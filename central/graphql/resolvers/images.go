@@ -14,6 +14,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -170,7 +171,6 @@ func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (Vu
 		return nil, errors.New("multiple vulnerabilities matched for top image vulnerability")
 	}
 	return &cVEResolver{root: resolver.root, data: vulns[0]}, nil
-
 }
 
 // Vulns returns all of the vulnerabilities in the image.
@@ -189,8 +189,17 @@ func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) (
 func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCount")
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
+	if args.IsEmpty() {
+		vulnSet := set.NewStringSet()
+		for _, c := range resolver.data.GetScan().GetComponents() {
+			for _, v := range c.GetVulns() {
+				vulnSet.Add(v.GetCve())
+			}
+		}
+		return int32(len(vulnSet)), nil
+	}
 
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 	return resolver.root.VulnerabilityCount(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
@@ -199,8 +208,19 @@ func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (in
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
 func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	if args.IsEmpty() {
+		var vulns []*storage.EmbeddedVulnerability
+		vulnSet := set.NewStringSet()
+		for _, component := range resolver.data.GetScan().GetComponents() {
+			for _, v := range component.GetVulns() {
+				if vulnSet.Add(v.GetCve()) {
+					vulns = append(vulns, v)
+				}
+			}
+		}
+		return mapVulnsToVulnerabilityCounter(vulns), nil
+	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
-
 	return resolver.root.VulnCounter(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
@@ -212,7 +232,6 @@ func (resolver *imageResolver) Components(ctx context.Context, args PaginatedQue
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
-
 	return resolver.root.Components(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
@@ -222,8 +241,11 @@ func (resolver *imageResolver) Components(ctx context.Context, args PaginatedQue
 func (resolver *imageResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComponentCount")
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
+	if args.IsEmpty() {
+		return int32(len(resolver.data.GetScan().GetComponents())), nil
+	}
 
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 	return resolver.root.ComponentCount(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),

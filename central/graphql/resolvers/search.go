@@ -52,6 +52,11 @@ func (r *PaginatedQuery) String() string {
 	return *r.Query
 }
 
+// IsEmpty means no query was specified
+func (r *PaginatedQuery) IsEmpty() bool {
+	return r == nil || r.Query == nil
+}
+
 // RawQuery represents a raw query
 type RawQuery struct {
 	Query *string
@@ -72,6 +77,11 @@ func (r RawQuery) String() string {
 		return ""
 	}
 	return *r.Query
+}
+
+// IsEmpty means no query specified
+func (r RawQuery) IsEmpty() bool {
+	return r.Query == nil
 }
 
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
