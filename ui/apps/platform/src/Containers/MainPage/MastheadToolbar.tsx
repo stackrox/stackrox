@@ -13,7 +13,6 @@ import {
 } from '@patternfly/react-core';
 import { QuestionCircleIcon } from '@patternfly/react-icons';
 
-import CLIDownloadButton from 'Components/CLIDownloadButton';
 import ClusterStatusProblems from 'Components/ClusterStatusProblems';
 import GlobalSearchButton from 'Components/GlobalSearchButton';
 import ThemeToggleButton from 'Components/ThemeToggleButton';
@@ -22,6 +21,7 @@ import OrchestratorComponentsToggle from 'Containers/Navigation/OrchestratorComp
 import UserMenu from 'Containers/Navigation/UserMenu';
 import useMetadata from 'hooks/useMetadata';
 import parseURL from 'utils/URLParser';
+import CLIDownloadMenu from './CLIDownloadMenu';
 
 const topNavBtnClass =
     'flex flex-end px-4 no-underline pt-3 pb-2 text-base-600 items-center cursor-pointer';
@@ -86,7 +86,7 @@ function MastheadToolbar(): ReactElement {
                     <GlobalSearchButton topNavBtnClass={topNavBtnClass} />
                 </PageHeaderToolsItem>
                 <PageHeaderToolsItem>
-                    <CLIDownloadButton topNavBtnClass={topNavBtnClass} />
+                    <CLIDownloadMenu />
                 </PageHeaderToolsItem>
                 <PageHeaderToolsItem>
                     <ThemeToggleButton />

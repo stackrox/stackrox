@@ -6,12 +6,10 @@ import { Page } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
-import { actions as cliSearchActions } from 'reducers/cli';
 
 import Notifications from 'Containers/Notifications';
 import NavigationSideBar from 'Containers/Navigation/NavigationSideBar';
 import SearchModal from 'Containers/Search/SearchModal';
-import CLIModal from 'Containers/CLI/CLIModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper, { PublicConfig } from 'Containers/AppWrapper';
 import CredentialExpiryBanners from 'Containers/CredentialExpiryBanners/CredentialExpiryBanners';
@@ -41,9 +39,7 @@ export type MainPageProps = {
 function MainPage({
     history,
     toggleGlobalSearchView,
-    toggleCLIDownloadView,
     isGlobalSearchView,
-    isCliDownloadView,
     metadata = {
         stale: false,
     },
@@ -73,9 +69,6 @@ function MainPage({
                 {isGlobalSearchView && (
                     <SearchModal onClose={onCloseHandler(history, toggleGlobalSearchView)} />
                 )}
-                {isCliDownloadView && (
-                    <CLIModal onClose={onCloseHandler(history, toggleCLIDownloadView)} />
-                )}
             </div>
         </AppWrapper>
     );
@@ -83,7 +76,6 @@ function MainPage({
 
 const mapStateToProps = createStructuredSelector({
     isGlobalSearchView: selectors.getGlobalSearchView,
-    isCliDownloadView: selectors.getCLIDownloadView,
     metadata: selectors.getMetadata,
     featureFlags: selectors.getFeatureFlags,
     publicConfig: selectors.getPublicConfig,
@@ -91,7 +83,6 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     toggleGlobalSearchView: globalSearchActions.toggleGlobalSearchView,
-    toggleCLIDownloadView: cliSearchActions.toggleCLIDownloadView,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(MainPage);

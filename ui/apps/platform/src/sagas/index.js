@@ -20,7 +20,6 @@ import metadata from './metadataSagas';
 import processes from './processSagas';
 import groups from './groupSagas';
 import attributes from './attributesSagas';
-import cli from './cliSagas';
 import systemConfig from './systemConfig';
 import telemetryConfig from './telemetryConfig';
 
@@ -30,7 +29,6 @@ export default function* root() {
         fork(apiTokens),
         fork(authProviders),
         fork(clusterInitBundles),
-        fork(cli),
         fork(clusters),
         fork(deployments),
         fork(images),

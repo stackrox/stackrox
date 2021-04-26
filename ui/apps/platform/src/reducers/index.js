@@ -28,7 +28,6 @@ import network, { selectors as networkSelectors } from './network/reducer';
 import processes, { selectors as processSelectors } from './processes';
 import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
-import cli, { selectors as cliSelectors } from './cli';
 import pdfDownload, { selectors as pdfDownloadSelectors } from './pdfDownload';
 import systemConfig, { selectors as systemConfigSelectors } from './systemConfig';
 import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
@@ -48,7 +47,6 @@ const appReducer = combineReducers({
     notifications,
     featureFlags,
     globalSearch,
-    cli,
     policies,
     roles,
     searchAutoComplete,
@@ -104,7 +102,6 @@ const getNetwork = (state) => getApp(state).network;
 const getProcesses = (state) => getApp(state).processes;
 const getRuleGroups = (state) => getApp(state).groups;
 const getAttributes = (state) => getApp(state).attributes;
-const getCLI = (state) => getApp(state).cli;
 const getPdfDownload = (state) => getApp(state).pdfDownload;
 const getSystemConfig = (state) => getApp(state).systemConfig;
 const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
@@ -135,7 +132,6 @@ const boundSelectors = {
     ...bindSelectors(getProcesses, processSelectors),
     ...bindSelectors(getRuleGroups, groupsSelectors),
     ...bindSelectors(getAttributes, attributesSelectors),
-    ...bindSelectors(getCLI, cliSelectors),
     ...bindSelectors(getPdfDownload, pdfDownloadSelectors),
     ...bindSelectors(getSystemConfig, systemConfigSelectors),
     ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
