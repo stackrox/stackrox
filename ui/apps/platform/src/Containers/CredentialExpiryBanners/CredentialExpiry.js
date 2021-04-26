@@ -3,20 +3,19 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { differenceInDays, distanceInWordsStrict, format } from 'date-fns';
+import { Banner, Button } from '@patternfly/react-core';
 
-import MessageBanner from 'Components/MessageBanner';
 import { selectors } from 'reducers';
 import { getHasReadWritePermission } from 'reducers/roles';
-import Button from '../../Components/Button';
 
 const getExpirationMessageType = (daysLeft) => {
     if (daysLeft > 14) {
         return 'info';
     }
     if (daysLeft > 3) {
-        return 'warn';
+        return 'warning';
     }
-    return 'error';
+    return 'danger';
 };
 
 const CredentialExpiry = ({
@@ -53,20 +52,17 @@ const CredentialExpiry = ({
         'ServiceIdentity',
         userRolePermissions
     );
+    const downloadLink = (
+        <Button variant="link" isInline onClick={downloadYAMLFunc}>
+            download this YAML file
+        </Button>
+    );
     const message = (
         <span className="flex-1 text-center">
             The {component} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
             {format(expirationDate, 'MMMM D, YYYY')} (at {format(expirationDate, 'h:mm a')}).{' '}
             {hasServiceIdentityWritePermission ? (
-                <>
-                    To use renewed certificates,{' '}
-                    <Button
-                        text="download this YAML file"
-                        className="text-tertiary-700 hover:text-tertiary-800 underline font-700 justify-center"
-                        onClick={downloadYAMLFunc}
-                    />{' '}
-                    and apply it to your cluster.
-                </>
+                <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>
             ) : (
                 'Contact your administrator.'
             )}
@@ -74,12 +70,9 @@ const CredentialExpiry = ({
     );
 
     return (
-        <MessageBanner
-            dataTestId={`cert-expiry-banner-${component.split(' ').join('-').toLowerCase()}`}
-            type={type}
-            component={message}
-            showCancel={type === 'warn'}
-        />
+        <Banner isSticky variant={type}>
+            {message}
+        </Banner>
     );
 };
 
