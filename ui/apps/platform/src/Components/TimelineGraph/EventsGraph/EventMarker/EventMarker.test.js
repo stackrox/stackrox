@@ -1,10 +1,10 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import EventMarker from './EventMarker';
 
 test('should show a policy violation event marker', async () => {
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <EventMarker
                 id="1"
@@ -20,12 +20,12 @@ test('should show a policy violation event marker', async () => {
             />
         </svg>
     );
-    expect(queryByTestId('policy-violation-event')).not.toBeNull();
+    expect(screen.queryByTestId('policy-violation-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
 test('should show a process activity event marker', async () => {
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <EventMarker
                 id="1"
@@ -45,12 +45,12 @@ test('should show a process activity event marker', async () => {
             />
         </svg>
     );
-    expect(queryByTestId('process-activity-event')).not.toBeNull();
+    expect(screen.queryByTestId('process-activity-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
 test('should show a process in baseline activity event marker', async () => {
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <EventMarker
                 id="1"
@@ -71,12 +71,12 @@ test('should show a process in baseline activity event marker', async () => {
             />
         </svg>
     );
-    expect(queryByTestId('process-in-baseline-activity-event')).not.toBeNull();
+    expect(screen.queryByTestId('process-in-baseline-activity-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
 test('should show a container restart event marker', async () => {
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <EventMarker
                 id="1"
@@ -92,12 +92,12 @@ test('should show a container restart event marker', async () => {
             />
         </svg>
     );
-    expect(queryByTestId('restart-event')).not.toBeNull();
+    expect(screen.queryByTestId('restart-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
 test('should show a container termination event marker', async () => {
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <EventMarker
                 id="1"
@@ -114,6 +114,6 @@ test('should show a container termination event marker', async () => {
             />
         </svg>
     );
-    expect(queryByTestId('termination-event')).not.toBeNull();
+    expect(screen.queryByTestId('termination-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import Tabs from 'Components/Tabs';
 
@@ -9,8 +9,8 @@ describe('Component:Tabs', () => {
             { text: 'Tab 1', disabled: false },
             { text: 'Tab 2', disabled: false },
         ];
-        const { getAllByRole } = render(<Tabs headers={headers} />);
-        const buttons = getAllByRole('button');
+        render(<Tabs headers={headers} />);
+        const buttons = screen.getAllByRole('button');
 
         expect(buttons.length).toEqual(headers.length);
         expect(buttons[0]).toHaveClass('active');
@@ -23,8 +23,8 @@ describe('Component:Tabs', () => {
             { text: 'Tab 2', disabled: false },
             { text: 'Tab 3', disabled: false },
         ];
-        const { getAllByRole } = render(<Tabs headers={headers} />);
-        const buttons = getAllByRole('button');
+        render(<Tabs headers={headers} />);
+        const buttons = screen.getAllByRole('button');
 
         fireEvent.click(buttons[1]);
         expect(buttons[0]).not.toHaveClass('active');
@@ -41,8 +41,8 @@ describe('Component:Tabs', () => {
             { text: 'Tab 2', disabled: true },
             { text: 'Tab 3', disabled: false },
         ];
-        const { getAllByRole } = render(<Tabs headers={headers} />);
-        const buttons = getAllByRole('button');
+        render(<Tabs headers={headers} />);
+        const buttons = screen.getAllByRole('button');
 
         fireEvent.click(buttons[1]);
         expect(buttons[0]).toHaveClass('active');

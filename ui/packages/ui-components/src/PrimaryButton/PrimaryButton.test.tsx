@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import PrimaryButton from './PrimaryButton';
 
@@ -7,13 +7,13 @@ describe('PrimaryButton', () => {
     it('renders', () => {
         function onClick(): void {}
 
-        const { getByText } = render(
+        render(
             <PrimaryButton type="button" onClick={onClick}>
                 Save cluster
             </PrimaryButton>
         );
 
-        expect(getByText('Save cluster')).toBeInTheDocument();
+        expect(screen.getByText('Save cluster')).toBeInTheDocument();
     });
 
     it('has the correct style', () => {

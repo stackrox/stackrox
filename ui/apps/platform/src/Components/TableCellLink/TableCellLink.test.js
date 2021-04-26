@@ -1,4 +1,5 @@
 import React from 'react';
+import { screen } from '@testing-library/react';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
 import TableCellLink from './TableCellLink';
@@ -8,13 +9,13 @@ describe('TableCellLink', () => {
         const text = 'rempote';
         const link = '/main/configmanagement/cluster/88d17fde-3b80-48dc-a4f3-1c8068e95f28';
 
-        const { getByText } = renderWithRouter(
+        renderWithRouter(
             <TableCellLink pdf={false} url={link}>
                 {text}
             </TableCellLink>
         );
 
-        const el = getByText(text);
+        const el = screen.getByText(text);
         expect(el.href).toContain(link);
     });
 
@@ -22,13 +23,13 @@ describe('TableCellLink', () => {
         const text = 'rempote';
         const link = '/main/configmanagement/cluster/88d17fde-3b80-48dc-a4f3-1c8068e95f28';
 
-        const { getByText } = renderWithRouter(
+        renderWithRouter(
             <TableCellLink pdf url={link}>
                 {text}
             </TableCellLink>
         );
 
-        const el = getByText(text);
+        const el = screen.getByText(text);
         expect(el.href).toBeFalsy();
     });
 });

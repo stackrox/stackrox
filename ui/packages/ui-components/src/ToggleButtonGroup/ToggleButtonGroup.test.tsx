@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import ToggleButtonGroup from './ToggleButtonGroup';
@@ -27,12 +27,12 @@ describe('ToggleButtonGroup', () => {
     });
 
     test('toggles the active button when clicking the inactive button', () => {
-        const { getByText, getByTestId } = render(<Component />);
+        render(<Component />);
 
-        expect(getByTestId('active-toggle-button')).toHaveTextContent('Lock');
+        expect(screen.getByTestId('active-toggle-button')).toHaveTextContent('Lock');
 
-        userEvent.click(getByText('Unlock'));
+        userEvent.click(screen.getByText('Unlock'));
 
-        expect(getByTestId('active-toggle-button')).toHaveTextContent('Unlock');
+        expect(screen.getByTestId('active-toggle-button')).toHaveTextContent('Unlock');
     });
 });

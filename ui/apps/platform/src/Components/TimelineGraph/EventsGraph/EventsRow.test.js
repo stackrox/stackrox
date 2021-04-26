@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import EventsRow from './EventsRow';
 
@@ -35,8 +35,8 @@ const MockedEventsRow = () => {
 };
 
 test('should only render events in the view', () => {
-    const { getAllByTestId } = render(<MockedEventsRow />);
-    const elements = getAllByTestId('timeline-event-marker');
+    render(<MockedEventsRow />);
+    const elements = screen.getAllByTestId('timeline-event-marker');
     // we should only see 5 events between 0-4500ms
     expect(elements.length).toBe(5);
 });

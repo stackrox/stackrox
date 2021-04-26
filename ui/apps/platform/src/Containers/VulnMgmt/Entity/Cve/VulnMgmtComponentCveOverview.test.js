@@ -1,6 +1,7 @@
 import React from 'react';
 import { Provider } from 'react-redux';
 import { createBrowserHistory as createHistory } from 'history';
+import { screen } from '@testing-library/react';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
 import configureStore from 'store/configureStore';
@@ -42,7 +43,7 @@ describe('VulnMgmtComponentCveOverview', () => {
 
         const store = configureStore(initialStore, history);
         // act
-        const { getByTestId } = renderWithRouter(
+        renderWithRouter(
             <Provider store={store}>
                 <VulnMgmtCveOverview data={data} />
             </Provider>,
@@ -52,7 +53,7 @@ describe('VulnMgmtComponentCveOverview', () => {
         );
 
         // assert
-        const el = getByTestId('more-info-link');
+        const el = screen.getByTestId('more-info-link');
         expect(el).toHaveTextContent('View Full CVE Description');
         expect(el).toHaveAttribute('href', mockExternalLink);
         expect(el).toHaveAttribute('target', '_blank');

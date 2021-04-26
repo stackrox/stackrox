@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import Comment from './Comment';
 
@@ -9,7 +9,7 @@ test('should not save on an empty comment', async () => {
         message: '',
     };
     function doNothing() {}
-    const { getByTestId, getByText } = render(
+    render(
         <Comment
             comment={comment}
             onSave={doNothing}
@@ -18,13 +18,13 @@ test('should not save on an empty comment', async () => {
             defaultEdit
         />
     );
-    const textarea = getByTestId('comment-textarea');
-    const saveButton = getByText('Save');
+    const textarea = screen.getByTestId('comment-textarea');
+    const saveButton = screen.getByText('Save');
 
     fireEvent.change(textarea, { target: { value: '   ' } });
     fireEvent.click(saveButton);
 
-    await waitFor(() => expect(getByText('This field is required')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('This field is required')).toBeInTheDocument());
 });
 
 test('should show links for urls with http(s) as a prefix', async () => {
@@ -33,12 +33,15 @@ test('should show links for urls with http(s) as a prefix', async () => {
         message: 'Here is a link: https://www.example.com',
     };
     function doNothing() {}
-    const { getByTestId } = render(
+    render(
         <Comment comment={comment} onSave={doNothing} onClose={doNothing} onRemove={doNothing} />
     );
 
     await waitFor(() =>
-        expect(getByTestId('comment-link')).toHaveAttribute('href', 'https://www.example.com')
+        expect(screen.getByTestId('comment-link')).toHaveAttribute(
+            'href',
+            'https://www.example.com'
+        )
     );
 });
 
@@ -48,9 +51,9 @@ test('should not show links for urls with non-http(s) as a prefix', async () => 
         message: 'These are not links: www.example3.com, example4.com',
     };
     function doNothing() {}
-    const { queryByTestId } = render(
+    render(
         <Comment comment={comment} onSave={doNothing} onClose={doNothing} onRemove={doNothing} />
     );
 
-    expect(queryByTestId('comment-link')).toBeNull();
+    expect(screen.queryByTestId('comment-link')).toBeNull();
 });

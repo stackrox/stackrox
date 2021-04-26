@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { renderHook, act } from '@testing-library/react-hooks';
 
 import useTabs from './useTabs';
@@ -35,11 +35,11 @@ describe('useTabs', () => {
 
         const { tabHeaders, activeTabContent } = result.current;
 
-        const { getByText } = render(activeTabContent);
+        render(activeTabContent);
 
         expect(tabHeaders[0].isActive).toEqual(true);
         expect(tabHeaders[1].isActive).toEqual(false);
-        expect(getByText('Tab 1 Content')).toBeDefined();
+        expect(screen.getByText('Tab 1 Content')).toBeDefined();
     });
 
     it("should select the second tab and see the second tab's content", async () => {
@@ -54,10 +54,10 @@ describe('useTabs', () => {
 
         const { tabHeaders, activeTabContent } = result.current;
 
-        const { getByText } = render(activeTabContent);
+        render(activeTabContent);
 
         expect(tabHeaders[0].isActive).toEqual(false);
         expect(tabHeaders[1].isActive).toEqual(true);
-        expect(getByText('Tab 2 Content')).toBeDefined();
+        expect(screen.getByText('Tab 2 Content')).toBeDefined();
     });
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { combineReducers, createStore } from 'redux';
+import { screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import featureFlags from 'reducers/featureFlags';
@@ -28,13 +29,13 @@ test('can render the children when the feature is enabled', () => {
     };
     const store = createStore(rootReducer, initialState);
 
-    const { queryByText } = renderWithRedux(
+    renderWithRedux(
         store,
         <FeatureEnabled featureFlag="FEATURE_TEST_1">
             {({ featureEnabled }) => featureEnabled && <div>Feature Enabled</div>}
         </FeatureEnabled>
     );
-    expect(queryByText('Feature Enabled')).toBeDefined();
+    expect(screen.queryByText('Feature Enabled')).toBeDefined();
 });
 
 test("can't render the children when the feature is disabled", () => {
@@ -57,11 +58,11 @@ test("can't render the children when the feature is disabled", () => {
     };
     const store = createStore(rootReducer, initialState);
 
-    const { queryByText } = renderWithRedux(
+    renderWithRedux(
         store,
         <FeatureEnabled featureFlag="FEATURE_TEST_1">
             {({ featureEnabled }) => featureEnabled && <div>Feature Enabled</div>}
         </FeatureEnabled>
     );
-    expect(queryByText('Feature Enabled')).toBeNull();
+    expect(screen.queryByText('Feature Enabled')).toBeNull();
 });

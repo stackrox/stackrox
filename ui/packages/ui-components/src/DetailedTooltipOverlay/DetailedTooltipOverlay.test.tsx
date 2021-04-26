@@ -1,11 +1,11 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import DetailedTooltipOverlay from './DetailedTooltipOverlay';
 
 describe('DetailedTooltipOverlay', () => {
     test('renders title, subtitle and footer', () => {
-        const { getByText, getByTestId } = render(
+        render(
             <DetailedTooltipOverlay
                 title="Title"
                 subtitle="Subtitle"
@@ -13,11 +13,11 @@ describe('DetailedTooltipOverlay', () => {
                 footer="Footer"
             />
         );
-        expect(getByTestId('tooltip-title')).toHaveTextContent('Title');
-        expect(getByTestId('tooltip-subtitle')).toHaveTextContent('Subtitle');
-        expect(getByTestId('tooltip-footer')).toHaveTextContent('Footer');
+        expect(screen.getByTestId('tooltip-title')).toHaveTextContent('Title');
+        expect(screen.getByTestId('tooltip-subtitle')).toHaveTextContent('Subtitle');
+        expect(screen.getByTestId('tooltip-footer')).toHaveTextContent('Footer');
 
-        expect(getByTestId('tooltip-body')).toHaveTextContent('Body');
-        expect(getByText('Body')).toHaveClass('my-class');
+        expect(screen.getByTestId('tooltip-body')).toHaveTextContent('Body');
+        expect(screen.getByText('Body')).toHaveClass('my-class');
     });
 });

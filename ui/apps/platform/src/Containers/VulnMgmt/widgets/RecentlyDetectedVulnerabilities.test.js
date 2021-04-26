@@ -1,5 +1,6 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
+import { screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -47,7 +48,7 @@ describe('RecentlyDetectedVulnerabilities', () => {
 
         const workflowState = parseURL(location);
 
-        const { findByTestId } = renderWithRouter(
+        renderWithRouter(
             <MockedProvider mocks={mocks} addTypename={false}>
                 <workflowStateContext.Provider value={workflowState}>
                     <RecentlyDetectedVulnerabilities />
@@ -55,7 +56,7 @@ describe('RecentlyDetectedVulnerabilities', () => {
             </MockedProvider>
         );
 
-        const messageElement = await findByTestId(messageTestId);
+        const messageElement = await screen.findByTestId(messageTestId);
         expect(messageElement.textContent).toContain(expectedMessage);
     });
 });

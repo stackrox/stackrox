@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import { Event } from '../eventTypes';
 import ClusteredEventMarker from './ClusteredEventMarker';
@@ -22,7 +22,7 @@ test('should show a clustered generic event marker', () => {
         uid: 1000,
         timestamp: '2020-04-20T20:20:20.358227916Z',
     });
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <ClusteredEventMarker
                 events={events}
@@ -35,7 +35,7 @@ test('should show a clustered generic event marker', () => {
             />
         </svg>
     );
-    expect(queryByTestId('clustered-generic-event')).not.toBeNull();
+    expect(screen.queryByTestId('clustered-generic-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -48,7 +48,7 @@ test('should show a clustered policy violation event marker', () => {
             timestamp: '2020-04-20T20:20:20.358227916Z',
         };
     });
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <ClusteredEventMarker
                 events={events}
@@ -61,7 +61,7 @@ test('should show a clustered policy violation event marker', () => {
             />
         </svg>
     );
-    expect(queryByTestId('clustered-policy-violation-event')).not.toBeNull();
+    expect(screen.queryByTestId('clustered-policy-violation-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -78,7 +78,7 @@ test('should show a clustered process activity event marker', () => {
             timestamp: '2020-04-20T20:20:20.358227916Z',
         };
     });
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <ClusteredEventMarker
                 events={events}
@@ -91,7 +91,7 @@ test('should show a clustered process activity event marker', () => {
             />
         </svg>
     );
-    expect(queryByTestId('clustered-process-activity-event')).not.toBeNull();
+    expect(screen.queryByTestId('clustered-process-activity-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -109,7 +109,7 @@ test('should show a clustered process in baseline activity event marker', () => 
             timestamp: '2020-04-20T20:20:20.358227916Z',
         };
     });
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <ClusteredEventMarker
                 events={events}
@@ -122,7 +122,7 @@ test('should show a clustered process in baseline activity event marker', () => 
             />
         </svg>
     );
-    expect(queryByTestId('clustered-process-in-baseline-activity-event')).not.toBeNull();
+    expect(screen.queryByTestId('clustered-process-in-baseline-activity-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -135,7 +135,7 @@ test('should show a clustered container restart event marker', () => {
             timestamp: '2020-04-20T20:20:20.358227916Z',
         };
     });
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <ClusteredEventMarker
                 events={events}
@@ -148,7 +148,7 @@ test('should show a clustered container restart event marker', () => {
             />
         </svg>
     );
-    expect(queryByTestId('clustered-restart-event')).not.toBeNull();
+    expect(screen.queryByTestId('clustered-restart-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -162,7 +162,7 @@ test('should show a container termination event marker', () => {
             timestamp: '2020-04-20T20:20:20.358227916Z',
         };
     });
-    const { queryByTestId, asFragment } = render(
+    const { asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <ClusteredEventMarker
                 events={events}
@@ -175,6 +175,6 @@ test('should show a container termination event marker', () => {
             />
         </svg>
     );
-    expect(queryByTestId('clustered-termination-event')).not.toBeNull();
+    expect(screen.queryByTestId('clustered-termination-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
