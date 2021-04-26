@@ -28,11 +28,6 @@ const tableColumnDescriptor = Object.freeze({
                 Header: 'AWS Account Number',
             },
             { accessor: 'awsSecurityHub.region', Header: 'AWS Region' },
-            {
-                accessor: 'enabled',
-                Header: 'Enabled',
-                Cell: ({ original }) => <span>{original?.enabled ? 'Yes' : 'No'}</span>,
-            },
         ],
         slack: [
             { accessor: 'name', Header: 'Name' },
