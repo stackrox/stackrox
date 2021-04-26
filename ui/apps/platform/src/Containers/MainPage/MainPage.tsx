@@ -14,7 +14,7 @@ import SearchModal from 'Containers/Search/SearchModal';
 import CLIModal from 'Containers/CLI/CLIModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper, { PublicConfig } from 'Containers/AppWrapper';
-import CredentialExpiryBanners from 'Containers/CredentialExpiry/CredentialExpiryBanners';
+import CredentialExpiryBanners from 'Containers/CredentialExpiryBanners/CredentialExpiryBanners';
 import VersionOutOfDate from 'Containers/VersionOutOfDate';
 import Body from 'Containers/MainPage/Body';
 import Masthead from 'Containers/MainPage/Masthead';
