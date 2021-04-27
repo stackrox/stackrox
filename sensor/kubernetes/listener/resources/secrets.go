@@ -11,9 +11,14 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/registries/docker"
+	"github.com/stackrox/rox/pkg/registries/rhel"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/uuid"
 	v1 "k8s.io/api/core/v1"
 )
+
+const redhatRegistryEndpoint = "registry.redhat.io"
 
 // The following types are copied from the Kubernetes codebase,
 // since it is not placed in any of the officially supported client
@@ -185,9 +190,14 @@ func newSecretDispatcher() *secretDispatcher {
 }
 
 func dockerConfigToImageIntegration(registry string, dce dockerConfigEntry) *storage.ImageIntegration {
+	registryType := docker.GenericDockerRegistryType
+	if urlfmt.TrimHTTPPrefixes(registry) == redhatRegistryEndpoint {
+		registryType = rhel.RedHatRegistryType
+	}
+
 	return &storage.ImageIntegration{
 		Id:         uuid.NewV4().String(),
-		Type:       "docker",
+		Type:       registryType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{

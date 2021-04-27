@@ -88,7 +88,7 @@ func (s *pipelineImpl) getMatchingImageIntegration(auto *storage.ImageIntegratio
 
 		// At this point, we just want to see if we already have an exact match
 		// if so then we don't want to reprocess everything for no change
-		if matchesAuth(auto, existing) {
+		if matchesAuth(auto, existing) && auto.GetType() == existing.GetType() {
 			return nil, false
 		}
 		integrationToUpdate = existing

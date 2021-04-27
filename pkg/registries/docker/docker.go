@@ -21,6 +21,9 @@ import (
 )
 
 const (
+	// GenericDockerRegistryType exposes the default registry type
+	GenericDockerRegistryType = "docker"
+
 	registryTimeout = 5 * time.Second
 )
 
@@ -30,7 +33,7 @@ var (
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "docker", func(integration *storage.ImageIntegration) (types.Registry, error) {
+	return GenericDockerRegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
 		reg, err := NewDockerRegistry(integration)
 		return reg, err
 	}
