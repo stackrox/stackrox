@@ -1,24 +1,27 @@
 import React, { ReactElement } from 'react';
+import { Banner, Button } from '@patternfly/react-core';
 
-import Button from 'Components/Button';
-
-function windowReloadHandler() {
+function refreshWindow() {
     window.location.reload();
 }
 
 function VersionOutOfDate(): ReactElement {
+    const refreshButton = (
+        <Button variant="link" isInline onClick={refreshWindow}>
+            refresh this page
+        </Button>
+    );
+    const message = (
+        <span>
+            It looks like this page is out of date and may not behave properly. Please{' '}
+            {refreshButton} to correct any issues.
+        </span>
+    );
+
     return (
-        <div className="flex w-full items-center p-3 bg-warning-200 text-warning-800 border-b border-base-400 justify-center font-700">
-            <span>
-                It looks like this page is out of date and may not behave properly. Please{' '}
-                <Button
-                    text="refresh this page"
-                    className="text-tertiary-700 hover:text-tertiary-800 underline font-700 justify-center"
-                    onClick={windowReloadHandler}
-                />{' '}
-                to correct any issues.
-            </span>
-        </div>
+        <Banner isSticky variant="warning">
+            {message}
+        </Banner>
     );
 }
 
