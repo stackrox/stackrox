@@ -52,17 +52,13 @@ function MastheadToolbar(): ReactElement {
                 />
                 <ApplicationLauncherItem
                     key="app-launcher-item-docs"
-                    component={
-                        <Link
-                            className="pf-c-app-launcher__menu-item"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            to="/docs/product"
-                        >
-                            Help Center
-                        </Link>
-                    }
-                />
+                    href="/docs/product"
+                    isExternal
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Help Center
+                </ApplicationLauncherItem>
                 <ApplicationLauncherSeparator key="separator" />
             </ApplicationLauncherGroup>
             <ApplicationLauncherGroup key="app-launder-group-metadata">
