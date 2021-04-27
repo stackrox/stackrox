@@ -4825,6 +4825,19 @@ jobs:
             docker push "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
             docker push "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim" | cat
 
+
+      - run:
+          name: Push image into quay.io repository backing registry.redhat.io
+          command: |
+            docker login -u "$RH_REGISTRY_QUAY_USERNAME" --password-stdin \<<<"$RH_REGISTRY_QUAY_PASSWORD" quay.io
+
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_TAG="$(make --quiet scanner-tag)"
+            COLLECTOR_TAG="$(make --quiet collector-tag)"
+
+            ./scripts/redhat-registry-publish/retag.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
+            DRY_RUN=false ./scripts/redhat-registry-publish/push.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
+
       - run:
           name: Push roxctl to stackrox-hub
           command: |
