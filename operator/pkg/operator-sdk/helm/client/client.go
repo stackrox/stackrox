@@ -83,7 +83,7 @@ func (c namespaceClientConfig) ConfigAccess() clientcmd.ConfigAccess {
 	return nil
 }
 
-func NewRESTClientGetter(mgr manager.Manager, ns string) (genericclioptions.RESTClientGetter, error) {
+func NewRESTClientGetter(mgr manager.Manager, ns string) (genericclioptions.RESTClientGetter, error) { //nolint:golint
 	cfg := mgr.GetConfig()
 	dc, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
@@ -102,6 +102,7 @@ func NewRESTClientGetter(mgr manager.Manager, ns string) (genericclioptions.REST
 
 var _ kube.Interface = &ownerRefInjectingClient{}
 
+// NewOwnerRefInjectingClient creates a new client
 func NewOwnerRefInjectingClient(base kube.Client, restMapper meta.RESTMapper,
 	cr *unstructured.Unstructured) (kube.Interface, error) {
 

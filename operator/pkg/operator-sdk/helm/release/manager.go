@@ -18,10 +18,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/internal/types"
 	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/manifestutil"
 	jsonpatch "gomodules.xyz/jsonpatch/v3"
@@ -75,9 +74,9 @@ type manager struct {
 	chart             *cpb.Chart
 }
 
-type InstallOption func(*action.Install) error
-type UpgradeOption func(*action.Upgrade) error
-type UninstallOption func(*action.Uninstall) error
+type InstallOption func(*action.Install) error     //nolint:golint
+type UpgradeOption func(*action.Upgrade) error     //nolint:golint
+type UninstallOption func(*action.Uninstall) error //nolint:golint
 
 // ReleaseName returns the name of the release.
 func (m manager) ReleaseName() string {
@@ -98,7 +97,7 @@ func (m *manager) Sync(ctx context.Context) error {
 	// Get release history for this release name
 	releases, err := m.storageBackend.History(m.releaseName)
 	if err != nil && !notFoundErr(err) {
-		return fmt.Errorf("failed to retrieve release history: %w", err)
+		return errors.Wrap(err, "failed to retrieve release history")
 	}
 
 	// Cleanup non-deployed release versions. If all release versions are
@@ -108,7 +107,7 @@ func (m *manager) Sync(ctx context.Context) error {
 		if rel.Info != nil && rel.Info.Status != rpb.StatusDeployed {
 			_, err := m.storageBackend.Delete(rel.Name, rel.Version)
 			if err != nil && !notFoundErr(err) {
-				return fmt.Errorf("failed to delete stale release version: %w", err)
+				return errors.Wrap(err, "failed to delete stale release version")
 			}
 		}
 	}
@@ -119,7 +118,7 @@ func (m *manager) Sync(ctx context.Context) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("failed to get deployed release: %w", err)
+		return errors.Wrap(err, "failed to get deployed release")
 	}
 	m.deployedRelease = deployedRelease
 	m.isInstalled = true
@@ -127,7 +126,7 @@ func (m *manager) Sync(ctx context.Context) error {
 	// Get the next candidate release to determine if an upgrade is necessary.
 	candidateRelease, err := m.getCandidateRelease(m.namespace, m.releaseName, m.chart, m.values)
 	if err != nil {
-		return fmt.Errorf("failed to get candidate release: %w", err)
+		return errors.Wrap(err, "failed to get candidate release")
 	}
 	if deployedRelease.Manifest != candidateRelease.Manifest {
 		m.isUpgradeRequired = true
@@ -166,7 +165,7 @@ func (m manager) InstallRelease(ctx context.Context, opts ...InstallOption) (*rp
 	install.Namespace = m.namespace
 	for _, o := range opts {
 		if err := o(install); err != nil {
-			return nil, fmt.Errorf("failed to apply install option: %w", err)
+			return nil, errors.Wrap(err, "failed to apply install option")
 		}
 	}
 
@@ -186,15 +185,15 @@ func (m manager) InstallRelease(ctx context.Context, opts ...InstallOption) (*rp
 			// Only log a message about a rollback failure if the failure was caused
 			// by something other than the release not being found.
 			if uninstallErr != nil && !notFoundErr(uninstallErr) {
-				return nil, fmt.Errorf("failed installation (%s) and failed rollback: %w", err, uninstallErr)
+				return nil, errors.Wrapf(uninstallErr, "failed installation (%s) and failed rollback", err)
 			}
 		}
-		return nil, fmt.Errorf("failed to install release: %w", err)
+		return nil, errors.Wrap(err, "failed to install release")
 	}
 	return installedRelease, nil
 }
 
-func ForceUpgrade(force bool) UpgradeOption {
+func ForceUpgrade(force bool) UpgradeOption { //nolint:golint
 	return func(u *action.Upgrade) error {
 		u.Force = force
 		return nil
@@ -207,7 +206,7 @@ func (m manager) UpgradeRelease(ctx context.Context, opts ...UpgradeOption) (*rp
 	upgrade.Namespace = m.namespace
 	for _, o := range opts {
 		if err := o(upgrade); err != nil {
-			return nil, nil, fmt.Errorf("failed to apply upgrade option: %w", err)
+			return nil, nil, errors.Wrap(err, "failed to apply upgrade option")
 		}
 	}
 
@@ -225,10 +224,10 @@ func (m manager) UpgradeRelease(ctx context.Context, opts ...UpgradeOption) (*rp
 			// log both the upgrade and rollback errors.
 			rollbackErr := rollback.Run(m.releaseName)
 			if rollbackErr != nil {
-				return nil, nil, fmt.Errorf("failed upgrade (%s) and failed rollback: %w", err, rollbackErr)
+				return nil, nil, errors.Wrapf(rollbackErr, "failed upgrade (%s) and failed rollback", err)
 			}
 		}
-		return nil, nil, fmt.Errorf("failed to upgrade release: %w", err)
+		return nil, nil, errors.Wrap(err, "failed to upgrade release")
 	}
 	return m.deployedRelease, upgradedRelease, err
 }
@@ -247,18 +246,18 @@ func reconcileRelease(_ context.Context, kubeClient kube.Interface, expectedMani
 	}
 	return expectedInfos.Visit(func(expected *resource.Info, err error) error {
 		if err != nil {
-			return fmt.Errorf("visit error: %w", err)
+			return errors.Wrap(err, "visit error")
 		}
 
 		helper := resource.NewHelper(expected.Client, expected.Mapping)
 		existing, err := helper.Get(expected.Namespace, expected.Name)
 		if apierrors.IsNotFound(err) {
 			if _, err := helper.Create(expected.Namespace, true, expected.Object); err != nil {
-				return fmt.Errorf("create error: %s", err)
+				return errors.Wrap(err, "create error")
 			}
 			return nil
 		} else if err != nil {
-			return fmt.Errorf("could not get object: %w", err)
+			return errors.Wrap(err, "could not get object")
 		}
 
 		// Replicate helm's patch creation, which will create a Three-Way-Merge patch for
@@ -268,7 +267,7 @@ func reconcileRelease(_ context.Context, kubeClient kube.Interface, expectedMani
 		// https://github.com/helm/helm/blob/1c9b54ad7f62a5ce12f87c3ae55136ca20f09c98/pkg/kube/client.go#L392
 		patch, patchType, err := createPatch(existing, expected)
 		if err != nil {
-			return fmt.Errorf("error creating patch: %w", err)
+			return errors.Wrap(err, "error creating patch")
 		}
 
 		if patch == nil {
@@ -279,7 +278,7 @@ func reconcileRelease(_ context.Context, kubeClient kube.Interface, expectedMani
 		_, err = helper.Patch(expected.Namespace, expected.Name, patchType, patch,
 			&metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("patch error: %w", err)
+			return errors.Wrap(err, "patch error")
 		}
 		return nil
 	})
@@ -357,7 +356,7 @@ func (m manager) UninstallRelease(ctx context.Context, opts ...UninstallOption) 
 	uninstall := action.NewUninstall(m.actionConfig)
 	for _, o := range opts {
 		if err := o(uninstall); err != nil {
-			return nil, fmt.Errorf("failed to apply uninstall option: %w", err)
+			return nil, errors.Wrap(err, "failed to apply uninstall option")
 		}
 	}
 	uninstallResponse, err := uninstall.Run(m.releaseName)
@@ -372,16 +371,16 @@ func (m manager) UninstallRelease(ctx context.Context, opts ...UninstallOption) 
 func (m manager) CleanupRelease(ctx context.Context, manifest string) (bool, error) {
 	dc, err := m.actionConfig.RESTClientGetter.ToDiscoveryClient()
 	if err != nil {
-		return false, fmt.Errorf("failed to get Kubernetes discovery client: %w", err)
+		return false, errors.Wrap(err, "failed to get Kubernetes discovery client")
 	}
 	apiVersions, err := action.GetVersionSet(dc)
 	if err != nil && !discovery.IsGroupDiscoveryFailedError(err) {
-		return false, fmt.Errorf("failed to get apiVersions from Kubernetes: %w", err)
+		return false, errors.Wrap(err, "failed to get apiVersions from Kubernetes")
 	}
 	manifests := releaseutil.SplitManifests(manifest)
 	_, files, err := releaseutil.SortManifests(manifests, apiVersions, releaseutil.UninstallOrder)
 	if err != nil {
-		return false, fmt.Errorf("failed to sort manifests: %w", err)
+		return false, errors.Wrap(err, "failed to sort manifests")
 	}
 	// do not delete resources that are annotated with the Helm resource policy 'keep'
 	_, filesToDelete := manifestutil.FilterManifestsToKeep(files)
@@ -391,7 +390,7 @@ func (m manager) CleanupRelease(ctx context.Context, manifest string) (bool, err
 	}
 	resources, err := m.kubeClient.Build(strings.NewReader(builder.String()), false)
 	if err != nil {
-		return false, fmt.Errorf("failed to build resources from manifests: %w", err)
+		return false, errors.Wrap(err, "failed to build resources from manifests")
 	}
 	if resources == nil || len(resources) <= 0 {
 		return true, nil
@@ -402,12 +401,12 @@ func (m manager) CleanupRelease(ctx context.Context, manifest string) (bool, err
 			if apierrors.IsNotFound(err) {
 				continue // resource is already delete, check the next one.
 			}
-			return false, fmt.Errorf("failed to get resource: %w", err)
+			return false, errors.Wrap(err, "failed to get resource")
 		}
 		// found at least one resource that is not deleted so just delete everything again.
 		_, errs := m.kubeClient.Delete(resources)
 		if len(errs) > 0 {
-			return false, fmt.Errorf("failed to delete resources: %v", apiutilerrors.NewAggregate(errs))
+			return false, errors.Errorf("failed to delete resources: %v", apiutilerrors.NewAggregate(errs))
 		}
 		return false, nil
 	}

@@ -20,8 +20,8 @@ import (
 	"helm.sh/helm/v3/pkg/releaseutil"
 )
 
-// Source from https://github.com/helm/helm/blob/v3.4.2/pkg/action/resource_policy.go\
-
+// FilterManifestsToKeep filters manifests to keep
+// Source from https://github.com/helm/helm/blob/v3.4.2/pkg/action/resource_policy.go
 func FilterManifestsToKeep(manifests []releaseutil.Manifest) (keep, remaining []releaseutil.Manifest) {
 	for _, m := range manifests {
 		if m.Head.Metadata == nil || m.Head.Metadata.Annotations == nil || len(m.Head.Metadata.Annotations) == 0 {

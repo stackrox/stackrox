@@ -19,11 +19,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/pkg/sync"
 	libhandler "github.com/operator-framework/operator-lib/handler"
 	"github.com/operator-framework/operator-lib/predicate"
 	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/release"
 	"github.com/stackrox/rox/operator/pkg/operator-sdk/util/k8sutil"
+	"github.com/stackrox/rox/pkg/sync"
 	rpb "helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/releaseutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

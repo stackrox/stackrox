@@ -22,6 +22,8 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
+var ls = regexp.MustCompile("^")
+
 // Generate generates a diff between a and b, in color.
 func Generate(a, b string) string {
 	dmp := diffmatchpatch.New()
@@ -52,10 +54,9 @@ func Generate(a, b string) string {
 func prefixLines(s, prefix string) string {
 	var buf bytes.Buffer
 	lines := strings.Split(s, "\n")
-	ls := regexp.MustCompile("^")
 	for _, line := range lines[:len(lines)-1] {
-		buf.WriteString(ls.ReplaceAllString(line, prefix))
-		buf.WriteString("\n")
+		_, _ = buf.WriteString(ls.ReplaceAllString(line, prefix))
+		_, _ = buf.WriteString("\n")
 	}
 	return buf.String()
 }

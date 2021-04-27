@@ -38,7 +38,7 @@ var (
 	)
 )
 
-func RegisterBuildInfo(r prometheus.Registerer) {
+func RegisterBuildInfo(r prometheus.Registerer) { //nolint:golint
 	buildInfo.Set(1)
 	r.MustRegister(buildInfo)
 }

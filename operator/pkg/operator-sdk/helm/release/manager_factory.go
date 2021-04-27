@@ -17,6 +17,7 @@ package release
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/client"
 	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/internal/types"
 	"helm.sh/helm/v3/pkg/action"
@@ -53,7 +54,7 @@ func (f managerFactory) NewManager(cr *unstructured.Unstructured, overrideValues
 	// Get both v2 and v3 storage backends
 	clientv1, err := v1.NewForConfig(f.mgr.GetConfig())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get core/v1 client: %w", err)
+		return nil, errors.Wrap(err, "failed to get core/v1 client")
 	}
 	storageBackend := storage.Init(driver.NewSecrets(clientv1.Secrets(cr.GetNamespace())))
 
@@ -61,34 +62,34 @@ func (f managerFactory) NewManager(cr *unstructured.Unstructured, overrideValues
 	// as an owner reference into all resources templated by the chart.
 	rcg, err := client.NewRESTClientGetter(f.mgr, cr.GetNamespace())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get REST client getter from manager: %w", err)
+		return nil, errors.Wrap(err, "failed to get REST client getter from manager")
 	}
 
 	kubeClient := kube.New(rcg)
 	restMapper := f.mgr.GetRESTMapper()
 	ownerRefClient, err := client.NewOwnerRefInjectingClient(*kubeClient, restMapper, cr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inject owner references: %w", err)
+		return nil, errors.Wrap(err, "failed to inject owner references")
 	}
 
 	crChart, err := loader.LoadDir(f.chartDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load chart dir: %w", err)
+		return nil, errors.Wrap(err, "failed to load chart dir")
 	}
 
 	releaseName, err := getReleaseName(storageBackend, crChart.Name(), cr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get helm release name: %w", err)
+		return nil, errors.Wrap(err, "failed to get helm release name")
 	}
 
 	crValues, ok := cr.Object["spec"].(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("failed to get spec: expected map[string]interface{}")
+		return nil, errors.New("failed to get spec: expected map[string]interface{}")
 	}
 
 	expOverrides, err := parseOverrides(overrideValues)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse override values: %w", err)
+		return nil, errors.Wrap(err, "failed to parse override values")
 	}
 	values := mergeMaps(crValues, expOverrides)
 
@@ -145,11 +146,11 @@ func getReleaseName(storageBackend *storage.Storage, crChartName string,
 	// different than the chart managed by this operator, return an error
 	// because something else created the existing release.
 	if history[0].Chart == nil {
-		return "", fmt.Errorf("could not find chart metadata in release with name %q", releaseName)
+		return "", errors.Errorf("could not find chart metadata in release with name %q", releaseName)
 	}
 	existingChartName := history[0].Chart.Name()
 	if existingChartName != crChartName {
-		return "", fmt.Errorf("duplicate release name: found existing release with name %q for chart %q",
+		return "", errors.Errorf("duplicate release name: found existing release with name %q for chart %q",
 			releaseName, existingChartName)
 	}
 

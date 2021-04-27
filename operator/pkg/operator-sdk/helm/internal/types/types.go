@@ -22,12 +22,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type HelmAppList struct {
+type HelmAppList struct { //nolint:golint
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 	Items           []HelmApp `json:"items"`
 }
 
+// HelmApp is a helm app
 type HelmApp struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
@@ -35,13 +36,13 @@ type HelmApp struct {
 	Status            HelmAppStatus `json:"status,omitempty"`
 }
 
-type HelmAppSpec map[string]interface{}
+type HelmAppSpec map[string]interface{} //nolint:golint
 
-type HelmAppConditionType string
-type ConditionStatus string
-type HelmAppConditionReason string
+type HelmAppConditionType string   //nolint:golint
+type ConditionStatus string        //nolint:golint
+type HelmAppConditionReason string //nolint:golint
 
-type HelmAppCondition struct {
+type HelmAppCondition struct { //nolint:golint
 	Type    HelmAppConditionType   `json:"type"`
 	Status  ConditionStatus        `json:"status"`
 	Reason  HelmAppConditionReason `json:"reason,omitempty"`
@@ -50,36 +51,36 @@ type HelmAppCondition struct {
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
-type HelmAppRelease struct {
+type HelmAppRelease struct { //nolint:golint
 	Name     string `json:"name,omitempty"`
 	Manifest string `json:"manifest,omitempty"`
 }
 
-const (
-	ConditionInitialized    HelmAppConditionType = "Initialized"
-	ConditionDeployed       HelmAppConditionType = "Deployed"
-	ConditionReleaseFailed  HelmAppConditionType = "ReleaseFailed"
-	ConditionIrreconcilable HelmAppConditionType = "Irreconcilable"
+const ( //nolint:golint
+	ConditionInitialized    HelmAppConditionType = "Initialized"    //nolint:golint
+	ConditionDeployed       HelmAppConditionType = "Deployed"       //nolint:golint
+	ConditionReleaseFailed  HelmAppConditionType = "ReleaseFailed"  //nolint:golint
+	ConditionIrreconcilable HelmAppConditionType = "Irreconcilable" //nolint:golint
 
-	StatusTrue    ConditionStatus = "True"
-	StatusFalse   ConditionStatus = "False"
-	StatusUnknown ConditionStatus = "Unknown"
+	StatusTrue    ConditionStatus = "True"    //nolint:golint
+	StatusFalse   ConditionStatus = "False"   //nolint:golint
+	StatusUnknown ConditionStatus = "Unknown" //nolint:golint
 
-	ReasonInstallSuccessful   HelmAppConditionReason = "InstallSuccessful"
-	ReasonUpgradeSuccessful   HelmAppConditionReason = "UpgradeSuccessful"
-	ReasonUninstallSuccessful HelmAppConditionReason = "UninstallSuccessful"
-	ReasonInstallError        HelmAppConditionReason = "InstallError"
-	ReasonUpgradeError        HelmAppConditionReason = "UpgradeError"
-	ReasonReconcileError      HelmAppConditionReason = "ReconcileError"
-	ReasonUninstallError      HelmAppConditionReason = "UninstallError"
+	ReasonInstallSuccessful   HelmAppConditionReason = "InstallSuccessful"   //nolint:golint
+	ReasonUpgradeSuccessful   HelmAppConditionReason = "UpgradeSuccessful"   //nolint:golint
+	ReasonUninstallSuccessful HelmAppConditionReason = "UninstallSuccessful" //nolint:golint
+	ReasonInstallError        HelmAppConditionReason = "InstallError"        //nolint:golint
+	ReasonUpgradeError        HelmAppConditionReason = "UpgradeError"        //nolint:golint
+	ReasonReconcileError      HelmAppConditionReason = "ReconcileError"      //nolint:golint
+	ReasonUninstallError      HelmAppConditionReason = "UninstallError"      //nolint:golint
 )
 
-type HelmAppStatus struct {
+type HelmAppStatus struct { //nolint:golint
 	Conditions      []HelmAppCondition `json:"conditions"`
 	DeployedRelease *HelmAppRelease    `json:"deployedRelease,omitempty"`
 }
 
-func (s *HelmAppStatus) ToMap() (map[string]interface{}, error) {
+func (s *HelmAppStatus) ToMap() (map[string]interface{}, error) { //nolint:golint
 	var out map[string]interface{}
 	jsonObj, err := json.Marshal(&s)
 	if err != nil {

@@ -68,7 +68,6 @@ const (
 // uninstalling a Helm release based on the resource's current state. If no
 // release changes are necessary, Reconcile will create or patch the underlying
 // resources to match the expected release manifest.
-
 func (r HelmOperatorReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint:gocyclo
 	o := &unstructured.Unstructured{}
 	o.SetGroupVersionKind(r.GVK)
