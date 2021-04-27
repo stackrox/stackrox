@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, ReactElement } from 'react';
 import * as Icon from 'react-feather';
 
 import LegendTile from 'Components/LegendTile';
 import { UIfeatureFlags } from 'utils/featureFlags';
 
-const LegendContent = ({ isOpen, toggleLegend }) => {
-    if (!isOpen) {
-        return null;
-    }
+function LegendContent({ toggleLegend }: { toggleLegend: (value) => void }): ReactElement {
     return (
         <>
             <div className="flex justify-between border-b border-base-400 p-2 uppercase items-center">
@@ -82,14 +78,9 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
             </div>
         </>
     );
-};
+}
 
-LegendContent.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    toggleLegend: PropTypes.func.isRequired,
-};
-
-const Legend = () => {
+function Legend(): ReactElement {
     const [isOpen, toggleOpen] = useState(true);
 
     function toggleLegend() {
@@ -97,7 +88,7 @@ const Legend = () => {
     }
 
     function handleKeyUp(e) {
-        return e.key === 'Enter' ? toggleLegend(!isOpen) : null;
+        return e.key === 'Enter' ? toggleLegend() : null;
     }
 
     return (
@@ -111,14 +102,14 @@ const Legend = () => {
                     className="uppercase p-2 hover:bg-base-200 hover:text-primary-700 cursor-pointer"
                     onClick={toggleLegend}
                     onKeyUp={handleKeyUp}
-                    tabIndex="0"
+                    tabIndex={0}
                 >
                     Legend
                 </div>
             )}
-            <LegendContent isOpen={isOpen} toggleLegend={toggleLegend} />
+            {isOpen && <LegendContent toggleLegend={toggleLegend} />}
         </div>
     );
-};
+}
 
 export default Legend;

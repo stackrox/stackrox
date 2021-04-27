@@ -1,17 +1,21 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
 import dateFns from 'date-fns';
 import * as Icon from 'react-feather';
 
+import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
 
-const NodesUpdateButton = ({ nodeUpdatesCount, updateNetworkNodes }) => {
-    if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) {
-        return null;
-    }
+type NodesUpdateButtonProps = {
+    nodeUpdatesCount: number;
+    updateNetworkNodes: () => void;
+};
+
+function NodesUpdateButton({
+    nodeUpdatesCount,
+    updateNetworkNodes,
+}: NodesUpdateButtonProps): ReactElement {
     return (
         <button
             type="button"
@@ -24,48 +28,41 @@ const NodesUpdateButton = ({ nodeUpdatesCount, updateNetworkNodes }) => {
             </span>
         </button>
     );
+}
+
+type NodeUpdateSectionProps = {
+    lastUpdatedTimestamp: Date;
+    nodeUpdatesCount: number;
+    updateNetworkNodes: () => void;
 };
 
-NodesUpdateButton.propTypes = {
-    nodeUpdatesCount: PropTypes.number.isRequired,
-    updateNetworkNodes: PropTypes.func.isRequired,
-};
-
-const NodesUpdateSection = ({ updateNetworkNodes, nodeUpdatesCount, lastUpdatedTimestamp }) => {
-    if (!lastUpdatedTimestamp) {
-        return null;
-    }
+const NodesUpdateSection = ({
+    updateNetworkNodes,
+    nodeUpdatesCount,
+    lastUpdatedTimestamp,
+}: NodeUpdateSectionProps) => {
     return (
         <div className="absolute top-0 pin-network-update-label-left mt-2 mr-2 p-2 bg-base-100 rounded-sm border-2 border-base-400 text-base-500 text-xs font-700">
             <div className="uppercase">{`Last Updated: ${dateFns.format(
                 lastUpdatedTimestamp,
                 'hh:mm:ssA'
             )}`}</div>
-            <NodesUpdateButton
-                nodeUpdatesCount={nodeUpdatesCount}
-                updateNetworkNodes={updateNetworkNodes}
-            />
+            {nodeUpdatesCount > 0 && (
+                <NodesUpdateButton
+                    nodeUpdatesCount={nodeUpdatesCount}
+                    updateNetworkNodes={updateNetworkNodes}
+                />
+            )}
         </div>
     );
 };
 
-NodesUpdateSection.propTypes = {
-    lastUpdatedTimestamp: PropTypes.instanceOf(Date),
-    nodeUpdatesCount: PropTypes.number.isRequired,
-    updateNetworkNodes: PropTypes.func.isRequired,
-};
-
-NodesUpdateSection.defaultProps = {
-    lastUpdatedTimestamp: null,
-};
-
 const getNodeUpdatesCount = createSelector(
     [selectors.getNetworkPolicyGraph, selectors.getNodeUpdatesEpoch],
-    (networkPolicyGraph, lastUpdatedEpoch) => lastUpdatedEpoch - networkPolicyGraph.epoch
+    (networkPolicyGraph, lastUpdatedEpoch: number) => lastUpdatedEpoch - networkPolicyGraph.epoch
 );
 
 const mapStateToProps = createStructuredSelector({
-    lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
     nodeUpdatesCount: getNodeUpdatesCount,
 });
 

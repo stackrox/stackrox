@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { Box } from 'react-feather';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
@@ -9,14 +9,23 @@ import { actions as pageActions } from 'reducers/network/page';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import sidepanelStages from '../SidePanel/sidepanelStages';
 
-const CIDRFormButton = ({
+type CIDRFormButtonProps = {
+    sidePanelOpen: boolean;
+    sidePanelStage: string;
+    openSidePanel: () => void;
+    closeSidePanel: () => void;
+    setSidePanelStage: (stage) => void;
+    isDisabled: boolean;
+};
+
+function CIDRFormButton({
     sidePanelOpen,
     sidePanelStage,
     openSidePanel,
     closeSidePanel,
     setSidePanelStage,
     isDisabled,
-}) => {
+}: CIDRFormButtonProps): ReactElement {
     function toggleForm() {
         if (sidePanelOpen && sidePanelStage === sidepanelStages.cidrForm) {
             closeSidePanel();
@@ -43,7 +52,7 @@ const CIDRFormButton = ({
             </span>
         </button>
     );
-};
+}
 
 const mapStateToProps = createStructuredSelector({
     sidePanelOpen: selectors.getSidePanelOpen,

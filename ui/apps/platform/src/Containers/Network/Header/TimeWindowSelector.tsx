@@ -1,14 +1,23 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
+
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
-
 import { timeWindows } from 'constants/timeWindows';
 
-const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow, isDisabled }) => {
+type TimeWindowSelectorProps = {
+    setActivityTimeWindow: (timeWindow) => void;
+    activityTimeWindow: string;
+    isDisabled?: boolean;
+};
+
+function TimeWindowSelector({
+    setActivityTimeWindow,
+    activityTimeWindow,
+    isDisabled = false,
+}: TimeWindowSelectorProps) {
     function selectTimeWindow(event) {
         const timeWindow = event.target.value;
         setActivityTimeWindow(timeWindow);
@@ -37,17 +46,7 @@ const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow, isDisab
             </select>
         </div>
     );
-};
-
-TimeWindowSelector.propTypes = {
-    activityTimeWindow: PropTypes.string.isRequired,
-    setActivityTimeWindow: PropTypes.func.isRequired,
-    isDisabled: PropTypes.bool,
-};
-
-TimeWindowSelector.defaultProps = {
-    isDisabled: false,
-};
+}
 
 const mapStateToProps = createStructuredSelector({
     activityTimeWindow: selectors.getNetworkActivityTimeWindow,

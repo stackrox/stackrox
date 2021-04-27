@@ -1,26 +1,34 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+
 import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
-
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
-import NamespaceEdgeFilter from './NamespaceEdgeFilter';
+import NamespaceEdgeFilter, { NamespaceEdgeFilterState } from './NamespaceEdgeFilter';
 
 const baseButtonClassName =
     'flex-shrink-0 px-2 py-px border-2 rounded-sm uppercase text-xs font-700';
 const buttonClassName = `${baseButtonClassName} border-base-400 hover:bg-primary-200 text-base-600`;
 const activeButtonClassName = `${baseButtonClassName} bg-primary-300 border-primary-400 hover:bg-primary-200 text-primary-700 border-l-2 border-r-2`;
 
-const Filters = ({
+type FiltersProps = {
+    setFilterMode: (mode) => void;
+    offset?: boolean;
+    sidePanelOpen: boolean;
+    filterMode: number;
+    showNamespaceFlows: NamespaceEdgeFilterState;
+    setShowNamespaceFlows: (value) => void;
+};
+
+function Filters({
     setFilterMode,
-    offset,
+    offset = false,
     sidePanelOpen,
     filterMode,
     showNamespaceFlows,
     setShowNamespaceFlows,
-}) => {
+}: FiltersProps): ReactElement {
     function handleChange(mode) {
         return () => {
             setFilterMode(mode);
@@ -44,11 +52,11 @@ const Filters = ({
                                 ? activeButtonClassName
                                 : buttonClassName
                         }
-                ${filterMode === filterModes.allowed && 'border-r-0'}`}
+                ${filterMode === filterModes.allowed ? 'border-r-0' : ''}`}
                         onClick={handleChange(filterModes.active)}
                         data-testid="network-connections-filter-active"
                     >
-                        {`${filterLabels[filterModes.active]}`}
+                        {`${filterLabels[filterModes.active] as string}`}
                     </button>
                     <button
                         type="button"
@@ -61,7 +69,7 @@ const Filters = ({
                         onClick={handleChange(filterModes.allowed)}
                         data-testid="network-connections-filter-allowed"
                     >
-                        {`${filterLabels[filterModes.allowed]}`}
+                        {`${filterLabels[filterModes.allowed] as string}`}
                     </button>
                     <button
                         type="button"
@@ -69,11 +77,11 @@ const Filters = ({
                         className={`${
                             filterMode === filterModes.all ? activeButtonClassName : buttonClassName
                         }
-                ${filterMode === filterModes.allowed && 'border-l-0'}`}
+                ${filterMode === filterModes.allowed ? 'border-l-0' : ''}`}
                         onClick={handleChange(filterModes.all)}
                         data-testid="network-connections-filter-all"
                     >
-                        {`${filterLabels[filterModes.all]}`}
+                        {`${filterLabels[filterModes.all] as string}`}
                     </button>
                 </div>
             </div>
@@ -89,20 +97,7 @@ const Filters = ({
             </div>
         </div>
     );
-};
-
-Filters.propTypes = {
-    setFilterMode: PropTypes.func.isRequired,
-    offset: PropTypes.bool,
-    sidePanelOpen: PropTypes.bool.isRequired,
-    filterMode: PropTypes.number.isRequired,
-    showNamespaceFlows: PropTypes.string.isRequired,
-    setShowNamespaceFlows: PropTypes.string.isRequired,
-};
-
-Filters.defaultProps = {
-    offset: false,
-};
+}
 
 const mapStateToProps = createStructuredSelector({
     sidePanelOpen: selectors.getSidePanelOpen,

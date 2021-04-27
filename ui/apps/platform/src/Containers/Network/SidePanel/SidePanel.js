@@ -15,7 +15,7 @@ import ExternalDetailsOverlay from './ExternalDetails/ExternalDetailsOverlay';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
-function SidePanel({ sidePanelOpen, sidePanelStage, onClose }) {
+function SidePanel({ lastUpdatedTimestamp, sidePanelOpen, sidePanelStage, onClose }) {
     if (
         sidePanelOpen &&
         (sidePanelStage === sidepanelStages.details ||
@@ -30,7 +30,9 @@ function SidePanel({ sidePanelOpen, sidePanelStage, onClose }) {
         return (
             <div className="network-panel">
                 <div className="absolute flex flex-1 max-h-full right-0 w-1/3 min-w-168 max-w-184">
-                    <NodesUpdateSection />
+                    {lastUpdatedTimestamp && (
+                        <NodesUpdateSection lastUpdatedTimestamp={lastUpdatedTimestamp} />
+                    )}
                     {paletteComponent}
                 </div>
                 <div className="absolute h-full right-0">
@@ -68,7 +70,9 @@ function SidePanel({ sidePanelOpen, sidePanelStage, onClose }) {
 
     return (
         <div className={`${width} h-full absolute right-0 bg-base-100 shadow-lg network-panel`}>
-            <NodesUpdateSection />
+            {lastUpdatedTimestamp && (
+                <NodesUpdateSection lastUpdatedTimestamp={lastUpdatedTimestamp} />
+            )}
             <ZoomButtons pinnedLeft />
 
             {panelContent}
@@ -80,9 +84,15 @@ SidePanel.propTypes = {
     sidePanelOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     sidePanelStage: PropTypes.string.isRequired,
+    lastUpdatedTimestamp: PropTypes.instanceOf(Date),
+};
+
+SidePanel.defaultProps = {
+    lastUpdatedTimestamp: null,
 };
 
 const mapStateToProps = createStructuredSelector({
+    lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
     sidePanelOpen: selectors.getSidePanelOpen,
     sidePanelStage: selectors.getSidePanelStage,
 });

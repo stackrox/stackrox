@@ -1,32 +1,42 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import Button from 'Components/Button';
+import React, { ReactElement } from 'react';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
-import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 
-const ZoomButtons = ({ pinnedLeft, networkGraphRef: graph }) => {
+import { selectors } from 'reducers';
+import Button from 'Components/Button';
+
+type ZoomButtonsProps = {
+    pinnedLeft?: boolean;
+    networkGraphRef?: {
+        zoomToFit: () => void;
+        zoomIn: () => void;
+        zoomOut: () => void;
+    };
+};
+
+function ZoomButtons({
+    pinnedLeft = false,
+    networkGraphRef = undefined,
+}: ZoomButtonsProps): ReactElement {
     function zoomToFit() {
-        if (graph) {
-            graph.zoomToFit();
-        }
+        networkGraphRef?.zoomToFit();
     }
 
     function zoomIn() {
-        if (graph) {
-            graph.zoomIn();
-        }
+        networkGraphRef?.zoomIn();
     }
 
     function zoomOut() {
-        if (graph) {
-            graph.zoomOut();
-        }
+        networkGraphRef?.zoomOut();
     }
 
     return (
-        <div className={`flex absolute bottom-0 ${pinnedLeft && 'pin-network-zoom-buttons-left'}`}>
+        <div
+            className={`flex absolute bottom-0 ${
+                pinnedLeft ? 'pin-network-zoom-buttons-left' : ''
+            }`}
+        >
             <div className="border-2 border-base-400 my-4">
                 <Button
                     className="btn-icon btn-base border-b border-base-300"
@@ -48,21 +58,7 @@ const ZoomButtons = ({ pinnedLeft, networkGraphRef: graph }) => {
             </div>
         </div>
     );
-};
-
-ZoomButtons.propTypes = {
-    networkGraphRef: PropTypes.shape({
-        zoomToFit: PropTypes.func,
-        zoomIn: PropTypes.func,
-        zoomOut: PropTypes.func,
-    }),
-    pinnedLeft: PropTypes.bool,
-};
-
-ZoomButtons.defaultProps = {
-    networkGraphRef: null,
-    pinnedLeft: false,
-};
+}
 
 const mapStateToProps = createStructuredSelector({
     networkGraphRef: selectors.getNetworkGraphRef,

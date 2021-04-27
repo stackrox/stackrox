@@ -2,8 +2,10 @@ import React, { ReactElement } from 'react';
 
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 
+export type NamespaceEdgeFilterState = 'show' | 'hide';
+
 export type NamespaceEdgeFilterProps = {
-    selectedState: 'show' | 'hide';
+    selectedState: NamespaceEdgeFilterState;
     setFilter: (string) => void;
 };
 

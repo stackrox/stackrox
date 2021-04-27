@@ -5,7 +5,6 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as searchActions } from 'reducers/network/search';
-import { SearchEntry, SearchState } from 'reducers/pageSearch';
 import {
     ORCHESTRATOR_COMPONENT_KEY,
     orchestratorComponentOption,
@@ -46,13 +45,7 @@ function NetworkSearch({
     );
 }
 
-const mapStateToProps = createStructuredSelector<
-    SearchState,
-    {
-        searchOptions: SearchEntry[];
-        searchModifiers: SearchEntry[];
-    }
->({
+const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getNetworkSearchOptions,
     searchModifiers: selectors.getNetworkSearchModifiers,
 });
