@@ -5219,7 +5219,9 @@ workflows:
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
-          context: docker-io-and-stackrox-io-push
+          context:
+            - docker-io-and-stackrox-io-push
+            - quay-rh-registry-push
           requires:
             - build
             - build-rhel
