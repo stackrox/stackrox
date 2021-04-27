@@ -1,5 +1,10 @@
 import React from 'react';
+
+import { defaultColumnClassName } from 'Components/Table';
+
 import { times, daysOfWeek } from './Schedule';
+
+const classNameWordBreak = `${defaultColumnClassName} word-break`;
 
 const tableColumnDescriptor = Object.freeze({
     authProviders: {
@@ -31,12 +36,12 @@ const tableColumnDescriptor = Object.freeze({
         ],
         slack: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'labelDefault', Header: 'Default Webhook', className: 'word-break' },
+            { accessor: 'labelDefault', Header: 'Default Webhook', className: classNameWordBreak },
             { accessor: 'labelKey', Header: 'Webhook Label Key' },
         ],
         teams: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'labelDefault', Header: 'Default Webhook', className: 'word-break' },
+            { accessor: 'labelDefault', Header: 'Default Webhook', className: classNameWordBreak },
             { accessor: 'labelKey', Header: 'Webhook Label Key' },
         ],
         jira: [
