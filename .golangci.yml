@@ -1,5 +1,7 @@
 run:
   timeout: 5m
+  skip-dirs:
+  - operator/pkg/operator-sdk
 
 issues:
   exclude-use-default: false
