@@ -105,3 +105,76 @@ func (mr *MockDataStoreMockRecorder) RemoveRole(ctx, name interface{}) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRole", reflect.TypeOf((*MockDataStore)(nil).RemoveRole), ctx, name)
 }
+
+// GetAccessScope mocks base method
+func (m *MockDataStore) GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccessScope", ctx, id)
+	ret0, _ := ret[0].(*storage.SimpleAccessScope)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAccessScope indicates an expected call of GetAccessScope
+func (mr *MockDataStoreMockRecorder) GetAccessScope(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccessScope", reflect.TypeOf((*MockDataStore)(nil).GetAccessScope), ctx, id)
+}
+
+// GetAllAccessScopes mocks base method
+func (m *MockDataStore) GetAllAccessScopes(ctx context.Context) ([]*storage.SimpleAccessScope, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllAccessScopes", ctx)
+	ret0, _ := ret[0].([]*storage.SimpleAccessScope)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllAccessScopes indicates an expected call of GetAllAccessScopes
+func (mr *MockDataStoreMockRecorder) GetAllAccessScopes(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAccessScopes", reflect.TypeOf((*MockDataStore)(nil).GetAllAccessScopes), ctx)
+}
+
+// AddAccessScope mocks base method
+func (m *MockDataStore) AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddAccessScope", ctx, scope)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddAccessScope indicates an expected call of AddAccessScope
+func (mr *MockDataStoreMockRecorder) AddAccessScope(ctx, scope interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAccessScope", reflect.TypeOf((*MockDataStore)(nil).AddAccessScope), ctx, scope)
+}
+
+// UpdateAccessScope mocks base method
+func (m *MockDataStore) UpdateAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAccessScope", ctx, scope)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAccessScope indicates an expected call of UpdateAccessScope
+func (mr *MockDataStoreMockRecorder) UpdateAccessScope(ctx, scope interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAccessScope", reflect.TypeOf((*MockDataStore)(nil).UpdateAccessScope), ctx, scope)
+}
+
+// RemoveAccessScope mocks base method
+func (m *MockDataStore) RemoveAccessScope(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveAccessScope", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveAccessScope indicates an expected call of RemoveAccessScope
+func (mr *MockDataStoreMockRecorder) RemoveAccessScope(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAccessScope", reflect.TypeOf((*MockDataStore)(nil).RemoveAccessScope), ctx, id)
+}

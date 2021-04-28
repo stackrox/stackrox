@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "storage/labels.proto";
+
 package storage;
 
 // A role specifies which actions are allowed for which subset of cluster
@@ -34,4 +36,34 @@ enum Access {
     NO_ACCESS = 0;
     READ_ACCESS = 1;
     READ_WRITE_ACCESS = 2;
+}
+
+// Simple access scope is a (simple) selection criteria for scoped resources.
+// It does *not* allow multi-component AND-rules nor set operations on names.
+message SimpleAccessScope {
+    // Each element of any repeated field is an individual rule. Rules are
+    // joined by logical OR: if there exists a rule allowing resource `x`,
+    // `x` is in the access scope.
+    message Rules {
+        message Namespace {
+            // Both fields must be set.
+            string cluster_name   = 1;
+            string namespace_name = 2;
+        }
+
+        repeated string included_clusters                = 1;
+        repeated Namespace included_namespaces           = 2;
+
+        repeated SetBasedLabelSelector cluster_label_selectors   = 3;
+        repeated SetBasedLabelSelector namespace_label_selectors = 4;
+    }
+
+    // id is generated.
+    string id           = 1;
+
+    // name is provided by the user.
+    string name         = 2;
+    string description  = 3;
+
+    Rules  rules        = 4;
 }

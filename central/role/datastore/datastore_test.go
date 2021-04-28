@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	storeMocks "github.com/stackrox/rox/central/role/datastore/internal/store/mocks"
+	roleStoreMocks "github.com/stackrox/rox/central/role/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	rocksDBStoreMocks "github.com/stackrox/rox/central/role/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -24,8 +25,9 @@ type roleDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	dataStore DataStore
-	storage   *storeMocks.MockStore
+	dataStore          DataStore
+	roleStorage        *roleStoreMocks.MockStore
+	accessScopeStorage *rocksDBStoreMocks.MockSimpleAccessScopeStore
 
 	mockCtrl *gomock.Controller
 }
@@ -42,8 +44,9 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Role)))
 
 	s.mockCtrl = gomock.NewController(s.T())
-	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.dataStore = New(s.storage)
+	s.roleStorage = roleStoreMocks.NewMockStore(s.mockCtrl)
+	s.accessScopeStorage = rocksDBStoreMocks.NewMockSimpleAccessScopeStore(s.mockCtrl)
+	s.dataStore = New(s.roleStorage, s.accessScopeStorage)
 }
 
 func (s *roleDataStoreTestSuite) TearDownTest() {
@@ -51,7 +54,7 @@ func (s *roleDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *roleDataStoreTestSuite) TestEnforcesGet() {
-	s.storage.EXPECT().GetRole(gomock.Any()).Times(0)
+	s.roleStorage.EXPECT().GetRole(gomock.Any()).Times(0)
 
 	role, err := s.dataStore.GetRole(s.hasNoneCtx, "someID")
 	s.NoError(err, "expected no error, should return nil without access")
@@ -59,19 +62,19 @@ func (s *roleDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *roleDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().GetRole(gomock.Any()).Return(nil, nil)
+	s.roleStorage.EXPECT().GetRole(gomock.Any()).Return(nil, nil)
 
 	_, err := s.dataStore.GetRole(s.hasReadCtx, "someID")
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().GetRole(gomock.Any()).Return(nil, nil)
+	s.roleStorage.EXPECT().GetRole(gomock.Any()).Return(nil, nil)
 
 	_, err = s.dataStore.GetRole(s.hasWriteCtx, "someID")
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (s *roleDataStoreTestSuite) TestEnforcesGetAll() {
-	s.storage.EXPECT().GetAllRoles().Times(0)
+	s.roleStorage.EXPECT().GetAllRoles().Times(0)
 
 	roles, err := s.dataStore.GetAllRoles(s.hasNoneCtx)
 	s.NoError(err, "expected no error, should return nil without access")
@@ -79,19 +82,19 @@ func (s *roleDataStoreTestSuite) TestEnforcesGetAll() {
 }
 
 func (s *roleDataStoreTestSuite) TestAllowsGetAll() {
-	s.storage.EXPECT().GetAllRoles().Return(nil, nil)
+	s.roleStorage.EXPECT().GetAllRoles().Return(nil, nil)
 
 	_, err := s.dataStore.GetAllRoles(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().GetAllRoles().Return(nil, nil)
+	s.roleStorage.EXPECT().GetAllRoles().Return(nil, nil)
 
 	_, err = s.dataStore.GetAllRoles(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (s *roleDataStoreTestSuite) TestEnforcesAdd() {
-	s.storage.EXPECT().AddRole(gomock.Any()).Times(0)
+	s.roleStorage.EXPECT().AddRole(gomock.Any()).Times(0)
 
 	err := s.dataStore.AddRole(s.hasNoneCtx, &storage.Role{Name: "role"})
 	s.Error(err, "expected an error trying to write without permissions")
@@ -101,14 +104,14 @@ func (s *roleDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *roleDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().AddRole(gomock.Any()).Return(nil)
+	s.roleStorage.EXPECT().AddRole(gomock.Any()).Return(nil)
 
 	err := s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{Name: "role"})
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
 func (s *roleDataStoreTestSuite) TestEnforcesUpdate() {
-	s.storage.EXPECT().AddRole(gomock.Any()).Times(0)
+	s.roleStorage.EXPECT().AddRole(gomock.Any()).Times(0)
 
 	err := s.dataStore.UpdateRole(s.hasNoneCtx, &storage.Role{Name: "role"})
 	s.Error(err, "expected an error trying to write without permissions")
@@ -118,14 +121,14 @@ func (s *roleDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *roleDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().UpdateRole(gomock.Any()).Return(nil)
+	s.roleStorage.EXPECT().UpdateRole(gomock.Any()).Return(nil)
 
 	err := s.dataStore.UpdateRole(s.hasWriteCtx, &storage.Role{Name: "role"})
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
 func (s *roleDataStoreTestSuite) TestEnforcesRemove() {
-	s.storage.EXPECT().RemoveRole(gomock.Any()).Times(0)
+	s.roleStorage.EXPECT().RemoveRole(gomock.Any()).Times(0)
 
 	err := s.dataStore.RemoveRole(s.hasNoneCtx, "role")
 	s.Error(err, "expected an error trying to write without permissions")
@@ -135,7 +138,7 @@ func (s *roleDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (s *roleDataStoreTestSuite) TestAllowsRemove() {
-	s.storage.EXPECT().RemoveRole(gomock.Any()).Return(nil)
+	s.roleStorage.EXPECT().RemoveRole(gomock.Any()).Return(nil)
 
 	err := s.dataStore.RemoveRole(s.hasWriteCtx, "role")
 	s.NoError(err, "expected no error trying to write with permissions")

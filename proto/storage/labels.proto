@@ -7,6 +7,9 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
+// Label selector components are joined with logical AND, see
+//     https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+//
 // Next available tag: 3
 message LabelSelector {
     enum Operator {
@@ -24,7 +27,33 @@ message LabelSelector {
         repeated string values = 3;
     }
 
-    // This is actually a oneof, but we can't make it one due to backwards compatibility constraints.
+    // This is actually a oneof, but we can't make it one due to backwards
+    // compatibility constraints.
     map<string, string> match_labels  = 1;
+    repeated Requirement requirements = 2;
+}
+
+// SetBasedLabelSelector only allows set-based label requirements.
+//
+// Next available tag: 3
+message SetBasedLabelSelector {
+    enum Operator {
+        UNKNOWN = 0;
+        IN = 1;
+        NOT_IN = 2;
+        EXISTS = 3;
+        NOT_EXISTS = 4;
+    }
+
+    // Next available tag: 4
+    message Requirement {
+        string key             = 1;
+        Operator op            = 2;
+        repeated string values = 3;
+    }
+
+    // Tag 1 is reserved to enable upgrade from SetBasedLabelSelector to
+    // LabelSelector
+    reserved                            1;
     repeated Requirement requirements = 2;
 }

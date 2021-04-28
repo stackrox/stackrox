@@ -26,6 +26,10 @@ message GetResourcesResponse {
     repeated string resources = 1;
 }
 
+message ListSimpleAccessScopesResponse {
+    repeated storage.SimpleAccessScope access_scopes = 1;
+}
+
 service RoleService {
 
     rpc GetRoles (Empty) returns (GetRolesResponse) {
@@ -69,6 +73,43 @@ service RoleService {
     rpc GetResources (Empty) returns (GetResourcesResponse) {
         option (google.api.http) = {
             get: "/v1/resources"
+        };
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Access scopes                                                          //
+    //                                                                        //
+
+    rpc GetSimpleAccessScope (ResourceByID) returns (storage.SimpleAccessScope) {
+        option (google.api.http) = {
+            get: "/v1/simpleaccessscopes/{id}"
+        };
+    }
+
+    rpc ListSimpleAccessScopes (Empty) returns (ListSimpleAccessScopesResponse) {
+        option (google.api.http) = {
+            get: "/v1/simpleaccessscopes"
+        };
+    }
+
+    // SimpleAccessScope.id is disallowed in request and set in response.
+    rpc PostSimpleAccessScope (storage.SimpleAccessScope) returns (storage.SimpleAccessScope) {
+        option (google.api.http) = {
+            post: "/v1/simpleaccessscopes"
+            body: "*"
+        };
+    }
+
+    rpc PutSimpleAccessScope (storage.SimpleAccessScope) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/simpleaccessscopes/{id}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteSimpleAccessScope (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/simpleaccessscopes/{id}"
         };
     }
 }

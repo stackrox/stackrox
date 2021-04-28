@@ -8,4 +8,7 @@ var (
 
 	// ErrInvalidArgs indicates that a request has invalid arguments.
 	ErrInvalidArgs = errors.New("invalid arguments")
+
+	// ErrNotFound indicates that the requested object was not found.
+	ErrNotFound = errors.New("not found")
 )
