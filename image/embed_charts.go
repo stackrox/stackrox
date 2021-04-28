@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/helmtpl"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
@@ -147,7 +146,7 @@ var (
 
 // LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from an embed.FS, and instantiates
 // it, using default chart values.
-func (i *Image) LoadAndInstantiateChartTemplate(prefix string) ([]*loader.BufferedFile, error) {
+func (i *Image) LoadAndInstantiateChartTemplate(prefix string, metaVals map[string]interface{}) ([]*loader.BufferedFile, error) {
 	chartTplFiles, err := i.GetFiles(prefix)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystems", prefix)
@@ -158,7 +157,7 @@ func (i *Image) LoadAndInstantiateChartTemplate(prefix string) ([]*loader.Buffer
 	}
 
 	// Render template files.
-	renderedChartFiles, err := chartTpl.InstantiateRaw(charts.DefaultMetaValues())
+	renderedChartFiles, err := chartTpl.InstantiateRaw(metaVals)
 	if err != nil {
 		return nil, errors.Wrapf(err, "instantiating %s helmtpl", prefix)
 	}

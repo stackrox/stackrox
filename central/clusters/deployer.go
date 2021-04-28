@@ -117,5 +117,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"AdmissionControllerEnabled":       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		"AdmissionControlEnforceOnUpdates": c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 	}
+	// `MainRegistry` is a newer field name.
+	fields["MainRegistry"] = fields["ImageRegistry"]
 	return fields, nil
 }

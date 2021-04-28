@@ -2,7 +2,7 @@
 # Services.
 
 image:
-  registry: [< default "stackrox.io" .MainRegistry >]
+  registry: [< required "Main registry must be explicitly specified" .MainRegistry >]
   main:
     name: [< default "main" .ImageRemote >]
     pullPolicy: IfNotPresent

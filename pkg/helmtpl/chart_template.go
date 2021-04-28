@@ -74,7 +74,7 @@ func Load(files []*loader.BufferedFile) (*ChartTemplate, error) {
 		data := file.Data
 
 		if stringutils.ConsumeSuffix(&elem.name, TemplateFileSuffix) {
-			tpl, err := template.New(elem.name).Delims("[<", ">]").Funcs(sprig.TxtFuncMap()).Parse(string(data))
+			tpl, err := template.New(elem.name).Delims("[<", ">]").Funcs(sprig.TxtFuncMap()).Funcs(extraFuncMap).Parse(string(data))
 			if err != nil {
 				return nil, errors.Wrapf(err, "parsing template file %s", file.Name)
 			}
