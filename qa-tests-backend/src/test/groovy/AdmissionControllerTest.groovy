@@ -86,10 +86,11 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def setup() {
-        // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
-        // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
-        chaosMonkey = new ChaosMonkey(1, 10L)
-        chaosMonkey.waitForEffect()
+        // https://stack-rox.atlassian.net/browse/ROX-7026 - Disable ChaosMonkey
+        // // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
+        // // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
+        // chaosMonkey = new ChaosMonkey(1, 10L)
+        // chaosMonkey.waitForEffect()
     }
 
     def cleanup() {
@@ -174,8 +175,10 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setScanInline(true)
                 .setTimeoutSeconds(5)
                 .build()
-
         assert ClusterService.updateAdmissionController(ac)
+
+        printlnDated "Admission control configuration updated"
+
         PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
                 .setName("Matching CVE (CVE-2019-3462)")
                 .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
@@ -191,8 +194,11 @@ class AdmissionControllerTest extends BaseSpecification {
                         .setPolicy(policy)
                         .build()
         )
+
+        printlnDated "Policy created to scale-to-zero deployments with CVE-2019-3462"
         // Maximum time to wait for propagation to sensor
         Helpers.sleepWithRetryBackoff(5000)
+        printlnDated "Sensor and admission-controller _should_ have the policy update"
 
         def deployment = new Deployment()
                 .setName("admission-suppress-cve")
@@ -207,8 +213,10 @@ class AdmissionControllerTest extends BaseSpecification {
         when:
         "Suppress CVE and check that the deployment can now launch"
         CVEService.suppressCVE("CVE-2019-3462")
+        printlnDated "Suppressing CVE-2019-3462"
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(3000)
+        Helpers.sleepWithRetryBackoff(5000)
+        printlnDated "Expect that the suppression has propagated"
 
         created = orchestrator.createDeploymentNoWait(deployment)
         assert created
@@ -218,12 +226,17 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Unsuppress CVE"
         CVEService.unsuppressCVE("CVE-2019-3462")
+        printlnDated "Unsuppress CVE-2019-3462"
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(3000)
+        Helpers.sleepWithRetryBackoff(15000)
+        printlnDated "Expect that the unsuppression has propagated"
+
+        and:
+        "Verify unsuppressing lets the deployment be blocked again"
+        created = orchestrator.createDeploymentNoWait(deployment)
 
         then:
-        "Verify unsuppressing lets the deployment be blocked again"
-        assert !orchestrator.createDeploymentNoWait(deployment)
+        assert !created
 
         cleanup:
         "Delete policy"
@@ -436,7 +449,7 @@ class AdmissionControllerTest extends BaseSpecification {
                     // Get the current ready, non-deleted pod replicas
                     def admCtrlPods = new ArrayList<Pod>(orchestrator.getPods(
                             Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME))
-                    admCtrlPods.removeIf { it?.status?.containerStatuses[0]?.ready }
+                    admCtrlPods.removeIf { !it?.status?.containerStatuses[0]?.ready }
 
                     if (admCtrlPods.size() <= minReadyReplicas) {
                         lock.lock()
@@ -481,13 +494,13 @@ class AdmissionControllerTest extends BaseSpecification {
                 }
                 allReady = true
                 for (def pod : admCtrlPods) {
-                    if (!pod.status.containerStatuses[0].ready) {
+                    if (!pod.status?.containerStatuses[0]?.ready) {
                         allReady = false
                         break
                     }
                 }
             }
-            println "All admission control pod replicas ready"
+            printlnDated "ChaosMonkey: All admission control pod replicas ready"
         }
     }
 
@@ -509,6 +522,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Sensor is unavailable"
         orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("sensor").scale(0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 1)
+        printlnDated "Sensor is now scaled to 0"
 
         and:
         "Admission controller is started from scratch w/o cached scans"
@@ -516,10 +530,12 @@ class AdmissionControllerTest extends BaseSpecification {
         def originalAdmCtrlReplicas = admCtrlDeploy.spec.replicas
         orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("admission-control").scale(0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", admCtrlDeploy.spec.selector.matchLabels, 30, 1)
+        printlnDated "Admission controller scaled to 0, was ${originalAdmCtrlReplicas}"
         orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("admission-control")
                 .scale(originalAdmCtrlReplicas)
         orchestrator.waitForPodsReady("stackrox", admCtrlDeploy.spec.selector.matchLabels,
                 originalAdmCtrlReplicas, 30, 1)
+        printlnDated "Admission controller scaled back to ${originalAdmCtrlReplicas}"
 
         when:
         "A deployment with an image violating a policy is created"

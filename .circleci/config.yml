@@ -1406,7 +1406,11 @@ commands:
       - run:
           name: QA Automation Platform Part 2
           command: |
-            export CLUSTER=K8S
+            if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
+              export CLUSTER=OPENSHIFT
+            else
+              export CLUSTER=K8S
+            fi
             make -C qa-tests-backend sensor-bounce-test
 
       - run:

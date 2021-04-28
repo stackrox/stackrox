@@ -73,20 +73,20 @@ class TLSChallengeTest extends BaseSpecification {
         when:
         "Deploying Sensor without root CA certs can't connect to load balancer"
 
-        println "Setting sensor ROX_CENTRAL_ENDPOINT to ${CENTRAL_PROXY_ENDPOINT}"
+        printlnDated "Setting sensor ROX_CENTRAL_ENDPOINT to ${CENTRAL_PROXY_ENDPOINT}"
         orchestrator.updateDeploymentEnv("stackrox", "sensor", "ROX_CENTRAL_ENDPOINT", CENTRAL_PROXY_ENDPOINT)
-        println "Wait for sensor to be restarted"
+        printlnDated "Wait for sensor to be restarted"
         orchestrator.waitForPodsReady("stackrox", [app: "sensor"], 1, 10, 5)
 
         then:
         "Central connection to Sensor becomes unhealthy because root CAs are missing"
-        println "Wait until Sensor connection is marked as UNHEALTHY or DEGRADED in Centrals clusters health"
+        printlnDated "Wait until Sensor connection is marked as UNHEALTHY or DEGRADED in Centrals clusters health"
         assert waitUntilCentralSensorConnectionIs(HealthStatusLabel.UNHEALTHY, HealthStatusLabel.DEGRADED)
 
         when:
         "Central receives additional CA configurations after restart"
 
-        println "Create additional-ca secret"
+        printlnDated "Create additional-ca secret"
         Secret additionalCASecret = new Secret(
                 name: "additional-ca",
                 namespace: "stackrox",
@@ -97,7 +97,7 @@ class TLSChallengeTest extends BaseSpecification {
 
         // restart with "kill 1" to prevent deletion of PVs on local machines
         assert orchestrator.restartPodByLabelWithExecKill("stackrox", [app: "central"])
-        println "Wait for central pod being ready again"
+        printlnDated "Wait for central pod being ready again"
         orchestrator.waitForPodsReady("stackrox", [app: "central"], 1, 50, 3)
 
         // restart nginx load balancer
@@ -107,10 +107,10 @@ class TLSChallengeTest extends BaseSpecification {
         "Sensor receives root CAs from central after restart and is connected to central"
 
         // delete sensor to force reconnect
-        println "Restart Sensor, should connect to ${CENTRAL_PROXY_ENDPOINT}"
+        printlnDated "Restart Sensor, should connect to ${CENTRAL_PROXY_ENDPOINT}"
         orchestrator.restartPodByLabels("stackrox", [app: "sensor"], 30, 5)
 
-        println "Wait until Sensor is ready again"
+        printlnDated "Wait until Sensor is ready again"
         assert Services.waitForDeployment(new Deployment(name: "sensor", namespace: "stackrox"))
 
         // Check connection details Sensor <> Central
@@ -128,12 +128,12 @@ class TLSChallengeTest extends BaseSpecification {
             // Check if sensor logs contain connection information
             if (log.contains("Connecting to Central server ${CENTRAL_PROXY_ENDPOINT}")
                 && log.contains("Communication with central started")) {
-                println "Found successful connection logs in sensor pod"
+                printlnDated "Found successful connection logs in sensor pod"
                 return true
             }
         }
 
-        println "Could not establish connection to central ${CENTRAL_PROXY_ENDPOINT}"
+        printlnDated "Could not establish connection to central ${CENTRAL_PROXY_ENDPOINT}"
         println log
         return false
     }
@@ -147,9 +147,10 @@ class TLSChallengeTest extends BaseSpecification {
                         "Did not found any cluster, maybe redeploy StackRox or register a new cluster.")
             }
 
-            println "Receiving cluster status from central, checking sensor connection"
+            printlnDated "Receiving cluster status from central, checking sensor connection"
             HealthStatusLabel healthStatusLabel = list.get(0).getHealthStatus().getSensorHealthStatus()
             def found = healthStatusLabels.find { it == healthStatusLabel }
+            printlnDated("Status is: ${healthStatusLabel}")
             if (found) {
                 return true
             }
