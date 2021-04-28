@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 )
@@ -112,6 +111,7 @@ var (
 		Type: "clairify",
 		Categories: []storage.ImageIntegrationCategory{
 			storage.ImageIntegrationCategory_SCANNER,
+			storage.ImageIntegrationCategory_NODE_SCANNER,
 		},
 		IntegrationConfig: &storage.ImageIntegration_Clairify{
 			Clairify: &storage.ClairifyConfig{
@@ -128,9 +128,3 @@ var (
 		}),
 	}
 )
-
-func init() {
-	if features.HostScanning.Enabled() {
-		defaultScanner.Categories = append(defaultScanner.Categories, storage.ImageIntegrationCategory_NODE_SCANNER)
-	}
-}

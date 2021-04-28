@@ -30,7 +30,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -294,10 +293,6 @@ func (suite *NodeDataStoreTestSuite) TestBasicSearch() {
 }
 
 func (suite *NodeDataStoreTestSuite) TestSearchByVuln() {
-	if !features.HostScanning.Enabled() {
-		return
-	}
-
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Node),
@@ -401,10 +396,6 @@ func (suite *NodeDataStoreTestSuite) TestSearchByNodeCVEEdge() {
 }
 
 func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
-	if !features.HostScanning.Enabled() {
-		return
-	}
-
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Node),

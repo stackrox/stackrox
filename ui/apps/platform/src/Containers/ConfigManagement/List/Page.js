@@ -3,8 +3,6 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import PageHeader from 'Components/PageHeader';
 import { PageBody } from 'Components/Panel';
@@ -28,11 +26,7 @@ import SidePanel from '../SidePanel/SidePanel';
 
 const ListPage = ({ match, location, history }) => {
     const { isDarkMode } = useTheme();
-    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
-    const featureFlags = {
-        [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
-    };
-    const useCaseEntityMap = getUseCaseEntityMap(featureFlags);
+    const useCaseEntityMap = getUseCaseEntityMap();
 
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;

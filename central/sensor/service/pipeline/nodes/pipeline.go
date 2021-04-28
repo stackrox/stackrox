@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
@@ -103,22 +102,18 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		node.ClusterName = clusterName
 	}
 
-	if features.HostScanning.Enabled() {
-		err := p.enricher.EnrichNode(node)
-		if err != nil {
-			log.Warnf("enriching node %s:%s: %v", node.GetClusterName(), node.GetName(), err)
-		}
-
-		if err := p.riskManager.CalculateRiskAndUpsertNode(node); err != nil {
-			err = errors.Wrapf(err, "upserting node %s:%s into datastore", node.GetClusterName(), node.GetName())
-			log.Error(err)
-			return err
-		}
-
-		return nil
+	err = p.enricher.EnrichNode(node)
+	if err != nil {
+		log.Warnf("enriching node %s:%s: %v", node.GetClusterName(), node.GetName(), err)
 	}
 
-	return store.UpsertNode(node)
+	if err := p.riskManager.CalculateRiskAndUpsertNode(node); err != nil {
+		err = errors.Wrapf(err, "upserting node %s:%s into datastore", node.GetClusterName(), node.GetName())
+		log.Error(err)
+		return err
+	}
+
+	return nil
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {}

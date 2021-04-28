@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import { format } from 'date-fns';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
@@ -236,7 +234,7 @@ const getQueryBySelectedEntity = (entityType) => {
     }
 };
 
-const getEntitiesByContext = (entityContext, hostScanningEnabled) => {
+const getEntitiesByContext = (entityContext) => {
     const entities = [];
     if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
         entities.push({ label: 'Top Riskiest Components', value: entityTypes.COMPONENT });
@@ -245,15 +243,14 @@ const getEntitiesByContext = (entityContext, hostScanningEnabled) => {
         // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
         entities.unshift({ label: 'Top Riskiest Images', value: entityTypes.IMAGE });
     }
-    if (hostScanningEnabled && (entityContext === {} || !entityContext[entityTypes.NODE])) {
+    if (entityContext === {} || !entityContext[entityTypes.NODE]) {
         entities.push({ label: 'Top Riskiest Nodes', value: entityTypes.NODE });
     }
     return entities;
 };
 
 const TopRiskiestEntities = ({ entityContext, limit }) => {
-    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
-    const entities = getEntitiesByContext(entityContext, hostScanningEnabled);
+    const entities = getEntitiesByContext(entityContext);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
     function onEntityChange(value) {

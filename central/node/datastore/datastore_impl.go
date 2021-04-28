@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -65,9 +64,7 @@ func (d *datastoreImpl) ListNodes() ([]*storage.Node, error) {
 		return nil, err
 	}
 
-	if features.HostScanning.Enabled() {
-		d.updateNodePriority(nodes...)
-	}
+	d.updateNodePriority(nodes...)
 
 	return nodes, nil
 }
@@ -83,9 +80,7 @@ func (d *datastoreImpl) GetNode(id string) (*storage.Node, error) {
 		return nil, nil
 	}
 
-	if features.HostScanning.Enabled() {
-		d.updateNodePriority(node)
-	}
+	d.updateNodePriority(node)
 
 	return node, nil
 }
@@ -104,10 +99,8 @@ func (d *datastoreImpl) UpsertNode(node *storage.Node) error {
 	d.keyedMutex.Lock(node.GetId())
 	defer d.keyedMutex.Unlock(node.GetId())
 
-	if features.HostScanning.Enabled() {
-		d.updateComponentRisk(node)
-		enricher.FillScanStats(node)
-	}
+	d.updateComponentRisk(node)
+	enricher.FillScanStats(node)
 
 	if err := d.store.UpsertNode(node); err != nil {
 		return err
@@ -116,10 +109,8 @@ func (d *datastoreImpl) UpsertNode(node *storage.Node) error {
 		return err
 	}
 
-	if features.HostScanning.Enabled() {
-		// If the node in db is latest, this node object will be carrying its risk score
-		d.nodeRanker.Add(node.GetId(), node.GetRiskScore())
-	}
+	// If the node in db is latest, this node object will be carrying its risk score
+	d.nodeRanker.Add(node.GetId(), node.GetRiskScore())
 
 	return nil
 }
@@ -139,12 +130,8 @@ func (d *datastoreImpl) RemoveNode(id string) error {
 		return err
 	}
 
-	if features.HostScanning.Enabled() {
-		// removing component risk will be handled by pruning
-		return d.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_NODE)
-	}
-
-	return nil
+	// removing component risk will be handled by pruning
+	return d.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_NODE)
 }
 
 func (d *datastoreImpl) updateComponentRisk(node *storage.Node) {

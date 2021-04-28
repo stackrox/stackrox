@@ -2,7 +2,6 @@ package objects
 
 import common.Constants
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
-import services.FeatureFlagService
 import services.ImageIntegrationService
 import util.Env
 
@@ -46,10 +45,10 @@ class StackroxScannerIntegration implements ImageIntegration {
                 ImageIntegrationOuterClass.ClairifyConfig.newBuilder()
                         .setEndpoint(args.endpoint as String)
 
-        def categories = [ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER]
-        if (FeatureFlagService.isFeatureFlagEnabled("ROX_HOST_SCANNING")) {
-            categories.add(ImageIntegrationOuterClass.ImageIntegrationCategory.NODE_SCANNER)
-        }
+        def categories = [
+            ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER,
+            ImageIntegrationOuterClass.ImageIntegrationCategory.NODE_SCANNER,
+        ]
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)

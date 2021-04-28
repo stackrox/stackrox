@@ -329,9 +329,6 @@ func (l *loopImpl) reprocessNode(id string) bool {
 }
 
 func (l *loopImpl) reprocessNodes() {
-	if !features.HostScanning.Enabled() {
-		return
-	}
 	l.runReprocessingForObjects("node", func() ([]string, error) {
 		results, err := l.nodes.Search(allAccessCtx, search.EmptyQuery())
 		if err != nil {

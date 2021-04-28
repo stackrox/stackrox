@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -52,10 +51,8 @@ func New(globalStore globalstore.GlobalStore, indexer index.Indexer, risks riskD
 		return nil, err
 	}
 
-	if features.HostScanning.Enabled() {
-		if err := gds.initializeRankers(); err != nil {
-			return nil, err
-		}
+	if err := gds.initializeRankers(); err != nil {
+		return nil, err
 	}
 
 	return gds, nil

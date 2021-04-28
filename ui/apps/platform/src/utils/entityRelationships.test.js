@@ -126,7 +126,7 @@ it('gets direct Children relationships', () => {
         relationshipTypes.CHILDREN,
         useCaseTypes.VULN_MANAGEMENT
     );
-    expect(children).not.toContain(entityTypes.NODE);
+    expect(children).toContain(entityTypes.NODE);
     expect(children).toContain(entityTypes.NAMESPACE);
     expect(children).not.toContain(entityTypes.ROLE);
 });

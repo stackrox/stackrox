@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { withRouter } from 'react-router-dom';
 import startCase from 'lodash/startCase';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import PageHeader from 'Components/PageHeader';
 import EntityTabs from 'Components/workflow/EntityTabs';
@@ -26,11 +24,7 @@ import { EntityComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowEntityPageLayout = ({ location }) => {
     const { isDarkMode } = useTheme();
-    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
-    const featureFlags = {
-        [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
-    };
-    const useCaseEntityMap = getUseCaseEntityMap(featureFlags);
+    const useCaseEntityMap = getUseCaseEntityMap();
 
     const workflowState = parseURL(location);
     const { stateStack, useCase, search } = workflowState;

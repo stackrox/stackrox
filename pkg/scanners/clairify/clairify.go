@@ -15,7 +15,6 @@ import (
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -118,10 +117,6 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 }
 
 func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, error) {
-	if !features.HostScanning.Enabled() {
-		return nil, errors.New("node scanning is not currently enabled")
-	}
-
 	conf := protoNodeIntegration.GetClairify()
 	if conf == nil {
 		return nil, errors.New("scanner configuration required")
@@ -288,10 +283,6 @@ func (c *clairify) scan(image *storage.Image) error {
 
 // GetNodeScan retrieves the most recent node scan
 func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
-	if !features.HostScanning.Enabled() {
-		return nil, errors.New("Host scanning is disabled")
-	}
-
 	req := convertNodeToVulnRequest(node)
 	resp, err := c.scanServiceClient.GetNodeVulnerabilities(context.Background(), req)
 	if err != nil {

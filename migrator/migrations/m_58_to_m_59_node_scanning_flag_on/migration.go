@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 )
@@ -25,9 +24,6 @@ var (
 		StartingSeqNum: 58,
 		VersionAfter:   storage.Version{SeqNum: 59},
 		Run: func(databases *types.Databases) error {
-			if !features.HostScanning.Enabled() {
-				return nil
-			}
 			if err := migrateNodes(databases.BoltDB, databases.RocksDB); err != nil {
 				return err
 			}

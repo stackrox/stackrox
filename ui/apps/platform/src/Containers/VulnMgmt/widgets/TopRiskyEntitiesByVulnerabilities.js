@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
@@ -37,10 +35,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     small,
 }) => {
     const workflowState = useContext(workflowStateContext);
-    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
-    const typesToUse = hostScanningEnabled
-        ? riskEntityTypes.concat(entityTypes.NODE)
-        : riskEntityTypes;
+    const typesToUse = riskEntityTypes.concat(entityTypes.NODE);
 
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);

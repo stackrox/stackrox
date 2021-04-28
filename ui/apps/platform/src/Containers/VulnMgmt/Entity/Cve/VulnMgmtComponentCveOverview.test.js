@@ -11,9 +11,7 @@ const history = createHistory();
 
 const initialStore = {
     app: {
-        featureFlags: {
-            featureFlags: [{ name: 'DISABLED', envVar: 'ROX_HOST_SCANNING', enabled: false }],
-        },
+        featureFlags: {},
     },
 };
 

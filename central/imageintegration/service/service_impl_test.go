@@ -11,12 +11,10 @@ import (
 	loopMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/secrets"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
@@ -215,77 +213,75 @@ func TestValidateIntegration(t *testing.T) {
 }
 
 func TestValidateNodeIntegration(t *testing.T) {
-	testutils.RunWithFeatureFlagEnabled(t, features.HostScanning, func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-		testCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
-		clusterDatastore := clusterMocks.NewMockDataStore(ctrl)
-		clusterDatastore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{}, nil).AnyTimes()
+	clusterDatastore := clusterMocks.NewMockDataStore(ctrl)
+	clusterDatastore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{}, nil).AnyTimes()
 
-		integrationDatastore := integrationMocks.NewMockDataStore(ctrl)
+	integrationDatastore := integrationMocks.NewMockDataStore(ctrl)
 
-		scannerFactory := scannerMocks.NewMockFactory(ctrl)
-		nodeEnricher := nodeMocks.NewMockNodeEnricher(ctrl)
-		reprocessorLoop := loopMocks.NewMockLoop(ctrl)
-		integrationManager := mocks.NewMockManager(ctrl)
+	scannerFactory := scannerMocks.NewMockFactory(ctrl)
+	nodeEnricher := nodeMocks.NewMockNodeEnricher(ctrl)
+	reprocessorLoop := loopMocks.NewMockLoop(ctrl)
+	integrationManager := mocks.NewMockManager(ctrl)
 
-		s := &serviceImpl{
-			clusterDatastore:   clusterDatastore,
-			datastore:          integrationDatastore,
-			nodeEnricher:       nodeEnricher,
-			integrationManager: integrationManager,
-			scannerFactory:     scannerFactory,
-			reprocessorLoop:    reprocessorLoop,
-		}
+	s := &serviceImpl{
+		clusterDatastore:   clusterDatastore,
+		datastore:          integrationDatastore,
+		nodeEnricher:       nodeEnricher,
+		integrationManager: integrationManager,
+		scannerFactory:     scannerFactory,
+		reprocessorLoop:    reprocessorLoop,
+	}
 
-		// Test should be successful
-		integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{}, nil)
-		assert.NoError(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
-			Name:       "name",
-			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_NODE_SCANNER},
-		}))
+	// Test should be successful
+	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{}, nil)
+	assert.NoError(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
+		Name:       "name",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_NODE_SCANNER},
+	}))
 
-		clairifyConfig := &storage.ClairifyConfig{
-			Endpoint:           "https://scanner.stackrox:8080",
-			NumConcurrentScans: 30,
-		}
-		clairifyIntegrationConfig := &storage.ImageIntegration{
-			Id:                  "id",
-			Name:                "name",
-			IntegrationConfig:   &storage.ImageIntegration_Clairify{Clairify: clairifyConfig},
-			Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER, storage.ImageIntegrationCategory_NODE_SCANNER},
-			SkipTestIntegration: true,
-		}
-		clairifyNodeIntegrationConfig := &storage.NodeIntegration{
-			Id:                "id",
-			Name:              "name",
-			IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: clairifyConfig},
-		}
+	clairifyConfig := &storage.ClairifyConfig{
+		Endpoint:           "https://scanner.stackrox:8080",
+		NumConcurrentScans: 30,
+	}
+	clairifyIntegrationConfig := &storage.ImageIntegration{
+		Id:                  "id",
+		Name:                "name",
+		IntegrationConfig:   &storage.ImageIntegration_Clairify{Clairify: clairifyConfig},
+		Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER, storage.ImageIntegrationCategory_NODE_SCANNER},
+		SkipTestIntegration: true,
+	}
+	clairifyNodeIntegrationConfig := &storage.NodeIntegration{
+		Id:                "id",
+		Name:              "name",
+		IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: clairifyConfig},
+	}
 
-		clairifyIntegrationConfigStored := clairifyIntegrationConfig.Clone()
-		clairifyIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Clairify{Clairify: clairifyConfig.Clone()}
+	clairifyIntegrationConfigStored := clairifyIntegrationConfig.Clone()
+	clairifyIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Clairify{Clairify: clairifyConfig.Clone()}
 
-		// Test integration.
-		integrationDatastore.EXPECT().GetImageIntegrations(
-			gomock.Any(),
-			&v1.GetImageIntegrationsRequest{Name: "name"},
-		).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
-		scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(&fakeScanner{}, nil).Times(1)
-		nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(&fakeScanner{}, nil).Times(1)
-		_, err := s.TestImageIntegration(testCtx, clairifyIntegrationConfig)
-		assert.NoError(t, err)
+	// Test integration.
+	integrationDatastore.EXPECT().GetImageIntegrations(
+		gomock.Any(),
+		&v1.GetImageIntegrationsRequest{Name: "name"},
+	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
+	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(&fakeScanner{}, nil).Times(1)
+	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(&fakeScanner{}, nil).Times(1)
+	_, err := s.TestImageIntegration(testCtx, clairifyIntegrationConfig)
+	assert.NoError(t, err)
 
-		// Put.
-		integrationDatastore.EXPECT().GetImageIntegrations(
-			gomock.Any(),
-			&v1.GetImageIntegrationsRequest{Name: "name"},
-		).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
-		integrationDatastore.EXPECT().UpdateImageIntegration(gomock.Any(), clairifyIntegrationConfig).Return(nil).Times(1)
-		integrationManager.EXPECT().Upsert(clairifyIntegrationConfig).Return(nil)
-		reprocessorLoop.EXPECT().ShortCircuit().Times(1)
-		_, err = s.PutImageIntegration(testCtx, clairifyIntegrationConfig)
-		assert.NoError(t, err)
-	})
+	// Put.
+	integrationDatastore.EXPECT().GetImageIntegrations(
+		gomock.Any(),
+		&v1.GetImageIntegrationsRequest{Name: "name"},
+	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
+	integrationDatastore.EXPECT().UpdateImageIntegration(gomock.Any(), clairifyIntegrationConfig).Return(nil).Times(1)
+	integrationManager.EXPECT().Upsert(clairifyIntegrationConfig).Return(nil)
+	reprocessorLoop.EXPECT().ShortCircuit().Times(1)
+	_, err = s.PutImageIntegration(testCtx, clairifyIntegrationConfig)
+	assert.NoError(t, err)
 }

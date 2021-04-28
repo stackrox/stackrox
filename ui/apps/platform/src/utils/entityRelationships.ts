@@ -7,7 +7,6 @@ import { uniq } from 'lodash';
 import entityTypes from 'constants/entityTypes';
 import relationshipTypes from 'constants/relationshipTypes';
 import useCaseTypes from 'constants/useCaseTypes';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 // base k8s entities to be used across all use cases
 const baseEntities = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
@@ -35,15 +34,10 @@ export const useCaseEntityMap = {
     ],
 };
 
-// to add featureFlag logic to the useCaseEntityMap
-export const getUseCaseEntityMap = (
-    featureFlags: Record<string, boolean>
-): Record<string, string[]> => {
+export const getUseCaseEntityMap = (): Record<string, string[]> => {
     const entityMap = { ...useCaseEntityMap };
-    if (featureFlags[knownBackendFlags.ROX_HOST_SCANNING]) {
-        if (!entityMap[useCaseTypes.VULN_MANAGEMENT].includes(entityTypes.NODE)) {
-            entityMap[useCaseTypes.VULN_MANAGEMENT].push(entityTypes.NODE);
-        }
+    if (!entityMap[useCaseTypes.VULN_MANAGEMENT].includes(entityTypes.NODE)) {
+        entityMap[useCaseTypes.VULN_MANAGEMENT].push(entityTypes.NODE);
     }
     return entityMap;
 };
@@ -212,10 +206,9 @@ const isContainedInferred = (entityType1: string, entityType2: string): boolean 
 export const getEntityTypesByRelationship = (
     entityType: string,
     relationship: string,
-    useCase: string,
-    featureFlags = {}
+    useCase: string
 ): string[] => {
-    const entityMap = getUseCaseEntityMap(featureFlags);
+    const entityMap = getUseCaseEntityMap();
     let entities: string[] = [];
     if (relationship === relationshipTypes.CONTAINS) {
         entities = getContains(entityType);

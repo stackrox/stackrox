@@ -43,7 +43,6 @@ const IntegrationsPage = ({
 }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTile, setSelectedTile] = useState(emptyTile);
-    const isHostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
     const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
     );
@@ -140,12 +139,6 @@ const IntegrationsPage = ({
                     return null;
                 }
             }
-            // TODO: remove this manual check after ROX_HOST_SCANNING feature flag turned on
-            if (tile.label === 'StackRox Scanner' && !isHostScanningEnabled) {
-                // eslint-disable-next-line no-param-reassign
-                tile.categories = 'Scanner';
-            }
-            // end TODO block to remove
 
             return (
                 <IntegrationTile

@@ -1,8 +1,6 @@
 import static org.junit.Assume.assumeFalse
 
 import io.stackrox.proto.storage.RoleOuterClass
-import org.junit.Assume
-import services.FeatureFlagService
 import services.GraphQLService
 
 import groups.BAT
@@ -103,7 +101,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
         "Get Node CVEs and components"
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_HOST_SCANNING"))
         BaseService.useBasicAuth()
         disableAuthzPlugin()
 
@@ -145,7 +142,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     def "Verify SAC on vuln mgmt shared objects: #tokenName #baseQuery"() {
         when:
         "Get Node CVEs and components"
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_HOST_SCANNING"))
         BaseService.useBasicAuth()
         SACService.addAuthPlugin()
 

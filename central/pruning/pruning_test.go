@@ -41,7 +41,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -50,7 +49,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1105,10 +1103,6 @@ func TestRemoveOrphanedNodeRisks(t *testing.T) {
 				nodes: nodes,
 				risks: risks,
 			}
-
-			envIsolator := envisolator.NewEnvIsolator(t)
-			defer envIsolator.RestoreAll()
-			envIsolator.Setenv(features.HostScanning.EnvVar(), "true")
 
 			risks.EXPECT().Search(gomock.Any(), gomock.Any()).Return(c.risks, nil)
 			nodes.EXPECT().Search(gomock.Any(), gomock.Any()).Return(c.nodes, nil)

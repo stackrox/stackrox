@@ -4,8 +4,6 @@ import pluralize from 'pluralize';
 
 import entityLabels from 'messages/entity';
 import GroupedTabs from 'Components/GroupedTabs';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import {
     getEntityTypesByRelationship,
     entityGroups,
@@ -17,10 +15,6 @@ import workflowStateContext from 'Containers/workflowStateContext';
 // eslint-disable-next-line
 const EntityTabs = ({ entityType, activeTab }) => {
     const workflowState = useContext(workflowStateContext);
-    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
-    const featureFlags = {
-        [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
-    };
     function getTab(tabType) {
         return {
             group: entityGroupMap[tabType],
@@ -34,14 +28,12 @@ const EntityTabs = ({ entityType, activeTab }) => {
         ...getEntityTypesByRelationship(
             entityType,
             relationshipTypes.MATCHES,
-            workflowState.useCase,
-            featureFlags
+            workflowState.useCase
         ),
         ...getEntityTypesByRelationship(
             entityType,
             relationshipTypes.CONTAINS,
-            workflowState.useCase,
-            featureFlags
+            workflowState.useCase
         ),
     ];
 

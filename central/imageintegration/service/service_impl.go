@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -235,7 +234,7 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 				return status.Error(codes.InvalidArgument, errors.Wrap(err, "image scanner integration").Error())
 			}
 		}
-		if features.HostScanning.Enabled() && category == storage.ImageIntegrationCategory_NODE_SCANNER {
+		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
 			nodeIntegration, err := imageIntegrationToNodeIntegration(request)
 			if err != nil {
 				return status.Error(codes.InvalidArgument, errors.Wrap(err, "node scanner integration").Error())

@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -104,44 +103,24 @@ type VulnerabilityResolver interface {
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).
 func (resolver *Resolver) Vulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerability")
-	if !features.HostScanning.Enabled() {
-		if err := readImages(ctx); err != nil {
-			return nil, err
-		}
-	}
 	return resolver.vulnerabilityV2(ctx, args)
 }
 
 // Vulnerabilities resolves a set of vulnerabilities based on a query.
 func (resolver *Resolver) Vulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerabilities")
-	if !features.HostScanning.Enabled() {
-		if err := readImages(ctx); err != nil {
-			return nil, err
-		}
-	}
 	return resolver.vulnerabilitiesV2(ctx, q)
 }
 
 // VulnerabilityCount returns count of all clusters across infrastructure
 func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnerabilityCount")
-	if !features.HostScanning.Enabled() {
-		if err := readImages(ctx); err != nil {
-			return 0, err
-		}
-	}
 	return resolver.vulnerabilityCountV2(ctx, args)
 }
 
 // VulnCounter returns a VulnerabilityCounterResolver for the input query.s
 func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnCounter")
-	if !features.HostScanning.Enabled() {
-		if err := readImages(ctx); err != nil {
-			return nil, err
-		}
-	}
 	return resolver.vulnCounterV2(ctx, args)
 }
 

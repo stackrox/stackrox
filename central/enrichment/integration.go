@@ -3,7 +3,6 @@ package enrichment
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 )
@@ -59,26 +58,21 @@ func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 	if err := m.imageIntegrationSet.UpdateImageIntegration(integration); err != nil {
 		return err
 	}
-	if features.HostScanning.Enabled() {
-		if !isNodeIntegration(integration) {
-			m.nodeEnricher.RemoveNodeIntegration(integration.GetId())
-			return nil
-		}
-		nodeIntegration, err := imageIntegrationToNodeIntegration(integration)
-		if err != nil {
-			return err
-		}
-		return m.nodeEnricher.UpsertNodeIntegration(nodeIntegration)
+	if !isNodeIntegration(integration) {
+		m.nodeEnricher.RemoveNodeIntegration(integration.GetId())
+		return nil
 	}
-	return nil
+	nodeIntegration, err := imageIntegrationToNodeIntegration(integration)
+	if err != nil {
+		return err
+	}
+	return m.nodeEnricher.UpsertNodeIntegration(nodeIntegration)
 }
 
 func (m *managerImpl) Remove(id string) error {
 	if err := m.imageIntegrationSet.RemoveImageIntegration(id); err != nil {
 		return err
 	}
-	if features.HostScanning.Enabled() {
-		m.nodeEnricher.RemoveNodeIntegration(id)
-	}
+	m.nodeEnricher.RemoveNodeIntegration(id)
 	return nil
 }

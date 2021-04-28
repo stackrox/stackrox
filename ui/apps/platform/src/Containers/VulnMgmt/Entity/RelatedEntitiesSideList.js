@@ -2,8 +2,6 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getEntityTypesByRelationship } from 'utils/entityRelationships';
@@ -14,10 +12,6 @@ import TileList from 'Components/TileList';
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
-    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
-    const featureFlags = {
-        [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
-    };
     const { useCase } = workflowState;
     if (!useCase) {
         return null;
@@ -25,12 +19,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
 
     const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
-    const matches = getEntityTypesByRelationship(
-        entityType,
-        relationshipTypes.MATCHES,
-        useCase,
-        featureFlags
-    )
+    const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
         .map((matchEntity) => {
             const count = data[countKeyMap[matchEntity]];
             return {
@@ -41,12 +30,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
             };
         })
         .filter((matchObj) => matchObj.count && !entityContext[matchObj.entity]);
-    const contains = getEntityTypesByRelationship(
-        entityType,
-        relationshipTypes.CONTAINS,
-        useCase,
-        featureFlags
-    )
+    const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
         .map((containEntity) => {
             const count = data[countKeyMap[containEntity]];
             return {
