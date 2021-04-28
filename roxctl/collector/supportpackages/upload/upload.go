@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -44,7 +45,9 @@ func analyzePackageFile(pkg *zip.Reader) (map[string]*zip.File, bool) {
 			continue // ignore everything not in the kernel-modules/ directory
 		}
 		if !probeupload.IsValidFilePath(strippedName) {
-			hasUnrecognized = true
+			if path.Base(strippedName) != "LICENSE" {
+				hasUnrecognized = true
+			}
 			continue
 		}
 		probeFiles[strippedName] = f
