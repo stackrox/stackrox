@@ -4,7 +4,7 @@ class Node {
     def uid
     def name
     def labels
-    def annotations
+    Map<String, String> annotations
     def internalIps
     def externalIps
     def containerRuntimeVersion

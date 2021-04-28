@@ -14,6 +14,7 @@ import io.stackrox.proto.storage.Compliance.ComplianceResultValue
 import io.stackrox.proto.storage.Compliance.ComplianceRunResults
 import io.stackrox.proto.storage.Compliance.ComplianceState
 import io.stackrox.proto.storage.ImageOuterClass
+import io.stackrox.proto.storage.NodeOuterClass.Node
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Control
 import objects.CsvRow
@@ -32,10 +33,10 @@ import services.ComplianceService
 import services.CreatePolicyService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
+import services.NodeService
 import services.ImageService
 import services.ProcessService
 import spock.lang.Shared
-import util.Env
 import util.Timer
 import v1.ComplianceServiceOuterClass.ComplianceControl
 import v1.ComplianceServiceOuterClass.ComplianceStandard
@@ -153,16 +154,17 @@ class ComplianceTest extends BaseSpecification {
                         ["StackRox is installed in cluster \"remote\", and provides continuous risk assessment."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
-        if (Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio")) {
-            staticControls.add(new Control(
-                    "CIS_Docker_v1_2_0:2_6",
-                    ["Node does not use Docker container runtime"],
-                    ComplianceState.COMPLIANCE_STATE_SKIP).setType(Control.ControlType.NODE))
-        } else {
+        List<Node> nodes = NodeService.getNodes()
+        if (nodes.size() > 0 && nodes.get(0).containerRuntimeVersion.contains("docker")) {
             staticControls.add(new Control(
                     "CIS_Docker_v1_2_0:2_6",
                     ["Docker daemon is not exposed over TCP"],
                     ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE))
+        } else {
+            staticControls.add(new Control(
+                    "CIS_Docker_v1_2_0:2_6",
+                    ["Node does not use Docker container runtime"],
+                    ComplianceState.COMPLIANCE_STATE_SKIP).setType(Control.ControlType.NODE))
         }
 
         expect:
@@ -541,11 +543,11 @@ class ComplianceTest extends BaseSpecification {
             }
         }
 
-        def overalLState = controlResult.getOverallState()
-        assert controlResult.evidenceList.size() == 1
+        def overallState = controlResult.getOverallState()
+        assert controlResult.evidenceList.size() >= 1
         def evidence = controlResult.evidenceList[0]
         if (hasMaster) {
-            if (overalLState == ComplianceState.COMPLIANCE_STATE_NOTE) {
+            if (overallState == ComplianceState.COMPLIANCE_STATE_NOTE) {
                 // openshift-crio has a master node but does not run the master API process so it should note that the
                 // master API process does not exist.
                 assert evidence.message.contains("not found on host")
@@ -556,7 +558,7 @@ class ComplianceTest extends BaseSpecification {
             }
         } else {
             // When there is no master node we should make sure the note is the default generated in Central
-            assert overalLState == ComplianceState.COMPLIANCE_STATE_NOTE
+            assert overallState == ComplianceState.COMPLIANCE_STATE_NOTE
             assert evidence.message.contains("No evidence was received for this check")
         }
     }

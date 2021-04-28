@@ -1,7 +1,11 @@
+import common.Constants
 import groups.BAT
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import objects.Namespace
+import org.javers.core.Javers
+import org.javers.core.JaversBuilder
+import org.javers.core.diff.ListCompareAlgorithm
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.NamespaceService
@@ -17,25 +21,28 @@ class SummaryTest extends BaseSpecification {
         "Counts API should match orchestrator details"
 
         withRetry(10, 6) {
-            def counts = SummaryService.getCounts()
-            def deployments = orchestrator.getDeploymentCount() +
+            def stackroxSummaryCounts = SummaryService.getCounts()
+            List<String> orchestratorResourceNames = orchestrator.getDeploymentCount() +
                     orchestrator.getDaemonSetCount() +
                     orchestrator.getStaticPodCount() +
                     orchestrator.getStatefulSetCount() +
                     orchestrator.getJobCount()
 
-            def deploymentNames = Services.getDeployments()*.name
-            if (counts.numDeployments != deployments.size()) {
-                deploymentNames.any { name -> !deployments.contains(name) } .each {
-                    name -> println "SR deployment is missing in K8s list: ${name}"
-                }
-                deployments.any { name -> !deploymentNames.contains(name) } .each {
-                    name -> println "K8s deployment is missing in SR list: ${name}"
-                }
+            if (stackroxSummaryCounts.numDeployments != orchestratorResourceNames.size()) {
+                println "The summary count for deployments does not equate to the orchestrator count."
+                println "Stackrox count: ${stackroxSummaryCounts.numDeployments}, " +
+                        "orchestrator count ${orchestratorResourceNames.size()}"
+                println "This diff may help with debug, however deployment names may be different between APIs"
+                List<String> stackroxDeploymentNames = Services.getDeployments()*.name
+                Javers javers = JaversBuilder.javers()
+                        .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
+                        .build()
+                println javers.compare(stackroxDeploymentNames, orchestratorResourceNames).prettyPrint()
             }
-            assert counts.numDeployments == deployments.size()
-            assert counts.numSecrets == orchestrator.getSecretCount()
-            assert counts.numNodes == orchestrator.getNodeCount()
+
+            assert stackroxSummaryCounts.numDeployments == orchestratorResourceNames.size()
+            assert stackroxSummaryCounts.numSecrets == orchestrator.getSecretCount()
+            assert stackroxSummaryCounts.numNodes == orchestrator.getNodeCount()
         }
     }
 
@@ -44,25 +51,37 @@ class SummaryTest extends BaseSpecification {
         given:
         "fetch the list of nodes"
         List<Node> stackroxNodes = NodeService.getNodes()
-        List<objects.Node> orchNodes = orchestrator.getNodeDetails()
+        List<objects.Node> orchestratorNodes = orchestrator.getNodeDetails()
 
         expect:
         "verify Node Details"
-        assert stackroxNodes.size() == orchNodes.size()
-        for (Node node : stackroxNodes) {
-            objects.Node actualNode = orchNodes.find { it.uid == node.id }
-            assert node.clusterId == ClusterService.getClusterId()
-            assert node.name == actualNode.name
-            assert node.labelsMap == actualNode.labels
-            assert node.annotationsMap == actualNode.annotations
-            assert node.internalIpAddressesList == actualNode.internalIps
-            assert node.externalIpAddressesList == actualNode.externalIps
-            assert node.containerRuntimeVersion == actualNode.containerRuntimeVersion
-            assert node.kernelVersion == actualNode.kernelVersion
-            assert node.osImage == actualNode.osImage
-            assert node.kubeletVersion == actualNode.kubeletVersion
-            assert node.kubeProxyVersion == actualNode.kubeProxyVersion
+        assert stackroxNodes.size() == orchestratorNodes.size()
+        Boolean diff = false
+        Javers javers = JaversBuilder.javers().build()
+        for (Node stackroxNode : stackroxNodes) {
+            objects.Node orchestratorNode = orchestratorNodes.find { it.uid == stackroxNode.id }
+            assert stackroxNode.clusterId == ClusterService.getClusterId()
+            assert stackroxNode.name == orchestratorNode.name
+            if (stackroxNode.labelsMap != orchestratorNode.labels) {
+                println "There is a node label difference - StackRox -v- Orchestrator:"
+                println javers.compare(stackroxNode.labelsMap, orchestratorNode.labels).prettyPrint()
+                diff = true
+            }
+            assert stackroxNode.labelsMap == orchestratorNode.labels
+            if (stackroxNode.annotationsMap != orchestratorNode.annotations) {
+                println "There is a node annotation difference - StackRox -v- Orchestrator:"
+                println javers.compare(stackroxNode.annotationsMap, orchestratorNode.annotations).prettyPrint()
+                diff = true
+            }
+            assert stackroxNode.internalIpAddressesList == orchestratorNode.internalIps
+            assert stackroxNode.externalIpAddressesList == orchestratorNode.externalIps
+            assert stackroxNode.containerRuntimeVersion == orchestratorNode.containerRuntimeVersion
+            assert stackroxNode.kernelVersion == orchestratorNode.kernelVersion
+            assert stackroxNode.osImage == orchestratorNode.osImage
+            assert stackroxNode.kubeletVersion == orchestratorNode.kubeletVersion
+            assert stackroxNode.kubeProxyVersion == orchestratorNode.kubeProxyVersion
         }
+        assert !diff, "See diff(s) above"
     }
 
     @Category([BAT])
@@ -70,33 +89,55 @@ class SummaryTest extends BaseSpecification {
         given:
         "fetch the list of namespace"
 
-        List<Namespace> orchNamespaces = orchestrator.getNamespaceDetails()
-        Namespace orchQANamespace = orchNamespaces.find { it.name == "qa" }.collect().first()
-        NamespaceService.waitForNamespace(orchQANamespace.uid)
+        List<Namespace> orchestratorNamespaces = orchestrator.getNamespaceDetails()
+        Namespace qaNamespace = orchestratorNamespaces.find {
+            it.name == Constants.ORCHESTRATOR_NAMESPACE
+        }
+        NamespaceService.waitForNamespace(qaNamespace.uid)
 
         List<NamespaceServiceOuterClass.Namespace> stackroxNamespaces = NamespaceService.getNamespaces()
 
         expect:
-        "verify Node Details"
-        assert stackroxNamespaces.size() == orchNamespaces.size()
-        for (NamespaceServiceOuterClass.Namespace ns : stackroxNamespaces) {
-            def start = System.currentTimeMillis()
-            Namespace actualNamespace = orchNamespaces.find { it.uid == ns.metadata.id }
-            while (ns.numDeployments != actualNamespace.deploymentCount.size() &&
-                    (System.currentTimeMillis() - start) < (60 * 1000)) {
-                ns = NamespaceService.getNamespace(ns.metadata.id)
+        "verify Namespace Details"
+        assert stackroxNamespaces.size() == orchestratorNamespaces.size()
+        Boolean diff = false
+        for (NamespaceServiceOuterClass.Namespace stackroxNamespace : stackroxNamespaces) {
+            Namespace orchestratorNamespace = orchestratorNamespaces.find {
+                it.uid == stackroxNamespace.metadata.id
             }
-            def deploymentNames = Services.getDeployments(
-                    SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Namespace:${ ns.metadata.name }").build()
-            )*.name
-            println "SR deployments in ${ns.metadata.name}: ${deploymentNames.sort()}"
-            println "Actual deployments in ${ns.metadata.name}: ${actualNamespace.deploymentCount.sort()}"
-            assert ns.metadata.clusterId == ClusterService.getClusterId()
-            assert ns.metadata.name == actualNamespace.name
-            assert ns.metadata.labelsMap == actualNamespace.labels
-            assert ns.numDeployments == actualNamespace.deploymentCount.size()
-            assert ns.numSecrets == actualNamespace.secretsCount
-            assert ns.numNetworkPolicies == actualNamespace.networkPolicyCount
+            def start = System.currentTimeMillis()
+            while (stackroxNamespace.numDeployments != orchestratorNamespace.deploymentCount.size() &&
+                (System.currentTimeMillis() - start) < (30 * 1000)) {
+                stackroxNamespace = NamespaceService.getNamespace(stackroxNamespace.metadata.id)
+                println "There is a difference in the deployment count for namespace "+
+                        stackroxNamespace.metadata.name
+                println "StackRox has ${stackroxNamespace.numDeployments}, "+
+                        "the orchestrator has ${orchestratorNamespace.deploymentCount.size()}"
+                println "will retry to find equivalence in 5 seconds"
+                sleep(5000)
+            }
+            if (stackroxNamespace.numDeployments != orchestratorNamespace.deploymentCount.size()) {
+                println "There is a difference in the deployment count for namespace "+
+                        stackroxNamespace.metadata.name
+                println "StackRox has ${stackroxNamespace.numDeployments}, "+
+                        "the orchestrator has ${orchestratorNamespace.deploymentCount.size()}"
+                println "This diff may help with debug, however deployment names may be different between APIs"
+                List<String> stackroxDeploymentNames = Services.getDeployments(
+                        SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
+                                "Namespace:${ stackroxNamespace.metadata.name }").build()
+                )*.name
+                Javers javers = JaversBuilder.javers()
+                        .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
+                        .build()
+                println javers.compare(stackroxDeploymentNames, orchestratorNamespace.deploymentCount).prettyPrint()
+                diff = true
+            }
+            assert stackroxNamespace.metadata.clusterId == ClusterService.getClusterId()
+            assert stackroxNamespace.metadata.name == orchestratorNamespace.name
+            assert stackroxNamespace.metadata.labelsMap == orchestratorNamespace.labels
+            assert stackroxNamespace.numSecrets == orchestratorNamespace.secretsCount
+            assert stackroxNamespace.numNetworkPolicies == orchestratorNamespace.networkPolicyCount
         }
+        assert !diff, "See diff(s) above"
     }
 }

@@ -158,9 +158,7 @@ class BaseSpecification extends Specification {
     }
 
     def setupSpec() {
-        def date = new Date()
-        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        println "${sdf.format(date)} Starting testsuite"
+        printlnDated("Starting testsuite")
 
         testStartTimeMillis = System.currentTimeMillis()
 
@@ -200,9 +198,7 @@ class BaseSpecification extends Specification {
     }
 
     def setup() {
-        def date = new Date()
-        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        println "${sdf.format(date)} Starting testcase"
+        printlnDated("Starting testcase")
 
         //Always make sure to revert back to the allAccessToken before each test
         resetAuth()
@@ -218,9 +214,7 @@ class BaseSpecification extends Specification {
     }
 
     def cleanupSpec() {
-        def date = new Date()
-        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        println "${sdf.format(date)} Ending testsuite"
+        printlnDated("Ending testsuite")
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
@@ -243,9 +237,7 @@ class BaseSpecification extends Specification {
     }
 
     def cleanup() {
-        def date = new Date()
-        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        println "${sdf.format(date)} Ending testcase"
+        printlnDated("Ending testcase")
 
         Helpers.resetRetryAttempts()
     }
@@ -319,5 +311,11 @@ class BaseSpecification extends Specification {
 
     static Boolean isRaceBuild() {
         return Env.get("IS_RACE_BUILD", null) == "true"
+    }
+
+    static Void printlnDated(String msg) {
+        def date = new Date()
+        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        println "${sdf.format(date)} ${msg}"
     }
 }
