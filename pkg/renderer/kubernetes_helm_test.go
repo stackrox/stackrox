@@ -57,8 +57,10 @@ func TestRenderSensorHelm(t *testing.T) {
 
 			fields := map[string]interface{}{
 				"ImageRegistry": "stackrox.io",
-				"ImageRemote":   "main",
-				"ImageTag":      "3.0.41.x-92-g9e8a347ffe",
+				// TODO: we should probably get rid of ImageRegistry eventually.
+				"MainRegistry": "stackrox.io",
+				"ImageRemote":  "main",
+				"ImageTag":     "3.0.41.x-92-g9e8a347ffe",
 
 				"PublicEndpoint": "central.stackrox:443",
 

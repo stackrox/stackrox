@@ -30,13 +30,15 @@ func init() {
 
 func TestHelmLint(t *testing.T) {
 	for chartName := range common.ChartTemplates {
-		t.Run(chartName, func(t *testing.T) {
-			testChartLint(t, chartName)
-		})
+		for _, rhacs := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s-rhacs-%v", chartName, rhacs), func(t *testing.T) {
+				testChartLint(t, chartName, rhacs)
+			})
+		}
 	}
 }
 
-func testChartLint(t *testing.T, chartName string) {
+func testChartLint(t *testing.T, chartName string, rhacs bool) {
 	const noDebug = false
 	const noDebugChartPath = ""
 	outputDir, err := ioutil.TempDir("", "roxctl-helm-output-lint-")
@@ -46,7 +48,7 @@ func testChartLint(t *testing.T, chartName string) {
 		_ = os.RemoveAll(outputDir)
 	}()
 
-	err = outputHelmChart(chartName, outputDir, true, noDebug, noDebugChartPath)
+	err = outputHelmChart(chartName, outputDir, true, rhacs, noDebug, noDebugChartPath)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {

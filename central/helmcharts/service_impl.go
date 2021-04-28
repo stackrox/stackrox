@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
+	pkgCharts "github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/zip"
@@ -63,7 +64,7 @@ func (s *service) serveChart(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Render template files.
-	renderedChartFiles, err := helmImage.LoadAndInstantiateChartTemplate(chartPathPrefix)
+	renderedChartFiles, err := helmImage.LoadAndInstantiateChartTemplate(chartPathPrefix, pkgCharts.DefaultMetaValues())
 	if err != nil {
 		http.Error(w, errors.Wrapf(err, "loading and instantiating %s helmtpl", chartName).Error(), http.StatusInternalServerError)
 		return
