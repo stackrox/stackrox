@@ -70,7 +70,7 @@ const CredentialExpiry = ({
     );
 
     return (
-        <Banner isSticky variant={type}>
+        <Banner className="pf-u-text-align-center" isSticky variant={type}>
             {message}
         </Banner>
     );

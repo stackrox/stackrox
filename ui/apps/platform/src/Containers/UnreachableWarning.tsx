@@ -1,57 +1,38 @@
-import React, { ReactElement, useState } from 'react';
-import { connect } from 'react-redux';
-import * as Icon from 'react-feather';
+import React, { ReactElement } from 'react';
+import { Banner, Button } from '@patternfly/react-core';
 
-import Button from 'Components/Button';
-import { selectors } from 'reducers';
 import { serverStates } from 'reducers/serverError';
 
-const windowReloadHandler = () => window.location.reload();
+const refreshPage = () => window.location.reload();
 
+export type ServerState = 'UP' | 'UNREACHABLE' | 'RESURRECTED' | undefined | null;
 export type UnreachableWarningProps = {
-    serverState?: 'UP' | 'UNREACHABLE' | 'RESURRECTED' | null;
+    serverState: ServerState;
 };
 
 function UnreachableWarning({ serverState }: UnreachableWarningProps): ReactElement | null {
-    const [isShowing, toggleShow] = useState(true);
-    function onClickHandler() {
-        toggleShow(false);
-    }
-
-    if (serverState === serverStates.UNREACHABLE && !isShowing) {
-        toggleShow(true); // reset on subsequent failures, if RESURRECTED message was dismissed
-    }
-
-    if (serverState !== serverStates.UNREACHABLE && serverState !== serverStates.RESURRECTED) {
+    if (!serverState || serverState === 'UP') {
         return null;
     }
-    const showCancel = serverState === serverStates.RESURRECTED;
-    if (isShowing) {
-        return (
-            <div className="flex w-full items-center p-3 bg-warning-200 text-warning-800 border-b border-base-400 justify-center font-700 text-center">
-                <span className="flex-1">
-                    {serverState === serverStates.UNREACHABLE &&
-                        `There seems to be an issue reaching the server. Please check your network connection or `}
-                    {serverState === serverStates.RESURRECTED &&
-                        `The server has become reachable again after a connection problem. If you experience issues, please `}
-                    <Button
-                        text="refresh the page"
-                        className="text-tertiary-700 hover:text-tertiary-800 underline font-700 justify-center"
-                        onClick={windowReloadHandler}
-                    />
-                    .
-                </span>
-                {showCancel && (
-                    <Icon.X className="h-6 w-6 cursor-pointer" onClick={onClickHandler} />
-                )}
-            </div>
-        );
-    }
-    return null;
+
+    const message = (
+        <span>
+            {serverState === serverStates.UNREACHABLE &&
+                `There seems to be an issue reaching the server. Please check your network connection or `}
+            {serverState === serverStates.RESURRECTED &&
+                `The server has become reachable again after a connection problem. If you experience issues, please `}
+            <Button variant="link" isInline onClick={refreshPage}>
+                refresh the page
+            </Button>
+            .
+        </span>
+    );
+
+    return (
+        <Banner className="pf-u-text-align-center" isSticky variant="warning">
+            {message}
+        </Banner>
+    );
 }
 
-// not using `reselect` because it falsely assumes the serverState nested property has not changed,
-// if the server comes back online
-const mapStateToProps = (state) => ({ serverState: selectors.getServerState(state) });
-
-export default connect(mapStateToProps, null)(UnreachableWarning);
+export default UnreachableWarning;

@@ -66,7 +66,7 @@ const reducer = combineReducers({
     serverError,
 });
 
-const getServerState = (state) => state.serverError && state.serverError.serverState;
+const getServerState = (state) => state?.serverError?.serverState;
 
 export const selectors = {
     getServerState,

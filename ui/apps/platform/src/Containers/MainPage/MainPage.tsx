@@ -10,7 +10,7 @@ import { actions as globalSearchActions } from 'reducers/globalSearch';
 import Notifications from 'Containers/Notifications';
 import NavigationSideBar from 'Containers/Navigation/NavigationSideBar';
 import SearchModal from 'Containers/Search/SearchModal';
-import UnreachableWarning from 'Containers/UnreachableWarning';
+import UnreachableWarning, { ServerState } from 'Containers/UnreachableWarning';
 import AppWrapper, { PublicConfig } from 'Containers/AppWrapper';
 import CredentialExpiryBanners from 'Containers/CredentialExpiryBanners/CredentialExpiryBanners';
 import VersionOutOfDate from 'Containers/VersionOutOfDate';
@@ -34,6 +34,7 @@ export type MainPageProps = {
         stale?: boolean;
     };
     publicConfig: PublicConfig;
+    serverState: ServerState;
 };
 
 function MainPage({
@@ -44,6 +45,7 @@ function MainPage({
         stale: false,
     },
     publicConfig,
+    serverState,
 }: MainPageProps): ReactElement {
     const [isNavOpen, setNavOpen] = useState(true);
     function onNavToggle() {
@@ -55,7 +57,7 @@ function MainPage({
     return (
         <AppWrapper publicConfig={publicConfig}>
             <div className="flex flex-1 flex-col h-full relative">
-                <UnreachableWarning />
+                <UnreachableWarning serverState={serverState} />
                 <Notifications />
                 <CredentialExpiryBanners />
                 {metadata?.stale && <VersionOutOfDate />}
@@ -79,6 +81,7 @@ const mapStateToProps = createStructuredSelector({
     metadata: selectors.getMetadata,
     featureFlags: selectors.getFeatureFlags,
     publicConfig: selectors.getPublicConfig,
+    serverState: selectors.getServerState,
 });
 
 const mapDispatchToProps = {

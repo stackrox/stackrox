@@ -49,6 +49,8 @@ class LoginPage extends Component {
             username: PropTypes.string,
             password: PropTypes.string,
         }).isRequired,
+        serverState: PropTypes.oneOf(['UP', 'UNREACHABLE', 'RESURRECTED', undefined, null])
+            .isRequired,
         ...reduxFormPropTypes,
     };
 
@@ -209,15 +211,16 @@ class LoginPage extends Component {
     };
 
     render() {
+        const { serverState } = this.props;
         return (
             <AppWrapper>
+                <UnreachableWarning serverState={serverState} />
                 <main className="flex h-full items-center justify-center">
                     <div className="flex items-start">
                         <form
                             className="pf-u-background-color-100 w-128 theme-light"
                             onSubmit={this.props.handleSubmit(this.login)}
                         >
-                            <UnreachableWarning />
                             <div className="flex flex-col p-12 w-full">
                                 {this.renderFields()}
                                 <LoginNotice />
@@ -246,6 +249,7 @@ const mapStateToProps = createStructuredSelector({
     authStatus: selectors.getAuthStatus,
     authProviderResponse: selectors.getAuthProviderError,
     formValues: (state) => selector(state, 'authProvider', 'username', 'password'),
+    serverState: selectors.getServerState,
 });
 
 const Form = reduxForm({

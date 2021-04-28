@@ -19,7 +19,7 @@ function VersionOutOfDate(): ReactElement {
     );
 
     return (
-        <Banner isSticky variant="warning">
+        <Banner className="pf-u-text-align-center" isSticky variant="warning">
             {message}
         </Banner>
     );
