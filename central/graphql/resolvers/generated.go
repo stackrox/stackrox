@@ -1149,7 +1149,32 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 		"secrets: [String!]!",
 	}))
+	utils.Must(builder.AddType("SetBasedLabelSelector", []string{
+		"requirements: [SetBasedLabelSelector_Requirement]!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SetBasedLabelSelector_Operator(0)))
+	utils.Must(builder.AddType("SetBasedLabelSelector_Requirement", []string{
+		"key: String!",
+		"op: SetBasedLabelSelector_Operator!",
+		"values: [String!]!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
+	utils.Must(builder.AddType("SimpleAccessScope", []string{
+		"description: String!",
+		"id: ID!",
+		"name: String!",
+		"rules: SimpleAccessScope_Rules",
+	}))
+	utils.Must(builder.AddType("SimpleAccessScope_Rules", []string{
+		"clusterLabelSelectors: [SetBasedLabelSelector]!",
+		"includedClusters: [String!]!",
+		"includedNamespaces: [SimpleAccessScope_Rules_Namespace]!",
+		"namespaceLabelSelectors: [SetBasedLabelSelector]!",
+	}))
+	utils.Must(builder.AddType("SimpleAccessScope_Rules_Namespace", []string{
+		"clusterName: String!",
+		"namespaceName: String!",
+	}))
 	utils.Must(builder.AddInput("SortOption", []string{
 		"field: String",
 		"reversed: Boolean",
@@ -9808,6 +9833,92 @@ func (resolver *serviceAccountResolver) Secrets(ctx context.Context) []string {
 	return value
 }
 
+type setBasedLabelSelectorResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SetBasedLabelSelector
+}
+
+func (resolver *Resolver) wrapSetBasedLabelSelector(value *storage.SetBasedLabelSelector, ok bool, err error) (*setBasedLabelSelectorResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &setBasedLabelSelectorResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSetBasedLabelSelectors(values []*storage.SetBasedLabelSelector, err error) ([]*setBasedLabelSelectorResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*setBasedLabelSelectorResolver, len(values))
+	for i, v := range values {
+		output[i] = &setBasedLabelSelectorResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *setBasedLabelSelectorResolver) Requirements(ctx context.Context) ([]*setBasedLabelSelector_RequirementResolver, error) {
+	value := resolver.data.GetRequirements()
+	return resolver.root.wrapSetBasedLabelSelector_Requirements(value, nil)
+}
+
+func toSetBasedLabelSelector_Operator(value *string) storage.SetBasedLabelSelector_Operator {
+	if value != nil {
+		return storage.SetBasedLabelSelector_Operator(storage.SetBasedLabelSelector_Operator_value[*value])
+	}
+	return storage.SetBasedLabelSelector_Operator(0)
+}
+
+func toSetBasedLabelSelector_Operators(values *[]string) []storage.SetBasedLabelSelector_Operator {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SetBasedLabelSelector_Operator, len(*values))
+	for i, v := range *values {
+		output[i] = toSetBasedLabelSelector_Operator(&v)
+	}
+	return output
+}
+
+type setBasedLabelSelector_RequirementResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SetBasedLabelSelector_Requirement
+}
+
+func (resolver *Resolver) wrapSetBasedLabelSelector_Requirement(value *storage.SetBasedLabelSelector_Requirement, ok bool, err error) (*setBasedLabelSelector_RequirementResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &setBasedLabelSelector_RequirementResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSetBasedLabelSelector_Requirements(values []*storage.SetBasedLabelSelector_Requirement, err error) ([]*setBasedLabelSelector_RequirementResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*setBasedLabelSelector_RequirementResolver, len(values))
+	for i, v := range values {
+		output[i] = &setBasedLabelSelector_RequirementResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *setBasedLabelSelector_RequirementResolver) Key(ctx context.Context) string {
+	value := resolver.data.GetKey()
+	return value
+}
+
+func (resolver *setBasedLabelSelector_RequirementResolver) Op(ctx context.Context) string {
+	value := resolver.data.GetOp()
+	return value.String()
+}
+
+func (resolver *setBasedLabelSelector_RequirementResolver) Values(ctx context.Context) []string {
+	value := resolver.data.GetValues()
+	return value
+}
+
 func toSeverity(value *string) storage.Severity {
 	if value != nil {
 		return storage.Severity(storage.Severity_value[*value])
@@ -9824,6 +9935,128 @@ func toSeverities(values *[]string) []storage.Severity {
 		output[i] = toSeverity(&v)
 	}
 	return output
+}
+
+type simpleAccessScopeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SimpleAccessScope
+}
+
+func (resolver *Resolver) wrapSimpleAccessScope(value *storage.SimpleAccessScope, ok bool, err error) (*simpleAccessScopeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &simpleAccessScopeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSimpleAccessScopes(values []*storage.SimpleAccessScope, err error) ([]*simpleAccessScopeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*simpleAccessScopeResolver, len(values))
+	for i, v := range values {
+		output[i] = &simpleAccessScopeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *simpleAccessScopeResolver) Description(ctx context.Context) string {
+	value := resolver.data.GetDescription()
+	return value
+}
+
+func (resolver *simpleAccessScopeResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *simpleAccessScopeResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *simpleAccessScopeResolver) Rules(ctx context.Context) (*simpleAccessScope_RulesResolver, error) {
+	value := resolver.data.GetRules()
+	return resolver.root.wrapSimpleAccessScope_Rules(value, true, nil)
+}
+
+type simpleAccessScope_RulesResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SimpleAccessScope_Rules
+}
+
+func (resolver *Resolver) wrapSimpleAccessScope_Rules(value *storage.SimpleAccessScope_Rules, ok bool, err error) (*simpleAccessScope_RulesResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &simpleAccessScope_RulesResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSimpleAccessScope_Ruleses(values []*storage.SimpleAccessScope_Rules, err error) ([]*simpleAccessScope_RulesResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*simpleAccessScope_RulesResolver, len(values))
+	for i, v := range values {
+		output[i] = &simpleAccessScope_RulesResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *simpleAccessScope_RulesResolver) ClusterLabelSelectors(ctx context.Context) ([]*setBasedLabelSelectorResolver, error) {
+	value := resolver.data.GetClusterLabelSelectors()
+	return resolver.root.wrapSetBasedLabelSelectors(value, nil)
+}
+
+func (resolver *simpleAccessScope_RulesResolver) IncludedClusters(ctx context.Context) []string {
+	value := resolver.data.GetIncludedClusters()
+	return value
+}
+
+func (resolver *simpleAccessScope_RulesResolver) IncludedNamespaces(ctx context.Context) ([]*simpleAccessScope_Rules_NamespaceResolver, error) {
+	value := resolver.data.GetIncludedNamespaces()
+	return resolver.root.wrapSimpleAccessScope_Rules_Namespaces(value, nil)
+}
+
+func (resolver *simpleAccessScope_RulesResolver) NamespaceLabelSelectors(ctx context.Context) ([]*setBasedLabelSelectorResolver, error) {
+	value := resolver.data.GetNamespaceLabelSelectors()
+	return resolver.root.wrapSetBasedLabelSelectors(value, nil)
+}
+
+type simpleAccessScope_Rules_NamespaceResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SimpleAccessScope_Rules_Namespace
+}
+
+func (resolver *Resolver) wrapSimpleAccessScope_Rules_Namespace(value *storage.SimpleAccessScope_Rules_Namespace, ok bool, err error) (*simpleAccessScope_Rules_NamespaceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &simpleAccessScope_Rules_NamespaceResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSimpleAccessScope_Rules_Namespaces(values []*storage.SimpleAccessScope_Rules_Namespace, err error) ([]*simpleAccessScope_Rules_NamespaceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*simpleAccessScope_Rules_NamespaceResolver, len(values))
+	for i, v := range values {
+		output[i] = &simpleAccessScope_Rules_NamespaceResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *simpleAccessScope_Rules_NamespaceResolver) NamespaceName(ctx context.Context) string {
+	value := resolver.data.GetNamespaceName()
+	return value
 }
 
 func toSourceType(value *string) storage.SourceType {

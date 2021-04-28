@@ -43,6 +43,7 @@ var (
 			reflect.TypeOf((*storage.Role)(nil)),
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 			reflect.TypeOf((*storage.Secret)(nil)),
+			reflect.TypeOf((*storage.SimpleAccessScope)(nil)),
 			reflect.TypeOf((*storage.ListSecret)(nil)),
 			reflect.TypeOf((*storage.TokenMetadata)(nil)),
 			reflect.TypeOf((*v1.GenerateTokenResponse)(nil)),
