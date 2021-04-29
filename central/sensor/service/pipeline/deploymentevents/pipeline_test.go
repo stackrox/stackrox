@@ -67,7 +67,6 @@ func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
 	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
-	suite.manager.EXPECT().DeploymentRemoved(deployment).Return(nil)
 
 	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -116,10 +115,10 @@ func (suite *PipelineTestSuite) TestAlertRemovalOnReconciliation() {
 
 	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
-	suite.manager.EXPECT().DeploymentRemoved(deployment)
+	suite.manager.EXPECT().DeploymentRemoved(deployment.GetId())
 	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(deployment.GetId()).Return(nil)
 
-	suite.NoError(suite.pipeline.runRemovePipeline(context.Background(), deployment))
+	suite.NoError(suite.pipeline.runRemovePipeline(context.Background(), deployment.GetId(), deployment.GetClusterId(), true))
 }
 
 func (suite *PipelineTestSuite) TestValidateImages() {

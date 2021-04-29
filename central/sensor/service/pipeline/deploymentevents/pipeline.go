@@ -84,7 +84,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Deployment)(nil))
 	return reconciliation.Perform(store, search.ResultsToIDSet(results), "deployments", func(id string) error {
-		return s.runRemovePipeline(ctx, &storage.Deployment{Id: id})
+		return s.runRemovePipeline(ctx, id, clusterID, true)
 	})
 }
 
@@ -103,7 +103,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	var err error
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		err = s.runRemovePipeline(ctx, deployment)
+		err = s.runRemovePipeline(ctx, deployment.GetId(), clusterID, false)
 	default:
 		err = s.runGeneralPipeline(ctx, deployment)
 	}
@@ -111,29 +111,31 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storage.Deployment) error {
-	// Validate the the deployment we receive has necessary fields set.
-	if err := s.validateInput.do(deployment); err != nil {
-		return err
-	}
-
-	if err := s.lifecycleManager.DeploymentRemoved(deployment); err != nil {
-		return err
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deploymentID, clusterID string, isReconciliation bool) error {
+	// If we're in reconciliation, manage the alert lifecycle.
+	// Otherwise, this will get handled in the alerts pipeline since sensor sends the deployment
+	// remove event over there.
+	// Doing it here can cause a race while handling it in the alert pipeline ensures it will be done sequentially.
+	// For reconciliation, though, we're not going to receive that message from sensor, so we do it here.
+	if isReconciliation {
+		if err := s.lifecycleManager.DeploymentRemoved(deploymentID); err != nil {
+			return err
+		}
 	}
 
 	// Before removing the deployment, clean up all the network baselines that had an edge to this deployment
 	// Otherwise if deployment delete succeeded but baseline clean up failed, we may never have chance to
 	// clean up these baselines
-	if err := s.networkBaselines.ProcessDeploymentDelete(deployment.GetId()); err != nil {
+	if err := s.networkBaselines.ProcessDeploymentDelete(deploymentID); err != nil {
 		return err
 	}
 
 	// Remove the deployment from persistence.
-	if err := s.deployments.RemoveDeployment(ctx, deployment.GetClusterId(), deployment.GetId()); err != nil {
+	if err := s.deployments.RemoveDeployment(ctx, clusterID, deploymentID); err != nil {
 		return err
 	}
 
-	s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
+	s.graphEvaluator.IncrementEpoch(clusterID)
 	return nil
 }
 

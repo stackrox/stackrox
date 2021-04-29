@@ -61,6 +61,17 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	alertResults := msg.GetEvent().GetAlertResults()
+	if msg.GetEvent().GetAction() == central.ResourceAction_REMOVE_RESOURCE {
+		if len(alertResults.GetAlerts()) > 0 {
+			return errors.Errorf("unexpected: Got non-zero alerts for a deployment remove: %+v", msg.GetEvent())
+		}
+		if err := s.lifecycleManager.DeploymentRemoved(alertResults.GetDeploymentId()); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	for _, a := range alertResults.GetAlerts() {
 		if deployment := a.GetDeployment(); deployment != nil {
 			deployment.ClusterId = clusterID

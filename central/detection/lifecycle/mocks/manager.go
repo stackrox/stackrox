@@ -76,17 +76,17 @@ func (mr *MockManagerMockRecorder) HandleAlerts(deploymentID, alerts, stage inte
 }
 
 // DeploymentRemoved mocks base method
-func (m *MockManager) DeploymentRemoved(deployment *storage.Deployment) error {
+func (m *MockManager) DeploymentRemoved(deploymentID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeploymentRemoved", deployment)
+	ret := m.ctrl.Call(m, "DeploymentRemoved", deploymentID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeploymentRemoved indicates an expected call of DeploymentRemoved
-func (mr *MockManagerMockRecorder) DeploymentRemoved(deployment interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) DeploymentRemoved(deploymentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentRemoved", reflect.TypeOf((*MockManager)(nil).DeploymentRemoved), deployment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentRemoved", reflect.TypeOf((*MockManager)(nil).DeploymentRemoved), deploymentID)
 }
 
 // RemovePolicy mocks base method
