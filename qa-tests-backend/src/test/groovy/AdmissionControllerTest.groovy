@@ -368,7 +368,9 @@ class AdmissionControllerTest extends BaseSpecification {
         "Check if test is applicable"
         and:
         "Stop the regular chaos monkey"
-        chaosMonkey.stop()
+        if (chaosMonkey) {
+            chaosMonkey.stop()
+        }
         chaosMonkey = null
 
         and:
