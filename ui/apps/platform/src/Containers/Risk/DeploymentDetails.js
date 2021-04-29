@@ -68,12 +68,15 @@ const DeploymentDetails = ({ deployment }) => {
             <div className="px-3 pt-5">
                 <CollapsibleCard title="Overview">
                     <div className="h-full px-3 word-break">
-                        <KeyValuePairs data={deployment} keyValueMap={deploymentDetailsMap} />
+                        <KeyValuePairs
+                            data={relatedDeployment || deployment}
+                            keyValueMap={deploymentDetailsMap}
+                        />
                     </div>
                 </CollapsibleCard>
             </div>
             <ContainerConfigurations deployment={relatedDeployment || deployment} />
-            <SecurityContext deployment={deployment} />
+            <SecurityContext deployment={relatedDeployment || deployment} />
         </div>
     );
 };
