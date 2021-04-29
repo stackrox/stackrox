@@ -59,7 +59,7 @@ function entityContextToQueryObject(entityContext) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
         } else if (key === entityTypes.COMPONENT) {
             const parsedComponentID = entityContext[key].split(':').map(decodeBase64);
-            [entityQueryObj[`${key} NAME`], entityQueryObj[`${key} VERSION`]] = parsedComponentID;
+            [entityQueryObj[`${key}`], entityQueryObj[`${key} VERSION`]] = parsedComponentID;
         } else if (key === entityTypes.CVE) {
             entityQueryObj[key] = entityContext[key];
         } else {

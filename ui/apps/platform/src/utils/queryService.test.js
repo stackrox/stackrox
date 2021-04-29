@@ -31,7 +31,7 @@ describe('queryService.', () => {
             const queryObject = queryService.entityContextToQueryObject(entityContext);
 
             expect(queryObject).toEqual({
-                'COMPONENT NAME': 'python3.4',
+                COMPONENT: 'python3.4',
                 'COMPONENT VERSION': '3.4.3-1ubuntu1~14.04.7',
             });
         });
