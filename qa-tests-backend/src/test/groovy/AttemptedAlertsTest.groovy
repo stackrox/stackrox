@@ -99,8 +99,7 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Category([BAT, RUNTIME])
     def "Verify attempted alerts on deployment create: #desc"() {
         Assume.assumeTrue("ROX-6916: Only run in reliable environments until fixed",
-                !Env.CI_JOBNAME || !Env.CI_JOBNAME.contains("openshift-rhel"))
-
+                !Env.CI_JOBNAME.contains("openshift-rhel"))
         when:
         "Set 'Latest Tag' policy enforcement to #policyEnforcements"
         Services.updatePolicyEnforcement(LATEST_TAG_POLICY_NAME, policyEnforcements, true)
@@ -135,16 +134,16 @@ class AttemptedAlertsTest extends BaseSpecification {
             // Expected number of alerts for deployment name relies on the order of data inputs.
             assert listAlerts && listAlerts.size() == numAlerts
             assert listAlerts.get(0).getPolicy().getName() == LATEST_TAG_POLICY_NAME
-        }
 
-        // Alerts are sorted in descending order of their violation time, therefore, the following check is
-        // applied to most recent violations.
-        if (createShouldSucceed) {
-            assert listAlerts.get(0).getState() == ViolationState.ACTIVE
-        } else {
-            assert listAlerts.get(0).getState() == ViolationState.ATTEMPTED
-            // Verify admission controller enforcement action is applied.
-            assert listAlerts.get(0).getEnforcementAction() == EnforcementAction.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT
+            // Alerts are sorted in descending order of their violation time, therefore, the following check is
+            // applied to most recent violations.
+            if (createShouldSucceed) {
+                assert listAlerts.get(0).getState() == ViolationState.ACTIVE
+            } else {
+                assert listAlerts.get(0).getState() == ViolationState.ATTEMPTED
+                // Verify admission controller enforcement action is applied.
+                assert listAlerts.get(0).getEnforcementAction() == EnforcementAction.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT
+            }
         }
 
         // Verify that the alerts are not merged.
@@ -163,7 +162,7 @@ class AttemptedAlertsTest extends BaseSpecification {
                 "create enforce; policy enforce; 2nd attempt"
         // 1 active and 2 attempted alerts are expected.
         false   | DEP_NAMES[1]   | DEPLOY_TIME_ENFORCEMENTS | true                | 3         |
-                "no create enforce; policy enforce"
+                "no create enforce; policy enforce; 2nd attempt"
         false   | DEP_NAMES[2]   | NO_ENFORCEMENTS          | true                | 1         |
                 "no enforcement"
         true    | DEP_NAMES[3]   | NO_ENFORCEMENTS          | true                | 1         |
@@ -175,8 +174,7 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Category([BAT, RUNTIME])
     def "Verify attempted alerts on deployment updates: #desc"() {
         Assume.assumeTrue("ROX-6916: Only run in reliable environments until fixed",
-                !Env.CI_JOBNAME || !Env.CI_JOBNAME.contains("openshift-rhel"))
-
+                !Env.CI_JOBNAME.contains("openshift-rhel"))
         given:
         "Create deployment not violating 'Latest Tag' policy"
         assert orchestrator.createDeploymentNoWait(DEPLOYMENTS.get(DEP_NAMES[4]))
@@ -218,16 +216,16 @@ class AttemptedAlertsTest extends BaseSpecification {
             // Expected number of alerts for deployment relies on the order of data inputs.
             assert listAlerts && listAlerts.size() == numAlerts
             assert listAlerts.get(0).getPolicy().getName() == LATEST_TAG_POLICY_NAME
-        }
 
-        // Alerts are sorted in descending order of their violation time, therefore, the following check is
-        // applied to most recent violations.
-        if (updateShouldSucceed) {
-            assert listAlerts.get(0).getState() == ViolationState.ACTIVE
-        } else {
-            assert listAlerts.get(0).getState() == ViolationState.ATTEMPTED
-            // Verify admission controller enforcement action is applied.
-            assert listAlerts.get(0).getEnforcementAction() == EnforcementAction.FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
+            // Alerts are sorted in descending order of their violation time, therefore, the following check is
+            // applied to most recent violations.
+            if (updateShouldSucceed) {
+                assert listAlerts.get(0).getState() == ViolationState.ACTIVE
+            } else {
+                assert listAlerts.get(0).getState() == ViolationState.ATTEMPTED
+                // Verify admission controller enforcement action is applied.
+                assert listAlerts.get(0).getEnforcementAction() == EnforcementAction.FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
+            }
         }
 
         // Verify that the alerts are not merged.
@@ -256,9 +254,6 @@ class AttemptedAlertsTest extends BaseSpecification {
         "Admission Controller exec/pf is enabled"
         // K8s event detection is currently not supported on OpenShift.
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
-        Assume.assumeTrue("ROX-6915: Only run in reliable environments until fixed",
-                (orchestrator.isGKE() && (!Env.CI_JOBNAME || !Env.CI_JOBNAME.contains("gke-rhel"))) ||
-                        ClusterService.isEKS())
 
         assert ClusterService.getCluster().getAdmissionControllerEvents()
 
@@ -292,14 +287,14 @@ class AttemptedAlertsTest extends BaseSpecification {
             listAlerts = Services.getViolationsWithTimeout(dep.name, KUBECTL_EXEC_POLICY_NAME, 60)
             assert listAlerts && listAlerts.size() == numAlerts
             assert listAlerts.get(0).getPolicy().getName() == KUBECTL_EXEC_POLICY_NAME
-        }
 
-        // Alerts are sorted in descending order of their violation time, therefore, the following check is
-        // applied to most recent violations.
-        if (!execShouldSucceed) {
-            assert listAlerts.get(0).getState() == ViolationState.ATTEMPTED
-            // Verify admission controller enforcement action is applied.
-            assert listAlerts.get(0).getEnforcementAction() == EnforcementAction.FAIL_KUBE_REQUEST_ENFORCEMENT
+            // Alerts are sorted in descending order of their violation time, therefore, the following check is
+            // applied to most recent violations.
+            if (!execShouldSucceed) {
+                assert listAlerts.get(0).getState() == ViolationState.ATTEMPTED
+                // Verify admission controller enforcement action is applied.
+                assert listAlerts.get(0).getEnforcementAction() == EnforcementAction.FAIL_KUBE_REQUEST_ENFORCEMENT
+            }
         }
 
         // Verify that the alerts are not merged.
