@@ -45,9 +45,10 @@ bundle() {
 
 store_roxctl() {
   output_path=$1
-  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/darwin"  "${DIR}/${output_path}/bin/darwin"
-  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/linux"   "${DIR}/${output_path}/bin/linux"
-  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/windows" "${DIR}/${output_path}/bin/windows"
+  mkdir -p "${DIR}/${output_path}/bin"
+  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/darwin"  "${DIR}/${output_path}/bin"
+  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/linux"   "${DIR}/${output_path}/bin"
+  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/windows" "${DIR}/${output_path}/bin"
   chmod +x "${DIR}/${output_path}/bin/darwin/roxctl" "${DIR}/${output_path}/bin/linux/roxctl"
 }
 
