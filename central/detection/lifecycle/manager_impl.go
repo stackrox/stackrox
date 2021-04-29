@@ -318,8 +318,8 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	return nil
 }
 
-func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
-	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentID(deployment.GetId(), true))
+func (m *managerImpl) DeploymentRemoved(deploymentID string) error {
+	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentID(deploymentID, true))
 	return err
 }
 

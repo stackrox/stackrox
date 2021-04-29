@@ -33,7 +33,7 @@ type Manager interface {
 	IndicatorAdded(indicator *storage.ProcessIndicator) error
 	UpsertPolicy(policy *storage.Policy) error
 	HandleAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
-	DeploymentRemoved(deployment *storage.Deployment) error
+	DeploymentRemoved(deploymentID string) error
 	RemovePolicy(policyID string) error
 }
 
