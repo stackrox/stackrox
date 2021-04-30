@@ -20,11 +20,7 @@ function LeftNavItem({ label, to, location }: LeftNavItemProps): ReactElement {
     );
 }
 
-export type NavigationSideBarProps = {
-    isNavOpen: boolean;
-};
-
-function NavigationSideBar({ isNavOpen }: NavigationSideBarProps): ReactElement {
+function NavigationSideBar(): ReactElement {
     const location: Location = useLocation();
 
     const Navigation = (
@@ -57,7 +53,7 @@ function NavigationSideBar({ isNavOpen }: NavigationSideBarProps): ReactElement 
         </Nav>
     );
 
-    return <PageSidebar nav={Navigation} isNavOpen={isNavOpen} />;
+    return <PageSidebar nav={Navigation} />;
 }
 
 export default NavigationSideBar;

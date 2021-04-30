@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { History } from 'history';
@@ -47,12 +47,7 @@ function MainPage({
     publicConfig,
     serverState,
 }: MainPageProps): ReactElement {
-    const [isNavOpen, setNavOpen] = useState(true);
-    function onNavToggle() {
-        setNavOpen(!isNavOpen);
-    }
-
-    const Header = <Masthead isNavOpen={isNavOpen} onNavToggle={onNavToggle} />;
+    const Header = <Masthead />;
 
     return (
         <AppWrapper publicConfig={publicConfig}>
@@ -64,7 +59,8 @@ function MainPage({
                 <Page
                     mainContainerId="main-page-container"
                     header={Header}
-                    sidebar={<NavigationSideBar isNavOpen={isNavOpen} />}
+                    isManagedSidebar
+                    sidebar={<NavigationSideBar />}
                 >
                     <Body />
                 </Page>
