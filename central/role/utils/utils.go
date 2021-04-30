@@ -35,7 +35,7 @@ func FillAccessList(role *storage.Role) {
 // ValidateSimpleAccessScope checks whether the supplied protobuf message is a
 // valid simple access scope.
 func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
-	var multiErr *multierror.Error
+	var multiErr error
 
 	if !strings.HasPrefix(scope.GetId(), AccessScopeIDPrefix) {
 		multiErr = multierror.Append(multiErr, errors.Errorf("id field must be in '%s*' format", AccessScopeIDPrefix))
