@@ -36,6 +36,7 @@ package="${2:-}"
 if [[ -n "$interfaces" ]] && [[ -n "$package" ]]; then
   # Generate mocks for the specified interfaces in the specified package.
   out_file="mocks/${package}/mocks/mocks.go"
+  out_file="${out_file#$(basename "$PWD")/}"  # Skip mocks/ prefix if current dir is called mocks/
   out_directory="$(dirname "${out_file}")"
   mkdir -p "${out_directory}"
 
