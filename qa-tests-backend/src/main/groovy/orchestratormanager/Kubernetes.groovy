@@ -464,6 +464,11 @@ class Kubernetes implements OrchestratorMain {
     }
 
     EnvVar getDeploymentEnv(String ns, String name, String key) {
+        def deployment = client.apps().deployments().inNamespace(ns).withName(name).get()
+        if (deployment == null) {
+            throw new OrchestratorManagerException("Did not find deployment ${ns}/${name}")
+        }
+
         List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
                 .spec.containers.get(0).env
         int index = envVars.findIndexOf { it.name == key }

@@ -31,7 +31,14 @@ are inferred from the `central-deploy` directory.
 - Select Gradle, add a new configuration
   - Script path : `github.com/stackrox/rox/qa-tests-backend/src/test/groovy/<Groovy class name>.groovy`
   - Working Directory : `github.com/stackrox/rox/qa-tests-backend`
-  - Environment Variables : `CLUSTER`, `API_HOSTNAME`, `PORT`,`ROX_USERNAME`, `ROX_PASSWORD` and another other relevant integration credential environment variables.
+  - Environment Variables:
+    - `CLUSTER`: Either `OPENSHIFT` or `K8S`
+    - `API_HOSTNAME`: hostname central is running; default `localhost`
+    - `PORT`: central port; default `8000`
+    - `ROX_USERNAME`: default `admin`
+    - `ROX_PASSWORD`: default read from deploy dir based on specified `CLUSTER`
+    - `KUBECONFIG`: kubeconfig file to use
+
   - module : `qa-test-backend.test`
 - Save the configuration and run the test.
 
