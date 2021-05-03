@@ -63,6 +63,7 @@ export const resourceLabels = Object.freeze({
     IMAGE: 'image',
     POLICY: 'policy',
     CHECK: 'check',
+    ROLE: 'role',
 });
 
 export const rbacConfigLabels: Record<RbacConfigType, string> = Object.freeze({

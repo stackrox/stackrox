@@ -27,6 +27,7 @@ const useCaseTypes = {
     VIOLATIONS: 'violations',
     POLICIES: 'policies',
     NETWORK: 'network',
+    USER: 'user',
 };
 
 // TODO: long-term, need to standardize all sections to fully use Workflow State

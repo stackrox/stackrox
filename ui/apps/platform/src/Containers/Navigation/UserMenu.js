@@ -37,32 +37,35 @@ function UserItem({ email, name, roleNames }) {
     const thClassName = 'pf-u-font-weight-normal pf-u-pr-md pf-u-text-align-left pf-u-text-nowrap';
 
     return (
-        <table>
-            <tbody>
-                <tr key="name">
-                    <th scope="row" className={thClassName}>
-                        User name
-                    </th>
-                    <td data-testid="menu-user-name">{name}</td>
-                </tr>
-                {email && (
-                    <tr key="email">
+        <div>
+            <div>User Profile</div>
+            <table>
+                <tbody>
+                    <tr key="name">
                         <th scope="row" className={thClassName}>
-                            User email
+                            User name
                         </th>
-                        <td data-testid="menu-user-email">{email}</td>
+                        <td data-testid="menu-user-name">{name}</td>
                     </tr>
-                )}
-                <tr key="roles">
-                    <th scope="row" className={thClassName}>
-                        User roles
-                    </th>
-                    <td data-testid="menu-user-roles">
-                        <RoleChips roleNames={roleNames} />
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                    {email && (
+                        <tr key="email">
+                            <th scope="row" className={thClassName}>
+                                User email
+                            </th>
+                            <td data-testid="menu-user-email">{email}</td>
+                        </tr>
+                    )}
+                    <tr key="roles">
+                        <th scope="row" className={thClassName}>
+                            User roles
+                        </th>
+                        <td data-testid="menu-user-roles">
+                            <RoleChips roleNames={roleNames} />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     );
 }
 

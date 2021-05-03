@@ -15,6 +15,7 @@ import {
     violationsPath,
     policiesPath,
     networkPath,
+    userRolePath,
 } from '../routePaths';
 
 function getTypeKeyFromParamValue(value: string, listOnly = false): string | null {
@@ -166,6 +167,19 @@ function parseURL(location: Location<LocationState>): WorkflowState {
             params: {
                 ...matchedPoliciesParams,
                 context: useCases.POLICIES,
+            },
+        };
+    }
+
+    const matchedUserRoleParams = matchPath(pathname, {
+        path: userRolePath,
+        exact: true,
+    });
+    if (matchedUserRoleParams) {
+        legacyParams = {
+            params: {
+                ...matchedUserRoleParams,
+                context: useCases.USER,
             },
         };
     }

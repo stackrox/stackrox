@@ -4,12 +4,12 @@ const rolesUrl = '/v1/roles';
 const permissionsURL = '/v1/mypermissions';
 const resourcesURL = '/v1/resources';
 
-export type Access = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
+export type AccessType = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
 
 export type Role = {
     name: string;
-    globalAccess: Access;
-    resourceToAccess: Record<string, Access>;
+    globalAccess: AccessType;
+    resourceToAccess: Record<string, AccessType>;
 };
 
 export function fetchResources(): Promise<{ response: { resources: string[] } }> {

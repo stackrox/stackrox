@@ -1,5 +1,7 @@
 import { ReactNode } from 'react';
 
+import { AccessType } from 'services/RolesService';
+
 // Type definitions, mock data, and helper functions that might be temporary.
 
 export type Column = {
@@ -26,11 +28,9 @@ export type AuthProvider = {
     // assignedRules: string[];
 };
 
-export type Access = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
-
 export type Permission = {
     resource: string;
-    access: Access;
+    access: AccessType;
 };
 
 export type PermissionSet = {

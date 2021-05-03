@@ -12,9 +12,10 @@
     "dependencies": {
         "@apollo/client": "^3.3.11",
         "@lifeomic/axios-fetch": "^1.5.1",
-        "@patternfly/react-core": "^4.101.3",
+        "@patternfly/react-core": "^4.106.2",
         "@patternfly/react-icons": "^4.9.9",
-        "@patternfly/react-styles": "^4.8.5",
+        "@patternfly/react-styles": "^4.9.4",
+        "@patternfly/react-table": "^4.24.1",
         "@stackrox/ui-components": "*",
         "axios": "^0.21.1",
         "computed-style-to-inline-style": "^3.0.0",

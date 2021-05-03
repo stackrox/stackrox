@@ -1,74 +1,139 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { NavLink, Route, Switch } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector, createSelector } from 'reselect';
-import { ArrowRightCircle } from 'react-feather';
+import {
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    EmptyState,
+    EmptyStateBody,
+    Flex,
+    FlexItem,
+    Nav,
+    NavExpandable,
+    NavItem,
+    NavList,
+    PageSection,
+    Title,
+} from '@patternfly/react-core';
 
+import DescriptionListCompact from 'Components/DescriptionListCompact';
 import { selectors } from 'reducers';
-import PageHeader from 'Components/PageHeader';
+import { userPath, userRolePath } from 'routePaths';
 import User from 'utils/User';
-import SideBar from 'Containers/AccessControl/SideBar';
-import Permissions from 'Containers/AccessControl/Roles/Permissions/Permissions';
 
-const UserPage = ({ userData, resourceToAccessByRole }) => {
-    const user = new User(userData);
+import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
+import UserPermissionsTable from './UserPermissionsTable';
+
+const spacerPageSection = 'var(--pf-global--spacer--md)';
+
+const stylePageSection = {
+    '--pf-c-page__main-section--PaddingTop': spacerPageSection,
+    '--pf-c-page__main-section--PaddingRight': spacerPageSection,
+    '--pf-c-page__main-section--PaddingBottom': spacerPageSection,
+    '--pf-c-page__main-section--PaddingLeft': spacerPageSection,
+};
+
+const getUserRolePath = (roleName) => `${userPath}/roles/${roleName}`;
+
+function UserPage({ resourceToAccessByRole, userData }) {
+    const { email, name, roles, usedAuthProvider } = new User(userData);
     const authProviderName =
-        user.usedAuthProvider?.type === 'basic' ? 'Basic' : user.usedAuthProvider?.name;
-    const aggregatedPermissionsPage = {
-        username: user.username || 'Unknown',
-        authProviderName,
-        resourceToAccess: resourceToAccessByRole,
-    };
-    const [selectedPage, setSelectedPage] = useState(aggregatedPermissionsPage);
-    function onAggregatedPermissionsClick() {
-        setSelectedPage(aggregatedPermissionsPage);
-    }
+        usedAuthProvider?.type === 'basic' ? 'Basic' : usedAuthProvider?.name ?? '';
 
     return (
-        <section className="flex flex-1 h-full w-full">
-            <div className="flex flex-1 flex-col w-full">
-                <PageHeader
-                    header={user.name || user.username}
-                    subHeader={user.email}
-                    capitalize={false}
-                />
-                <div className="flex bg-base-200">
-                    <div className="m-4 shadow-sm w-1/4">
-                        <button
-                            type="button"
-                            onClick={onAggregatedPermissionsClick}
-                            className={`flex w-full h-14 border pl-4 pr-3 justify-between mb-4 text-base-600 items-center tracking-wide leading-normal font-700 uppercase ${
-                                selectedPage.resourceToAccess ===
-                                aggregatedPermissionsPage.resourceToAccess
-                                    ? 'border-tertiary-400 bg-tertiary-200'
-                                    : 'hover:bg-base-200 bg-base-100 border-base-400'
-                            }`}
-                        >
-                            StackRox User Permissions
-                            <ArrowRightCircle className="w-5" />
-                        </button>
-                        <div className="bg-base-100 border border-base-400">
-                            <SideBar
-                                header="StackRox User Roles"
-                                rows={user.roles}
-                                selected={selectedPage}
-                                onSelectRow={setSelectedPage}
-                                type="role"
-                            />
+        <>
+            <PageSection variant="light" style={stylePageSection}>
+                <Title headingLevel="h1">User Profile</Title>
+            </PageSection>
+            <PageSection variant="light" style={stylePageSection}>
+                <DescriptionListCompact isHorizontal>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>User name</DescriptionListTerm>
+                        <DescriptionListDescription>{name}</DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>User email</DescriptionListTerm>
+                        <DescriptionListDescription>{email}</DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm className="whitespace-nowrap">
+                            Auth provider
+                        </DescriptionListTerm>
+                        <DescriptionListDescription>{authProviderName}</DescriptionListDescription>
+                    </DescriptionListGroup>
+                </DescriptionListCompact>
+            </PageSection>
+            <PageSection variant="light" style={stylePageSection} isFilled>
+                <Flex>
+                    <FlexItem>
+                        <div className="pf-u-background-color-200">
+                            <Nav theme="light">
+                                <NavList>
+                                    <NavItem>
+                                        <NavLink exact to={userPath} activeClassName="pf-m-current">
+                                            User permissions for roles
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavExpandable title="User roles" isExpanded>
+                                        {roles.map((role) => (
+                                            <NavItem key={role.name} activeClassName="pf-m-current">
+                                                <NavLink
+                                                    exact
+                                                    to={getUserRolePath(role.name)}
+                                                    activeClassName="pf-m-current"
+                                                >
+                                                    {role.name}
+                                                </NavLink>
+                                            </NavItem>
+                                        ))}
+                                    </NavExpandable>
+                                </NavList>
+                            </Nav>
                         </div>
-                    </div>
-                    <div className="border border-base-400 md:w-3/4 w-full my-4 mr-4">
-                        <Permissions
-                            resources={selectedPage.resourceToAccess}
-                            selectedRole={selectedPage}
-                            readOnly
-                        />
-                    </div>
-                </div>
-            </div>
-        </section>
+                    </FlexItem>
+                    <FlexItem>
+                        <Switch>
+                            <Route
+                                path={userRolePath}
+                                // eslint-disable-next-line react/jsx-no-bind
+                                render={({
+                                    match: {
+                                        params: { roleName },
+                                    },
+                                }) => {
+                                    const role = roles.find((_role) => _role.name === roleName);
+
+                                    if (role) {
+                                        return (
+                                            <UserPermissionsTable
+                                                permissions={role?.resourceToAccess ?? {}}
+                                            />
+                                        );
+                                    }
+
+                                    return (
+                                        <EmptyState>
+                                            <Title headingLevel="h4">Role not found for user</Title>
+                                            <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
+                                        </EmptyState>
+                                    );
+                                }}
+                            />
+                            <Route path={userPath}>
+                                <UserPermissionsForRolesTable
+                                    resourceToAccessByRole={resourceToAccessByRole}
+                                />
+                            </Route>
+                        </Switch>
+                    </FlexItem>
+                </Flex>
+            </PageSection>
+        </>
     );
-};
+}
 
 UserPage.propTypes = {
     userData: PropTypes.shape({

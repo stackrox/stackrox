@@ -87,15 +87,14 @@ describe('General sanity checks', () => {
             cy.title().should('eq', `API Reference | ${baseTitleText}`);
         });
 
-        // TODO: Fix for ROX-6826
-        xit('for User Page', () => {
-            const summaryCounts = api.graphql(api.general.graphqlOps.summaryCounts);
-            cy.route('POST', summaryCounts).as('summaryCounts');
+        it('for User Profile', () => {
+            const { mypermissions } = api.roles;
+            cy.route('GET', mypermissions).as('mypermissions');
 
             cy.visit('/main/user');
-            cy.wait('@summaryCounts');
+            cy.wait('@mypermissions');
 
-            cy.title().should('eq', `User Page | ${baseTitleText}`);
+            cy.title().should('eq', `User Profile | ${baseTitleText}`);
         });
     });
 

@@ -68,103 +68,84 @@ describe('User Info', () => {
     });
 
     describe('User Page', () => {
-        it('should show user name & email in the header', () => {
+        it('should show user name and email', () => {
             mockWithAdminUser();
             cy.visit(userPageUrl);
 
-            cy.get(userPageSelectors.pageHeader).should('contain.text', 'Artificial Intelligence');
-            cy.get(userPageSelectors.pageHeader).should('contain.text', 'ai@stackrox.com');
+            cy.get(userPageSelectors.userName).should('contain.text', 'Artificial Intelligence');
+            cy.get(userPageSelectors.userEmail).should('contain.text', 'ai@stackrox.com');
         });
 
         it('should show all the user roles', () => {
             mockWithMultiRolesUser();
             cy.visit(userPageUrl);
 
-            cy.get(`${userPageSelectors.rolesPanel.table.cells}:contains("Admin")`);
-            cy.get(`${userPageSelectors.rolesPanel.table.cells}:contains("Analyst")`);
-            cy.get(
-                `${userPageSelectors.rolesPanel.table.cells}:contains("Continuous Integration")`
-            );
+            cy.get(`${userPageSelectors.userRoleNames}:contains("Admin")`);
+            cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`);
+            cy.get(`${userPageSelectors.userRoleNames}:contains("Continuous Integration")`);
         });
 
         it('should show correct permissions for the role', () => {
             mockWithMultiRolesUser();
             cy.visit(userPageUrl);
 
-            cy.get(`${userPageSelectors.rolesPanel.table.cells}:contains("Analyst")`).click();
+            cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).click();
 
             // check that read is allowed and write is forbidden
-            cy.get(
-                userPageSelectors.permissionsPanel.permissionsMatrix.allowedIcon('User', 'read')
-            );
-            cy.get(
-                userPageSelectors.permissionsPanel.permissionsMatrix.forbiddenIcon('User', 'write')
-            );
+            cy.get(userPageSelectors.permissionsTable.allowedIcon('User', 'read'));
+            cy.get(userPageSelectors.permissionsTable.forbiddenIcon('User', 'write'));
         });
 
-        it('should properly highlight user permissions by role button', () => {
+        it('should properly highlight current nav item', () => {
             cy.visit(userPageUrl);
-            const highlightedCssClass = 'bg-tertiary-200';
-            function checkUserPermissionsHighlightedAndShown() {
-                cy.get(userPageSelectors.userPermissionsButton).should(
-                    'have.class',
-                    highlightedCssClass
-                );
-                cy.get(userPageSelectors.permissionsPanel.header).should(
-                    'contain.text',
-                    'User Permissions'
-                );
-            }
 
-            // it should happen when first time landing on a page
-            checkUserPermissionsHighlightedAndShown();
+            const { userPermissionsForRoles, userRoleNames } = userPageSelectors;
+            const userRoleAdmin = `${userRoleNames}:contains("Admin")`;
+            const currentClass = 'pf-m-current';
 
-            cy.get(userPageSelectors.rolesPanel.table.row.firstRow).click();
-            cy.get(userPageSelectors.userPermissionsButton).should(
-                'not.have.class',
-                highlightedCssClass
-            );
+            // When landing on Users page:
+            cy.get(userPermissionsForRoles).should('have.class', currentClass);
+            cy.get(userRoleAdmin).should('not.have.class', currentClass);
 
-            cy.get(userPageSelectors.userPermissionsButton).click();
-            checkUserPermissionsHighlightedAndShown();
+            // After clicking Admin user role:
+            cy.get(userRoleAdmin).click();
+            cy.get(userPermissionsForRoles).should('not.have.class', currentClass);
+            cy.get(userRoleAdmin).should('have.class', currentClass);
+
+            // After clicking User permissions for roles:
+            cy.get(userPermissionsForRoles).click();
+            cy.get(userPermissionsForRoles).should('have.class', currentClass);
+            cy.get(userRoleAdmin).should('not.have.class', currentClass);
         });
 
         it('should display aggregated permissions for basic auth user', () => {
             mockWithBasicAuthUser();
             cy.visit(userPageUrl);
 
-            cy.get(userPageSelectors.permissionsPanel.roleNameHeader).should(
-                'contain.text',
-                'admin'
-            );
-            cy.get(userPageSelectors.permissionsPanel.roleNameHeader).should(
-                'contain.text',
-                'Basic'
-            );
+            cy.get(userPageSelectors.userName).should('contain.text', 'admin');
+            cy.get(userPageSelectors.authProviderName).should('contain.text', 'Basic');
+
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'read'))
+                .should('contain.text', 'Admin')
+                .should('not.contain.text', 'Analyst');
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'write'))
+                .should('contain.text', 'Admin')
+                .should('not.contain.text', 'Analyst');
         });
 
-        it('should show correct aggregated permissions', () => {
+        it('should show correct aggregated permissions for multi roles user', () => {
             mockWithMultiRolesUser();
             cy.visit(userPageUrl);
 
-            cy.get(userPageSelectors.permissionsPanel.roleNameHeader).should('contain.text', 'ai');
-            cy.get(userPageSelectors.permissionsPanel.roleNameHeader).should(
-                'contain.text',
-                'My OIDC Provider'
-            );
+            cy.get(userPageSelectors.userName).should('contain.text', 'ai');
+            cy.get(userPageSelectors.authProviderName).should('contain.text', 'My OIDC Provider');
 
-            cy.get(
-                userPageSelectors.permissionsPanel.permissionsMatrix.permissionColumn(
-                    'User',
-                    'read'
-                )
-            ).should('contain.text', 'Admin, Analyst');
-            cy.get(
-                userPageSelectors.permissionsPanel.permissionsMatrix.permissionColumn(
-                    'User',
-                    'write'
-                )
-            ).should('contain.text', 'Admin');
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'read'))
+                .should('contain.text', 'Admin')
+                .should('contain.text', 'Analyst');
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'write'))
+                .should('contain.text', 'Admin')
+                .should('not.contain.text', 'Analyst');
         });
     });
 });

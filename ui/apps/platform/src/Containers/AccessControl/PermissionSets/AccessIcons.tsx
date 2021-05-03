@@ -1,10 +1,14 @@
 import React, { ReactElement } from 'react';
-import { Check, X } from 'react-feather';
+import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
 import { AccessType } from 'constants/accessControl';
 
-const forbiddenIcon = <X className="text-alert-600 h-4 w-4" />;
-const permittedIcon = <Check className="text-success-600 h-4 w-4" />;
+const forbiddenIcon = (
+    <TimesIcon aria-label="forbidden" color="var(--pf-global--danger-color--100)" size="sm" />
+);
+const permittedIcon = (
+    <CheckIcon aria-label="permitted" color="var(--pf-global--success-color--100)" size="sm" />
+);
 
 export type AccessIconProps = {
     accessType: AccessType;

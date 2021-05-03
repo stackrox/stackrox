@@ -28,6 +28,7 @@ export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;
 export const accessControlPathV2 = `${mainPath}/access-control`;
 export const userPath = `${mainPath}/user`;
+export const userRolePath = `${mainPath}/user/roles/:roleName`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
@@ -95,7 +96,7 @@ export const basePathToLabelMap = {
     [systemConfigPath]: 'System Configuration',
     [systemHealthPath]: 'System Health',
     [loginPath]: 'Log In',
-    [userPath]: 'User Page',
+    [userPath]: 'User Profile',
 };
 
 const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;
