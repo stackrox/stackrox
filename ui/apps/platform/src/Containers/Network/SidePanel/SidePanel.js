@@ -10,7 +10,7 @@ import NetworkDeploymentOverlay from './NetworkDeploymentOverlay';
 import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
 import CIDRPanel from './CIDRForm/CIDRPanel';
-import NamespaceDetails from './NamespaceDetails/NamespaceDetails';
+import NamespaceDetailsOverlay from './NamespaceDetails/NamespaceDetailsOverlay';
 import ExternalDetailsOverlay from './ExternalDetails/ExternalDetailsOverlay';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
@@ -19,21 +19,22 @@ function SidePanel({ lastUpdatedTimestamp, sidePanelOpen, sidePanelStage, onClos
     if (
         sidePanelOpen &&
         (sidePanelStage === sidepanelStages.details ||
-            sidePanelStage === sidepanelStages.externalDetails)
+            sidePanelStage === sidepanelStages.externalDetails ||
+            sidePanelStage === sidepanelStages.namespaceDetails)
     ) {
-        const paletteComponent =
-            sidePanelStage === sidepanelStages.details ? (
-                <NetworkDeploymentOverlay onClose={onClose} />
-            ) : (
-                <ExternalDetailsOverlay onClose={onClose} />
-            );
         return (
             <div className="network-panel">
                 <div className="absolute flex flex-1 max-h-full right-0 w-1/3 min-w-168 max-w-184">
                     {lastUpdatedTimestamp && (
                         <NodesUpdateSection lastUpdatedTimestamp={lastUpdatedTimestamp} />
                     )}
-                    {paletteComponent}
+                    {sidePanelStage === sidepanelStages.details && <NetworkDeploymentOverlay />}
+                    {sidePanelStage === sidepanelStages.externalDetails && (
+                        <ExternalDetailsOverlay />
+                    )}
+                    {sidePanelStage === sidepanelStages.namespaceDetails && (
+                        <NamespaceDetailsOverlay />
+                    )}
                 </div>
                 <div className="absolute h-full right-0">
                     <ZoomButtons pinnedLeft />
@@ -47,19 +48,12 @@ function SidePanel({ lastUpdatedTimestamp, sidePanelOpen, sidePanelStage, onClos
 
     if (sidePanelOpen) {
         switch (sidePanelStage) {
-            case sidepanelStages.details:
-                return null; // supserseded by NetworkDeploymentOverlay
             case sidepanelStages.simulator:
                 panelContent = <Simulator onClose={onClose} />;
                 break;
             case sidepanelStages.creator:
                 panelContent = <Creator onClose={onClose} />;
                 break;
-            case sidepanelStages.namespaceDetails:
-                panelContent = <NamespaceDetails onClose={onClose} />;
-                break;
-            case sidepanelStages.externalDetails:
-                return null; // superseded by ExternalDetailsOverlay
             case sidepanelStages.cidrForm:
                 panelContent = <CIDRPanel onClose={onClose} />;
                 break;

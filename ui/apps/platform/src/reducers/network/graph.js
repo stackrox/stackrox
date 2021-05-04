@@ -200,7 +200,10 @@ const selectedNode = (state = null, action) => {
 
 const selectedNamespace = (state = null, action) => {
     if (action.type === types.SET_SELECTED_NAMESPACE) {
-        return action.namespace;
+        const { namespace } = action;
+        if (namespace || namespace === null) {
+            return namespace;
+        }
     }
     return state;
 };

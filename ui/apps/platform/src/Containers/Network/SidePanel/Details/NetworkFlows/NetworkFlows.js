@@ -5,7 +5,6 @@ import pluralize from 'pluralize';
 import { createStructuredSelector } from 'reselect';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
-import { actions as graphActions } from 'reducers/network/graph';
 
 import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
@@ -73,27 +72,16 @@ const NetworkFlows = ({ edges, filterState, onNavigateToDeploymentById }) => {
 
 NetworkFlows.propTypes = {
     edges: PropTypes.arrayOf(PropTypes.shape({})),
-    networkGraphRef: PropTypes.shape({
-        setSelectedNode: PropTypes.func,
-        getNodeData: PropTypes.func,
-        onNodeClick: PropTypes.func,
-    }),
     filterState: PropTypes.number.isRequired,
     onNavigateToDeploymentById: PropTypes.func.isRequired,
 };
 
 NetworkFlows.defaultProps = {
     edges: [],
-    networkGraphRef: null,
 };
 
 const mapStateToProps = createStructuredSelector({
-    networkGraphRef: selectors.getNetworkGraphRef,
     filterState: selectors.getNetworkGraphFilterMode,
 });
 
-const mapDispatchToProps = {
-    setSelectedNamespace: graphActions.setSelectedNamespace,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(NetworkFlows);
+export default connect(mapStateToProps, null)(NetworkFlows);

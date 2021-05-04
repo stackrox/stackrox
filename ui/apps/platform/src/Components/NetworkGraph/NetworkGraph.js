@@ -36,7 +36,6 @@ import {
 } from 'utils/networkNode.utils';
 import { getClusterNode } from 'utils/networkUtils';
 import {
-    getIsNamespaceNode,
     getIsNamespaceEdge,
     getNodeData,
     getEdges,
@@ -79,7 +78,6 @@ const NetworkGraph = ({
     match,
     featureFlags,
     lastUpdatedTimestamp,
-    selectedNamespace,
     selectedClusterId,
     isReadOnly,
 }) => {
@@ -282,7 +280,7 @@ const NetworkGraph = ({
             }
 
             // if we didn't return early, must be click off a NS
-            setSelectedNamespace(null);
+            setSelectedNamespace();
 
             // New Node click: select node
             if (target.isNode()) {
@@ -642,16 +640,6 @@ const NetworkGraph = ({
             setSelectedNode(node[0].data);
             onNodeClick(node[0].data);
         }
-        if (
-            selectedNode &&
-            getIsNamespaceNode(selectedNode?.type) &&
-            selectedNode?.id === selectedNamespace?.id
-        ) {
-            onNamespaceClick({
-                id: selectedNode.id,
-                deployments: namespacesWithDeployments[selectedNode.id] || [],
-            });
-        }
     }
 
     function grabifyNamespaces() {
@@ -726,10 +714,6 @@ NetworkGraph.propTypes = {
     showNamespaceFlows: PropTypes.string.isRequired,
     featureFlags: PropTypes.arrayOf(PropTypes.shape),
     lastUpdatedTimestamp: PropTypes.instanceOf(Date),
-    selectedNamespace: PropTypes.shape({
-        id: PropTypes.string,
-        deployments: PropTypes.arrayOf(PropTypes.shape({})),
-    }),
     selectedClusterId: PropTypes.string,
 };
 
@@ -738,7 +722,6 @@ NetworkGraph.defaultProps = {
     networkEdgeMap: {},
     featureFlags: [],
     lastUpdatedTimestamp: null,
-    selectedNamespace: null,
     selectedClusterId: null,
     isReadOnly: false,
 };
