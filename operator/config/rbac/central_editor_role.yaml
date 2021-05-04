@@ -1,0 +1,24 @@
+# permissions for end users to edit centrals.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: central-editor-role
+rules:
+- apiGroups:
+  - acs.openshift.io
+  resources:
+  - centrals
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - acs.openshift.io
+  resources:
+  - centrals/status
+  verbs:
+  - get

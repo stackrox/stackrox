@@ -95,6 +95,10 @@ function go_build() (
   done
 )
 
+function go_run() (
+  invoke_go run "$@"
+)
+
 function go_test() (
   unset GOOS
   invoke_go test "$@"
@@ -106,6 +110,9 @@ case "$TOOL" in
     ;;
   test)
     go_test "$@"
+    ;;
+  run)
+    go_run "$@"
     ;;
   *)
     die "Unknown go tool '${TOOL}'"

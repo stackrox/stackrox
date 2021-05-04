@@ -1,0 +1,7 @@
+apiVersion: acs.openshift.io/v1alpha1
+kind: Central
+metadata:
+  name: central-sample
+spec:
+  # Add fields here
+  foo: bar

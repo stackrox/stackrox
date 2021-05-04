@@ -1,0 +1,20 @@
+# permissions for end users to view centrals.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: central-viewer-role
+rules:
+- apiGroups:
+  - acs.openshift.io
+  resources:
+  - centrals
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - acs.openshift.io
+  resources:
+  - centrals/status
+  verbs:
+  - get

@@ -21,7 +21,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/client"
 	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/internal/types"
 	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/kube"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage"
@@ -41,13 +41,13 @@ type ManagerFactory interface {
 }
 
 type managerFactory struct {
-	mgr      crmanager.Manager
-	chartDir string
+	mgr   crmanager.Manager
+	chart *chart.Chart
 }
 
 // NewManagerFactory returns a new Helm manager factory capable of installing and uninstalling releases.
-func NewManagerFactory(mgr crmanager.Manager, chartDir string) ManagerFactory {
-	return &managerFactory{mgr, chartDir}
+func NewManagerFactory(mgr crmanager.Manager, helmChart *chart.Chart) ManagerFactory {
+	return &managerFactory{mgr, helmChart}
 }
 
 func (f managerFactory) NewManager(cr *unstructured.Unstructured, overrideValues map[string]string) (Manager, error) {
@@ -72,12 +72,7 @@ func (f managerFactory) NewManager(cr *unstructured.Unstructured, overrideValues
 		return nil, errors.Wrap(err, "failed to inject owner references")
 	}
 
-	crChart, err := loader.LoadDir(f.chartDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load chart dir")
-	}
-
-	releaseName, err := getReleaseName(storageBackend, crChart.Name(), cr)
+	releaseName, err := getReleaseName(storageBackend, f.chart.Name(), cr)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get helm release name")
 	}
@@ -108,7 +103,7 @@ func (f managerFactory) NewManager(cr *unstructured.Unstructured, overrideValues
 		releaseName: releaseName,
 		namespace:   cr.GetNamespace(),
 
-		chart:  crChart,
+		chart:  f.chart,
 		values: values,
 		status: types.StatusFor(cr),
 	}, nil
