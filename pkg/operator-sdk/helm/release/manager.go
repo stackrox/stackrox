@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/internal/types"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/manifestutil"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/internal/types"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/manifestutil"
 	jsonpatch "gomodules.xyz/jsonpatch/v3"
 	"helm.sh/helm/v3/pkg/action"
 	cpb "helm.sh/helm/v3/pkg/chart"

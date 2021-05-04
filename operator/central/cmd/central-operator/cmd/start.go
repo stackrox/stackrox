@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/operator/pkg/central"
-	helmCtrl "github.com/stackrox/rox/operator/pkg/operator-sdk/helm/controller"
+	"github.com/stackrox/rox/operator/central/pkg/central"
+	helmCtrl "github.com/stackrox/rox/pkg/operator-sdk/helm/controller"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

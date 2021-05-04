@@ -4,7 +4,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: operator
-repo: github.com/stackrox/rox/operator
+repo: github.com/stackrox/rox/operator/central
 resources:
 - api:
     crdVersion: v1

@@ -19,10 +19,10 @@ package central
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/controller"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/release"
+	"github.com/stackrox/rox/operator/central/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/charts"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/controller"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/release"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/manager"

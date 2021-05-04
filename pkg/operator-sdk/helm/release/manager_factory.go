@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/client"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/internal/types"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/client"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/internal/types"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/kube"

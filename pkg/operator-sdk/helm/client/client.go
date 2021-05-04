@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/operator-framework/operator-lib/handler"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/util/k8sutil"
+	"github.com/stackrox/rox/pkg/operator-sdk/util/k8sutil"
 	"helm.sh/helm/v3/pkg/kube"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -17,7 +17,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	sdkVersion "github.com/stackrox/rox/operator/pkg/operator-sdk/version"
+	sdkVersion "github.com/stackrox/rox/pkg/operator-sdk/version"
 )
 
 const (

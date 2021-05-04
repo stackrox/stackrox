@@ -84,7 +84,7 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
-	../scripts/go-run.sh ./main.go start
+	../../scripts/go-run.sh ./main.go start
 
 docker-build: test ## Build docker image with the manager.
 	docker build -t ${IMG} .

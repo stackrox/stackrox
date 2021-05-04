@@ -21,9 +21,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/internal/diff"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/internal/types"
-	"github.com/stackrox/rox/operator/pkg/operator-sdk/helm/release"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/internal/diff"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/internal/types"
+	"github.com/stackrox/rox/pkg/operator-sdk/helm/release"
 	rpb "helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
