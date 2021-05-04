@@ -173,6 +173,7 @@ class NotifierService extends BaseService {
                 .setLabelDefault(splunkIntegration)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .setSplunk(NotifierOuterClass.Splunk.newBuilder()
+                        .setDerivedSourceType(true)
                         .setHttpToken(prePackagedToken)
                         .setInsecure(true)
                         .setHttpEndpoint(String.format(

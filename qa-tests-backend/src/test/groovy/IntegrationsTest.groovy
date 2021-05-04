@@ -24,7 +24,6 @@ import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
 import objects.SyslogNotifier
 import objects.TeamsNotifier
-import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
@@ -99,7 +98,12 @@ class IntegrationsTest extends BaseSpecification {
                         .addPort(8089)
                         .addPort(514)
                         .addAnnotation("test", "annotation")
-                        .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
+                        .setEnv([ "SPLUNK_START_ARGS": "--accept-license",
+                                  "SPLUNK_USER": "root",
+                                  // This is required to get splunk 6.6.2 to start in an OpenShift crio environment
+                                  // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
+                                  // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
+                                  "OPTIMISTIC_ABOUT_FILE_LOCKING": "1", ])
                         .addLabel("app", deploymentName)
                         .setPrivilegedFlag(true)
                         .addVolume("test", "/tmp")
@@ -231,10 +235,6 @@ class IntegrationsTest extends BaseSpecification {
     @Category(Integration)
     def "Verify Splunk Integration (legacy mode: #legacy)"() {
         given:
-        "Assume cluster is not OS"
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
-
-        and:
         "the integration is tested"
         SplunkParts parts = createSplunk()
 
@@ -567,10 +567,6 @@ class IntegrationsTest extends BaseSpecification {
     @Category(Integration)
     def "Verify syslog notifier"() {
         given:
-        "Assume cluster is not OS"
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
-
-        and:
         "the some syslog receiver is created"
         // Change the local port numbers so we don't conflict with any other splunk instances
         SplunkParts parts = createSplunk()
@@ -582,7 +578,7 @@ class IntegrationsTest extends BaseSpecification {
         try {
             notifier.createNotifier()
         } catch (Exception e) {
-            Assume.assumeNoException("Could not create Splunk notifier. Skipping test!", e)
+            Assume.assumeNoException("Could not create syslog notifier. Skipping test!", e)
         }
 
         then:

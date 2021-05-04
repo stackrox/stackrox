@@ -8,6 +8,7 @@ import objects.K8sServiceAccount
 import objects.Secret
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
+import orchestratormanager.OrchestratorTypes
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -88,11 +89,22 @@ class BaseSpecification extends Specification {
                 println metadata
                 println "isGKE: ${orchestrator.isGKE()}"
                 println "isEKS: ${ClusterService.isEKS()}"
+                println "isOpenShift3: ${ClusterService.isOpenShift3()}"
+                println "isOpenShift4: ${ClusterService.isOpenShift4()}"
             }
             catch (Exception ex) {
                 println "Check the test target deployment, auth credentials, kube service proxy, etc."
                 throw(ex)
             }
+        }
+
+        if (ClusterService.isOpenShift3() || ClusterService.isOpenShift4()) {
+            assert Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT,
+                    "Set CLUSTER=OPENSHIFT when testing OpenShift"
+        }
+        else {
+            assert Env.mustGetOrchestratorType() == OrchestratorTypes.K8S,
+                    "Set CLUSTER=K8S when testing non OpenShift"
         }
 
         withRetry(30, 1) {
