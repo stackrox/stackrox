@@ -1,3 +1,12 @@
+**Attention:** Now that StackRox is a part of Red Hat, we are migrating to Red
+Hat's design system, [PatternFly](https://www.patternfly.org/). We will be using
+PatternFly's methods for styling, and no longer updating this Tailwind config.
+(The generated Tailwind file will still be necessary until we migrate every part
+of the UI over to PatternFly, but no additions or changes should be made, and no
+new code added for the UI should use Tailwind classes.)
+
+---
+
 # StackRox Base Tailwind Config and CSS Themes
 
 Base [Tailwind CSS](https://tailwindcss.com/) config recommended for all

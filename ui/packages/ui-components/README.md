@@ -1,3 +1,10 @@
+**Attention:** Now that StackRox is a part of Red Hat, we are migrating to Red
+Hat's design system, [PatternFly](https://www.patternfly.org/). We will be using
+PatternFly's React components directly as a rule, and no longer adding to this
+package, or updating the components already here.
+
+---
+
 # StackRox React UI Components
 
 A library of React components recommended for any StackRox UI for the
@@ -64,83 +71,84 @@ file:
 
 <details>
   <summary>Expand to see FFS configuration...</summary>
-  
-  ```json
-  "fastFolderStructure.structures": [
-    {
-      "name": "TypeScript React Component Dir",
-      "omitParentDirectory": false,
-      "structure": [
-        {
-          "fileName": "<FFSName>.tsx",
-          "template": "React TypeScript Functional Component with PropTypes"
-        },
-        {
-          "fileName": "index.ts",
-          "template": "React Component Index File"
-        },
-        {
-          "fileName": "<FFSName>.test.tsx",
-          "template": "React Component Jest Tests"
-        },
-        {
-          "fileName": "<FFSName>.stories.tsx",
-          "template": "React Component Storybook File"
-        }
-      ]          
-    }
-  ],
-  "fastFolderStructure.fileTemplates": {
-    "React TypeScript Functional Component with PropTypes": [
-      "import React, { ReactElement } from 'react';",
-      "import PropTypes, { InferProps } from 'prop-types';",
-      "",
-      "function <FFSName>({}: <FFSName>Props): ReactElement {",
-      "    return <></>;",
-      "}",
-      "",
-      "<FFSName>.propTypes = {};",
-      "",
-      "<FFSName>.defaultProps = {};",
-      "",
-      "export type <FFSName>Props = InferProps<typeof <FFSName>.propTypes>;",
-      "export default <FFSName>;",
-      ""
-    ],
-    "React Component Index File": [
-      "export { default } from './<FFSName>';",
-      "export * from './<FFSName>';",
-      ""
-    ],
-    "React Component Jest Tests": [
-      "import React from 'react';",
-      "import { render } from '@testing-library/react';",
-      "",
-      "import <FFSName> from './<FFSName>';",
-      "",
-      "describe('<FFSName>', () => {",
-      "    test('renders title, subtitle and footer', () => {",
-      "        const { getByText, getByTestId } = render(<<FFSName> />);",
-      "    });",
-      "});",
-      ""
-    ],
-    "React Component Storybook File": [
-      "import React from 'react';",
-      "import { Meta, Story } from '@storybook/react/types-6-0';",
-      "",
-      "import <FFSName> from './<FFSName>';",
-      "",
-      "export default {",
-      "    title: '<FFSName>',",
-      "    component: <FFSName>,",
-      "} as Meta;",
-      "",
-      "export const FirstStory: Story = () => <<FFSName> />;",
-      ""        
+
+```json
+"fastFolderStructure.structures": [
+  {
+    "name": "TypeScript React Component Dir",
+    "omitParentDirectory": false,
+    "structure": [
+      {
+        "fileName": "<FFSName>.tsx",
+        "template": "React TypeScript Functional Component with PropTypes"
+      },
+      {
+        "fileName": "index.ts",
+        "template": "React Component Index File"
+      },
+      {
+        "fileName": "<FFSName>.test.tsx",
+        "template": "React Component Jest Tests"
+      },
+      {
+        "fileName": "<FFSName>.stories.tsx",
+        "template": "React Component Storybook File"
+      }
     ]
-  } 
-  ```
+  }
+],
+"fastFolderStructure.fileTemplates": {
+  "React TypeScript Functional Component with PropTypes": [
+    "import React, { ReactElement } from 'react';",
+    "import PropTypes, { InferProps } from 'prop-types';",
+    "",
+    "function <FFSName>({}: <FFSName>Props): ReactElement {",
+    "    return <></>;",
+    "}",
+    "",
+    "<FFSName>.propTypes = {};",
+    "",
+    "<FFSName>.defaultProps = {};",
+    "",
+    "export type <FFSName>Props = InferProps<typeof <FFSName>.propTypes>;",
+    "export default <FFSName>;",
+    ""
+  ],
+  "React Component Index File": [
+    "export { default } from './<FFSName>';",
+    "export * from './<FFSName>';",
+    ""
+  ],
+  "React Component Jest Tests": [
+    "import React from 'react';",
+    "import { render } from '@testing-library/react';",
+    "",
+    "import <FFSName> from './<FFSName>';",
+    "",
+    "describe('<FFSName>', () => {",
+    "    test('renders title, subtitle and footer', () => {",
+    "        const { getByText, getByTestId } = render(<<FFSName> />);",
+    "    });",
+    "});",
+    ""
+  ],
+  "React Component Storybook File": [
+    "import React from 'react';",
+    "import { Meta, Story } from '@storybook/react/types-6-0';",
+    "",
+    "import <FFSName> from './<FFSName>';",
+    "",
+    "export default {",
+    "    title: '<FFSName>',",
+    "    component: <FFSName>,",
+    "} as Meta;",
+    "",
+    "export const FirstStory: Story = () => <<FFSName> />;",
+    ""
+  ]
+}
+```
+
 </details>
 
 Then in the project explorer's context menu for `src` directory select
