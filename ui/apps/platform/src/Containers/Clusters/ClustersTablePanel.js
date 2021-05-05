@@ -9,6 +9,7 @@ import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
 import PanelButton from 'Components/PanelButton';
+import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import { searchParams } from 'constants/searchParams';
@@ -241,6 +242,10 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     };
     const clusterColumns = getColumnsForClusters(columnOptions);
 
+    // Because clusters are not paginated, make the list display them all.
+    const pageSize =
+        currentClusters.length <= DEFAULT_PAGE_SIZE ? DEFAULT_PAGE_SIZE : currentClusters.length;
+
     return (
         <div className="overflow-hidden w-full">
             <PanelNew testid="panel">
@@ -268,6 +273,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
                             selectedRowId={selectedClusterId}
                             noDataText="No clusters to show."
                             minRows={20}
+                            pageSize={pageSize}
                         />
                     </div>
                 </PanelBody>

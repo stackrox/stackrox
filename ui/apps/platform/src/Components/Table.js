@@ -144,6 +144,7 @@ class Table extends Component {
                 showPageJump={false}
                 minRows={Math.min(this.props.rows.length, pageSize)}
                 page={this.props.page}
+                pageSize={pageSize}
                 showPagination={false}
                 manual={manual}
                 {...rest}
