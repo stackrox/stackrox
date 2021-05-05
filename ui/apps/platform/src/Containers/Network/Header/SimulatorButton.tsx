@@ -7,6 +7,8 @@ import * as Icon from 'react-feather';
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
+import { actions as graphActions } from 'reducers/network/graph';
+import { filterModes } from 'constants/networkFilterModes';
 import sidepanelStages from '../SidePanel/sidepanelStages';
 
 type SimulatorButtonProps = {
@@ -14,6 +16,7 @@ type SimulatorButtonProps = {
     openSidePanel: () => void;
     setSidePanelStage: (stage) => void;
     closeSidePanel: () => void;
+    setNetworkGraphFilterMode: (mode) => void;
     isDisabled?: boolean;
 };
 
@@ -22,6 +25,7 @@ function SimulatorButton({
     openSidePanel,
     setSidePanelStage,
     closeSidePanel,
+    setNetworkGraphFilterMode,
     isDisabled = false,
 }: SimulatorButtonProps): ReactElement {
     const history = useHistory();
@@ -34,6 +38,7 @@ function SimulatorButton({
         } else {
             openSidePanel();
             setSidePanelStage(sidepanelStages.creator);
+            setNetworkGraphFilterMode(filterModes.allowed);
         }
     }
 
@@ -70,6 +75,7 @@ const mapDispatchToProps = {
     openSidePanel: pageActions.openSidePanel,
     closeSidePanel: pageActions.closeSidePanel,
     setSidePanelStage: sidepanelActions.setSidePanelStage,
+    setNetworkGraphFilterMode: graphActions.setNetworkGraphFilterMode,
 };
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(SimulatorButton));
