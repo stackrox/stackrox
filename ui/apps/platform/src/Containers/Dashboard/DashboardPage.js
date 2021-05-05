@@ -11,6 +11,7 @@ import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
 import { selectors } from 'reducers';
 import { actions as dashboardActions } from 'reducers/dashboard';
 import AlertsByTimeseriesChart from './AlertsByTimeseriesChart';
+import SummaryCounts from './SummaryCounts';
 import ViolationsByClusterChart from './ViolationsByClusterChart';
 import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
 import EnvironmentRisk from './EnvironmentRisk';
@@ -23,6 +24,7 @@ const DashboardPage = (props) => {
             className={`flex flex-1 h-full w-full ${!isDarkMode ? 'bg-base-200' : 'bg-base-0'}`}
         >
             <div className="flex flex-col w-full">
+                <SummaryCounts />
                 <div>
                     <PageHeader header="Dashboard" subHeader={subHeader}>
                         <ReduxSearchInput
