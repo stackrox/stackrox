@@ -49,6 +49,8 @@ function* getNetworkGraphs(clusterId, query) {
         yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
     } catch (error) {
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
         // if network flow graph fails
         const policyGraph = yield select(selectors.getNetworkPolicyGraph);
         if (policyGraph) {
