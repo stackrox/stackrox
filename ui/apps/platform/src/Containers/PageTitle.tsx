@@ -22,7 +22,7 @@ const getTitleFromWorkflowState = (workflowState): string => {
 };
 
 const getPageTitleText = (location: Location): string => {
-    const baseTitleText = 'Red Hat ACS';
+    const baseTitleText = 'Red Hat Advanced Cluster Security';
     if (basePathToLabelMap[location.pathname]) {
         const topPageLabel = basePathToLabelMap[location.pathname];
         return `${topPageLabel} | ${baseTitleText}`;

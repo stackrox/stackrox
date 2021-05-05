@@ -18,7 +18,7 @@ describe('General sanity checks', () => {
     });
 
     describe('should have correct page titles based on URL', () => {
-        const baseTitleText = 'Red Hat ACS';
+        const baseTitleText = 'Red Hat Advanced Cluster Security';
 
         it('for Dashboard', () => {
             cy.route('GET', api.dashboard.timeseries).as('dashboardTimeseries');
