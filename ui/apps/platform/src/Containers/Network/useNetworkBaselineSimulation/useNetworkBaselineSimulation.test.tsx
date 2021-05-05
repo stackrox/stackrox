@@ -1,17 +1,32 @@
 import React from 'react';
 import { renderHook, act } from '@testing-library/react-hooks';
-import {
-    BaselineSimulationProvider,
-    useNetworkBaselineSimulation,
-} from './baselineSimulationContext';
+import { Provider } from 'react-redux';
+import { createBrowserHistory as createHistory } from 'history';
+
+import configureStore from 'store/configureStore';
+import useNetworkBaselineSimulation from './useNetworkBaselineSimulation';
+
+const history = createHistory();
+
+const initialStore = {
+    app: {
+        network: {
+            baselineSimulation: {
+                isOn: false,
+                options: { excludePortsAndProtocols: false },
+            },
+        },
+    },
+};
 
 describe('useNetworkBaselineSimulation', () => {
     it('should not be in simulation mode by default', () => {
         // arrange
-        const wrapper = ({ children }) => (
-            <BaselineSimulationProvider>{children}</BaselineSimulationProvider>
-        );
-        const { result } = renderHook(() => useNetworkBaselineSimulation(), { wrapper });
+        const store = configureStore(initialStore, history);
+
+        const { result } = renderHook(() => useNetworkBaselineSimulation(), {
+            wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+        });
 
         // assert
         expect(result.current.isBaselineSimulationOn).toEqual(false);
@@ -19,10 +34,11 @@ describe('useNetworkBaselineSimulation', () => {
 
     it('should be able to start a baseline simulation', () => {
         // arrange
-        const wrapper = ({ children }) => (
-            <BaselineSimulationProvider>{children}</BaselineSimulationProvider>
-        );
-        const { result } = renderHook(() => useNetworkBaselineSimulation(), { wrapper });
+        const store = configureStore(initialStore, history);
+
+        const { result } = renderHook(() => useNetworkBaselineSimulation(), {
+            wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+        });
 
         // act
         act(() => {
@@ -38,10 +54,11 @@ describe('useNetworkBaselineSimulation', () => {
 
     it('should be able to start a baseline simulation with options set', () => {
         // arrange
-        const wrapper = ({ children }) => (
-            <BaselineSimulationProvider>{children}</BaselineSimulationProvider>
-        );
-        const { result } = renderHook(() => useNetworkBaselineSimulation(), { wrapper });
+        const store = configureStore(initialStore, history);
+
+        const { result } = renderHook(() => useNetworkBaselineSimulation(), {
+            wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+        });
 
         // act
         act(() => {
@@ -57,10 +74,11 @@ describe('useNetworkBaselineSimulation', () => {
 
     it('should be able to stop a baseline simulation', () => {
         // arrange
-        const wrapper = ({ children }) => (
-            <BaselineSimulationProvider>{children}</BaselineSimulationProvider>
-        );
-        const { result } = renderHook(() => useNetworkBaselineSimulation(), { wrapper });
+        const store = configureStore(initialStore, history);
+
+        const { result } = renderHook(() => useNetworkBaselineSimulation(), {
+            wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+        });
 
         // act
         act(() => {

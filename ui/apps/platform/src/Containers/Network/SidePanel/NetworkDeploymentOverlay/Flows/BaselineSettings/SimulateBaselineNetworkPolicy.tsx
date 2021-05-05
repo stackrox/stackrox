@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 
-import { useNetworkBaselineSimulation } from 'Containers/Network/baselineSimulationContext';
+import useNetworkBaselineSimulation from 'Containers/Network/useNetworkBaselineSimulation';
 
 import { PrimaryButton, CheckboxWithLabel } from '@stackrox/ui-components';
 

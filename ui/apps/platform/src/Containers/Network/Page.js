@@ -7,10 +7,7 @@ import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import { actions as pageActions } from 'reducers/network/page';
 import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
 import useNetworkPolicySimulation from 'Containers/Network/useNetworkPolicySimulation';
-import {
-    BaselineSimulationProvider,
-    useNetworkBaselineSimulation,
-} from 'Containers/Network/baselineSimulationContext';
+import useNetworkBaselineSimulation from 'Containers/Network/useNetworkBaselineSimulation';
 
 import SimulationFrame from 'Components/SimulationFrame';
 import Dialogue from 'Containers/Network/Dialogue';
@@ -86,9 +83,7 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
     return (
         <section className="flex flex-1 h-full w-full">
             <div className="flex flex-1 flex-col w-full overflow-hidden">
-                <BaselineSimulationProvider>
-                    <NetworkPageContent />
-                </BaselineSimulationProvider>
+                <NetworkPageContent />
             </div>
             <Dialogue />
         </section>

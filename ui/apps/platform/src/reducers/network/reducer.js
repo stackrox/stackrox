@@ -7,6 +7,9 @@ import graphReducer, { selectors as graphSelectors } from 'reducers/network/grap
 import pageReducer, { selectors as pageSelectors } from 'reducers/network/page';
 import searchReducer, { selectors as searchSelectors } from 'reducers/network/search';
 import wizardReducer, { selectors as wizardSelectors } from 'reducers/network/sidepanel';
+import baselineSimulationReducer, {
+    selectors as baselineSimulationSelectors,
+} from 'reducers/network/baselineSimulation';
 
 // File combines all of the reducers and selectors under reducers/network.
 
@@ -20,6 +23,7 @@ const reducer = combineReducers({
     page: pageReducer,
     search: searchReducer,
     wizard: wizardReducer,
+    baselineSimulation: baselineSimulationReducer,
 });
 
 export default reducer;
@@ -33,6 +37,7 @@ const getGraph = (state) => state.graph;
 const getPage = (state) => state.page;
 const getSearch = (state) => state.search;
 const getWizard = (state) => state.wizard;
+const getBaselineSimulation = (state) => state.baselineSimulation;
 
 export const selectors = {
     ...bindSelectors(getBackend, backendSelectors),
@@ -41,4 +46,5 @@ export const selectors = {
     ...bindSelectors(getPage, pageSelectors),
     ...bindSelectors(getSearch, searchSelectors),
     ...bindSelectors(getWizard, wizardSelectors),
+    ...bindSelectors(getBaselineSimulation, baselineSimulationSelectors),
 };

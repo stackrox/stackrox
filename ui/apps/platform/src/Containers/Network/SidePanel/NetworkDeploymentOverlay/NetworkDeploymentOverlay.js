@@ -5,7 +5,7 @@ import { createStructuredSelector } from 'reselect';
 import { useParams } from 'react-router-dom';
 
 import { selectors } from 'reducers';
-import { useNetworkBaselineSimulation } from 'Containers/Network/baselineSimulationContext';
+import useNetworkBaselineSimulation from 'Containers/Network/useNetworkBaselineSimulation';
 
 import Tab from 'Components/Tab';
 import NetworkEntityTabbedOverlay from 'Components/NetworkEntityTabbedOverlay';

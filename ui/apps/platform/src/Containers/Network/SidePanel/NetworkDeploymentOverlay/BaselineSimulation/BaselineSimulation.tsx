@@ -4,7 +4,7 @@ import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Compon
 import TablePagination from 'Components/TablePagination';
 import { FilterState } from 'Containers/Network/networkTypes';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
-import { useNetworkBaselineSimulation } from 'Containers/Network/baselineSimulationContext';
+import useNetworkBaselineSimulation from 'Containers/Network/useNetworkBaselineSimulation';
 import NetworkPolicyYAMLOptions from './NetworkPolicyYAMLOptions';
 import SimulatedNetworkBaselines from './SimulatedNetworkBaselines';
 import ApplyBaselineNetworkPolicy from './ApplyBaselineNetworkPolicy';

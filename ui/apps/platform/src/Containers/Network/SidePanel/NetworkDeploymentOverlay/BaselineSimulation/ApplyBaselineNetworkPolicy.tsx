@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { SuccessButton } from '@stackrox/ui-components';
 
 import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
-import { BaselineSimulationResult } from 'Containers/Network/baselineSimulationContext';
+import { BaselineSimulationResult } from 'Containers/Network/useNetworkBaselineSimulation';
 import { applyBaselineNetworkPolicy } from 'services/NetworkService';
 
 export type ApplyBaselineNetworkPolicyProps = {
