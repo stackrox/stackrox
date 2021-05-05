@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package central
+package securedcluster
 
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/operator/central/api/v1alpha1"
+	"github.com/stackrox/rox/operator/securedcluster/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/operator-sdk/helm/controller"
 	"github.com/stackrox/rox/pkg/operator-sdk/helm/release"
@@ -28,22 +28,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-const centralKind = "Central"
+const securedClusterKind = "SecuredCluster"
 
 // CreateWatchOptions creates the watch options
 func CreateWatchOptions(mgr manager.Manager) (controller.WatchOptions, error) {
 	templateImage := image.GetDefaultImage()
-	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(image.CentralServicesChartPrefix, charts.RHACSMetaValues())
+	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(image.SecuredClusterServicesChartPrefix, charts.RHACSMetaValues())
 	if err != nil {
-		return controller.WatchOptions{}, errors.Wrap(err, "loading and instantiating central services chart")
+		return controller.WatchOptions{}, errors.Wrap(err, "loading and instantiating secured cluster services chart")
 	}
 
 	chart, err := loader.LoadFiles(renderedChartFiles)
 	if err != nil {
-		return controller.WatchOptions{}, errors.Wrap(err, "loading central services helm chart files")
+		return controller.WatchOptions{}, errors.Wrap(err, "loading secured cluster services helm chart files")
 	}
 	return controller.WatchOptions{
-		GVK:                     schema.GroupVersionKind{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Kind: centralKind},
+		GVK:                     schema.GroupVersionKind{Group: v1alpha1.GroupVersion.Group, Version: v1alpha1.GroupVersion.Version, Kind: securedClusterKind},
 		ManagerFactory:          release.NewManagerFactory(mgr, chart),
 		WatchDependentResources: true,
 		OverrideValues:          make(map[string]string),

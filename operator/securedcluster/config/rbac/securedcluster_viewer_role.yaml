@@ -1,0 +1,20 @@
+# permissions for end users to view securedclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: securedcluster-viewer-role
+rules:
+- apiGroups:
+  - acs.openshift.io
+  resources:
+  - securedclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - acs.openshift.io
+  resources:
+  - securedclusters/status
+  verbs:
+  - get

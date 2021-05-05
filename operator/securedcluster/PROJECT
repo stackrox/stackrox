@@ -4,8 +4,8 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: central
-repo: github.com/stackrox/rox/operator/central
+projectName: securedcluster
+repo: github.com/stackrox/rox/operator/securedcluster
 resources:
 - api:
     crdVersion: v1
@@ -13,7 +13,7 @@ resources:
   controller: true
   domain: openshift.io
   group: acs
-  kind: Central
-  path: github.com/stackrox/rox/operator/central/api/v1alpha1
+  kind: SecuredCluster
+  path: github.com/stackrox/rox/operator/securedcluster/api/v1alpha1
   version: v1alpha1
 version: "3"
