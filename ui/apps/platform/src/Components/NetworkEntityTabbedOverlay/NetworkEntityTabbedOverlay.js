@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import useTabs from 'hooks/useTabs';
 import { networkEntityLabels } from 'messages/network';
 
+import DetailsOverlay from 'Components/DetailsOverlay';
 import NetworkEntityTabHeader from './NetworkEntityTabHeader';
 
 function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
@@ -22,26 +23,14 @@ function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
     });
 
     return (
-        <div
-            className="flex flex-1 flex-col text-sm network-overlay-bg-shadow max-h-minus-buttons rounded-bl-lg min-w-0"
-            data-testid="network-entity-tabbed-overlay"
+        <DetailsOverlay
+            headerText={entityName}
+            subHeaderText={networkEntityLabels[entityType]}
+            tabHeaderComponents={tabHeaderComponents}
+            dataTestId="network-entity-tabbed-overlay"
         >
-            <div className="bg-primary-800 flex items-center m-2 p-3 rounded-lg shadow text-primary-100">
-                <div
-                    className="flex flex-1 flex-col"
-                    data-testid="network-entity-tabbed-overlay-header"
-                >
-                    <div className="text-base">{entityName}</div>
-                    <div className="italic text-primary-300 text-xs capitalize">
-                        {networkEntityLabels[entityType]}
-                    </div>
-                </div>
-                <ul className="flex ml-8 items-center text-sm uppercase font-700">
-                    {tabHeaderComponents}
-                </ul>
-            </div>
-            <div className="flex flex-1 m-2 overflow-auto rounded">{activeTabContent}</div>
-        </div>
+            {activeTabContent}
+        </DetailsOverlay>
     );
 }
 
