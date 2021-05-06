@@ -28,7 +28,7 @@ const TileContent = ({
             className={`flex flex-col text-center justify-around ${textColorClass} ${className}`}
             data-testid={dataTestId}
         >
-            {superText && (
+            {superText !== '' && (
                 <div className="text-2xl tracking-widest pb-1" data-testid="tileLinkSuperText">
                     {superText}
                 </div>
