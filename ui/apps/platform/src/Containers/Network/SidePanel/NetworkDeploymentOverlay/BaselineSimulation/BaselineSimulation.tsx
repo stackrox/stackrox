@@ -49,7 +49,7 @@ function BaselineSimulation({ deploymentId, filterState }: BaselineSimulationPro
                 <PanelHead>
                     <PanelTitle text="Baseline Simulation" />
                     <PanelHeadEnd>
-                        <NetworkPolicyYAMLOptions />
+                        <NetworkPolicyYAMLOptions networkPolicy={networkPolicy} />
                         <TablePagination
                             page={page}
                             dataLength={filteredBaselines.length}

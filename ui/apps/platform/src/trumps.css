@@ -24,3 +24,7 @@ body {
 .pf-c-nav__link {
     align-items: center !important;
 }
+
+.pf-c-check__input {
+    width: var(--pf-c-check__input--Height);
+}
