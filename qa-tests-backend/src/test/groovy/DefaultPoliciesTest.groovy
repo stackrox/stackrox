@@ -1,3 +1,4 @@
+
 import static Services.getPolicies
 import static Services.waitForViolation
 
@@ -27,6 +28,7 @@ import io.stackrox.proto.storage.ImageOuterClass
 import services.DeploymentService
 import services.ImageService
 import util.Env
+import util.Helpers
 import util.SlackUtil
 
 import org.junit.Assume
@@ -130,6 +132,9 @@ class DefaultPoliciesTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
+        Helpers.collectImageScanForDebug(
+                STRUTS_DEPLOYMENT.getImage(), 'default-policies-test-struts-app.json'
+        )
     }
 
     def cleanupSpec() {
@@ -343,7 +348,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Number of Components in Image"   | 1.5f     | null |
                 "Image \"docker.io/stackrox/qa:struts-app\"" +
-                " contains 167 components" | []
+                " contains 16[67] components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
 

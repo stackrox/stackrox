@@ -1,11 +1,12 @@
 package util
 
 import common.Constants
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.text.SimpleDateFormat
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
-
-import java.text.SimpleDateFormat
 
 // Helpers defines useful helper methods. Is mixed in to every object in order to be visible everywhere.
 class Helpers {
@@ -104,6 +105,38 @@ class Helpers {
         }
         catch (Exception e) {
             println "Could not collect logs: ${e}"
+        }
+    }
+
+    // collectImageScanForDebug(image) - a best effort debug tool to get a complete image scan.
+    static void collectImageScanForDebug(String image, String saveName) {
+        if (!Env.IN_CI) {
+            println "Won't collect image scans when not in CI"
+            return
+        }
+
+        println "Will scan ${image} to ${saveName}"
+
+        try {
+            Path imageScans = Paths.get(Constants.FAILURE_DEBUG_DIR).resolve("image-scans")
+            new File(imageScans.toAbsolutePath().toString()).mkdir()
+
+            Process proc = "./scripts/ci/roxctl.sh image scan -i ${image}".execute(null, new File(".."))
+            String output = imageScans.resolve(saveName).toAbsolutePath()
+            FileWriter sout = new FileWriter(output)
+            StringBuilder serr = new StringBuilder()
+
+            proc.consumeProcessOutput(sout, serr)
+            proc.waitFor()
+
+            if (proc.exitValue() != 0) {
+                println "Failed to scan the image."
+                println "Stderr: $serr"
+                println "Exit: ${proc.exitValue()}"
+            }
+        }
+        catch (Exception e) {
+            println "Could not collect image details: ${e}"
         }
     }
 
