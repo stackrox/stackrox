@@ -359,6 +359,9 @@ class Kubernetes implements OrchestratorMain {
         if (deployment.exposeAsService) {
             this.deleteService(deployment.name, deployment.namespace)
         }
+        if (deployment.createRoute) {
+            this.deleteRoute(deployment.name, deployment.namespace)
+        }
         // Retry deletion due to race condition in sdk and controller
         // See https://github.com/fabric8io/kubernetes-client/issues/1477
         Timer t = new Timer(10, 1)
@@ -862,6 +865,23 @@ class Kubernetes implements OrchestratorMain {
         }
         return loadBalancerIP
     }
+
+    /*
+        Route Methods
+    */
+
+    def createRoute(String routeName, String namespace) {
+        throw new RuntimeException("K8s does not support routes")
+    }
+
+    def deleteRoute(String routeName, String namespace) {
+        throw new RuntimeException("K8s does not support routes")
+    }
+
+    String waitForRouteHost(String serviceName, String namespace) {
+        throw new RuntimeException("K8s does not support routes")
+    }
+
     /*
         Secrets Methods
     */
@@ -1737,6 +1757,10 @@ class Kubernetes implements OrchestratorMain {
             println "Told the orchestrator to create " + deployment.name
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
+            }
+            if (deployment.createRoute) {
+                createRoute(deployment.name, deployment.namespace)
+                deployment.routeHost = waitForRouteHost(deployment.name, deployment.namespace)
             }
             return true
         } catch (Exception e) {

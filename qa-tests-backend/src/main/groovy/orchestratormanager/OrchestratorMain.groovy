@@ -89,6 +89,10 @@ interface OrchestratorMain {
     def deleteService(String serviceName, String namespace)
     def waitForServiceDeletion(Service service)
 
+    //Routes
+    def createRoute(String routeName, String namespace)
+    def deleteRoute(String routeName, String namespace)
+
     //Secrets
     def createSecret(Secret secret)
     def createSecret(String name, String namespace)

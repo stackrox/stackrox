@@ -5,10 +5,8 @@ import io.fabric8.openshift.api.model.ProjectRequest
 import io.fabric8.openshift.api.model.ProjectRequestBuilder
 import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.api.model.RouteBuilder
-import io.fabric8.openshift.api.model.RouteList
 import io.fabric8.openshift.api.model.SecurityContextConstraints
 import io.fabric8.openshift.client.OpenShiftClient
-import objects.Deployment
 import util.Timer
 
 class OpenShift extends Kubernetes {
@@ -79,42 +77,41 @@ class OpenShift extends Kubernetes {
     }
 
     /*
-        Service Methods
+        Route Methods
     */
-    @Override
-    String waitForLoadBalancer(String serviceName, String namespace) {
-        def loadBalancerIP
-        def route = new RouteBuilder()
-            .withNewMetadata()
-                .withName(serviceName)
-                .endMetadata()
-            .withNewSpec()
-                .withNewTo("Service", serviceName, null)
-                .endSpec()
-            .build()
 
-        oClient.routes().inNamespace(namespace).createOrReplace(route)
-        println "Waiting for Route for " + serviceName
-        int retries = maxWaitTimeSeconds / sleepDurationSeconds
-        Timer t = new Timer(retries, sleepDurationSeconds)
-        while (t.IsValid()) {
-            RouteList rList
-            rList = oClient.routes().inNamespace(namespace).list()
-            for (Route r : rList.getItems()) {
-                if (r.getMetadata().getName() == serviceName) {
-                    if (r.getStatus().getIngress() != null) {
-                        println "Route Host: " + r.getStatus().getIngress().get(0).getHost()
-                        return loadBalancerIP
-                    }
-                }
-            }
+    @Override
+    def createRoute(String routeName, String namespace) {
+        println "Creating a route: " + routeName
+        withRetry(2, 3) {
+            Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata()
+                    .withNewSpec().withNewTo().withName(routeName).endTo().endSpec().build()
+            oClient.routes().inNamespace(namespace).createOrReplace(route)
         }
-        println("Could not get loadBalancer IP in ${t.SecondsSince()} seconds")
-        return loadBalancerIP
     }
 
-    /*
-        Misc/Helper Methods
-    */
+    @Override
+    def deleteRoute(String routeName, String namespace) {
+        println "Deleting a route: " + routeName
+        withRetry(2, 3) {
+            Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata().build()
+            oClient.routes().inNamespace(namespace).delete(route)
+        }
+    }
 
+    @Override
+    String waitForRouteHost(String serviceName, String namespace) {
+        println "Waiting for route: " + serviceName
+        int retries = (int) (maxWaitTimeSeconds / sleepDurationSeconds)
+        Timer t = new Timer(retries, sleepDurationSeconds)
+        while (t.IsValid()) {
+            Route route = oClient.routes().inNamespace(namespace).withName(serviceName).get()
+            if (route?.status?.ingress?.size() > 0) {
+                println "Route Host: " + route.status.ingress[0].host
+                return route.status.ingress[0].host
+            }
+        }
+        println("Could not get route host in ${t.SecondsSince()} seconds")
+        return null
+    }
 }

@@ -37,12 +37,14 @@ class Deployment {
 
     // Misc
     String loadBalancerIP = null
+    String routeHost = null
     String deploymentUid
     List<Pod> pods = []
     String containerName = null
     Boolean skipReplicaWait = false
     Boolean exposeAsService = false
     Boolean createLoadBalancer = false
+    Boolean createRoute = false
     String serviceName
     String serviceAccountName
 
@@ -249,6 +251,11 @@ class Deployment {
 
     Deployment setCreateLoadBalancer(Boolean lb) {
         this.createLoadBalancer = lb
+        return this
+    }
+
+    Deployment setCreateRoute(Boolean create) {
+        this.createRoute = create
         return this
     }
 

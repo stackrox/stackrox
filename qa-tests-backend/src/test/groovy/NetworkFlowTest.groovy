@@ -21,6 +21,7 @@ import objects.Service
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.NetworkGraphService
+import services.ClusterService
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
@@ -83,7 +84,8 @@ class NetworkFlowTest extends BaseSpecification {
                     .addPort(80)
                     .addLabel("app", NGINXCONNECTIONTARGET)
                     .setExposeAsService(true)
-                    .setCreateLoadBalancer(true),
+                    .setCreateLoadBalancer(true)
+                    .setCreateRoute(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT),
         ]
     }
 
@@ -475,15 +477,25 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Category([NetworkFlowVisualization])
     def "Verify connections from external sources"() {
-        given:
-        "Only run on non-OpenShift until we can fix the route issue in CI"
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+        // https://stack-rox.atlassian.net/browse/ROX-7047
+        Assume.assumeFalse(ClusterService.isOpenShift4())
 
+        given:
         "Deployment A, where an external source communicates to A"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
-        String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
-        assert deploymentIP != null
+        String targetUrl
+        if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
+            String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
+            assert deploymentIP != null
+            targetUrl = "http://${deploymentIP}"
+        } else if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
+            String routeHost = deployments.find { it.name == NGINXCONNECTIONTARGET }?.routeHost
+            assert routeHost != null
+            targetUrl = "http://${routeHost}"
+        } else {
+            throw new RuntimeException("Unexpected OrchestratorType")
+        }
 
         when:
         "ping the target deployment"
@@ -491,17 +503,18 @@ class NetworkFlowTest extends BaseSpecification {
         Timer t = new Timer(12, 5)
         while (response?.statusCode() != 200 && t.IsValid()) {
             try {
-                response = given().get("http://${deploymentIP}")
+                println "trying ${targetUrl}..."
+                response = given().get(targetUrl)
             } catch (Exception e) {
-                println "Failure calling http://${deploymentIP}. Trying again in 5 sec..."
+                println "Failure calling ${targetUrl}. Trying again in 5 sec..."
             }
         }
-        Assume.assumeTrue(response?.getStatusCode() == 200)
+        assert response?.getStatusCode() == 200
         println response.asString()
 
         then:
         "Check for edge in network graph"
-        println "Checking for edge from external target to ${EXTERNALDESTINATION}"
+        println "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
         List<Edge> edges =
                 NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
         assert edges
@@ -509,14 +522,10 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Category([NetworkFlowVisualization])
     def "Verify intra-cluster connection via external IP"() {
-        given:
-        "ROX-6092: This test is falsely passing when the deployment fails to start"
+        // https://stack-rox.atlassian.net/browse/ROX-7046 - this test does not pass
         Assume.assumeTrue(false)
 
-        and:
-        "Only run on non-OpenShift until we can fix the route issue in CI"
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
-
+        given:
         "Deployment A, exposed via LB"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
@@ -530,13 +539,15 @@ class NetworkFlowTest extends BaseSpecification {
                 .setImage("nginx:1.15.4-alpine")
                 .addLabel("app", "talk-to-lb-ip")
                 .setCommand(["/bin/sh", "-c",])
-                .setArgs(["while sleep 5; do wget -S -T 2 http://${deploymentIP}; done"])
+                .setArgs(["while sleep 5; do wget -S -T 2 http://"+deploymentIP+"; done"])
 
         orchestrator.createDeployment(newDeployment)
+        assert Services.waitForDeployment(newDeployment)
+        assert newDeployment.deploymentUid
 
         then:
         "Check for edge in network graph"
-        println "Checking for edge from external target to ${EXTERNALDESTINATION}"
+        println "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(newDeployment.deploymentUid, deploymentUid, null, 180)
         assert edges
 
@@ -714,9 +725,6 @@ class NetworkFlowTest extends BaseSpecification {
     @Unroll
     @Category([BAT])
     def "Verify network policy generator apply/undo with delete modes: #deleteMode #note"() {
-        //skip on OS for now
-        Assume.assumeTrue(Env.mustGetOrchestratorType() == OrchestratorTypes.K8S)
-
         given:
         "apply network policies to the system"
         NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic-to-app")
