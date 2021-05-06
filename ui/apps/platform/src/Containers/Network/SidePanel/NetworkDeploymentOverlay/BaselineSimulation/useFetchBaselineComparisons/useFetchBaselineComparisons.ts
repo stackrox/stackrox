@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { selectors } from 'reducers';
+import { createSelector } from 'reselect';
 
-import { fetchBaselineComparison } from 'services/NetworkService';
-import { FilterState } from 'Containers/Network/networkTypes';
-import { SimulatedBaseline } from '../SimulatedNetworkBaselines/baselineSimulationTypes';
+import { FilterState, SimulatedBaseline } from 'Containers/Network/networkTypes';
 import processBaselineComparisons from './processBaselineComparisons';
 
 export type FetchBaselineComparisonsResult = {
     isLoading: boolean;
     simulatedBaselines: SimulatedBaseline[];
-    error: string | null;
+    error: Error | null;
 };
 
 export type UseFetchBaselineComparisons = {
@@ -16,40 +16,22 @@ export type UseFetchBaselineComparisons = {
     filterState: FilterState;
 };
 
-const defaultResultState = {
-    simulatedBaselines: [],
-    error: null,
-    isLoading: true,
-};
+const selectBaselineComparisons = createSelector(
+    [selectors.getBaselineComparisons],
+    (baselineComparisons) => baselineComparisons
+);
 
 function useFetchBaselineComparisons({
-    deploymentId,
     filterState,
 }: UseFetchBaselineComparisons): FetchBaselineComparisonsResult {
-    const [result, setResult] = useState<FetchBaselineComparisonsResult>(defaultResultState);
+    const result = useSelector(selectBaselineComparisons);
 
-    useEffect(() => {
-        const baselineComparisonPromise = fetchBaselineComparison({ deploymentId });
+    const simulatedBaselines = processBaselineComparisons(result.data, filterState);
 
-        baselineComparisonPromise
-            .then((response) => {
-                const simulatedBaselines = processBaselineComparisons(response, filterState);
-                setResult({
-                    simulatedBaselines,
-                    error: null,
-                    isLoading: false,
-                });
-            })
-            .catch((error) => {
-                setResult({
-                    simulatedBaselines: [],
-                    error,
-                    isLoading: false,
-                });
-            });
-    }, [deploymentId, filterState]);
-
-    return result;
+    return {
+        ...result,
+        simulatedBaselines,
+    };
 }
 
 export default useFetchBaselineComparisons;

@@ -19,8 +19,8 @@ import {
     getDirectionalityLabel,
 } from 'Containers/Network/SidePanel/NetworkDeploymentOverlay/utils';
 import Loader from 'Components/Loader';
+import { SimulatedBaseline } from 'Containers/Network/networkTypes';
 import getRowColorStylesByStatus from './getRowColorStylesByStatus';
-import { SimulatedBaseline } from './baselineSimulationTypes';
 
 const columns = [
     {

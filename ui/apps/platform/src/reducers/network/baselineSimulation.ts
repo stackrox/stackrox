@@ -1,6 +1,9 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 
+import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import { BaselineComparisonsResponse } from 'Containers/Network/networkTypes';
+
 export type BaselineSimulationOptions = {
     excludePortsAndProtocols: boolean;
 };
@@ -17,6 +20,28 @@ export type StopBaselineSimulationAction = {
 export type BaselineSimulationState = {
     isOn: boolean;
     options: { excludePortsAndProtocols: boolean };
+    baselineComparisons: BaselineComparisonsResult;
+};
+
+export type BaselineComparisonsAction = {
+    type:
+        | 'network/FETCH_BASELINE_COMPARISONS_REQUEST'
+        | 'network/FETCH_BASELINE_COMPARISONS_SUCCESS'
+        | 'network/FETCH_BASELINE_COMPARISONS_FAILURE';
+    response: BaselineComparisonsResponse;
+    error: Error | null;
+};
+
+export type BaselineComparisonsResult = {
+    isLoading: boolean;
+    data: BaselineComparisonsResponse;
+    error: Error | null;
+};
+
+const baselineComparisonsDefaultState = {
+    isLoading: false,
+    data: { added: [], removed: [], reconciled: [] },
+    error: null,
 };
 
 // Action types
@@ -25,6 +50,7 @@ export type BaselineSimulationState = {
 export const types = {
     START_BASELINE_SIMULATION: 'network/START_BASELINE_SIMULATION',
     STOP_BASELINE_SIMULATION: 'network/STOP_BASELINE_SIMULATION',
+    FETCH_BASELINE_COMPARISONS: createFetchingActionTypes('network/FETCH_BASELINE_COMPARISONS'),
 };
 
 // Actions
@@ -40,6 +66,7 @@ export const actions = {
     stopBaselineSimulation: (): StopBaselineSimulationAction => ({
         type: 'network/STOP_BASELINE_SIMULATION',
     }),
+    fetchBaselineComparisons: createFetchingActions(types.FETCH_BASELINE_COMPARISONS),
 };
 
 // Reducers
@@ -76,9 +103,32 @@ const options = (
     return state;
 };
 
+const baselineComparisons = (
+    state: BaselineComparisonsResult = baselineComparisonsDefaultState,
+    action: BaselineComparisonsAction
+): BaselineComparisonsResult => {
+    const { type } = action;
+    if (type === 'network/FETCH_BASELINE_COMPARISONS_REQUEST') {
+        const newState = { ...baselineComparisonsDefaultState, isLoading: true };
+        return isEqual(newState, state) ? state : newState;
+    }
+    if (type === 'network/FETCH_BASELINE_COMPARISONS_SUCCESS') {
+        const { response } = action;
+        const newState = { ...baselineComparisonsDefaultState, data: response };
+        return isEqual(newState, state) ? state : newState;
+    }
+    if (type === 'network/FETCH_BASELINE_COMPARISONS_FAILURE') {
+        const { error } = action;
+        const newState = { ...baselineComparisonsDefaultState, error };
+        return isEqual(newState, state) ? state : newState;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     isOn,
     options,
+    baselineComparisons,
 });
 
 export default reducer;
@@ -90,8 +140,11 @@ export default reducer;
 const getIsBaselineSimulationOn = (state: BaselineSimulationState): boolean => state.isOn;
 const getBaselineSimulationOptions = (state: BaselineSimulationState): BaselineSimulationOptions =>
     state.options;
+const getBaselineComparisons = (state: BaselineSimulationState): BaselineComparisonsResult =>
+    state.baselineComparisons;
 
 export const selectors = {
     getIsBaselineSimulationOn,
     getBaselineSimulationOptions,
+    getBaselineComparisons,
 };

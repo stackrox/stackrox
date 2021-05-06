@@ -1,5 +1,5 @@
 import { TableColorStyles } from 'Components/TableV7';
-import { SimulatedBaselineStatus } from '../baselineSimulationTypes';
+import { SimulatedBaselineStatus } from 'Containers/Network/networkTypes';
 
 const SIMULATED_BASELINE_STATES = {
     ADDED: 'ADDED',

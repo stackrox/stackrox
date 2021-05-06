@@ -15,7 +15,10 @@ import {
     actions as wizardNetworkActions,
     types as wizardNetworkTypes,
 } from 'reducers/network/sidepanel';
-import { types as baselineSimulationTypes } from 'reducers/network/baselineSimulation';
+import {
+    types as baselineSimulationTypes,
+    actions as baselineSimulationActions,
+} from 'reducers/network/baselineSimulation';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
@@ -176,6 +179,17 @@ function* filterNetworkPageByBaselineSimulation() {
     yield fork(getNetworkGraphs, clusterId, filter);
 }
 
+function* getBaselineComparisons() {
+    try {
+        yield put(baselineSimulationActions.fetchBaselineComparisons.request());
+        const { deploymentId } = yield select(selectors.getSelectedNode);
+        const response = yield call(service.fetchBaselineComparison, { deploymentId });
+        yield put(baselineSimulationActions.fetchBaselineComparisons.success(response));
+    } catch (error) {
+        yield put(baselineSimulationActions.fetchBaselineComparisons.failure(error));
+    }
+}
+
 function* loadNetworkPage() {
     try {
         const result = yield call(fetchClusters);
@@ -302,6 +316,7 @@ function* watchNetworkNodesUpdate() {
 }
 
 function* watchBaselineSimulation() {
+    yield takeLatest(baselineSimulationTypes.START_BASELINE_SIMULATION, getBaselineComparisons);
     yield takeLatest(
         baselineSimulationTypes.START_BASELINE_SIMULATION,
         filterNetworkPageByBaselineSimulation

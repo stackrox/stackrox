@@ -1,51 +1,14 @@
-import { FilterState } from 'Containers/Network/networkTypes';
-import { filterLabels } from 'constants/networkFilterModes';
 import {
+    FilterState,
+    DeploymentEntity,
+    ExternalSourceEntity,
+    InternetEntity,
+    BaselineComparisonsResponse,
     SimulatedBaseline,
     SimulatedBaselineStatus,
     Properties,
-} from '../SimulatedNetworkBaselines/baselineSimulationTypes';
-
-type DeploymentEntity = {
-    id: string;
-    type: 'DEPLOYMENT';
-    deployment: {
-        name: string;
-        namespace: string;
-    };
-};
-
-type ExternalSourceEntity = {
-    id: string;
-    type: 'EXTERNAL_SOURCE';
-    externalSource: {
-        name: string;
-        cidr: string;
-    };
-};
-
-type InternetEntity = {
-    id: string;
-    type: 'INTERNET';
-};
-
-type AddedRemovedBaselineResponse = {
-    entity: DeploymentEntity | ExternalSourceEntity | InternetEntity;
-    properties: [Properties];
-};
-
-export type ReconciledBaselineResponse = {
-    entity: DeploymentEntity | ExternalSourceEntity | InternetEntity;
-    added: [Properties];
-    removed: [Properties];
-    unchanged: [Properties];
-};
-
-export type BaselineResponse = {
-    added: AddedRemovedBaselineResponse[];
-    removed: AddedRemovedBaselineResponse[];
-    reconciled: ReconciledBaselineResponse[];
-};
+} from 'Containers/Network/networkTypes';
+import { filterLabels } from 'constants/networkFilterModes';
 
 function getEntityNameByType(
     entity: DeploymentEntity | ExternalSourceEntity | InternetEntity
@@ -99,7 +62,7 @@ function processBaseline(
 }
 
 function processAddedRemovedBaselines(
-    baselines: BaselineResponse['added'] | BaselineResponse['removed'],
+    baselines: BaselineComparisonsResponse['added'] | BaselineComparisonsResponse['removed'],
     filterState: FilterState,
     simulatedStatus: SimulatedBaselineStatus
 ): SimulatedBaseline[] {
@@ -110,7 +73,7 @@ function processAddedRemovedBaselines(
 }
 
 function processReconciledBaselines(
-    baselines: BaselineResponse['reconciled'],
+    baselines: BaselineComparisonsResponse['reconciled'],
     filterState: FilterState
 ): SimulatedBaseline[] {
     return baselines.reduce((acc, baseline) => {
@@ -123,7 +86,7 @@ function processReconciledBaselines(
 }
 
 function processBaselineComparisons(
-    { added, removed, reconciled }: BaselineResponse,
+    { added, removed, reconciled }: BaselineComparisonsResponse,
     filterState: FilterState
 ): SimulatedBaseline[] {
     const result = [
