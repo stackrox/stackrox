@@ -15,6 +15,7 @@ import {
     actions as wizardNetworkActions,
     types as wizardNetworkTypes,
 } from 'reducers/network/sidepanel';
+import { types as baselineSimulationTypes } from 'reducers/network/baselineSimulation';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
@@ -23,6 +24,7 @@ import { types as deploymentTypes } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import timeWindowToDate from 'utils/timeWindows';
+import queryService from 'utils/queryService';
 import { getDeployment } from './deploymentSagas';
 
 // get generators
@@ -167,6 +169,13 @@ function* filterNetworkPageBySearch() {
     }
 }
 
+function* filterNetworkPageByBaselineSimulation() {
+    const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+    const node = yield select(selectors.getSelectedNode);
+    const filter = queryService.objectToWhereClause({ Deployment: node.name });
+    yield fork(getNetworkGraphs, clusterId, filter);
+}
+
 function* loadNetworkPage() {
     try {
         const result = yield call(fetchClusters);
@@ -292,6 +301,14 @@ function* watchNetworkNodesUpdate() {
     yield takeLatest(graphNetworkTypes.NETWORK_NODES_UPDATE, filterNetworkPageBySearch);
 }
 
+function* watchBaselineSimulation() {
+    yield takeLatest(
+        baselineSimulationTypes.START_BASELINE_SIMULATION,
+        filterNetworkPageByBaselineSimulation
+    );
+    yield takeLatest(baselineSimulationTypes.STOP_BASELINE_SIMULATION, filterNetworkPageBySearch);
+}
+
 // all generators
 export default function* network() {
     yield all([
@@ -308,6 +325,7 @@ export default function* network() {
         fork(watchNetworkPolicyModification),
         fork(watchNotifyNetworkPolicyModification),
         fork(watchApplyNetworkPolicyModification),
+        fork(watchBaselineSimulation),
         fork(watchLocation),
     ]);
 }
