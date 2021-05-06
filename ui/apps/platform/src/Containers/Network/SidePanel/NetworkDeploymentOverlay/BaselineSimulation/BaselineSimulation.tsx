@@ -2,32 +2,27 @@ import React, { useState, ReactElement } from 'react';
 
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
-import { FilterState } from 'Containers/Network/networkTypes';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
 import useNetworkBaselineSimulation from 'Containers/Network/useNetworkBaselineSimulation';
+import useFetchBaselineComparison from 'Containers/Network/useFetchBaselineComparisons';
 import NetworkPolicyYAMLOptions from './NetworkPolicyYAMLOptions';
 import SimulatedNetworkBaselines from './SimulatedNetworkBaselines';
 import ApplyBaselineNetworkPolicy from './ApplyBaselineNetworkPolicy';
 import BaselineSimulationSearch, {
     getSimulatedBaselineValueByCategory,
 } from './BaselineSimulationSearch';
-import useFetchBaselineComparison from './useFetchBaselineComparisons';
 import useFetchBaselineGeneratedNetworkPolicy from './useFetchBaselineGeneratedNetworkPolicy';
 
 export type BaselineSimulationProps = {
     deploymentId: string;
-    filterState: FilterState;
 };
 
-function BaselineSimulation({ deploymentId, filterState }: BaselineSimulationProps): ReactElement {
+function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactElement {
     const {
         baselineSimulationOptions: { excludePortsAndProtocols },
         stopBaselineSimulation,
     } = useNetworkBaselineSimulation();
-    const { simulatedBaselines, isLoading } = useFetchBaselineComparison({
-        deploymentId,
-        filterState,
-    });
+    const { simulatedBaselines, isLoading } = useFetchBaselineComparison();
     const {
         data: networkPolicy,
         isGeneratingNetworkPolicy,

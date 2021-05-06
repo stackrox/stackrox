@@ -41,7 +41,7 @@ function NetworkDeploymentOverlay({
         >
             <Tab title="Flows">
                 {isBaselineSimulationOn ? (
-                    <BaselineSimulation deploymentId={deploymentId} filterState={filterState} />
+                    <BaselineSimulation deploymentId={deploymentId} />
                 ) : (
                     <Flows
                         selectedDeployment={selectedDeployment}

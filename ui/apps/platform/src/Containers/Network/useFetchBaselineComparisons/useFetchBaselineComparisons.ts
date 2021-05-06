@@ -11,20 +11,19 @@ export type FetchBaselineComparisonsResult = {
     error: Error | null;
 };
 
-export type UseFetchBaselineComparisons = {
-    deploymentId: string;
-    filterState: FilterState;
-};
-
 const selectBaselineComparisons = createSelector(
     [selectors.getBaselineComparisons],
     (baselineComparisons) => baselineComparisons
 );
 
-function useFetchBaselineComparisons({
-    filterState,
-}: UseFetchBaselineComparisons): FetchBaselineComparisonsResult {
+const selectNetworkFilterMode = createSelector(
+    [selectors.getNetworkGraphFilterMode],
+    (filterMode) => filterMode as FilterState
+);
+
+function useFetchBaselineComparisons(): FetchBaselineComparisonsResult {
     const result = useSelector(selectBaselineComparisons);
+    const filterState = useSelector(selectNetworkFilterMode);
 
     const simulatedBaselines = processBaselineComparisons(result.data, filterState);
 

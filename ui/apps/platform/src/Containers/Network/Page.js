@@ -8,6 +8,7 @@ import { actions as pageActions } from 'reducers/network/page';
 import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
 import useNetworkPolicySimulation from 'Containers/Network/useNetworkPolicySimulation';
 import useNetworkBaselineSimulation from 'Containers/Network/useNetworkBaselineSimulation';
+import useFetchBaselineComparisons from 'Containers/Network/useFetchBaselineComparisons';
 
 import SimulationFrame from 'Components/SimulationFrame';
 import Dialogue from 'Containers/Network/Dialogue';
@@ -26,6 +27,7 @@ function NetworkPageContent() {
         stopNetworkSimulation,
     } = useNetworkPolicySimulation();
     const { isBaselineSimulationOn, stopBaselineSimulation } = useNetworkBaselineSimulation();
+    const { simulatedBaselines } = useFetchBaselineComparisons();
 
     const isSimulationOn = isNetworkSimulationOn || isBaselineSimulationOn;
     let onStop;
@@ -53,6 +55,7 @@ function NetworkPageContent() {
                             isReadOnly
                             showNamespaceFlows={showNamespaceFlows}
                             setShowNamespaceFlows={handleNamespaceFlowsToggle}
+                            simulatedBaselines={simulatedBaselines}
                         />
                         <SidePanel />
                     </div>

@@ -53,6 +53,9 @@ class Graph extends Component {
         lastUpdatedTimestamp: PropTypes.instanceOf(Date),
 
         isReadOnly: PropTypes.bool,
+        // @TODO: merge this with networkNodeMap and networkEdgeMap somehow
+        // eslint-disable-next-line react/no-unused-prop-types
+        simulatedBaselines: PropTypes.arrayOf(PropTypes.shape),
     };
 
     static defaultProps = {
@@ -63,6 +66,7 @@ class Graph extends Component {
         lastUpdatedTimestamp: null,
         selectedNamespace: null,
         isReadOnly: false,
+        simulatedBaselines: [],
     };
 
     shouldComponentUpdate(nextProps) {

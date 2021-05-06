@@ -28,6 +28,7 @@ import { types as locationActionTypes } from 'reducers/routes';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import timeWindowToDate from 'utils/timeWindows';
 import queryService from 'utils/queryService';
+import { filterModes } from 'constants/networkFilterModes';
 import { getDeployment } from './deploymentSagas';
 
 // get generators
@@ -177,6 +178,11 @@ function* filterNetworkPageByBaselineSimulation() {
     const node = yield select(selectors.getSelectedNode);
     const filter = queryService.objectToWhereClause({ Deployment: node.name });
     yield fork(getNetworkGraphs, clusterId, filter);
+    /*
+     * We want to switch to the allowed filter when showing the simulated state because we want to
+     * show the possible added, removed, modified edges
+     */
+    yield put(graphNetworkActions.setNetworkGraphFilterMode(filterModes.allowed));
 }
 
 function* getBaselineComparisons() {
