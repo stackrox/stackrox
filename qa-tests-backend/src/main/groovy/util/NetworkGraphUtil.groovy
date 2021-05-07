@@ -1,10 +1,12 @@
 package util
 
 import com.google.protobuf.Timestamp
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo
 import objects.Edge
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass
+import services.DeploymentService
 import services.NetworkGraphService
 
 class NetworkGraphUtil {
@@ -124,6 +126,47 @@ class NetworkGraphUtil {
         }
         println "SR did not detect the edge in Network Flow graph"
         return null
+    }
+
+    static NetworkGraphNodes getDeploymentsAsGraphNodes() {
+        def deployments = DeploymentService.listDeploymentsSearch(
+                SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Orchestrator Component:true").build()
+        ).deploymentsList
+        Set<String> orchestratorDeployments = new HashSet<String>([])
+        deployments.each { orchestratorDeployments.add("${it.namespace}/${it.name}") }
+
+        deployments = DeploymentService.listDeploymentsSearch(
+                SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Orchestrator Component:false").build()
+        ).deploymentsList
+        Set<String> nonOrchestratorDeployments = new HashSet<String>([])
+        deployments.each { nonOrchestratorDeployments.add("${it.namespace}/${it.name}") }
+
+        return new NetworkGraphNodes(orchestratorDeployments, nonOrchestratorDeployments)
+    }
+
+    static boolean verifyGraphFilterAndScope(
+            NetworkGraphServiceOuterClass.NetworkGraph graph,
+            Set<String> nonOrchestratorDeployments,
+            Set<String> orchestratorDeployments,
+            boolean nonOrchestratorComponentsShouldExist,
+            boolean orchestratorComponentsShouldExist
+    ) {
+        def graphDeployments = deployments(graph)
+        assert nonOrchestratorComponentsShouldExist ==
+                (nonOrchestratorDeployments.intersect(graphDeployments).size() > 0)
+        assert orchestratorComponentsShouldExist ==
+                (orchestratorDeployments.intersect(graphDeployments).size() > 0)
+        return true
+    }
+
+    static class NetworkGraphNodes {
+        Set<String> orchestratorDeployments
+        Set<String> nonOrchestratorDeployments
+
+        NetworkGraphNodes(Set<String> orchestratorDeployments, Set<String> nonOrchestratorDeployments) {
+            this.orchestratorDeployments = orchestratorDeployments
+            this.nonOrchestratorDeployments = nonOrchestratorDeployments
+        }
     }
 }
 

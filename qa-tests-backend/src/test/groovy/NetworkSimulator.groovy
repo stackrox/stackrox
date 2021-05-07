@@ -55,6 +55,9 @@ class NetworkSimulator extends BaseSpecification {
 
     @Category([NetworkPolicySimulation, BAT])
     def "Verify NetworkPolicy Simulator replace existing network policy"() {
+        given:
+        def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
+
         when:
         "apply network policy"
         NetworkPolicy policy = new NetworkPolicy("deny-all-namespace-ingress")
@@ -63,13 +66,13 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
         orchestrator.applyNetworkPolicy(policy)
         assert NetworkPolicyService.waitForNetworkPolicy(policy.uid)
-        def baseline = NetworkPolicyService.getNetworkPolicyGraph()
+        def baseline = NetworkPolicyService.getNetworkPolicyGraph(null, scope)
 
         and:
         "generate simulation"
         policy.addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyYAML = orchestrator.generateYaml(policy)
-        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(policyYAML)
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(policyYAML, null, scope)
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
 
@@ -80,6 +83,9 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
         assert simulation.policiesList.find { it.policy.name == "deny-all-namespace-ingress" }?.status ==
                 NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.MODIFIED
+
+        assert NetworkGraphUtil.verifyGraphFilterAndScope(simulation.simulatedGraph, allDeps.nonOrchestratorDeployments,
+                allDeps.orchestratorDeployments, true, orchestratorDepsShouldExist)
 
         // Verify no change to added nodes
         assert simulation.added.nodeDiffsCount == 0
@@ -106,10 +112,20 @@ class NetworkSimulator extends BaseSpecification {
         cleanup:
         "cleanup"
         Services.cleanupNetworkPolicies([policy])
+
+        where:
+        "Data is:"
+
+        scope                           | orchestratorDepsShouldExist
+        "Orchestrator Component:false"  | false
+        ""                              | true
     }
 
     @Category([NetworkPolicySimulation, BAT])
     def "Verify NetworkPolicy Simulator add to an existing network policy"() {
+        given:
+        def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
+
         when:
         "apply network policy"
         NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic")
@@ -119,7 +135,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         orchestrator.applyNetworkPolicy(policy1)
         assert NetworkPolicyService.waitForNetworkPolicy(policy1.uid)
-        def baseline = NetworkPolicyService.getNetworkPolicyGraph()
+        def baseline = NetworkPolicyService.getNetworkPolicyGraph(null, scope)
 
         and:
         "generate simulation"
@@ -127,7 +143,8 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
-        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2), null,
+                scope)
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def clientAppId = simulation.simulatedGraph.nodesList.find {
@@ -136,6 +153,9 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "verify simulation"
+        assert NetworkGraphUtil.verifyGraphFilterAndScope(simulation.simulatedGraph, allDeps.nonOrchestratorDeployments,
+                allDeps.orchestratorDeployments, true, orchestratorDepsShouldExist)
+
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() > 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, clientAppId).size() ==
                 NetworkGraphUtil.findEdges(baseline, null, clientAppId).size()
@@ -165,10 +185,20 @@ class NetworkSimulator extends BaseSpecification {
         cleanup:
         "cleanup"
         Services.cleanupNetworkPolicies([policy1])
+
+        where:
+        "Data is:"
+
+        scope                           | orchestratorDepsShouldExist
+        "Orchestrator Component:false"  | false
+        ""                              | true
     }
 
     @Category([NetworkPolicySimulation, BAT])
     def "Verify NetworkPolicy Simulator with query - multiple policy simulation"() {
+        given:
+        def allDeps = new NetworkGraphUtil().getDeploymentsAsGraphNodes()
+
         when:
         "apply network policy"
         NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic")
@@ -193,7 +223,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def simulation = NetworkPolicyService.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy2) + orchestrator.generateYaml(policy3),
-                "Deployment:\"web\",\"client\"+Namespace:qa")
+                "Deployment:\"web\",\"client\"+Namespace:qa", scope)
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def clientAppId = simulation.simulatedGraph.nodesList.find {
@@ -204,6 +234,9 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "verify simulation"
+        assert NetworkGraphUtil.verifyGraphFilterAndScope(simulation.simulatedGraph, allDeps.nonOrchestratorDeployments,
+                allDeps.orchestratorDeployments, true, orchestratorDepsShouldExist)
+
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() >=
                 numNonIsolatedEgressNodes
 
@@ -242,11 +275,23 @@ class NetworkSimulator extends BaseSpecification {
 
         cleanup:
         "cleanup"
-        Services.cleanupNetworkPolicies([policy1])\
+        Services.cleanupNetworkPolicies([policy1])
+
+        where:
+        "Data is:"
+
+        scope                           | orchestratorDepsShouldExist
+        "Orchestrator Component:false"  | false
+        // although unscoped, the net pol allows connection only between non-orchestrator components,
+        // hence no orchestrator components are expected in simulation.
+        ""                              | false
     }
 
     @Category([NetworkPolicySimulation, BAT])
     def "Verify NetworkPolicy Simulator with query - single policy simulation"() {
+        given:
+        def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
+
         when:
         "apply network policy"
         NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic")
@@ -264,7 +309,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
         def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
-                "Deployment:\"web\"+Namespace:qa")
+                "Deployment:\"web\"+Namespace:qa", scope)
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         // Ensure that central is present
@@ -273,6 +318,9 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "verify simulation"
+        assert NetworkGraphUtil.verifyGraphFilterAndScope(simulation.simulatedGraph, allDeps.nonOrchestratorDeployments,
+                allDeps.orchestratorDeployments, true, orchestratorDepsShouldExist)
+
         // At least nodes with non-isolated egress should have edges to 'web' deployment.
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() >=
                 numNonIsolatedEgressNodes
@@ -303,10 +351,20 @@ class NetworkSimulator extends BaseSpecification {
         cleanup:
         "cleanup"
         Services.cleanupNetworkPolicies([policy1])
+
+        where:
+        "Data is:"
+
+        scope                           | orchestratorDepsShouldExist
+        "Orchestrator Component:false"  | false
+        ""                              | true
     }
 
     @Category([NetworkPolicySimulation, BAT])
-    def "Verify NetworkPolicy Simulator with with delete policies"() {
+    def "Verify NetworkPolicy Simulator with delete policies"() {
+        given:
+        def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
+
         when:
         "apply network policy"
         NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic")
@@ -322,7 +380,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addIngressNamespaceSelector()
         orchestrator.applyNetworkPolicy(policy2)
         assert NetworkPolicyService.waitForNetworkPolicy(policy2.uid)
-        def baseline = NetworkGraphService.getNetworkGraph()
+        def baseline = NetworkGraphService.getNetworkGraph(null, scope)
 
         and:
         "compile list of to delete policies"
@@ -339,10 +397,8 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector(["app": CLIENTDEPLOYMENT])
                 .addIngressNamespaceSelector()
-        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(
-                orchestrator.generateYaml(policy3),
-                null,
-                toDelete)
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy3), null,
+                scope, toDelete)
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def clientAppId = simulation.simulatedGraph.nodesList.find {
@@ -351,6 +407,9 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "verify simulation"
+        assert NetworkGraphUtil.verifyGraphFilterAndScope(simulation.simulatedGraph, allDeps.nonOrchestratorDeployments,
+                allDeps.orchestratorDeployments, true, orchestratorDepsShouldExist)
+
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, clientAppId).size() > 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() ==
                 NetworkGraphUtil.findEdges(baseline, null, webAppId).size()
@@ -383,6 +442,13 @@ class NetworkSimulator extends BaseSpecification {
         cleanup:
         "cleanup"
         Services.cleanupNetworkPolicies([policy1, policy2])
+
+        where:
+        "Data is:"
+
+        scope                           | orchestratorDepsShouldExist
+        "Orchestrator Component:false"  | false
+        ""                              | true
     }
 
     @Category([NetworkPolicySimulation])

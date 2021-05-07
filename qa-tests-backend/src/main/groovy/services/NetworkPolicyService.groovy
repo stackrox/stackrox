@@ -23,7 +23,7 @@ class NetworkPolicyService extends BaseService {
         return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getNetworkPolicyGraph(String query = null, String scope = null) {
+    static getNetworkPolicyGraph(String query = null, String scopeQuery = null) {
         try {
             GetNetworkGraphRequest.Builder request =
                     GetNetworkGraphRequest.newBuilder()
@@ -31,8 +31,8 @@ class NetworkPolicyService extends BaseService {
             if (query != null) {
                 request.setQuery(query)
             }
-            if (scope != null) {
-                request.setScope(NetworkGraphScope.newBuilder().setQuery(scope))
+            if (scopeQuery != null) {
+                request.setScope(NetworkGraphScope.newBuilder().setQuery(scopeQuery))
             }
             return getNetworkPolicyClient().getNetworkGraph(request.build())
         } catch (Exception e) {
@@ -50,6 +50,7 @@ class NetworkPolicyService extends BaseService {
     static submitNetworkGraphSimulation(
             String yaml,
             String query = null,
+            String scopeQuery = null,
             List<NetworkPolicyReference> toDelete = null) {
         println "Generating simulation using YAML:"
         println yaml
@@ -66,6 +67,9 @@ class NetworkPolicyService extends BaseService {
                             .setIncludeNodeDiff(true)
             if (query != null) {
                 request.setQuery(query)
+            }
+            if (scopeQuery != null) {
+                request.setScope(NetworkGraphScope.newBuilder().setQuery(scopeQuery))
             }
             return getNetworkPolicyClient().simulateNetworkGraph(request.build())
         } catch (Exception e) {

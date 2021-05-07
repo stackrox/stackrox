@@ -239,7 +239,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	// Get the deployments we want to check connectivity between.
-	queryDeploymentIDs, clusterDeployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery(), nil)
+	queryDeploymentIDs, clusterDeployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery(), request.GetScope())
 	if err != nil {
 		return nil, err
 	}

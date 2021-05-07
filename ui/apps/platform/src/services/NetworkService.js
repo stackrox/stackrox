@@ -128,10 +128,17 @@ export function fetchNetworkPolicyGraph(clusterId, query, modification, includeP
         urlParams.includePorts = true;
     }
 
+    // for openshift filtering toggle
+    if (localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true') {
+        urlParams.scope = {
+            query: 'Orchestrator Component:false',
+        };
+    }
+    const params = queryString.stringify(urlParams, { arrayFormat: 'repeat', allowDots: true });
+
     let options;
     let getGraph = (data) => data;
     if (modification) {
-        const params = queryString.stringify(urlParams, { arrayFormat: 'repeat' });
         options = {
             method: 'POST',
             data: modification,
@@ -139,13 +146,6 @@ export function fetchNetworkPolicyGraph(clusterId, query, modification, includeP
         };
         getGraph = ({ simulatedGraph }) => simulatedGraph;
     } else {
-        // for openshift filtering toggle
-        if (localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true') {
-            urlParams.scope = {
-                query: 'Orchestrator Component:false',
-            };
-        }
-        const params = queryString.stringify(urlParams, { arrayFormat: 'repeat', allowDots: true });
         options = {
             method: 'GET',
             url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`,

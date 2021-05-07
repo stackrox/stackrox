@@ -17,7 +17,7 @@ class NetworkGraphService extends BaseService {
         return NetworkGraphServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getNetworkGraph(Timestamp since = null, String query = null, String scope = null) {
+    static getNetworkGraph(Timestamp since = null, String query = null, String scopeQuery = null) {
         try {
             NetworkGraphRequest.Builder request =
                     NetworkGraphRequest.newBuilder()
@@ -28,8 +28,8 @@ class NetworkGraphService extends BaseService {
             if (query != null) {
                 request.setQuery(query)
             }
-            if (scope != null) {
-                request.setScope(NetworkGraphScope.newBuilder().setQuery(scope))
+            if (scopeQuery != null) {
+                request.setScope(NetworkGraphScope.newBuilder().setQuery(scopeQuery))
             }
             return getNetworkGraphClient().getNetworkGraph(request.build())
         } catch (Exception e) {

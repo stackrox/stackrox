@@ -43,13 +43,14 @@ message GetNetworkGraphRequest {
 }
 
 message SimulateNetworkGraphRequest {
-    string cluster_id                      = 1;
-    string query                           = 2;
-    storage.NetworkPolicyModification modification = 3;
+    string                            cluster_id        = 1;
+    string                            query             = 2;
+    storage.NetworkPolicyModification modification      = 3;
 
     // If set to true, include port-level information in the network policy graph.
-    bool include_ports = 4;
-    bool include_node_diff = 5;
+    bool                              include_ports     = 4;
+    bool                              include_node_diff = 5;
+    NetworkGraphScope                 scope             = 6;
 }
 
 message ApplyNetworkPolicyYamlRequest {

@@ -32,7 +32,6 @@ import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
-import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import com.jayway.restassured.response.Response
 
 @Stepwise
@@ -243,30 +242,6 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    def verifyGraphFilterAndScope(
-            NetworkGraph graph,
-            Set<String> nonOrchestratorDeployments,
-            Set<String> orchestratorDeployments,
-            boolean nonOrchestratorComponentsShouldExist,
-            boolean orchestratorComponentsShouldExist
-    ) {
-        def graphDeployments = NetworkGraphUtil.deployments(graph)
-        def numGraphNonOrchestratorDeployments = nonOrchestratorDeployments.intersect(graphDeployments).size()
-        if (nonOrchestratorComponentsShouldExist) {
-            assert numGraphNonOrchestratorDeployments > 0
-        } else {
-            assert numGraphNonOrchestratorDeployments == 0
-        }
-
-        def numGraphOrchestratorDeployments = orchestratorDeployments.intersect(graphDeployments).size()
-        if (orchestratorComponentsShouldExist) {
-            assert numGraphOrchestratorDeployments > 0
-        } else {
-            assert numGraphOrchestratorDeployments == 0
-        }
-        return true
-    }
-
     @Category([NetworkFlowVisualization])
     def "Verify one-time connections show at first, but do not appear again"() {
         given:
@@ -393,18 +368,7 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify network graph when filtered on \"#filter\" and scoped to \"#scope\" #desc"() {
         given:
         "Orchestrator components exists"
-        def deployments = Services.getDeployments(
-                RawQuery.newBuilder().setQuery("Orchestrator Component:true").build()
-        )
-        def orchestratorDeployments = new HashSet<String>([])
-        deployments.each { orchestratorDeployments.add("${it.namespace}/${it.name}") }
-        Assume.assumeTrue(orchestratorDeployments.size() > 0)
-
-        deployments = Services.getDeployments(
-                RawQuery.newBuilder().setQuery("Orchestrator Component:false").build()
-        )
-        def nonOrchestratorDeployments = new HashSet<String>([])
-        deployments.each { nonOrchestratorDeployments.add("${it.namespace}/${it.name}") }
+        def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
 
         when:
         "Network graph is filtered on \"#filter\" and scoped to \"#scope\""
@@ -412,8 +376,8 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Network graph #desc"
-        assert verifyGraphFilterAndScope(graph, nonOrchestratorDeployments, orchestratorDeployments,
-                nonOrchestratorDepsShouldExist, orchestratorDepsShouldExist)
+        assert NetworkGraphUtil.verifyGraphFilterAndScope(graph, allDeps.nonOrchestratorDeployments,
+                allDeps.orchestratorDeployments, nonOrchestratorDepsShouldExist, orchestratorDepsShouldExist)
 
         when:
         "Network policy graph is filtered on \"#filter\" and scoped to \"#scope\""
@@ -421,8 +385,8 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Network policy graph #desc"
-        assert verifyGraphFilterAndScope(graph, nonOrchestratorDeployments, orchestratorDeployments,
-                nonOrchestratorDepsShouldExist, orchestratorDepsShouldExist)
+        assert NetworkGraphUtil.verifyGraphFilterAndScope(graph, allDeps.nonOrchestratorDeployments,
+                allDeps.orchestratorDeployments, nonOrchestratorDepsShouldExist, orchestratorDepsShouldExist)
 
         where:
         "Data is:"
