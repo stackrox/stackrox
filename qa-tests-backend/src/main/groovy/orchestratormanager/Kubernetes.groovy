@@ -97,6 +97,7 @@ import objects.SecretKeyRef
 import okhttp3.Response
 import util.Timer
 
+import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -329,6 +330,14 @@ class Kubernetes implements OrchestratorMain {
         println "reading logs from ${ns}/${name}"
         return client.pods().inNamespace(ns)
                 .withName(name).getLog()
+    }
+
+    def copyFileToPod(String fromPath, String ns, String podName, String toPath) {
+        client.pods()
+                .inNamespace(ns)
+                .withName(podName)
+                .file(toPath)
+                .upload(Paths.get(fromPath))
     }
 
     def waitForDeploymentDeletion(Deployment deploy, int retries = 30, int intervalSeconds = 5) {
@@ -800,6 +809,15 @@ class Kubernetes implements OrchestratorMain {
         if (objects.Service.Type.LOADBALANCER == s.type) {
             s.loadBalancerIP = waitForLoadBalancer(s.name, s.namespace)
         }
+    }
+
+    def getServiceIP(String serviceName, String ns) {
+        return client.services()
+                .inNamespace(ns)
+                .withName(serviceName)
+                .get()
+                .getSpec()
+                .getClusterIP()
     }
 
     def deleteService(String name, String namespace = this.namespace) {

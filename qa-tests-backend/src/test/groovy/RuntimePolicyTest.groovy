@@ -71,7 +71,7 @@ class RuntimePolicyTest extends BaseSpecification  {
 
     @Unroll
     @Category([BAT])
-    def "Verify runtime alerts are removed once policy is removed"() {
+    def "Verify runtime alert violations are resolved once policy is removed"() {
         given:
         "Create runtime alert"
         def policy = PolicyOuterClass.Policy.newBuilder()

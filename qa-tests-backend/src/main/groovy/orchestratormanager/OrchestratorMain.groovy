@@ -39,6 +39,7 @@ interface OrchestratorMain {
     def waitForPodsReady(String ns, Map<String, String> labels, int minReady, int iterations, int intervalSeconds)
     def waitForPodRestart(String ns, String name, int prevRestartCount, int retries, int intervalSeconds)
     String getPodLog(String ns, String name)
+    def copyFileToPod(String fromPath, String ns, String podName, String toPath)
 
     //Deployments
     io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name)
@@ -88,6 +89,7 @@ interface OrchestratorMain {
     def createService(Service service)
     def deleteService(String serviceName, String namespace)
     def waitForServiceDeletion(Service service)
+    def getServiceIP(String serviceName, String ns)
 
     //Routes
     def createRoute(String routeName, String namespace)

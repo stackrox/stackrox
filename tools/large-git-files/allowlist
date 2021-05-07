@@ -26,4 +26,6 @@ roxctl/helm/derivelocalvalues/testdata/k8s-resources/offlineMode-internalRegistr
 pkg/helmtest/openapi-schemas/kubernetes-1.20.2.json.gz
 pkg/helmtest/openapi-schemas/openshift-4.1.0.json.gz
 pkg/helmtest/openapi-schemas/openshift-3.11.0.json.gz
+qa-tests-backend/artifacts/splunk-violations-test/2021-04-13-TA-stackrox-1.1.2-input-validation-patched.spl
+qa-tests-backend/artifacts/splunk-violations-test/splunk-common-information-model-cim_4190.tgz
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go

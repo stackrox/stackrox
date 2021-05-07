@@ -2,17 +2,24 @@ package util
 
 import static com.jayway.restassured.RestAssured.given
 
-import com.google.gson.GsonBuilder
+import groovy.transform.TupleConstructor
+import io.fabric8.kubernetes.client.LocalPortForward
+import objects.Deployment
+import objects.Service
 import objects.SplunkAlert
 import objects.SplunkAlertRaw
 import objects.SplunkAlerts
 import objects.SplunkSearch
+import orchestratormanager.OrchestratorMain
 
-import com.google.gson.Gson
-import com.jayway.restassured.response.Response
 import org.junit.AssumptionViolatedException
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.jayway.restassured.response.Response
+
 class SplunkUtil {
+    public static final String SPLUNK_ADMIN_PASSWORD = "helloworld"
     static final private Gson GSON = new GsonBuilder().create()
 
     static List<SplunkAlert> getSplunkAlerts(int port, String searchId) {
@@ -84,31 +91,25 @@ class SplunkUtil {
     }
 
     static Response getSearchResults(int port, String searchId) {
-        Response response
-        try {
-            response = given().auth().basic("admin", "changeme")
+        Response response = null
+        withRetry(20, 3) {
+            response = given().auth()
+                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
                     .param("output_mode", "json")
                     .get("https://127.0.0.1:${port}/services/search/jobs/${searchId}/events")
         }
-        catch (Exception e) {
-            println("catching unknownhost exception for KOPS and other intermittent connection issues" + e)
-        }
-        println "Printing response from https://127.0.0.1:${port} " + response?.prettyPrint()
         return response
     }
 
     static String createSearch(int port, String search = "search") {
         Response response = null
-        try {
-            withRetry(20, 3) {
-                response = given().auth().basic("admin", "changeme")
-                        .formParam("search", search)
-                        .param("output_mode", "json")
-                        .post("https://127.0.0.1:${port}/services/search/jobs")
-            }
-        }
-        catch (Exception e) {
-            println("catching unknownhost exception for KOPS and other intermittent connection issues" + e)
+        withRetry(20, 3) {
+            response = given()
+                    .auth()
+                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
+                    .formParam("search", search)
+                    .formParam("output_mode", "json")
+                    .post("https://127.0.0.1:${port}/services/search/jobs")
         }
 
         println response?.asString() //printout the response for debugging purposes
@@ -120,5 +121,78 @@ class SplunkUtil {
             println "New Search created: ${searchId}"
             return searchId
         }
+    }
+
+    static SplunkDeployment createSplunk(OrchestratorMain orchestrator, String namespace, boolean useLegacySplunk) {
+        def uid = UUID.randomUUID()
+        def deploymentName = "splunk-${uid}"
+        if (useLegacySplunk) {
+            orchestrator.createImagePullSecret("qa-stackrox", Env.mustGetDockerIOUserName(),
+                    Env.mustGetDockerIOPassword(), namespace)
+        }
+        Deployment deployment =
+                new Deployment()
+                        .setNamespace(namespace)
+                        .setName(deploymentName)
+                        .setImage(useLegacySplunk ? "stackrox/splunk-test-repo:6.6.2" : "splunk/splunk:8.1.2")
+                        .addPort (8000)
+                        .addPort (8088)
+                        .addPort(8089)
+                        .addPort(514)
+                        .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root",
+                                  "SPLUNK_PASSWORD": SPLUNK_ADMIN_PASSWORD,
+                                  // This is required to get splunk 6.6.2 to start in an OpenShift crio environment
+                                  // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
+                                  // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
+                                  "OPTIMISTIC_ABOUT_FILE_LOCKING": "1", ])
+                        .addLabel("app", deploymentName)
+        if (useLegacySplunk) {
+            deployment.addImagePullSecret("qa-stackrox")
+        }
+        orchestrator.createDeployment(deployment)
+
+        Service collectorSvc = new Service("splunk-collector-${uid}", namespace)
+                .addLabel("app", deploymentName)
+                .addPort(8088, "TCP")
+                .setType(Service.Type.CLUSTERIP)
+        orchestrator.createService(collectorSvc)
+
+        Service syslogSvc = new Service("splunk-syslog-${uid}", namespace)
+                .addLabel("app", deploymentName)
+                .addPort(514, "TCP")
+                .setType(Service.Type.CLUSTERIP)
+        orchestrator.createService(syslogSvc)
+
+        LocalPortForward splunkPortForward = orchestrator.createPortForward(8089, deployment)
+
+        return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
+    }
+
+    static void tearDownSplunk(OrchestratorMain orchestrator, SplunkDeployment splunkDeployment) {
+        def imagePullSecrets = splunkDeployment.deployment.getImagePullSecret()
+        for (String secret : imagePullSecrets) {
+            orchestrator.deleteSecret(secret, splunkDeployment.deployment.namespace)
+        }
+        orchestrator.deleteService(splunkDeployment.syslogSvc.name, splunkDeployment.syslogSvc.namespace)
+        orchestrator.deleteService(splunkDeployment.collectorSvc.name, splunkDeployment.collectorSvc.namespace)
+        orchestrator.deleteDeployment(splunkDeployment.deployment)
+    }
+
+    static void postToSplunk(int port, String path, Map<String, String> parameters) {
+        withRetry(200, 3) {
+            given().auth().basic("admin", SPLUNK_ADMIN_PASSWORD)
+                    .relaxedHTTPSValidation()
+                    .params(parameters)
+                    .post("https://localhost:${port}${path}")
+        }
+    }
+
+    @TupleConstructor
+    static class SplunkDeployment {
+        UUID uid
+        Service collectorSvc
+        LocalPortForward splunkPortForward
+        Service syslogSvc
+        Deployment deployment
     }
 }

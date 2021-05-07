@@ -1,10 +1,10 @@
+import common.Constants
 import groups.Notifiers
-import io.fabric8.kubernetes.client.LocalPortForward
+import groups.BAT
+import groups.Integration
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
-import groups.BAT
-import groups.Integration
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.AnchoreScannerIntegration
 import objects.AzureRegistryIntegration
@@ -24,18 +24,22 @@ import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
 import objects.SyslogNotifier
 import objects.TeamsNotifier
-import org.junit.Assume
-import org.junit.experimental.categories.Category
+import objects.Deployment
 import services.ClusterService
 import services.CreatePolicyService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
 import spock.lang.Unroll
-import objects.Deployment
-import objects.Service
+import util.SplunkUtil
 import util.Env
-import common.Constants
+
+import java.util.concurrent.TimeUnit
+
+import org.junit.Assume
+import org.junit.Rule
+import org.junit.experimental.categories.Category
+import org.junit.rules.Timeout
 
 class IntegrationsTest extends BaseSpecification {
     static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"
@@ -51,6 +55,10 @@ class IntegrationsTest extends BaseSpecification {
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
+
     def setupSpec() {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -60,94 +68,6 @@ class IntegrationsTest extends BaseSpecification {
     def cleanupSpec() {
         ImageIntegrationService.addStackroxScannerIntegration()
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
-    }
-
-    private static class SplunkParts {
-        UUID uid
-        Service collectorSvc
-        LocalPortForward splunkPortForward
-        Service syslogSvc
-        Service httpSvc
-        Service httpsSvc
-        Deployment deployment
-
-        SplunkParts(UUID uid, Service collectorSvc, LocalPortForward splunkPortForward,
-                    Service syslogSvc, Service httpSvc, Service httpsSvc, Deployment deployment) {
-            this.uid = uid
-            this.collectorSvc = collectorSvc
-            this.splunkPortForward = splunkPortForward
-            this.syslogSvc = syslogSvc
-            this.httpSvc = httpSvc
-            this.httpsSvc = httpsSvc
-            this.deployment = deployment
-        }
-    }
-
-    SplunkParts createSplunk() {
-        def uid = UUID.randomUUID()
-        def deploymentName = "splunk-${uid}"
-        orchestrator.createImagePullSecret("qa-stackrox", Env.mustGetDockerIOUserName(),
-                Env.mustGetDockerIOPassword(), Constants.ORCHESTRATOR_NAMESPACE)
-        Deployment deployment =
-                new Deployment()
-                        .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
-                        .setName(deploymentName)
-                        .setImage("stackrox/splunk-test-repo:6.6.2")
-                        .addPort (8000)
-                        .addPort (8088)
-                        .addPort(8089)
-                        .addPort(514)
-                        .addAnnotation("test", "annotation")
-                        .setEnv([ "SPLUNK_START_ARGS": "--accept-license",
-                                  "SPLUNK_USER": "root",
-                                  // This is required to get splunk 6.6.2 to start in an OpenShift crio environment
-                                  // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
-                                  // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
-                                  "OPTIMISTIC_ABOUT_FILE_LOCKING": "1", ])
-                        .addLabel("app", deploymentName)
-                        .setPrivilegedFlag(true)
-                        .addVolume("test", "/tmp")
-                        .addImagePullSecret("qa-stackrox")
-        orchestrator.createDeployment(deployment)
-
-        Service httpSvc = new Service("splunk-http-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
-                .addLabel("app", deploymentName)
-                .addPort(8000, "TCP")
-                .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(httpSvc)
-
-        Service  collectorSvc = new Service("splunk-collector-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
-                .addLabel("app", deploymentName)
-                .addPort(8088, "TCP")
-                .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(collectorSvc)
-
-        Service httpsSvc = new Service("splunk-https-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
-                .addLabel("app", deploymentName)
-                .addPort(8089, "TCP")
-                .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(httpsSvc)
-
-        Service syslogSvc = new Service( "splunk-syslog-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
-                .addLabel("app", deploymentName)
-                .addPort(514, "TCP")
-                .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(syslogSvc)
-
-        LocalPortForward splunkPortForward = orchestrator.createPortForward(8089, deployment)
-
-        return new SplunkParts(uid, collectorSvc, splunkPortForward, syslogSvc, httpSvc, httpsSvc, deployment)
-    }
-
-    def tearDownSplunk(SplunkParts splunkParts) {
-        if (splunkParts.deployment != null) {
-            orchestrator.deleteDeployment(splunkParts.deployment)
-        }
-        orchestrator.deleteService(splunkParts.syslogSvc.name, splunkParts.syslogSvc.namespace)
-        orchestrator.deleteService(splunkParts.httpSvc.name, splunkParts.httpSvc.namespace)
-        orchestrator.deleteService(splunkParts.collectorSvc.name, splunkParts.collectorSvc.namespace)
-        orchestrator.deleteService(splunkParts.httpsSvc.name, splunkParts.httpsSvc.namespace)
-        orchestrator.deleteSecret("qa-stackrox", Constants.ORCHESTRATOR_NAMESPACE)
     }
 
     @Unroll
@@ -236,7 +156,8 @@ class IntegrationsTest extends BaseSpecification {
     def "Verify Splunk Integration (legacy mode: #legacy)"() {
         given:
         "the integration is tested"
-        SplunkParts parts = createSplunk()
+        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator,
+                Constants.ORCHESTRATOR_NAMESPACE, true)
 
         when:
         "call the grpc API for the splunk integration."
@@ -283,7 +204,7 @@ class IntegrationsTest extends BaseSpecification {
         if (policy != null) {
             CreatePolicyService.deletePolicy(policyId)
         }
-        tearDownSplunk(parts)
+        SplunkUtil.tearDownSplunk(orchestrator, parts)
         notifier.deleteNotifier()
 
         where:
@@ -569,12 +490,13 @@ class IntegrationsTest extends BaseSpecification {
         given:
         "the some syslog receiver is created"
         // Change the local port numbers so we don't conflict with any other splunk instances
-        SplunkParts parts = createSplunk()
+        SplunkUtil.SplunkDeployment splunkDeployment = SplunkUtil.createSplunk(orchestrator,
+                Constants.ORCHESTRATOR_NAMESPACE, true)
 
         when:
         "call the grpc API for the syslog integration."
-        SyslogNotifier notifier = new SyslogNotifier(parts.syslogSvc.name, 514,
-                parts.splunkPortForward.localPort)
+        SyslogNotifier notifier = new SyslogNotifier(splunkDeployment.syslogSvc.name, 514,
+                splunkDeployment.splunkPortForward.localPort)
         try {
             notifier.createNotifier()
         } catch (Exception e) {
@@ -588,7 +510,7 @@ class IntegrationsTest extends BaseSpecification {
 
         cleanup:
         "remove splunk and syslog notifier integration"
-        tearDownSplunk(parts)
+        SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
         notifier.deleteNotifier()
     }
 }

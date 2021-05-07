@@ -327,12 +327,7 @@ class SplunkNotifier extends Notifier {
     }
 
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        def response
-        try {
-            response = SplunkUtil.waitForSplunkAlerts(splunkPort, 30)
-        } catch (Exception e) {
-            Assume.assumeNoException("Failed to create new Splunk search. Skipping test!", exception)
-        }
+        def response = SplunkUtil.waitForSplunkAlerts(splunkPort, 30)
 
         assert response.find { it.deployment.id == deployment.deploymentUid }
         assert response.find { it.deployment.name == deployment.name }
@@ -359,12 +354,7 @@ class SyslogNotifier extends Notifier {
     }
 
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        def response
-        try {
-            response = SplunkUtil.waitForSplunkSyslog(splunkPort, 30)
-        } catch (Exception e) {
-            Assume.assumeNoException("Failed to create new Splunk search. Skipping test!", e)
-        }
+        def response = SplunkUtil.waitForSplunkSyslog(splunkPort, 30)
         // We must have received at least one syslog message
         assert response.size() > 0
     }
