@@ -15,7 +15,7 @@ clusterName: ""
 confirmNewClusterName: ""
 
 imagePullSecrets:
-  allowNone: [< or .KubectlOutput .RenderAsLegacyChart | not | not >]
+  allowNone: [< or .ImagePullSecrets.AllowNone .KubectlOutput .RenderAsLegacyChart | not | not >]
   useExisting: []
   useFromDefaultServiceAccount: true
 

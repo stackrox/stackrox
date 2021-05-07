@@ -14,6 +14,11 @@ type ChartRepo struct {
 	URL string
 }
 
+// ImagePullSecrets represents the image pull secret defaults.
+type ImagePullSecrets struct {
+	AllowNone bool
+}
+
 // DefaultMetaValues are the default meta values for rendering the StackRox charts in production.
 func DefaultMetaValues() MetaValues {
 	metaValues := map[string]interface{}{
@@ -23,6 +28,9 @@ func DefaultMetaValues() MetaValues {
 		"RenderMode":        "",
 		"ChartRepo": ChartRepo{
 			URL: "https://charts.stackrox.io",
+		},
+		"ImagePullSecrets": ImagePullSecrets{
+			AllowNone: false,
 		},
 	}
 
@@ -44,6 +52,9 @@ func RHACSMetaValues() MetaValues {
 		"RenderMode":        "",
 		"ChartRepo": ChartRepo{
 			URL: "http://mirror.openshift.com/pub/rhacs/charts",
+		},
+		"ImagePullSecrets": ImagePullSecrets{
+			AllowNone: true,
 		},
 	}
 

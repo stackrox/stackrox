@@ -1,7 +1,7 @@
 defaults:
 
   imagePullSecrets:
-    allowNone: false
+    allowNone: [< .ImagePullSecrets.AllowNone >]
     useExisting: []
     useFromDefaultServiceAccount: true
 
