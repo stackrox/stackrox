@@ -18,12 +18,6 @@
           "namespace": "openshift-cluster-csi-drivers"
         }
       }
-    },
-    {
-      "name": "Don't alert on a pdcsi-node deployment",
-      "deployment": {
-        "name": "pdcsi-node"
-      }
     }
   ],
   "severity": "MEDIUM_SEVERITY",

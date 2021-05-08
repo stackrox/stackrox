@@ -53,4 +53,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_64_to_m_65_detect_openshift4_cluster_on_exec_webhooks"
 	_ "github.com/stackrox/rox/migrator/migrations/m_65_to_m_66_policy_bug_fixes"
 	_ "github.com/stackrox/rox/migrator/migrations/m_66_to_m_67_missing_policy_migrations"
+	_ "github.com/stackrox/rox/migrator/migrations/m_67_to_m_68_exclude_pdcsi_from_mount_propagation"
 )
