@@ -21,7 +21,7 @@ import {
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
 import { selectors } from 'reducers';
-import { userPath, userRolePath } from 'routePaths';
+import { userBasePath, userRolePath } from 'routePaths';
 import User from 'utils/User';
 
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
@@ -36,7 +36,7 @@ const stylePageSection = {
     '--pf-c-page__main-section--PaddingLeft': spacerPageSection,
 };
 
-const getUserRolePath = (roleName) => `${userPath}/roles/${roleName}`;
+const getUserRolePath = (roleName) => `${userBasePath}/roles/${roleName}`;
 
 function UserPage({ resourceToAccessByRole, userData }) {
     const { email, name, roles, usedAuthProvider } = new User(userData);
@@ -73,7 +73,11 @@ function UserPage({ resourceToAccessByRole, userData }) {
                             <Nav theme="light">
                                 <NavList>
                                     <NavItem>
-                                        <NavLink exact to={userPath} activeClassName="pf-m-current">
+                                        <NavLink
+                                            exact
+                                            to={userBasePath}
+                                            activeClassName="pf-m-current"
+                                        >
                                             User permissions for roles
                                         </NavLink>
                                     </NavItem>
@@ -122,7 +126,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                                     );
                                 }}
                             />
-                            <Route path={userPath}>
+                            <Route path={userBasePath}>
                                 <UserPermissionsForRolesTable
                                     resourceToAccessByRole={resourceToAccessByRole}
                                 />

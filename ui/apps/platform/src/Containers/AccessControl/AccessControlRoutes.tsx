@@ -4,7 +4,7 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 import PageNotFound from 'Components/PageNotFound';
 import useCaseTypes from 'constants/useCaseTypes'; // use case path segments
 
-import { accessControlPath, getEntityPath } from './accessControlPaths';
+import { accessControlBasePath, getEntityPath } from './accessControlPaths';
 import AccessScopesList from './AccessScopes/AccessScopesList';
 import AuthProvidersList from './AuthProviders/AuthProvidersList';
 import PermissionSetsList from './PermissionSets/PermissionSetsList';
@@ -15,7 +15,7 @@ const entityIdParam = ':entityId?';
 function AccessControlRoutes(): ReactElement {
     return (
         <Switch>
-            <Route exact path={accessControlPath}>
+            <Route exact path={accessControlBasePath}>
                 <Redirect to={getEntityPath('AUTH_PROVIDER')} />
             </Route>
             <Route path={getEntityPath('ACCESS_SCOPE', entityIdParam)}>

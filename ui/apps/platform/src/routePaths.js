@@ -26,9 +26,10 @@ export const imagesPath = `${mainPath}/images/:imageId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;
-export const accessControlPathV2 = `${mainPath}/access-control`;
-export const userPath = `${mainPath}/user`;
-export const userRolePath = `${mainPath}/user/roles/:roleName`;
+export const accessControlBasePathV2 = `${mainPath}/access-control`;
+export const accessControlPathV2 = `${accessControlBasePathV2}/:entityType?/:entityId?`;
+export const userBasePath = `${mainPath}/user`;
+export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
@@ -96,7 +97,7 @@ export const basePathToLabelMap = {
     [systemConfigPath]: 'System Configuration',
     [systemHealthPath]: 'System Health',
     [loginPath]: 'Log In',
-    [userPath]: 'User Profile',
+    [userBasePath]: 'User Profile',
 };
 
 const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;

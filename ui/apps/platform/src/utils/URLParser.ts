@@ -16,7 +16,71 @@ import {
     policiesPath,
     networkPath,
     userRolePath,
+    accessControlPathV2,
 } from '../routePaths';
+
+type ParamsWithContext = {
+    context: string;
+    [key: string]: string;
+};
+
+const nonWorkflowUseCasePathEntries = Object.entries({
+    CLUSTERS: clustersPathWithParam,
+    RISK: riskPath,
+    VIOLATIONS: violationsPath,
+    POLICIES: policiesPath,
+    NETWORK: networkPath,
+    USER: userRolePath, // however, it matches workflow list path
+    ACCESS_CONTROL: accessControlPathV2,
+});
+
+function getNonWorkflowParams(pathname): ParamsWithContext {
+    for (let i = 0; i < nonWorkflowUseCasePathEntries.length; i += 1) {
+        const [useCaseKey, path] = nonWorkflowUseCasePathEntries[i];
+        const matchedPath = matchPath(pathname, {
+            path,
+            exact: true,
+        });
+
+        if (matchedPath?.params) {
+            const { params } = matchedPath;
+            return {
+                ...(params as Record<string, string>),
+                context: useCases[useCaseKey],
+            };
+        }
+    }
+
+    return { context: '' };
+}
+
+function getParams(pathname): ParamsWithContext {
+    // The type casts assert that workflow paths include a :context param.
+
+    const matchedEntityPath = matchPath(pathname, {
+        path: workflowPaths.ENTITY,
+    });
+    if (matchedEntityPath?.params) {
+        return matchedEntityPath.params as ParamsWithContext;
+    }
+
+    const matchedListPath = matchPath(pathname, {
+        path: workflowPaths.LIST,
+    });
+    if (matchedListPath?.params) {
+        return matchedListPath.params as ParamsWithContext;
+    }
+
+    const matchedDashboardPath = matchPath(pathname, {
+        path: workflowPaths.DASHBOARD,
+        exact: true,
+    });
+    if (matchedDashboardPath?.params) {
+        return matchedDashboardPath.params as ParamsWithContext;
+    }
+
+    return getNonWorkflowParams(pathname);
+}
 
 function getTypeKeyFromParamValue(value: string, listOnly = false): string | null {
     const listMatch = Object.entries(urlEntityListTypes).find((entry) => entry[1] === value);
@@ -97,94 +161,7 @@ function parseURL(location: Location<LocationState>): WorkflowState {
     }
 
     const { pathname, search } = location;
-    const listParams = matchPath(pathname, {
-        path: workflowPaths.LIST,
-    });
-    const entityParams = matchPath(pathname, {
-        path: workflowPaths.ENTITY,
-    });
-    const dashboardParams = matchPath(pathname, {
-        path: workflowPaths.DASHBOARD,
-        exact: true,
-    });
-
-    // check for legacy-Workflow sections
-    const matchedRiskParams = matchPath(pathname, {
-        path: riskPath,
-        exact: true,
-    });
-    const matchedNetworkParams = matchPath(pathname, {
-        path: networkPath,
-        exact: true,
-    });
-    const matchedClustersParams = matchPath(pathname, {
-        path: clustersPathWithParam,
-        exact: true,
-    });
-    const matchedViolationsParams = matchPath(pathname, {
-        path: violationsPath,
-        exact: true,
-    });
-    const matchedPoliciesParams = matchPath(pathname, {
-        path: policiesPath,
-        exact: true,
-    });
-    let legacyParams = { params: {} };
-    if (matchedNetworkParams) {
-        legacyParams = {
-            params: {
-                ...matchedNetworkParams,
-                context: useCases.NETWORK,
-            },
-        };
-    }
-    if (matchedRiskParams) {
-        legacyParams = {
-            params: {
-                ...matchedRiskParams,
-                context: useCases.RISK,
-            },
-        };
-    }
-    if (matchedClustersParams) {
-        legacyParams = {
-            params: {
-                ...matchedClustersParams,
-                context: useCases.CLUSTERS,
-            },
-        };
-    }
-    if (matchedViolationsParams) {
-        legacyParams = {
-            params: {
-                ...matchedViolationsParams,
-                context: useCases.VIOLATIONS,
-            },
-        };
-    }
-    if (matchedPoliciesParams) {
-        legacyParams = {
-            params: {
-                ...matchedPoliciesParams,
-                context: useCases.POLICIES,
-            },
-        };
-    }
-
-    const matchedUserRoleParams = matchPath(pathname, {
-        path: userRolePath,
-        exact: true,
-    });
-    if (matchedUserRoleParams) {
-        legacyParams = {
-            params: {
-                ...matchedUserRoleParams,
-                context: useCases.USER,
-            },
-        };
-    }
-
-    const { params } = entityParams || listParams || dashboardParams || legacyParams;
+    const params = getParams(pathname);
     const queryStr = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
 
     const stateStackFromURLParams = paramsToStateStack(params) || [];

@@ -1,9 +1,9 @@
 import qs from 'qs';
 
-import { accessControlPathV2 } from 'routePaths'; // import { accessControlPath } from 'routePaths';
+import { accessControlBasePathV2 } from 'routePaths'; // import { accessControlPath } from 'routePaths';
 import { AccessControlEntityType } from 'constants/entityTypes';
 
-export const accessControlPath = accessControlPathV2; // export { accessControlPath };
+export const accessControlBasePath = accessControlBasePathV2; // export { accessControlPath };
 
 export const entityPathSegment: Record<AccessControlEntityType, string> = {
     ACCESS_SCOPE: 'access-scopes',
@@ -22,7 +22,7 @@ export function getEntityPath(
     entityId = '',
     queryObject?: AccessControlQueryObject
 ): string {
-    const entityTypePath = `${accessControlPath}/${entityPathSegment[entityType]}`;
+    const entityTypePath = `${accessControlBasePath}/${entityPathSegment[entityType]}`;
 
     // TODO verify which the backend will expect:
     // ?s[PERMISSION_SET]=GuestAccount

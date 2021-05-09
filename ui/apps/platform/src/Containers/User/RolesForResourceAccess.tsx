@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Flex } from '@patternfly/react-core';
 import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
-import { userPath } from 'routePaths';
+import { userBasePath } from 'routePaths';
 
 const forbiddenIcon = (
     <TimesIcon aria-label="forbidden" color="var(--pf-global--danger-color--100)" size="sm" />
@@ -12,7 +12,7 @@ const permittedIcon = (
     <CheckIcon aria-label="permitted" color="var(--pf-global--success-color--100)" size="sm" />
 );
 
-const getUserRolePath = (roleName: string) => `${userPath}/roles/${roleName}`;
+const getUserRolePath = (roleName: string) => `${userBasePath}/roles/${roleName}`;
 
 export type RolesForResourceAccessProps = {
     roleNames: string[];

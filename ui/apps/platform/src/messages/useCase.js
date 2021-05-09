@@ -5,8 +5,9 @@ const legacyPageLabels = {
     [useCaseTypes.RISK]: 'Risk',
     [useCaseTypes.VIOLATIONS]: 'Violations',
     [useCaseTypes.POLICIES]: 'System Policies',
-    [useCaseTypes.NETWORK]: 'Network',
+    [useCaseTypes.NETWORK]: 'Network Graph',
     [useCaseTypes.USER]: 'User Profile',
+    [useCaseTypes.ACCESS_CONTROL]: 'Access Control',
 };
 
 const useCaseLabels = {

@@ -118,6 +118,46 @@ describe('ParseURL', () => {
 
         expect(workflowState.stateStack).toEqual([{ t: entityTypes.DEPLOYMENT }]);
     });
+
+    it('reads entity page non-workflow state params from url', () => {
+        const context = 'clusters';
+        const pathname = `/main/${context}/0123456789abcdef`;
+
+        const location = createLocation({
+            pathname,
+            search: '',
+        });
+
+        const workflowState = parseURL(location);
+
+        // Test workflowState object
+        expect(workflowState).not.toBeNull();
+        expect(workflowState.useCase).toBe(context);
+        expect(workflowState.stateStack.length).toBe(0);
+        expect(workflowState.search).toEqual({ s: null, s2: null });
+        expect(workflowState.sort).toEqual({ sort: null, sort2: null });
+        expect(workflowState.paging).toEqual({ p: 0, p2: 0 });
+    });
+
+    it('reads list page non-workflow state including query params from url', () => {
+        const context = 'clusters';
+        const pathname = `/main/${context}`;
+
+        const location = createLocation({
+            pathname,
+            search: 's[CLUSTER_HEALTH]=HEALTHY',
+        });
+
+        const workflowState = parseURL(location);
+
+        // Test workflowState object
+        expect(workflowState).not.toBeNull();
+        expect(workflowState.useCase).toBe(context);
+        expect(workflowState.stateStack.length).toBe(0);
+        expect(workflowState.search).toEqual({ s: { CLUSTER_HEALTH: 'HEALTHY' }, s2: null });
+        expect(workflowState.sort).toEqual({ sort: null, sort2: null });
+        expect(workflowState.paging).toEqual({ p: 0, p2: 0 });
+    });
 });
 
 describe('GenerateURL', () => {

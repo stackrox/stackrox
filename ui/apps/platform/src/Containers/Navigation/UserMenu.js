@@ -14,7 +14,7 @@ import { Avatar } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { userPath } from 'routePaths';
+import { userBasePath } from 'routePaths';
 import User from 'utils/User';
 
 function RoleChips({ roleNames }) {
@@ -80,7 +80,7 @@ function UserMenu({ logout, userData }) {
     const { email, name, roles } = user;
 
     const dropdownItems = [
-        <DropdownItem key="user" href={userPath}>
+        <DropdownItem key="user" href={userBasePath}>
             <UserItem email={email} name={name} roleNames={roles.map((role) => role.name)} />
         </DropdownItem>,
         <DropdownSeparator key="separator" />,

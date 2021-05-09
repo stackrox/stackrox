@@ -14,7 +14,7 @@ import {
     apidocsPath,
     accessControlPath,
     accessControlPathV2,
-    userPath,
+    userBasePath,
     systemConfigPath,
     systemHealthPath,
     vulnManagementPath,
@@ -77,7 +77,7 @@ function Body(): ReactElement {
                         featureFlagEnabled={isScopedAccessControlEnabled}
                     />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
-                    <ProtectedRoute path={userPath} component={AsyncUserPage} />
+                    <ProtectedRoute path={userBasePath} component={AsyncUserPage} />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
                     <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <ProtectedRoute
