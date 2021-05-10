@@ -73,6 +73,19 @@ var (
 				ParentType: reflect.TypeOf(storage.Policy{}),
 				FieldName:  "Whitelists",
 			},
+
+			{
+				ParentType: reflect.TypeOf(storage.CVE{}),
+				FieldName:  "Cvss",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.CVE{}),
+				FieldName:  "CvssV2",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.CVE{}),
+				FieldName:  "CvssV3",
+			},
 		},
 		InputTypes: []reflect.Type{
 			reflect.TypeOf((*inputtypes.SortOption)(nil)),

@@ -10,17 +10,17 @@ import getImageScanMessages from 'Containers/VulnMgmt/VulnMgmt.utils/getImageSca
 
 function PillTooltipBody({ vulnCounter }) {
     if (vulnCounter?.all?.total > 0) {
-        const { critical, high, medium, low } = vulnCounter;
+        const { critical, important, moderate, low } = vulnCounter;
         return (
             <div>
                 <div>
                     {critical?.total} Critical CVEs ({critical?.fixable} Fixable)
                 </div>
                 <div>
-                    {high?.total} High CVEs ({high?.fixable} Fixable)
+                    {important?.total} Important CVEs ({important?.fixable} Fixable)
                 </div>
                 <div>
-                    {medium?.total} Medium CVEs ({medium?.fixable} Fixable)
+                    {moderate?.total} Moderate CVEs ({moderate?.fixable} Fixable)
                 </div>
                 <div>
                     {low?.total} Low CVEs ({low?.fixable} Fixable)
@@ -75,8 +75,8 @@ const CVEStackedPill = ({
                     </div>
                     <SeverityStackedPill
                         critical={vulnCounter.critical.total}
-                        high={vulnCounter.high.total}
-                        medium={vulnCounter.medium.total}
+                        important={vulnCounter.important.total}
+                        moderate={vulnCounter.moderate.total}
                         low={vulnCounter.low.total}
                         tooltip={pillTooltip}
                     />
@@ -113,11 +113,11 @@ CVEStackedPill.propTypes = {
             total: PropTypes.number,
             fixable: PropTypes.number,
         }),
-        high: PropTypes.shape({
+        important: PropTypes.shape({
             total: PropTypes.number,
             fixable: PropTypes.number,
         }),
-        medium: PropTypes.shape({
+        moderate: PropTypes.shape({
             total: PropTypes.number,
             fixable: PropTypes.number,
         }),

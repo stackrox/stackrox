@@ -125,9 +125,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("CVE", []string{
 		"createdAt: Time",
-		"cvss: Float!",
-		"cvssV2: CVSSV2",
-		"cvssV3: CVSSV3",
 		"id: ID!",
 		"impactScore: Float!",
 		"lastModified: Time",
@@ -135,6 +132,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"publishedOn: Time",
 		"references: [CVE_Reference]!",
 		"scoreVersion: CVE_ScoreVersion!",
+		"severity: VulnerabilitySeverity!",
 		"summary: String!",
 		"suppressActivation: Time",
 		"suppressExpiry: Time",
@@ -788,6 +786,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"taints: [Taint]!",
 	}))
 	utils.Must(builder.AddType("NodeScan", []string{
+		"operatingSystem: String!",
 		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("Notifier", []string{
@@ -1289,6 +1288,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Volume_MountPropagation(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilitySeverity(0)))
 }
 
 type aWSProviderMetadataResolver struct {
@@ -2184,21 +2184,6 @@ func (resolver *cVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, erro
 	return timestamp(value)
 }
 
-func (resolver *cVEResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
-}
-
-func (resolver *cVEResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
-	value := resolver.data.GetCvssV2()
-	return resolver.root.wrapCVSSV2(value, true, nil)
-}
-
-func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error) {
-	value := resolver.data.GetCvssV3()
-	return resolver.root.wrapCVSSV3(value, true, nil)
-}
-
 func (resolver *cVEResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -2231,6 +2216,11 @@ func (resolver *cVEResolver) References(ctx context.Context) ([]*cVE_ReferenceRe
 
 func (resolver *cVEResolver) ScoreVersion(ctx context.Context) string {
 	value := resolver.data.GetScoreVersion()
+	return value.String()
+}
+
+func (resolver *cVEResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
 	return value.String()
 }
 
@@ -7293,6 +7283,11 @@ func (resolver *Resolver) wrapNodeScans(values []*storage.NodeScan, err error) (
 	return output, nil
 }
 
+func (resolver *nodeScanResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
 func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
@@ -10917,6 +10912,24 @@ func toVolume_MountPropagations(values *[]string) []storage.Volume_MountPropagat
 	output := make([]storage.Volume_MountPropagation, len(*values))
 	for i, v := range *values {
 		output[i] = toVolume_MountPropagation(&v)
+	}
+	return output
+}
+
+func toVulnerabilitySeverity(value *string) storage.VulnerabilitySeverity {
+	if value != nil {
+		return storage.VulnerabilitySeverity(storage.VulnerabilitySeverity_value[*value])
+	}
+	return storage.VulnerabilitySeverity(0)
+}
+
+func toVulnerabilitySeverities(values *[]string) []storage.VulnerabilitySeverity {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.VulnerabilitySeverity, len(*values))
+	for i, v := range *values {
+		output[i] = toVulnerabilitySeverity(&v)
 	}
 	return output
 }

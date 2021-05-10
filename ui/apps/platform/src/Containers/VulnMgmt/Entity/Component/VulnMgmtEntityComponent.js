@@ -35,7 +35,7 @@ const VulnMgmtComponent = ({
                 fixedIn
                 location(query: $scopeQuery)
                 priority
-                vulnCount(query: $query)
+                vulnCount(query: $query, scopeQuery: $scopeQuery)
                 deploymentCount(query: $query)
                 imageCount(query: $query)
                 nodeCount(query: $query)
@@ -52,8 +52,8 @@ const VulnMgmtComponent = ({
         query getComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: component(id: $id) {
                 id
-                ${defaultCountKeyMap[entityListType]}(query: $query)
-                ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                ${defaultCountKeyMap[entityListType]}(query: $query, scopeQuery: $scopeQuery)
+                ${listFieldName}(query: $query, scopeQuery: $scopeQuery, pagination: $pagination) { ...${fragmentName} }
                 unusedVarSink(query: $policyQuery)
                 unusedVarSink(query: $scopeQuery)
             }

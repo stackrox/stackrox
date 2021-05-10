@@ -7,6 +7,13 @@ export const severityLabels = Object.freeze({
     LOW_SEVERITY: 'Low',
 });
 
+export const cvssSeverityLabels = Object.freeze({
+    CRITICAL_VULNERABILITY_SEVERITY: 'Critical',
+    IMPORTANT_VULNERABILITY_SEVERITY: 'Important',
+    MODERATE_VULNERABILITY_SEVERITY: 'Moderate',
+    LOW_VULNERABILITY_SEVERITY: 'Low',
+});
+
 export const clusterTypeLabels = Object.freeze({
     KUBERNETES_CLUSTER: 'Kubernetes Clusters',
     SWARM_CLUSTER: 'Swarm Clusters',

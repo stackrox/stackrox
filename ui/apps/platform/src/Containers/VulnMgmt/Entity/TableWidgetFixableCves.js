@@ -41,7 +41,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
                         fixable
                     }
                 }
-                vulnerabilities: vulns(query: $vulnQuery, pagination: $vulnPagination) {
+                vulnerabilities: vulns(query: $vulnQuery, scopeQuery: $scopeQuery, pagination: $vulnPagination) {
                     ...cveFields
                 }
             }

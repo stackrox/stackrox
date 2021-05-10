@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -283,6 +284,14 @@ func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, image *storage.I
 	return true
 }
 
+func normalizeVulnerabilities(scan *storage.ImageScan) {
+	for _, c := range scan.GetComponents() {
+		for _, v := range c.GetVulns() {
+			v.Severity = cvss.VulnToSeverity(v)
+		}
+	}
+}
+
 func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
 	if !scanner.Match(image.GetName()) {
 		return ScanNotDone, nil
@@ -317,8 +326,9 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 			return ScanNotDone, nil
 		}
 
+		// normalize the vulns
+		normalizeVulnerabilities(scan)
 	}
-
 	scan.DataSource = scanner.DataSource()
 
 	// Assume:

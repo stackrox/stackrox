@@ -80,7 +80,10 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                             />
                         </div>
                         <div className="s-1">
-                            <CvesByCvssScore entityContext={currentEntity} />
+                            <CvesByCvssScore
+                                entityContext={currentEntity}
+                                parentContext={entityContext}
+                            />
                         </div>
                     </div>
                 </CollapsibleSection>

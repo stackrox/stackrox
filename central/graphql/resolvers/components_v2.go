@@ -146,6 +146,7 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 	}
 
 	return &cVEResolver{
+		ctx:  eicr.ctx,
 		root: eicr.root,
 		data: vulns[0],
 	}, nil
@@ -157,6 +158,17 @@ func (eicr *imageComponentResolver) Vulns(ctx context.Context, args PaginatedQue
 	if err != nil {
 		return nil, err
 	}
+
+	scopeQuery, err := args.AsV1ScopeQueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, err = eicr.root.AddDistroContext(ctx, query, scopeQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	pagination := query.GetPagination()
 	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
 	if err != nil {
@@ -175,10 +187,20 @@ func (eicr *imageComponentResolver) VulnCount(ctx context.Context, args RawQuery
 	if err != nil {
 		return 0, err
 	}
+	scopeQuery, err := args.AsV1ScopeQueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	ctx, err = eicr.root.AddDistroContext(ctx, query, scopeQuery)
+	if err != nil {
+		return 0, err
+	}
+
 	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
 	if err != nil {
 		return 0, err
 	}
+
 	return eicr.root.vulnerabilityCountV2Query(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    eicr.data.GetId(),
@@ -193,7 +215,7 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 	}
 
 	fixableVulnsQuery := search.NewConjunctionQuery(eicr.componentQuery(), search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-	fixableVulns, err := vulnLoader.FromQuery(scoped.Context(ctx, scoped.Scope{
+	fixableVulns, err := vulnLoader.FromQuery(scoped.Context(eicr.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    eicr.data.GetId(),
 	}), fixableVulnsQuery)
@@ -202,7 +224,7 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 	}
 
 	unFixableVulnsQuery := search.NewConjunctionQuery(eicr.componentQuery(), search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
-	unFixableCVEs, err := vulnLoader.FromQuery(scoped.Context(ctx, scoped.Scope{
+	unFixableCVEs, err := vulnLoader.FromQuery(scoped.Context(eicr.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    eicr.data.GetId(),
 	}), unFixableVulnsQuery)

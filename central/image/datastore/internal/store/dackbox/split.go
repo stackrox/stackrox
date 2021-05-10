@@ -39,7 +39,7 @@ func splitComponents(parts ImageParts) []ComponentParts {
 		cp := ComponentParts{}
 		cp.component = generateImageComponent(component)
 		cp.edge = generateImageComponentEdge(parts.image, cp.component, component)
-		cp.children = splitCVEs(cp, component)
+		cp.children = splitCVEs(parts.image.GetScan().GetOperatingSystem(), cp, component)
 
 		ret = append(ret, cp)
 	}
@@ -47,11 +47,11 @@ func splitComponents(parts ImageParts) []ComponentParts {
 	return ret
 }
 
-func splitCVEs(component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
+func splitCVEs(os string, component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	for _, cve := range embedded.GetVulns() {
 		cp := CVEParts{}
-		cp.cve = converter.EmbeddedCVEToProtoCVE(cve)
+		cp.cve = converter.EmbeddedCVEToProtoCVE(os, cve)
 		cp.edge = generateComponentCVEEdge(component.component, cp.cve, cve)
 
 		ret = append(ret, cp)

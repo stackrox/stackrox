@@ -38,11 +38,11 @@ export const NODE_FRAGMENT = gql`
                 total
                 fixable
             }
-            medium {
+            moderate {
                 total
                 fixable
             }
-            high {
+            important {
                 total
                 fixable
             }

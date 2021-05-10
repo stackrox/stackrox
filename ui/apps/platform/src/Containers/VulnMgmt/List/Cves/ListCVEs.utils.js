@@ -26,6 +26,9 @@ export function getFilteredCVEColumns(columns, workflowState) {
             case 'entities': {
                 return shouldKeepEntitiesColumn;
             }
+            case 'severity': {
+                return shouldKeepDiscoveredAtImageColumn;
+            }
             default: {
                 return true;
             }

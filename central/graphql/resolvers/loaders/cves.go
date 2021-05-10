@@ -7,8 +7,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/datastore"
+	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -56,6 +58,17 @@ type cveLoaderImpl struct {
 	ds datastore.DataStore
 }
 
+func enrich(distro string, value *storage.CVE) {
+	if specifics, ok := value.DistroSpecifics[distro]; ok {
+		value.Cvss = specifics.GetCvss()
+		value.CvssV2 = specifics.GetCvssV2()
+		value.CvssV3 = specifics.GetCvssV3()
+		value.Severity = specifics.GetSeverity()
+	} else {
+		value.Severity = cvss.VulnToSeverity(value)
+	}
+}
+
 // FromIDs loads a set of cves from a set of ids.
 func (idl *cveLoaderImpl) FromIDs(ctx context.Context, ids []string) ([]*storage.CVE, error) {
 	cves, err := idl.load(ctx, ids)
@@ -97,12 +110,16 @@ func (idl *cveLoaderImpl) CountAll(ctx context.Context) (int32, error) {
 }
 
 func (idl *cveLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.CVE, error) {
+	distro := distroctx.FromContext(ctx)
 	cves, missing := idl.readAll(ids)
 	if len(missing) > 0 {
 		var err error
 		cves, err = idl.ds.GetBatch(ctx, collectMissing(ids, missing))
 		if err != nil {
 			return nil, err
+		}
+		for _, cve := range cves {
+			enrich(distro, cve)
 		}
 		idl.setAll(cves)
 		cves, missing = idl.readAll(ids)

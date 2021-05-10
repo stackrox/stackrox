@@ -3,11 +3,14 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter"
+	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,11 +18,157 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 // V2 Connections to root.
 //////////////////////////
+
+var (
+	cvePredicateFactory        = predicate.NewFactory("cve", &storage.CVE{})
+	cvePostFilteringOptionsMap = func() search.OptionsMap {
+		opts := search.Walk(v1.SearchCategory_VULNERABILITIES, "cve", (*storage.CVE)(nil))
+
+		cvss := opts.MustGet(search.CVSS.String())
+		severity := opts.MustGet(search.Severity.String())
+
+		return search.NewOptionsMap(v1.SearchCategory_VULNERABILITIES).
+			Add(search.CVSS, cvss).
+			Add(search.Severity, severity)
+	}()
+)
+
+func getImageIDFromQuery(q *v1.Query) string {
+	if q == nil {
+		return ""
+	}
+	var imageID string
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
+			imageID = matchFieldQuery.MatchFieldQuery.Value
+			imageID = strings.TrimRight(imageID, `"`)
+			imageID = strings.TrimLeft(imageID, `"`)
+		}
+	})
+	return imageID
+}
+
+// AddDistroContext adds the image distribution from the query or scope query if necessary
+func (resolver *Resolver) AddDistroContext(ctx context.Context, query, scopeQuery *v1.Query) (context.Context, error) {
+	if distro := distroctx.FromContext(ctx); distro != "" {
+		return ctx, nil
+	}
+
+	scope, ok := scoped.GetScope(ctx)
+	if ok && scope.Level == v1.SearchCategory_IMAGES {
+		if image := resolver.getImage(ctx, scope.ID); image != nil {
+			return distroctx.Context(ctx, image.GetScan().GetOperatingSystem()), nil
+		}
+	}
+
+	imageIDFromQuery := getImageIDFromQuery(query)
+	imageIDFromScope := getImageIDFromQuery(scopeQuery)
+
+	if imageID := stringutils.FirstNonEmpty(imageIDFromQuery, imageIDFromScope); imageID != "" {
+		image, exists, err := resolver.ImageDataStore.GetImageMetadata(ctx, imageID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return ctx, nil
+		}
+		return distroctx.Context(ctx, image.GetScan().GetOperatingSystem()), nil
+	}
+	return ctx, nil
+}
+
+func filterNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CVE, error) {
+	vulnQuery, _ := search.FilterQueryWithMap(query, cvePostFilteringOptionsMap)
+	vulnPred, err := cvePredicateFactory.GeneratePredicate(vulnQuery)
+	if err != nil {
+		return nil, err
+	}
+	filtered := cves[:0]
+	for _, cve := range cves {
+		if vulnPred.Matches(cve) {
+			filtered = append(filtered, cve)
+		}
+	}
+	return filtered, nil
+}
+
+func needsPostSorting(query *v1.Query) bool {
+	for _, so := range query.GetPagination().GetSortOptions() {
+		switch so.GetField() {
+		case search.Severity.String(), search.CVSS.String():
+			return true
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+func sortNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CVE, error) {
+	// Currently, only one sort option is supported on this endpoint
+	sortOption := query.GetPagination().SortOptions[0]
+	switch sortOption.Field {
+	case search.Severity.String():
+		sort.Slice(cves, func(i, j int) bool {
+			var result bool
+			if cves[i].GetSeverity() != cves[j].GetSeverity() {
+				result = cves[i].GetSeverity() < cves[j].GetSeverity()
+			} else {
+				result = cves[i].GetCvss() < cves[j].GetCvss()
+			}
+			if sortOption.GetReversed() {
+				return !result
+			}
+			return result
+		})
+	case search.CVSS.String():
+		sort.Slice(cves, func(i, j int) bool {
+			var result bool
+			if cves[i].GetCvss() != cves[j].GetCvss() {
+				result = cves[i].GetCvss() < cves[j].GetCvss()
+			} else {
+				result = cves[i].GetSeverity() < cves[j].GetSeverity()
+			}
+			if sortOption.Reversed {
+				return !result
+			}
+			return result
+		})
+	}
+	paginatedCVEs, err := paginationWrapper{
+		pv: query.GetPagination(),
+	}.paginate(cves, nil)
+	if err != nil {
+		return nil, err
+	}
+	return paginatedCVEs.([]*storage.CVE), nil
+}
+
+func (resolver *cVEResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *cVEResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
+	value := resolver.data.GetCvssV2()
+	return resolver.root.wrapCVSSV2(value, true, nil)
+}
+
+func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error) {
+	value := resolver.data.GetCvssV3()
+	return resolver.root.wrapCVSSV3(value, true, nil)
+}
 
 func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
 	vuln, exists, err := resolver.CVEDataStore.Get(ctx, string(*args.ID))
@@ -41,6 +190,16 @@ func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQ
 	if err != nil {
 		return nil, err
 	}
+
+	scopeQuery, err := args.AsV1ScopeQueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, err = resolver.AddDistroContext(ctx, query, scopeQuery)
+	if err != nil {
+		return nil, err
+	}
 	return resolver.vulnerabilitiesV2Query(ctx, query)
 }
 
@@ -51,10 +210,34 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 
 	query = tryUnsuppressedQuery(query)
-	vulns, err := resolver.wrapCVEs(vulnLoader.FromQuery(ctx, query))
+
+	originalQuery := query
+	var queryModified, postSortingNeeded bool
+	if distroctx.IsImageScoped(ctx) {
+		query, queryModified = search.InverseFilterQueryWithMap(query, cvePostFilteringOptionsMap)
+		postSortingNeeded = needsPostSorting(originalQuery)
+	}
+
+	vulns, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	if queryModified {
+		vulns, err = filterNamespacedFields(originalQuery, vulns)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if postSortingNeeded {
+		vulns, err = sortNamespacedFields(originalQuery, vulns)
+		if err != nil {
+			return nil, err
+		}
+	}
+	vulnResolvers, err := resolver.wrapCVEs(vulns, err)
 
 	ret := make([]VulnerabilityResolver, 0, len(vulns))
-	for _, resolver := range vulns {
+	for _, resolver := range vulnResolvers {
 		resolver.ctx = ctx
 		ret = append(ret, resolver)
 	}
@@ -66,6 +249,7 @@ func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuer
 	if err != nil {
 		return 0, err
 	}
+
 	return resolver.vulnerabilityCountV2Query(ctx, query)
 }
 
@@ -74,6 +258,18 @@ func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *
 	if err != nil {
 		return 0, err
 	}
+
+	if distroctx.IsImageScoped(ctx) {
+		_, queryModified := search.InverseFilterQueryWithMap(query, cvePostFilteringOptionsMap)
+		if queryModified {
+			vulns, err := resolver.vulnerabilitiesV2Query(ctx, query)
+			if err != nil {
+				return 0, err
+			}
+			return int32(len(vulns)), nil
+		}
+	}
+
 	query = tryUnsuppressedQuery(query)
 	return vulnLoader.CountFromQuery(ctx, query)
 }
@@ -103,6 +299,7 @@ func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Quer
 	if err != nil {
 		return nil, err
 	}
+
 	return mapCVEsToVulnerabilityCounter(fixableVulns, unFixableCVEs), nil
 }
 
@@ -299,13 +496,6 @@ func (resolver *cVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {
 		}
 	}
 	return nil
-}
-
-func (resolver *cVEResolver) Severity(ctx context.Context) string {
-	if resolver.data.GetScoreVersion() == storage.CVE_V3 {
-		return resolver.data.GetCvssV3().GetSeverity().String()
-	}
-	return resolver.data.GetCvssV2().GetSeverity().String()
 }
 
 func (resolver *cVEResolver) VulnerabilityType() string {

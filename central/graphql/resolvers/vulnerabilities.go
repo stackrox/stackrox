@@ -48,7 +48,7 @@ func init() {
 			"suppressExpiry: Time",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("vulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
+		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
 		schema.AddQuery("vulnerabilityCount(query: String): Int!"),
 		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("k8sVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),

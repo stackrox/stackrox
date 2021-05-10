@@ -64,7 +64,7 @@ func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEIte
 }
 
 func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnerability) error {
-	cves := converter.EmbeddedCVEsToProtoCVEs(embeddedCVEs...)
+	cves := converter.EmbeddedCVEsToProtoCVEs("", embeddedCVEs...)
 	newCVEs := make([]converter.ClusterCVEParts, 0, len(cves))
 	newCVEIDs := set.NewStringSet()
 	for _, cve := range cves {

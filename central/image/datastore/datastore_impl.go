@@ -154,6 +154,20 @@ func (ds *datastoreImpl) canReadImage(ctx context.Context, sha string) (bool, er
 	return false, nil
 }
 
+// GetImageMetadata gets the image data without the scan
+func (ds *datastoreImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
+	img, found, err := ds.storage.GetImageMetadata(id)
+	if err != nil || !found {
+		return nil, false, err
+	}
+	if ok, err := ds.canReadImage(ctx, id); err != nil || !ok {
+		return nil, false, err
+	}
+	ds.updateImagePriority(img)
+
+	return img, true, nil
+}
+
 // GetImage delegates to the underlying store.
 func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Image, bool, error) {
 	img, found, err := ds.storage.GetImage(sha)

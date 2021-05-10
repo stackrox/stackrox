@@ -13,11 +13,11 @@ export const CLUSTER_LIST_FRAGMENT = gql`
                 fixable
                 total
             }
-            high {
+            important {
                 fixable
                 total
             }
-            medium {
+            moderate {
                 fixable
                 total
             }
@@ -49,6 +49,7 @@ export const VULN_CVE_ONLY_FRAGMENT = gql`
         id
         cve
         cvss
+        severity
         scoreVersion
         summary
         fixedByVersion
@@ -66,6 +67,7 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
         envImpact
         impactScore
         summary
+        severity
         fixedByVersion
         isFixable(query: $scopeQuery)
         createdAt
@@ -91,11 +93,11 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
                 total
                 fixable
             }
-            medium {
+            moderate {
                 total
                 fixable
             }
-            high {
+            important {
                 total
                 fixable
             }
@@ -141,11 +143,11 @@ export const NODE_LIST_FRAGMENT = gql`
                 total
                 fixable
             }
-            medium {
+            moderate {
                 total
                 fixable
             }
-            high {
+            important {
                 total
                 fixable
             }
@@ -204,11 +206,11 @@ export const IMAGE_LIST_FRAGMENT = gql`
                 total
                 fixable
             }
-            medium {
+            moderate {
                 total
                 fixable
             }
-            high {
+            important {
                 total
                 fixable
             }
@@ -237,11 +239,11 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
                 total
                 fixable
             }
-            medium {
+            moderate {
                 total
                 fixable
             }
-            high {
+            important {
                 total
                 fixable
             }
@@ -279,11 +281,11 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
                 fixable
                 total
             }
-            high {
+            important {
                 fixable
                 total
             }
-            medium {
+            moderate {
                 fixable
                 total
             }

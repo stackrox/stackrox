@@ -272,7 +272,7 @@ func protoToEmbeddedVulnType(protoCVEType storage.CVE_CVEType) storage.EmbeddedV
 }
 
 // EmbeddedCVEToProtoCVE converts *storage.EmbeddedVulnerability object to *storage.CVE object
-func EmbeddedCVEToProtoCVE(from *storage.EmbeddedVulnerability) *storage.CVE {
+func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *storage.CVE {
 	ret := &storage.CVE{
 		Type:               embeddedVulnTypeToProtoType(from.GetVulnerabilityType()),
 		Id:                 from.GetCve(),
@@ -294,14 +294,28 @@ func EmbeddedCVEToProtoCVE(from *storage.EmbeddedVulnerability) *storage.CVE {
 		ret.ScoreVersion = storage.CVE_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
+	// If the OS is empty, then the OS is unknown and we don't need to save
+	// any distro specific settings
+	if os == "" {
+		return ret
+	}
+	ret.DistroSpecifics = map[string]*storage.CVE_DistroSpecific{
+		os: {
+			Severity:     from.GetSeverity(),
+			Cvss:         ret.Cvss,
+			CvssV2:       ret.CvssV2,
+			CvssV3:       ret.CvssV3,
+			ScoreVersion: ret.ScoreVersion,
+		},
+	}
 	return ret
 }
 
 // EmbeddedCVEsToProtoCVEs converts *storage.EmbeddedVulnerability to *storage.CVE
-func EmbeddedCVEsToProtoCVEs(froms ...*storage.EmbeddedVulnerability) []*storage.CVE {
+func EmbeddedCVEsToProtoCVEs(os string, froms ...*storage.EmbeddedVulnerability) []*storage.CVE {
 	ret := make([]*storage.CVE, 0, len(froms))
 	for _, from := range froms {
-		ret = append(ret, EmbeddedCVEToProtoCVE(from))
+		ret = append(ret, EmbeddedCVEToProtoCVE(os, from))
 	}
 	return ret
 }

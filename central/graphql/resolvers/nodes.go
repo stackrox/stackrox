@@ -32,7 +32,7 @@ func init() {
 		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "controls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "cluster: Cluster!"),
-		schema.AddExtraResolver("Node", "vulns(query: String, pagination: Pagination): [EmbeddedVulnerability]!"),
+		schema.AddExtraResolver("Node", "vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!"),
 		schema.AddExtraResolver("Node", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("Node", "nodeStatus(query: String): String!"),
 		schema.AddExtraResolver("Node", "topVuln(query: String): EmbeddedVulnerability"),

@@ -47,7 +47,8 @@ func convertContainerRuntime(containerRuntime *storage.ContainerRuntimeInfo) *v1
 
 func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *v1.GetNodeVulnerabilitiesResponse) *storage.NodeScan {
 	scan := &storage.NodeScan{
-		ScanTime: gogoProto.TimestampNow(),
+		ScanTime:        gogoProto.TimestampNow(),
+		OperatingSystem: resp.GetOperatingSystem(),
 		Components: []*storage.EmbeddedNodeScanComponent{
 			{
 				Name:    stringutils.OrDefault(resp.GetKernelComponent().GetName(), "kernel"),

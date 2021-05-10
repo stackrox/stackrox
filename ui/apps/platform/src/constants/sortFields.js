@@ -64,6 +64,7 @@ export const cveSortFields = {
     CVE_TYPE: 'CVE Type',
     CVSS_SCORE: 'CVSS',
     SUPPRESSED: 'CVE Snoozed',
+    SEVERITY: 'Severity',
     FIXABLE: 'Fixable',
     FIXEDIN: 'Fixed By',
     ENV_IMPACT: 'Env. Impact',

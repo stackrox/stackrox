@@ -34,6 +34,7 @@ import { cveSortFields } from 'constants/sortFields';
 import { snoozeDurations, durations } from 'constants/timeWindows';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
+import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { getFilteredCVEColumns } from './ListCVEs.utils';
@@ -111,6 +112,18 @@ export function getCveTableColumns(workflowState) {
             id: cveSortFields.FIXEDIN,
             accessor: 'fixedByVersion',
             sortField: cveSortFields.FIXEDIN,
+        },
+        {
+            Header: `Severity`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 text-center ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original }) => {
+                return <CVSSSeverityLabel severity={original.severity} />;
+            },
+            id: cveSortFields.SEVERITY,
+            accessor: 'severity',
+            sortField: cveSortFields.SEVERITY,
         },
         {
             Header: `CVSS Score`,

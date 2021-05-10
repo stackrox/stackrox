@@ -55,7 +55,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `imageCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
 		schema.AddExtraResolver("Cluster", `componentCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `vulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Cluster", `vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `vulnCounter(query: String): VulnerabilityCounter!`),
 		schema.AddExtraResolver("Cluster", `k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),

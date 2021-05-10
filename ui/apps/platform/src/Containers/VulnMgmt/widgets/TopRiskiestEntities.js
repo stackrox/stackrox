@@ -35,11 +35,11 @@ const TOP_RISKIEST_IMAGES = gql`
                     total
                     fixable
                 }
-                medium {
+                moderate {
                     total
                     fixable
                 }
-                high {
+                important {
                     total
                     fixable
                 }
@@ -72,11 +72,11 @@ const TOP_RISKIEST_COMPONENTS = gql`
                     total
                     fixable
                 }
-                medium {
+                moderate {
                     total
                     fixable
                 }
-                high {
+                important {
                     total
                     fixable
                 }
@@ -104,11 +104,11 @@ const TOP_RISKIEST_NODES = gql`
                     total
                     fixable
                 }
-                medium {
+                moderate {
                     total
                     fixable
                 }
-                high {
+                important {
                     total
                     fixable
                 }
@@ -162,7 +162,7 @@ const processData = (data, entityType, workflowState) => {
             const cvesUrl = cveListState.toUrl();
             const fixableUrl = cveListState.setSearch({ Fixable: true }).toUrl();
 
-            const { critical, high, medium, low } = vulnCounter;
+            const { critical, important, moderate, low } = vulnCounter;
 
             const scanTimeToUse = scan?.scanTime || lastScanned;
             const formattedDate = format(scanTimeToUse, dateTimeFormat);
@@ -186,10 +186,10 @@ const processData = (data, entityType, workflowState) => {
                             {critical.total} Critical CVEs ({critical.fixable} Fixable)
                         </div>
                         <div>
-                            {high.total} High CVEs ({high.fixable} Fixable)
+                            {important.total} Important CVEs ({important.fixable} Fixable)
                         </div>
                         <div>
-                            {medium.total} Medium CVEs ({medium.fixable} Fixable)
+                            {moderate.total} Moderate CVEs ({moderate.fixable} Fixable)
                         </div>
                         <div>
                             {low.total} Low CVEs ({low.fixable} Fixable)

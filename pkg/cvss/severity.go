@@ -1,36 +1,44 @@
 package cvss
 
-// Severity represents cve severity by cvss v3 (preferred) or cvss v2
-type Severity int32
+import "github.com/stackrox/rox/generated/storage"
 
-const (
-	// UNKNOWN represents cve severity is unset
-	UNKNOWN Severity = iota
-	// LOW represents low cve severity; cvss v2 (0.0-3.9), cvss v3 (0.0-3.9) NONE is also mapped to LOW
-	LOW
-	// MEDIUM represents medium cve severity; cvss v2 (4.0-6.9), cvss v3 (4.0-6.9)
-	MEDIUM
-	// HIGH represents high cve severity; cvss v2 (7.0-10.0), cvss v3 (7.0-8.9)
-	HIGH
-	// CRITICAL represents critical cve severity; cvss v2 (n/a), cvss v3 (9.0.-10.0)
-	CRITICAL
-)
-
-func (s Severity) String() string {
-	return [...]string{"UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL"}[s]
+type vulnI interface {
+	GetSeverity() storage.VulnerabilitySeverity
+	GetCvssV2() *storage.CVSSV2
+	GetCvssV3() *storage.CVSSV3
 }
 
-// ScoreToSeverity returns the top level cve severity for the cvss v3/v2 score
-func ScoreToSeverity(score float32) Severity {
-	switch {
-	case score < 4.0:
-		return LOW
-	case score < 7.0:
-		return MEDIUM
-	case score < 9.0:
-		return HIGH
-	case score <= 10.0:
-		return CRITICAL
+// VulnToSeverity to returns a storage severity
+func VulnToSeverity(v vulnI) storage.VulnerabilitySeverity {
+	if v.GetSeverity() != storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY {
+		return v.GetSeverity()
 	}
-	return UNKNOWN
+
+	if v.GetCvssV3() != nil {
+		switch v.GetCvssV3().GetSeverity() {
+		case storage.CVSSV3_UNKNOWN:
+			return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+		case storage.CVSSV3_NONE, storage.CVSSV3_LOW:
+			return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+		case storage.CVSSV3_MEDIUM:
+			return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
+		case storage.CVSSV3_HIGH:
+			return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
+		case storage.CVSSV3_CRITICAL:
+			return storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+		}
+	}
+	if v.GetCvssV2() != nil {
+		switch v.GetCvssV2().GetSeverity() {
+		case storage.CVSSV2_UNKNOWN:
+			return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+		case storage.CVSSV2_LOW:
+			return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+		case storage.CVSSV2_MEDIUM:
+			return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
+		case storage.CVSSV2_HIGH:
+			return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
+		}
+	}
+	return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }

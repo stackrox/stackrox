@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import PercentageStackedPill from 'Components/visuals/PercentageStackedPill';
 import { getPercentage } from 'utils/mathUtils';
 
-const SeverityStackedPill = ({ low, medium, high, critical, tooltip }) => {
-    const total = low + medium + high + critical;
+const SeverityStackedPill = ({ low, moderate, important, critical, tooltip }) => {
+    const total = low + moderate + important + critical;
     const data = [];
     if (low) {
         data.push({
@@ -13,16 +13,16 @@ const SeverityStackedPill = ({ low, medium, high, critical, tooltip }) => {
             value: getPercentage(low, total),
         });
     }
-    if (medium) {
+    if (moderate) {
         data.push({
             colorType: 'warning',
-            value: getPercentage(medium, total),
+            value: getPercentage(moderate, total),
         });
     }
-    if (high) {
+    if (important) {
         data.push({
             colorType: 'caution',
-            value: getPercentage(high, total),
+            value: getPercentage(important, total),
         });
     }
     if (critical) {
@@ -36,8 +36,8 @@ const SeverityStackedPill = ({ low, medium, high, critical, tooltip }) => {
 
 SeverityStackedPill.propTypes = {
     low: PropTypes.number,
-    medium: PropTypes.number,
-    high: PropTypes.number,
+    moderate: PropTypes.number,
+    important: PropTypes.number,
     critical: PropTypes.number,
     tooltip: PropTypes.shape({
         title: PropTypes.string.isRequired,
@@ -47,8 +47,8 @@ SeverityStackedPill.propTypes = {
 
 SeverityStackedPill.defaultProps = {
     low: 0,
-    medium: 0,
-    high: 0,
+    moderate: 0,
+    important: 0,
     critical: 0,
     tooltip: null,
 };

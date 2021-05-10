@@ -65,8 +65,9 @@ message Node {
 }
 
 message NodeScan {
-    google.protobuf.Timestamp          scan_time  = 1 [(gogoproto.moretags) = "search:\"Node Scan Time,store\""];
-    repeated EmbeddedNodeScanComponent components = 2;
+    google.protobuf.Timestamp          scan_time        = 1 [(gogoproto.moretags) = "search:\"Node Scan Time,store\""];
+    string                             operating_system = 3;
+    repeated EmbeddedNodeScanComponent components       = 2;
 }
 
 message EmbeddedNodeScanComponent {

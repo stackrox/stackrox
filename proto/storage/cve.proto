@@ -8,6 +8,14 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
+enum VulnerabilitySeverity {
+    UNKNOWN_VULNERABILITY_SEVERITY   = 0;
+    LOW_VULNERABILITY_SEVERITY       = 1;
+    MODERATE_VULNERABILITY_SEVERITY  = 2;
+    IMPORTANT_VULNERABILITY_SEVERITY = 3;
+    CRITICAL_VULNERABILITY_SEVERITY  = 4;
+}
+
 // Next Tag: 19
 message CVE {
     enum ScoreVersion {
@@ -49,6 +57,16 @@ message CVE {
     bool                      suppressed            = 12 [(gogoproto.moretags) = "search:\"CVE Snoozed,store\""];
     google.protobuf.Timestamp suppress_activation   = 16;
     google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = "search:\"CVE Snooze Expiry,store,hidden\""];
+
+    message DistroSpecific {
+        VulnerabilitySeverity     severity              = 1;
+        float                     cvss                  = 2;
+        ScoreVersion              score_version         = 3;
+        CVSSV2                    cvss_v2               = 4;
+        CVSSV3                    cvss_v3               = 5;
+    }
+    map<string, DistroSpecific> distro_specifics    = 19;
+    VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = "search:\"Severity\""];
 }
 
 message CVSSV2 {

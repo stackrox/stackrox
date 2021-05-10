@@ -400,6 +400,12 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTi
 		parts.cve.SuppressExpiry = currCVE.GetSuppressExpiry()
 
 		parts.cve.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_IMAGE_CVE)
+		if parts.cve.DistroSpecifics == nil {
+			parts.cve.DistroSpecifics = make(map[string]*storage.CVE_DistroSpecific)
+		}
+		for k, v := range currCVE.GetDistroSpecifics() {
+			parts.cve.DistroSpecifics[k] = v
+		}
 	} else {
 		parts.cve.CreatedAt = iTime
 

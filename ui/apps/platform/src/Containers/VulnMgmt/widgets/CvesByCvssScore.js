@@ -11,14 +11,15 @@ import Sunburst from 'Components/visuals/Sunburst';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import {
-    severityColorMap,
-    severityTextColorMap,
-    severityColorLegend,
+    cvssSeverityColorMap,
+    cvssSeverityTextColorMap,
+    cvssSeverityColorLegend,
 } from 'constants/severityColors';
+import { getScopeQuery } from 'Containers/VulnMgmt/Entity/VulnMgmtPolicyQueryUtil';
 
 const CVES_QUERY = gql`
-    query getCvesByCVSS($query: String) {
-        results: vulnerabilities(query: $query) {
+    query getCvesByCVSS($query: String, $scopeQuery: String) {
+        results: vulnerabilities(query: $query, scopeQuery: $scopeQuery) {
             cve
             cvss
             severity
@@ -27,10 +28,13 @@ const CVES_QUERY = gql`
     }
 `;
 
-const CvesByCvssScore = ({ entityContext }) => {
+const vulnerabilitySeveritySuffix = '_VULNERABILITY_SEVERITY';
+
+const CvesByCvssScore = ({ entityContext, parentContext }) => {
     const { loading, data = {} } = useQuery(CVES_QUERY, {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
+            scopeQuery: getScopeQuery(parentContext),
         },
     });
 
@@ -45,15 +49,18 @@ const CvesByCvssScore = ({ entityContext }) => {
 
     function getChildren(vulns, severity) {
         return vulns
-            .filter((vuln) => vuln.severity === severity)
+            .filter(
+                (vuln) =>
+                    vuln.severity === `${severity.toUpperCase()}${vulnerabilitySeveritySuffix}`
+            )
             .map(({ cve, cvss, summary }) => {
-                const severityString = `${severity.toUpperCase()}_SEVERITY`;
+                const severityString = `${severity.toUpperCase()}${vulnerabilitySeveritySuffix}`;
                 return {
                     severity,
                     name: `${cve} -- ${summary}`,
-                    color: severityColorMap[severityString],
-                    labelColor: severityTextColorMap[severityString],
-                    textColor: severityTextColorMap[severityString],
+                    color: cvssSeverityColorMap[severityString],
+                    labelColor: cvssSeverityTextColorMap[severityString],
+                    textColor: cvssSeverityTextColorMap[severityString],
                     value: cvss,
                     link: workflowState.pushRelatedEntity(entityTypes.CVE, cve).toUrl(),
                 };
@@ -61,7 +68,7 @@ const CvesByCvssScore = ({ entityContext }) => {
     }
 
     function getSunburstData(vulns) {
-        return severityColorLegend.map(({ title, color, textColor }) => {
+        return cvssSeverityColorLegend.map(({ title, color, textColor }) => {
             const severity = title.toUpperCase();
             return {
                 name: title,
@@ -74,8 +81,8 @@ const CvesByCvssScore = ({ entityContext }) => {
     }
 
     function getSidePanelData(vulns) {
-        return severityColorLegend.map(({ title, textColor }) => {
-            const severity = title.toUpperCase();
+        return cvssSeverityColorLegend.map(({ title, textColor }) => {
+            const severity = `${title.toUpperCase()}${vulnerabilitySeveritySuffix}`;
             const category = vulns.filter((vuln) => vuln.severity === severity);
             const text = `${category.length} rated as ${title}`;
             return {
@@ -116,10 +123,12 @@ const CvesByCvssScore = ({ entityContext }) => {
 
 CvesByCvssScore.propTypes = {
     entityContext: PropTypes.shape({}),
+    parentContext: PropTypes.shape({}),
 };
 
 CvesByCvssScore.defaultProps = {
     entityContext: {},
+    parentContext: {},
 };
 
 export default CvesByCvssScore;

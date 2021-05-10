@@ -33,11 +33,11 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 		}
 
 		// Generate an embedded component for the edge and non-embedded version.
-		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(cp, parts.imageCVEEdges))
+		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(image.GetScan().GetOperatingSystem(), cp, parts.imageCVEEdges))
 	}
 }
 
-func generateEmbeddedComponent(cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
+func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
 	if cp.component == nil || cp.edge == nil {
 		return nil
 	}
@@ -63,12 +63,31 @@ func generateEmbeddedComponent(cp ComponentParts, imageCVEEdges map[string]*stor
 
 	ret.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(cp.children))
 	for _, cve := range cp.children {
-		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(cve, imageCVEEdges[cve.cve.GetId()]))
+		cveEdge := imageCVEEdges[cve.cve.GetId()]
+		// This is due to the scenario when the CVE was never found in the image, but instead
+		// the <component, version> tuple was found in another image that may have had these specific vulns.
+		// When getting the image, we should filter these vulns out for correctness. Note, this does not
+		// fix what will happen in the UI
+		if cveEdge.GetFirstImageOccurrence() == nil {
+			continue
+		}
+		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(os, cve, imageCVEEdges[cve.cve.GetId()]))
 	}
 	return ret
 }
 
-func generateEmbeddedCVE(cp CVEParts, imageCVEEdge *storage.ImageCVEEdge) *storage.EmbeddedVulnerability {
+func cveScoreVersionToEmbeddedScoreVersion(v storage.CVE_ScoreVersion) storage.EmbeddedVulnerability_ScoreVersion {
+	switch v {
+	case storage.CVE_V2:
+		return storage.EmbeddedVulnerability_V2
+	case storage.CVE_V3:
+		return storage.EmbeddedVulnerability_V3
+	default:
+		return storage.EmbeddedVulnerability_V2
+	}
+}
+
+func generateEmbeddedCVE(os string, cp CVEParts, imageCVEEdge *storage.ImageCVEEdge) *storage.EmbeddedVulnerability {
 	if cp.cve == nil || cp.edge == nil {
 		return nil
 	}
@@ -80,5 +99,14 @@ func generateEmbeddedCVE(cp CVEParts, imageCVEEdge *storage.ImageCVEEdge) *stora
 		}
 	}
 	ret.FirstImageOccurrence = imageCVEEdge.GetFirstImageOccurrence()
+
+	if distroSpecifics, ok := cp.cve.GetDistroSpecifics()[os]; ok {
+		ret.Severity = distroSpecifics.GetSeverity()
+		ret.Cvss = distroSpecifics.GetCvss()
+		ret.CvssV2 = distroSpecifics.GetCvssV2()
+		ret.CvssV3 = distroSpecifics.GetCvssV3()
+		ret.ScoreVersion = cveScoreVersionToEmbeddedScoreVersion(distroSpecifics.GetScoreVersion())
+	}
+
 	return ret
 }

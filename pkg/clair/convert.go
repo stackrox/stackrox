@@ -47,6 +47,22 @@ type cvss struct {
 	ImpactScore         float32
 }
 
+func severityToStorageSeverity(severity string) storage.VulnerabilitySeverity {
+	switch severity {
+	case string(clairV1.UnknownSeverity):
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	case string(clairV1.LowSeverity):
+		return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+	case string(clairV1.ModerateSeverity):
+		return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
+	case string(clairV1.ImportantSeverity):
+		return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
+	case string(clairV1.CriticalSeverity):
+		return storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+	}
+	return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
 // ConvertVulnerability converts a clair vulnerability to a proto vulnerability
 func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerability {
 	var vulnMetadataMap interface{}
@@ -72,6 +88,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 			FixedBy: v.FixedBy,
 		},
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+		Severity:          severityToStorageSeverity(v.Severity),
 	}
 
 	d, err := json.Marshal(vulnMetadataMap)

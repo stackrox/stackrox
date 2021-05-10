@@ -42,7 +42,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `imageCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
 		schema.AddExtraResolver("Namespace", `componentCount(query: String): Int!`),
-		schema.AddExtraResolver("Namespace", `vulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Namespace", `vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Namespace", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `vulnCounter(query: String): VulnerabilityCounter!`),
 		schema.AddExtraResolver("Namespace", `secrets(query: String, pagination: Pagination): [Secret!]!`),

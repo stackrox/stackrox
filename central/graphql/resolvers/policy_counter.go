@@ -40,12 +40,12 @@ func (evr *PolicyCounterResolver) Low(ctx context.Context) int32 {
 	return evr.low
 }
 
-// Medium returns the total number of medium severity violated policies.
+// Medium returns the total number of moderate severity violated policies.
 func (evr *PolicyCounterResolver) Medium(ctx context.Context) int32 {
 	return evr.medium
 }
 
-// High returns the total number of high severity violated policies.
+// High returns the total number of important severity violated policies.
 func (evr *PolicyCounterResolver) High(ctx context.Context) int32 {
 	return evr.high
 }

@@ -17,11 +17,11 @@ const vulnCounter = {
         total: 5,
         fixable: 1,
     },
-    high: {
+    important: {
         total: 5,
         fixable: 1,
     },
-    medium: {
+    moderate: {
         total: 5,
         fixable: 1,
     },

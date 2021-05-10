@@ -50,8 +50,9 @@ func TestSplitAndMergeImage(t *testing.T) {
 					},
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
-							Cve:               "cve1",
-							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							Cve:                  "cve1",
+							VulnerabilityType:    storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							FirstImageOccurrence: ts,
 						},
 						{
 							Cve:               "cve2",
@@ -59,6 +60,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver3",
 							},
+							FirstImageOccurrence: ts,
 						},
 					},
 				},
@@ -75,10 +77,12 @@ func TestSplitAndMergeImage(t *testing.T) {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "ver2",
 							},
+							FirstImageOccurrence: ts,
 						},
 						{
-							Cve:               "cve2",
-							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							Cve:                  "cve2",
+							VulnerabilityType:    storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							FirstImageOccurrence: ts,
 						},
 					},
 				},
@@ -226,6 +230,12 @@ func TestSplitAndMergeImage(t *testing.T) {
 
 	splitActual := Split(image, true)
 	assert.Equal(t, splitExpected, splitActual)
+
+	// Need to add first occurrence edges as otherwise they will be filtered out
+	// These values are added on insertion for the DB which is why we will populate them artificially here
+	for _, v := range splitActual.imageCVEEdges {
+		v.FirstImageOccurrence = ts
+	}
 
 	imageActual := Merge(splitActual)
 	assert.Equal(t, image, imageActual)

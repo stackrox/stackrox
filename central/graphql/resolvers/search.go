@@ -25,6 +25,7 @@ func init() {
 // PaginatedQuery represents a query with pagination info
 type PaginatedQuery struct {
 	Query      *string
+	ScopeQuery *string
 	Pagination *inputtypes.Pagination
 }
 
@@ -44,6 +45,20 @@ func (r *PaginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	return q, nil
 }
 
+// AsV1ScopeQueryOrEmpty returns a proto query or empty proto query if pagination query is empty
+func (r *PaginatedQuery) AsV1ScopeQueryOrEmpty() (*v1.Query, error) {
+	var q *v1.Query
+	if r == nil || r.ScopeQuery == nil {
+		q := search.EmptyQuery()
+		return q, nil
+	}
+	q, err := search.ParseQuery(*r.ScopeQuery, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+	return q, nil
+}
+
 // String returns a String representation of PaginatedQuery
 func (r *PaginatedQuery) String() string {
 	if r == nil || r.Query == nil {
@@ -59,7 +74,8 @@ func (r *PaginatedQuery) IsEmpty() bool {
 
 // RawQuery represents a raw query
 type RawQuery struct {
-	Query *string
+	Query      *string
+	ScopeQuery *string
 }
 
 // AsV1QueryOrEmpty returns a proto query or empty proto query if raw query is empty
@@ -69,6 +85,20 @@ func (r RawQuery) AsV1QueryOrEmpty(opts ...search.ParseQueryOption) (*v1.Query, 
 	}
 	opts = append(opts, search.MatchAllIfEmpty())
 	return search.ParseQuery(*r.Query, opts...)
+}
+
+// AsV1ScopeQueryOrEmpty returns a proto query or empty proto query if pagination query is empty
+func (r *RawQuery) AsV1ScopeQueryOrEmpty() (*v1.Query, error) {
+	var q *v1.Query
+	if r == nil || r.ScopeQuery == nil {
+		q := search.EmptyQuery()
+		return q, nil
+	}
+	q, err := search.ParseQuery(*r.ScopeQuery, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+	return q, nil
 }
 
 // String returns a String representation of RawQuery

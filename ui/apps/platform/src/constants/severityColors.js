@@ -36,7 +36,46 @@ export const severityColorLegend = [
     },
 ];
 
+export const cvssSeverityColorMap = {
+    CRITICAL_VULNERABILITY_SEVERITY: 'var(--alert-400)',
+    IMPORTANT_VULNERABILITY_SEVERITY: 'var(--caution-400)',
+    MODERATE_VULNERABILITY_SEVERITY: 'var(--warning-400)',
+    LOW_VULNERABILITY_SEVERITY: 'var(--tertiary-400)',
+};
+
+export const cvssSeverityTextColorMap = {
+    CRITICAL_VULNERABILITY_SEVERITY: 'var(--alert-700)',
+    IMPORTANT_VULNERABILITY_SEVERITY: 'var(--caution-700)',
+    MODERATE_VULNERABILITY_SEVERITY: 'var(--warning-700)',
+    LOW_VULNERABILITY_SEVERITY: 'var(--tertiary-700)',
+};
+
+export const cvssSeverityColorLegend = [
+    {
+        title: 'Low',
+        color: cvssSeverityColorMap.LOW_VULNERABILITY_SEVERITY,
+        textColor: cvssSeverityTextColorMap.LOW_VULNERABILITY_SEVERITY,
+    },
+    {
+        title: 'Moderate',
+        color: cvssSeverityColorMap.MODERATE_VULNERABILITY_SEVERITY,
+        textColor: cvssSeverityTextColorMap.MODERATE_VULNERABILITY_SEVERITY,
+    },
+    {
+        title: 'Important',
+        color: cvssSeverityColorMap.IMPORTANT_VULNERABILITY_SEVERITY,
+        textColor: cvssSeverityTextColorMap.IMPORTANT_VULNERABILITY_SEVERITY,
+    },
+    {
+        title: 'Critical',
+        color: cvssSeverityColorMap.CRITICAL_VULNERABILITY_SEVERITY,
+        textColor: cvssSeverityTextColorMap.CRITICAL_VULNERABILITY_SEVERITY,
+    },
+];
+
 export default {
     severityColorMap,
     severityColorLegend,
+    cvssSeverityColorMap,
+    cvssSeverityColorLegend,
 };

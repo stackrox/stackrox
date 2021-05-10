@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
@@ -39,7 +40,7 @@ func init() {
 		schema.AddExtraResolver("Image", "deployments(query: String, pagination: Pagination): [Deployment!]!"),
 		schema.AddExtraResolver("Image", "deploymentCount(query: String): Int!"),
 		schema.AddExtraResolver("Image", "topVuln(query: String): EmbeddedVulnerability"),
-		schema.AddExtraResolver("Image", "vulns(query: String, pagination: Pagination): [EmbeddedVulnerability]!"),
+		schema.AddExtraResolver("Image", "vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!"),
 		schema.AddExtraResolver("Image", "vulnCount(query: String): Int!"),
 		schema.AddExtraResolver("Image", "vulnCounter(query: String): VulnerabilityCounter!"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "layerIndex: Int"),
@@ -142,6 +143,22 @@ func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (Vu
 		return nil, nil
 	}
 
+	if args.IsEmpty() {
+		var max *storage.EmbeddedVulnerability
+		for _, c := range resolver.data.GetScan().GetComponents() {
+			for _, v := range c.GetVulns() {
+				if max == nil {
+					max = v
+					continue
+				}
+				if v.GetCvss() > max.GetCvss() || (v.GetCvss() == max.GetCvss() && v.GetCve() > max.GetCve()) {
+					max = v
+				}
+			}
+		}
+		return resolver.root.wrapEmbeddedVulnerability(max, nil)
+	}
+
 	query = search.NewConjunctionQuery(query, resolver.getImageQuery())
 	query.Pagination = &v1.QueryPagination{
 		SortOptions: []*v1.QuerySortOption{
@@ -179,10 +196,12 @@ func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) (
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
-	return resolver.root.Vulnerabilities(scoped.Context(ctx, scoped.Scope{
+	ctx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
-	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	})
+	ctx = distroctx.Context(ctx, resolver.data.GetScan().GetOperatingSystem())
+	return resolver.root.Vulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // VulnCount returns the number of vulnerabilities the image has.
@@ -200,6 +219,8 @@ func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (in
 	}
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
+
+	ctx = distroctx.Context(ctx, resolver.data.GetScan().GetOperatingSystem())
 	return resolver.root.VulnerabilityCount(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
@@ -232,10 +253,13 @@ func (resolver *imageResolver) Components(ctx context.Context, args PaginatedQue
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
-	return resolver.root.Components(scoped.Context(ctx, scoped.Scope{
+
+	ctx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
-	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	})
+	ctx = distroctx.Context(ctx, resolver.data.GetScan().GetOperatingSystem())
+	return resolver.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *imageResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
