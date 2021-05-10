@@ -58,10 +58,10 @@ message SimpleAccessScope {
         repeated SetBasedLabelSelector namespace_label_selectors = 4;
     }
 
-    // id is generated.
+    // `id` is generated and cannot be changed.
     string id           = 1;
 
-    // name is provided by the user.
+    // `name` and `description` are provided by the user and can be changed.
     string name         = 2;
     string description  = 3;
 

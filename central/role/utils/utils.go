@@ -12,8 +12,8 @@ import (
 const (
 	// AccessScopeIDPrefix should be prepended to every human-hostile ID of an
 	// access scope for readability, e.g.,
-	//     "acs.authz.accessscope.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
-	AccessScopeIDPrefix = "acs.authz.accessscope."
+	//     "io.stackrox.authz.accessscope.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
+	AccessScopeIDPrefix = "io.stackrox.authz.accessscope."
 )
 
 // FillAccessList fills in the access list if the role uses the GlobalAccess field.
