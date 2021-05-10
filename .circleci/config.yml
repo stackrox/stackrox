@@ -4091,8 +4091,8 @@ jobs:
       - run:
           name: Restore 56.1 backup to current HEAD
           command: |
-            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_upgrade.zip .
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_upgrade.zip
+            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 
       - *waitForAPI
       - validate-upgrade-and-check-logs-with-bouncing:
@@ -4125,7 +4125,7 @@ jobs:
       - run:
           name: Restore 56.1 backup to 56.1
           command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_upgrade.zip
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 
       - *waitForAPI
 
