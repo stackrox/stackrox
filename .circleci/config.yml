@@ -4156,7 +4156,7 @@ jobs:
             extra_args=()
             if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
               # builds with -race are very slow at building the bundle (PR #8149)
-              extra_args+=("-t 40s")
+              extra_args+=(-t 40s)
             fi
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" "${extra_args[@]}" sensor get-bundle remote
             [[ -d sensor-remote ]]
