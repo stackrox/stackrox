@@ -59,6 +59,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/itchyny/gojq v0.12.1
+	github.com/joelanford/helm-operator v0.0.7
 	github.com/jstemmer/go-junit-report v0.9.1
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/machinebox/graphql v0.2.2
@@ -119,7 +120,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
-	helm.sh/helm/v3 v3.4.0
+	helm.sh/helm/v3 v3.5.0
 	honnef.co/go/tools v0.0.1-2020.1.6
 	k8s.io/api v0.20.2
 	k8s.io/apiextensions-apiserver v0.20.2
