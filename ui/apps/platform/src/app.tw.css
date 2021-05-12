@@ -664,9 +664,17 @@ h6 {
     @apply bg-base-100 !important;
 }
 
+.ReactTable .rt-th {
+    @apply bg-base-100 !important; /* th also needs background for horizontal scrolling beyond tr width */
+}
+
 .theme-dark .ReactTable .rt-thead.-header .rt-tr {
     @apply border-b border-base-200 bg-base-0 !important;
     box-shadow: -10px 0 0 var(--base-100), 10px 0 0 var(--base-100), 0 2px 8px 0 hsl(233, 25%, 15%) !important;
+}
+
+.theme-dark .ReactTable .rt-th {
+    @apply bg-base-0 !important; /* th also needs background for horizontal scrolling beyond tr width */
 }
 
 .theme-dark .network-panel .ReactTable .rt-thead.-header .rt-tr {
@@ -674,7 +682,12 @@ h6 {
     box-shadow: none !important;
 }
 
-.theme-dark .widget .ReactTable .rt-thead.-header .rt-tr {
+.theme-dark .network-panel .ReactTable .rt-th {
+    background: none !important;
+}
+
+.theme-dark .widget .ReactTable .rt-thead.-header .rt-tr,
+.theme-dark .widget .ReactTable .rt-th {
     @apply bg-base-100 !important;
 }
 
