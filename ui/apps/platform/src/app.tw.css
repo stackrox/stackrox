@@ -289,10 +289,10 @@ h6 {
     position: absolute;
     left: 0;
     z-index: 10;
-    top: 63px;
+    top: 76px;
     height: 100%;
-    background-color: hsla(225, 30%, 21%, 0.85);
-    padding-bottom: 84px;
+    /* background-color: hsla(225, 30%, 21%, 0.85); */
+    padding-bottom: 76px;
 }
 
 /* Collapsible CSS */
@@ -407,13 +407,6 @@ h6 {
 
 .left-navigation {
     width: 133px;
-}
-
-.bg-global-search-empty-state {
-    background-image: url('images/globalSearchEmptyState.svg');
-    background-repeat: no-repeat;
-    background-position-x: 50%;
-    background-position-y: 50%;
 }
 
 .text-critical-severity {

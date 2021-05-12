@@ -28,3 +28,8 @@ body {
 .pf-c-check__input {
     width: var(--pf-c-check__input--Height);
 }
+
+/* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
+.pf-c-empty-state__content svg {
+    display: inline;
+}
