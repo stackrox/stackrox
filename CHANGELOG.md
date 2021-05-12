@@ -6,6 +6,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+## [60.0]
+
 - CVE Severity levels are now mapped to their respective Red Hat security ratings (https://access.redhat.com/security/updates/classification)
 
 ## [59.0]
