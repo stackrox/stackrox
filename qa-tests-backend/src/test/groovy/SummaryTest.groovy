@@ -69,9 +69,18 @@ class SummaryTest extends BaseSpecification {
             }
             assert stackroxNode.labelsMap == orchestratorNode.labels
             if (stackroxNode.annotationsMap != orchestratorNode.annotations) {
-                println "There is a node annotation difference - StackRox -v- Orchestrator:"
-                println javers.compare(stackroxNode.annotationsMap, orchestratorNode.annotations).prettyPrint()
-                diff = true
+                Map<String, String> orchestratorTruncated = orchestratorNode.annotations.clone()
+                orchestratorTruncated.keySet().each { name ->
+                    if (orchestratorTruncated[name].length() > Constants.STACKROX_NODE_ANNOTATION_TRUNCATION_LENGTH) {
+                        orchestratorTruncated[name] = orchestratorTruncated[name].substring(0,
+                                Constants.STACKROX_NODE_ANNOTATION_TRUNCATION_LENGTH - 1) + "..."
+                    }
+                }
+                if (stackroxNode.annotationsMap != orchestratorTruncated) {
+                    println "There is a node annotation difference - StackRox -v- Orchestrator:"
+                    println javers.compare(stackroxNode.annotationsMap, orchestratorTruncated).prettyPrint()
+                    diff = true
+                }
             }
             assert stackroxNode.internalIpAddressesList == orchestratorNode.internalIps
             assert stackroxNode.externalIpAddressesList == orchestratorNode.externalIps
