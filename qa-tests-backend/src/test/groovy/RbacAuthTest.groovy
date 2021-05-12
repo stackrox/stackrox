@@ -3,8 +3,6 @@ import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NetworkPolicyOuterClass
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ApiTokenService
 import services.AuthProviderService
@@ -17,7 +15,6 @@ import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
 import spock.lang.Shared
 import spock.lang.Unroll
-import util.Env
 
 class RbacAuthTest extends BaseSpecification {
 
@@ -119,13 +116,6 @@ spec:
     @Unroll
     @Category(BAT)
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
-        //skip on OS for now
-        def skip = false
-        if (resourceTest.contains("NetworkPolicy")) {
-            skip = Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT
-            Assume.assumeFalse(skip)
-        }
-
         when:
         "Create a test role"
         def testRole = RoleOuterClass.Role.newBuilder()
@@ -159,8 +149,7 @@ spec:
 
         "remove role and token"
         if (resourceAccess.containsKey("NetworkPolicy") &&
-                resourceAccess.get("NetworkPolicy") == RoleOuterClass.Access.READ_WRITE_ACCESS &&
-                !skip) {
+                resourceAccess.get("NetworkPolicy") == RoleOuterClass.Access.READ_WRITE_ACCESS) {
             NetworkPolicyService.applyGeneratedNetworkPolicy(
                     NetworkPolicyService.undoGeneratedNetworkPolicy().undoModification
             )
