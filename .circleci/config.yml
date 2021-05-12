@@ -2087,7 +2087,6 @@ jobs:
 
   go-unit-tests:
     executor: custom
-    resource_class: xlarge
     steps:
       - pre-go-unit-tests
       - run:
@@ -2098,7 +2097,6 @@ jobs:
 
   go-unit-tests-release:
     executor: custom
-    resource_class: xlarge
     steps:
       - pre-go-unit-tests
       - run:
@@ -2109,7 +2107,7 @@ jobs:
 
   shell-unit-tests:
     executor: custom
-    resource_class: medium
+    resource_class: small
     steps:
       - checkout
 
@@ -2162,7 +2160,7 @@ jobs:
 
   check-generated-files-up-to-date:
     executor: custom
-    resource_class: large
+    resource_class: small
     steps:
       - checkout
 
@@ -2195,7 +2193,7 @@ jobs:
 
   check-policy-files-up-to-date:
     executor: custom
-    resource_class: medium
+    resource_class: small
     steps:
       - checkout
 
@@ -2221,10 +2219,8 @@ jobs:
 
   integration-unit-tests:
     executor: custom
-    resource_class: large
     steps:
       - checkout
-
       - *restoreGoModCache
       - setup-go-build-env
 
@@ -5015,21 +5011,6 @@ jobs:
                 fi
             done
 
-  collect-test-jobs-stats:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - setup-gcp
-
-      - run:
-          name: Wait for all other workflow jobs to finish
-          command: CIRCLE_TOKEN="$CIRCLE_TOKEN_ROXBOT" .circleci/wait-for-jobs-completion.sh
-
-      - run:
-          name: Collect and send test jobs stats
-          command: CIRCLE_TOKEN="$CIRCLE_TOKEN_ROXBOT" .circleci/collect-tests-stats.sh "stackrox-ci" "ci_metrics.rox_jobs_stats" "ci_metrics.rox_failed_tests"
-
 workflows:
   version: 2
 
@@ -5239,14 +5220,6 @@ workflows:
               ignore: /.*/
             tags:
               only: /.*/
-
-      - collect-test-jobs-stats:
-          context: docker-io-pull
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /.*-nightly-.*/
 
 #      - provision-test-helm-charts-repo:
 #          <<: *runOnlyOnReleaseBuilds
