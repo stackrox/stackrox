@@ -53,6 +53,8 @@ class NetworkFlowTest extends BaseSpecification {
     // Other namespace
     static final private String OTHER_NAMESPACE = "qa2"
 
+    static final private String SOCAT_DEBUG = "-d -d -v"
+
     // Target deployments
     @Shared
     private List<Deployment> targetDeployments
@@ -66,7 +68,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", UDPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["socat -dd -v UDP-RECV:8080 STDOUT",]),
+                    .setArgs(["socat "+SOCAT_DEBUG+" UDP-RECV:8080 STDOUT",]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET)
                     .setImage("stackrox/qa:socat")
@@ -75,8 +77,8 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", TCPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat -dd -v TCP-LISTEN:80,fork STDOUT & " +
-                                      "socat -dd -v TCP-LISTEN:8080,fork STDOUT)" as String,]),
+                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:80,fork STDOUT & " +
+                                      "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
                     .setImage("nginx")
@@ -104,7 +106,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", SHORTCONSISTENTSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do wget -S http://${NGINXCONNECTIONTARGET}; " +
+                                      "do wget -S -T 2 http://${NGINXCONNECTIONTARGET}; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(SINGLECONNECTIONSOURCE)
@@ -120,7 +122,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
                                       "do echo \"Hello from ${UDPCONNECTIONSOURCE}\" | " +
-                                      "socat -dddd -s STDIN UDP:${UDPCONNECTIONTARGET}:8080; " +
+                                      "socat "+SOCAT_DEBUG+" -s STDIN UDP:${UDPCONNECTIONTARGET}:8080; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
@@ -129,7 +131,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
                                       "do echo \"Hello from ${TCPCONNECTIONSOURCE}\" | " +
-                                      "socat -dddd -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
+                                      "socat "+SOCAT_DEBUG+" -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
@@ -138,9 +140,9 @@ class NetworkFlowTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
                                       "do echo \"Hello from ${MULTIPLEPORTSCONNECTION}\" | " +
-                                      "socat -dd -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
+                                      "socat "+SOCAT_DEBUG+" -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "echo \"Hello from ${MULTIPLEPORTSCONNECTION}\" | " +
-                                      "socat -dd -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
+                                      "socat "+SOCAT_DEBUG+" -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(EXTERNALDESTINATION)
@@ -148,7 +150,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", EXTERNALDESTINATION)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
-                                      "do wget -S http://www.google.com; " +
+                                      "do wget -S -T 2 http://www.google.com; " +
                                       "done" as String,]),
             new Deployment()
                     .setName("${TCPCONNECTIONSOURCE}-qa2")
@@ -158,7 +160,8 @@ class NetworkFlowTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
                                       "do echo \"Hello from ${TCPCONNECTIONSOURCE}-qa2\" | " +
-                                      "socat -dddd -s STDIN TCP:${TCPCONNECTIONTARGET}.qa.svc.cluster.local:80; " +
+                                      "socat "+SOCAT_DEBUG+" -s STDIN "+
+                                         "TCP:${TCPCONNECTIONTARGET}.qa.svc.cluster.local:80; " +
                                       "done" as String,]),
         ]
     }
@@ -560,16 +563,17 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify cluster updates can block flow connections from showing"() {
         given:
-        "orchestrator supports NetworkPolicies"
-        // limit this test to run only on environments that support Network Policies
-        Assume.assumeTrue(orchestrator.supportsNetworkPolicies())
-
-        and:
         "Two deployments, A and B, where B communicates to A"
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == SHORTCONSISTENTSOURCE }?.deploymentUid
         assert sourceUid != null
+
+        and:
+        "The edge is found before blocked"
+        println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
+        assert edges
 
         when:
         "apply network policy to block ingress to A"
@@ -582,9 +586,9 @@ class NetworkFlowTest extends BaseSpecification {
         sleep 60000
 
         and:
-        "Check for original edge in network graph"
-        println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
-        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
+        "Get the latest edge"
+        println "Checking for latest edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
+        edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -862,6 +866,9 @@ class NetworkFlowTest extends BaseSpecification {
             if (newEdge != null &&
                     newEdge.lastActiveTimestamp > edge.lastActiveTimestamp + (addSecondsToEdgeTimestamp * 1000)) {
                 println "Found updated edge in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
+                println "The updated edge is " +
+                        "${((newEdge.lastActiveTimestamp - edge.lastActiveTimestamp)/1000) as Integer} " +
+                        "seconds later"
                 return newEdge
             }
             sleep intervalSeconds * 1000

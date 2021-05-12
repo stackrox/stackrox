@@ -1130,15 +1130,6 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    def supportsNetworkPolicies() {
-        return evaluateWithRetry(2, 3) {
-            List<Node> gkeNodes = client.nodes().list().getItems().findAll {
-                it.getStatus().getNodeInfo().getKubeletVersion().contains("gke")
-            }
-            return gkeNodes.size() > 0
-        }
-    }
-
     /*
         Namespace Methods
      */

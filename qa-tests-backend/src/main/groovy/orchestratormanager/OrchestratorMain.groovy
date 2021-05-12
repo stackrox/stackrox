@@ -121,7 +121,6 @@ interface OrchestratorMain {
     //Nodes
     def getNodeCount()
     List<Node> getNodeDetails()
-    def supportsNetworkPolicies()
     def isGKE()
 
     //Service Accounts
