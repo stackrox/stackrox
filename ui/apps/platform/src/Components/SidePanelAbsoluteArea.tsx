@@ -14,7 +14,7 @@ function SidePanelAbsoluteArea({ children }: SidePanelAbsoluteAreaProps): ReactE
     return (
         <div
             className="absolute flex h-full justify-end left-0 top-0 w-full z-10"
-            style={{ backgroundColor: 'hsla(210, 15%, 34%, 0.5)' }}
+            style={{ backgroundColor: 'rgba(3, 3, 3, 0.62)' }}
         >
             <div className="bg-base-200 border-base-400 border-l h-full rounded-tl-lg shadow-sidepanel w-full lg:w-9/10">
                 {children}
