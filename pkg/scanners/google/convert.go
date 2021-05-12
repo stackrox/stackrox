@@ -74,9 +74,13 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 	}
 
 	var link string
-	if len(vulnerability.RelatedUrls) > 0 {
-		link = vulnerability.GetRelatedUrls()[0].GetUrl()
-	} else {
+	for _, url := range vulnerability.RelatedUrls {
+		if url.Url != "" {
+			link = url.Url
+			break
+		}
+	}
+	if link == "" {
 		link = fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", cveName)
 	}
 
