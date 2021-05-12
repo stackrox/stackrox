@@ -20,7 +20,22 @@ import com.jayway.restassured.response.Response
 
 class SplunkUtil {
     public static final String SPLUNK_ADMIN_PASSWORD = "helloworld"
-    static final private Gson GSON = new GsonBuilder().create()
+    private static final Gson GSON = new GsonBuilder().create()
+    private static final Map<String, String> ENV_VARIABLES = ["SPLUNK_START_ARGS" : "--accept-license",
+        "SPLUNK_USER": "root",
+        "SPLUNK_PASSWORD"   : SPLUNK_ADMIN_PASSWORD,
+        // This is required to get splunk 8.1.2 to start in an OpenShift crio environment
+        // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
+        // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
+        // See https://github.com/splunk/splunk-ansible/issues/349
+        "SPLUNK_LAUNCH_CONF": "OPTIMISTIC_ABOUT_FILE_LOCKING=1",]
+    private static final Map<String, String> LEGACY_ENV_VARIABLES = ["SPLUNK_START_ARGS" : "--accept-license",
+        "SPLUNK_USER": "root",
+        "SPLUNK_PASSWORD"   : SPLUNK_ADMIN_PASSWORD,
+        // This is required to get splunk 6.6.2 to start in an OpenShift crio environment
+        // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
+        // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
+        "OPTIMISTIC_ABOUT_FILE_LOCKING": "1",]
 
     static List<SplunkAlert> getSplunkAlerts(int port, String searchId) {
         Response response = getSearchResults(port, searchId)
@@ -139,12 +154,7 @@ class SplunkUtil {
                         .addPort (8088)
                         .addPort(8089)
                         .addPort(514)
-                        .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root",
-                                  "SPLUNK_PASSWORD": SPLUNK_ADMIN_PASSWORD,
-                                  // This is required to get splunk 6.6.2 to start in an OpenShift crio environment
-                                  // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
-                                  // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
-                                  "OPTIMISTIC_ABOUT_FILE_LOCKING": "1", ])
+                        .setEnv(useLegacySplunk ? LEGACY_ENV_VARIABLES : ENV_VARIABLES)
                         .addLabel("app", deploymentName)
         if (useLegacySplunk) {
             deployment.addImagePullSecret("qa-stackrox")

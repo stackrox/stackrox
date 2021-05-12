@@ -54,14 +54,13 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 .getName()
         int port = splunkDeployment.splunkPortForward.getLocalPort()
 
-        println "${LocalDateTime.now()} Copying TA file to splunk pod"
+        println "${LocalDateTime.now()} Copying TA and CIM app files to splunk pod"
         orchestrator.copyFileToPod(PATH_TO_SPLUNK_TA_SPL, TEST_NAMESPACE, podName, STACKROX_REMOTE_LOCATION)
+        orchestrator.copyFileToPod(PATH_TO_CIM_TA_TGZ, TEST_NAMESPACE, podName, CIM_REMOTE_LOCATION)
         println "${LocalDateTime.now()} Installing TA"
         postToSplunk(port, "/services/apps/local",
                 ["name": STACKROX_REMOTE_LOCATION, "filename": "true"])
-
         println "${LocalDateTime.now()} Installing CIM app"
-        orchestrator.copyFileToPod(PATH_TO_CIM_TA_TGZ, TEST_NAMESPACE, podName, CIM_REMOTE_LOCATION)
         postToSplunk(port, "/services/apps/local",
                 ["name": CIM_REMOTE_LOCATION, "filename": "true"])
         // fix minimum free disk space parameter
@@ -106,8 +105,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         for (int i = 0; i < 20; i++) {
             println "Attempt ${i} to get violations from Splunk"
-            def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts"
-            )
+            def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(10)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
