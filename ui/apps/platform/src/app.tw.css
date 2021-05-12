@@ -1088,13 +1088,6 @@ h6 {
     width: 9px;
 }
 
-.banner-background {
-    background-image: url('images/list-bg.svg');
-    background-repeat: no-repeat;
-    background-position-y: bottom;
-    background-size: contain;
-}
-
 .before:before {
     content: ' ';
 }

@@ -101,7 +101,7 @@ class CollapsibleBanner extends Component {
                 <div data-testid="collapsible-banner">
                     <Slider
                         {...sliderSettings}
-                        className={`banner-background px-3 py-1 bg-primary-200 h-64 ${this.props.className}`}
+                        className={`px-3 py-1 bg-base-200 h-64 ${this.props.className}`}
                     >
                         {content}
                     </Slider>
