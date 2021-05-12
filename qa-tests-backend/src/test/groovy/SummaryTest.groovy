@@ -6,6 +6,7 @@ import objects.Namespace
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.ListCompareAlgorithm
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.NamespaceService
@@ -17,6 +18,9 @@ class SummaryTest extends BaseSpecification {
 
     @Category([BAT])
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
+        // https://stack-rox.atlassian.net/browse/ROX-6844
+        Assume.assumeFalse(ClusterService.isOpenShift4())
+
         expect:
         "Counts API should match orchestrator details"
 
@@ -95,6 +99,9 @@ class SummaryTest extends BaseSpecification {
 
     @Category([BAT])
     def "Verify namespace details"() {
+        // https://stack-rox.atlassian.net/browse/ROX-6844
+        Assume.assumeFalse(ClusterService.isOpenShift4())
+
         given:
         "fetch the list of namespace"
 
