@@ -13,8 +13,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type allCounts struct {
+	summaryCountsResp
+	PodCount int
+}
+
+func allIntsZero(ints ...int) bool {
+	for _, i := range ints {
+		if i != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *allCounts) AllZero() bool {
+	return allIntsZero(a.PodCount, a.ClusterCount, a.NodeCount, a.ViolationCount, a.DeploymentCount, a.SecretCount)
+}
+
 type summaryCountsResp struct {
-	ClusterCount, NodeCount, ViolationCount, DeploymentCount, ImageCount, SecretCount int
+	ClusterCount, NodeCount, ViolationCount, DeploymentCount, SecretCount int
 }
 
 func getSummaryCounts(t *testing.T) summaryCountsResp {
@@ -25,23 +43,36 @@ func getSummaryCounts(t *testing.T) summaryCountsResp {
 			nodeCount
 			violationCount
 			deploymentCount
-			imageCount
 			secretCount
 		}
 	`, map[string]interface{}{}, &resp, timeout)
 	return resp
 }
 
+func getAllCounts(t *testing.T) allCounts {
+	summaryCounts := getSummaryCounts(t)
+	conn := testutils.GRPCConnectionToCentral(t)
+	podSvc := v1.NewPodServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	podsResp, err := podSvc.GetPods(ctx, &v1.RawQuery{})
+	require.NoError(t, err)
+	return allCounts{
+		summaryCountsResp: summaryCounts,
+		PodCount:          len(podsResp.Pods),
+	}
+}
+
 func TestClusterDeletion(t *testing.T) {
-	resp := getSummaryCounts(t)
-	assert.NotZero(t, resp.ClusterCount)
+	counts := getAllCounts(t)
+	assert.NotZero(t, counts.ClusterCount)
 	// ROX-6391: NodeCount starts at zero
 	// assert.NotZero(t, resp.NodeCount)
-	assert.NotZero(t, resp.ViolationCount)
-	assert.NotZero(t, resp.DeploymentCount)
-	assert.NotZero(t, resp.ImageCount)
-	assert.NotZero(t, resp.SecretCount)
-	log.Infof("the initial counts are: %+v", resp)
+	assert.NotZero(t, counts.ViolationCount)
+	assert.NotZero(t, counts.DeploymentCount)
+	assert.NotZero(t, counts.SecretCount)
+	assert.NotZero(t, counts.PodCount)
+	log.Infof("the initial counts are: %+v", counts)
 
 	conn := testutils.GRPCConnectionToCentral(t)
 	service := v1.NewClustersServiceClient(conn)
@@ -58,26 +89,22 @@ func TestClusterDeletion(t *testing.T) {
 	}
 
 	var noChangeCount, loopCount int
+	previous := counts
 	for {
-		previous := resp
-
 		time.Sleep(5 * time.Second)
 
-		resp := getSummaryCounts(t)
-		if resp.DeploymentCount == 0 {
-			if resp.ClusterCount == 0 &&
-				resp.NodeCount == 0 &&
-				resp.SecretCount == 0 &&
-				resp.ViolationCount == 0 {
+		counts := getAllCounts(t)
+		if counts.DeploymentCount == 0 {
+			if counts.AllZero() {
 				log.Infof("objects have all drained to 0")
 				return
 			}
-			log.Infof("resp still has non zero values: %+v", resp)
+			log.Infof("resp still has non zero values: %+v", counts)
 		} else {
-			log.Infof("deployment count is still not zero: %d", resp.DeploymentCount)
+			log.Infof("deployment count is still not zero: %d", counts.DeploymentCount)
 		}
 
-		if previous.DeploymentCount > 0 && previous.DeploymentCount > resp.DeploymentCount {
+		if previous.DeploymentCount > 0 && previous.DeploymentCount > counts.DeploymentCount {
 			noChangeCount = 0
 		} else {
 			noChangeCount++
@@ -86,5 +113,6 @@ func TestClusterDeletion(t *testing.T) {
 
 		require.LessOrEqual(t, noChangeCount, 20)
 		require.LessOrEqual(t, loopCount, 240)
+		previous = counts
 	}
 }

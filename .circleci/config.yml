@@ -3377,6 +3377,14 @@ jobs:
       - check-stackrox-logs
 
       - run:
+          name: Destructive API tests
+          command: |
+            make -C tests destructive-tests
+
+      - store-test-results-and-artifacts:
+          path: tests/destructive-tests-results
+
+      - run:
           name: Deploy and restore DB to version 41.4
           command: |
             # Download 41.4 backup
@@ -3394,14 +3402,6 @@ jobs:
 
       - store-test-results-and-artifacts:
           path: tests/external-backup-tests-results
-
-      - run:
-          name: Destructive API tests
-          command: |
-            make -C tests destructive-tests
-
-      - store-test-results-and-artifacts:
-          path: tests/destructive-tests-results
 
       - run:
           name: Collect final stackrox logs
