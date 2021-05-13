@@ -33,8 +33,8 @@ message Role {
 }
 
 enum Access {
-    NO_ACCESS = 0;
-    READ_ACCESS = 1;
+    NO_ACCESS         = 0;
+    READ_ACCESS       = 1;
     READ_WRITE_ACCESS = 2;
 }
 
