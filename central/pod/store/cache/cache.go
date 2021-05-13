@@ -158,3 +158,7 @@ func (c *cachedStore) GetKeysToIndex() ([]string, error) {
 func (c *cachedStore) GetIDs() ([]string, error) {
 	return c.store.GetIDs()
 }
+
+func (c *cachedStore) Walk(fn func(pod *storage.Pod) error) error {
+	return c.store.Walk(fn)
+}
