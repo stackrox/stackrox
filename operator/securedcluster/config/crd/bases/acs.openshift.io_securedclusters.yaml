@@ -36,13 +36,439 @@ spec:
           spec:
             description: SecuredClusterSpec defines the desired state of SecuredCluster
             properties:
-              foo:
-                description: Foo is an example field of SecuredCluster. Edit securedcluster_types.go
-                  to remove/update
+              admissionControl:
+                description: AdmissionControlComponentSpec defines settings for admission
+                  control.
+                properties:
+                  customize:
+                    description: Customizations to apply on this container.
+                    properties:
+                      envVars:
+                        additionalProperties:
+                          type: string
+                        description: Custom environment variables to set on this container.
+                        type: object
+                    type: object
+                  imagePullPolicy:
+                    description: PullPolicy describes a policy for if/when to pull
+                      a container image
+                    type: string
+                  listenOnCreates:
+                    description: This setting controls whether the cluster is configured
+                      to contact the StackRox Kubernetes Security Platform with `AdmissionReview`
+                      requests for create events on Kubernetes objects.
+                    type: boolean
+                  listenOnEvents:
+                    description: This setting controls whether the cluster is configured
+                      to contact the StackRox Kubernetes Security Platform with `AdmissionReview`
+                      requests for update Kubernetes events like exec and portforward.
+                      Defaults to `false` on OpenShift, to `true` otherwise.
+                    type: boolean
+                  listenOnUpdates:
+                    description: This setting controls whether the cluster is configured
+                      to contact the StackRox Kubernetes Security Platform with `AdmissionReview`
+                      requests for update events on Kubernetes objects.
+                    type: boolean
+                  resources:
+                    description: Resources define resource-related settings.
+                    properties:
+                      override:
+                        description: Override allow overriding resource requirements
+                          for pods of this deployment, the defaults are computed by
+                          the operator. Currently that computation simply means using
+                          the defaults from the Helm charts.
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                    type: object
+                  serviceTLS:
+                    description: 'Secret that contains cert and key. Omit means: autogenerate.'
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                type: object
+              centralEndpoint:
+                description: Address of the Central endpoint, including the port number.
+                  If using a non-gRPC capable LoadBalancer, use the WebSocket protocol
+                  by prefixing the endpoint address with wss://.
                 type: string
+              clusterName:
+                description: 'TODO(ROX-7125): decide how to guarantee immutability;
+                  use metadata.name instead?'
+                type: string
+              collector:
+                description: CollectorComponentSpec defines settings for collector.
+                properties:
+                  collection:
+                    description: CollectionMethod is a type for values of spec.collector.collection
+                    type: string
+                  collector:
+                    description: CollectorContainerSpec defines settings for the collector
+                      container.
+                    properties:
+                      customize:
+                        description: Customizations to apply on this container.
+                        properties:
+                          envVars:
+                            additionalProperties:
+                              type: string
+                            description: Custom environment variables to set on this
+                              container.
+                            type: object
+                        type: object
+                      imageFlavor:
+                        description: CollectorImageFlavor is a type for values of
+                          spec.collector.collector.imageFlavor
+                        type: string
+                      imagePullPolicy:
+                        description: PullPolicy describes a policy for if/when to
+                          pull a container image
+                        type: string
+                      resources:
+                        description: Resources define resource-related settings.
+                        properties:
+                          override:
+                            description: Override allow overriding resource requirements
+                              for pods of this deployment, the defaults are computed
+                              by the operator. Currently that computation simply means
+                              using the defaults from the Helm charts.
+                            properties:
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount
+                                  of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount
+                                  of compute resources required. If Requests is omitted
+                                  for a container, it defaults to Limits if that is
+                                  explicitly specified, otherwise to an implementation-defined
+                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                            type: object
+                        type: object
+                    type: object
+                  compliance:
+                    description: ContainerSpec defines settings common to secured
+                      cluster components.
+                    properties:
+                      customize:
+                        description: Customizations to apply on this container.
+                        properties:
+                          envVars:
+                            additionalProperties:
+                              type: string
+                            description: Custom environment variables to set on this
+                              container.
+                            type: object
+                        type: object
+                      imagePullPolicy:
+                        description: PullPolicy describes a policy for if/when to
+                          pull a container image
+                        type: string
+                      resources:
+                        description: Resources define resource-related settings.
+                        properties:
+                          override:
+                            description: Override allow overriding resource requirements
+                              for pods of this deployment, the defaults are computed
+                              by the operator. Currently that computation simply means
+                              using the defaults from the Helm charts.
+                            properties:
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount
+                                  of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount
+                                  of compute resources required. If Requests is omitted
+                                  for a container, it defaults to Limits if that is
+                                  explicitly specified, otherwise to an implementation-defined
+                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                            type: object
+                        type: object
+                    type: object
+                  customize:
+                    description: Customizations to apply on the collector DaemonSet.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Custom annotations to set on all objects apart
+                          from Pods.
+                        type: object
+                      envVars:
+                        additionalProperties:
+                          type: string
+                        description: Custom environment variables to set on pods'
+                          containers.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Custom labels to set on all objects apart from
+                          Pods.
+                        type: object
+                      podAnnotations:
+                        additionalProperties:
+                          type: string
+                        description: Custom annotations to set on Pods.
+                        type: object
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Custom labels to set on Pods.
+                        type: object
+                    type: object
+                  serviceTLS:
+                    description: 'Secret that contains cert and key. Omit means: autogenerate.'
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                  taintToleration:
+                    description: TaintTolerationPolicy is a type for values of spec.collector.taintToleration
+                    type: string
+                type: object
+              customize:
+                description: Customizations to apply on all secured cluster components.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Custom annotations to set on all objects apart from
+                      Pods.
+                    type: object
+                  envVars:
+                    additionalProperties:
+                      type: string
+                    description: Custom environment variables to set on pods' containers.
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Custom labels to set on all objects apart from Pods.
+                    type: object
+                  podAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Custom annotations to set on Pods.
+                    type: object
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Custom labels to set on Pods.
+                    type: object
+                type: object
+              imagePullSecrets:
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                type: array
+              sensor:
+                description: SensorComponentSpec defines settings for sensor.
+                properties:
+                  customize:
+                    description: Customizations to apply on this container.
+                    properties:
+                      envVars:
+                        additionalProperties:
+                          type: string
+                        description: Custom environment variables to set on this container.
+                        type: object
+                    type: object
+                  endpoint:
+                    description: Address of the Sensor endpoint including port number.
+                      No trailing slash. Rarely needs to be changed.
+                    type: string
+                  imagePullPolicy:
+                    description: PullPolicy describes a policy for if/when to pull
+                      a container image
+                    type: string
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  resources:
+                    description: Resources define resource-related settings.
+                    properties:
+                      override:
+                        description: Override allow overriding resource requirements
+                          for pods of this deployment, the defaults are computed by
+                          the operator. Currently that computation simply means using
+                          the defaults from the Helm charts.
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                    type: object
+                  serviceTLS:
+                    description: 'Secret that contains cert and key. Omit means: autogenerate.'
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                type: object
+              tls:
+                description: TLSConfig defines common TLS-related settings for all
+                  components.
+                properties:
+                  additionalCAs:
+                    items:
+                      description: AdditionalCA defines a certificate for an additional
+                        Certificate Authority.
+                      properties:
+                        content:
+                          description: PEM format
+                          type: string
+                        name:
+                          description: Must be a valid file basename
+                          type: string
+                      required:
+                      - content
+                      - name
+                      type: object
+                    type: array
+                  caSecret:
+                    description: LocalObjectReference contains enough information
+                      to let you locate the referenced object inside the same namespace.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                    type: object
+                type: object
+            required:
+            - centralEndpoint
+            - clusterName
             type: object
           status:
             description: SecuredClusterStatus defines the observed state of SecuredCluster
+            properties:
+              conditions:
+                items:
+                  description: StackRoxCondition defines a condition for a StackRox
+                    custom resource.
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      description: ConditionReason is a type of values of condition
+                        reason.
+                      type: string
+                    status:
+                      description: ConditionStatus is a type of values of condition
+                        status.
+                      type: string
+                    type:
+                      description: ConditionType is a type of values of condition
+                        type.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              deployedRelease:
+                description: StackRoxRelease describes the Helm "release" that was
+                  most recently applied.
+                properties:
+                  version:
+                    type: string
+                type: object
+              sensorStatus:
+                description: SensorComponentStatus describes status specific to the
+                  sensor component.
+                properties:
+                  clusterID:
+                    type: string
+                type: object
+            required:
+            - conditions
             type: object
         type: object
     served: true
