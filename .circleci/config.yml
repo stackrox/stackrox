@@ -550,7 +550,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.3.9
+      - image: docker.io/stackrox/apollo-ci:0.3.10
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD
