@@ -292,11 +292,15 @@ func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, c
 }
 
 func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
-	cve := evr.root.k8sIstioCVEManager.GetNVDCVE(evr.data.Cve)
-	if cve == nil {
-		return 0, 0, errors.Errorf("CVE: %q not found", evr.data.Cve)
+	clusters, err := evr.root.ClusterDataStore.GetClusters(ctx)
+	if err != nil {
+		return 0, 0, err
 	}
-	return evr.root.getComponentsForAffectedCluster(ctx, cve, ct)
+	affectedClusters, err := evr.root.orchestratorIstioCVEManager.GetAffectedClusters(evr.data.Cve, ct, evr.root.cveMatcher)
+	if err != nil {
+		return 0, 0, err
+	}
+	return len(affectedClusters), len(clusters), nil
 }
 
 func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForImages(ctx context.Context) (numerator, denominator int, err error) {

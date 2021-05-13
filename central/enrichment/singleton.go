@@ -4,6 +4,7 @@ import (
 	"time"
 
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
@@ -20,6 +21,7 @@ var (
 	ie      imageEnricher.ImageEnricher
 	ne      nodeEnricher.NodeEnricher
 	en      Enricher
+	cf      fetcher.OrchestratorIstioCVEManager
 	manager Manager
 
 	imageScanCacheOnce sync.Once
@@ -35,7 +37,8 @@ func initialize() {
 	ie = imageEnricher.New(cveDataStore.Singleton(), imageintegration.Set(), metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton(), reporter.Singleton())
 	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
-	manager = newManager(imageintegration.Set(), ne)
+	cf = fetcher.SingletonManager()
+	manager = newManager(imageintegration.Set(), ne, cf)
 }
 
 // Singleton provides the singleton Enricher to use.

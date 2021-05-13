@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries"
@@ -69,6 +70,9 @@ type clairify struct {
 	pingServiceClient    clairGRPCV1.PingServiceClient
 	scanServiceClient    clairGRPCV1.NodeScanServiceClient
 	protoNodeIntegration *storage.NodeIntegration
+
+	orchestratorScanServiceClient clairGRPCV1.OrchestratorScanServiceClient
+	protoOrchestratorIntegration  *storage.OrchestratorIntegration
 }
 
 func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistries registries.Set) (*clairify, error) {
@@ -116,11 +120,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	return scanner, nil
 }
 
-func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, error) {
-	conf := protoNodeIntegration.GetClairify()
-	if conf == nil {
-		return nil, errors.New("scanner configuration required")
-	}
+func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientConn, error) {
 	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
@@ -135,7 +135,19 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 		endpoint = fmt.Sprintf("scanner.%s:8443", env.Namespace.Setting())
 	}
 
-	gRPCConnection, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	return grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+}
+
+func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, error) {
+	conf := protoNodeIntegration.GetClairify()
+	if conf == nil {
+		return nil, errors.New("scanner configuration required")
+	}
+	if err := validateConfig(conf); err != nil {
+		return nil, err
+	}
+
+	gRPCConnection, err := createGRPCConnectionToScanner(conf)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make gRPC connection to Scanner")
 	}
@@ -322,4 +334,54 @@ func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	return &v1.VulnDefinitionsInfo{
 		LastUpdatedTimestamp: info.GetLastUpdatedTime(),
 	}, nil
+}
+
+// OrchestratorScannerCreator provides creator for OrchestratorScanner
+func OrchestratorScannerCreator() (string, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error)) {
+	return typeString, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
+		return newOrchestratorScanner(integration)
+	}
+}
+
+func newOrchestratorScanner(integration *storage.OrchestratorIntegration) (*clairify, error) {
+	conf := integration.GetClairify()
+	if conf == nil {
+		return nil, errors.New("scanner configuration required")
+	}
+
+	gRPCConnection, err := createGRPCConnectionToScanner(conf)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to make gRPC connection to Scanner")
+	}
+
+	return &clairify{
+		ScanSemaphore:                 scannerTypes.NewSemaphoreWithValue(defaultMaxConcurrentScans),
+		conf:                          conf,
+		protoOrchestratorIntegration:  integration,
+		orchestratorScanServiceClient: clairGRPCV1.NewOrchestratorScanServiceClient(gRPCConnection),
+	}, nil
+}
+
+// KubernetesScan retrieves the most recent orchestrator scan from scanner
+func (c *clairify) KubernetesScan(version string) (map[string][]*storage.EmbeddedVulnerability, error) {
+	req := &clairGRPCV1.GetKubeVulnerabilitiesRequest{
+		KubernetesVersion: version,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	defer cancel()
+
+	resp, err := c.orchestratorScanServiceClient.GetKubeVulnerabilities(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	results := map[string][]*storage.EmbeddedVulnerability{
+		kubernetes.KubeAPIServer:         convertK8sVulns(resp.ApiserverVulnerabilities),
+		kubernetes.KubeAggregator:        convertK8sVulns(resp.AggregatorVulnerabilities),
+		kubernetes.KubeControllerManager: convertK8sVulns(resp.ControllerManagerVulnerabilities),
+		kubernetes.KubeScheduler:         convertK8sVulns(resp.SchedulerVulnerabilities),
+		kubernetes.Generic:               convertK8sVulns(resp.GenericVulnerabilities),
+	}
+
+	return results, nil
 }

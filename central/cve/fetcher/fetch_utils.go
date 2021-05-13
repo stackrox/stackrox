@@ -44,11 +44,6 @@ var (
 	preloadedIstioCVEsFilePath          = path.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Istio].CVEFilename)
 	preloadedIstioCVEsChecksumFilePath  = path.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Istio].ChecksumFilename)
 	log                                 = logging.LoggerForModule()
-
-	cveTypeToString = map[converter.CVEType]string{
-		converter.K8s:   "k8s",
-		converter.Istio: "istio",
-	}
 )
 
 func maybeAddLicenseIDAsQueryParam(baseURL string) (string, error) {

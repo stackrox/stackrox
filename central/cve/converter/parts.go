@@ -1,9 +1,6 @@
 package converter
 
 import (
-	"strings"
-
-	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/logging"
@@ -25,22 +22,21 @@ type EdgeParts struct {
 	ClusterID string
 }
 
-// NewClusterCVEParts returns new instance of ClusterCVEParts
-func NewClusterCVEParts(cve *storage.CVE, clusters []*storage.Cluster, nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) ClusterCVEParts {
+// NewClusterCVEParts creates and returns a new instance of ClusterCVEParts
+func NewClusterCVEParts(cve *storage.CVE, clusters []*storage.Cluster, fixVersions string) ClusterCVEParts {
 	ret := ClusterCVEParts{
 		CVE: cve,
 	}
 	for _, cluster := range clusters {
 		ret.Children = append(ret.Children, EdgeParts{
-			Edge:      generateClusterCVEEdge(cluster, cve, nvdCVE),
+			Edge:      generateClusterCVEEdge(cluster, cve, fixVersions),
 			ClusterID: cluster.GetId(),
 		})
 	}
 	return ret
 }
 
-func generateClusterCVEEdge(cluster *storage.Cluster, cve *storage.CVE, nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) *storage.ClusterCVEEdge {
-	fixVersions := getFixedVersions(nvdCVE)
+func generateClusterCVEEdge(cluster *storage.Cluster, cve *storage.CVE, fixVersions string) *storage.ClusterCVEEdge {
 	ret := &storage.ClusterCVEEdge{
 		Id:        edges.EdgeID{ParentID: cluster.GetId(), ChildID: cve.GetId()}.ToString(),
 		IsFixable: len(fixVersions) != 0,
@@ -48,7 +44,7 @@ func generateClusterCVEEdge(cluster *storage.Cluster, cve *storage.CVE, nvdCVE *
 
 	if ret.IsFixable {
 		ret.HasFixedBy = &storage.ClusterCVEEdge_FixedBy{
-			FixedBy: strings.Join(fixVersions, ","),
+			FixedBy: fixVersions,
 		}
 	}
 	return ret

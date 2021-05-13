@@ -29,7 +29,7 @@ func GetPipeline() pipeline.Fragment {
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, deploymentEnvsMgr deploymentenvs.Manager, cveFetcher cveFetcher.K8sIstioCVEManager) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, deploymentEnvsMgr deploymentenvs.Manager, cveFetcher cveFetcher.OrchestratorIstioCVEManager) pipeline.Fragment {
 	return &pipelineImpl{
 		clusters:          clusters,
 		deploymentEnvsMgr: deploymentEnvsMgr,
@@ -40,7 +40,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, deploymentEnvsMgr deployme
 type pipelineImpl struct {
 	clusters          clusterDataStore.DataStore
 	deploymentEnvsMgr deploymentenvs.Manager
-	cveFetcher        cveFetcher.K8sIstioCVEManager
+	cveFetcher        cveFetcher.OrchestratorIstioCVEManager
 }
 
 func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {

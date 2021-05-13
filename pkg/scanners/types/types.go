@@ -51,3 +51,11 @@ type NodeScannerWithDataSource interface {
 	NodeScanner
 	DataSource() *storage.DataSource
 }
+
+// OrchestratorScanner is the interface all orchestrator scanners must implement
+type OrchestratorScanner interface {
+	ScanSemaphore
+	Name() string
+	Type() string
+	KubernetesScan(string) (map[string][]*storage.EmbeddedVulnerability, error)
+}

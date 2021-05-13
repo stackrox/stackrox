@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -448,11 +447,15 @@ func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 }
 
 func (resolver *cVEResolver) getEnvImpactComponentsForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
-	cve := resolver.root.k8sIstioCVEManager.GetNVDCVE(resolver.data.GetId())
-	if cve == nil {
-		return 0, 0, fmt.Errorf("CVE: %q not found", resolver.data.GetId())
+	clusters, err := resolver.root.ClusterDataStore.GetClusters(ctx)
+	if err != nil {
+		return 0, 0, err
 	}
-	return resolver.root.getComponentsForAffectedCluster(ctx, cve, ct)
+	affectedClusters, err := resolver.root.orchestratorIstioCVEManager.GetAffectedClusters(resolver.data.GetId(), ct, resolver.root.cveMatcher)
+	if err != nil {
+		return 0, 0, err
+	}
+	return len(affectedClusters), len(clusters), nil
 }
 
 // LastScanned is the last time the vulnerability was scanned in an image.

@@ -118,7 +118,7 @@ func (m *CVEMatcher) IsClusterAffectedByK8sOrIstioCVE(ctx context.Context, clust
 func (m *CVEMatcher) IsClusterAffectedByK8sCVE(_ context.Context, cluster *storage.Cluster, cve *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
 	clusterVersion := cluster.GetStatus().GetOrchestratorMetadata().GetVersion()
 	for _, node := range cve.Configurations.Nodes {
-		matched, err := m.matchVersions(node, clusterVersion, converter.K8s)
+		matched, err := m.MatchVersions(node, clusterVersion, converter.K8s)
 		// If we could determine CVE impact from one of cpe string, we skip logging error
 		if matched {
 			return true, nil
@@ -146,7 +146,7 @@ func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *s
 	}
 	for _, node := range cve.Configurations.Nodes {
 		for _, version := range versions.AsSlice() {
-			matched, err := m.matchVersions(node, version, converter.Istio)
+			matched, err := m.MatchVersions(node, version, converter.Istio)
 			// If we could determine CVE impact from one of cpe string, we skip logging error
 			if matched {
 				return true, nil
@@ -185,7 +185,8 @@ func (m *CVEMatcher) getAllIstioComponentsVersionsInCluster(ctx context.Context,
 	return set, nil
 }
 
-func (m *CVEMatcher) matchVersions(node *schema.NVDCVEFeedJSON10DefNode, versionToMatch string, ct converter.CVEType) (bool, error) {
+// MatchVersions returns if versionToMatch is affected by cve according to its config node.
+func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, versionToMatch string, ct converter.CVEType) (bool, error) {
 	if node.Operator != "OR" {
 		return false, nil
 	}

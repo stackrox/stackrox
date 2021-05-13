@@ -1,12 +1,19 @@
 package fetcher
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -77,11 +84,139 @@ func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnera
 			continue
 		}
 		newCVEIDs.Add(cve.GetId())
-		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, clusters, m.getNVDCVE(cve.GetId())))
+
+		fixVersions := strings.Join(converter.GetFixedVersions(m.getNVDCVE(cve.GetId())), ",")
+		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, clusters, fixVersions))
 	}
 
 	if err := m.cveDataStore.UpsertClusterCVEs(cveElevatedCtx, newCVEs...); err != nil {
 		return err
 	}
 	return reconcileCVEsInDB(m.cveDataStore, storage.CVE_ISTIO_CVE, newCVEIDs)
+}
+
+// reconcileOnlineModeCVEs fetches new CVEs from definitions.stackrox.io and reconciles them
+func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
+	paths, err := getPaths(converter.Istio)
+	if err != nil {
+		return err
+	}
+
+	urls, err := getUrls(converter.Istio)
+	if err != nil {
+		return err
+	}
+
+	localCVEChecksum, err := getLocalCVEChecksum(paths.persistentCveChecksumFile)
+	if err != nil {
+		return nil
+	}
+
+	url, err := maybeAddLicenseIDAsQueryParam(urls.cveChecksumURL)
+	if err != nil {
+		return err
+	}
+
+	remoteCVEChecksumBytes, err := httputil.HTTPGet(url)
+	if err != nil {
+		return err
+	}
+
+	remoteCVEChecksum := string(remoteCVEChecksumBytes)
+	// If CVEs have been loaded before and checksums are same, no need to update CVEs
+	if !forceUpdate && localCVEChecksum == remoteCVEChecksum {
+		log.Info("local and remote CVE checksums are same, skipping download of new Istio CVEs")
+		return nil
+	}
+
+	url, err = maybeAddLicenseIDAsQueryParam(urls.cveURL)
+	if err != nil {
+		return err
+	}
+
+	data, err := httputil.HTTPGet(url)
+	if err != nil {
+		return err
+	}
+
+	if err := overwriteCVEs(paths.persistentCveFile, paths.persistentCveChecksumFile, remoteCVEChecksum, string(data)); err != nil {
+		return err
+	}
+
+	newCVEs, err := getLocalCVEs(paths.persistentCveFile)
+	if err != nil {
+		return err
+	}
+
+	if err := m.updateCVEs(newCVEs); err != nil {
+		return err
+	}
+
+	if localCVEChecksum != remoteCVEChecksum {
+		log.Infof("Istio CVEs have been updated, %d new CVEs found", len(newCVEs))
+	}
+	return nil
+}
+
+// reconcileOfflineModeCVEs reads the scanner bundle zip and updates the CVEs
+func (m *istioCVEManager) reconcileOfflineModeCVEs(zipPath string, forceUpdate bool) error {
+	paths, err := getPaths(converter.Istio)
+	if err != nil {
+		return err
+	}
+
+	bundlePath, err := extractK8sIstioCVEsInScannerBundleZip(zipPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err := os.RemoveAll(bundlePath)
+		if err != nil {
+			log.Errorf("error while deleting the temp bundle dir, error: %v", err)
+		}
+	}()
+
+	var bundledCVEFile, bundledCVEChecksumFile string
+
+	bundledCVEFile = filepath.Join(bundlePath, nvd.Feeds[nvd.Istio].CVEFilename)
+	bundledCVEChecksumFile = filepath.Join(bundlePath, nvd.Feeds[nvd.Istio].ChecksumFilename)
+
+	oldCveChecksum, err := getLocalCVEChecksum(paths.persistentCveChecksumFile)
+	if err != nil {
+		return nil
+	}
+
+	newCveChecksum, err := getLocalCVEChecksum(bundledCVEChecksumFile)
+	if err != nil {
+		return err
+	}
+
+	// If CVEs have been loaded before and checksums are same, no need to update CVEs
+	if !forceUpdate && oldCveChecksum == newCveChecksum {
+		log.Infof("local and bundled CVE checksums are same, skipping reconciliation of of new Istio CVEs")
+		return nil
+	}
+
+	data, err := ioutil.ReadFile(bundledCVEFile)
+	if err != nil {
+		return err
+	}
+
+	if err := overwriteCVEs(paths.persistentCveFile, paths.persistentCveChecksumFile, newCveChecksum, string(data)); err != nil {
+		return err
+	}
+
+	newCVEs, err := getLocalCVEs(paths.persistentCveFile)
+	if err != nil {
+		return err
+	}
+
+	if err := m.updateCVEs(newCVEs); err != nil {
+		return err
+	}
+
+	if oldCveChecksum != newCveChecksum {
+		log.Infof("Istio CVEs have been updated, %d new CVEs found", len(newCVEs))
+	}
+	return nil
 }

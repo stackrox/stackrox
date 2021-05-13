@@ -9,15 +9,15 @@ import (
 )
 
 var (
-	manager K8sIstioCVEManager
+	manager OrchestratorIstioCVEManager
 	once    sync.Once
 )
 
-// SingletonManager returns a singleton instance of k8sCVEManager
-func SingletonManager() K8sIstioCVEManager {
+// SingletonManager returns a singleton instance of OrchestratorIstioCVEManager
+func SingletonManager() OrchestratorIstioCVEManager {
 	var err error
 	once.Do(func() {
-		manager, err = Newk8sIstioCVEManagerImpl(clusterDataStore.Singleton(), cveDataStore.Singleton(), cveMatcher.Singleton())
+		manager, err = NewOrchestratorIstioCVEManagerImpl(clusterDataStore.Singleton(), cveDataStore.Singleton(), cveMatcher.Singleton())
 		utils.Must(err)
 	})
 

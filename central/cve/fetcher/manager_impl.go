@@ -10,15 +10,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	"github.com/pkg/errors"
-	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -35,6 +32,10 @@ var (
 	connectionDropThrottle = throttle.NewDropThrottle(10 * time.Minute)
 )
 
+const (
+	minNewScannerReconcileInterval = 10 * time.Minute
+)
+
 type mode int
 
 const (
@@ -45,7 +46,7 @@ const (
 )
 
 // Init copies build time CVEs to persistent volume
-func (m *k8sIstioCVEManagerImpl) initialize() {
+func (m *orchestratorIstioCVEManagerImpl) initialize() {
 	offlineModeSetting := env.OfflineModeEnv.Setting()
 	if offlineModeSetting == "true" {
 		m.mgrMode = offline
@@ -53,24 +54,18 @@ func (m *k8sIstioCVEManagerImpl) initialize() {
 		m.mgrMode = online
 	}
 
-	if err := copyCVEsFromPreloadedToPersistentDirIfAbsent(converter.K8s); err != nil {
-		log.Errorf("could not copy preloaded k8s CVE files to persistent volume %q:%v", path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir), err)
-		return
-	}
-	log.Infof("successfully copied preloaded k8s CVE files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir))
-
 	if err := copyCVEsFromPreloadedToPersistentDirIfAbsent(converter.Istio); err != nil {
 		log.Errorf("could not copy preloaded istio CVE files to persistent volume %q: %v", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir), err)
 		return
 	}
 	log.Infof("successfully copied preloaded CVE istio files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir))
 
-	m.k8sCVEMgr.initialize()
+	m.orchestratorCVEMgr.initialize()
 	m.istioCVEMgr.initialize()
 }
 
 // Fetch (works only in online mode) fetches new CVEs and reconciles them
-func (m *k8sIstioCVEManagerImpl) Start() {
+func (m *orchestratorIstioCVEManagerImpl) Start() {
 	if m.mgrMode != online {
 		log.Error("can't fetch in non-online mode")
 		return
@@ -90,14 +85,14 @@ func (m *k8sIstioCVEManagerImpl) Start() {
 	}
 }
 
-func (m *k8sIstioCVEManagerImpl) HandleClusterConnection() {
+func (m *orchestratorIstioCVEManagerImpl) HandleClusterConnection() {
 	connectionDropThrottle.Run(func() {
 		m.updateSignal.Signal()
 	})
 }
 
 // Update (works only in offline mode) updates new CVEs and reconciles them based on data from scanner bundle
-func (m *k8sIstioCVEManagerImpl) Update(zipPath string, forceUpdate bool) {
+func (m *orchestratorIstioCVEManagerImpl) Update(zipPath string, forceUpdate bool) {
 	if m.mgrMode != offline {
 		log.Error("can't fetch in non-offline mode")
 		return
@@ -105,173 +100,44 @@ func (m *k8sIstioCVEManagerImpl) Update(zipPath string, forceUpdate bool) {
 	m.reconcileAllCVEsInOfflineMode(zipPath, forceUpdate)
 }
 
-// GetNVDCVE returns current istio CVEs loaded in memory
-func (m *k8sIstioCVEManagerImpl) GetNVDCVE(id string) *schema.NVDCVEFeedJSON10DefCVEItem {
-	cve := m.k8sCVEMgr.getNVDCVE(id)
-	if cve == nil {
-		return m.istioCVEMgr.getNVDCVE(id)
-	}
-	return cve
-}
-
-func (m *k8sIstioCVEManagerImpl) updateCVEs(nvdCVEs []*schema.NVDCVEFeedJSON10DefCVEItem, ct converter.CVEType) error {
+// GetAffectedClusters returns the affected clusters for a CVE
+func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(cveID string, ct converter.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
 	if ct == converter.K8s {
-		return m.k8sCVEMgr.updateCVEs(nvdCVEs)
-	} else if ct == converter.Istio {
-		return m.istioCVEMgr.updateCVEs(nvdCVEs)
-	}
-	return errors.Errorf("unknown CVE type: %d", ct)
-}
-
-func (m *k8sIstioCVEManagerImpl) reconcileAllCVEsInOnlineMode(forceUpdate bool) {
-	if err := m.reconcileOnlineModeCVEs(converter.K8s, forceUpdate); err != nil {
-		log.Errorf("reconcile failed for k8s CVEs with error %v", err)
-	}
-	if err := m.reconcileOnlineModeCVEs(converter.Istio, forceUpdate); err != nil {
-		log.Errorf("reconcile failed for istio CVEs with error %v", err)
-	}
-}
-
-func (m *k8sIstioCVEManagerImpl) reconcileAllCVEsInOfflineMode(zipPath string, forceUpdate bool) {
-	if err := m.reconcileOfflineModeCVEs(converter.K8s, zipPath, forceUpdate); err != nil {
-		log.Errorf("reconcile failed for k8s CVEs with error %v", err)
-	}
-	if err := m.reconcileOfflineModeCVEs(converter.Istio, zipPath, forceUpdate); err != nil {
-		log.Errorf("reconcile failed for istio CVEs with error %v", err)
-	}
-}
-
-// reconcileOnlineModeCVEs fetches new CVEs from definitions.stackrox.io and reconciles them
-func (m *k8sIstioCVEManagerImpl) reconcileOnlineModeCVEs(ct converter.CVEType, forceUpdate bool) error {
-	paths, err := getPaths(ct)
-	if err != nil {
-		return err
-	}
-
-	urls, err := getUrls(ct)
-	if err != nil {
-		return err
-	}
-
-	localCVEChecksum, err := getLocalCVEChecksum(paths.persistentCveChecksumFile)
-	if err != nil {
-		return nil
-	}
-
-	url, err := maybeAddLicenseIDAsQueryParam(urls.cveChecksumURL)
-	if err != nil {
-		return err
-	}
-
-	remoteCVEChecksumBytes, err := httputil.HTTPGet(url)
-	if err != nil {
-		return err
-	}
-
-	remoteCVEChecksum := string(remoteCVEChecksumBytes)
-	// If CVEs have been loaded before and checksums are same, no need to update CVEs
-	if !forceUpdate && localCVEChecksum == remoteCVEChecksum {
-		log.Infof("local and remote CVE checksums are same, skipping download of new %s CVEs", cveTypeToString[ct])
-		return nil
-	}
-
-	url, err = maybeAddLicenseIDAsQueryParam(urls.cveURL)
-	if err != nil {
-		return err
-	}
-
-	data, err := httputil.HTTPGet(url)
-	if err != nil {
-		return err
-	}
-
-	if err := overwriteCVEs(paths.persistentCveFile, paths.persistentCveChecksumFile, remoteCVEChecksum, string(data)); err != nil {
-		return err
-	}
-
-	newCVEs, err := getLocalCVEs(paths.persistentCveFile)
-	if err != nil {
-		return err
-	}
-
-	if err := m.updateCVEs(newCVEs, ct); err != nil {
-		return err
-	}
-
-	if localCVEChecksum != remoteCVEChecksum {
-		log.Infof("%s CVEs have been updated, %d new CVEs found", cveTypeToString[ct], len(newCVEs))
-	}
-	return nil
-}
-
-// reconcileOfflineModeCVEs reads the scanner bundle zip and updates the CVEs
-func (m *k8sIstioCVEManagerImpl) reconcileOfflineModeCVEs(ct converter.CVEType, zipPath string, forceUpdate bool) error {
-	paths, err := getPaths(ct)
-	if err != nil {
-		return err
-	}
-
-	bundlePath, err := extractK8sIstioCVEsInScannerBundleZip(zipPath)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err := os.RemoveAll(bundlePath)
+		clusters, err := m.orchestratorCVEMgr.getAffectedClusters(cveID)
 		if err != nil {
-			log.Errorf("error while deleting the temp bundle dir, error: %v", err)
+			return nil, err
 		}
-	}()
+		return clusters, nil
+	}
+	cve := m.istioCVEMgr.getNVDCVE(cveID)
+	clusters, err := cveMatcher.GetAffectedClusters(cve)
+	if err != nil {
+		return nil, err
+	}
+	return clusters, nil
+}
 
-	var bundledCVEFile, bundledCVEChecksumFile string
-
-	if ct == converter.K8s {
-		bundledCVEFile = filepath.Join(bundlePath, nvd.Feeds[nvd.Kubernetes].CVEFilename)
-		bundledCVEChecksumFile = filepath.Join(bundlePath, nvd.Feeds[nvd.Kubernetes].ChecksumFilename)
-	} else if ct == converter.Istio {
-		bundledCVEFile = filepath.Join(bundlePath, nvd.Feeds[nvd.Istio].CVEFilename)
-		bundledCVEChecksumFile = filepath.Join(bundlePath, nvd.Feeds[nvd.Istio].ChecksumFilename)
+func (m *orchestratorIstioCVEManagerImpl) reconcile() {
+	if err := m.orchestratorCVEMgr.ReconcileK8sCVEs(); err != nil {
+		log.Errorf("scan and reconcile failed for k8s CVEs with error %v", err)
 	} else {
-		return errors.Errorf("unknown CVE type: %d", ct)
+		m.lastUpdatedTime = time.Now()
 	}
+}
 
-	oldCveChecksum, err := getLocalCVEChecksum(paths.persistentCveChecksumFile)
-	if err != nil {
-		return nil
+func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOnlineMode(forceUpdate bool) {
+	log.Infof("Start to reconcile all CVEs online")
+	m.reconcile()
+	if err := m.istioCVEMgr.reconcileOnlineModeCVEs(forceUpdate); err != nil {
+		log.Errorf("reconcile failed for istio CVEs with error %v", err)
 	}
+}
 
-	newCveChecksum, err := getLocalCVEChecksum(bundledCVEChecksumFile)
-	if err != nil {
-		return err
+func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOfflineMode(zipPath string, forceUpdate bool) {
+	m.reconcile()
+	if err := m.istioCVEMgr.reconcileOfflineModeCVEs(zipPath, forceUpdate); err != nil {
+		log.Errorf("reconcile failed for istio CVEs with error %v", err)
 	}
-
-	// If CVEs have been loaded before and checksums are same, no need to update CVEs
-	if !forceUpdate && oldCveChecksum == newCveChecksum {
-		log.Infof("local and bundled CVE checksums are same, skipping reconciliation of of new %s CVEs", cveTypeToString[ct])
-		return nil
-	}
-
-	data, err := ioutil.ReadFile(bundledCVEFile)
-	if err != nil {
-		return err
-	}
-
-	if err := overwriteCVEs(paths.persistentCveFile, paths.persistentCveChecksumFile, newCveChecksum, string(data)); err != nil {
-		return err
-	}
-
-	newCVEs, err := getLocalCVEs(paths.persistentCveFile)
-	if err != nil {
-		return err
-	}
-
-	if err := m.updateCVEs(newCVEs, ct); err != nil {
-		return err
-	}
-
-	if oldCveChecksum != newCveChecksum {
-		log.Infof("%s CVEs have been updated, %d new CVEs found", cveTypeToString[ct], len(newCVEs))
-	}
-	return nil
 }
 
 func extractK8sIstioCVEsInScannerBundleZip(zipPath string) (string, error) {
@@ -370,4 +236,23 @@ func reconcileCVEsInDB(cveDataStore cveDataStore.DataStore, cveType storage.CVE_
 	}
 	// delete all the cluster cves that do not affect the infra
 	return cveDataStore.Delete(cveElevatedCtx, discardCVEs.AsSlice()...)
+}
+
+// UpsertOrchestratorIntegration creates or updates an orchestrator integration.
+func (m *orchestratorIstioCVEManagerImpl) UpsertOrchestratorIntegration(integration *storage.OrchestratorIntegration) error {
+	err := m.orchestratorCVEMgr.UpsertOrchestratorScanner(integration)
+	if err != nil {
+		return err
+	}
+
+	// Trigger orchestrator scan if the first scanner joins or the last scan is more than minNewScannerReconcileInterval before.
+	if time.Now().After(m.lastUpdatedTime.Add(minNewScannerReconcileInterval)) {
+		m.reconcile()
+	}
+	return nil
+}
+
+// RemoveIntegration creates or updates a node integration.
+func (m *orchestratorIstioCVEManagerImpl) RemoveIntegration(integrationID string) {
+	m.orchestratorCVEMgr.RemoveIntegration(integrationID)
 }

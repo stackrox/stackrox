@@ -53,17 +53,17 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 			{
 				Name:    stringutils.OrDefault(resp.GetKernelComponent().GetName(), "kernel"),
 				Version: resp.GetKernelComponent().GetVersion(),
-				Vulns:   convertVulns(resp.GetKernelVulnerabilities()),
+				Vulns:   convertNodeVulns(resp.GetKernelVulnerabilities()),
 			},
 			{
 				Name:    "kubelet",
 				Version: req.GetKubeletVersion(),
-				Vulns:   convertVulns(resp.GetKubeletVulnerabilities()),
+				Vulns:   convertNodeVulns(resp.GetKubeletVulnerabilities()),
 			},
 			{
 				Name:    "kube-proxy",
 				Version: req.GetKubeproxyVersion(),
-				Vulns:   convertVulns(resp.GetKubeproxyVulnerabilities()),
+				Vulns:   convertNodeVulns(resp.GetKubeproxyVulnerabilities()),
 			},
 		},
 	}
@@ -71,22 +71,30 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
 			Name:    req.GetRuntime().GetName(),
 			Version: req.GetRuntime().GetVersion(),
-			Vulns:   convertVulns(resp.GetRuntimeVulnerabilities()),
+			Vulns:   convertNodeVulns(resp.GetRuntimeVulnerabilities()),
 		})
 	}
 	return scan
 }
 
-func convertVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVulnerability {
+func convertNodeVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVulnerability {
+	return convertVulnerabilities(vulnerabilities, storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+}
+
+func convertK8sVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVulnerability {
+	return convertVulnerabilities(vulnerabilities, storage.EmbeddedVulnerability_K8S_VULNERABILITY)
+}
+
+func convertVulnerabilities(vulnerabilities []*v1.Vulnerability, vulnType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(vulnerabilities))
 	for _, vuln := range vulnerabilities {
-		vulns = append(vulns, convertNodeVulnerability(vuln))
+		vulns = append(vulns, convertVulnerability(vuln, vulnType))
 	}
 	return vulns
 }
 
 // convertNodeVulnerability converts a clair node vulnerability to a proto vulnerability
-func convertNodeVulnerability(v *v1.Vulnerability) *storage.EmbeddedVulnerability {
+func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerability_VulnerabilityType) *storage.EmbeddedVulnerability {
 	link := v.GetLink()
 	if link == "" {
 		link = scans.GetVulnLink(v.GetName())
@@ -99,7 +107,7 @@ func convertNodeVulnerability(v *v1.Vulnerability) *storage.EmbeddedVulnerabilit
 		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: v.GetFixedBy(),
 		},
-		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		VulnerabilityType: vulnType,
 	}
 
 	if v.GetMetadataV2() != nil {

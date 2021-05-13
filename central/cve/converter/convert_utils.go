@@ -138,7 +138,7 @@ func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 		cve.Summary = nvdCVE.CVE.Description.DescriptionData[0].Value
 	}
 
-	fixedByVersions := getFixedVersions(nvdCVE)
+	fixedByVersions := GetFixedVersions(nvdCVE)
 	if len(fixedByVersions) > 0 {
 		cve.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: strings.Join(fixedByVersions, ","),
@@ -335,7 +335,8 @@ func embeddedVulnTypeToProtoType(protoCVEType storage.EmbeddedVulnerability_Vuln
 	}
 }
 
-func getFixedVersions(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) []string {
+// GetFixedVersions gets the fixed version from a NVD CVE item.
+func GetFixedVersions(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) []string {
 	var versions []string
 	if nvdCVE.Configurations == nil {
 		return versions

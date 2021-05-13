@@ -86,7 +86,7 @@ type Resolver struct {
 	ViolationsDataStore         violationsDatastore.DataStore
 	BaselineDataStore           baselineStore.DataStore
 	WatchedImageDataStore       watchedImageDataStore.DataStore
-	k8sIstioCVEManager          fetcher.K8sIstioCVEManager
+	orchestratorIstioCVEManager fetcher.OrchestratorIstioCVEManager
 	cveMatcher                  *cveMatcher.CVEMatcher
 }
 
@@ -127,7 +127,7 @@ func New() *Resolver {
 		ViolationsDataStore:         violationsDatastore.Singleton(),
 		BaselineDataStore:           baselineStore.Singleton(),
 		WatchedImageDataStore:       watchedImageDataStore.Singleton(),
-		k8sIstioCVEManager:          fetcher.SingletonManager(),
+		orchestratorIstioCVEManager: fetcher.SingletonManager(),
 		cveMatcher:                  cveMatcher.Singleton(),
 	}
 	return resolver
