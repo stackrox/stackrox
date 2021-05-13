@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -109,7 +108,6 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	}
 	log.Info("[Pruning] Starting a garbage collection cycle")
 	pvtConfig := config.GetPrivateConfig()
-	// Run collection initially then run on a ticker
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()
@@ -132,7 +130,47 @@ func (g *garbageCollectorImpl) runGC() {
 	}
 }
 
+// Remove pods where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) {
+	var podIDsToRemove []string
+	staleClusterIDsFound := set.NewStringSet()
+	err := g.pods.WalkAll(pruningCtx, func(pod *storage.Pod) error {
+		if !clusters.Contains(pod.GetClusterId()) {
+			podIDsToRemove = append(podIDsToRemove, pod.GetId())
+			staleClusterIDsFound.Add(pod.GetClusterId())
+		}
+		return nil
+	})
+	if err != nil {
+		log.Errorf("Error walking pods to find orphaned pods: %v", err)
+		return
+	}
+	if len(podIDsToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned pods...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned pods (from formerly deleted clusters: %v). Deleting...",
+		len(podIDsToRemove), staleClusterIDsFound.AsSlice())
+
+	for _, id := range podIDsToRemove {
+		if err := g.pods.RemovePod(pruningCtx, id); err != nil {
+			log.Errorf("Failed to remove pod with id %s: %v", id, err)
+		}
+	}
+}
+
 func (g *garbageCollectorImpl) removeOrphanedResources() {
+	clusters, err := g.clusters.GetClusters(pruningCtx)
+	if err != nil {
+		log.Errorf("Failed to fetch clusters: %v", err)
+		return
+	}
+	clusterIDs := make([]string, 0, len(clusters))
+	for _, c := range clusters {
+		clusterIDs = append(clusterIDs, c.GetId())
+	}
+	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
+
 	deploymentIDs, err := g.deployments.GetDeploymentIDs()
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
@@ -147,7 +185,8 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.removeOrphanedProcesses(deploymentSet, set.NewFrozenStringSet(podIDs...))
 	g.removeOrphanedProcessBaselines(deploymentSet)
 	g.markOrphanedAlertsAsResolved(deploymentSet)
-	g.removeOrphanedNetworkFlows(deploymentSet)
+	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
+	g.removeOrphanedPods(clusterIDSet)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
@@ -271,17 +310,11 @@ func isOrphanedDeployment(deployments set.FrozenStringSet, info *storage.Network
 	return info.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && !deployments.Contains(info.GetId())
 }
 
-func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments set.FrozenStringSet) {
-	clusters, err := g.clusters.GetClusters(pruningCtx)
-	if err != nil {
-		utils.Should(errors.Wrap(err, "could not fetch clusters for orphaned network flows"))
-		return
-	}
-
-	for _, c := range clusters {
-		store, err := g.networkflows.GetFlowStore(pruningCtx, c.GetId())
+func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments, clusters set.FrozenStringSet) {
+	for _, c := range clusters.AsSlice() {
+		store, err := g.networkflows.GetFlowStore(pruningCtx, c)
 		if err != nil {
-			log.Errorf("error getting flow store for cluster %q: %v", c.GetId(), err)
+			log.Errorf("error getting flow store for cluster %q: %v", c, err)
 			continue
 		} else if store == nil {
 			continue
@@ -297,7 +330,7 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments set.Frozen
 		}
 		err = store.RemoveMatchingFlows(pruningCtx, keyMatchFn, valueMatchFn)
 		if err != nil {
-			log.Errorf("error removing orphaned flows for cluster %q: %v", c.GetName(), err)
+			log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
 		}
 	}
 }

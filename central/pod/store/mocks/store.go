@@ -80,6 +80,20 @@ func (mr *MockStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ids)
 }
 
+// Walk mocks base method
+func (m *MockStore) Walk(fn func(*storage.Pod) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk
+func (mr *MockStoreMockRecorder) Walk(fn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), fn)
+}
+
 // Upsert mocks base method
 func (m *MockStore) Upsert(pod *storage.Pod) error {
 	m.ctrl.T.Helper()

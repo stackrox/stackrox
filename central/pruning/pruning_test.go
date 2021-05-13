@@ -10,7 +10,6 @@ import (
 	"github.com/golang/mock/gomock"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
-	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
@@ -944,11 +943,9 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			clusters := clusterDatastoreMocks.NewMockDataStore(ctrl)
 			clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(ctrl)
 			flows := networkFlowDatastoreMocks.NewMockFlowDataStore(ctrl)
 
-			clusters.EXPECT().GetClusters(pruningCtx).Return([]*storage.Cluster{{Id: "cluster"}}, nil)
 			clusterFlows.EXPECT().GetFlowStore(pruningCtx, "cluster").Return(flows, nil)
 
 			flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
@@ -965,10 +962,9 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 				})
 
 			gci := &garbageCollectorImpl{
-				clusters:     clusters,
 				networkflows: clusterFlows,
 			}
-			gci.removeOrphanedNetworkFlows(c.deployments)
+			gci.removeOrphanedNetworkFlows(c.deployments, set.NewFrozenStringSet("cluster"))
 		})
 	}
 }

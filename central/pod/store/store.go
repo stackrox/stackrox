@@ -11,6 +11,7 @@ type Store interface {
 
 	Get(id string) (*storage.Pod, bool, error)
 	GetMany(ids []string) ([]*storage.Pod, []int, error)
+	Walk(fn func(obj *storage.Pod) error) error
 
 	Upsert(pod *storage.Pod) error
 	Delete(id string) error
