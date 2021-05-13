@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode } from 'react';
-import { Button, FlexItem } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
 
 type RelatedLinkProps = {
     children: ReactNode;
@@ -15,18 +15,16 @@ function RelatedLink({
     onClick,
 }: RelatedLinkProps): ReactElement {
     return (
-        <FlexItem spacer={{ default: 'spacerSm' }}>
-            <Button
-                data-testid={dataTestId}
-                key={id}
-                variant="tertiary"
-                isSmall
-                isDisabled={!onClick}
-                onClick={onClick}
-            >
-                {children}
-            </Button>
-        </FlexItem>
+        <Button
+            data-testid={dataTestId}
+            key={id}
+            variant="tertiary"
+            isSmall
+            isDisabled={!onClick}
+            onClick={onClick}
+        >
+            {children}
+        </Button>
     );
 }
 

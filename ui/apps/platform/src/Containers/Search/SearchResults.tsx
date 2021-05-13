@@ -3,14 +3,20 @@ import capitalize from 'lodash/capitalize';
 import lowerCase from 'lodash/lowerCase';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { Bullseye, Flex } from '@patternfly/react-core';
+import {
+    Bullseye,
+    Flex,
+    FlexItem,
+    Tabs,
+    Tab,
+    TabTitleText,
+    TabContent,
+} from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
-import Tabs from 'Components/Tabs';
-import Tab from 'Components/Tab';
 import EmptyGlobalSearch from './EmptyGlobalSearch';
 import RelatedLink from './RelatedLink';
 
@@ -186,13 +192,14 @@ function SearchResults({
         return updatedRows;
     }
 
-    function handleHeaderClick(event, index, direction) {
+    function handleHeaderClick(_event, index, direction) {
         const updatedRows = onSort(sortedRows, index, direction);
         setSortedRows(updatedRows);
     }
 
-    function onTabClick(tab: SearchTab) {
-        setGlobalSearchCategory(tab.category);
+    function onTabClick(_event, eventKey) {
+        const selectedTab = defaultTabs[eventKey];
+        setGlobalSearchCategory(selectedTab.category);
     }
 
     const onLinkHandler = (
@@ -214,7 +221,7 @@ function SearchResults({
     };
 
     const contents = sortedRows.length ? (
-        <TableComposable aria-label="Matches" variant="compact">
+        <TableComposable aria-label="Matches" variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th
@@ -273,25 +280,29 @@ function SearchResults({
                                 dataLabel="View On:"
                                 data-testid="resourceViewOn"
                             >
-                                <Flex>
+                                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                                     {!mapping[category]?.viewOn ? (
-                                        <RelatedLink data-testid="view-on-label-chip" id={id}>
-                                            N/A
-                                        </RelatedLink>
+                                        <FlexItem key="na">
+                                            <RelatedLink data-testid="view-on-label-chip" id={id}>
+                                                N/A
+                                            </RelatedLink>
+                                        </FlexItem>
                                     ) : (
                                         mapping[category].viewOn.map((item) => (
-                                            <RelatedLink
-                                                data-testid="view-on-label-chip"
-                                                id={id}
-                                                onClick={onLinkHandler(
-                                                    category,
-                                                    item,
-                                                    getLink(item, id),
-                                                    name
-                                                )}
-                                            >
-                                                {item}
-                                            </RelatedLink>
+                                            <FlexItem key={item}>
+                                                <RelatedLink
+                                                    data-testid="view-on-label-chip"
+                                                    id={id}
+                                                    onClick={onLinkHandler(
+                                                        category,
+                                                        item,
+                                                        getLink(item, id),
+                                                        name
+                                                    )}
+                                                >
+                                                    {item}
+                                                </RelatedLink>
+                                            </FlexItem>
                                         ))
                                     )}
                                 </Flex>
@@ -301,25 +312,29 @@ function SearchResults({
                                 dataLabel="Filter On:"
                                 data-testid="resourceFilterOn"
                             >
-                                <Flex>
+                                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                                     {!mapping[category]?.filterOn ? (
-                                        <RelatedLink data-testid="view-on-label-chip" id={id}>
-                                            N/A
-                                        </RelatedLink>
+                                        <FlexItem key="na">
+                                            <RelatedLink data-testid="view-on-label-chip" id={id}>
+                                                N/A
+                                            </RelatedLink>
+                                        </FlexItem>
                                     ) : (
                                         mapping[category].filterOn.map((item) => (
-                                            <RelatedLink
-                                                data-testid="filter-on-label-chip"
-                                                id={id}
-                                                onClick={onLinkHandler(
-                                                    category,
-                                                    filterOnMapping[item],
-                                                    getLink(item),
-                                                    name
-                                                )}
-                                            >
-                                                {item}
-                                            </RelatedLink>
+                                            <FlexItem key={item}>
+                                                <RelatedLink
+                                                    data-testid="filter-on-label-chip"
+                                                    id={id}
+                                                    onClick={onLinkHandler(
+                                                        category,
+                                                        filterOnMapping[item],
+                                                        getLink(item),
+                                                        name
+                                                    )}
+                                                >
+                                                    {item}
+                                                </RelatedLink>
+                                            </FlexItem>
                                         ))
                                     )}
                                 </Flex>
@@ -330,36 +345,43 @@ function SearchResults({
             </Tbody>
         </TableComposable>
     ) : (
-        <EmptyGlobalSearch title="No results for your chosen filters">
+        <EmptyGlobalSearch key="no-results" title="No results for your chosen filters">
             Try changing the filter values.
         </EmptyGlobalSearch>
     );
 
+    const activeTabKey = tabs.findIndex((tab) => tab.category === defaultTab?.category) || 0;
+
     const renderTabs = () => {
         return (
-            <section className="flex flex-auto h-full">
-                <div className="flex flex-1">
-                    <Tabs
-                        className="bg-base-100 mb-8"
-                        headers={tabs}
-                        onTabClick={onTabClick}
-                        default={defaultTab}
-                        tabClass="tab flex-1 items-center justify-center font-700 p-3 uppercase shadow-none hover:text-primary-600 border-b-2 border-transparent"
-                        tabActiveClass="tab flex-1 items-center justify-center border-b-2 p-3 border-primary-400 shadow-none font-700 text-primary-700 uppercase"
-                        tabDisabledClass="tab flex-1 items-center justify-center border-2 border-transparent p-3 font-700 disabled shadow-none uppercase"
-                        tabContentBgColor="bg-base-100"
+            <section className="h-full">
+                <Tabs key="tab-bar" activeKey={activeTabKey} onSelect={onTabClick}>
+                    {tabs.map((tab, index) => (
+                        <Tab
+                            key={tab.category || tab.text}
+                            eventKey={index}
+                            title={<TabTitleText>{tab.text}</TabTitleText>}
+                        />
+                    ))}
+                </Tabs>
+                {tabs.map((tab, index) => (
+                    <TabContent
+                        eventKey={index}
+                        className="overflow-auto"
+                        id={tab.category || tab.text}
+                        aria-label={tab.text}
+                        key={tab.category || tab.text}
+                        hidden={index !== activeTabKey}
                     >
-                        {tabs.map((tab) => (
-                            <Tab key={tab.text}>{contents}</Tab>
-                        ))}
-                    </Tabs>
-                </div>
+                        {contents}
+                    </TabContent>
+                ))}
             </section>
         );
     };
 
     return !globalSearchOptions.length ? (
-        <Bullseye className="pf-u-background-color-100">
+        <Bullseye>
             <EmptyGlobalSearch title="Search all data across Advanced Cluster Security">
                 Choose one or more filter values to search.
             </EmptyGlobalSearch>

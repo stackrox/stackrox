@@ -44,7 +44,7 @@ class SearchModal extends Component {
     render() {
         return (
             <div className="flex flex-col h-full w-full">
-                <div className="flex w-full bg-base-100">
+                <div className="flex w-full">
                     <PageHeader header="Search All:">
                         <ReduxSearchInput
                             className="w-full flex-shrink"
@@ -76,7 +76,7 @@ class SearchModal extends Component {
 const SearchModalContainer = (props) => {
     const EnhancedSearchModal = onClickOutside(SearchModal);
     return (
-        <div className="search-modal w-full z-60 absolute">
+        <div className="search-modal w-full z-60 absolute pf-u-background-color-100">
             <EnhancedSearchModal {...props} />
         </div>
     );
