@@ -57,7 +57,6 @@ type deploymentWrap struct {
 	original         interface{}
 	portConfigs      map[portRef]*storage.PortConfig
 	pods             []*v1.Pod
-	podSelector      labels.Selector
 
 	mutex sync.RWMutex
 }
@@ -262,8 +261,7 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 	if err != nil {
 		return nil, errors.Wrap(err, "could not compile label selector")
 	}
-	w.podSelector = compiledLabelSelector
-	pods, err := lister.Pods(w.Namespace).List(w.podSelector)
+	pods, err := lister.Pods(w.Namespace).List(compiledLabelSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -505,7 +503,6 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 		original:         w.original, // original is only always read
 		registryOverride: w.registryOverride,
 		Deployment:       w.GetDeployment().Clone(),
-		podSelector:      w.podSelector.DeepCopySelector(),
 	}
 	if w.pods != nil {
 		ret.pods = make([]*v1.Pod, len(w.pods))
