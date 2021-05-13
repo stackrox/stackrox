@@ -5,8 +5,9 @@ import { reduxForm, getFormValues } from 'redux-form';
 
 import FormFieldRequired from 'Components/forms/FormFieldRequired';
 import ReduxTextField from 'Components/forms/ReduxTextField';
-import PermissionsMatrix from 'Containers/AccessControl/Roles/Permissions/PermissionsMatrix/PermissionsMatrix';
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
+
+import PermissionsMatrix from './PermissionsMatrix/PermissionsMatrix';
 
 const Form = ({ handleSubmit, initialValues, onSubmit, values }) => {
     const disableNameField = !!initialValues && !!initialValues.name;

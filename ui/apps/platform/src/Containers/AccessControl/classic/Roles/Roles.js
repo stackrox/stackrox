@@ -5,10 +5,10 @@ import { createStructuredSelector, createSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/roles';
 import Dialog from 'Components/Dialog';
-
-import SideBar from 'Containers/AccessControl/SideBar';
-import Permissions from 'Containers/AccessControl/Roles/Permissions/Permissions';
 import { defaultRoles, defaultSelectedRole } from 'constants/accessControl';
+
+import SideBar from '../SideBar';
+import Permissions from './Permissions/Permissions';
 
 const Roles = ({ roles, selectRole, selectedRole, saveRole, deleteRole }) => {
     const [isEditing, setIsEditing] = useState(false);

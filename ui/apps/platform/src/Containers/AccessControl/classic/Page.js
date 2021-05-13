@@ -7,10 +7,11 @@ import { Message } from '@stackrox/ui-components';
 import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
 import PageHeader from 'Components/PageHeader';
-import Roles from 'Containers/AccessControl/Roles/Roles';
-import AuthProviders from 'Containers/AccessControl/AuthProviders/AuthProviders';
 import { actions } from 'reducers/roles';
 import { selectors } from 'reducers';
+
+import AuthProviders from './AuthProviders/AuthProviders';
+import Roles from './Roles/Roles';
 
 function Page({ userRolePermissions, fetchResources }) {
     useEffect(() => {

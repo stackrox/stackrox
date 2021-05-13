@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import PermissionsMatrix from 'Containers/AccessControl/Roles/Permissions/PermissionsMatrix/PermissionsMatrix';
+import PermissionsMatrix from './PermissionsMatrix/PermissionsMatrix';
 
 const Details = (props) => {
     const { name, resourceToAccess, authProviderName, username } = props.role;

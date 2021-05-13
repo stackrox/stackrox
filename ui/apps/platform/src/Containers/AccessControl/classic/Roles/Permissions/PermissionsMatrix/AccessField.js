@@ -5,7 +5,7 @@ import { NO_ACCESS, READ_ACCESS, READ_WRITE_ACCESS } from 'constants/accessContr
 import { accessControl } from 'messages/common';
 
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
-import { ReadAccessIcon, WriteAccessIcon } from '../../../PermissionSets/AccessIcons';
+import { ReadAccessIcon, WriteAccessIcon } from '../../../../PermissionSets/AccessIcons';
 
 const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
     const options = [

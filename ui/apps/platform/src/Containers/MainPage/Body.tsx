@@ -39,7 +39,9 @@ const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/V
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
-const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
+const AsyncAccessControlPage = asyncComponent(
+    () => import('Containers/AccessControl/classic/Page')
+);
 const AsyncAccessControlRoutes = asyncComponent(
     () => import('Containers/AccessControl/AccessControlRoutes')
 );

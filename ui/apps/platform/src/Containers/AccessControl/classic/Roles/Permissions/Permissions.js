@@ -6,10 +6,11 @@ import { selectors } from 'reducers';
 
 import { defaultRoles } from 'constants/accessControl';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
-import Button from 'Containers/AccessControl/Roles/Permissions/Button';
-import Form from 'Containers/AccessControl/Roles/Permissions/Form';
-import Details from 'Containers/AccessControl/Roles/Permissions/Details';
-import addDefaultPermissionsToRole from 'Containers/AccessControl/Roles/Permissions/addDefaultPermissionsToRole';
+
+import Button from './Button';
+import Form from './Form';
+import Details from './Details';
+import addDefaultPermissionsToRole from './addDefaultPermissionsToRole';
 
 const Permissions = ({
     resources,

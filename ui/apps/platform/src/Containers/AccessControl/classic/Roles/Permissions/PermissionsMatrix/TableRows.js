@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Field } from 'redux-form';
 
-import AccessField from 'Containers/AccessControl/Roles/Permissions/PermissionsMatrix/AccessField';
+import AccessField from './AccessField';
 
 const TableRows = (props) => {
     const { resourceToAccess, name, isEditing } = props;

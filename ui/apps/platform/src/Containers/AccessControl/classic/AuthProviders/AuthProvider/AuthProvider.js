@@ -4,10 +4,11 @@ import { Message } from '@stackrox/ui-components';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
-import HeaderButtons from 'Containers/AccessControl/AuthProviders/AuthProvider/HeaderButtons';
-import Form from 'Containers/AccessControl/AuthProviders/AuthProvider/Form/Form';
-import Details from 'Containers/AccessControl/AuthProviders/AuthProvider/Details';
 import { getAuthProviderLabelByValue } from 'constants/accessControl';
+
+import HeaderButtons from './HeaderButtons';
+import Form from './Form/Form';
+import Details from './Details';
 
 class AuthProvider extends Component {
     static propTypes = {

@@ -7,10 +7,11 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/roles';
 import Modal from 'Components/Modal';
-import Form from 'Containers/AccessControl/Roles/Permissions/Form';
 import SaveButton from 'Components/SaveButton';
 import { defaultSelectedRole } from 'constants/accessControl';
-import addDefaultPermissionsToRole from 'Containers/AccessControl/Roles/Permissions/addDefaultPermissionsToRole';
+
+import Form from '../../../Roles/Permissions/Form';
+import addDefaultPermissionsToRole from '../../../Roles/Permissions/addDefaultPermissionsToRole';
 
 class CreateRoleModal extends Component {
     static propTypes = {
