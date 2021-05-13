@@ -290,9 +290,7 @@ h6 {
     left: 0;
     z-index: 10;
     top: 76px;
-    height: 100%;
-    /* background-color: hsla(225, 30%, 21%, 0.85); */
-    padding-bottom: 76px;
+    height: calc(100% - 76px);
 }
 
 /* Collapsible CSS */

@@ -39,6 +39,7 @@ function NavigationSideBar(): ReactElement {
                             >
                                 {children.map((navItem) => (
                                     <LeftNavItem
+                                        key={navItem.label}
                                         label={navItem.label}
                                         to={navItem.to}
                                         location={location}
@@ -47,7 +48,7 @@ function NavigationSideBar(): ReactElement {
                             </NavExpandable>
                         );
                     }
-                    return <LeftNavItem label={label} to={to} location={location} />;
+                    return <LeftNavItem key={label} label={label} to={to} location={location} />;
                 })}
             </NavList>
         </Nav>
