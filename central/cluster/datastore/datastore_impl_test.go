@@ -17,6 +17,7 @@ import (
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
+	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -52,6 +53,7 @@ type ClusterDataStoreTestSuite struct {
 	deploymentDataStore *deploymentMocks.MockDataStore
 	nodeDataStore       *nodeMocks.MockGlobalDataStore
 	secretDataStore     *secretMocks.MockDataStore
+	podDataStore        *podMocks.MockDataStore
 	flowsDataStore      *netFlowsMocks.MockClusterDataStore
 	netEntityDataStore  *netEntityMocks.MockEntityDataStore
 	connMgr             *connectionMocks.MockManager
@@ -84,6 +86,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.alertDataStore = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 	suite.secretDataStore = secretMocks.NewMockDataStore(suite.mockCtrl)
+	suite.podDataStore = podMocks.NewMockDataStore(suite.mockCtrl)
 	suite.flowsDataStore = netFlowsMocks.NewMockClusterDataStore(suite.mockCtrl)
 	suite.netEntityDataStore = netEntityMocks.NewMockEntityDataStore(suite.mockCtrl)
 	suite.riskDataStore = riskMocks.NewMockDataStore(suite.mockCtrl)
@@ -108,6 +111,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.namespaceDataStore,
 		suite.deploymentDataStore,
 		suite.nodeDataStore,
+		suite.podDataStore,
 		suite.secretDataStore,
 		suite.flowsDataStore,
 		suite.netEntityDataStore,
@@ -148,6 +152,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	testCluster := &storage.Cluster{Id: fakeClusterID}
 	testDeployments := []search.Result{{ID: "fakeDeployment"}}
+	testPods := []search.Result{{ID: "fakepod"}}
 	testAlerts := []*storage.Alert{{}}
 	testSecrets := []*storage.ListSecret{{}}
 	suite.clusters.EXPECT().Get(fakeClusterID).Return(testCluster, true, nil)
@@ -156,10 +161,12 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil)
 	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testDeployments, nil)
+	suite.podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testPods, nil)
 	suite.alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(testAlerts, nil)
 	suite.alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).Return(nil)
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
 	suite.deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	suite.podDataStore.EXPECT().RemovePod(gomock.Any(), "fakepod").Return(nil)
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(testSecrets, nil)
 	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil)
@@ -303,6 +310,7 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
 	suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 
 	done := concurrency.NewSignal()

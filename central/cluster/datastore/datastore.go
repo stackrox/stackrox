@@ -14,6 +14,7 @@ import (
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
@@ -75,6 +76,7 @@ func New(
 	namespaceDS namespaceDataStore.DataStore,
 	dds deploymentDataStore.DataStore,
 	ns nodeDataStore.GlobalDataStore,
+	pods podDataStore.DataStore,
 	ss secretDataStore.DataStore,
 	flows netFlowsDataStore.ClusterDataStore,
 	netEntities netEntityDataStore.EntityDataStore,
@@ -93,6 +95,7 @@ func New(
 		namespaceDataStore:   namespaceDS,
 		deploymentDataStore:  dds,
 		nodeDataStore:        ns,
+		podDataStore:         pods,
 		secretsDataStore:     ss,
 		netFlowsDataStore:    flows,
 		netEntityDataStore:   netEntities,

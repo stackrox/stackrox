@@ -15,6 +15,7 @@ import (
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -42,6 +43,7 @@ func initialize() {
 		namespaceDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		nodeDataStore.Singleton(),
+		podDataStore.Singleton(),
 		secretDataStore.Singleton(),
 		netFlowsDataStore.Singleton(),
 		netEntityDataStore.Singleton(),

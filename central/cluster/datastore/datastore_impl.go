@@ -16,6 +16,7 @@ import (
 	netFlowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
@@ -60,6 +61,7 @@ type datastoreImpl struct {
 	namespaceDataStore  namespaceDataStore.DataStore
 	deploymentDataStore deploymentDataStore.DataStore
 	nodeDataStore       nodeDataStore.GlobalDataStore
+	podDataStore        podDataStore.DataStore
 	secretsDataStore    secretDataStore.DataStore
 	netFlowsDataStore   netFlowDataStore.ClusterDataStore
 	netEntityDataStore  netEntityDataStore.EntityDataStore
@@ -450,11 +452,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	ds.idToNameCache.Remove(id)
 	ds.nameToIDCache.Remove(cluster.GetName())
 
-	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Namespace, resources.Deployment, resources.Alert, resources.Node, resources.Secret),
-		))
+	deleteRelatedCtx := sac.WithAllAccess(context.Background())
 	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
 	return ds.indexer.DeleteCluster(id)
 }
@@ -477,6 +475,8 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	// Tombstone each deployment and mark alerts stale.
 	ds.removeClusterDeployments(ctx, cluster)
+
+	ds.removeClusterPods(ctx, cluster)
 
 	// Remove nodes associated with this cluster
 	if err := ds.nodeDataStore.RemoveClusterNodeStores(ctx, cluster.GetId()); err != nil {
@@ -512,6 +512,20 @@ func (ds *datastoreImpl) removeClusterNamespaces(ctx context.Context, cluster *s
 		}
 	}
 
+}
+
+func (ds *datastoreImpl) removeClusterPods(ctx context.Context, cluster *storage.Cluster) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	pods, err := ds.podDataStore.Search(ctx, q)
+	if err != nil {
+		log.Errorf("Failed to get pods for removed cluster %s: %v", cluster.GetId(), err)
+		return
+	}
+	for _, pod := range pods {
+		if err := ds.podDataStore.RemovePod(ctx, pod.ID); err != nil {
+			log.Errorf("Failed to remove pod with id %s as part of removal of cluster %s: %v", pod.ID, cluster.GetId(), err)
+		}
+	}
 }
 
 func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *storage.Cluster) {
