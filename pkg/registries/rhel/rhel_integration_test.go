@@ -23,8 +23,8 @@ func TestRHEL(t *testing.T) {
 
 	m, err := reg.Metadata(&storage.Image{
 		Name: &storage.ImageName{
-			Remote: "rhscl/mysql-57-rhel7",
-			Tag:    "5.7-48",
+			Remote: "ubi8/ubi",
+			Tag:    "8.3",
 		},
 	})
 	require.NoError(t, err)
