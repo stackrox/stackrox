@@ -30,6 +30,25 @@ message ListSimpleAccessScopesResponse {
     repeated storage.SimpleAccessScope access_scopes = 1;
 }
 
+message ComputeEffectiveAccessScopeRequest {
+    enum Detail {
+        STANDARD = 0;
+        MINIMAL  = 1;
+        HIGH     = 2;
+    }
+
+    message Payload {
+        // Other definitions of access scope rules is science fiction for now;
+        // however, prepare for that possible future.
+        oneof rules_opt {
+            storage.SimpleAccessScope.Rules simple_rules = 1;
+        }
+    }
+
+    Detail  detail       = 1;
+    Payload access_scope = 2;
+}
+
 service RoleService {
 
     rpc GetRoles (Empty) returns (GetRolesResponse) {
@@ -80,6 +99,8 @@ service RoleService {
     // Access scopes                                                          //
     //                                                                        //
 
+    // BEGIN EXPERIMENTAL/UNSTABLE API
+
     rpc GetSimpleAccessScope (ResourceByID) returns (storage.SimpleAccessScope) {
         option (google.api.http) = {
             get: "/v1/simpleaccessscopes/{id}"
@@ -112,4 +133,39 @@ service RoleService {
             delete: "/v1/simpleaccessscopes/{id}"
         };
     }
+
+    // Returns effective access scope based on the rules in the request. Does
+    // not persist anything; not idempotent due to possible changes to clusters
+    // and namespaces. POST is chosen due to potentially large payload.
+    //
+    // There are advantages in both keeping the response slim and detailed. If
+    // only IDs of selected clusters and namespaces are included, response
+    // latency and processing time are lower but the caller shall overlay the
+    // response with its view of the world which is susceptible to consistency
+    // issues. Listing all clusters and namespaces with related metadata is
+    // convenient for the caller but bloat the message with secondary data.
+    //
+    // We let the caller decide what level of detail they would like to have:
+    //
+    //   * Minimal, when only roots of included subtrees are listed by their
+    //     IDs. Clusters can be either INCLUDED (its namespaces are included but
+    //     are not listed) or PARTIAL (at least one namespace is explicitly
+    //     included). Namespaces can only be INCLUDED.
+    //
+    //   * Standard [default], when all known clusters and namespaces are listed
+    //     with their IDs and names. Clusters can be INCLUDED (all its
+    //     namespaces are explicitly listed as INCLUDED), PARTIAL (all its
+    //     namespaces are explicitly listed, some as INCLUDED and some as
+    //     EXCLUDED), and EXCLUDED (all its namespaces are explicitly listed as
+    //     EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.
+    //
+    //   * High, when every cluster and namespace is augmented with metadata.
+    rpc ComputeEffectiveAccessScope (ComputeEffectiveAccessScopeRequest) returns (storage.EffectiveAccessScope) {
+        option (google.api.http) = {
+            post: "/v1/computeeffectiveaccessscope"
+            body: "access_scope"
+        };
+    }
+
+    // END EXPERIMENTAL/UNSTABLE API
 }

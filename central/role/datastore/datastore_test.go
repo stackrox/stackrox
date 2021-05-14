@@ -171,14 +171,14 @@ func (s *roleDataStoreTestSuite) TestAllowsRemove() {
 
 func getValidAccessScope(id string, name string) *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
-		Id:   utils.AccessScopeIDPrefix + id,
+		Id:   utils.EnsureValidAccessScopeID(id),
 		Name: name,
 	}
 }
 
 func getInvalidAccessScope(id string, name string) *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
-		Id:   utils.AccessScopeIDPrefix + id,
+		Id:   utils.EnsureValidAccessScopeID(id),
 		Name: name,
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{

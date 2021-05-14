@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -17,8 +19,10 @@ type Service interface {
 }
 
 // New returns a new instance of the service. Please use the Singleton instead.
-func New(roleDataStore datastore.DataStore) Service {
+func New(roleDataStore datastore.DataStore, clusterDataStore clusterDS.DataStore, namespaceDataStore namespaceDS.DataStore) Service {
 	return &serviceImpl{
-		roleDataStore: roleDataStore,
+		roleDataStore:      roleDataStore,
+		clusterDataStore:   clusterDataStore,
+		namespaceDataStore: namespaceDataStore,
 	}
 }

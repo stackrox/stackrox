@@ -67,3 +67,36 @@ message SimpleAccessScope {
 
     Rules  rules        = 4;
 }
+
+// EffectiveAccessScope describes which clusters and namespaces are "in scope"
+// given current state. Basically, if AccessScope is applied to the currently
+// known clusters and namespaces, the result is EffectiveAccessScope.
+//
+// EffectiveAccessScope represents a tree with nodes marked as included and
+// excluded. If a node is included, all its child nodes are included.
+message EffectiveAccessScope {
+    enum State {
+        UNKNOWN  = 0;
+        INCLUDED = 1;
+        EXCLUDED = 2;
+        PARTIAL  = 3;
+    }
+
+    message Namespace {
+        string              id     = 1;
+        string              name   = 2;
+        State               state  = 3;
+        map<string, string> labels = 4;
+    }
+
+    message Cluster {
+        string              id     = 1;
+        string              name   = 2;
+        State               state  = 3;
+        map<string, string> labels = 5;
+
+        repeated Namespace namespaces = 4;
+    }
+
+    repeated Cluster clusters = 1;
+}
