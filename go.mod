@@ -76,9 +76,9 @@ require (
 	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/operator-framework/operator-lib v0.4.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.10.0
+	github.com/prometheus/common v0.15.0
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.0
 	github.com/satori/go.uuid v1.2.0
@@ -89,7 +89,7 @@ require (
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
 	github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
-	github.com/stackrox/scanner v0.0.0-20210429045654-20925f74f673
+	github.com/stackrox/scanner v0.0.0-20210513233124-463cefc804fa
 	github.com/stretchr/testify v1.7.0
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3

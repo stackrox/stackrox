@@ -9,6 +9,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [60.0]
 
 - CVE Severity levels are now mapped to their respective Red Hat security ratings (https://access.redhat.com/security/updates/classification)
+- StackRox Scanner passes Red Hat Scanner Certification
+  - Images based on RHEL base images created after June 2020 will be scanned in a certified manner.
+    - These images will say `rhel` as the OS instead of `centos`.
+    - Language-related files like JAR (Java), egg-info (Python) will only be scanned if they are not provided by RPM.
+      To determine if a file is provided by RPM, run `rpm -q --whatprovides <absolute filepath>` in the image.
+  - Older RHEL-based images will be scanned the traditional way.
+    - These images will continue to say `centos` is the base OS.
+- StackRox Scanner now officially supports ubuntu:21.04 images
 
 ## [59.0]
 

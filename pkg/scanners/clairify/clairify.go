@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	clairV1 "github.com/stackrox/scanner/api/v1"
@@ -186,20 +187,20 @@ func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerE
 		return nil
 	}
 
+	noteSet := set.NewStringSet()
 	var notes []storage.ImageScan_Note
-	var hasStaleCVEs bool
 	for _, note := range layerEnvelope.Notes {
 		n := convertNote(note)
 		if n == -1 {
 			continue
 		}
-		if n == storage.ImageScan_OS_CVES_STALE {
-			hasStaleCVEs = true
+
+		if noteSet.Add(n.String()) {
+			notes = append(notes, n)
 		}
-		notes = append(notes, n)
 	}
 
-	if len(layerEnvelope.Notes) == 1 && !hasStaleCVEs {
+	if isPartialScan(noteSet) {
 		notes = append(notes, storage.ImageScan_PARTIAL_SCAN_DATA)
 	}
 
@@ -211,6 +212,27 @@ func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerE
 	}
 }
 
+func isPartialScan(notes set.StringSet) bool {
+	osCVEsUnavailable := notes.Contains(storage.ImageScan_OS_CVES_UNAVAILABLE.String())
+	languageCVEsUnavailable := notes.Contains(storage.ImageScan_LANGUAGE_CVES_UNAVAILABLE.String())
+	certifiedRHELUnavailable := notes.Contains(storage.ImageScan_CERTIFIED_RHEL_SCAN_UNAVAILABLE.String())
+
+	// != simulates XOR for bool values.
+	// When both osCVEsUnavailable and languageCVEsUnavailable are true, we have no scan results.
+	// When they are both false, we have full scan results.
+	// Otherwise, we have partial results.
+	if osCVEsUnavailable != languageCVEsUnavailable {
+		return true
+	}
+
+	// We are able to perform a full scan, but the results are not certified by Red Hat.
+	if !osCVEsUnavailable && !languageCVEsUnavailable && certifiedRHELUnavailable {
+		return true
+	}
+
+	return false
+}
+
 func convertNote(note clairV1.Note) storage.ImageScan_Note {
 	switch note {
 	case clairV1.OSCVEsUnavailable:
@@ -219,6 +241,8 @@ func convertNote(note clairV1.Note) storage.ImageScan_Note {
 		return storage.ImageScan_OS_CVES_STALE
 	case clairV1.LanguageCVEsUnavailable:
 		return storage.ImageScan_LANGUAGE_CVES_UNAVAILABLE
+	case clairV1.CertifiedRHELScanUnavailable:
+		return storage.ImageScan_CERTIFIED_RHEL_SCAN_UNAVAILABLE
 	default:
 		return -1
 	}
@@ -234,11 +258,32 @@ func v1ImageToClairifyImage(i *storage.Image) *types.Image {
 }
 
 // Try many ways to retrieve a sha
-func (c *clairify) getScan(image *storage.Image) (*clairV1.LayerEnvelope, error) {
-	if env, err := c.httpClient.RetrieveImageDataBySHA(utils.GetSHA(image), true, true); err == nil {
-		return env, nil
+func (c *clairify) getScan(image *storage.Image, opts *types.GetImageDataOpts) (*clairV1.LayerEnvelope, error) {
+	if layerEnv, err := c.httpClient.RetrieveImageDataBySHA(utils.GetSHA(image), opts); err == nil {
+		return layerEnv, nil
 	}
-	return c.httpClient.RetrieveImageDataByName(v1ImageToClairifyImage(image), true, true)
+	return c.httpClient.RetrieveImageDataByName(v1ImageToClairifyImage(image), opts)
+}
+
+func (c *clairify) getInitialScanResults(img *storage.Image) (*clairV1.LayerEnvelope, error) {
+	sha := utils.GetSHA(img)
+	var opts types.GetImageDataOpts
+	layerEnv, err := c.httpClient.RetrieveImageDataBySHA(sha, &opts)
+	if err != nil {
+		return nil, err
+	}
+	for _, note := range layerEnv.Notes {
+		if note == clairV1.CertifiedRHELScanUnavailable {
+			// We were unable to get certified scan results.
+			// Try getting uncertified results instead.
+			// This will also return a clairV1.CertifiedRHELScanUnavailable note.
+			log.Debugf("Image %v is out of Red Hat Scanner Certification scope. Retrying fetch for uncertified results", v1ImageToClairifyImage(img))
+			opts.UncertifiedRHELResults = true
+			layerEnv, err = c.httpClient.RetrieveImageDataBySHA(sha, &opts)
+		}
+	}
+
+	return layerEnv, err
 }
 
 // GetScan retrieves the most recent scan
@@ -248,36 +293,64 @@ func (c *clairify) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, nil
 	}
 	// If not found by digest, then should trigger a scan
-	env, err := c.httpClient.RetrieveImageDataBySHA(utils.GetSHA(image), true, true)
+	layerEnv, err := c.getInitialScanResults(image)
 	if err != nil {
 		if err != client.ErrorScanNotFound {
 			return nil, err
 		}
-		if err := c.scan(image); err != nil {
-			return nil, err
-		}
-		env, err = c.getScan(image)
+		var opts types.GetImageDataOpts
+		layerEnv, err = c.scanImage(image, opts)
 		if err != nil {
 			return nil, err
 		}
+		for _, note := range layerEnv.Notes {
+			if note == clairV1.CertifiedRHELScanUnavailable {
+				// We were unable to get certified scan results.
+				// Try getting uncertified results instead.
+				// This will also return a clairV1.CertifiedRHELScanUnavailable note.
+				opts.UncertifiedRHELResults = true
+				log.Debugf("Image %v is out of Red Hat Scanner Certification scope. Retrying scan for uncertified results", v1ImageToClairifyImage(image))
+				layerEnv, err = c.scanImage(image, opts)
+				if err != nil {
+					return nil, err
+				}
+
+				break
+			}
+		}
+
 	}
-	scan := convertLayerToImageScan(image, env)
+	scan := convertLayerToImageScan(image, layerEnv)
 	if scan == nil {
 		return nil, errors.New("malformed response from scanner")
 	}
 	return scan, nil
 }
 
-func (c *clairify) scan(image *storage.Image) error {
+func (c *clairify) scanImage(image *storage.Image, opts types.GetImageDataOpts) (*clairV1.LayerEnvelope, error) {
+	if err := c.addScan(image, opts.UncertifiedRHELResults); err != nil {
+		return nil, err
+	}
+	layerEnv, err := c.getScan(image, &opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return layerEnv, nil
+}
+
+func (c *clairify) addScan(image *storage.Image, uncertifiedRHEL bool) error {
 	rc := c.activeRegistries.GetRegistryMetadataByImage(image)
 	if rc == nil {
 		return nil
 	}
 
 	_, err := c.httpClient.AddImage(rc.Username, rc.Password, &types.ImageRequest{
-		Image:    utils.GetFullyQualifiedFullName(image),
-		Registry: rc.URL,
-		Insecure: rc.Insecure})
+		Image:               utils.GetFullyQualifiedFullName(image),
+		Registry:            rc.URL,
+		Insecure:            rc.Insecure,
+		UncertifiedRHELScan: uncertifiedRHEL,
+	})
 	return err
 }
 
