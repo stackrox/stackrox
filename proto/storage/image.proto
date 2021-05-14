@@ -58,12 +58,13 @@ message ImageScan {
     // DataSource contains information about which integration was used to scan the image
     DataSource                          data_source      = 3;
     enum Note {
-        UNSET                     = 0;
-        OS_UNAVAILABLE            = 1;
-        PARTIAL_SCAN_DATA         = 2;
-        OS_CVES_UNAVAILABLE       = 3;
-        OS_CVES_STALE             = 4;
-        LANGUAGE_CVES_UNAVAILABLE = 5;
+        UNSET                           = 0;
+        OS_UNAVAILABLE                  = 1;
+        PARTIAL_SCAN_DATA               = 2;
+        OS_CVES_UNAVAILABLE             = 3;
+        OS_CVES_STALE                   = 4;
+        LANGUAGE_CVES_UNAVAILABLE       = 5;
+        CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
     }
     repeated Note                       notes            = 5;
 }
