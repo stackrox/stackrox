@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: centrals.acs.openshift.io
+  name: centrals.platform.stackrox.io
 spec:
-  group: acs.openshift.io
+  group: platform.stackrox.io
   names:
     kind: Central
     listKind: CentralList

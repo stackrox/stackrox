@@ -1,11 +1,11 @@
-# ACS Operator
+# StackRox Central Services Operator
 
 ```
 # Run it!
 $ make install run
 
 # Create it!
-$ kubectl apply -f config/samples/acs_v1beta1_central.yaml
+$ kubectl apply -f config/samples/platform_v1alpha1_central.yaml
 
 # Specate it!
 ```

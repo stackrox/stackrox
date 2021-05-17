@@ -5,7 +5,7 @@ metadata:
   name: securedcluster-viewer-role
 rules:
 - apiGroups:
-  - acs.openshift.io
+  - platform.stackrox.io
   resources:
   - securedclusters
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - acs.openshift.io
+  - platform.stackrox.io
   resources:
   - securedclusters/status
   verbs:

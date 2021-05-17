@@ -1,0 +1,7 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: securedcluster-sample
+spec: # TODO: Add fields here
+  clusterName: foo-bar
+  centralEndpoint: blah

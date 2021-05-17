@@ -1,0 +1,5 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: central-sample
+spec: {} # TODO: Add fields here

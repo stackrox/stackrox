@@ -1,7 +1,0 @@
-apiVersion: acs.openshift.io/v1alpha1
-kind: SecuredCluster
-metadata:
-  name: securedcluster-sample
-spec:
-  # Add fields here
-  foo: bar

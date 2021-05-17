@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: a1d85e78.acs.openshift.io
+  resourceName: a1d85e78.platform.stackrox.io

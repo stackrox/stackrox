@@ -1,4 +1,4 @@
-domain: openshift.io
+domain: stackrox.io
 layout:
 - go.kubebuilder.io/v3
 plugins:
@@ -11,8 +11,8 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: openshift.io
-  group: acs
+  domain: stackrox.io
+  group: platform
   kind: SecuredCluster
   path: github.com/stackrox/rox/operator/securedcluster/api/v1alpha1
   version: v1alpha1
