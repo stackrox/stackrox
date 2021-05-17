@@ -35,6 +35,8 @@ var (
 			"/v1.RoleService/GetRole",
 			"/v1.RoleService/ListSimpleAccessScopes",
 			"/v1.RoleService/GetSimpleAccessScope",
+		},
+		user.With(permissions.View(resources.Role), permissions.View(resources.Cluster), permissions.View(resources.Namespace)): {
 			"/v1.RoleService/ComputeEffectiveAccessScope",
 		},
 		user.With(permissions.Modify(resources.Role)): {
