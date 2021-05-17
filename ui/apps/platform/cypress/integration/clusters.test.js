@@ -30,9 +30,6 @@ describe('Clusters page', () => {
                 'Name',
                 'Cloud Provider',
                 'Cluster Status',
-                'Sensor Status',
-                'Collector Status',
-                'Admission Control Status',
                 'Sensor Upgrade',
                 'Credential Expiration',
             ];
@@ -339,9 +336,6 @@ describe('Cluster Health', () => {
                 clusterName: 'alpha-amsterdam-1',
                 cloudProvider: 'Not applicable',
                 clusterStatus: 'Uninitialized',
-                sensorStatus: 'Uninitialized',
-                collectorStatus: 'Uninitialized',
-                admissionControlStatus: 'Uninitialized',
                 sensorUpgrade: 'Not applicable',
                 credentialExpiration: 'Not applicable',
             },
@@ -351,6 +345,9 @@ describe('Cluster Health', () => {
                 healthInfoComplete: null,
                 sensorVersion: null,
                 centralVersion: null,
+                sensorStatus: 'Uninitialized',
+                collectorStatus: 'Uninitialized',
+                admissionControlStatus: 'Uninitialized',
             },
         },
         {
@@ -358,9 +355,6 @@ describe('Cluster Health', () => {
                 clusterName: 'epsilon-edison-5',
                 cloudProvider: 'AWS us-west1',
                 clusterStatus: 'Unhealthy',
-                sensorStatus: 'Unhealthy for 1 hour',
-                collectorStatus: 'Healthy 1 hour ago',
-                admissionControlStatus: 'Healthy 1 hour ago',
                 sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 6 days on Monday',
             },
@@ -377,6 +371,9 @@ describe('Cluster Health', () => {
                 healthInfoComplete: null,
                 sensorVersion: '3.0.48.0',
                 centralVersion: '3.0.50.0',
+                sensorStatus: 'Unhealthy for 1 hour',
+                collectorStatus: 'Healthy 1 hour ago',
+                admissionControlStatus: 'Healthy 1 hour ago',
             },
         },
         {
@@ -384,9 +381,6 @@ describe('Cluster Health', () => {
                 clusterName: 'eta-7',
                 cloudProvider: 'GCP us-west1',
                 clusterStatus: 'Unhealthy',
-                sensorStatus: 'Healthy',
-                collectorStatus: 'Unhealthy',
-                admissionControlStatus: 'Unhealthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 29 days on 09/29/2020',
             },
@@ -403,6 +397,9 @@ describe('Cluster Health', () => {
                 healthInfoComplete: null,
                 sensorVersion: '3.0.50.0',
                 centralVersion: '3.0.50.0',
+                sensorStatus: 'Healthy',
+                collectorStatus: 'Unhealthy',
+                admissionControlStatus: 'Unhealthy',
             },
         },
         {
@@ -410,9 +407,6 @@ describe('Cluster Health', () => {
                 clusterName: 'kappa-kilogramme-10',
                 cloudProvider: 'AWS us-central1',
                 clusterStatus: 'Degraded',
-                sensorStatus: 'Degraded for 2 minutes',
-                collectorStatus: 'Healthy 2 minutes ago',
-                admissionControlStatus: 'Healthy 2 minutes ago',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 1 month',
             },
@@ -429,6 +423,9 @@ describe('Cluster Health', () => {
                 healthInfoComplete: null,
                 sensorVersion: '3.0.50.0',
                 centralVersion: '3.0.50.0',
+                sensorStatus: 'Degraded for 2 minutes',
+                collectorStatus: 'Healthy 2 minutes ago',
+                admissionControlStatus: 'Healthy 2 minutes ago',
             },
         },
         {
@@ -436,9 +433,6 @@ describe('Cluster Health', () => {
                 clusterName: 'lambda-liverpool-11',
                 cloudProvider: 'GCP us-central1',
                 clusterStatus: 'Degraded',
-                sensorStatus: 'Healthy',
-                collectorStatus: 'Degraded',
-                admissionControlStatus: 'Healthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 2 months',
             },
@@ -455,6 +449,9 @@ describe('Cluster Health', () => {
                 healthInfoComplete: null,
                 sensorVersion: '3.0.50.0',
                 centralVersion: '3.0.50.0',
+                sensorStatus: 'Healthy',
+                collectorStatus: 'Degraded',
+                admissionControlStatus: 'Healthy',
             },
         },
         {
@@ -462,9 +459,6 @@ describe('Cluster Health', () => {
                 clusterName: 'mu-madegascar-12',
                 cloudProvider: 'AWS eu-central1',
                 clusterStatus: 'Healthy',
-                sensorStatus: 'Healthy',
-                collectorStatus: 'Unavailable',
-                admissionControlStatus: 'Unavailable',
                 sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 12 months',
             },
@@ -477,6 +471,9 @@ describe('Cluster Health', () => {
                 },
                 sensorVersion: '3.0.47.0',
                 centralVersion: '3.0.50.0',
+                sensorStatus: 'Healthy',
+                collectorStatus: 'Unavailable',
+                admissionControlStatus: 'Unavailable',
             },
         },
         {
@@ -484,9 +481,6 @@ describe('Cluster Health', () => {
                 clusterName: 'nu-york-13',
                 cloudProvider: 'AWS ap-southeast1',
                 clusterStatus: 'Healthy',
-                sensorStatus: 'Healthy',
-                collectorStatus: 'Healthy',
-                admissionControlStatus: 'Healthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 1 year',
             },
@@ -503,6 +497,9 @@ describe('Cluster Health', () => {
                 healthInfoComplete: null,
                 sensorVersion: '3.0.50.0',
                 centralVersion: '3.0.50.0',
+                sensorStatus: 'Healthy',
+                collectorStatus: 'Healthy',
+                admissionControlStatus: 'Healthy',
             },
         },
     ];
@@ -516,7 +513,11 @@ describe('Cluster Health', () => {
             let n = 0;
             expectedClusters.forEach(({ expectedInListAndSide }) => {
                 Object.keys(expectedInListAndSide).forEach((key) => {
-                    expect($tds.eq(n).text()).to.equal(expectedInListAndSide[key]);
+                    if (key === 'clusterStatus') {
+                        expect($tds.eq(n).text()).to.include(expectedInListAndSide[key]);
+                    } else {
+                        expect($tds.eq(n).text()).to.equal(expectedInListAndSide[key]);
+                    }
                     n += 1;
                 });
             });
@@ -528,9 +529,6 @@ describe('Cluster Health', () => {
         const {
             clusterName,
             clusterStatus,
-            sensorStatus,
-            collectorStatus,
-            admissionControlStatus,
             sensorUpgrade,
             credentialExpiration,
         } = expectedInListAndSide;
@@ -540,6 +538,9 @@ describe('Cluster Health', () => {
             healthInfoComplete,
             sensorVersion,
             centralVersion,
+            sensorStatus,
+            collectorStatus,
+            admissionControlStatus,
         } = expectedInSide;
 
         it(`should appear in the form for ${clusterName}`, () => {

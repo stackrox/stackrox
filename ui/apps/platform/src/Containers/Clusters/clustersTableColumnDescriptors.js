@@ -11,10 +11,7 @@ import {
 
 import { formatCloudProvider } from './cluster.helpers';
 import ClusterStatus from './Components/ClusterStatus';
-import CollectorStatus from './Components/CollectorStatus';
-import AdmissionControlStatus from './Components/AdmissionControlStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
-import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
 import HelmIndicator from './Components/HelmIndicator';
 
@@ -60,43 +57,9 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
         },
         {
             Header: 'Cluster Status',
-            Cell: ({ original }) => (
-                <ClusterStatus overallHealthStatus={original.healthStatus?.overallHealthStatus} />
-            ),
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Sensor Status',
-            Cell: ({ original }) => (
-                <SensorStatus healthStatus={original.healthStatus} currentDatetime={new Date()} />
-            ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Collector Status',
-            Cell: ({ original }) => (
-                <CollectorStatus
-                    healthStatus={original.healthStatus}
-                    currentDatetime={new Date()}
-                    isList
-                />
-            ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Admission Control Status',
-            Cell: ({ original }) => (
-                <AdmissionControlStatus
-                    healthStatus={original.healthStatus}
-                    currentDatetime={new Date()}
-                    isList
-                />
-            ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+            Cell: ({ original }) => <ClusterStatus healthStatus={original.healthStatus} isList />,
+            headerClassName: `w-1/4 ${defaultHeaderClassName}`,
+            className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Sensor Upgrade',

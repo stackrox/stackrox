@@ -6,8 +6,8 @@ import Metadata from 'Components/Metadata';
 import Widget from 'Components/Widget';
 
 import ClusterStatus from './ClusterStatus';
-import CollectorStatus from './CollectorStatus';
-import AdmissionControlStatus from './AdmissionControlStatus';
+import CollectorStatus from './Collector/CollectorStatus';
+import AdmissionControlStatus from './AdmissionControl/AdmissionControlStatus';
 import CredentialExpiration from './CredentialExpiration';
 import CredentialInteraction from './CredentialInteraction';
 import SensorStatus from './SensorStatus';
@@ -29,7 +29,7 @@ const tdClass = 'px-0 py-1';
  *
  * Metadata renders a special purpose Widget whose body has built-in p-3 (too bad, so sad)
  */
-const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime, clusterId }) => (
+const ClusterSummary = ({ healthStatus, status, centralVersion, clusterId }) => (
     <CollapsibleSection title="Cluster Summary" titleClassName="text-xl">
         <div className="grid grid-columns-1 md:grid-columns-2 xl:grid-columns-4 grid-gap-4 xl:grid-gap-6 mb-4 w-full">
             <div className="s-1">
@@ -60,9 +60,7 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
                                     Cluster
                                 </th>
                                 <td className={tdClass}>
-                                    <ClusterStatus
-                                        overallHealthStatus={healthStatus?.overallHealthStatus}
-                                    />
+                                    <ClusterStatus healthStatus={healthStatus} />
                                 </td>
                             </tr>
                             <tr className={trClass} key="Sensor">
@@ -70,10 +68,7 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
                                     Sensor
                                 </th>
                                 <td className={tdClass}>
-                                    <SensorStatus
-                                        healthStatus={healthStatus}
-                                        currentDatetime={currentDatetime}
-                                    />
+                                    <SensorStatus healthStatus={healthStatus} />
                                 </td>
                             </tr>
                             <tr className={trClass} key="Collector">
@@ -81,11 +76,7 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
                                     Collector
                                 </th>
                                 <td className={tdClass}>
-                                    <CollectorStatus
-                                        healthStatus={healthStatus}
-                                        currentDatetime={currentDatetime}
-                                        isList={false}
-                                    />
+                                    <CollectorStatus healthStatus={healthStatus} />
                                 </td>
                             </tr>
                             <tr className={trClass} key="Admission Control">
@@ -93,11 +84,7 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
                                     Admission Control
                                 </th>
                                 <td className={tdClass}>
-                                    <AdmissionControlStatus
-                                        healthStatus={healthStatus}
-                                        currentDatetime={currentDatetime}
-                                        isList={false}
-                                    />
+                                    <AdmissionControlStatus healthStatus={healthStatus} />
                                 </td>
                             </tr>
                         </tbody>
@@ -110,8 +97,6 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
                         upgradeStatus={status?.upgradeStatus}
                         sensorVersion={status?.sensorVersion}
                         centralVersion={centralVersion}
-                        isList={false}
-                        actionProps={null}
                     />
                 </Widget>
             </div>
@@ -120,16 +105,11 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
                     {status?.certExpiryStatus?.sensorCertExpiry ? (
                         <CredentialInteraction
                             certExpiryStatus={status?.certExpiryStatus}
-                            currentDatetime={currentDatetime}
                             upgradeStatus={status?.upgradeStatus}
                             clusterId={clusterId}
                         />
                     ) : (
-                        <CredentialExpiration
-                            certExpiryStatus={status?.certExpiryStatus}
-                            currentDatetime={currentDatetime}
-                            isList={false}
-                        />
+                        <CredentialExpiration certExpiryStatus={status?.certExpiryStatus} />
                     )}
                 </Widget>
             </div>
@@ -178,7 +158,6 @@ ClusterSummary.propTypes = {
         }),
     }).isRequired,
     centralVersion: PropTypes.string.isRequired,
-    currentDatetime: PropTypes.instanceOf(Date).isRequired,
     clusterId: PropTypes.string.isRequired,
 };
 

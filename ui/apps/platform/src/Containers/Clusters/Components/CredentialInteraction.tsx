@@ -1,6 +1,5 @@
 /* eslint-disable react/jsx-no-bind */
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement, useState } from 'react';
 
 import { generateSecuredClusterCertSecret } from 'services/CertGenerationService';
 import { rotateClusterCerts } from 'services/ClustersService';
@@ -17,16 +16,18 @@ import {
 /*
  * The heading is a simple explanation of what did not happen because of the error.
  */
-const getErrorElement = (heading, error) => (
-    <div className="mt-2">
-        <div className="font-700" data-testid="reissue-error-heading">
-            {heading}
+function getErrorElement(heading: string, error): ReactElement {
+    return (
+        <div className="mt-2">
+            <div className="font-700" data-testid="reissue-error-heading">
+                {heading}
+            </div>
+            {error?.response?.data?.message && (
+                <div data-testid="reissue-error-message">{error.response.data.message}</div>
+            )}
         </div>
-        {error?.response?.data?.message && (
-            <div data-testid="reissue-error-message">{error.response.data.message}</div>
-        )}
-    </div>
-);
+    );
+}
 
 const download = 'download';
 const upgrade = 'upgrade';
@@ -40,17 +41,40 @@ const labelClassName = 'leading-tight ml-2';
  *
  * Display either the form to reissue certificate or an explanation of the result.
  */
-const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatus, clusterId }) => {
+
+type CredentialInteractionProps = {
+    certExpiryStatus: {
+        sensorCertExpiry: string; // ISO 8601
+    };
+    upgradeStatus: {
+        upgradability: string;
+        mostRecentProcess: {
+            type: string;
+            process: {
+                upgradeState: string;
+            };
+            initiatedAt: string;
+        };
+    };
+    clusterId: string;
+};
+
+function CredentialInteraction({
+    certExpiryStatus,
+    upgradeStatus,
+    clusterId,
+}: CredentialInteractionProps): ReactElement {
     const upgradeStateObject = findUpgradeState(upgradeStatus);
     const isUpToDate = isUpToDateStateObject(upgradeStateObject);
+    const currentDatetime = new Date();
 
     const [howToReissue, setHowToReissue] = useState(isUpToDate ? upgrade : download);
     const [disabledReissueButton, setDisabledReissueButton] = useState(false);
-    const [errorElement, setErrorElement] = useState(null);
+    const [errorElement, setErrorElement] = useState(<></>);
 
     const [isDownloadSuccessful, setIsDownloadSuccessful] = useState(false);
 
-    let interactionElement = null;
+    let interactionElement = <></>;
 
     if (isDownloadSuccessful) {
         interactionElement = (
@@ -178,33 +202,11 @@ const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatu
 
     return (
         <div className="flex flex-col">
-            <CredentialExpiration
-                certExpiryStatus={certExpiryStatus}
-                currentDatetime={currentDatetime}
-                isList={false}
-            />
+            <CredentialExpiration certExpiryStatus={certExpiryStatus} />
             {interactionElement}
             {errorElement}
         </div>
     );
-};
-
-CredentialInteraction.propTypes = {
-    certExpiryStatus: PropTypes.shape({
-        sensorCertExpiry: PropTypes.string, // ISO 8601
-    }).isRequired,
-    currentDatetime: PropTypes.instanceOf(Date).isRequired,
-    upgradeStatus: PropTypes.shape({
-        upgradability: PropTypes.string,
-        mostRecentProcess: PropTypes.shape({
-            type: PropTypes.string,
-            process: PropTypes.shape({
-                upgradeState: PropTypes.string,
-            }),
-            initiatedAt: PropTypes.string, // ISO 8601
-        }),
-    }).isRequired,
-    clusterId: PropTypes.string.isRequired,
-};
+}
 
 export default CredentialInteraction;
