@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
+	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
 	grpc_logging "github.com/stackrox/rox/pkg/grpc/logging"
 	"github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -142,6 +143,7 @@ func (a *apiImpl) Register(services ...APIService) {
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u := []grpc.UnaryServerInterceptor{
 		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
+		grpc_errors.ErrorToGrpcCodeInterceptor,
 		grpc_prometheus.UnaryServerInterceptor,
 		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
@@ -181,6 +183,7 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s := []grpc.StreamServerInterceptor{
 		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.StreamServerInterceptor,
+		grpc_errors.ErrorToGrpcCodeStreamInterceptor,
 		contextutil.StreamServerInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
