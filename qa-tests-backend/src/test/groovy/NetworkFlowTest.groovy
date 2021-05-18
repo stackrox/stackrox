@@ -562,6 +562,11 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Category([NetworkFlowVisualization])
     def "Verify cluster updates can block flow connections from showing"() {
+        // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
+        Assume.assumeFalse(ClusterService.isEKS())
+        // ROX-7153 - AKS cannot tolerate NetworkPolicy (RS-179)
+        Assume.assumeFalse(ClusterService.isAKS())
+
         given:
         "Two deployments, A and B, where B communicates to A"
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
