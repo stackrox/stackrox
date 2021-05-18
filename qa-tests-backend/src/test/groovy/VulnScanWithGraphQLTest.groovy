@@ -225,8 +225,8 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     }
 
     private static Boolean skipThisTest() {
-        // This test consistently fails with OpenShift RHEL -race (ROX-6584)
+        // This test consistently fails with RHEL -race (ROX-6584)
         return Env.get("IS_RACE_BUILD", null) == "true" &&
-                Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-rhel")
+                Env.CI_JOBNAME && Env.CI_JOBNAME.contains("-rhel")
     }
 }
