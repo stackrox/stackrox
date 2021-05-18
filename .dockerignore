@@ -1,0 +1,7 @@
+**/node_modules/
+/.git/
+/bin/
+/image/bin/
+/linux-gocache/
+/operator/*/bin/
+/qa-tests-backend/

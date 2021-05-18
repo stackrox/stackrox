@@ -2711,6 +2711,31 @@ jobs:
 
       - cleanup-clusters-on-fail
 
+  build-operators:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+      - setup_remote_docker:
+          # Default docker server version isn't new enough therefore we're asking for more recent one to enjoy Buildkit.
+          version: 20.10.2
+      - setup-dep-env:
+          docker-login: true
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *restoreGoModCache
+      - setup-go-build-env
+
+      - run:
+          name: Build Central Operator image
+          command: make -C operator/central build docker-build
+
+      - run:
+          name: Build Secured Cluster Operator image
+          command: make -C operator/securedcluster build docker-build
+
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
   # Recommended naming format: provision-{test_job_name}
@@ -5062,6 +5087,8 @@ workflows:
             - pre-build-cli
             - pre-build-go-binaries
       - build-rhel:
+          <<: *runOnAllTagsWithDockerIOPushCtx
+      - build-operators:
           <<: *runOnAllTagsWithDockerIOPushCtx
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithDockerIOPushCtx

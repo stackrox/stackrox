@@ -3,3 +3,11 @@
 !**/*.go
 !**/*.mod
 !**/*.sum
+
+Dockerfile
+.dockerignore
+*/.gitignore
+*/Makefile
+*/bin
+*/testbin
+*/cover.out
