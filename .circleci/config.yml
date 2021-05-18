@@ -2593,11 +2593,6 @@ jobs:
             make ossls-notice
 
       - run:
-          name: Log in to Docker Hub to pull the docs image
-          command: |
-            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD" docker.io
-
-      - run:
           name: Build main image
           command: make docker-build-main-image
 
@@ -2716,11 +2711,13 @@ jobs:
     resource_class: large
     steps:
       - checkout
+
       - setup_remote_docker:
           # Default docker server version isn't new enough therefore we're asking for more recent one to enjoy Buildkit.
           version: 20.10.2
-      - setup-dep-env:
-          docker-login: true
+      - run:
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
