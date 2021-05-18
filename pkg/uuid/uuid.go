@@ -5,7 +5,7 @@ package uuid
 import (
 	"database/sql/driver"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 // UUID in a universally unique identifier. The type is a wrapper around the uuid library.
@@ -21,7 +21,7 @@ var Nil = UUID{
 
 // Equal returns true if u1 and u2 equals, otherwise returns false.
 func Equal(u1 UUID, u2 UUID) bool {
-	return uuid.Equal(u1.uuid, u2.uuid)
+	return u1.uuid == u2.uuid
 }
 
 // Bytes returns bytes slice representation of UUID.
@@ -121,7 +121,7 @@ func FromStringOrPanic(input string) UUID {
 // NewV4 returns random generated UUID.
 func NewV4() UUID {
 	return UUID{
-		uuid: uuid.NewV4(),
+		uuid: uuid.Must(uuid.NewV4()),
 	}
 }
 

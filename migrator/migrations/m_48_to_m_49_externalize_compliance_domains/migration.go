@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -86,7 +86,7 @@ func migrateDomain(rocksDB *gorocksdb.DB, mdKey []byte, metadata *storage.Compli
 	}
 
 	domain := run.GetDomain()
-	domain.Id = uuid.NewV4().String()
+	domain.Id = uuid.Must(uuid.NewV4()).String()
 	run.Domain = nil
 	run.GetRunMetadata().DomainId = domain.GetId()
 	metadata.DomainId = domain.GetId()

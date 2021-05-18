@@ -46,11 +46,11 @@ var (
 
 	forbiddenImports = map[string]struct {
 		replacement string
-		whitelist   set.StringSet
+		allowlist   set.StringSet
 	}{
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
-			whitelist: set.NewStringSet(
+			allowlist: set.NewStringSet(
 				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
 			),
 		},
@@ -65,6 +65,12 @@ var (
 		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",
+		},
+		"github.com/satori/go.uuid": {
+			replacement: "github.com/stackrox/rox/pkg/uuid",
+		},
+		"github.com/google/uuid": {
+			replacement: "github.com/stackrox/rox/pkg/uuid",
 		},
 	}
 )
@@ -164,7 +170,7 @@ func checkForbidden(impPath, packageName string) error {
 		return nil
 	}
 
-	if forbiddenDetails.whitelist.Contains(packageName) {
+	if forbiddenDetails.allowlist.Contains(packageName) {
 		return nil
 	}
 
