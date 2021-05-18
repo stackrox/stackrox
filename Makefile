@@ -261,12 +261,6 @@ PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
-# For some reasons, a `packr clean` is much slower than the `find`. It also does not work.
-.PHONY: clean-packr-srcs
-clean-packr-srcs:
-	@echo "+ $@"
-	@find . -name '*-packr.go' -exec rm {} \;
-
 .PHONY: go-easyjson-srcs
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
@@ -306,7 +300,7 @@ generated-srcs: volatile-generated-srcs go-generated-srcs
 
 # clean-generated-srcs cleans ONLY volatile-generated-srcs.
 .PHONY: clean-generated-srcs
-clean-generated-srcs: clean-packr-srcs clean-proto-generated-srcs
+clean-generated-srcs: clean-proto-generated-srcs
 	@echo "+ $@"
 
 deps: go.mod proto-generated-srcs
