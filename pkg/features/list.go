@@ -21,9 +21,6 @@ var (
 	// NetworkDetectionBlockedFlows enables new features related to the blocked flows part of the network detection experience.
 	NetworkDetectionBlockedFlows = registerFeature("Enable blocked network flows experience", "ROX_NETWORK_DETECTION_BLOCKED_FLOWS", false)
 
-	// SensorTLSChallenge enables Sensor to receive Centrals configured additional-ca an default certs.
-	SensorTLSChallenge = registerFeature("Enable Sensor to receive default and additional CA certificates from Central", "ROX_SENSOR_TLS_CHALLENGE", true)
-
 	// IntegrationsAsConfig enables loading integrations from config
 	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)
 

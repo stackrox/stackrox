@@ -1,6 +1,4 @@
 import static io.stackrox.proto.storage.ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel
-import org.junit.Assume
-import services.FeatureFlagService
 import io.fabric8.kubernetes.api.model.EnvVar
 import orchestratormanager.OrchestratorManagerException
 import spock.lang.Shared
@@ -20,7 +18,6 @@ class TLSChallengeTest extends BaseSpecification {
     @Shared
     private EnvVar originalCentralEndpoint = new EnvVar()
     private final static String PROXY_NAMESPACE = "qa-tls-challenge"
-    private final static String FEATURE_FLAG = "ROX_SENSOR_TLS_CHALLENGE"
     private final static String CENTRAL_PROXY_ENDPOINT = "nginx-loadbalancer.${PROXY_NAMESPACE}:443"
     private final static String ASSETS_DIR = Paths.get(
             System.getProperty("user.dir"), "artifacts", "tls-challenge-test")
@@ -33,8 +30,6 @@ class TLSChallengeTest extends BaseSpecification {
             Paths.get(ASSETS_DIR, "nginx-lb-certs", "ca.pem"))
 
     def setupSpec() {
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled(FEATURE_FLAG))
-
         originalCentralEndpoint = orchestrator.getDeploymentEnv("stackrox", "sensor", "ROX_CENTRAL_ENDPOINT")
         orchestrator.createNamespace(PROXY_NAMESPACE)
 
@@ -47,8 +42,6 @@ class TLSChallengeTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled(FEATURE_FLAG))
-
         orchestrator.deleteNamespace(PROXY_NAMESPACE)
         orchestrator.waitForNamespaceDeletion(PROXY_NAMESPACE)
 

@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -222,17 +221,15 @@ func (s *Sensor) gRPCConnectToCentralWithRetries(signal *concurrency.Signal) {
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
 	s.waitUntilCentralIsReady()
 
-	if features.SensorTLSChallenge.Enabled() {
-		certs := s.getCentralTLSCerts()
-		if len(certs) != 0 {
-			log.Infof("Add %d central CA certs to gRPC connection", len(certs))
-			for _, c := range certs {
-				log.Infof("Add central CA cert with CommonName: '%s'", c.Subject.CommonName)
-			}
-			opts = append(opts, clientconn.AddRootCAs(certs...))
-		} else {
-			log.Infof("Did not add central CA cert to gRPC connection")
+	certs := s.getCentralTLSCerts()
+	if len(certs) != 0 {
+		log.Infof("Add %d central CA certs to gRPC connection", len(certs))
+		for _, c := range certs {
+			log.Infof("Add central CA cert with CommonName: '%s'", c.Subject.CommonName)
 		}
+		opts = append(opts, clientconn.AddRootCAs(certs...))
+	} else {
+		log.Infof("Did not add central CA cert to gRPC connection")
 	}
 
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, opts...)
