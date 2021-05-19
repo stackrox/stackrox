@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -159,6 +160,10 @@ func GetMyPermissions(ctx context.Context) (*storage.Role, error) {
 //                                                                            //
 
 func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceByID) (*storage.SimpleAccessScope, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	scope, found, err := s.roleDataStore.GetAccessScope(ctx, id.GetId())
 	if err != nil {
 		grpcCode := errorTypeToGrpcCode(err)
@@ -172,6 +177,10 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 }
 
 func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (*v1.ListSimpleAccessScopesResponse, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	scopes, err := s.roleDataStore.GetAllAccessScopes(ctx)
 	if err != nil {
 		grpcCode := errorTypeToGrpcCode(err)
@@ -182,6 +191,10 @@ func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (
 }
 
 func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	if scope.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "setting id field is not allowed")
 	}
@@ -200,6 +213,10 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 }
 
 func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*v1.Empty, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	err := s.roleDataStore.UpdateAccessScope(ctx, scope)
 	if err != nil {
 		grpcCode := errorTypeToGrpcCode(err)
@@ -210,6 +227,10 @@ func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.S
 }
 
 func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	err := s.roleDataStore.RemoveAccessScope(ctx, id.GetId())
 	if err != nil {
 		grpcCode := errorTypeToGrpcCode(err)
