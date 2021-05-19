@@ -76,7 +76,4 @@ func (s *ServiceTestSuite) TestAccessScopeAPIDisabledByDefault() {
 
 	_, err = s.svc.DeleteSimpleAccessScope(ctx, &v1.ResourceByID{Id: "someid"})
 	s.ErrorIs(err, status.Error(codes.Unimplemented, "feature not enabled"))
-
-	_, err = s.svc.ComputeEffectiveAccessScope(ctx, &v1.ComputeEffectiveAccessScopeRequest{})
-	s.ErrorIs(err, status.Error(codes.Unimplemented, "feature not enabled"))
 }
