@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,8 +30,6 @@ type ServiceTestSuite struct {
 	mockCtrl *gomock.Controller
 
 	mockRoles      *roleMocks.MockDataStore
-	mockClusters   *clusterMocks.MockDataStore
-	mockNamespaces *namespaceMocks.MockDataStore
 
 	svc Service
 }
@@ -45,10 +41,8 @@ func (s *ServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.mockRoles = roleMocks.NewMockDataStore(s.mockCtrl)
-	s.mockClusters = clusterMocks.NewMockDataStore(s.mockCtrl)
-	s.mockNamespaces = namespaceMocks.NewMockDataStore(s.mockCtrl)
 
-	s.svc = New(s.mockRoles, s.mockClusters, s.mockNamespaces)
+	s.svc = New(s.mockRoles)
 }
 
 func (s *ServiceTestSuite) TearDownTest() {
