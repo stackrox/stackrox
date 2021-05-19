@@ -34,4 +34,9 @@ export const imageScanMessages = {
         body: 'The source no longer provides data updates.',
         extra: '',
     },
+    certifiedRHELUnavailable: {
+        header: 'Image out of scope for Red Hat Vulnerability Scanner Certification.',
+        body:
+            'The scan results are not certified, as the base RHEL image is out of scope for certification. Please consider updating the base image.',
+    },
 };

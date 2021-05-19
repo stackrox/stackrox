@@ -64,4 +64,13 @@ describe('getImageScanMessages', () => {
 
         expect(messageObj).toEqual(imageScanMessages.osCvesStale);
     });
+
+    it('should return an object for certifiedRHELUnavailable when scan notes contain PARTIAL_SCAN_DATA and CERTIFIED_RHEL_SCAN_UNAVAILABLE', () => {
+        const imagesNotes = [];
+        const scanNotes = ['PARTIAL_SCAN_DATA', 'CERTIFIED_RHEL_SCAN_UNAVAILABLE'];
+
+        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+
+        expect(messageObj).toEqual(imageScanMessages.certifiedRHELUnavailable);
+    });
 });
