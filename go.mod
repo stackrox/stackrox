@@ -119,17 +119,17 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
-	helm.sh/helm/v3 v3.5.0
+	helm.sh/helm/v3 v3.5.4
 	honnef.co/go/tools v0.0.1-2020.1.6
-	k8s.io/api v0.20.2
-	k8s.io/apiextensions-apiserver v0.20.2
-	k8s.io/apimachinery v0.20.2
-	k8s.io/apiserver v0.20.2
-	k8s.io/cli-runtime v0.20.2
+	k8s.io/api v0.20.4
+	k8s.io/apiextensions-apiserver v0.20.4
+	k8s.io/apimachinery v0.20.4
+	k8s.io/apiserver v0.20.4
+	k8s.io/cli-runtime v0.20.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
-	k8s.io/kubectl v0.20.2
-	k8s.io/kubelet v0.20.2
+	k8s.io/kubectl v0.20.4
+	k8s.io/kubelet v0.20.4
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 	sigs.k8s.io/controller-runtime v0.8.3
 	sigs.k8s.io/yaml v1.2.0
@@ -142,8 +142,11 @@ replace (
 	github.com/couchbase/vellum => github.com/couchbase/vellum v0.0.0-20190829182332-ef2e028c01fd
 	github.com/dgraph-io/badger => github.com/stackrox/badger v1.6.1-0.20200807170638-4177b4beb2ed
 
+	// github.com/deislabs/oras doesn't specify a real version here but uses a replace, which is replicated by
+	// helm, which we now have to replicate, too...
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
+
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
@@ -161,9 +164,9 @@ replace (
 	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20200208204620-d153c71f6b8d
 
 	honnef.co/go/tools => honnef.co/go/tools v0.0.1-2020.1.5
-	k8s.io/api => k8s.io/api v0.20.2
+	k8s.io/api => k8s.io/api v0.20.4
 
 	// Circular github.com/stackrox/rox sets this to an incompatible version
-	k8s.io/client-go => k8s.io/client-go v0.20.2
+	k8s.io/client-go => k8s.io/client-go v0.20.4
 	vbom.ml/util => github.com/fvbommel/util v0.0.0-20200828041400-c69461e88a36
 )

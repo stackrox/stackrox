@@ -31,9 +31,6 @@ func Render(c *chart.Chart, values chartutil.Values, opts Options) (map[string]s
 		return nil, err
 	}
 
-	// Set up engine.
-	renderer := &engine.Engine{}
-
 	caps := &chartutil.Capabilities{
 		APIVersions: chartutil.DefaultVersionSet,
 		KubeVersion: chartutil.DefaultCapabilities.KubeVersion,
@@ -58,5 +55,5 @@ func Render(c *chart.Chart, values chartutil.Values, opts Options) (map[string]s
 		return nil, err
 	}
 
-	return renderer.Render(c, vals)
+	return engine.Render(c, vals)
 }

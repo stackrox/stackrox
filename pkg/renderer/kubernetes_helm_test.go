@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -91,6 +92,10 @@ func TestRenderSensorHelm(t *testing.T) {
 
 				"EnvVars":      envVars,
 				"FeatureFlags": make(map[string]string),
+
+				"Versions": version.Versions{
+					ChartVersion: "1.0.0",
+				},
 
 				"RenderAsLegacyChart": true,
 			}
