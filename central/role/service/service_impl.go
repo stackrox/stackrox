@@ -85,9 +85,6 @@ func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesRe
 	if err != nil {
 		return nil, err
 	}
-	for _, role := range roles {
-		utils.FillAccessList(role)
-	}
 	return &v1.GetRolesResponse{Roles: roles}, nil
 }
 
@@ -99,7 +96,6 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storag
 	if role == nil {
 		return nil, status.Errorf(codes.NotFound, "Role %s not found", id.GetId())
 	}
-	utils.FillAccessList(role)
 	return role, nil
 }
 
@@ -165,7 +161,6 @@ func GetMyPermissions(ctx context.Context) (*storage.Role, error) {
 	}
 	role := id.Permissions().Clone()
 	role.Name = "" // Clear name since this concept can't be applied to a user (Permission may result from many roles).
-	utils.FillAccessList(role)
 	return role, nil
 }
 

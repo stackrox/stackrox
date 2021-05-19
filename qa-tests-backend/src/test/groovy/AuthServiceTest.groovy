@@ -31,14 +31,12 @@ class AuthServiceTest extends BaseSpecification {
         }
 
         status.userInfo.withDo {
-            assert permissions.globalAccess == RoleOuterClass.Access.READ_WRITE_ACCESS
             assert permissions.resourceToAccessCount > 0
             permissions.resourceToAccessMap.each {
                 assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
             }
             def adminRole = rolesList.find { it.name == "Admin" }
             assert adminRole
-            assert adminRole.globalAccess == RoleOuterClass.Access.READ_WRITE_ACCESS
             assert adminRole.resourceToAccessCount > 0
             adminRole.resourceToAccessMap.each {
                 assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
@@ -63,7 +61,6 @@ class AuthServiceTest extends BaseSpecification {
         assert !status.authProvider.id
 
         status.userInfo.withDo {
-            assert permissions.globalAccess == RoleOuterClass.Access.NO_ACCESS
             assert permissions.resourceToAccessCount > 0
             permissions.resourceToAccessMap.each {
                 assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
@@ -71,7 +68,6 @@ class AuthServiceTest extends BaseSpecification {
 
             def tokenRole = rolesList.find { it.name.startsWith("Test Automation Role - ") }
             assert tokenRole
-            assert tokenRole.globalAccess == RoleOuterClass.Access.NO_ACCESS
             assert tokenRole.resourceToAccessCount > 0
             tokenRole.resourceToAccessMap.each {
                 assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS

@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/service"
-	roleUtils "github.com/stackrox/rox/central/role/utils"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -35,9 +34,6 @@ func (resolver *Resolver) Roles(ctx context.Context) ([]*roleResolver, error) {
 	if err != nil {
 		return nil, status.Error(codes.Internal, "unable to retrieve roles")
 	}
-	for _, role := range roles {
-		roleUtils.FillAccessList(role)
-	}
 	return resolver.wrapRoles(roles, nil)
 }
 
@@ -50,7 +46,6 @@ func (resolver *Resolver) Role(ctx context.Context, args struct{ *graphql.ID }) 
 	}
 
 	role, err := resolver.RoleDataStore.GetRole(ctx, string(*args.ID))
-	roleUtils.FillAccessList(role)
 	return resolver.wrapRole(role, role != nil, err)
 }
 

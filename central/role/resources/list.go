@@ -106,7 +106,7 @@ func AllResourcesViewPermissions() []permissions.ResourceWithAccess {
 	return result
 }
 
-// AllResourcesModifyPermissions returns a slice containing view permissions for all resource types.
+// AllResourcesModifyPermissions returns a slice containing write permissions for all resource types.
 func AllResourcesModifyPermissions() []permissions.ResourceWithAccess {
 	metadatas := ListAllMetadata()
 	result := make([]permissions.ResourceWithAccess, len(metadatas))

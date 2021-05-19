@@ -26,6 +26,7 @@ message Role {
     // Minimum (not default!) access level for every resource. Can be extended
     // below by explicit permissions but not shrunk.
     // Deprecated 2021-04-20 in favor of `permission_set_id`.
+    // This field now should be always NO_ACCESS
     Access global_access = 2 [deprecated = true];
 
     // Deprecated 2021-04-20 in favor of `permission_set_id`.

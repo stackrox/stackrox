@@ -5,6 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+* `globalAccess` field in roles is no longer supported
 
 ## [60.0]
 

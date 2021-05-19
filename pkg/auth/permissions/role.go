@@ -8,15 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// NewRoleWithGlobalAccess returns a new role with the given name,
-// which has access to all resources.
-func NewRoleWithGlobalAccess(name string, globalAccessLevel storage.Access) *storage.Role {
-	return &storage.Role{
-		Name:         name,
-		GlobalAccess: globalAccessLevel,
-	}
-}
-
 // NewRoleWithAccess returns a new role with the given resource accesses.
 func NewRoleWithAccess(name string, resourceWithAccess ...ResourceWithAccess) *storage.Role {
 	var permissions []*v1.Permission
@@ -59,16 +50,8 @@ func NewUnionRole(roles []*storage.Role) *storage.Role {
 
 	// Combine permissions into a map by resource, using the maximum access level for any
 	// resource with more than one permission set.
-	globalAccess := storage.Access_NO_ACCESS
 	resourceToAccess := make(map[string]storage.Access)
 	for _, role := range roles {
-		if role.GetGlobalAccess() == storage.Access_READ_WRITE_ACCESS {
-			return role
-		}
-
-		if role.GetGlobalAccess() > globalAccess {
-			globalAccess = role.GetGlobalAccess()
-		}
 		for resource, access := range role.GetResourceToAccess() {
 			if acc, exists := resourceToAccess[resource]; exists {
 				resourceToAccess[resource] = maxAccess(acc, access)
@@ -82,16 +65,12 @@ func NewUnionRole(roles []*storage.Role) *storage.Role {
 	}
 
 	return &storage.Role{
-		GlobalAccess:     globalAccess,
 		ResourceToAccess: resourceToAccess,
 	}
 }
 
 // RoleHasPermission is a helper function that returns if the given roles provides the given permission.
 func RoleHasPermission(role *storage.Role, perm ResourceWithAccess) bool {
-	if role.GetGlobalAccess() >= perm.Access {
-		return true
-	}
 	return role.GetResourceToAccess()[string(perm.Resource.GetResource())] >= perm.Access
 }
 

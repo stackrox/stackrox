@@ -63,7 +63,7 @@ func whoami(timeout time.Duration) error {
 
 	// Print resource access information
 	fmt.Println("Access:")
-	fmt.Printf("  %s Global\n", accessString(role.GetGlobalAccess()))
+	fmt.Printf("  Role name: %s\n", role.GetName())
 	for _, resource := range resources {
 		access := resourceToAccess[resource]
 		fmt.Printf("  %s %s\n", accessString(access), resource)

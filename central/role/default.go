@@ -27,9 +27,9 @@ const (
 
 // DefaultRoles are the pre-defined roles available.
 var defaultRoles = []*storage.Role{
-	permissions.NewRoleWithPermissions(None),
-	permissions.NewRoleWithGlobalAccess(Admin, storage.Access_READ_WRITE_ACCESS),
-	permissions.NewRoleWithGlobalAccess(Analyst, storage.Access_READ_ACCESS),
+	permissions.NewRoleWithAccess(None),
+	permissions.NewRoleWithAccess(Admin, resources.AllResourcesModifyPermissions()...),
+	permissions.NewRoleWithAccess(Analyst, resources.AllResourcesViewPermissions()...),
 	permissions.NewRoleWithAccess(ContinuousIntegration,
 		permissions.View(resources.Detection),
 		permissions.Modify(resources.Image),

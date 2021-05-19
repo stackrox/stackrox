@@ -5,9 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/role/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -44,16 +42,6 @@ func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1
 	return authStatusForID(id)
 }
 
-func fillAccessLists(userInfo *storage.UserInfo) {
-	if userInfo == nil {
-		return
-	}
-	utils.FillAccessList(userInfo.Permissions)
-	for _, role := range userInfo.Roles {
-		utils.FillAccessList(role)
-	}
-}
-
 func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 	exp, err := types.TimestampProto(id.Expiry())
 	if err != nil {
@@ -65,7 +53,6 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 		UserInfo:       id.User().Clone(),
 		UserAttributes: user.ConvertAttributes(id.Attributes()),
 	}
-	fillAccessLists(result.UserInfo)
 
 	if provider := id.ExternalAuthProvider(); provider != nil {
 		// every Identity should now have an auth provider but API token Identities won't have a Backend

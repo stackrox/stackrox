@@ -3,6 +3,7 @@ package transitional
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -17,7 +18,8 @@ func scopeCheckerForIdentity(id authn.Identity) sac.ScopeCheckerCore {
 		return sac.AllowAllAccessScopeChecker()
 	}
 
-	if id.Permissions().GetGlobalAccess() == storage.Access_READ_WRITE_ACCESS {
+	minimumAccess := computeMinimumAccess(id.Permissions())
+	if minimumAccess == storage.Access_READ_WRITE_ACCESS {
 		return sac.AllowAllAccessScopeChecker()
 	}
 
@@ -36,7 +38,7 @@ func scopeCheckerForIdentity(id authn.Identity) sac.ScopeCheckerCore {
 	}
 
 	var readAccessSCC sac.ScopeCheckerCore
-	if id.Permissions().GetGlobalAccess() == storage.Access_READ_ACCESS {
+	if minimumAccess == storage.Access_READ_ACCESS {
 		readAccessSCC = sac.AllowAllAccessScopeChecker()
 	} else {
 		readAccessSCC = sac.AllowFixedScopes(sac.ResourceScopeKeys(readResources...))
@@ -53,4 +55,17 @@ func scopeCheckerForIdentity(id authn.Identity) sac.ScopeCheckerCore {
 func LegacyAccessScopesContextEnricher(ctx context.Context) (context.Context, error) {
 	scc := scopeCheckerForIdentity(authn.IdentityFromContext(ctx))
 	return sac.WithGlobalAccessScopeChecker(ctx, scc), nil
+}
+
+func computeMinimumAccess(r *storage.Role) storage.Access {
+	minimumAccess := storage.Access_READ_WRITE_ACCESS
+	for _, resource := range resources.ListAll() {
+		if r.ResourceToAccess[string(resource)] < minimumAccess {
+			minimumAccess = r.ResourceToAccess[string(resource)]
+			if minimumAccess == storage.Access_NO_ACCESS {
+				return minimumAccess
+			}
+		}
+	}
+	return minimumAccess
 }

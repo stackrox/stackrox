@@ -5,7 +5,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -16,22 +15,6 @@ const (
 	//     "io.stackrox.authz.accessscope.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
 	accessScopeIDPrefix = "io.stackrox.authz.accessscope."
 )
-
-// FillAccessList fills in the access list if the role uses the GlobalAccess field.
-func FillAccessList(role *storage.Role) {
-	if role.GetGlobalAccess() == storage.Access_NO_ACCESS {
-		return
-	}
-	// If the role has global access, fill in the full list of resources with the max of the role's current access and global access.
-	if role.GetResourceToAccess() == nil {
-		role.ResourceToAccess = make(map[string]storage.Access)
-	}
-	for _, resource := range resources.ListAll() {
-		if role.ResourceToAccess[string(resource)] < role.GetGlobalAccess() {
-			role.ResourceToAccess[string(resource)] = role.GetGlobalAccess()
-		}
-	}
-}
 
 // GenerateAccessScopeID returns a random valid access scope ID.
 func GenerateAccessScopeID() string {
