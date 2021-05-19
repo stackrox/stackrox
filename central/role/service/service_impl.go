@@ -15,6 +15,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -169,6 +170,10 @@ func GetMyPermissions(ctx context.Context) (*storage.Role, error) {
 //                                                                            //
 
 func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceByID) (*storage.SimpleAccessScope, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	scope, found, err := s.roleDataStore.GetAccessScope(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve access scope %q", id.GetId())
@@ -181,6 +186,10 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 }
 
 func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (*v1.ListSimpleAccessScopesResponse, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	scopes, err := s.roleDataStore.GetAllAccessScopes(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve access scopes")
@@ -190,6 +199,10 @@ func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (
 }
 
 func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	if scope.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "setting id field is not allowed")
 	}
@@ -207,6 +220,10 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 }
 
 func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*v1.Empty, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	err := s.roleDataStore.UpdateAccessScope(ctx, scope)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to update access scope %q", scope.GetId())
@@ -216,6 +233,10 @@ func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.S
 }
 
 func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	err := s.roleDataStore.RemoveAccessScope(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to delete access scope %q", id.GetId())
@@ -227,9 +248,12 @@ func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.Resour
 // TODO(ROX-7076): Instead of fetching all clusters and namespaces for each
 //   request, rely on optimizations made by built-in scoped authorizer.
 func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
 	// If we're here, service-level authz has already verified that the caller
 	// has at least READ permission on the Role resource.
-
 	err := utils.ValidateSimpleAccessScopeRules(req.GetAccessScope().GetSimpleRules())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to compute effective access scope")
