@@ -2728,10 +2728,16 @@ jobs:
       - run:
           name: Build Central Operator image
           command: make -C operator/central build docker-build
+      - run:
+          name: Check that Central Operator image is runnable
+          command: docker run --rm stackrox.io/central-operator:$(make --no-print-directory -C operator/central tag) --help
 
       - run:
           name: Build Secured Cluster Operator image
           command: make -C operator/securedcluster build docker-build
+      - run:
+          name: Check that Secured Cluster Operator image is runnable
+          command: docker run --rm stackrox.io/securedcluster-operator:$(make --no-print-directory -C operator/securedcluster tag) --help
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)

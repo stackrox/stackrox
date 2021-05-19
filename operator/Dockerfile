@@ -1,13 +1,14 @@
+# We have to emulate directory layout as in the repo so that imports in go files work fine.
+ARG roxpath=/workspace/src/github.com/stackrox/rox
+
 # Build the manager binary
 FROM openshift/origin-release:golang-1.16 as builder
+ARG roxpath
 
 # openshift/origin-release:golang-1.16 image comes with `-mod=vendor` in GOFLAGS that forces modules vendoring mechanism
 # during the build (see https://golang.org/ref/mod#vendoring). We're not using modules vendoring and so the build fails
 # when this flag is on. Here we clear it out.
 ENV GOFLAGS=""
-
-# We have to emulate directory layout as in the repo so that imports in go files work fine.
-ARG roxpath=/workspace/src/github.com/stackrox/rox
 
 # Defines which operator image we're building, should correspond to one of subdirectory names: central or securedcluster.
 ARG operator_name
@@ -53,14 +54,21 @@ COPY image/ image/
 COPY generated/ generated/
 
 # Build
-RUN CGO_ENABLED=0 go build -a -o manager operator/${operator_name}/main.go
+RUN CGO_ENABLED=0 go build -a -o ${operator_name}-operator operator/${operator_name}/main.go
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
 FROM registry.access.redhat.com/ubi8-minimal:8.3
+ARG roxpath
+ARG operator_name
 
 RUN microdnf update && microdnf clean all && rm -rf /var/cache/yum/*
 
-COPY --from=builder /workspace/src/github.com/stackrox/rox/manager /usr/local/bin/
+COPY --from=builder ${roxpath}/${operator_name}-operator /usr/local/bin/
 USER nobody:nobody
 
-ENTRYPOINT ["/usr/local/bin/manager"]
+# Dockerfile ARG is not usable in ENTRYPOINT, therefore we communicate operator's executable through env variable.
+# See https://stackoverflow.com/a/47643816
+ENV operator_executable=${operator_name}-operator
+# `, "--"` in the end is needed to tell bash give all command line arguments to our script, otherwise it will steal the
+# first argument and never give it to the script.
+ENTRYPOINT ["/usr/bin/bash", "-uc", "exec /usr/local/bin/${operator_executable} \"${@}\"", "--"]
