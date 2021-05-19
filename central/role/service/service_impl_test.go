@@ -29,7 +29,7 @@ type ServiceTestSuite struct {
 
 	mockCtrl *gomock.Controller
 
-	mockRoles      *roleMocks.MockDataStore
+	mockRoles *roleMocks.MockDataStore
 
 	svc Service
 }
