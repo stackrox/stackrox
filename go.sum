@@ -1017,8 +1017,6 @@ github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhB
 github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5 h1:lrdPtrORjGv1HbbEvKWDUAy97mPpFm4B8hp77tcCUJY=
 github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
 github.com/joefitzgerald/rainbow-reporter v0.1.0/go.mod h1:481CNgqmVHQZzdIbN52CupLJyoVwB10FQ/IQlF1pdL8=
-github.com/joelanford/helm-operator v0.0.7 h1:hw+FMfCBKf+/DmOc5TIHN73AMbc4hl1ro3rPjx7J9jw=
-github.com/joelanford/helm-operator v0.0.7/go.mod h1:zRc/24Iz4lXZybIM2qZbDEowLc79tLX3onG+aKhwbM8=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
@@ -1578,6 +1576,8 @@ github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a h
 github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a/go.mod h1:faUw9vx/mA7ql41Ftlst5MYar2DT3nnS6oK94lbaW0g=
 github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca h1:teIgFfrO9MJjja7m3vCWjXeFfYh90/yOLhRNW1BoIfM=
 github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca/go.mod h1:4DO5Bk5QEsgH2AyJowQ/hP+RzfAb9JanP6W3USogT9E=
+github.com/stackrox/helm-operator v0.0.7 h1:25QjPae+tRZPpWkjKAgcOA4ERnDUiclPwnyzOSXAf8g=
+github.com/stackrox/helm-operator v0.0.7/go.mod h1:zRc/24Iz4lXZybIM2qZbDEowLc79tLX3onG+aKhwbM8=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab h1:77xJmm1YkqbgrQzHI3C4MyPckWL+PYRLWakQRC6Mzj8=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab/go.mod h1:EBskgGC5Gzt/r8ToNsuD6tYMcf+AWY0ubaFSRy5/3QM=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9 h1:IXESjfBZNfZjU+VuVdxLZvkeiMPlodw94++hjOLORis=
