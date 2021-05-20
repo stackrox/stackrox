@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
+	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/helmtpl"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
@@ -200,6 +201,20 @@ func (i *Image) GetFiles(prefix string) ([]*loader.BufferedFile, error) {
 	}
 
 	return files, nil
+}
+
+// LoadChart loads the given Helm chart template and renders it as a Helm chart
+func (i *Image) LoadChart(chartPrefix string, metaValues charts.MetaValues) (*chart.Chart, error) {
+	renderedChartFiles, err := i.LoadAndInstantiateChartTemplate(chartPrefix, metaValues)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading and instantiating embedded chart %q failed", chartPrefix)
+	}
+
+	c, err := loader.LoadFiles(renderedChartFiles)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading %q helm chart files failed", chartPrefix)
+	}
+	return c, nil
 }
 
 // GetSensorChartTemplate loads the Sensor helmtpl meta-template

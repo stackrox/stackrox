@@ -6,10 +6,17 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
+
+func init() {
+	testutils.SetMainVersion(&testing.T{}, "3.0.55.0")
+	testbuildinfo.SetForTest(&testing.T{})
+}
 
 func TestManager(t *testing.T) {
 	suite.Run(t, new(embedTestSuite))
@@ -49,4 +56,14 @@ func (s *embedTestSuite) TestChartTemplatesAvailable() {
 	s.Require().NoError(err, "failed to load central services chart")
 	_, err = s.image.GetSecuredClusterServicesChartTemplate()
 	s.Require().NoError(err, "failed to load secured cluster services chart")
+}
+
+func (s *embedTestSuite) TestLoadChart() {
+	chart, err := s.image.LoadChart(CentralServicesChartPrefix, charts.RHACSMetaValues())
+	s.Require().NoError(err)
+	s.Equal("stackrox-central-services", chart.Name())
+
+	chart, err = s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.RHACSMetaValues())
+	s.Require().NoError(err)
+	s.Equal("stackrox-secured-cluster-services", chart.Name())
 }
