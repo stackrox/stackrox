@@ -52,9 +52,30 @@ function hotload_binary {
   kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
 }
 
+function verify_orch {
+    if [ "$ORCH" == "openshift" ]; then
+        if kubectl api-versions | grep -q openshift.io; then
+            return
+        fi
+        echo "Cannot find openshift orchestrator. Please check your kubeconfig for: $(kubectl config current-context)"
+        exit 1
+    fi
+    if [ "$ORCH" == "k8s" ]; then
+        if kubectl api-versions | grep -q openshift.io; then
+            echo "Are you running an OpenShift orchestrator? Please use deploy/openshift/deploy*.sh to deploy."
+            exit 1
+        fi
+        return
+    fi
+    echo "Unexpected orchestrator: $ORCH"
+    exit 1
+}
+
 function launch_central {
     local k8s_dir="$1"
     local common_dir="${k8s_dir}/../common"
+
+    verify_orch
 
     echo "Generating central config..."
 
@@ -329,6 +350,8 @@ function launch_sensor {
     local extra_config=()
     local extra_json_config=''
     local extra_helm_config=()
+
+    verify_orch
 
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then
       extra_config+=("--admission-controller-listen-on-creates=true")
