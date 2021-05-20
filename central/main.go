@@ -571,7 +571,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/vm/export/csv",
-			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
+			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment), permissions.View(resources.Node)),
 			ServerHandler: csv.CVECSVHandler(),
 			Compression:   true,
 		},

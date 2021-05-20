@@ -12,17 +12,17 @@ import (
 )
 
 // ParseURLQuery parses the URL raw query values into a v1.Query object
-func ParseURLQuery(values url.Values) (*v1.Query, error) {
+func ParseURLQuery(values url.Values) (*v1.Query, *v1.RawQuery, error) {
 	var rawQuery v1.RawQuery
 	if err := runtime.PopulateQueryParameters(&rawQuery, values, &utilities.DoubleArray{}); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	query, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	paginated.FillPagination(query, rawQuery.Pagination, math.MaxInt32)
-	return query, nil
+	paginated.FillPagination(query, rawQuery.GetPagination(), math.MaxInt32)
+	return query, &rawQuery, nil
 }

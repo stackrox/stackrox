@@ -37,6 +37,7 @@ type CVEScopingTestSuite struct {
 	componentDataStore  *componentMocks.MockDataStore
 	cveDataStore        *cveMocks.MockDataStore
 	resolver            *resolvers.Resolver
+	handler             *handlerImpl
 }
 
 func (suite *CVEScopingTestSuite) SetupTest() {
@@ -59,6 +60,8 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 		CVEDataStore:            suite.cveDataStore,
 	}
 
+	suite.handler = newHandler(suite.resolver)
+
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 }
 
@@ -66,286 +69,77 @@ func (suite *CVEScopingTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-func (suite *CVEScopingTestSuite) TestGetVulnsWithScoping() {
-	deploymentID := "deployment1"
+func (suite *CVEScopingTestSuite) TestSingleResourceQuery() {
+	imgSha := "img1"
 
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
-			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.DeploymentID.String(), Value: deploymentID},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Fixable.String(), Value: "true"},
-						},
-					},
-				}},
-			},
-		}},
-	}
+	query := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddStrings(search.ImageSHA, imgSha).ProtoQuery(),
+		search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 
-	expectedVulns := []search.Result{
-		{
-			ID: "cve1",
-		},
-		{
-			ID: "cve2",
-		},
-	}
+	suite.imageDataStore.EXPECT().
+		Search(suite.ctx, search.NewQueryBuilder().AddStrings(search.ImageSHA, imgSha).ProtoQuery()).
+		Return([]search.Result{{ID: imgSha}}, nil)
 
-	suite.deploymentDataStore.EXPECT().Search(suite.ctx, query).Return([]search.Result{{ID: deploymentID}}, nil)
-
-	scopedCtx := scoped.Context(suite.ctx, scoped.Scope{
-		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    deploymentID,
-	})
-	suite.cveDataStore.EXPECT().Search(scopedCtx, query).Return(expectedVulns, nil)
-
-	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
-	suite.NoError(err)
-
-	for i, vuln := range actual {
-		suite.Equal(expectedVulns[i].ID, vuln.ID)
-	}
-}
-
-func (suite *CVEScopingTestSuite) TestGetNodeVulnsWithScoping() {
-	nodeID := "node1"
-
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
-			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.NodeID.String(), Value: nodeID},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Fixable.String(), Value: "true"},
-						},
-					},
-				}},
-			},
-		}},
-	}
-
-	expectedVulns := []search.Result{
-		{
-			ID: "cve1",
-		},
-		{
-			ID: "cve2",
-		},
-	}
-
-	suite.nodeDataStore.EXPECT().Search(suite.ctx, query).Return([]search.Result{{ID: nodeID}}, nil)
-
-	scopedCtx := scoped.Context(suite.ctx, scoped.Scope{
-		Level: v1.SearchCategory_NODES,
-		ID:    nodeID,
-	})
-	suite.cveDataStore.EXPECT().Search(scopedCtx, query).Return(expectedVulns, nil)
-
-	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
-	suite.NoError(err)
-
-	for i, vuln := range actual {
-		suite.Equal(expectedVulns[i].ID, vuln.ID)
-	}
-}
-
-func (suite *CVEScopingTestSuite) TestGetVulnsWithoutScoping() {
-	imageID := "image1"
-
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
-			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.DeploymentName.String(), Value: "any"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.ImageSHA.String(), Value: imageID},
-						},
-					},
-				}},
-			},
-		}},
-	}
-
-	expectedVulns := []search.Result{
-		{
-			ID: "cve1",
-		},
-		{
-			ID: "cve2",
-		},
-	}
-
-	suite.cveDataStore.EXPECT().Search(suite.ctx, query).Return(expectedVulns, nil)
-
-	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
-	suite.NoError(err)
-
-	for i, vuln := range actual {
-		suite.Equal(expectedVulns[i].ID, vuln.ID)
-	}
-}
-
-func (suite *CVEScopingTestSuite) TestGetNodeVulnsWithoutScoping() {
-	nodeID := "node1"
-
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
-			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Cluster.String(), Value: "any"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.NodeID.String(), Value: nodeID},
-						},
-					},
-				}},
-			},
-		}},
-	}
-
-	expectedVulns := []search.Result{
-		{
-			ID: "cve1",
-		},
-		{
-			ID: "cve2",
-		},
-	}
-
-	suite.cveDataStore.EXPECT().Search(suite.ctx, query).Return(expectedVulns, nil)
-
-	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
-	suite.NoError(err)
-
-	for i, vuln := range actual {
-		suite.Equal(expectedVulns[i].ID, vuln.ID)
-	}
-}
-
-func (suite *CVEScopingTestSuite) TestGetVulnsWithScopingOrder() {
-	deploymentID := "deployment1"
-	imageID := "image1"
-
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
-			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.DeploymentID.String(), Value: deploymentID},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.ImageSHA.String(), Value: imageID},
-						},
-					},
-				}},
-			},
-		}},
-	}
-
-	expectedVulns := []search.Result{
-		{
-			ID: "cve1",
-		},
-		{
-			ID: "cve2",
-		},
-	}
-
-	suite.imageDataStore.EXPECT().Search(suite.ctx, query).Return([]search.Result{{ID: imageID}}, nil)
-
-	scopedCtx := scoped.Context(suite.ctx, scoped.Scope{
+	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
-		ID:    imageID,
+		ID:    imgSha,
 	})
-	suite.cveDataStore.EXPECT().Search(scopedCtx, query).Return(expectedVulns, nil)
-
-	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
+	actual, err := suite.handler.getScopeContext(suite.ctx, query)
 	suite.NoError(err)
-
-	for i, vuln := range actual {
-		suite.Equal(expectedVulns[i].ID, vuln.ID)
-	}
+	suite.Equal(expected, actual)
 }
 
-func (suite *CVEScopingTestSuite) TestGetNodeVulnsWithScopingOrder() {
-	clusterID := "cluster1"
-	nodeID := "node1"
+func (suite *CVEScopingTestSuite) TestMultipleResourceQuery() {
+	imgSha := "img1"
 
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
-			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.ClusterID.String(), Value: clusterID},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.NodeID.String(), Value: nodeID},
-						},
-					},
-				}},
-			},
-		}},
-	}
+	query := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddStrings(search.DeploymentName, "dep").ProtoQuery(),
+		search.NewQueryBuilder().AddStrings(search.ImageSHA, imgSha).ProtoQuery(),
+		search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 
-	expectedVulns := []search.Result{
-		{
-			ID: "cve1",
-		},
-		{
-			ID: "cve2",
-		},
-	}
+	suite.imageDataStore.EXPECT().
+		Search(suite.ctx, search.NewQueryBuilder().AddStrings(search.ImageSHA, imgSha).ProtoQuery()).
+		Return([]search.Result{{ID: imgSha}}, nil)
 
-	suite.nodeDataStore.EXPECT().Search(suite.ctx, query).Return([]search.Result{{ID: nodeID}}, nil)
-
-	scopedCtx := scoped.Context(suite.ctx, scoped.Scope{
-		Level: v1.SearchCategory_NODES,
-		ID:    nodeID,
+	expected := scoped.Context(suite.ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGES,
+		ID:    imgSha,
 	})
-	suite.cveDataStore.EXPECT().Search(scopedCtx, query).Return(expectedVulns, nil)
-
-	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
+	// Lowest resource scope should be applied.
+	actual, err := suite.handler.getScopeContext(suite.ctx, query)
 	suite.NoError(err)
+	suite.Equal(expected, actual)
+}
 
-	for i, vuln := range actual {
-		suite.Equal(expectedVulns[i].ID, vuln.ID)
-	}
+func (suite *CVEScopingTestSuite) TestMultipleMatchesQuery() {
+	img := "img"
+
+	query := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddStrings(search.ImageName, img).ProtoQuery(),
+		search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
+
+	suite.imageDataStore.EXPECT().
+		Search(suite.ctx, search.NewQueryBuilder().AddStrings(search.ImageName, img).ProtoQuery()).
+		Return([]search.Result{{ID: "img1"}, {ID: "img2"}}, nil)
+
+	// No scope should be applied.
+	actual, err := suite.handler.getScopeContext(suite.ctx, query)
+	suite.NoError(err)
+	suite.Equal(suite.ctx, actual)
+}
+
+func (suite *CVEScopingTestSuite) TestNoReScope() {
+	img := "img"
+
+	query := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddStrings(search.ImageName, img).ProtoQuery(),
+		search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
+
+	expected := scoped.Context(suite.ctx, scoped.Scope{
+		Level: v1.SearchCategory_DEPLOYMENTS,
+		ID:    "dep",
+	})
+	actual, err := suite.handler.getScopeContext(expected, query)
+	suite.NoError(err)
+	suite.Equal(expected, actual)
 }

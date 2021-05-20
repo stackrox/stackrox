@@ -9,9 +9,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -334,4 +336,23 @@ func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args
 	}
 
 	return res[0].ID, nil
+}
+
+// V1RawQueryAsResolverQuery parse v1.RawQuery into inputtypes.RawQuery and inputtypes.Pagination queries used by graphQL resolvers.
+func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
+	if rQ.GetPagination() == nil {
+		return RawQuery{pointers.String(rQ.GetQuery()), nil}, PaginatedQuery{Query: pointers.String(rQ.GetQuery())}
+	}
+
+	return RawQuery{pointers.String(rQ.GetQuery()), nil}, PaginatedQuery{
+		Query: pointers.String(rQ.GetQuery()),
+		Pagination: &inputtypes.Pagination{
+			Limit:  pointers.Int32(rQ.GetPagination().GetLimit()),
+			Offset: pointers.Int32(rQ.GetPagination().GetOffset()),
+			SortOption: &inputtypes.SortOption{
+				Field:    pointers.String(rQ.GetPagination().GetSortOption().GetField()),
+				Reversed: pointers.Bool(rQ.GetPagination().GetSortOption().GetReversed()),
+			},
+		},
+	}
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
-	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -26,7 +25,7 @@ import (
 	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/parser"
 	"github.com/stackrox/rox/pkg/search/scoped"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -60,28 +59,38 @@ var (
 		),
 	)
 
-	// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
-	scopeLevels = []scopeLevel{
-		{v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap},
-		{v1.SearchCategory_IMAGES, imageOnlyOptionsMap},
-		{v1.SearchCategory_DEPLOYMENTS, deploymentOnlyOptionsMap},
-		{v1.SearchCategory_NAMESPACES, nsOnlyOptionsMap},
-		{v1.SearchCategory_NODES, nodeOnlyOptionsMap},
-		{v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap},
-	}
-
-	// idFields holds id search field label for various search category
-	idFields = set.NewStringSet(search.ClusterID.String(),
-		search.NamespaceID.String(),
-		search.DeploymentID.String(),
-		search.ImageSHA.String(),
-		search.NodeID.String(),
-		search.ComponentID.String())
+	once       sync.Once
+	csvHandler *handlerImpl
 )
 
-type scopeLevel struct {
+type handlerImpl struct {
+	resolver       *resolvers.Resolver
+	searchWrappers []*searchWrapper
+}
+
+func initialize() {
+	csvHandler = newHandler(resolvers.New())
+}
+
+func newHandler(resolver *resolvers.Resolver) *handlerImpl {
+	return &handlerImpl{
+		resolver: resolver,
+		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+		searchWrappers: []*searchWrapper{
+			{v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap, resolver.ImageComponentDataStore},
+			{v1.SearchCategory_IMAGES, imageOnlyOptionsMap, resolver.ImageDataStore},
+			{v1.SearchCategory_DEPLOYMENTS, deploymentOnlyOptionsMap, resolver.DeploymentDataStore},
+			{v1.SearchCategory_NAMESPACES, nsOnlyOptionsMap, resolver.NamespaceDataStore},
+			{v1.SearchCategory_NODES, nodeOnlyOptionsMap, resolver.NodeGlobalDataStore},
+			{v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap, resolver.ClusterDataStore},
+		},
+	}
+}
+
+type searchWrapper struct {
 	category   v1.SearchCategory
 	optionsMap search.OptionsMap
+	searcher   search.Searcher
 }
 
 type cveRow struct {
@@ -131,27 +140,31 @@ func (c *csvResults) addRow(row cveRow) {
 	c.AddValue(value)
 }
 
-// CVECSVHandler is an HTTP handler that outputs CSV exports of CVE data for Vuln Mgmt
+// CVECSVHandler is an HTTP handlerImpl that outputs CSV exports of CVE data for Vuln Mgmt
 func CVECSVHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := loaders.WithLoaderContext(r.Context())
+	once.Do(initialize)
 
-		query, err := parser.ParseURLQuery(r.URL.Query())
+	return func(w http.ResponseWriter, r *http.Request) {
+		query, rQuery, err := parser.ParseURLQuery(r.URL.Query())
 		if err != nil {
 			csv.WriteError(w, http.StatusBadRequest, err)
 			return
 		}
 
-		resolver := resolvers.New()
-		vulnResolvers, err := getVulns(ctx, resolver, query)
+		ctx, err := csvHandler.getScopeContext(loaders.WithLoaderContext(r.Context()), query)
+		if err != nil {
+			csv.WriteError(w, http.StatusInternalServerError, err)
+			log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
+			return
+		}
+
+		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
+		vulnResolvers, err := csvHandler.resolver.Vulnerabilities(ctx, paginatedQuery)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
 			log.Errorf("unable to get vulnerabilities for csv export: %v", err)
 			return
 		}
-
-		queryString := r.URL.Query().Get("query")
-		rawQuery := resolvers.RawQuery{Query: &queryString}
 
 		output := newCSVResults([]string{"CVE", "CVE Type(s)", "Fixable", "CVSS Score", "Env Impact (%)", "Impact Score", "Deployments", "Images", "Nodes", "Components", "Scanned", "Published", "Summary"})
 		for _, d := range vulnResolvers {
@@ -171,22 +184,26 @@ func CVECSVHandler() http.HandlerFunc {
 			}
 			dataRow.envImpact = fmt.Sprintf("%.2f", envImpact*100)
 			dataRow.impactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
-			deploymentCount, err := d.DeploymentCount(ctx, rawQuery)
+			// Entity counts should be scoped to CVE only
+			deploymentCount, err := d.DeploymentCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
 			dataRow.deploymentCount = fmt.Sprint(deploymentCount)
-			imageCount, err := d.ImageCount(ctx, rawQuery)
+			// Entity counts should be scoped to CVE only
+			imageCount, err := d.ImageCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
 			dataRow.imageCount = fmt.Sprint(imageCount)
-			nodeCount, err := d.NodeCount(ctx, rawQuery)
+			// Entity counts should be scoped to CVE only
+			nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
 			dataRow.nodeCount = fmt.Sprint(nodeCount)
-			componentCount, err := d.ComponentCount(ctx, rawQuery)
+			// Entity counts should be scoped to CVE only
+			componentCount, err := d.ComponentCount(ctx, resolvers.RawQuery{})
 			if err != nil {
 				errorList.AddError(err)
 			}
@@ -214,98 +231,30 @@ func CVECSVHandler() http.HandlerFunc {
 	}
 }
 
-func getVulns(ctx context.Context, resolver *resolvers.Resolver, q *v1.Query) ([]resolvers.VulnerabilityResolver, error) {
-	results, err := runAsScopedQuery(ctx, resolver, q)
-	if err != nil {
-		return nil, err
-	}
-	cveQuery := search.NewQueryBuilder().AddExactMatches(search.CVE, search.ResultsToIDs(results)...).Query()
-	return resolver.Vulnerabilities(ctx, resolvers.PaginatedQuery{Query: &cveQuery})
-}
-
-func runAsScopedQuery(ctx context.Context, resolver *resolvers.Resolver, query *v1.Query) ([]search.Result, error) {
-	// We handle scoping per entity only. For example, for query such as `Deployment:r/abc.*`, scoping is not performed.
-	// This is done to match csv results with cve list page.
-	scopedCtxs, err := getScopeContexts(ctx, resolver, query)
-	if err != nil {
-		return nil, err
+func (h *handlerImpl) getScopeContext(ctx context.Context, query *v1.Query) (context.Context, error) {
+	if _, ok := scoped.GetScope(ctx); ok {
+		return ctx, nil
 	}
 
-	// This is either incoming ctx or scoped context
-	ctx = scopedCtxs[0]
-	return resolver.CVEDataStore.Search(ctx, query)
-}
-
-func getScopeContexts(ctx context.Context, resolver *resolvers.Resolver, query *v1.Query) ([]context.Context, error) {
-	// query does not need scoping
-	if !isScopable(query) {
-		return []context.Context{ctx}, nil
-	}
-
-	for _, scopeLevel := range scopeLevels {
-		if !scopeByCategory(query, scopeLevel) {
+	for _, searchWrapper := range h.searchWrappers {
+		filteredQ, _ := search.FilterQueryWithMap(query.Clone(), searchWrapper.optionsMap)
+		if filteredQ == nil {
 			continue
 		}
 
-		scopeIDs, err := getScopeIDs(ctx, resolver, scopeLevel.category, query)
+		result, err := searchWrapper.searcher.Search(ctx, filteredQ)
 		if err != nil {
 			return nil, err
 		}
 
-		ret := make([]context.Context, 0, len(scopeIDs))
-		for _, id := range scopeIDs {
-			ret = append(ret, scoped.Context(ctx, scoped.Scope{Level: scopeLevel.category, ID: id}))
+		if len(result) == 0 {
+			continue
 		}
-		return ret, nil
-	}
-	return []context.Context{ctx}, nil
-}
 
-func scopeByCategory(query *v1.Query, scopeLevel scopeLevel) bool {
-	local := query.Clone()
-	notCVEQuery, _ := search.FilterQueryWithMap(local, scopeLevel.optionsMap)
-	return notCVEQuery != nil
-}
-
-func isScopable(query *v1.Query) bool {
-	local := query.Clone()
-	filtered, _ := search.InverseFilterQueryWithMap(local, search.CombineOptionsMaps(
-		cveMappings.OptionsMap, componentCVEEdgeMappings.OptionsMap, clusterCVEEdgeMappings.OptionsMap))
-	if filtered == nil {
-		return false
-	}
-
-	var containsNonIDFields bool
-	search.ApplyFnToAllBaseQueries(filtered, func(bq *v1.BaseQuery) {
-		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok {
-			if !idFields.Contains(matchFieldQuery.MatchFieldQuery.GetField()) {
-				containsNonIDFields = true
-			}
+		// Add searchWrapper only if we get exactly one match. Currently only scoping by one resource is supported in search.
+		if len(result) == 1 {
+			return scoped.Context(ctx, scoped.Scope{Level: searchWrapper.category, ID: result[0].ID}), nil
 		}
-	})
-	return !containsNonIDFields
-}
-
-func getScopeIDs(ctx context.Context, resolver *resolvers.Resolver, category v1.SearchCategory, query *v1.Query) ([]string, error) {
-	var err error
-	var results []search.Result
-	if category == v1.SearchCategory_IMAGE_COMPONENTS {
-		results, err = resolver.ImageComponentDataStore.Search(ctx, query)
-	} else if category == v1.SearchCategory_NODES {
-		results, err = resolver.NodeGlobalDataStore.Search(ctx, query)
-	} else if category == v1.SearchCategory_IMAGES {
-		results, err = resolver.ImageDataStore.Search(ctx, query)
-	} else if category == v1.SearchCategory_DEPLOYMENTS {
-		results, err = resolver.DeploymentDataStore.Search(ctx, query)
-	} else if category == v1.SearchCategory_NAMESPACES {
-		results, err = resolver.NamespaceDataStore.Search(ctx, query)
-	} else if category == v1.SearchCategory_CLUSTERS {
-		results, err = resolver.ClusterDataStore.Search(ctx, query)
 	}
-
-	if err != nil {
-		return nil, err
-	}
-	return search.ResultsToIDs(results), nil
+	return ctx, nil
 }
