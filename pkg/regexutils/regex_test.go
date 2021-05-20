@@ -11,6 +11,7 @@ import (
 func TestMatchWholeString(t *testing.T) {
 	cases := []struct {
 		regex    string
+		flags    Flags
 		value    string
 		expected bool
 	}{
@@ -32,6 +33,17 @@ func TestMatchWholeString(t *testing.T) {
 		{
 			regex:    "bcd",
 			value:    "bcd",
+			expected: true,
+		},
+		{
+			regex:    "bCD",
+			value:    "bcd",
+			expected: false,
+		},
+		{
+			regex:    "bCD",
+			value:    "bcd",
+			flags:    Flags{CaseInsensitive: true},
 			expected: true,
 		},
 		{
@@ -102,8 +114,8 @@ func TestMatchWholeString(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("%s - %s", c.regex, c.value), func(t *testing.T) {
-			m, err := CompileWholeStringMatcher(c.regex)
+		t.Run(fmt.Sprintf("%s - %s - %v", c.regex, c.value, c.flags), func(t *testing.T) {
+			m, err := CompileWholeStringMatcher(c.regex, c.flags)
 			require.NoError(t, err)
 			assert.Equal(t, c.expected, m.MatchWholeString(c.value))
 		})

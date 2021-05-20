@@ -206,7 +206,7 @@ func MapEnumValues(enumDesc *descriptor.EnumDescriptorProto) (nameToNumber map[s
 }
 
 func forStringRegexMatch(regex string, negated bool) (func(string) bool, error) {
-	matcher, err := regexutils.CompileWholeStringMatcher(regex)
+	matcher, err := regexutils.CompileWholeStringMatcher(regex, regexutils.Flags{CaseInsensitive: true})
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid regex: %q", regex)
 	}
@@ -218,9 +218,10 @@ func forStringRegexMatch(regex string, negated bool) (func(string) bool, error) 
 }
 
 func forStringExactMatch(value string, negated bool) (func(string) bool, error) {
+	lowerValue := strings.ToLower(value)
 	return func(instance string) bool {
 		// matched != negated is equivalent to (matched XOR negated), which is what we want here
-		return (value == instance) != negated
+		return (lowerValue == strings.ToLower(instance)) != negated
 	}, nil
 }
 

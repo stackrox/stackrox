@@ -16,7 +16,7 @@ type CompiledScope struct {
 
 // CompileScope takes in a scope and compiles it into regexes unless the regexes are invalid
 func CompileScope(scope *storage.Scope) (*CompiledScope, error) {
-	namespaceReg, err := regexutils.CompileWholeStringMatcher(scope.GetNamespace())
+	namespaceReg, err := regexutils.CompileWholeStringMatcher(scope.GetNamespace(), regexutils.Flags{CaseInsensitive: true})
 	if err != nil {
 		return nil, errors.Errorf("namespace regex %q could not be compiled", err)
 	}
@@ -27,11 +27,11 @@ func CompileScope(scope *storage.Scope) (*CompiledScope, error) {
 	}
 
 	if scope.GetLabel() != nil {
-		cs.LabelKey, err = regexutils.CompileWholeStringMatcher(scope.GetLabel().GetKey())
+		cs.LabelKey, err = regexutils.CompileWholeStringMatcher(scope.GetLabel().GetKey(), regexutils.Flags{CaseInsensitive: true})
 		if err != nil {
 			return nil, errors.Errorf("label key regex %q could not be compiled", err)
 		}
-		cs.LabelValue, err = regexutils.CompileWholeStringMatcher(scope.GetLabel().GetValue())
+		cs.LabelValue, err = regexutils.CompileWholeStringMatcher(scope.GetLabel().GetValue(), regexutils.Flags{CaseInsensitive: true})
 		if err != nil {
 			return nil, errors.Errorf("label value regex %q could not be compiled", err)
 		}

@@ -38,6 +38,7 @@ import (
 
 const (
 	writableHostMountPolicyName = "Writeable Host Mount"
+	anyHostPathPolicyName       = "Any Host Path"
 )
 
 func changeName(p *storage.Policy, newName string) *storage.Policy {
@@ -77,6 +78,7 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	suite.customPolicies = make(map[string]*storage.Policy)
 	for _, customPolicy := range []*storage.Policy{
 		changeName(policyWithSingleKeyValue(fieldnames.WritableHostMount, "true", false), writableHostMountPolicyName),
+		changeName(policyWithSingleKeyValue(fieldnames.VolumeType, "hostpath", false), anyHostPathPolicyName),
 	} {
 		suite.customPolicies[customPolicy.GetName()] = customPolicy
 	}
@@ -1343,6 +1345,18 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					{
 						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
+				},
+			},
+		},
+		{
+			policyName: anyHostPathPolicyName,
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				dockerSockDep.GetId(): {
+					{Message: "Read-only volume 'DOCKERSOCK' has source '/var/run/docker.sock' and type 'HostPath'"},
+				},
+				hostMountDep.GetId(): {
+					{Message: "Read-only volume 'KUBELET' has source '/var/lib/kubelet' and type 'HostPath'"},
+					{Message: "Writable volume 'HOSTMOUNT' has source '/etc/passwd' and type 'HostPath'"},
 				},
 			},
 		},

@@ -149,7 +149,7 @@ func regexpMatcherFromString(val string) (regexutils.WholeStringMatcher, error) 
 		return nil, nil
 	}
 
-	return regexutils.CompileWholeStringMatcher(val)
+	return regexutils.CompileWholeStringMatcher(val, regexutils.Flags{CaseInsensitive: true})
 }
 
 func convertConjunctionPairsToGroupConstraint(conjunctionPairsStr string) (*conjunctionGroupConstraint, error) {

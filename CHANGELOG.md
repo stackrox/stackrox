@@ -5,7 +5,9 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
-* `globalAccess` field in roles is no longer supported
+- `globalAccess` field in roles is no longer supported
+- Policy matching on all fields has been made case-insensitive. For example, if you set "Volume Type" to "hostpath",
+  that will match volumes that are "HostPath".
 
 ## [60.0]
 
