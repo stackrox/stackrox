@@ -14,13 +14,19 @@ type HealthStatusProps = {
     children: ReactNode;
     icon: ReactElement;
     iconColor: string;
+    isList?: boolean;
 };
 
-function HealthStatus({ children, icon, iconColor }: HealthStatusProps): ReactElement {
+function HealthStatus({
+    children,
+    icon,
+    iconColor,
+    isList = false,
+}: HealthStatusProps): ReactElement {
     return (
         // flex-row assumes a child element wraps multiple grandchildren
-        <div className="flex flex-row items-start leading-normal">
-            <span className={`flex-shrink-0 mr-2 ${iconColor}`}>{icon}</span>
+        <div className={`leading-normal ${isList ? 'inline' : 'flex flex-row items-start'}`}>
+            <span className={`align-middle flex-shrink-0 mr-2 ${iconColor}`}>{icon}</span>
             {children}
         </div>
     );

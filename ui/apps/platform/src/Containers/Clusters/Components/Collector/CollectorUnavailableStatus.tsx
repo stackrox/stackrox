@@ -24,8 +24,8 @@ function CollectorUnavailableStatus({
 
     return isList ? (
         <Tooltip content={<TooltipOverlay>{reasonUnavailable}</TooltipOverlay>}>
-            <div>
-                <HealthStatus icon={icon} iconColor={fgColor}>
+            <div className="inline">
+                <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
                     {statusElement}
                 </HealthStatus>
             </div>

@@ -26,7 +26,7 @@ function AdmissionControlUnavailableStatus({
 
     return isList ? (
         <Tooltip content={<TooltipOverlay>{reasonUnavailable}</TooltipOverlay>}>
-            <div>{healthStatusElement}</div>
+            <div className="inline">{healthStatusElement}</div>
         </Tooltip>
     ) : (
         <HealthStatus icon={icon} iconColor={fgColor}>

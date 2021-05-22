@@ -47,13 +47,17 @@ function HealthLabelWithDelayed({
     );
     if (isDelayed) {
         return (
-            <div data-testid={testId}>
+            <div data-testid={testId} className={`${isList ? 'inline' : ''}`}>
                 {healthLabelElement}
                 <span className="whitespace-nowrap">{` ${delayedText}`}</span>
             </div>
         );
     }
-    return <div data-testid={testId}>{healthLabelElement}</div>;
+    return (
+        <div data-testid={testId} className={`${isList ? 'inline' : ''}`}>
+            {healthLabelElement}
+        </div>
+    );
 }
 
 export default HealthLabelWithDelayed;

@@ -1,16 +1,16 @@
 import React from 'react';
 import { differenceInDays, distanceInWordsStrict } from 'date-fns';
 import get from 'lodash/get';
+import { DownloadCloud } from 'react-feather';
 import {
-    AlertCircle,
-    CheckCircle,
-    Circle,
-    DownloadCloud,
-    Info,
-    Loader,
-    MinusCircle,
-    XCircle,
-} from 'react-feather';
+    CheckCircleIcon,
+    TimesCircleIcon,
+    ExclamationCircleIcon,
+    MinusCircleIcon,
+    ResourcesEmptyIcon,
+    InfoCircleIcon,
+    InProgressIcon,
+} from '@patternfly/react-icons';
 
 import { getDate } from 'utils/dateUtils';
 
@@ -98,7 +98,7 @@ export const centralEnvDefault = {
 };
 
 const MinusCircleRotate45 = ({ className }) => (
-    <MinusCircle className={`${className} transform rotate-45`} />
+    <MinusCircleIcon className={`${className} transform rotate-45`} />
 );
 
 export const styleUninitialized = {
@@ -108,19 +108,19 @@ export const styleUninitialized = {
 };
 
 export const styleHealthy = {
-    Icon: CheckCircle,
+    Icon: CheckCircleIcon,
     bgColor: 'bg-success-200',
     fgColor: 'text-success-700',
 };
 
 export const styleDegraded = {
-    Icon: AlertCircle,
+    Icon: ExclamationCircleIcon,
     bgColor: 'bg-warning-200',
     fgColor: 'text-warning-700',
 };
 
 export const styleUnhealthy = {
-    Icon: XCircle,
+    Icon: TimesCircleIcon,
     bgColor: 'bg-alert-200',
     fgColor: 'text-alert-700',
 };
@@ -130,7 +130,7 @@ export const styleUnhealthy = {
 export const healthStatusStyles = {
     UNINITIALIZED: styleUninitialized,
     UNAVAILABLE: {
-        Icon: Circle,
+        Icon: ResourcesEmptyIcon,
         bgColor: 'bg-secondary-200',
         fgColor: 'text-secondary-700',
     },
@@ -141,14 +141,14 @@ export const healthStatusStyles = {
 
 // Special case for Collector when Sensor is UNHEALTHY or DELAYED.
 export const delayedCollectorStatusStyle = {
-    Icon: Info,
+    Icon: InfoCircleIcon,
     bgColor: 'bg-base-200',
     fgColor: 'text-base-700',
 };
 
 // Special case for Admission Control when Sensor is UNHEALTHY or DELAYED.
 export const delayedAdmissionControlStatusStyle = {
-    Icon: Info,
+    Icon: InfoCircleIcon,
     bgColor: 'bg-base-200',
     fgColor: 'text-base-700',
 };
@@ -156,7 +156,7 @@ export const delayedAdmissionControlStatusStyle = {
 export const sensorUpgradeStyles = {
     current: styleHealthy,
     progress: {
-        Icon: Loader,
+        Icon: InProgressIcon,
         bgColor: 'bg-tertiary-200',
         fgColor: 'text-tertiary-700',
     },

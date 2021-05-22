@@ -22,7 +22,7 @@ type SensorStatusProps = {
 
 function SensorStatus({ healthStatus, isList = false }: SensorStatusProps): ReactElement {
     if (!healthStatus?.sensorHealthStatus) {
-        return <HealthStatusNotApplicable testId="sensorStatus" />;
+        return <HealthStatusNotApplicable testId="sensorStatus" isList={isList} />;
     }
 
     const { sensorHealthStatus, lastContact } = healthStatus;
@@ -31,9 +31,9 @@ function SensorStatus({ healthStatus, isList = false }: SensorStatusProps): Reac
 
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
     const delayedText = `for ${getDistanceStrict(lastContact, currentDatetime)}`;
-    const icon = <Icon className="h-4 w-4" />;
+    const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
     const sensorStatus = (
-        <HealthStatus icon={icon} iconColor={fgColor}>
+        <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
             <HealthLabelWithDelayed
                 clusterHealthItem="sensor"
                 clusterHealthItemStatus={sensorHealthStatus}
@@ -52,7 +52,7 @@ function SensorStatus({ healthStatus, isList = false }: SensorStatusProps): Reac
                     <TooltipOverlay>{`Last contact: ${getDateTime(lastContact)}`}</TooltipOverlay>
                 }
             >
-                <div>{sensorStatus}</div>
+                <div className={`${isList ? 'inline' : ''}`}>{sensorStatus}</div>
             </Tooltip>
         );
     }

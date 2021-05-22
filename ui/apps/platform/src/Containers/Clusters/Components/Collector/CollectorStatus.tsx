@@ -28,7 +28,7 @@ type CollectorStatusProps = {
 
 function CollectorStatus({ healthStatus, isList = false }: CollectorStatusProps): ReactElement {
     if (!healthStatus?.collectorHealthStatus) {
-        return <HealthStatusNotApplicable testId="collectorStatus" />;
+        return <HealthStatusNotApplicable testId="collectorStatus" isList={isList} />;
     }
 
     const {
@@ -42,7 +42,7 @@ function CollectorStatus({ healthStatus, isList = false }: CollectorStatusProps)
     const { Icon, bgColor, fgColor } = isDelayed
         ? delayedCollectorStatusStyle
         : healthStatusStyles[collectorHealthStatus];
-    const icon = <Icon className="h-4 w-4" />;
+    const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
     const currentDatetime = new Date();
 
     // In rare case that the block does not fit in a narrow column,
@@ -87,8 +87,8 @@ function CollectorStatus({ healthStatus, isList = false }: CollectorStatusProps)
                     />
                 }
             >
-                <div>
-                    <HealthStatus icon={icon} iconColor={fgColor}>
+                <div className="inline">
+                    <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
                         {statusElement}
                     </HealthStatus>
                 </div>
@@ -116,7 +116,7 @@ function CollectorStatus({ healthStatus, isList = false }: CollectorStatusProps)
 
     // UNINITIALIZED
     return (
-        <HealthStatus icon={icon} iconColor={fgColor}>
+        <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
             {statusElement}
         </HealthStatus>
     );

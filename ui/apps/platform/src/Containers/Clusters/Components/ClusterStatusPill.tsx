@@ -11,14 +11,14 @@ type ClusterStatusPillProps = {
 
 function ClusterStatusPill({ healthStatus }: ClusterStatusPillProps): ReactElement {
     return (
-        <div className="border rounded-full flex mt-1">
-            <div className="pl-1 pr-2">
+        <div className="border inline rounded-full decoration-clone leading-looser text-sm py-1">
+            <div className="inline border-r pl-2 pr-3 w-full whitespace-nowrap">
                 <CollectorStatus healthStatus={healthStatus} isList />
             </div>
-            <div className="border-l pl-1 pr-2">
+            <div className="inline border-r pl-2 pr-3 w-full whitespace-nowrap">
                 <SensorStatus healthStatus={healthStatus} isList />
             </div>
-            <div className="border-l pl-1 pr-2">
+            <div className="inline pl-2 pr-3 w-full whitespace-nowrap">
                 <AdmissionControlStatus healthStatus={healthStatus} isList />
             </div>
         </div>

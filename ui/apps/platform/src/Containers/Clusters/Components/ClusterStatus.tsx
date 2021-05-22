@@ -20,16 +20,18 @@ type ClusterStatusProps = {
 function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): ReactElement {
     const { overallHealthStatus } = healthStatus;
     const { Icon, bgColor, fgColor } = healthStatusStyles[overallHealthStatus];
-    const icon = <Icon className="h-4 w-4" />;
+    const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
     return (
         <div>
-            <HealthStatus icon={icon} iconColor={fgColor}>
-                <div data-testid="clusterStatus">
-                    <span className={`${bgColor} ${fgColor}`}>
-                        {healthStatusLabels[overallHealthStatus]}
-                    </span>
-                </div>
-            </HealthStatus>
+            <div className={`${isList ? 'mb-1' : ''}`}>
+                <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
+                    <div data-testid="clusterStatus" className={`${isList ? 'inline' : ''}`}>
+                        <span className={`${bgColor} ${fgColor}`}>
+                            {healthStatusLabels[overallHealthStatus]}
+                        </span>
+                    </div>
+                </HealthStatus>
+            </div>
             {isList && <ClusterStatusPill healthStatus={healthStatus} />}
         </div>
     );

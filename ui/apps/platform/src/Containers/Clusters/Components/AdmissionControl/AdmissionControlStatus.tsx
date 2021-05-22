@@ -31,7 +31,7 @@ function AdmissionControlStatus({
     isList = false,
 }: AdmissionControlStatusProps): ReactElement {
     if (!healthStatus?.admissionControlHealthStatus) {
-        return <HealthStatusNotApplicable testId="admissionControlStatus" />;
+        return <HealthStatusNotApplicable testId="admissionControlStatus" isList={isList} />;
     }
 
     const {
@@ -45,7 +45,7 @@ function AdmissionControlStatus({
     const { Icon, bgColor, fgColor } = isDelayed
         ? delayedAdmissionControlStatusStyle
         : healthStatusStyles[admissionControlHealthStatus];
-    const icon = <Icon className="h-4 w-4" />;
+    const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
     const currentDatetime = new Date();
 
     const healthLabelElement = (
@@ -59,7 +59,7 @@ function AdmissionControlStatus({
     );
 
     const healthStatusElement = (
-        <HealthStatus icon={icon} iconColor={fgColor}>
+        <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
             {healthLabelElement}
         </HealthStatus>
     );
@@ -93,7 +93,7 @@ function AdmissionControlStatus({
                     />
                 }
             >
-                <div>{healthStatusElement}</div>
+                <div className="inline">{healthStatusElement}</div>
             </Tooltip>
         ) : (
             <HealthStatus icon={icon} iconColor={fgColor}>

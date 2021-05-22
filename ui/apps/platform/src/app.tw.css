@@ -1254,3 +1254,12 @@ s::before {
 s::after {
     content: ' [end of stricken text] ';
 }
+
+.decoration-clone {
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+
+.leading-looser {
+    line-height: 1.75rem;
+}
