@@ -12,7 +12,13 @@ message KubernetesEvent {
     enum APIVerb {
         UNKNOWN = 0;
         CREATE  = 1;
-        // Other valid actions are GET, UPDATE, PATCH, DELETE, PROXY, LIST, WATCH.
+        UPDATE  = 2;
+        PATCH   = 3;
+        DELETE  = 4;
+        LIST    = 5;
+        GET     = 6;
+        WATCH   = 7;
+        PROXY   = 8;
     }
 
     message Object {
@@ -21,6 +27,8 @@ message KubernetesEvent {
             UNKNOWN          = 0;
             PODS_EXEC        = 1;
             PODS_PORTFORWARD = 2;
+            SECRETS          = 3;
+            CONFIG_MAPS      = 4;
         }
 
         string   name       = 1;
@@ -33,10 +41,21 @@ message KubernetesEvent {
     Object                    object                = 2;
     google.protobuf.Timestamp timestamp             = 3;
     APIVerb                   api_verb              = 4 [(gogoproto.moretags) = "policy:\"Kubernetes API Verb\""];
+
+    // tags 5-14 reserved for ObjectArgs
+    // Next available tag: 7
     oneof ObjectArgs {
         PodExecArgs           pod_exec_args         = 5;
         PodPortForwardArgs    pod_port_forward_args = 6;
     }
+
+    // Extended arguments. May not be available for pod exec and port forward events.
+    // These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
+    User                      user                 = 15;
+    User                      impersonated_user    = 16; // this field is optional if the request wasn't an impersonated request
+    repeated string           source_ips           = 17;
+    string                    user_agent           = 18;
+    ResponseStatus            response_status      = 19;
 
     message PodExecArgs {
         string          container = 1;
@@ -45,5 +64,15 @@ message KubernetesEvent {
 
     message PodPortForwardArgs {
         repeated int32 ports = 1;
+    }
+
+    message ResponseStatus {
+        int32  status_code = 1;
+        string reason      = 2;
+    }
+
+    message User {
+        string          username = 1;
+        repeated string groups   = 2;
     }
 }

@@ -244,6 +244,13 @@ message ClusterCVEEdge {
     }
 }
 
+// AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
+// For internal use only
+message AuditLogFileState {
+    google.protobuf.Timestamp collect_logs_since = 1;
+    string                    last_audit_id      = 2; // Previously received audit id. May be empty
+}
+
 message ClusterHealthStatus {
     enum HealthStatusLabel {
         UNINITIALIZED = 0;
