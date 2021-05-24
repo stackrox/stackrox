@@ -23,9 +23,6 @@ import useMetadata from 'hooks/useMetadata';
 import parseURL from 'utils/URLParser';
 import CLIDownloadMenu from './CLIDownloadMenu';
 
-const topNavBtnClass =
-    'flex flex-end px-4 no-underline pt-3 pb-2 text-base-600 items-center cursor-pointer';
-
 function MastheadToolbar(): ReactElement {
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const metadata = useMetadata();
@@ -38,36 +35,34 @@ function MastheadToolbar(): ReactElement {
     function toggleHelpMenu() {
         setIsHelpOpen(!isHelpOpen);
     }
-    const appLauncherItems: ReactElement[] = [];
-    appLauncherItems.push(
-        <>
-            <ApplicationLauncherGroup key="app-launder-group-links">
-                <ApplicationLauncherItem
-                    key="app-launcher-item-api"
-                    component={
-                        <Link className="pf-c-app-launcher__menu-item" to="/main/apidocs">
-                            API Reference
-                        </Link>
-                    }
-                />
-                <ApplicationLauncherItem
-                    key="app-launcher-item-docs"
-                    href="/docs/product"
-                    isExternal
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Help Center
-                </ApplicationLauncherItem>
-                <ApplicationLauncherSeparator key="separator" />
-            </ApplicationLauncherGroup>
-            <ApplicationLauncherGroup key="app-launder-group-metadata">
-                <ApplicationLauncherItem key="app-launcher-item-version" isDisabled>
-                    <span>{metadata.versionString}</span>
-                </ApplicationLauncherItem>
-            </ApplicationLauncherGroup>
-        </>
-    );
+
+    const appLauncherItems = [
+        <ApplicationLauncherGroup key="app-launder-group-links">
+            <ApplicationLauncherItem
+                key="app-launcher-item-api"
+                component={
+                    <Link className="pf-c-app-launcher__menu-item" to="/main/apidocs">
+                        API Reference
+                    </Link>
+                }
+            />
+            <ApplicationLauncherItem
+                key="app-launcher-item-docs"
+                href="/docs/product"
+                isExternal
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Help Center
+            </ApplicationLauncherItem>
+            <ApplicationLauncherSeparator key="separator" />
+        </ApplicationLauncherGroup>,
+        <ApplicationLauncherGroup key="app-launder-group-metadata">
+            <ApplicationLauncherItem key="app-launcher-item-version" isDisabled>
+                <span>{metadata.versionString}</span>
+            </ApplicationLauncherItem>
+        </ApplicationLauncherGroup>,
+    ];
 
     return (
         <PageHeaderTools>
@@ -79,7 +74,7 @@ function MastheadToolbar(): ReactElement {
                     </PageHeaderToolsItem>
                 )}
                 <PageHeaderToolsItem>
-                    <GlobalSearchButton topNavBtnClass={topNavBtnClass} />
+                    <GlobalSearchButton />
                 </PageHeaderToolsItem>
                 <PageHeaderToolsItem>
                     <CLIDownloadMenu />
@@ -95,7 +90,6 @@ function MastheadToolbar(): ReactElement {
                         key="help-menu"
                         aria-label="Help Menu"
                         className="co-app-launcher"
-                        onSelect={() => {}}
                         onToggle={toggleHelpMenu}
                         isOpen={isHelpOpen}
                         items={appLauncherItems}

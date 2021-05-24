@@ -1,30 +1,31 @@
 import React, { ReactElement } from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
+import { Flex, FlexItem } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 
 type GlobalSearchButtonProps = {
     toggleGlobalSearchView: () => void;
-    topNavBtnClass: string;
 };
 
-const GlobalSearchButton = ({
-    toggleGlobalSearchView,
-    topNavBtnClass,
-}: GlobalSearchButtonProps): ReactElement => (
-    <Tooltip content={<TooltipOverlay>Search</TooltipOverlay>} className="sm:visible md:invisible">
-        <button
-            type="button"
-            onClick={toggleGlobalSearchView}
-            className={`${topNavBtnClass} ignore-react-onclickoutside`}
-        >
-            <SearchIcon alt="" />
-            <span className="ml-2">Search</span>
-        </button>
-    </Tooltip>
+/*
+ * Use HTML button with PatternFly Button class to inherit masthead color.
+ */
+const GlobalSearchButton = ({ toggleGlobalSearchView }: GlobalSearchButtonProps): ReactElement => (
+    <button
+        type="button"
+        onClick={toggleGlobalSearchView}
+        className="pf-c-button ignore-react-onclickoutside"
+    >
+        <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
+            <FlexItem>
+                <SearchIcon alt="" />
+            </FlexItem>
+            <FlexItem>Search</FlexItem>
+        </Flex>
+    </button>
 );
 
 const mapDispatchToProps = (dispatch) => ({

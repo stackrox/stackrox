@@ -1,9 +1,13 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { useState, ReactElement } from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { DownloadIcon } from '@patternfly/react-icons';
-import { ApplicationLauncher, ApplicationLauncherItem } from '@patternfly/react-core';
+import {
+    ApplicationLauncher,
+    ApplicationLauncherItem,
+    Flex,
+    FlexItem,
+} from '@patternfly/react-core';
 import Raven from 'raven-js';
 
 import { actions } from 'reducers/notifications';
@@ -31,50 +35,51 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
         };
     }
 
-    const appLauncherItems: ReactElement[] = [];
-    appLauncherItems.push(
-        <>
-            <ApplicationLauncherItem
-                key="app-launcher-item-cli-mac"
-                component="button"
-                onClick={handleDownloadCLI('darwin')}
-            >
-                Mac 64-bit
-            </ApplicationLauncherItem>
-            <ApplicationLauncherItem
-                key="app-launcher-item-cli-linux"
-                component="button"
-                onClick={handleDownloadCLI('linux')}
-            >
-                Linux 64-bit
-            </ApplicationLauncherItem>
-            <ApplicationLauncherItem
-                key="app-launcher-item-cli-windows"
-                component="button"
-                onClick={handleDownloadCLI('windows')}
-            >
-                Windows 64-bit
-            </ApplicationLauncherItem>
-        </>
-    );
+    const appLauncherItems = [
+        <ApplicationLauncherItem
+            key="app-launcher-item-cli-mac"
+            component="button"
+            onClick={handleDownloadCLI('darwin')}
+        >
+            Mac 64-bit
+        </ApplicationLauncherItem>,
+        <ApplicationLauncherItem
+            key="app-launcher-item-cli-linux"
+            component="button"
+            onClick={handleDownloadCLI('linux')}
+        >
+            Linux 64-bit
+        </ApplicationLauncherItem>,
+        <ApplicationLauncherItem
+            key="app-launcher-item-cli-windows"
+            component="button"
+            onClick={handleDownloadCLI('windows')}
+        >
+            Windows 64-bit
+        </ApplicationLauncherItem>,
+    ];
 
     function toggleCLIMenu() {
         setIsCLIMenuOpen(!isCLIMenuOpen);
     }
 
+    // The className prop overrides `font-weight: 600` for button in ui-components.css file.
     const CLIDownloadIcon = (
-        <div className="flex items-center pt-1">
-            <DownloadIcon alt="" />
-            <span className="pl-1">CLI</span>
-        </div>
+        <Flex
+            alignItems={{ default: 'alignItemsCenter' }}
+            spaceItems={{ default: 'spaceItemsSm' }}
+            className="pf-u-font-weight-normal"
+        >
+            <FlexItem>
+                <DownloadIcon alt="" />
+            </FlexItem>
+            <FlexItem>CLI</FlexItem>
+        </Flex>
     );
 
     return (
         <ApplicationLauncher
-            key="cli-download-menu"
             aria-label="CLI Download Menu"
-            className="co-app-launcher"
-            onSelect={() => {}}
             onToggle={toggleCLIMenu}
             isOpen={isCLIMenuOpen}
             items={appLauncherItems}
