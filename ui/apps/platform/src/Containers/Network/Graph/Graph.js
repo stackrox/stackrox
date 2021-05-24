@@ -52,7 +52,7 @@ class Graph extends Component {
         setSelectedNodeInGraph: PropTypes.func,
         lastUpdatedTimestamp: PropTypes.instanceOf(Date),
 
-        isReadOnly: PropTypes.bool,
+        isSimulationOn: PropTypes.bool,
         // @TODO: merge this with networkNodeMap and networkEdgeMap somehow
         // eslint-disable-next-line react/no-unused-prop-types
         simulatedBaselines: PropTypes.arrayOf(PropTypes.shape),
@@ -65,7 +65,7 @@ class Graph extends Component {
         setSelectedNodeInGraph: null,
         lastUpdatedTimestamp: null,
         selectedNamespace: null,
-        isReadOnly: false,
+        isSimulationOn: false,
         simulatedBaselines: [],
     };
 
@@ -77,7 +77,7 @@ class Graph extends Component {
             sidePanelOpen,
             networkEdgeMap,
             networkNodeMap,
-            isReadOnly,
+            isSimulationOn,
             showNamespaceFlows,
             simulatedBaselines,
         } = this.props;
@@ -88,7 +88,7 @@ class Graph extends Component {
             nextProps.filterState !== filterState ||
             nextProps.isLoading !== isLoading ||
             nextProps.sidePanelOpen !== sidePanelOpen ||
-            nextProps.isReadOnly !== isReadOnly ||
+            nextProps.isSimulationOn !== isSimulationOn ||
             nextProps.showNamespaceFlows !== showNamespaceFlows ||
             nextProps.simulatedBaselines !== simulatedBaselines
         );
@@ -133,7 +133,7 @@ class Graph extends Component {
             setSelectedNodeInGraph,
             lastUpdatedTimestamp,
             selectedNamespace,
-            isReadOnly,
+            isSimulationOn,
             simulatedBaselines,
         } = this.props;
 
@@ -171,23 +171,24 @@ class Graph extends Component {
                 lastUpdatedTimestamp={lastUpdatedTimestamp}
                 selectedNamespace={selectedNamespace}
                 selectedClusterId={selectedClusterId}
-                isReadOnly={isReadOnly}
+                isReadOnly={isSimulationOn}
                 simulatedBaselines={simulatedBaselines}
             />
         );
     };
 
     render() {
-        const { isReadOnly, showNamespaceFlows, setShowNamespaceFlows } = this.props;
+        const { isSimulationOn, showNamespaceFlows, setShowNamespaceFlows } = this.props;
 
         return (
             <div className="w-full h-full">
                 {this.renderGraph()}
-                <Filters
-                    offset={isReadOnly}
-                    showNamespaceFlows={showNamespaceFlows}
-                    setShowNamespaceFlows={setShowNamespaceFlows}
-                />
+                {!isSimulationOn && (
+                    <Filters
+                        showNamespaceFlows={showNamespaceFlows}
+                        setShowNamespaceFlows={setShowNamespaceFlows}
+                    />
+                )}
                 <Legend />
             </div>
         );

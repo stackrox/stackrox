@@ -14,7 +14,6 @@ const activeButtonClassName = `${baseButtonClassName} bg-primary-300 border-prim
 
 type FiltersProps = {
     setFilterMode: (mode) => void;
-    offset?: boolean;
     sidePanelOpen: boolean;
     filterMode: number;
     showNamespaceFlows: NamespaceEdgeFilterState;
@@ -23,7 +22,6 @@ type FiltersProps = {
 
 function Filters({
     setFilterMode,
-    offset = false,
     sidePanelOpen,
     filterMode,
     showNamespaceFlows,
@@ -37,7 +35,7 @@ function Filters({
 
     return (
         <div
-            className={`flex absolute top-0 left-0 ${offset ? 'mt-10' : 'mt-2'} ${
+            className={`flex absolute top-0 left-0 mt-2 ${
                 sidePanelOpen ? 'flex-col' : ''
             } ml-2 absolute z-1`}
         >

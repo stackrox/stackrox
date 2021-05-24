@@ -52,7 +52,7 @@ function NetworkPageContent() {
                 <SimulationFrame isError={isError} onStop={onStop}>
                     <div className="flex flex-1 relative">
                         <Graph
-                            isReadOnly
+                            isSimulationOn
                             showNamespaceFlows={showNamespaceFlows}
                             setShowNamespaceFlows={handleNamespaceFlowsToggle}
                             simulatedBaselines={simulatedBaselines}
