@@ -5011,7 +5011,7 @@ jobs:
             git push origin "$NIGHTLY_TAG"
 
       - run:
-          name: Remove tags more then 3 days old
+          name: Remove tags more than 3 days old
           command: |
             beforeDate=$(date --date=@$(($(date +'%s') - (3 * 24 * 60 * 60))) +'%Y%m%d')
             echo "Anything prior to ${beforeDate} will be deleted"
