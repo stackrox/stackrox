@@ -305,6 +305,30 @@ const styles = [
         },
     },
     {
+        selector: 'edge.namespace.simulated.added',
+        style: {
+            color: COLORS.simulatedStatus.ADDED,
+            'text-border-color': COLORS.simulatedStatus.ADDED,
+            'line-color': COLORS.simulatedStatus.ADDED,
+        },
+    },
+    {
+        selector: 'edge.namespace.simulated.removed',
+        style: {
+            color: COLORS.simulatedStatus.REMOVED,
+            'text-border-color': COLORS.simulatedStatus.REMOVED,
+            'line-color': COLORS.simulatedStatus.REMOVED,
+        },
+    },
+    {
+        selector: 'edge.namespace.simulated.modified',
+        style: {
+            color: COLORS.simulatedStatus.MODIFIED,
+            'text-border-color': COLORS.simulatedStatus.MODIFIED,
+            'line-color': COLORS.simulatedStatus.MODIFIED,
+        },
+    },
+    {
         selector: 'edge.taxi-vertical',
         style: {
             'taxi-direction': 'vertical',
@@ -335,7 +359,6 @@ const styles = [
         selector: 'edge.active',
         style: {
             'line-style': 'solid',
-            'line-color': COLORS.edge,
             'z-compound-depth': 'top',
         },
     },
@@ -426,6 +449,69 @@ const styles = [
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 50%, 1)',
             'overlay-opacity': 0.1,
+        },
+    },
+    {
+        selector: 'edge.simulated.added',
+        style: {
+            'line-color': COLORS.simulatedStatus.ADDED,
+            'target-arrow-color': COLORS.simulatedStatus.ADDED,
+            'mid-source-arrow-color': COLORS.simulatedStatus.ADDED,
+            'mid-target-arrow-color': COLORS.simulatedStatus.ADDED,
+        },
+    },
+    {
+        selector: 'edge.simulated.added.hovered',
+        style: {
+            opacity: 1,
+            color: 'hsl(228, 56%, 63%)',
+            'line-color': COLORS.hoveredSimulatedStatus.ADDED,
+            'text-border-color': COLORS.hoveredSimulatedStatus.ADDED,
+            'overlay-padding': '3px',
+            'mid-source-arrow-color': COLORS.hoveredSimulatedStatus.ADDED,
+            'mid-target-arrow-color': COLORS.hoveredSimulatedStatus.ADDED,
+        },
+    },
+    {
+        selector: 'edge.simulated.removed',
+        style: {
+            'line-color': COLORS.simulatedStatus.REMOVED,
+            'target-arrow-color': COLORS.simulatedStatus.REMOVED,
+            'mid-source-arrow-color': COLORS.simulatedStatus.REMOVED,
+            'mid-target-arrow-color': COLORS.simulatedStatus.REMOVED,
+        },
+    },
+    {
+        selector: 'edge.simulated.removed.hovered',
+        style: {
+            opacity: 1,
+            color: 'hsl(228, 56%, 63%)',
+            'line-color': COLORS.hoveredSimulatedStatus.REMOVED,
+            'text-border-color': COLORS.hoveredSimulatedStatus.REMOVED,
+            'overlay-padding': '3px',
+            'mid-source-arrow-color': COLORS.hoveredSimulatedStatus.REMOVED,
+            'mid-target-arrow-color': COLORS.hoveredSimulatedStatus.REMOVED,
+        },
+    },
+    {
+        selector: 'edge.simulated.modified',
+        style: {
+            'line-color': COLORS.simulatedStatus.MODIFIED,
+            'target-arrow-color': COLORS.simulatedStatus.MODIFIED,
+            'mid-source-arrow-color': COLORS.simulatedStatus.MODIFIED,
+            'mid-target-arrow-color': COLORS.simulatedStatus.MODIFIED,
+        },
+    },
+    {
+        selector: 'edge.simulated.modified.hovered',
+        style: {
+            opacity: 1,
+            color: 'hsl(228, 56%, 63%)',
+            'line-color': COLORS.hoveredSimulatedStatus.MODIFIED,
+            'text-border-color': COLORS.hoveredSimulatedStatus.MODIFIED,
+            'overlay-padding': '3px',
+            'mid-source-arrow-color': COLORS.hoveredSimulatedStatus.MODIFIED,
+            'mid-target-arrow-color': COLORS.hoveredSimulatedStatus.MODIFIED,
         },
     },
 ];

@@ -20,7 +20,7 @@ function getEntityNameByType(
         return entity.externalSource.cidr;
     }
     if (entity.type === 'INTERNET') {
-        return 'External Sources';
+        return 'External Entities';
     }
     throw new Error('Could not get name of entity');
 }

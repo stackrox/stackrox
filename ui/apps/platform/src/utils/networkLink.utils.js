@@ -114,35 +114,37 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
         }
 
         Object.keys(node.outEdges).forEach((targetNodeId) => {
-            const targetNode =
-                networkNodeMap[targetNodeId].active || networkNodeMap[targetNodeId].allowed;
-            const { id: targetEntityId, type: targetNodeType } = targetNode.entity;
-            const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
-            const targetNS = getNodeNamespace(targetNode);
-            const targetName = getNodeName(targetNode);
-            const isTargetExternal =
-                targetNodeType === nodeTypes.EXTERNAL_ENTITIES ||
-                targetNodeType === nodeTypes.CIDR_BLOCK;
+            if (networkNodeMap[targetNodeId]) {
+                const targetNode =
+                    networkNodeMap[targetNodeId].active || networkNodeMap[targetNodeId].allowed;
+                const { id: targetEntityId, type: targetNodeType } = targetNode.entity;
+                const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
+                const targetNS = getNodeNamespace(targetNode);
+                const targetName = getNodeName(targetNode);
+                const isTargetExternal =
+                    targetNodeType === nodeTypes.EXTERNAL_ENTITIES ||
+                    targetNodeType === nodeTypes.CIDR_BLOCK;
 
-            const link = {
-                source: sourceEntityId,
-                target: targetEntityId,
-                sourceName,
-                targetName,
-                sourceNS,
-                targetNS,
-                sourceType: sourceNodeType,
-                targetType: targetNodeType,
-                isExternal: isSourceExternal || isTargetExternal,
-            };
+                const link = {
+                    source: sourceEntityId,
+                    target: targetEntityId,
+                    sourceName,
+                    targetName,
+                    sourceNS,
+                    targetNS,
+                    sourceType: sourceNodeType,
+                    targetType: targetNodeType,
+                    isExternal: isSourceExternal || isTargetExternal,
+                };
 
-            link.isActive = isActive(edgeKey);
-            link.isBetweenNonIsolated = isBetweenNonIsolated(sourceEntityId, targetEntityId);
-            link.isAllowed = isAllowed(edgeKey, link);
-            link.isDisallowed = isDisallowed(edgeKey, link);
+                link.isActive = isActive(edgeKey);
+                link.isBetweenNonIsolated = isBetweenNonIsolated(sourceEntityId, targetEntityId);
+                link.isAllowed = isAllowed(edgeKey, link);
+                link.isDisallowed = isDisallowed(edgeKey, link);
 
-            filteredLinks.push(link);
-            filteredEdgeHashTable[edgeKey] = true;
+                filteredLinks.push(link);
+                filteredEdgeHashTable[edgeKey] = true;
+            }
         });
     });
 

@@ -48,6 +48,7 @@ function getEmptyGroupRow(status: BaselineStatus): Row {
                     id: '',
                     type: 'DEPLOYMENT', // placeholder
                     name: 'empty-group', // placeholder
+                    namespace: '',
                 },
                 port: '',
                 protocol: 'L4_PROTOCOL_ANY', // placeholder

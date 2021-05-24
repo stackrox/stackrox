@@ -1,7 +1,7 @@
 import uniq from 'lodash/uniq';
 
 import entityTypes from 'constants/entityTypes';
-import { networkTraffic, networkConnections, nodeTypes } from 'constants/networkGraph';
+import { networkTraffic, nodeTypes } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
 
 export const edgeTypes = {
@@ -10,6 +10,9 @@ export const edgeTypes = {
     NODE_TO_NAMESPACE_EDGE: 'NODE_TO_NAMESPACE_EDGE',
 };
 const LINK_DELIMITER = '**__**';
+
+export const getIsExternal = (type) =>
+    type === nodeTypes.EXTERNAL_ENTITIES || type === nodeTypes.CIDR_BLOCK;
 
 export const getIsNonIsolatedNode = (node) => node.nonIsolatedIngress && node.nonIsolatedEgress;
 
@@ -191,9 +194,10 @@ export const createPortsAndProtocolsSelector = (
                     targetNode.entity.id === highlightedNodeId
                         ? networkTraffic.INGRESS
                         : networkTraffic.EGRESS;
-                const modifiedProperties = properties.map((datum) => {
-                    return { ...datum, traffic };
-                });
+                const modifiedProperties =
+                    properties?.map((datum) => {
+                        return { ...datum, traffic };
+                    }) || [];
                 if (linkPortsAndProtocols[nodeLinkKey]) {
                     linkPortsAndProtocols[nodeLinkKey] = [
                         ...linkPortsAndProtocols[nodeLinkKey],
@@ -222,6 +226,20 @@ export const createPortsAndProtocolsSelector = (
 
     return getPortsAndProtocolsByLink;
 };
+
+function addSimulatedStatusToNamespaceLink(namespaceLink, simulatedStatus) {
+    const newNamespaceLink = { ...namespaceLink };
+    if (!namespaceLink.simulatedStatus) {
+        newNamespaceLink.simulatedStatus = simulatedStatus;
+    } else if (
+        (namespaceLink.simulatedStatus === 'ADDED' && simulatedStatus !== 'ADDED') ||
+        (namespaceLink.simulatedStatus === 'REMOVED' && simulatedStatus !== 'REMOVED') ||
+        (namespaceLink.simulatedStatus === 'UNMODIFIED' && simulatedStatus !== 'UNMODIFIED')
+    ) {
+        newNamespaceLink.simulatedStatus = 'MODIFIED';
+    }
+    return newNamespaceLink;
+}
 
 /**
  * Iterates through a list of links and returns bundled edges between namespaces
@@ -268,7 +286,17 @@ export const getNamespaceEdges = ({
     );
 
     filteredLinks.forEach(
-        ({ source, target, sourceNS, targetNS, isActive, isAllowed, isDisallowed, isExternal }) => {
+        ({
+            source,
+            target,
+            sourceNS,
+            targetNS,
+            isActive,
+            isAllowed,
+            isDisallowed,
+            isExternal,
+            simulatedStatus,
+        }) => {
             const namespaceLinkKey = getSourceTargetKey(sourceNS, targetNS);
             const nodeLinkKey = getSourceTargetKey(source, target);
             const isEgress = source === highlightedNodeId;
@@ -285,7 +313,7 @@ export const getNamespaceEdges = ({
             const portsAndProtocols = getPortsAndProtocolsByLink(nodeLinkKey, isEgress);
             const isLinkPreviouslyVisited = visitedNodeLinks[nodeLinkKey];
 
-            const namespaceLink = namespaceLinks[namespaceLinkKey] || {
+            let namespaceLink = namespaceLinks[namespaceLinkKey] || {
                 portsAndProtocols: [],
                 numBidirectionalLinks: 0,
                 numUnidirectionalLinks: 0,
@@ -295,6 +323,9 @@ export const getNamespaceEdges = ({
                 numAllowedUnidirectionalLinks: 0,
                 isExternal,
             };
+
+            // add simulated status information
+            namespaceLink = addSimulatedStatusToNamespaceLink(namespaceLink, simulatedStatus);
 
             namespaceLink.portsAndProtocols = [
                 ...namespaceLink.portsAndProtocols,
@@ -344,6 +375,7 @@ export const getNamespaceEdges = ({
             numAllowedBidirectionalLinks,
             numAllowedUnidirectionalLinks,
             isExternal,
+            simulatedStatus,
         } = namespaceLinks[namespaceLinkKey];
         const isHoveredEdge =
             (hoveredEdge?.sourceNodeNamespace === sourceNS &&
@@ -365,6 +397,11 @@ export const getNamespaceEdges = ({
             unidirectional: numUnidirectionalLinks > 0,
             bidirectional: numBidirectionalLinks > 0,
             externalEdge: isExternalEdge,
+            simulated: !!simulatedStatus,
+            added: simulatedStatus === 'ADDED',
+            removed: simulatedStatus === 'REMOVED',
+            unmodified: simulatedStatus === 'UNMODIFIED',
+            modified: simulatedStatus === 'MODIFIED',
         });
 
         const { source, target } = getSideMap(sourceNS, targetNS, nodeSideMap) || {
@@ -409,6 +446,7 @@ const getLinkMetadata = (link, isSourceNode) => {
         isActive,
         isAllowed,
         isDisallowed,
+        simulatedStatus,
     } = link;
     // destination node info needed for network flow tab
     const destNodeId = isSourceNode ? targetNodeId : sourceNodeId;
@@ -429,17 +467,17 @@ const getLinkMetadata = (link, isSourceNode) => {
         isActive,
         isAllowed,
         isDisallowed,
+        simulatedStatus,
     };
 };
 
-const setBidirectionalLinkData = (nodeLink, coreClasses, extraClasses) => {
+const setBidirectionalLinkData = (nodeLink, classes) => {
     const processedNodeLink = { ...nodeLink };
     // if this edge is already in the nodeLinks, it means it's going in the other direction
     processedNodeLink.data.isBidirectional = true;
     processedNodeLink.data.traffic = networkTraffic.BIDIRECTIONAL;
     processedNodeLink.classes = getClasses({
-        ...coreClasses,
-        ...extraClasses,
+        ...classes,
         bidirectional: true,
     });
     return processedNodeLink;
@@ -457,6 +495,29 @@ const getIsInnerNamespaceEdge = (hoveredEdge, sourceNS, targetNS) => {
         getIsNamespaceEdge(hoveredEdge?.type) &&
         (isOriginalDirectionHovered || isOppositeDirectionHovered)
     );
+};
+
+const addSimulationClasses = (classes, simulatedStatus) => {
+    if (!simulatedStatus) {
+        return {};
+    }
+    if (
+        classes &&
+        ((classes.includes('added') && simulatedStatus !== 'ADDED') ||
+            (classes.includes('removed') && simulatedStatus !== 'REMOVED') ||
+            (classes.includes('unmodified') && simulatedStatus !== 'UNMODIFIED') ||
+            (classes.includes('modified') && simulatedStatus !== 'MODIFIED'))
+    ) {
+        return {
+            simulated: !!simulatedStatus,
+            modified: true,
+        };
+    }
+    const simulationClassName = simulatedStatus.toLowerCase();
+    return {
+        simulated: !!simulatedStatus,
+        [simulationClassName]: true,
+    };
 };
 
 /**
@@ -502,6 +563,7 @@ export const getEdgesFromNode = ({
             isActive,
             isDisallowed,
             isBetweenNonIsolated,
+            simulatedStatus,
         } = link;
         const isSourceNode = highlightedNode?.id === source;
         const isTargetNode = highlightedNode?.id === target;
@@ -518,14 +580,6 @@ export const getEdgesFromNode = ({
 
         // only get edges for the currently highlighted node
         if ((isSourceNode || isTargetNode) && (filterState !== filterModes.active || isActive)) {
-            const coreClasses = {
-                edge: true,
-                active: !inAllowedFilterState && isActive,
-                // only hide edge when it's bw nonisolated and is not active
-                nonIsolated: isBetweenNonIsolated && (!isActive || inAllowedFilterState),
-                // an edge is disallowed when it is active but is not allowed
-                disallowed: !inAllowedFilterState && isDisallowed,
-            };
             // if ingress or egress, show edge arrow to indicate direction
             const isUnidirectional = isRelativeIngress || isRelativeEgress;
 
@@ -542,11 +596,22 @@ export const getEdgesFromNode = ({
             const nodeLink = nodeLinks[nodeLinkKey];
             const portsAndProtocols = getPortsAndProtocolsByLink(nodeLinkKey, isEgress);
 
+            const simulationClasses = addSimulationClasses(nodeLink?.classes, simulatedStatus);
+            const coreClasses = {
+                edge: true,
+                active: !inAllowedFilterState && isActive,
+                // only hide edge when it's bw nonisolated and is not active
+                nonIsolated: isBetweenNonIsolated && (!isActive || inAllowedFilterState),
+                // an edge is disallowed when it is active but is not allowed
+                disallowed: !inAllowedFilterState && isDisallowed,
+            };
+
             // if the edge is between two deployments in the same namespace
             if (linkIsInSameNamespace) {
                 if (!nodeLink) {
                     const classes = getClasses({
                         ...coreClasses,
+                        ...simulationClasses,
                         unidirectional: isUnidirectional,
                         // if the edge is in the same namespace, it's hovered when the source/target lines up
                         hovered:
@@ -565,17 +630,15 @@ export const getEdgesFromNode = ({
                     };
                 } else if (!nodeLink?.data?.isBidirectional) {
                     // if this edge is already in the nodeLinks, it means it's going in the other direction
-                    const hoveredClass = {
+                    const classes = {
+                        ...coreClasses,
+                        ...simulationClasses,
                         // if the edge is bidirectional, it means the source/target is backwards if hovered
                         hovered:
                             hoveredEdge?.targetNodeId === source &&
                             hoveredEdge?.sourceNodeId === target,
                     };
-                    nodeLinks[nodeLinkKey] = setBidirectionalLinkData(
-                        nodeLink,
-                        coreClasses,
-                        hoveredClass
-                    );
+                    nodeLinks[nodeLinkKey] = setBidirectionalLinkData(nodeLink, classes);
                 }
             } else {
                 // get inner edge for both source and target nodes
@@ -617,9 +680,19 @@ export const getEdgesFromNode = ({
                 const innerSourceEdge = nodeLinks[innerSourceEdgeKey];
                 const innerTargetEdge = nodeLinks[innerTargetEdgeKey];
 
+                const innerSourceEdgeSimulationClasses = addSimulationClasses(
+                    innerSourceEdge?.classes,
+                    simulatedStatus
+                );
+                const innerTargetEdgeSimulationClasses = addSimulationClasses(
+                    innerTargetEdge?.classes,
+                    simulatedStatus
+                );
+
                 // if the inner edge from source/target to namespace is in the same namespace as selected
                 const innerSourceEdgeClasses = getClasses({
                     ...coreClasses,
+                    ...innerSourceEdgeSimulationClasses,
                     unidirectional: isUnidirectional,
                     inner: true,
                     withinNS: highlightedNodeInSourceNS,
@@ -640,6 +713,7 @@ export const getEdgesFromNode = ({
 
                 const innerTargetEdgeClasses = getClasses({
                     ...coreClasses,
+                    ...innerTargetEdgeSimulationClasses,
                     unidirectional: isUnidirectional,
                     inner: true,
                     withinNS: highlightedNodeInTargetNS,
@@ -664,6 +738,18 @@ export const getEdgesFromNode = ({
                     // if the inner source edge does not exist in the link map yet, add it to the node link map
                     if (!innerSourceEdge) {
                         nodeLinks[innerSourceEdgeKey] = constructedInnerSourceEdge;
+                    } else if (!innerSourceEdge.data?.isBidirectional) {
+                        const classes = {
+                            ...coreClasses,
+                            ...innerSourceEdgeSimulationClasses,
+                            inner: true,
+                            withinNS: highlightedNodeInSourceNS,
+                            hovered: isInnerSourceEdgeHovered,
+                        };
+                        nodeLinks[innerSourceEdgeKey] = setBidirectionalLinkData(
+                            nodeLinks[innerSourceEdgeKey],
+                            classes
+                        );
                     }
 
                     // if the inner target edge does not exist yet, add it to the node link map
@@ -681,15 +767,16 @@ export const getEdgesFromNode = ({
                             if (!innerTargetEdge) {
                                 nodeLinks[innerTargetEdgeKey] = constructedInnerTargetEdge;
                             } else if (!innerTargetEdge.data?.isBidirectional) {
-                                const extraClasses = {
+                                const classes = {
+                                    ...coreClasses,
+                                    ...innerTargetEdgeSimulationClasses,
                                     inner: true,
                                     withinNS: highlightedNodeInTargetNS,
                                     hovered: isInnerTargetEdgeHovered,
                                 };
                                 nodeLinks[innerTargetEdgeKey] = setBidirectionalLinkData(
                                     nodeLinks[innerTargetEdgeKey],
-                                    coreClasses,
-                                    extraClasses
+                                    classes
                                 );
                             }
                             if (!innerSourceEdge) {
@@ -697,6 +784,7 @@ export const getEdgesFromNode = ({
                                     edge: true,
                                     inner: true,
                                     hidden: true,
+                                    ...innerSourceEdgeSimulationClasses,
                                 });
                                 // Edge from external source to external source edge
                                 nodeLinks[innerSourceEdgeKey] = {
@@ -717,15 +805,16 @@ export const getEdgesFromNode = ({
                             if (!innerSourceEdge) {
                                 nodeLinks[innerSourceEdgeKey] = constructedInnerSourceEdge;
                             } else if (!innerSourceEdge.data?.isBidirectional) {
-                                const extraClasses = {
+                                const classes = {
+                                    ...coreClasses,
+                                    ...innerSourceEdgeSimulationClasses,
                                     inner: true,
                                     withinNS: highlightedNodeInSourceNS,
                                     hovered: isInnerSourceEdgeHovered,
                                 };
                                 nodeLinks[innerSourceEdgeKey] = setBidirectionalLinkData(
                                     nodeLinks[innerSourceEdgeKey],
-                                    coreClasses,
-                                    extraClasses
+                                    classes
                                 );
                             }
                             if (!innerTargetEdge) {
@@ -733,6 +822,7 @@ export const getEdgesFromNode = ({
                                     edge: true,
                                     inner: true,
                                     hidden: true,
+                                    ...innerTargetEdgeSimulationClasses,
                                 });
                                 // Edge from external source to external source edge
                                 nodeLinks[innerTargetEdgeKey] = {
@@ -757,25 +847,27 @@ export const getEdgesFromNode = ({
                     ) {
                         if (!isSourceExternal) {
                             // if this edge is already in the nodeLinks, it means it's going in the other direction
-                            const hoveredClass = {
+                            const classes = {
+                                ...coreClasses,
+                                ...innerSourceEdgeSimulationClasses,
                                 hovered: isInnerSourceEdgeHovered,
                             };
                             nodeLinks[innerSourceEdgeKey] = setBidirectionalLinkData(
                                 nodeLinks[innerSourceEdgeKey],
-                                coreClasses,
-                                hoveredClass
+                                classes
                             );
                         }
 
                         if (!isTargetExternal) {
                             // we want to make sure the corresponding inner edge from the other namespace is also updated
-                            const hoveredClass = {
+                            const classes = {
+                                ...coreClasses,
+                                ...innerTargetEdgeSimulationClasses,
                                 hovered: isInnerTargetEdgeHovered,
                             };
                             nodeLinks[innerTargetEdgeKey] = setBidirectionalLinkData(
                                 nodeLinks[innerTargetEdgeKey],
-                                coreClasses,
-                                hoveredClass
+                                classes
                             );
                         }
                     }
@@ -787,25 +879,27 @@ export const getEdgesFromNode = ({
                     ) {
                         if (!isTargetExternal) {
                             // if this edge is already in the nodeLinks, it means it's going in the other direction
-                            const hoveredClass = {
+                            const classes = {
+                                ...coreClasses,
+                                ...innerTargetEdgeSimulationClasses,
                                 hovered: isInnerTargetEdgeHovered,
                             };
                             nodeLinks[innerTargetEdgeKey] = setBidirectionalLinkData(
                                 nodeLinks[innerTargetEdgeKey],
-                                coreClasses,
-                                hoveredClass
+                                classes
                             );
                         }
 
                         if (!isSourceExternal) {
                             // we want to make sure the corresponding inner edge from the other namespace is also updated
-                            const hoveredClass = {
+                            const classes = {
+                                ...coreClasses,
+                                ...innerSourceEdgeSimulationClasses,
                                 hovered: isInnerSourceEdgeHovered,
                             };
                             nodeLinks[innerSourceEdgeKey] = setBidirectionalLinkData(
                                 nodeLinks[innerSourceEdgeKey],
-                                coreClasses,
-                                hoveredClass
+                                classes
                             );
                         }
                     }
@@ -1118,104 +1212,6 @@ export const getCIDRBlockEdgeNodes = (cidrBlockNodes) => {
     const cidrBlockEdgeNodes = getEdgeNodes(cidrBlockNodes, 'cidrBlockEdge');
     return cidrBlockEdgeNodes;
 };
-
-function getConnectionText(filterState, isActive, isAllowed) {
-    let connection = '-';
-    const isActiveOrAll = filterState === filterModes.active || filterState === filterModes.all;
-    const isAllowedOrAll = filterState === filterModes.allowed || filterState === filterModes.all;
-    if (isActiveOrAll && isActive) {
-        connection = networkConnections.ACTIVE;
-    } else if (isAllowedOrAll && isAllowed) {
-        connection = networkConnections.ALLOWED;
-    }
-    return connection;
-}
-
-class DirectionalFlows {
-    constructor() {
-        this.numIngressFlows = 0;
-        this.numEgressFlows = 0;
-    }
-
-    incrementFlows(traffic) {
-        if (traffic === networkTraffic.INGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
-            this.numIngressFlows += 1;
-        }
-        if (traffic === networkTraffic.EGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
-            this.numEgressFlows += 1;
-        }
-    }
-
-    getNumIngressFlows() {
-        return this.numIngressFlows;
-    }
-
-    getNumEgressFlows() {
-        return this.numEgressFlows;
-    }
-}
-
-/**
- * Grabs the deployment-to-deployment edges and filters based on the filter state
- *
- * @param {!Object[]} edges
- * @param {!Number} filterState
- * @returns {!Object}
- */
-export function getNetworkFlows(edges, filterState) {
-    let networkFlows;
-    const directionalFlows = new DirectionalFlows();
-    const nodeMapping = edges.reduce((acc, { data }) => {
-        const {
-            destNodeId,
-            traffic,
-            destNodeName,
-            destNodeNamespace,
-            destNodeType,
-            isActive,
-            isAllowed,
-            portsAndProtocols,
-        } = data;
-        // don't double count edges that are divided because they're within different namespaces
-        if (acc[destNodeId]) {
-            return acc;
-        }
-        const isExternal =
-            getIsExternalEntitiesNode(destNodeType) || getIsCIDRBlockNode(destNodeType);
-        const connection = getConnectionText(filterState, isActive, isAllowed);
-        directionalFlows.incrementFlows(traffic);
-        return {
-            ...acc,
-            [destNodeId]: {
-                traffic,
-                deploymentId: destNodeId,
-                entityName: destNodeName,
-                namespace: isExternal ? '-' : destNodeNamespace,
-                type: isExternal ? 'external' : 'deployment',
-                connection,
-                portsAndProtocols,
-                entityType: destNodeType,
-            },
-        };
-    }, {});
-    switch (filterState) {
-        case filterModes.active:
-            networkFlows = Object.values(nodeMapping).filter(
-                (edge) => edge.connection === networkConnections.ACTIVE
-            );
-            break;
-        case filterModes.allowed:
-            networkFlows = Object.values(nodeMapping).filter(
-                (edge) => edge.connection === networkConnections.ALLOWED
-            );
-            break;
-        default:
-            networkFlows = Object.values(nodeMapping);
-    }
-    const numIngressFlows = directionalFlows.getNumIngressFlows();
-    const numEgressFlows = directionalFlows.getNumEgressFlows();
-    return { networkFlows, numIngressFlows, numEgressFlows };
-}
 
 /**
  * Grabs either the ingress or egress ports and protocols from the network flows

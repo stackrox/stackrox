@@ -79,6 +79,7 @@ class Graph extends Component {
             networkNodeMap,
             isReadOnly,
             showNamespaceFlows,
+            simulatedBaselines,
         } = this.props;
         return (
             !networkEdgeMap ||
@@ -88,7 +89,8 @@ class Graph extends Component {
             nextProps.isLoading !== isLoading ||
             nextProps.sidePanelOpen !== sidePanelOpen ||
             nextProps.isReadOnly !== isReadOnly ||
-            nextProps.showNamespaceFlows !== showNamespaceFlows
+            nextProps.showNamespaceFlows !== showNamespaceFlows ||
+            nextProps.simulatedBaselines !== simulatedBaselines
         );
     }
 
@@ -132,6 +134,7 @@ class Graph extends Component {
             lastUpdatedTimestamp,
             selectedNamespace,
             isReadOnly,
+            simulatedBaselines,
         } = this.props;
 
         // If we have more than 1100 nodes, display a message instead of the graph.
@@ -169,6 +172,7 @@ class Graph extends Component {
                 selectedNamespace={selectedNamespace}
                 selectedClusterId={selectedClusterId}
                 isReadOnly={isReadOnly}
+                simulatedBaselines={simulatedBaselines}
             />
         );
     };

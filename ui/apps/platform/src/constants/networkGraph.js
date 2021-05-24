@@ -36,7 +36,19 @@ export const COLORS = {
     hovered: 'hsla(229, 24%, 70%, 1)',
     selected: 'hsla(229, 24%, 60%, 1)',
     hoveredEdge: '#3C58CC',
-    edge: ' #788CDF',
+    edge: '#788CDF',
+    simulatedStatus: {
+        ADDED: '#47b238',
+        REMOVED: '#fc655a',
+        UNMODIFIED: '#788CDF',
+        MODIFIED: '#e3c987',
+    },
+    hoveredSimulatedStatus: {
+        ADDED: '#2c8820',
+        REMOVED: '#c25047',
+        UNMODIFIED: '#3C58CC',
+        MODIFIED: '#b39956',
+    },
 };
 
 export const PROTOCOLS = {

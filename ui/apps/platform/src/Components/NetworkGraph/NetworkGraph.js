@@ -56,8 +56,17 @@ import { defaultTippyTooltipProps } from '@stackrox/ui-components/lib/Tooltip';
 import NodeTooltipOverlay from './NodeTooltipOverlay';
 import NamespaceEdgeTooltipOverlay from './NamespaceEdgeTooltipOverlay';
 import EdgeTooltipOverlay from './EdgeTooltipOverlay';
+import {
+    enhanceNodesWithSimulatedStatus,
+    enhanceLinksWithSimulatedStatus,
+} from './baselineSimulationUtils';
 
-Cytoscape.use(popper);
+// This was getting annoying when I kept making changes to the code and it would break
+try {
+    Cytoscape.use(popper);
+} catch (error) {
+    // popper already exists
+}
 Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
 Cytoscape.use(edgeGridLayout);
 
@@ -80,6 +89,7 @@ const NetworkGraph = ({
     lastUpdatedTimestamp,
     selectedClusterId,
     isReadOnly,
+    simulatedBaselines,
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredElement, setHoveredElement] = useState();
@@ -92,10 +102,12 @@ const NetworkGraph = ({
     const tippyRef = useRef();
     const namespacesWithDeployments = {};
 
-    const nodes = useMemo(() => getFilteredNodes(networkNodeMap, filterState), [
-        networkNodeMap,
-        filterState,
-    ]);
+    const nodes = useMemo(() => {
+        const filteredNodes = getFilteredNodes(networkNodeMap, filterState);
+        return selectedNode && simulatedBaselines.length
+            ? enhanceNodesWithSimulatedStatus(selectedNode, filteredNodes, simulatedBaselines)
+            : filteredNodes;
+    }, [networkNodeMap, filterState, selectedNode, simulatedBaselines]);
 
     const data = useMemo(() => {
         return nodes.map((datum) => ({
@@ -104,10 +116,20 @@ const NetworkGraph = ({
         }));
     }, [nodes, filterState]);
 
-    const links = useMemo(
-        () => getLinks(data, networkEdgeMap, networkNodeMap, filterState, featureFlags),
-        [data, networkEdgeMap, networkNodeMap, filterState, featureFlags]
-    );
+    const links = useMemo(() => {
+        const result = getLinks(data, networkEdgeMap, networkNodeMap, filterState, featureFlags);
+        return selectedNode && simulatedBaselines.length
+            ? enhanceLinksWithSimulatedStatus(selectedNode, result, simulatedBaselines)
+            : result;
+    }, [
+        data,
+        networkEdgeMap,
+        networkNodeMap,
+        filterState,
+        featureFlags,
+        selectedNode,
+        simulatedBaselines,
+    ]);
     const filteredLinks = useMemo(() => getFilteredLinks(links), [links]);
 
     function showTooltip(elm, component) {
@@ -660,6 +682,7 @@ const NetworkGraph = ({
         isReadOnly,
         lastUpdatedTimestamp,
         match.params.deploymentId,
+        simulatedBaselines,
     ]);
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
@@ -715,6 +738,7 @@ NetworkGraph.propTypes = {
     featureFlags: PropTypes.arrayOf(PropTypes.shape),
     lastUpdatedTimestamp: PropTypes.instanceOf(Date),
     selectedClusterId: PropTypes.string,
+    simulatedBaselines: PropTypes.arrayOf(PropTypes.shape({})),
 };
 
 NetworkGraph.defaultProps = {
@@ -724,6 +748,7 @@ NetworkGraph.defaultProps = {
     lastUpdatedTimestamp: null,
     selectedClusterId: null,
     isReadOnly: false,
+    simulatedBaselines: [],
 };
 
 export default withRouter(NetworkGraph);

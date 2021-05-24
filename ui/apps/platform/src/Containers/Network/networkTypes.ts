@@ -12,7 +12,7 @@ export type Entity = {
     id: string;
     type: EntityType;
     name: string;
-    namespace?: string;
+    namespace: string;
 };
 
 export type FlattenedPeer = {
