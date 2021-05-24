@@ -506,11 +506,14 @@ getPrometheusMetricParser: &getPrometheusMetricParser
 version: 2.1
 
 parameters:
-  # A block of external parameters used to run qa-backend-tests against an image set
-  # released via a non-standard pipeline. e.g. DSOP images. See: designated-image-tests.
-  run_designated_image_test:
+  # A block of external parameters used when triggering CI out of the standard
+  # git push cycle.
+  trigger_on_demand:
     type: boolean
     default: false
+  workflow_name:
+    type: string
+    default: ""
   main_image_tag:
     type: string
     default: ""
@@ -2260,7 +2263,8 @@ jobs:
     #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/rox/pipeline -d '{
     #     "branch": "3.0.50.x",
     #     "parameters": {
-    #         "run_designated_image_test": true,
+    #         "trigger_on_demand": true,
+    #         "workflow_name": "designated_image_test",
     #         "main_image_tag": "3.0.50.1",
     #         "main_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/main-rhel",
     #         "roxctl_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/main-rhel",
@@ -5033,7 +5037,7 @@ workflows:
 
   build_all:
     when: 
-      not: << pipeline.parameters.run_designated_image_test >>
+      not: << pipeline.parameters.trigger_on_demand >>
     jobs:
       - slack-notify:
           filters:
@@ -5265,8 +5269,49 @@ workflows:
             branches:
               only: master
 
+  ###
+  # These workflows can be triggered on demand.
+  ##
+
+  # To trigger a build for example:
+  #
+  #   curl -X POST --header 'Content-Type: application/json' \
+  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/rox/pipeline -d '{
+  #     "branch": "<your branch>",
+  #     "parameters": {
+  #         "trigger_on_demand": true,
+  #         "workflow_name": "build"
+  #     }
+  # }'
+
+  build:
+    when:
+      equal: [ "build", << pipeline.parameters.workflow_name >> ]
+    jobs:
+      - pre-create-tag:
+          context: docker-io-pull
+      - pre-build-ui:
+          context: docker-io-pull
+          requires:
+            - pre-create-tag
+      - pre-build-cli:
+          context: docker-io-pull
+          requires:
+            - pre-create-tag
+      - pre-build-go-binaries:
+          context: docker-io-push
+          requires:
+            - pre-create-tag
+      - build:
+          context: docker-io-push
+          requires:
+            - pre-build-ui
+            - pre-build-cli
+            - pre-build-go-binaries
+
   designated_image_test:
-    when: << pipeline.parameters.run_designated_image_test >>
+    when:
+      equal: [ "designated_image_test", << pipeline.parameters.workflow_name >> ]
     jobs:
       - designated-image-tests:
           context: docker-io-pull
