@@ -28,13 +28,14 @@ import (
 // -------------------------------------------------------------
 // Spec
 
-// SecuredClusterSpec defines the desired state of SecuredCluster
+// SecuredClusterSpec defines the desired configuration state of a secured cluster.
 type SecuredClusterSpec struct {
+	// ClusterName should specify the name assigned to your secured cluster.
 	// TODO(ROX-7125): decide how to guarantee immutability; use metadata.name instead?
 	ClusterName string `json:"clusterName"`
-	// Address of the Central endpoint, including the port number.
-	// If using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing
-	// the endpoint address with wss://.
+	// CentralEndpoint should specify the address of the Central endpoint, including the port number.
+	// If using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address
+	// with wss://.
 	CentralEndpoint string `json:"centralEndpoint"`
 
 	TLS              *common.TLSConfig              `json:"tls,omitempty"`
@@ -50,52 +51,49 @@ type SecuredClusterSpec struct {
 
 // SensorComponentSpec defines settings for sensor.
 type SensorComponentSpec struct {
-	ContainerSpec `json:",inline"`
-	NodeSelector  map[string]string `json:"nodeSelector,omitempty"`
-	// Secret that contains cert and key. Omit means: autogenerate.
-	ServiceTLS *corev1.LocalObjectReference `json:"serviceTLS,omitempty"`
+	ContainerSpec         `json:",inline"`
+	common.ServiceTLSSpec `json:",inline"`
+
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// Address of the Sensor endpoint including port number. No trailing slash.
 	// Rarely needs to be changed.
 	Endpoint *string `json:"endpoint,omitempty"`
 }
 
-// AdmissionControlComponentSpec defines settings for admission control.
+// AdmissionControlComponentSpec defines settings for the admission controller configuration.
 type AdmissionControlComponentSpec struct {
-	ContainerSpec `json:",inline"`
-	// Secret that contains cert and key. Omit means: autogenerate.
-	ServiceTLS *corev1.LocalObjectReference `json:"serviceTLS,omitempty"`
+	ContainerSpec         `json:",inline"`
+	common.ServiceTLSSpec `json:",inline"`
 
-	// This setting controls whether the cluster is configured to contact the StackRox
-	// Kubernetes Security Platform with `AdmissionReview` requests for create events on
-	// Kubernetes objects.
+	// ListenOnCreates controls whether Kubernetes is configured to contact Secured Cluster Services with
+	// `AdmissionReview` requests for workload creation events.
 	ListenOnCreates *bool `json:"listenOnCreates,omitempty"`
 
-	// This setting controls whether the cluster is configured to contact the StackRox Kubernetes
-	// Security Platform with `AdmissionReview` requests for update events on Kubernetes objects.
+	// ListenOnUpdates controls whether Kubernetes is configured to contact Secured Cluster Services with
+	// `AdmissionReview` requests for update events on Kubernetes objects.
 	ListenOnUpdates *bool `json:"listenOnUpdates,omitempty"`
 
-	// This setting controls whether the cluster is configured to contact the StackRox
-	// Kubernetes Security Platform with `AdmissionReview` requests for update Kubernetes events
-	// like exec and portforward.
+	// ListenOnEvents controls whether Kubernetes is configured to contact Secured Cluster Services with
+	// `AdmissionReview` requests for update Kubernetes events like exec and portforward.
 	// Defaults to `false` on OpenShift, to `true` otherwise.
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 }
 
-// CollectorComponentSpec defines settings for collector.
+// CollectorComponentSpec declares configuration settings for the collector component.
 type CollectorComponentSpec struct {
+	common.ServiceTLSSpec `json:",inline"`
+
 	Collection      *CollectionMethod      `json:"collection,omitempty"`
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 
 	Collector  *CollectorContainerSpec `json:"collector,omitempty"`
 	Compliance *ContainerSpec          `json:"compliance,omitempty"`
-	// Secret that contains cert and key. Omit means: autogenerate.
-	ServiceTLS *corev1.LocalObjectReference `json:"serviceTLS,omitempty"`
 	// Customizations to apply on the collector DaemonSet.
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
-// CollectionMethod is a type for values of spec.collector.collection
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
 type CollectionMethod string
 
 const (
@@ -125,15 +123,17 @@ type CollectorContainerSpec struct {
 
 // ContainerSpec defines settings common to secured cluster components.
 type ContainerSpec struct {
-	Resources       *common.Resources  `json:"resources,omitempty"`
+	Resources *common.Resources `json:"resources,omitempty"`
+	// ImagePullPolicy specifies how to pull container images from a registry.
 	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Customizations to apply on this container.
+	// Customize specifies additional attributes for all containers.
 	Customize *ContainerCustomizeSpec `json:"customize,omitempty"`
 }
 
 // ContainerCustomizeSpec contains customizations to apply on a container.
 type ContainerCustomizeSpec struct {
-	// Custom environment variables to set on this container.
+	// EnvVars specify environment variables available for the container.
+	// When applied to admission controller, EnvVars can specify feature flags.
 	EnvVars map[string]string `json:"envVars,omitempty"`
 }
 
@@ -165,7 +165,7 @@ type SensorComponentStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// SecuredCluster is the Schema for the securedclusters API
+// SecuredCluster is the configuration template for the secured cluster services.
 type SecuredCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -6,5 +6,5 @@ metadata:
   name: stackrox-secured-cluster-services
   namespace: stackrox
 spec: # TODO: Add fields here
-  clusterName: foo-bar
-  centralEndpoint: blah
+  clusterName: changeme
+  centralEndpoint: changeme

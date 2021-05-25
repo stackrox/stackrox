@@ -28,21 +28,26 @@ type CustomizeSpec struct {
 
 // DeploymentSpec defines settings that affect a deployment.
 type DeploymentSpec struct {
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	Resources    *Resources        `json:"resources,omitempty"`
-	// Secret that contains cert and key. Omit means: autogenerate.
-	ServiceTLS *corev1.LocalObjectReference `json:"serviceTLS,omitempty"`
+	ServiceTLSSpec `json:",inline"`
+	NodeSelector   map[string]string `json:"nodeSelector,omitempty"`
+	Resources      *Resources        `json:"resources,omitempty"`
 	// Customizations to apply on this deployment.
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 	// TODO(ROX-7150): We do not support setting image in the CRs because they are determined by
 	// the operator version whose lifecycle is orthogonal to that of the CR.
 }
 
-// Resources define resource-related settings.
+// ServiceTLSSpec is just a wrapper for ServiceTLS field to make documentation available in all spots where it is used.
+type ServiceTLSSpec struct {
+	// ServiceTLS is a secret certificate and keypair used to secure internal service to service communications.
+	// By default, this certificate is automatically generated.
+	ServiceTLS *corev1.LocalObjectReference `json:"serviceTLS,omitempty"`
+}
+
+// Resources define the resource requests and limits for deployed containers.
 type Resources struct {
-	// Override allow overriding resource requirements for pods of this deployment,
-	// the defaults are computed by the operator.
-	// Currently that computation simply means using the defaults from the Helm charts.
+	// Override allows users to define custom resource allocations if they need to modify the default resource requests
+	// and limits.
 	Override *corev1.ResourceRequirements `json:"override,omitempty"`
 	// TODO(ROX-7146): potentially add a Cap field once we support vertical autoscaling.
 }
