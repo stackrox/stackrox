@@ -24,6 +24,8 @@ import (
 	"github.com/stackrox/rox/operator/central/api/v1alpha1"
 	helmv2Reconciler "github.com/stackrox/rox/pkg/operator/helm/reconciler"
 	helmv1Reconciler "github.com/stackrox/rox/pkg/operator/helm/v1/reconciler"
+	"helm.sh/helm/v3/pkg/chartutil"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -48,6 +50,21 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
+}
+
+type translator struct{}
+
+func (translator) Translate(u *unstructured.Unstructured) (chartutil.Values, error) {
+	central := v1alpha1.Central{}
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &central)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(ROX-7088): replace this placeholder translation
+	v := chartutil.Values{}
+
+	return v, err
 }
 
 func main() {
@@ -89,7 +106,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		if err := helmv2Reconciler.SetupReconcilerWithManager(mgr, gvk, image.CentralServicesChartPrefix); err != nil {
+		if err := helmv2Reconciler.SetupReconcilerWithManager(mgr, gvk, image.CentralServicesChartPrefix, translator{}); err != nil {
 			setupLog.Error(err, "unable to setup central reconciler")
 			os.Exit(1)
 		}

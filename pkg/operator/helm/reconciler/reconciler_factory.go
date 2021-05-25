@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"github.com/joelanford/helm-operator/pkg/reconciler"
+	"github.com/joelanford/helm-operator/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/charts"
@@ -10,7 +11,7 @@ import (
 )
 
 // SetupReconcilerWithManager creates and registers a new helm reconciler to the given controller manager.
-func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix string) error {
+func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix string, translator values.Translator) error {
 	chart, err := image.GetDefaultImage().LoadChart(chartPrefix, charts.RHACSMetaValues())
 	if err != nil {
 		return err
@@ -19,6 +20,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 	reconciler, err := reconciler.New(
 		reconciler.WithChart(*chart),
 		reconciler.WithGroupVersionKind(gvk),
+		reconciler.WithValueTranslator(translator),
 	)
 	if err != nil {
 		return errors.Wrapf(err, "unable to create %s reconciler", gvk)

@@ -1,7 +1,10 @@
 apiVersion: platform.stackrox.io/v1alpha1
 kind: SecuredCluster
 metadata:
-  name: securedcluster-sample
+  # Name and namespace must have the following values.
+  # Different values aren't supported by operators at the moment.
+  name: stackrox-secured-cluster-services
+  namespace: stackrox
 spec: # TODO: Add fields here
   clusterName: foo-bar
   centralEndpoint: blah

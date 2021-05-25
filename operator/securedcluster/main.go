@@ -24,6 +24,8 @@ import (
 	"github.com/stackrox/rox/operator/securedcluster/api/v1alpha1"
 	helmv2Reconciler "github.com/stackrox/rox/pkg/operator/helm/reconciler"
 	helmv1Reconciler "github.com/stackrox/rox/pkg/operator/helm/v1/reconciler"
+	"helm.sh/helm/v3/pkg/chartutil"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -48,6 +50,22 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
+}
+
+type translator struct{}
+
+func (translator) Translate(u *unstructured.Unstructured) (chartutil.Values, error) {
+	sc := v1alpha1.SecuredCluster{}
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &sc)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(ROX-7089): replace this placeholder translation
+	v := chartutil.Values{}
+	v["clusterName"] = sc.Spec.ClusterName
+
+	return v, err
 }
 
 func main() {
@@ -89,7 +107,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		if err := helmv2Reconciler.SetupReconcilerWithManager(mgr, gvk, image.SecuredClusterServicesChartPrefix); err != nil {
+		if err := helmv2Reconciler.SetupReconcilerWithManager(mgr, gvk, image.SecuredClusterServicesChartPrefix, translator{}); err != nil {
 			setupLog.Error(err, "unable to setup secured cluster reconciler")
 			os.Exit(1)
 		}

@@ -1,5 +1,8 @@
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:
-  name: central-sample
+  # Name and namespace must have the following values.
+  # Different values aren't supported by operators at the moment.
+  name: stackrox-central-services
+  namespace: stackrox
 spec: {} # TODO: Add fields here
