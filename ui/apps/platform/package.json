@@ -40,7 +40,7 @@
         "html2canvas": "1.0.0-rc.7",
         "js-base64": "^3.6.0",
         "jspdf": "^2.3.1",
-        "jspdf-autotable": "^3.5.13",
+        "jspdf-autotable": "^3.5.14",
         "lodash": "^4.17.21",
         "mobx": "^6.1.7",
         "normalizr": "^3.6.1",
