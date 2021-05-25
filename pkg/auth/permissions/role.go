@@ -39,13 +39,15 @@ func NewRoleWithPermissions(name string, permissions ...*v1.Permission) *storage
 	}
 }
 
-// NewUnionRole returns a new role with maximum of the permissions of all input roles.
-func NewUnionRole(roles []*storage.Role) *storage.Role {
+// NewUnionPermissions returns maximum of the permissions of all input roles.
+func NewUnionPermissions(roles []*storage.Role) *storage.ResourceToAccess {
 	if len(roles) == 0 {
 		return nil
 	}
 	if len(roles) == 1 {
-		return roles[0]
+		return &storage.ResourceToAccess{
+			ResourceToAccess: roles[0].GetResourceToAccess(),
+		}
 	}
 
 	// Combine permissions into a map by resource, using the maximum access level for any
@@ -64,7 +66,7 @@ func NewUnionRole(roles []*storage.Role) *storage.Role {
 		resourceToAccess = nil
 	}
 
-	return &storage.Role{
+	return &storage.ResourceToAccess{
 		ResourceToAccess: resourceToAccess,
 	}
 }

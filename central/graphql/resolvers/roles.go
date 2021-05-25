@@ -18,7 +18,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("roles: [Role!]!"),
 		schema.AddQuery("role(id: ID): Role"),
-		schema.AddQuery("myPermissions: Role"),
+		schema.AddQuery("myPermissions: GetPermissionsResponse"),
 		schema.AddExtraResolver("Role", "resourceToAccess: [Label!]!"),
 	)
 }
@@ -50,10 +50,10 @@ func (resolver *Resolver) Role(ctx context.Context, args struct{ *graphql.ID }) 
 }
 
 // MyPermissions returns a GraphQL resolver for the role of the current authenticated user. Only supplies permissions.
-func (resolver *Resolver) MyPermissions(ctx context.Context) (*roleResolver, error) {
+func (resolver *Resolver) MyPermissions(ctx context.Context) (*getPermissionsResponseResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "MyPermissions")
-	role, err := service.GetMyPermissions(ctx)
-	return resolver.wrapRole(role, role != nil, err)
+	perms, err := service.GetMyPermissions(ctx)
+	return resolver.wrapGetPermissionsResponse(perms, perms != nil, err)
 }
 
 // Enable returning of the ResourceToAccess map.
@@ -65,7 +65,7 @@ func (resolver *roleResolver) ResourceToAccess() labels {
 	}
 	rToS := make(map[string]string)
 	for resource, access := range rToA {
-		rToS[resource] = string(access.String())
+		rToS[resource] = access.String()
 	}
 	return labelsResolver(rToS)
 }

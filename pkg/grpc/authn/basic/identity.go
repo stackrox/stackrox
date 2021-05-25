@@ -37,8 +37,10 @@ func (i identity) FullName() string {
 	return i.username
 }
 
-func (i identity) Permissions() *storage.Role {
-	return i.role
+func (i identity) Permissions() *storage.ResourceToAccess {
+	return &storage.ResourceToAccess{
+		ResourceToAccess: i.role.GetResourceToAccess(),
+	}
 }
 
 func (i identity) Roles() []*storage.Role {
@@ -51,10 +53,11 @@ func (i identity) Service() *storage.ServiceIdentity {
 
 func (i identity) User() *storage.UserInfo {
 	return &storage.UserInfo{
-		Username:    i.username,
-		Role:        i.role,
-		Permissions: i.role,
-		Roles:       []*storage.Role{i.role},
+		Username: i.username,
+		Permissions: &storage.ResourceToAccess{
+			ResourceToAccess: i.role.GetResourceToAccess(),
+		},
+		Roles: []*storage.Role{i.role},
 	}
 }
 

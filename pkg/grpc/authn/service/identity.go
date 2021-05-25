@@ -32,7 +32,7 @@ func (i identity) FullName() string {
 	return i.id.Subject.CN()
 }
 
-func (i identity) Permissions() *storage.Role {
+func (i identity) Permissions() *storage.ResourceToAccess {
 	return nil
 }
 

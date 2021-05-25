@@ -100,7 +100,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storag
 	return role, nil
 }
 
-func (s *serviceImpl) GetMyPermissions(ctx context.Context, _ *v1.Empty) (*storage.Role, error) {
+func (s *serviceImpl) GetMyPermissions(ctx context.Context, _ *v1.Empty) (*v1.GetPermissionsResponse, error) {
 	return GetMyPermissions(ctx)
 }
 
@@ -154,15 +154,15 @@ func (s *serviceImpl) GetResources(context.Context, *v1.Empty) (*v1.GetResources
 }
 
 // GetMyPermissions returns the permissions for a user based on the context.
-func GetMyPermissions(ctx context.Context) (*storage.Role, error) {
-	// Get the role from the current user context.
+func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
+	// Get the perms from the current user context.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
 		return nil, status.Error(codes.Internal, "unable to retrieve user identity")
 	}
-	role := id.Permissions().Clone()
-	role.Name = "" // Clear name since this concept can't be applied to a user (Permission may result from many roles).
-	return role, nil
+	return &v1.GetPermissionsResponse{
+		ResourceToAccess: id.Permissions().Clone().GetResourceToAccess(),
+	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

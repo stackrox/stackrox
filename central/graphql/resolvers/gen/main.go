@@ -41,6 +41,7 @@ var (
 			reflect.TypeOf((*v1.ProcessNameGroup)(nil)),
 			reflect.TypeOf((*storage.Risk)(nil)),
 			reflect.TypeOf((*storage.Role)(nil)),
+			reflect.TypeOf((*v1.GetPermissionsResponse)(nil)),
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 			reflect.TypeOf((*storage.Secret)(nil)),
 			reflect.TypeOf((*storage.SimpleAccessScope)(nil)),

@@ -565,6 +565,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"invalidRunIds: [String!]!",
 		"runs: [ComplianceRun]!",
 	}))
+	utils.Must(builder.AddType("GetPermissionsResponse", []string{
+	}))
 	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
 		"project: String!",
@@ -5582,6 +5584,30 @@ func (resolver *getComplianceRunStatusesResponseResolver) InvalidRunIds(ctx cont
 func (resolver *getComplianceRunStatusesResponseResolver) Runs(ctx context.Context) ([]*complianceRunResolver, error) {
 	value := resolver.data.GetRuns()
 	return resolver.root.wrapComplianceRuns(value, nil)
+}
+
+type getPermissionsResponseResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *v1.GetPermissionsResponse
+}
+
+func (resolver *Resolver) wrapGetPermissionsResponse(value *v1.GetPermissionsResponse, ok bool, err error) (*getPermissionsResponseResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &getPermissionsResponseResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapGetPermissionsResponses(values []*v1.GetPermissionsResponse, err error) ([]*getPermissionsResponseResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*getPermissionsResponseResolver, len(values))
+	for i, v := range values {
+		output[i] = &getPermissionsResponseResolver{root: resolver, data: v}
+	}
+	return output, nil
 }
 
 type googleProviderMetadataResolver struct {

@@ -17,7 +17,7 @@ type Identity interface {
 	FullName() string
 
 	User() *storage.UserInfo
-	Permissions() *storage.Role
+	Permissions() *storage.ResourceToAccess
 	Roles() []*storage.Role
 
 	Service() *storage.ServiceIdentity

@@ -78,7 +78,7 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 				return nil, err
 			}
 			identity.roles = roles
-			identity.perms = permissions.NewUnionRole(roles)
+			identity.perms = permissions.NewUnionPermissions(roles)
 			return identity, nil
 		}
 	}
@@ -127,7 +127,7 @@ type identity struct {
 	info       requestinfo.CertInfo
 	provider   authproviders.Provider
 	roles      []*storage.Role
-	perms      *storage.Role
+	perms      *storage.ResourceToAccess
 	attributes map[string][]string
 }
 
@@ -146,13 +146,12 @@ func (i *identity) FullName() string {
 func (i *identity) User() *storage.UserInfo {
 	return &storage.UserInfo{
 		FriendlyName: i.info.Subject.CommonName,
-		Role:         i.perms,
 		Permissions:  i.perms,
 		Roles:        i.roles,
 	}
 }
 
-func (i *identity) Permissions() *storage.Role {
+func (i *identity) Permissions() *storage.ResourceToAccess {
 	return i.perms
 }
 

@@ -69,6 +69,16 @@ message SimpleAccessScope {
     Rules  rules        = 4;
 }
 
+// This message created to represent collection of permissions
+// Previously we used `Role` for this purpose, but after work on SAC we will not be able to do that
+// When `PermissionsSet` can be created and modified my customer, `ResourceToAccess` is internal proto aimed ot reduce
+// amount of unnecessary usage of `Role` proto
+message ResourceToAccess {
+    reserved 1; // name, likely not used in permission checking
+    reserved 2; // global_access, likely not used outside system roles
+    map<string, Access> resource_to_access = 3;
+}
+
 // EffectiveAccessScope describes which clusters and namespaces are "in scope"
 // given current state. Basically, if AccessScope is applied to the currently
 // known clusters and namespaces, the result is EffectiveAccessScope.

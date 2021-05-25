@@ -44,13 +44,18 @@ func whoami(timeout time.Duration) error {
 		return err
 	}
 
-	role, err := v1.NewRoleServiceClient(conn).GetMyPermissions(ctx, &v1.Empty{})
+	perms, err := v1.NewRoleServiceClient(conn).GetMyPermissions(ctx, &v1.Empty{})
+	if err != nil {
+		return err
+	}
+
+	roles, err := v1.NewRoleServiceClient(conn).GetRoles(ctx, &v1.Empty{})
 	if err != nil {
 		return err
 	}
 
 	// Lexicographically sort the set of resources we have (known) access to.
-	resourceToAccess := role.GetResourceToAccess()
+	resourceToAccess := perms.GetResourceToAccess()
 	resources := make([]string, 0, len(resourceToAccess))
 	for resource := range resourceToAccess {
 		resources = append(resources, resource)
@@ -62,14 +67,26 @@ func whoami(timeout time.Duration) error {
 	fmt.Printf("  %s\n", auth.GetUserId())
 
 	// Print resource access information
+	printRoles(roles.GetRoles())
 	fmt.Println("Access:")
-	fmt.Printf("  Role name: %s\n", role.GetName())
 	for _, resource := range resources {
 		access := resourceToAccess[resource]
 		fmt.Printf("  %s %s\n", accessString(access), resource)
 	}
 
 	return nil
+}
+
+func printRoles(roles []*storage.Role) {
+	fmt.Println("Roles:")
+	fmt.Print(" ")
+	for i, r := range roles {
+		fmt.Print(r.GetName())
+		if i != len(roles)-1 {
+			fmt.Print(", ")
+		}
+	}
+	fmt.Print("\n")
 }
 
 func accessString(access storage.Access) string {

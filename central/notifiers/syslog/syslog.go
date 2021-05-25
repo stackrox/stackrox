@@ -130,7 +130,7 @@ func auditLogToCEF(auditLog *v1.Audit_Message) string {
 
 	// deviceReciptTime is allowed to be ms since epoch, seems easier than converting it to a time string
 	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, auditLog.GetTime()))
-	extensionList = append(extensionList, makeExtensionPair(sourceUserPrivileges, auditLog.GetUser().GetPermissions().GetName()))
+	extensionList = append(extensionList, makeExtensionPair(sourceUserPrivileges, joinRoleNames(auditLog.GetUser().GetRoles())))
 	extensionList = append(extensionList, makeExtensionPair(sourceUserName, auditLog.GetUser().GetUsername()))
 	extensionList = append(extensionList, makeExtensionPair(requestURL, auditLog.GetRequest().GetEndpoint()))
 	extensionList = append(extensionList, makeExtensionPair(requestMethod, auditLog.GetRequest().GetMethod()))
@@ -139,6 +139,14 @@ func auditLogToCEF(auditLog *v1.Audit_Message) string {
 	extensionList = append(extensionList, makeJSONExtensionPair(stackroxKubernetesSecurityPlatformAuditLog, auditLog))
 
 	return getCEFHeaderWithExtension("AuditLog", "AuditLog", 3, makeExtensionFromPairs(extensionList))
+}
+
+func joinRoleNames(roles []*storage.Role) string {
+	roleNames := make([]string, 0, len(roles))
+	for _, r := range roles {
+		roleNames = append(roleNames, r.GetName())
+	}
+	return strings.Join(roleNames, ",")
 }
 
 func alertToCEF(alert *storage.Alert) string {

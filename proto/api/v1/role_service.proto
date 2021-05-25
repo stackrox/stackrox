@@ -22,6 +22,14 @@ message GetRolesResponse {
     repeated storage.Role roles = 1;
 }
 
+message GetPermissionsResponse {
+    // instead of role name
+    reserved 1;
+    // instead of globalAccess
+    reserved 2;
+    map<string, storage.Access> resource_to_access = 3;
+}
+
 message GetResourcesResponse {
     repeated string resources = 1;
 }
@@ -63,7 +71,7 @@ service RoleService {
         };
     }
 
-    rpc GetMyPermissions (Empty) returns (storage.Role) {
+    rpc GetMyPermissions (Empty) returns (GetPermissionsResponse) {
         option (google.api.http) = {
             get: "/v1/mypermissions"
         };

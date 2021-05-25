@@ -57,11 +57,11 @@ func LegacyAccessScopesContextEnricher(ctx context.Context) (context.Context, er
 	return sac.WithGlobalAccessScopeChecker(ctx, scc), nil
 }
 
-func computeMinimumAccess(r *storage.Role) storage.Access {
+func computeMinimumAccess(perms *storage.ResourceToAccess) storage.Access {
 	minimumAccess := storage.Access_READ_WRITE_ACCESS
 	for _, resource := range resources.ListAll() {
-		if r.ResourceToAccess[string(resource)] < minimumAccess {
-			minimumAccess = r.ResourceToAccess[string(resource)]
+		if perms.GetResourceToAccess()[string(resource)] < minimumAccess {
+			minimumAccess = perms.GetResourceToAccess()[string(resource)]
 			if minimumAccess == storage.Access_NO_ACCESS {
 				return minimumAccess
 			}

@@ -15,7 +15,7 @@ type roleBasedIdentity struct {
 	username     string
 	friendlyName string
 	fullName     string
-	perms        *storage.Role
+	perms        *storage.ResourceToAccess
 	roles        []*storage.Role
 	expiry       time.Time
 	attributes   map[string][]string
@@ -34,7 +34,7 @@ func (i *roleBasedIdentity) FullName() string {
 	return i.fullName
 }
 
-func (i *roleBasedIdentity) Permissions() *storage.Role {
+func (i *roleBasedIdentity) Permissions() *storage.ResourceToAccess {
 	return i.perms
 }
 
@@ -50,7 +50,6 @@ func (i *roleBasedIdentity) User() *storage.UserInfo {
 	return &storage.UserInfo{
 		Username:     i.username,
 		FriendlyName: i.friendlyName,
-		Role:         i.perms,
 		Permissions:  i.perms,
 		Roles:        i.roles,
 	}
