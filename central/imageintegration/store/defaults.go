@@ -82,6 +82,17 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 			},
 		},
 	},
+	{
+		Id:         "54107745-5717-49c1-9073-a2b72f7a3b49",
+		Name:       "registry.access.redhat.com",
+		Type:       "rhel",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "registry.access.redhat.com",
+			},
+		},
+	},
 }
 
 // DelayedIntegration is a default integration to be added only when the trigger function returns true
