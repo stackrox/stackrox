@@ -61,7 +61,7 @@ function verify_orch {
         exit 1
     fi
     if [ "$ORCH" == "k8s" ]; then
-        if kubectl api-versions | grep -q openshift.io; then
+        if kubectl api-versions | grep -q configs.operator.openshift.io; then
             echo "Are you running an OpenShift orchestrator? Please use deploy/openshift/deploy*.sh to deploy."
             exit 1
         fi
