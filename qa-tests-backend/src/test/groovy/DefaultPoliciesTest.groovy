@@ -287,6 +287,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                     slackPayload += "\n${k}: ${v}"
                 }
                 SlackUtil.sendMessage(slackPayload)
+
+                imageVulnMap.keySet().collect().each { imageFullName ->
+                    Helpers.collectImageScanForDebug(
+                            imageFullName, imageFullName.replaceAll("\\W", "-")+".json"
+                    )
+                }
             }
         }
     }
