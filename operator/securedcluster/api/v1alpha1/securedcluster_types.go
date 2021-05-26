@@ -36,7 +36,7 @@ type SecuredClusterSpec struct {
 	// CentralEndpoint should specify the address of the Central endpoint, including the port number.
 	// If using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address
 	// with wss://.
-	CentralEndpoint string `json:"centralEndpoint"`
+	CentralEndpoint *string `json:"centralEndpoint,omitempty"`
 
 	TLS              *common.TLSConfig              `json:"tls,omitempty"`
 	ImagePullSecrets []corev1.LocalObjectReference  `json:"imagePullSecrets,omitempty"`
@@ -59,6 +59,9 @@ type SensorComponentSpec struct {
 	// Address of the Sensor endpoint including port number. No trailing slash.
 	// Rarely needs to be changed.
 	Endpoint *string `json:"endpoint,omitempty"`
+
+	// Customizations to apply on sensor component.
+	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.
@@ -78,6 +81,9 @@ type AdmissionControlComponentSpec struct {
 	// `AdmissionReview` requests for update Kubernetes events like exec and portforward.
 	// Defaults to `false` on OpenShift, to `true` otherwise.
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
+
+	// Customizations to apply on admission control component.
+	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
 // CollectorComponentSpec declares configuration settings for the collector component.
@@ -98,11 +104,11 @@ type CollectionMethod string
 
 const (
 	// CollectionEBPF means: use EBPF collection.
-	CollectionEBPF = "EBPF"
-	// CollectionModule means: use KERNEL_MODULE collection.
-	CollectionModule = "KernelModule"
+	CollectionEBPF CollectionMethod = "EBPF"
+	// CollectionKernelModule means: use KERNEL_MODULE collection.
+	CollectionKernelModule CollectionMethod = "KernelModule"
 	// CollectionNone means: NO_COLLECTION.
-	CollectionNone = "None"
+	CollectionNone CollectionMethod = "NoCollection"
 )
 
 // TaintTolerationPolicy is a type for values of spec.collector.taintToleration

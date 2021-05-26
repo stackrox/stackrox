@@ -17,11 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/operator/securedcluster/api/v1alpha1"
+	"github.com/stackrox/rox/operator/securedcluster/pkg/values/translation"
 	helmv2Reconciler "github.com/stackrox/rox/pkg/operator/helm/reconciler"
 	helmv1Reconciler "github.com/stackrox/rox/pkg/operator/helm/v1/reconciler"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -29,7 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -52,20 +56,20 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-type translator struct{}
+type translator struct {
+	config *rest.Config
+}
 
-func (translator) Translate(u *unstructured.Unstructured) (chartutil.Values, error) {
+func (t translator) Translate(u *unstructured.Unstructured) (chartutil.Values, error) {
 	sc := v1alpha1.SecuredCluster{}
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &sc)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(ROX-7089): replace this placeholder translation
-	v := chartutil.Values{}
-	v["clusterName"] = sc.Spec.ClusterName
-
-	return v, err
+	// TODO(ROX-7250): propagate context to Translators
+	// TODO(ROX-7251): make sure that the client we create here is kosher
+	return translation.Translate(context.TODO(), kubernetes.NewForConfigOrDie(t.config), sc)
 }
 
 func main() {
@@ -107,7 +111,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		if err := helmv2Reconciler.SetupReconcilerWithManager(mgr, gvk, image.SecuredClusterServicesChartPrefix, translator{}); err != nil {
+		if err := helmv2Reconciler.SetupReconcilerWithManager(mgr, gvk, image.SecuredClusterServicesChartPrefix, translator{config: mgr.GetConfig()}); err != nil {
 			setupLog.Error(err, "unable to setup secured cluster reconciler")
 			os.Exit(1)
 		}

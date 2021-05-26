@@ -111,7 +111,7 @@ func TestBase(t *testing.T) {
 }
 
 func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...string) (*chart.Chart, map[string]string) {
-	var helmVals chartutil.Values
+	helmVals := make(chartutil.Values)
 	helmImage := image.GetDefaultImage()
 	for _, valStr := range valStrs {
 		extraVals, err := chartutil.ReadValues([]byte(valStr))
