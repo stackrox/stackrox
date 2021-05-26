@@ -15,8 +15,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-//lint:file-ignore U1000 Unused functions are due to test skip.
-
 type mockSender struct {
 	sentC chan *auditEvent
 }
@@ -61,6 +59,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsErrorIfFileExistsBu
 	_, reader := s.getMocks(logPath)
 
 	started, err := reader.StartReader(context.Background())
+
 	s.False(started)
 	s.Error(err, "It should fail with an error if the log file is not openable")
 }
@@ -88,7 +87,6 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsErrorIfReaderIsAlre
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
-	s.T().Skipf("Temporarily skipping until deadlock is fixed in tests")
 	tempDir, err := ioutil.TempDir("", "")
 	s.NoError(err)
 	defer func() {
@@ -105,6 +103,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 	line, expectedEvent := s.fakeAuditLogLine("get", "secrets", "fake-token", "stackrox")
 	_, err = f.Write([]byte(line))
 	s.NoError(err)
+	s.NoError(f.Sync())
 
 	started, err := reader.StartReader(context.Background())
 	s.True(started)
@@ -115,10 +114,11 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 	s.Equal(expectedEvent, *event)
 
 	// Write a few more log lines and check that they are read and parsed
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 3; i++ {
 		line, expectedEvent = s.fakeAuditLogLine("get", "configmaps", fmt.Sprintf("fake-map%d", i), "stackrox")
 		_, err = f.Write([]byte(line))
 		s.NoError(err)
+		s.NoError(f.Sync())
 
 		event = s.getSentEvent(sender.sentC)
 		s.Equal(expectedEvent, *event)
@@ -126,7 +126,6 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchFilter() {
-	s.T().Skipf("Temporarily skipping until deadlock is fixed in tests")
 	tempDir, err := ioutil.TempDir("", "")
 	s.NoError(err)
 	defer func() {
@@ -145,12 +144,14 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchFi
 		line, _ := s.fakeAuditLogLine("get", "something-else", "fake-thing", "stackrox")
 		_, err = f.Write([]byte(line))
 		s.NoError(err)
+		s.NoError(f.Sync())
 	}
 
 	// Then something that doesn't get filtered out
 	line, expectedEvent := s.fakeAuditLogLine("get", "secrets", "fake-token", "stackrox")
 	_, err = f.Write([]byte(line))
 	s.NoError(err)
+	s.NoError(f.Sync())
 
 	started, err := reader.StartReader(context.Background())
 	s.True(started)
@@ -162,7 +163,6 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchFi
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBeParsed() {
-	s.T().Skipf("Temporarily skipping until deadlock is fixed in tests")
 	tempDir, err := ioutil.TempDir("", "")
 	s.NoError(err)
 	defer func() {
@@ -179,11 +179,13 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBePar
 	// Write a line that cannot be unmarshalled
 	_, err = f.Write([]byte("This line cannot be unmarshalled!\n"))
 	s.NoError(err)
+	s.NoError(f.Sync())
 
 	// And then something that won't get filtered out
 	line, expectedEvent := s.fakeAuditLogLine("get", "secrets", "fake-token", "stackrox")
 	_, err = f.Write([]byte(line))
 	s.NoError(err)
+	s.NoError(f.Sync())
 
 	started, err := reader.StartReader(context.Background())
 	s.True(started)
@@ -192,6 +194,8 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBePar
 
 	event := s.getSentEvent(sender.sentC)
 	s.Equal(expectedEvent, *event) // First event received should match the one not filtered out
+
+	reader.StopReader() // force stop
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) getMocks(logPath string) (*mockSender, *auditLogReaderImpl) {
@@ -261,7 +265,7 @@ func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLine(verb, resourceType,
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) getSentEvent(c chan *auditEvent) *auditEvent {
-	afterCh := time.After(10 * time.Second)
+	afterCh := time.After(20 * time.Second)
 	select {
 	case event := <-c:
 		return event

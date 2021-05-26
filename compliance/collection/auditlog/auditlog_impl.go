@@ -56,7 +56,7 @@ func (s *auditLogReaderImpl) StopReader() bool {
 }
 
 func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer *tail.Tail) {
-	defer tailer.Cleanup()
+	defer s.cleanupTailOnStop(tailer)
 
 	for {
 		select {
@@ -66,8 +66,13 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 			return
 		case line := <-tailer.Lines:
 			if line == nil {
+				err := tailer.Err()
 				// For some reason the channel has been closed. We don't expect to ever get any more data here so return
-				log.Errorf("Audit log tailing on file %s has unexpectedly ended", s.logPath)
+				if err != nil {
+					log.Errorf("Audit log tailing on file %s has unexpectedly ended: %v", s.logPath, err)
+				} else {
+					log.Errorf("Audit log tailing on file %s has unexpectedly ended", s.logPath)
+				}
 				// TODO: report health failure
 				return
 			}
@@ -99,4 +104,11 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 
 func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent) bool {
 	return event.ObjectRef.Resource == "secrets" || event.ObjectRef.Resource == "configmaps"
+}
+
+func (s *auditLogReaderImpl) cleanupTailOnStop(tailer *tail.Tail) {
+	if err := tailer.Stop(); err != nil {
+		log.Errorf("Audit log tailer stopped with an error %v", err)
+	}
+	tailer.Cleanup()
 }
