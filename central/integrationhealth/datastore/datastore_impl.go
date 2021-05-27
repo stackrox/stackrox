@@ -3,13 +3,12 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -25,7 +24,7 @@ type datastoreImpl struct {
 func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*storage.IntegrationHealth, error) {
 	if ok, err := imageSAC.ReadAllowed(ctx); err != nil {
 		return nil,
-			status.Errorf(codes.Internal, "Failed to retrieve health for registries and scanners: %v", err)
+			errors.Errorf("Failed to retrieve health for registries and scanners: %v", err)
 	} else if !ok {
 		return nil, nil
 	}
@@ -34,7 +33,7 @@ func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*stora
 
 func (ds *datastoreImpl) GetNotifierPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
 	if ok, err := notifierSAC.ReadAllowed(ctx); err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to retrieve health for notifiers: %v", err)
+		return nil, errors.Errorf("Failed to retrieve health for notifiers: %v", err)
 	} else if !ok {
 		return nil, nil
 	}
@@ -43,7 +42,7 @@ func (ds *datastoreImpl) GetNotifierPlugins(ctx context.Context) ([]*storage.Int
 
 func (ds *datastoreImpl) GetBackupPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
 	if ok, err := backupSAC.ReadAllowed(ctx); err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to retrieve health for backup plugins: %v", err)
+		return nil, errors.Errorf("Failed to retrieve health for backup plugins: %v", err)
 	} else if !ok {
 		return nil, nil
 	}
@@ -52,7 +51,7 @@ func (ds *datastoreImpl) GetBackupPlugins(ctx context.Context) ([]*storage.Integ
 
 func (ds *datastoreImpl) UpdateIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error {
 	if ok, err := writeAllowed(ctx, integrationHealth.GetType()); err != nil {
-		return status.Errorf(codes.Internal, "Failed to update health for integration %s: %v",
+		return errors.Errorf("Failed to update health for integration %s: %v",
 			integrationHealth.Id, err)
 	} else if !ok {
 		return nil
@@ -63,13 +62,13 @@ func (ds *datastoreImpl) UpdateIntegrationHealth(ctx context.Context, integratio
 func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string) error {
 	currentHealth, exists, err := ds.GetIntegrationHealth(ctx, id)
 	if err != nil {
-		return status.Errorf(codes.Internal, "unable to find integration health for integration %s", id)
+		return errors.Errorf("unable to find integration health for integration %s", id)
 	}
 	if !exists {
 		return nil
 	}
 	if ok, err := writeAllowed(ctx, currentHealth.GetType()); err != nil {
-		return status.Errorf(codes.Internal, "Failed to remove health for integration %s: %v", id, err)
+		return errors.Errorf("Failed to remove health for integration %s: %v", id, err)
 	} else if !ok {
 		return nil
 	}
@@ -82,7 +81,7 @@ func (ds *datastoreImpl) GetIntegrationHealth(ctx context.Context, id string) (*
 		return nil, false, err
 	}
 	if ok, err := readAllowed(ctx, health.GetType()); err != nil {
-		return nil, false, status.Errorf(codes.Internal, "Failed to get health for integration %s: %v", id, err)
+		return nil, false, errors.Errorf("Failed to get health for integration %s: %v", id, err)
 	} else if !ok {
 		return nil, false, nil
 	}
@@ -98,7 +97,7 @@ func writeAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool
 	case storage.IntegrationHealth_BACKUP:
 		return backupSAC.WriteAllowed(ctx)
 	default:
-		return false, utils.Should(status.Error(codes.Internal, "Unknown integration type"))
+		return false, utils.Should(errors.New("Unknown integration type"))
 	}
 }
 
@@ -111,7 +110,7 @@ func readAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool,
 	case storage.IntegrationHealth_BACKUP:
 		return backupSAC.ReadAllowed(ctx)
 	default:
-		return false, utils.Should(status.Error(codes.Internal, "Unknown integration type"))
+		return false, utils.Should(errors.New("Unknown integration type"))
 	}
 }
 

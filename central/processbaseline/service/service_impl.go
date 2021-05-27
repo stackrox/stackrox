@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -20,8 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -85,14 +84,14 @@ func validateKeyNotEmpty(key *storage.ProcessBaselineKey) error {
 
 func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetProcessBaselineRequest) (*storage.ProcessBaseline, error) {
 	if err := validateKeyNotEmpty(request.GetKey()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	baseline, exists, err := s.dataStore.GetProcessBaseline(ctx, request.GetKey())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "No process baseline with key %+v found", request.GetKey())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "No process baseline with key %+v found", request.GetKey())
 	}
 	return baseline, nil
 }
@@ -163,12 +162,12 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 
 func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.DeleteProcessBaselinesRequest) (*v1.DeleteProcessBaselinesResponse, error) {
 	if request.GetQuery() == "" {
-		return nil, status.Error(codes.InvalidArgument, "query string must be nonempty")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "query string must be nonempty")
 	}
 
 	q, err := search.ParseQuery(request.GetQuery())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	results, err := s.dataStore.Search(ctx, q)

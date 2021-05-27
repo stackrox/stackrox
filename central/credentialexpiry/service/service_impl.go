@@ -21,8 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -46,24 +44,24 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 	case v1.GetCertExpiry_SCANNER:
 		return s.getScannerCertExpiry(ctx)
 	}
-	return nil, status.Errorf(codes.InvalidArgument, "invalid component: %v", request.GetComponent())
+	return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid component: %v", request.GetComponent())
 }
 
 func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error) {
 	cert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to retrieve leaf certificate: %v", err)
+		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
 	}
 	if len(cert.Certificate) == 0 {
-		return nil, status.Error(codes.Internal, "no central cert found")
+		return nil, errors.New("no central cert found")
 	}
 	parsedCert, err := x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to parse central cert")
+		return nil, errors.New("failed to parse central cert")
 	}
 	expiry, err := types.TimestampProto(parsedCert.NotAfter)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to convert timestamp: %v", err)
+		return nil, errors.Errorf("failed to convert timestamp: %v", err)
 	}
 	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
 }
@@ -111,11 +109,11 @@ func (s *serviceImpl) maybeGetExpiryFomScannerAt(ctx context.Context, endpoint s
 
 func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
 	if s.scannerConfig == nil {
-		return nil, status.Error(codes.Internal, "could not load TLS config to talk to scanner")
+		return nil, errors.New("could not load TLS config to talk to scanner")
 	}
 	integrations, err := s.imageIntegrations.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to retrieve image integrations: %v", err)
+		return nil, errors.Errorf("failed to retrieve image integrations: %v", err)
 	}
 
 	var clairifyEndpoints []string
@@ -125,7 +123,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		}
 	}
 	if len(clairifyEndpoints) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "StackRox Scanner is not integrated")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "StackRox Scanner is not integrated")
 	}
 	errC := make(chan error, len(clairifyEndpoints))
 	expiryC := make(chan *types.Timestamp, len(clairifyEndpoints))
@@ -152,7 +150,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 			errorList.AddError(err)
 			// All the endpoints have failed.
 			if len(errorList.ErrorStrings()) == len(clairifyEndpoints) {
-				return nil, status.Error(codes.Internal, errorList.String())
+				return nil, errors.New(errorList.String())
 			}
 		case expiry := <-expiryC:
 			return &v1.GetCertExpiry_Response{Expiry: expiry}, nil

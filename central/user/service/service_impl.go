@@ -4,18 +4,18 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/user/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -66,7 +66,7 @@ func (s *serviceImpl) GetUser(ctx context.Context, id *v1.ResourceByID) (*storag
 		return nil, err
 	}
 	if user == nil {
-		return nil, status.Errorf(codes.NotFound, "user %s not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "user %s not found", id.GetId())
 	}
 	return user, nil
 }

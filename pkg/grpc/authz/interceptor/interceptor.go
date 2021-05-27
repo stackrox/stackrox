@@ -2,12 +2,11 @@ package interceptor
 
 import (
 	"context"
+	"errors"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type authContextKey struct{}
@@ -44,7 +43,7 @@ func AuthContextUpdaterInterceptor() grpc.UnaryServerInterceptor {
 func GetAuthErrorFromContext(ctx context.Context) AuthStatus {
 	authCtxValue := ctx.Value(authContextKey{})
 	if authCtxValue == nil {
-		return AuthStatus{Error: status.Error(codes.Internal, "authentication status is always required")}
+		return AuthStatus{Error: errors.New("authentication status is always required")}
 	}
 	return authCtxValue.(AuthStatus)
 }

@@ -5,18 +5,18 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -92,7 +92,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 		return nil, err
 	}
 	if group == nil {
-		return nil, status.Errorf(codes.NotFound, "group %q not found", proto.MarshalTextString(props))
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "group %q not found", proto.MarshalTextString(props))
 	}
 	return group, nil
 }
@@ -100,7 +100,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateRequest) (*v1.Empty, error) {
 	for _, group := range req.GetRequiredGroups() {
 		if err := validate(group); err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 		}
 	}
 
@@ -113,7 +113,7 @@ func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateR
 
 func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
 	if err := validate(group); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	err := s.groups.Add(ctx, group)
 	if err != nil {
@@ -124,7 +124,7 @@ func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v
 
 func (s *serviceImpl) UpdateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
 	if err := validate(group); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	err := s.groups.Update(ctx, group)
 	if err != nil {

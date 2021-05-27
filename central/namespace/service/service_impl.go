@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/central/namespace/datastore"
@@ -12,12 +13,11 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -47,7 +47,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 func (s *serviceImpl) GetNamespaces(ctx context.Context, _ *v1.Empty) (*v1.GetNamespacesResponse, error) {
 	namespaces, err := namespace.ResolveAll(ctx, s.datastore, s.deployments, s.secrets, s.networkPolicies)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to retrieve namespaces: %v", err)
+		return nil, errors.Errorf("Failed to retrieve namespaces: %v", err)
 	}
 	return &v1.GetNamespacesResponse{
 		Namespaces: namespaces,
@@ -56,14 +56,14 @@ func (s *serviceImpl) GetNamespaces(ctx context.Context, _ *v1.Empty) (*v1.GetNa
 
 func (s *serviceImpl) GetNamespace(ctx context.Context, req *v1.ResourceByID) (*v1.Namespace, error) {
 	if req.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "ID cannot be empty")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "ID cannot be empty")
 	}
 	resolvedNS, found, err := namespace.ResolveByID(ctx, req.GetId(), s.datastore, s.deployments, s.secrets, s.networkPolicies)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to retrieve namespace: %v", err)
+		return nil, errors.Errorf("Failed to retrieve namespace: %v", err)
 	}
 	if !found {
-		return nil, status.Errorf(codes.InvalidArgument, "Namespace '%s' not found", req.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Namespace '%s' not found", req.GetId())
 	}
 	return resolvedNS, nil
 }

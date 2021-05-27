@@ -128,7 +128,7 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "network policy with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "network policy with id '%s' does not exist", request.GetId())
 	}
 	populateYAML(networkPolicy)
 	return networkPolicy, nil
@@ -143,7 +143,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	// Get the policies in the cluster
 	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, request.GetClusterId(), "")
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	// If there is a deployment query, filter the policies that apply to the deployments that match the query.
@@ -151,12 +151,12 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 		// Get the deployments we want to check connectivity between.
 		queryDeployments, err := s.getQueryDeployments(ctx, request.GetClusterId(), request.GetDeploymentQuery())
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, err
 		}
 
 		networkTree, err := s.getNetworkTree(request.GetClusterId())
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "unable to get network tree for cluster %s: %v", request.GetClusterId(), err)
+			return nil, errors.Errorf("unable to get network tree for cluster %s: %v", request.GetClusterId(), err)
 		}
 		networkPolicies = s.graphEvaluator.GetAppliedPolicies(queryDeployments, networkTree, networkPolicies)
 	}
@@ -165,7 +165,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	for _, np := range networkPolicies {
 		np.Yaml, err = networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, err
 		}
 	}
 
@@ -195,7 +195,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 
 	networkTree, err := s.getNetworkTree(request.GetClusterId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "unable to get network tree for cluster %s: %v", request.GetClusterId(), err)
+		return nil, errors.Errorf("unable to get network tree for cluster %s: %v", request.GetClusterId(), err)
 	}
 	// Generate the graph.
 	return s.graphEvaluator.GetGraph(request.GetClusterId(), queryDeploymentIDs, clusterDeployments, networkTree, networkPolicies, request.GetIncludePorts()), nil
@@ -215,7 +215,7 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 
 	err = s.networkPolicies.UpsertUndoRecord(ctx, request.GetClusterId(), undoRecord)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "network policy was applied, but undo record could not be stored: %v", err)
+		return nil, errors.Errorf("network policy was applied, but undo record could not be stored: %v", err)
 	}
 	return &v1.Empty{}, nil
 }
@@ -264,13 +264,13 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 			oldPolicies = append(oldPolicies, policyInSim.GetOldPolicy())
 			hasChanges = true
 		default:
-			return nil, status.Errorf(codes.Internal, "unhandled policy status %v", policyInSim.GetStatus())
+			return nil, errors.Errorf("unhandled policy status %v", policyInSim.GetStatus())
 		}
 	}
 
 	networkTree, err := s.getNetworkTree(request.GetClusterId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "unable to get network tree for cluster %s: %v", request.GetClusterId(), err)
+		return nil, errors.Errorf("unable to get network tree for cluster %s: %v", request.GetClusterId(), err)
 	}
 
 	newGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), queryDeploymentIDs, clusterDeployments, networkTree, newPolicies, request.GetIncludePorts())
@@ -299,21 +299,21 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
 	if request.GetClusterId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
 	}
 	if len(request.GetNotifierIds()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Notifier IDs must be specified")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Notifier IDs must be specified")
 	}
 	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Modification must have contents")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
 	}
 
 	clusterName, exists, err := s.clusterStore.GetClusterName(ctx, request.GetClusterId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to retrieve cluster: %s", err.Error())
+		return nil, errors.Errorf("failed to retrieve cluster: %s", err.Error())
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "Cluster '%s' not found", request.GetClusterId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Cluster '%s' not found", request.GetClusterId())
 	}
 
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
@@ -347,7 +347,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 
 	err = errorList.ToError()
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return &v1.Empty{}, nil
 }
@@ -359,12 +359,12 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 	}
 
 	if req.GetClusterId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
 	}
 
 	generated, toDelete, err := s.policyGenerator.Generate(ctx, req)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error generating network policies: %v", err)
+		return nil, errors.Errorf("error generating network policies: %v", err)
 	}
 
 	applyYAML, err := s.generateApplyYamlFromGeneratedPolicies(generated)
@@ -385,10 +385,10 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoModificationRequest) (*v1.GetUndoModificationResponse, error) {
 	undoRecord, exists, err := s.networkPolicies.GetUndoRecord(ctx, req.GetClusterId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not query undo store: %v", err)
+		return nil, errors.Errorf("could not query undo store: %v", err)
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "no undo record stored for cluster %q", req.GetClusterId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no undo record stored for cluster %q", req.GetClusterId())
 	}
 	return &v1.GetUndoModificationResponse{
 		UndoRecord: undoRecord,
@@ -400,7 +400,7 @@ func (s *serviceImpl) generateApplyYamlFromGeneratedPolicies(generatedPolicies [
 	for _, policy := range generatedPolicies {
 		yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: policy}.ToYaml()
 		if err != nil {
-			return "", status.Errorf(codes.Internal, "error converting generated network policy to YAML: %v", err)
+			return "", errors.Errorf("error converting generated network policy to YAML: %v", err)
 		}
 		if applyYAML != "" {
 			applyYAML += "\n---\n"
@@ -417,12 +417,12 @@ func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context
 	// Currently we don't look at request.GetDeleteExisting. We try to delete the existing baseline generated
 	// policy no matter what
 	if request.GetDeploymentId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
 	}
 
 	generated, toDelete, err := s.policyGenerator.GenerateFromBaselineForDeployment(ctx, request)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error generating network policies: %v", err)
+		return nil, errors.Errorf("error generating network policies: %v", err)
 	}
 
 	applyYAML, err := s.generateApplyYamlFromGeneratedPolicies(generated)
@@ -473,18 +473,18 @@ func (s *serviceImpl) getRelevantClusterObjectsForDeployment(ctx context.Context
 	// Get the deployment
 	deployment, found, err := s.deployments.GetDeployment(ctx, deploymentID)
 	if err != nil {
-		return nil, nil, nil, status.Error(codes.Internal, err.Error())
+		return nil, nil, nil, err
 	} else if !found {
-		return nil, nil, nil, status.Error(codes.InvalidArgument, "specified deployment not found")
+		return nil, nil, nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "specified deployment not found")
 	}
 
 	networkTree, err := s.getNetworkTree(deployment.GetClusterId())
 	if err != nil {
-		return nil, nil, nil, status.Error(codes.Internal, err.Error())
+		return nil, nil, nil, err
 	}
 	_, deploymentsInCluster, err := s.getDeployments(ctx, deployment.GetClusterId(), "", nil)
 	if err != nil {
-		return nil, nil, nil, status.Error(codes.Internal, err.Error())
+		return nil, nil, nil, err
 	}
 	return deployment, networkTree, deploymentsInCluster, nil
 }
@@ -496,7 +496,7 @@ func (s *serviceImpl) getAllowedPeersForDeployment(ctx context.Context, deployme
 	// Get the policies in the cluster
 	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, deployment.GetClusterId(), "")
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	// Only get the network policies that are applied to the deployment
 	networkPolicies = s.graphEvaluator.GetAppliedPolicies([]*storage.Deployment{deployment}, networkTree, networkPolicies)
@@ -512,7 +512,7 @@ func (s *serviceImpl) getAllowedPeersForDeployment(ctx context.Context, deployme
 			true)
 	allowedPeers, err := s.getPeersOfDeploymentFromGraph(deployment, graphWithNetPols)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return allowedPeers, nil
 }
@@ -611,7 +611,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	modification *storage.NetworkPolicyModification,
 ) (*storage.NetworkPolicyApplicationUndoRecord, error) {
 	if modification.GetApplyYaml() == "" && len(modification.GetToDelete()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Modification must have contents")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
 	}
 
 	conn := s.sensorConnMgr.GetConnection(clusterID)
@@ -621,7 +621,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 
 	undoMod, err := conn.NetworkPolicies().ApplyNetworkPolicies(ctx, modification)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not apply network policy modification: %v", err)
+		return nil, errors.Errorf("could not apply network policy modification: %v", err)
 	}
 
 	var user string
@@ -649,9 +649,9 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 	// Get the deployment
 	deployment, found, err := s.deployments.GetDeployment(ctx, request.GetDeploymentId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	} else if !found {
-		return nil, status.Errorf(codes.NotFound, "requested deployment %q not found", request.GetDeploymentId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "requested deployment %q not found", request.GetDeploymentId())
 	}
 
 	undoRecord, err := s.applyModificationAndGetUndoRecord(ctx, deployment.GetClusterId(), request.GetModification())
@@ -666,7 +666,7 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 			UndoRecord:   undoRecord,
 		})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "network policy was applied, but undo deployment record could not be stored: %v", err)
+		return nil, errors.Errorf("network policy was applied, but undo deployment record could not be stored: %v", err)
 	}
 	return &v1.Empty{}, nil
 }
@@ -678,16 +678,16 @@ func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, requ
 	// Try getting the deployment first
 	_, found, err := s.deployments.GetDeployment(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	} else if !found {
-		return nil, status.Errorf(codes.NotFound, "deployment with ID %q not found", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with ID %q not found", request.GetId())
 	}
 
 	undoRecord, found, err := s.networkPolicies.GetUndoDeploymentRecord(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	} else if !found {
-		return nil, status.Errorf(codes.NotFound, "no undo record stored for deployment %q", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no undo record stored for deployment %q", request.GetId())
 	}
 	return &v1.GetUndoModificationForDeploymentResponse{
 		UndoRecord: undoRecord.GetUndoRecord(),
@@ -710,9 +710,9 @@ func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx cont
 	// Get allowed peers from the deployment's NetworkBaseline
 	baseline, found, err := s.networkBaselines.GetNetworkBaseline(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	} else if !found {
-		return nil, status.Error(codes.NotFound, "requested deployment's baseline not found")
+		return nil, errors.Wrap(errorhelpers.ErrNotFound, "requested deployment's baseline not found")
 	}
 
 	// Populate a map of peer deployments by ID.
@@ -1061,14 +1061,14 @@ func validateNoPolicyDiff(applyPolicy *storage.NetworkPolicy, currPolicy *storag
 
 func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error {
 	if clusterID == "" {
-		return status.Error(codes.InvalidArgument, "cluster ID must be specified")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "cluster ID must be specified")
 	}
 	exists, err := s.clusterStore.Exists(ctx, clusterID)
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 	if !exists {
-		return status.Errorf(codes.NotFound, "cluster with ID %q doesn't exist", clusterID)
+		return errors.Wrapf(errorhelpers.ErrNotFound, "cluster with ID %q doesn't exist", clusterID)
 	}
 	return nil
 }

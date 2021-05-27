@@ -8,9 +8,11 @@ import (
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -35,24 +37,24 @@ func (s *service) handleRestore(req *http.Request) error {
 	headerLenStr := queryValues.Get("headerLength")
 	headerLen, err := strconv.Atoi(headerLenStr)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid header length %q: %v", headerLenStr, err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid header length %q: %v", headerLenStr, err)
 	}
 
 	id := queryValues.Get("id")
 	if id == "" {
 		id = uuid.NewV4().String()
 	} else if _, err := uuid.FromString(id); err != nil {
-		return status.Errorf(codes.InvalidArgument, "ID must be unset or a valid UUID (got: %q)", id)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "ID must be unset or a valid UUID (got: %q)", id)
 	}
 
 	headerBytes := make([]byte, headerLen)
 	if _, err := io.ReadFull(req.Body, headerBytes); err != nil {
-		return status.Errorf(codes.InvalidArgument, "could not read request header (%d bytes): %v", headerLen, err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not read request header (%d bytes): %v", headerLen, err)
 	}
 
 	var header v1.DBRestoreRequestHeader
 	if err := proto.Unmarshal(headerBytes, &header); err != nil {
-		return status.Errorf(codes.InvalidArgument, "could not parse restore request header: %v", err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not parse restore request header: %v", err)
 	}
 
 	// Make sure we perform a clean cut when reading from the stream. Returning from a handler while a concurrent call
@@ -70,7 +72,7 @@ func (s *service) handleRestore(req *http.Request) error {
 
 	attemptDone, err := s.mgr.LaunchRestoreProcess(req.Context(), id, &header, ioutil.NopCloser(body))
 	if err != nil {
-		return status.Errorf(codes.Internal, "Could not create a restore process: %v", err)
+		return errors.Errorf("Could not create a restore process: %v", err)
 	}
 
 	restoreErr, wasDone := concurrency.WaitForErrorUntil(attemptDone, req.Context())
@@ -78,7 +80,7 @@ func (s *service) handleRestore(req *http.Request) error {
 		return status.Errorf(codes.Canceled, "context canceled before restore could complete: %v", req.Context().Err())
 	}
 	if restoreErr != nil {
-		return status.Errorf(codes.Internal, "database restore failed: %v", restoreErr)
+		return errors.Errorf("database restore failed: %v", restoreErr)
 	}
 
 	return nil
@@ -92,31 +94,31 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 	queryValues := req.URL.Query()
 	processID := queryValues.Get("id")
 	if processID == "" {
-		return status.Error(codes.InvalidArgument, "need to specify a restore process ID for resuming")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "need to specify a restore process ID for resuming")
 	}
 
 	attemptID := queryValues.Get("attemptId")
 	if _, err := uuid.FromString(attemptID); err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid attempt ID %q: %v", attemptID, err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid attempt ID %q: %v", attemptID, err)
 	}
 
 	posStr := queryValues.Get("pos")
 	pos, err := strconv.ParseInt(posStr, 10, 64)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid position specification %q: %v", posStr, err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid position specification %q: %v", posStr, err)
 	}
 
 	crc32Str := queryValues.Get("crc32")
 	crc32Val, err := strconv.ParseUint(crc32Str, 16, 32)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid CRC32 value %q: %v", crc32Str, err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid CRC32 value %q: %v", crc32Str, err)
 	}
 
 	crc32 := uint32(crc32Val)
 
 	activeProcess := s.mgr.GetActiveRestoreProcess()
 	if activeProcess.Metadata().GetId() != processID {
-		return status.Errorf(codes.InvalidArgument, "specified process ID %s does not match ID of currently active restore process", processID)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "specified process ID %s does not match ID of currently active restore process", processID)
 	}
 
 	// Make sure we perform a clean cut when reading from the stream. Returning from a handler while a concurrent call
@@ -134,7 +136,7 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 
 	attemptDone, err := activeProcess.Resume(req.Context(), attemptID, ioutil.NopCloser(body), pos, binenc.BigEndian.EncodeUint32(crc32))
 	if err != nil {
-		return status.Errorf(codes.Internal, "could not resume restore process %s: %v", processID, err)
+		return errors.Errorf("could not resume restore process %s: %v", processID, err)
 	}
 
 	attemptErr, wasDone := concurrency.WaitForErrorUntil(attemptDone, req.Context())
@@ -142,7 +144,7 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 		return status.Errorf(codes.Canceled, "context canceled before restore could complete: %v", req.Context().Err())
 	}
 	if attemptErr != nil {
-		return status.Errorf(codes.Internal, "database restore failed: %v", attemptErr)
+		return errors.Errorf("database restore failed: %v", attemptErr)
 	}
 
 	return nil

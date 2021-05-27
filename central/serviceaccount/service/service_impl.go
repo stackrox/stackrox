@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	roleDatastore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -14,14 +15,13 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -61,10 +61,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.ResourceByID) (*v1.GetServiceAccountResponse, error) {
 	sa, exists, err := s.serviceAccounts.GetServiceAccount(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "service account with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "service account with id '%s' does not exist", request.GetId())
 	}
 
 	clusterRoles, scopedRoles, err := s.getRoles(ctx, sa)
@@ -87,12 +87,12 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListServiceAccountResponse, error) {
 	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	serviceAccounts, err := s.serviceAccounts.SearchRawServiceAccounts(ctx, q)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to retrieve service accounts: %s", err)
+		return nil, errors.Errorf("failed to retrieve service accounts: %s", err)
 	}
 
 	saAndRoles := make([]*v1.ServiceAccountAndRoles, 0, len(serviceAccounts))

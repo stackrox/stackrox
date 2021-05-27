@@ -26,8 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -332,7 +330,7 @@ func (m *manager) validatePeers(peers []*v1.NetworkBaselinePeerStatus) error {
 		if len(invalidPeerTypes) > 0 {
 			errorList.AddStringf("invalid types for peers: %v", invalidPeerTypes)
 		}
-		return status.Error(codes.InvalidArgument, errorList.String())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, errorList.String())
 	}
 	return nil
 }
@@ -344,7 +342,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 
 	baseline, found := m.baselinesByDeploymentID[deploymentID]
 	if !found {
-		return status.Errorf(codes.InvalidArgument, "no baseline found for deployment id %q", deploymentID)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "no baseline found for deployment id %q", deploymentID)
 	}
 	if err := m.validatePeers(modifyRequest.GetPeers()); err != nil {
 		return err
@@ -356,7 +354,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
 		return err
 	} else if !ok {
-		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
+		return sac.ErrPermissionDenied
 	}
 
 	modifiedDeploymentIDs := set.NewStringSet()
@@ -408,7 +406,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 		}
 	}
 	if err := m.persistNetworkBaselines(modifiedDeploymentIDs, nil); err != nil {
-		return status.Errorf(codes.Internal, "failed to persist baseline to store: %v", err)
+		return errors.Errorf("failed to persist baseline to store: %v", err)
 	}
 	return nil
 }
@@ -512,13 +510,13 @@ type clusterNamespacePair struct {
 func (m *manager) processBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error {
 	baseline, found := m.baselinesByDeploymentID[deploymentID]
 	if !found {
-		return status.Error(codes.InvalidArgument, "no baseline with given deployment ID found")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "no baseline with given deployment ID found")
 	}
 	// Permission check before modifying in-memory data structures
 	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
 		return err
 	} else if !ok {
-		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
+		return sac.ErrPermissionDenied
 	}
 
 	// No error if already locked/unlocked

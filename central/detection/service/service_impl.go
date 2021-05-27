@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	centralDetection "github.com/stackrox/rox/central/detection"
@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -35,8 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	coreV1 "k8s.io/api/core/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -106,7 +105,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		var err error
 		image, err = utils.GenerateImageFromString(req.GetImageName())
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, err
 		}
 	}
 	if image.GetName() == nil {
@@ -158,7 +157,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
 	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(enrichmentContext, deployment)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	for _, idx := range updatedIndices {
 		img := images[idx]
@@ -178,11 +177,11 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
 	alerts, err := s.detector.Detect(detectionCtx, deployment, images, filter)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	unusedCategories := getUnusedCategories()
 	if len(unusedCategories) > 0 {
-		return nil, status.Errorf(codes.Internal, "allowed categories %v did not match any policy categories", unusedCategories)
+		return nil, errors.Errorf("allowed categories %v did not match any policy categories", unusedCategories)
 	}
 	return &apiV1.DeployDetectionResponse_Run{
 		Name:   deployment.GetName(),
@@ -198,7 +197,7 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.Enr
 
 	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Could not convert to deployment from resource: %v", err)
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not convert to deployment from resource: %v", err)
 	}
 	return s.enrichAndDetect(ctx, eCtx, deployment, policyCategories...)
 }
@@ -213,11 +212,11 @@ func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
 			break
 		}
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "Failed to read YAML with err: %v", err)
+			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Failed to read YAML with err: %v", err)
 		}
 		obj, _, err := decode(yamlBytes, nil, nil)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "could not parse YAML: %v", err)
+			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not parse YAML: %v", err)
 		}
 		if list, ok := obj.(*coreV1.List); ok {
 			listResources, err := getObjectsFromList(list)
@@ -238,7 +237,7 @@ func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, error) {
 	for i, item := range list.Items {
 		obj, _, err := decode(item.Raw, nil, nil)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "Could not decode item %d in the list: %v", i, err)
+			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not decode item %d in the list: %v", i, err)
 		}
 		objects = append(objects, obj)
 	}
@@ -248,7 +247,7 @@ func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, error) {
 // DetectDeployTime runs detection on a deployment
 func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.DeployYAMLDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetYaml() == "" {
-		return nil, status.Error(codes.InvalidArgument, "yaml field must be specified in detection request")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "yaml field must be specified in detection request")
 	}
 
 	resources, err := getObjectsFromYAML(req.GetYaml())
@@ -267,7 +266,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	for _, r := range resources {
 		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "Unable to convert object: %v", err)
+			return nil, errors.Errorf("Unable to convert object: %v", err)
 		}
 		if run != nil {
 			runs = append(runs, run)
@@ -296,7 +295,7 @@ func (s *serviceImpl) populateDeploymentWithClusterInfo(ctx context.Context, clu
 		return err
 	}
 	if !exists {
-		return status.Errorf(codes.InvalidArgument, "cluster with ID %q does not exist", clusterID)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "cluster with ID %q does not exist", clusterID)
 	}
 	deployment.ClusterId = clusterID
 	deployment.ClusterName = clusterName
@@ -305,7 +304,7 @@ func (s *serviceImpl) populateDeploymentWithClusterInfo(ctx context.Context, clu
 
 func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetDeployment() == nil {
-		return nil, status.Error(codes.InvalidArgument, "Deployment must be passed to deploy time detection")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Deployment must be passed to deploy time detection")
 	}
 	if err := s.populateDeploymentWithClusterInfo(ctx, req.GetClusterId(), req.GetDeployment()); err != nil {
 		return nil, err
@@ -343,7 +342,7 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 
 	run, err := s.enrichAndDetect(ctx, enrichmentCtx, req.GetDeployment())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return &apiV1.DeployDetectionResponse{
 		Runs: []*apiV1.DeployDetectionResponse_Run{

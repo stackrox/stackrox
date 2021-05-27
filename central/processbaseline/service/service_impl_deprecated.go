@@ -6,8 +6,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // TODO(ROX-6194): The code below implements a deprecated `ProcessWhitelistServiceServer`
@@ -34,7 +32,7 @@ func (s *serviceImpl) GetProcessWhitelist(ctx context.Context, request *v1.GetPr
 func (s *serviceImpl) UpdateProcessWhitelists(ctx context.Context, request *v1.UpdateProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {
 	var realRequest v1.UpdateProcessBaselinesRequest
 	if err := convertProto(request, &realRequest); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	realResponse, err := s.UpdateProcessBaselines(ctx, &realRequest)
@@ -44,7 +42,7 @@ func (s *serviceImpl) UpdateProcessWhitelists(ctx context.Context, request *v1.U
 
 	var response v1.UpdateProcessWhitelistsResponse
 	if err := convertProto(realResponse, &response); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &response, nil
@@ -53,7 +51,7 @@ func (s *serviceImpl) UpdateProcessWhitelists(ctx context.Context, request *v1.U
 func (s *serviceImpl) LockProcessWhitelists(ctx context.Context, request *v1.LockProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {
 	var realRequest v1.LockProcessBaselinesRequest
 	if err := convertProto(request, &realRequest); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	realResponse, err := s.LockProcessBaselines(ctx, &realRequest)
@@ -63,7 +61,7 @@ func (s *serviceImpl) LockProcessWhitelists(ctx context.Context, request *v1.Loc
 
 	var response v1.UpdateProcessWhitelistsResponse
 	if err := convertProto(realResponse, &response); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &response, nil
@@ -72,7 +70,7 @@ func (s *serviceImpl) LockProcessWhitelists(ctx context.Context, request *v1.Loc
 func (s *serviceImpl) DeleteProcessWhitelists(ctx context.Context, request *v1.DeleteProcessWhitelistsRequest) (*v1.DeleteProcessWhitelistsResponse, error) {
 	var realRequest v1.DeleteProcessBaselinesRequest
 	if err := convertProto(request, &realRequest); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	realResponse, err := s.DeleteProcessBaselines(ctx, &realRequest)
@@ -82,7 +80,7 @@ func (s *serviceImpl) DeleteProcessWhitelists(ctx context.Context, request *v1.D
 
 	var response v1.DeleteProcessWhitelistsResponse
 	if err := convertProto(realResponse, &response); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &response, nil

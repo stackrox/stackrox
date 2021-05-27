@@ -2,12 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkgraph/aggregator"
@@ -90,13 +89,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
 	query, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	query, _ = search.FilterQueryWithMap(query, mappings.OptionsMap)
 	pred, err := netEntityPredFactory.GeneratePredicate(query)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "failed to parse query %q: %v", query.String(), err.Error())
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())
 	}
 
 	ret, err := s.entities.GetAllMatchingEntities(ctx, func(entity *storage.NetworkEntity) bool {
@@ -107,7 +106,7 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 		return false
 	})
 	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err != nil {
 		return nil, err
@@ -122,7 +121,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 	// An error here implies one of the arguments is invalid.
 	id, err := externalsrcs.NewClusterScopedID(request.GetClusterId(), request.GetEntity().GetCidr())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	if err := s.validateCluster(request.GetClusterId()); err != nil {
@@ -144,13 +143,13 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 
 	err = s.entities.CreateExternalNetworkEntity(ctx, entity, false)
 	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if errors.Is(err, errorhelpers.ErrAlreadyExists) {
 		return nil, status.Error(codes.AlreadyExists, err.Error())
 	}
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return entity, nil
@@ -163,7 +162,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 
 	if err := s.entities.DeleteExternalNetworkEntity(ctx, request.GetId()); err != nil {
 		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 		}
 		return nil, err
 	}
@@ -173,7 +172,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 
 func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v1.PatchNetworkEntityRequest) (*storage.NetworkEntity, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "network entity ID must be specified")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity ID must be specified")
 	}
 
 	id := request.GetId()
@@ -190,7 +189,7 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 
 	if err := s.entities.UpdateExternalNetworkEntity(ctx, entity, false); err != nil {
 		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 		}
 		return nil, err
 	}
@@ -200,13 +199,13 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string) (*storage.NetworkEntity, error) {
 	entity, found, err := s.entities.GetEntity(ctx, id)
 	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("network entity %s not found", id))
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "network entity %s not found", id)
 	}
 	if entity.GetInfo().GetExternalSource().GetDefault() {
 		return nil, status.Error(codes.PermissionDenied, "StackRox-generated network entities are immutable")
@@ -218,7 +217,7 @@ func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string
 func (s *serviceImpl) GetNetworkGraphConfig(ctx context.Context, _ *v1.Empty) (*storage.NetworkGraphConfig, error) {
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not obtain network graph configuration: %v", err)
+		return nil, errors.Errorf("could not obtain network graph configuration: %v", err)
 	}
 	return cfg, nil
 }
@@ -226,11 +225,11 @@ func (s *serviceImpl) GetNetworkGraphConfig(ctx context.Context, _ *v1.Empty) (*
 // PutNetworkGraphConfig updates Central's network graph config
 func (s *serviceImpl) PutNetworkGraphConfig(ctx context.Context, req *v1.PutNetworkGraphConfigRequest) (*storage.NetworkGraphConfig, error) {
 	if req.GetConfig() == nil {
-		return nil, status.Error(codes.InvalidArgument, "network graph config must be specified")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "network graph config must be specified")
 	}
 
 	if err := s.graphConfig.UpdateNetworkGraphConfig(ctx, req.GetConfig()); err != nil {
-		return nil, status.Errorf(codes.Internal, "could not update network graph configuration: %v", err)
+		return nil, errors.Errorf("could not update network graph configuration: %v", err)
 	}
 	return req.GetConfig(), nil
 }
@@ -238,10 +237,10 @@ func (s *serviceImpl) PutNetworkGraphConfig(ctx context.Context, req *v1.PutNetw
 func (s *serviceImpl) getFlowStore(ctx context.Context, clusterID string) (networkFlowDS.FlowDataStore, error) {
 	flowStore, err := s.clusterFlows.GetFlowStore(ctx, clusterID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not obtain flows for cluster %s: %v", clusterID, err)
+		return nil, errors.Errorf("could not obtain flows for cluster %s: %v", clusterID, err)
 	}
 	if flowStore == nil {
-		return nil, status.Errorf(codes.NotFound, "no flows found for cluster %s", clusterID)
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no flows found for cluster %s", clusterID)
 	}
 	return flowStore, nil
 }
@@ -256,7 +255,7 @@ func (s *serviceImpl) validateCluster(clusterID string) error {
 	if exists, err := s.clusters.Exists(clusterReadCtx, clusterID); err != nil {
 		return err
 	} else if !exists {
-		return status.Errorf(codes.NotFound, "cluster %s not found. It may have been deleted", clusterID)
+		return errors.Wrapf(errorhelpers.ErrNotFound, "cluster %s not found. It may have been deleted", clusterID)
 	}
 	return nil
 }
@@ -267,7 +266,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 
 func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "cluster ID must be specified")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "cluster ID must be specified")
 	}
 
 	requestClone := request.Clone()

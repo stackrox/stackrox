@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/sensor/common/store"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // Service is an interface provides functionality to get deployments from Sensor.
@@ -51,19 +51,19 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetDeploymentForPod(ctx context.Context, req *sensor.GetDeploymentForPodRequest) (*storage.Deployment, error) {
 	if req.GetPodName() == "" || req.GetNamespace() == "" {
-		return nil, status.Error(codes.InvalidArgument, "pod namespace and pod name must be provided")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "pod namespace and pod name must be provided")
 	}
 
 	pod := s.pods.GetByName(req.GetPodName(), req.GetNamespace())
 	if pod == nil {
-		return nil, status.Errorf(codes.NotFound,
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound,
 			"namespace/%s/pods/%s not found",
 			req.GetNamespace(), req.GetPodName())
 	}
 
 	dep := s.deployments.Get(pod.GetDeploymentId())
 	if dep == nil {
-		return nil, status.Errorf(codes.NotFound,
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound,
 			"no containing deployment found for namespace/%s/pods/%s",
 			req.GetNamespace(), req.GetPodName())
 	}

@@ -2,12 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
@@ -15,14 +14,13 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -61,15 +59,15 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
 	activation := types.TimestampNow()
 	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	if err := s.cves.Suppress(ctx, activation, request.GetDuration(), request.GetIds()...); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	s.reprocessDeployments()
@@ -80,15 +78,15 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 // UnsuppressCVE unsuppresses given cves indefinitely.
 func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
 	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	if err := s.cves.Unsuppress(ctx, request.GetIds()...); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	s.reprocessDeployments()
@@ -115,12 +113,12 @@ func (s *serviceImpl) reprocessDeployments() {
 func (s *serviceImpl) validateCVEsExist(ctx context.Context, ids ...string) error {
 	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery())
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 
 	if len(result) < len(ids) {
 		missingIds := set.NewStringSet(ids...).Difference(search.ResultsToIDSet(result))
-		return status.Error(codes.NotFound, fmt.Sprintf("Following CVEs not found: %s", strings.Join(missingIds.AsSlice(), ", ")))
+		return errors.Wrapf(errorhelpers.ErrNotFound, "Following CVEs not found: %s", strings.Join(missingIds.AsSlice(), ", "))
 	}
 	return nil
 }

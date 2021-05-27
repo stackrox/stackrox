@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,8 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/scanners"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -91,7 +90,7 @@ func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v
 func (s *serviceImpl) GetVulnDefinitionsInfo(ctx context.Context, empty *v1.Empty) (*v1.VulnDefinitionsInfo, error) {
 	info, err := s.vulnDefsInfoProvider.GetVulnDefsInfo()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to obtain vulnerability definitions information: %v", err)
+		return nil, errors.Errorf("failed to obtain vulnerability definitions information: %v", err)
 	}
 	return info, nil
 }

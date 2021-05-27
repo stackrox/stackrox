@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
@@ -13,13 +14,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -85,7 +85,7 @@ func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v
 		return nil, err
 	}
 	if !exists {
-		return nil, status.Error(codes.NotFound, req.GetId())
+		return nil, errors.Wrap(errorhelpers.ErrNotFound, req.GetId())
 	}
 	return &v1.GetComplianceStandardResponse{
 		Standard: standard,
@@ -99,7 +99,7 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 	if query.GetQuery() != "" {
 		q, err = search.ParseQuery(query.GetQuery())
 		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 		}
 	}
 	results, err := s.complianceDataStore.QueryControlResults(ctx, q)

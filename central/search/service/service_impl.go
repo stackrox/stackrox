@@ -34,6 +34,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	protoSet "github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -43,8 +44,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const maxAutocompleteResults = 10
@@ -229,7 +228,7 @@ func trimMatches(matches map[string][]string, fieldPaths []string) map[string][]
 func RunAutoComplete(ctx context.Context, queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
 	query, autocompleteKey, err := search.ParseQueryForAutocomplete(queryString)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "unable to parse query %q: %v", queryString, err)
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "unable to parse query %q: %v", queryString, err)
 	}
 	// Set the max return size for the query
 	query.Pagination = &v1.QueryPagination{
@@ -249,12 +248,12 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 			if ok {
 				utils.Should(errors.Errorf("searchers map has an entry for category %v, but the returned searcher was nil", category))
 			}
-			return nil, status.Errorf(codes.InvalidArgument, "Search category %q is not implemented", category.String())
+			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Search category %q is not implemented", category.String())
 		}
 
 		optMultiMap := categoryToOptionsMultimap[category]
 		if optMultiMap == nil {
-			return nil, status.Errorf(codes.InvalidArgument, "Search category %q is not implemented", category.String())
+			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Search category %q is not implemented", category.String())
 		}
 
 		autocompleteFields := optMultiMap.GetAll(autocompleteKey)
@@ -276,7 +275,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		results, err := searcher.Search(ctx, query)
 		if err != nil {
 			log.Errorf("failed to search category %s: %s", category.String(), err)
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, err
 		}
 		for _, r := range results {
 			matches := trimMatches(r.Matches, fieldPaths)
@@ -316,7 +315,7 @@ func (s *serviceImpl) autocomplete(ctx context.Context, queryString string, cate
 
 func (s *serviceImpl) Autocomplete(ctx context.Context, req *v1.RawSearchRequest) (*v1.AutocompleteResponse, error) {
 	if req.GetQuery() == "" {
-		return nil, status.Error(codes.InvalidArgument, "query cannot be empty")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "query cannot be empty")
 	}
 	results, err := s.autocomplete(ctx, req.GetQuery(), req.GetCategories())
 	if err != nil {
@@ -378,7 +377,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 
 	parsedRequest, err := search.ParseQuery(query)
 	if err != nil {
-		err = status.Error(codes.InvalidArgument, err.Error())
+		err = errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 		return
 	}
 	if len(categories) == 0 {
@@ -391,14 +390,13 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 		}
 		searchFunc, ok := searchFuncMap[category]
 		if !ok {
-			err = status.Error(codes.InvalidArgument, fmt.Sprintf("Search category '%s' is not implemented", category.String()))
+			err = errors.Wrapf(errorhelpers.ErrInvalidArgs, "Search category '%s' is not implemented", category.String())
 			return
 		}
 		var resultsFromCategory []*v1.SearchResult
 		resultsFromCategory, err = searchFunc(ctx, parsedRequest)
 		if err != nil {
 			log.Errorf("error searching for %s: %v", category, err)
-			err = status.Error(codes.Internal, err.Error())
 			return
 		}
 		counts = append(counts, &v1.SearchResponse_Count{Category: category, Count: int64(len(resultsFromCategory))})

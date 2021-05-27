@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -45,7 +46,7 @@ func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1
 func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 	exp, err := types.TimestampProto(id.Expiry())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "expiration time: %s", err)
+		return nil, errors.Errorf("expiration time: %s", err)
 	}
 
 	result := &v1.AuthStatus{

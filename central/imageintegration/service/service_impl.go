@@ -26,8 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -80,14 +78,14 @@ func scrubImageIntegration(i *storage.ImageIntegration) {
 // GetImageIntegration returns the image integration given its ID.
 func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*storage.ImageIntegration, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "image integration id must be provided")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "image integration id must be provided")
 	}
 	integration, exists, err := s.datastore.GetImageIntegration(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "image integration %s not found", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "image integration %s not found", request.GetId())
 	}
 	scrubImageIntegration(integration)
 	return integration, nil
@@ -144,23 +142,23 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, imageIntegration 
 // PostImageIntegration creates a image integration.
 func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*storage.ImageIntegration, error) {
 	if request.GetId() != "" {
-		return nil, status.Error(codes.InvalidArgument, "id field should be empty when posting a new image integration")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id field should be empty when posting a new image integration")
 	}
 
 	if err := s.validateTestAndNormalize(ctx, request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	id, err := s.datastore.AddImageIntegration(ctx, request)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	request.Id = id
 
 	if err := s.integrationManager.Upsert(request); err != nil {
 		_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	s.reprocessorLoop.ShortCircuit()
 	return request, nil
@@ -169,14 +167,14 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 // DeleteImageIntegration removes a image integration given its ID.
 func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "image integration id must be provided")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "image integration id must be provided")
 	}
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 
 	if err := s.integrationManager.Remove(request.GetId()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return &v1.Empty{}, nil
 }
@@ -184,20 +182,20 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 // UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
 func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.UpdateImageIntegrationRequest) (*v1.Empty, error) {
 	if err := s.validateIntegration(ctx, request.GetConfig()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := s.reconcileUpdateImageIntegrationRequest(ctx, request); err != nil {
 		return nil, err
 	}
 	if err := s.validateTestAndNormalize(ctx, request.GetConfig()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := s.datastore.UpdateImageIntegration(ctx, request.GetConfig()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	if err := s.integrationManager.Upsert(request.GetConfig()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	s.reprocessorLoop.ShortCircuit()
 	return &v1.Empty{}, nil
@@ -211,7 +209,7 @@ func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration
 // TestImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
 func (s *serviceImpl) TestUpdatedImageIntegration(ctx context.Context, request *v1.UpdateImageIntegrationRequest) (*v1.Empty, error) {
 	if err := s.validateIntegration(ctx, request.GetConfig()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := s.reconcileUpdateImageIntegrationRequest(ctx, request); err != nil {
 		return nil, err
@@ -226,21 +224,21 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 	for _, category := range request.GetCategories() {
 		if category == storage.ImageIntegrationCategory_REGISTRY {
 			if err := s.testRegistryIntegration(request); err != nil {
-				return status.Error(codes.InvalidArgument, errors.Wrap(err, "registry integration").Error())
+				return errors.Wrap(errorhelpers.ErrInvalidArgs, errors.Wrap(err, "registry integration").Error())
 			}
 		}
 		if category == storage.ImageIntegrationCategory_SCANNER {
 			if err := s.testScannerIntegration(request); err != nil {
-				return status.Error(codes.InvalidArgument, errors.Wrap(err, "image scanner integration").Error())
+				return errors.Wrap(errorhelpers.ErrInvalidArgs, errors.Wrap(err, "image scanner integration").Error())
 			}
 		}
 		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
 			nodeIntegration, err := imageIntegrationToNodeIntegration(request)
 			if err != nil {
-				return status.Error(codes.InvalidArgument, errors.Wrap(err, "node scanner integration").Error())
+				return errors.Wrap(errorhelpers.ErrInvalidArgs, errors.Wrap(err, "node scanner integration").Error())
 			}
 			if err := s.testNodeScannerIntegration(nodeIntegration); err != nil {
-				return status.Error(codes.InvalidArgument, errors.Wrap(err, "node scanner integration").Error())
+				return errors.Wrap(errorhelpers.ErrInvalidArgs, errors.Wrap(err, "node scanner integration").Error())
 			}
 		}
 	}
@@ -250,10 +248,10 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegration) error {
 	registry, err := s.registryFactory.CreateRegistry(integration)
 	if err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := registry.Test(); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil
 }
@@ -261,10 +259,10 @@ func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegrat
 func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegration) error {
 	scanner, err := s.scannerFactory.CreateScanner(integration)
 	if err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := scanner.Test(); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil
 }
@@ -272,10 +270,10 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegration) error {
 	scanner, err := s.nodeEnricher.CreateNodeScanner(integration)
 	if err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := scanner.TestNodeScanner(); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil
 }
@@ -295,7 +293,7 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 	clustersRequested := request.GetClusters()
 	existingClusters, err := s.clusterDatastore.GetClusters(ctx)
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 	for _, req := range clustersRequested {
 		if !s.clusterExists(req, existingClusters) {
@@ -311,7 +309,7 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 
 	integrations, err := s.datastore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Name: request.GetName()})
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 	if len(integrations) != 0 && request.GetId() != integrations[0].GetId() {
 		errorList.AddStringf("integration with name %q already exists", request.GetName())
@@ -333,20 +331,20 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 		return nil
 	}
 	if updateRequest.GetConfig() == nil {
-		return status.Error(codes.InvalidArgument, "request is missing image integration config")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "request is missing image integration config")
 	}
 	if updateRequest.GetConfig().GetId() == "" {
-		return status.Error(codes.InvalidArgument, "id required for stored credential reconciliation")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "id required for stored credential reconciliation")
 	}
 	integration, exists, err := s.datastore.GetImageIntegration(ctx, updateRequest.GetConfig().GetId())
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 	if !exists {
-		return status.Errorf(codes.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
+		return errors.Wrapf(errorhelpers.ErrNotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
 	}
 	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), integration); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil
 }

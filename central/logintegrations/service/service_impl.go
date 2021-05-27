@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/logintegrations/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -67,7 +69,7 @@ func (s *serviceImpl) GetLogIntegration(ctx context.Context, req *v1.ResourceByI
 		return nil, err
 	}
 	if !found {
-		return nil, status.Errorf(codes.NotFound, logintegration.ErrNotFound, req.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, logintegration.ErrNotFound, req.GetId())
 	}
 	return &v1.GetLogIntegrationResponse{
 		LogIntegration: integration,
@@ -96,13 +98,13 @@ func (s *serviceImpl) CreateLogIntegration(ctx context.Context, req *v1.CreateLo
 
 	// Validate parameters
 	if req.GetLogIntegration() == nil {
-		return nil, status.Error(codes.InvalidArgument, "Invalid create Log Integration request")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Invalid create Log Integration request")
 	}
 	if req.GetLogIntegration().GetId() != "" {
-		return nil, status.Error(codes.InvalidArgument, "ID not expected in create Log Integration request")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "ID not expected in create Log Integration request")
 	}
 	if req.GetLogIntegration().Config == nil {
-		return nil, status.Error(codes.InvalidArgument, "Config must be provided in create Log Integration request")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Config must be provided in create Log Integration request")
 	}
 	req.LogIntegration.Id = uuid.NewV4().String()
 
@@ -166,22 +168,22 @@ func (s *serviceImpl) reconcileUpdateLogIntegrationRequest(ctx context.Context, 
 	}
 
 	if updateRequest.GetConfig() == nil {
-		return status.Error(codes.InvalidArgument, "request is missing log integration configuration")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "request is missing log integration configuration")
 	}
 	if updateRequest.GetConfig().GetId() == "" {
-		return status.Error(codes.InvalidArgument, "id required for stored credential reconciliation")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "id required for stored credential reconciliation")
 	}
 
 	existing, _, err := s.datastore.GetLogIntegration(ctx, updateRequest.GetConfig().GetId())
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 	if existing == nil {
-		return status.Errorf(codes.NotFound, logintegration.ErrNotFound, updateRequest.GetConfig().GetId())
+		return errors.Wrapf(errorhelpers.ErrNotFound, logintegration.ErrNotFound, updateRequest.GetConfig().GetId())
 	}
 
 	if err := reconcileLogIntegrationWithExisting(updateRequest.GetConfig(), existing); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil
 }

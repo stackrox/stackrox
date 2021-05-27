@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -15,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -95,7 +95,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storag
 		return nil, err
 	}
 	if role == nil {
-		return nil, status.Errorf(codes.NotFound, "Role %s not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role %s not found", id.GetId())
 	}
 	return role, nil
 }
@@ -106,7 +106,7 @@ func (s *serviceImpl) GetMyPermissions(ctx context.Context, _ *v1.Empty) (*v1.Ge
 
 func (s *serviceImpl) CreateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		return nil, status.Error(codes.InvalidArgument, "Setting global access is not supported.")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Setting global access is not supported.")
 	}
 	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
@@ -117,7 +117,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, role *storage.Role) (*v1.E
 
 func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		return nil, status.Error(codes.InvalidArgument, "Setting global access is not supported.")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Setting global access is not supported.")
 	}
 	err := s.roleDataStore.UpdateRole(ctx, role)
 	if err != nil {
@@ -131,7 +131,7 @@ func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.
 	if err != nil {
 		return nil, err
 	} else if role == nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Role '%s' not found", id.GetId()))
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role '%s' not found", id.GetId())
 	}
 
 	err = s.roleDataStore.RemoveRole(ctx, id.GetId())
@@ -158,7 +158,7 @@ func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
 	// Get the perms from the current user context.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return nil, status.Error(codes.Internal, "unable to retrieve user identity")
+		return nil, errors.New("unable to retrieve user identity")
 	}
 	return &v1.GetPermissionsResponse{
 		ResourceToAccess: id.Permissions().Clone().GetResourceToAccess(),
@@ -179,7 +179,7 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 		return nil, errors.Wrapf(err, "failed to retrieve access scope %q", id.GetId())
 	}
 	if !found {
-		return nil, status.Errorf(codes.NotFound, "failed to retrieve access scope %q: not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve access scope %q: not found", id.GetId())
 	}
 
 	return scope, nil
@@ -204,7 +204,7 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 	}
 
 	if scope.GetId() != "" {
-		return nil, status.Error(codes.InvalidArgument, "setting id field is not allowed")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "setting id field is not allowed")
 	}
 	scope.Id = utils.GenerateAccessScopeID()
 
@@ -269,17 +269,17 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 
 	clusters, err := s.clusterDataStore.GetClusters(readScopesCtx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to compute effective access scope: %v", err)
+		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
 
 	namespaces, err := s.namespaceDataStore.GetNamespaces(readScopesCtx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to compute effective access scope: %v", err)
+		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
 
 	response, err := effectiveAccessScopeForSimpleAccessScope(req.GetAccessScope().GetSimpleRules(), clusters, namespaces, req.GetDetail())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to compute effective access scope: %v", err)
+		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
 
 	return response, nil

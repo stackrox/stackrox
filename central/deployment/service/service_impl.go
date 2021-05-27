@@ -17,6 +17,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -27,8 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -62,7 +61,7 @@ type serviceImpl struct {
 func (s *serviceImpl) baselineResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessBaselineResults, error) {
 	baselineResults, err := s.processBaselineResults.GetBaselineResults(ctx, deployment.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return baselineResults, nil
 }
@@ -121,10 +120,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByID) (*storage.Deployment, error) {
 	deployment, exists, err := s.datastore.GetDeployment(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
 	return deployment, nil
 }
@@ -133,15 +132,15 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.ResourceByID) (*v1.GetDeploymentWithRiskResponse, error) {
 	deployment, exists, err := s.datastore.GetDeployment(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
 
 	risk, _, err := s.risks.GetRisk(ctx, request.GetId(), storage.RiskSubjectType_DEPLOYMENT)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &v1.GetDeploymentWithRiskResponse{
@@ -155,12 +154,12 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	deployments, err := s.datastore.Search(ctx, parsedQuery)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return &v1.CountDeploymentsResponse{Count: int32(len(deployments))}, nil
 }
@@ -170,7 +169,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	// Fill in pagination.
@@ -178,7 +177,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 
 	deployments, err := s.datastore.SearchListDeployments(ctx, parsedQuery)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &v1.ListDeploymentsResponse{
@@ -199,7 +198,7 @@ func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.Deploymen
 	q := queryForLabels()
 	searchRes, err := s.datastore.Search(ctx, q)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	labelsMap, values := labelsMapFromSearchResults(searchRes)

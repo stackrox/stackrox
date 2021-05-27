@@ -7,18 +7,18 @@ import (
 	"github.com/golang/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // Service is the struct that manages the Metadata API
@@ -67,38 +67,38 @@ func (s *serviceImpl) TLSChallenge(ctx context.Context, req *v1.TLSChallengeRequ
 	sensorChallenge := req.GetChallengeToken()
 	sensorChallengeBytes, err := base64.URLEncoding.DecodeString(sensorChallenge)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "challenge token must be a valid base64 string: %s", err)
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "challenge token must be a valid base64 string: %s", err)
 	}
 	if len(sensorChallengeBytes) != centralsensor.ChallengeTokenLength {
-		return nil, status.Errorf(codes.InvalidArgument, "base64 decoded challenge token must be %d bytes long, got %s", centralsensor.ChallengeTokenLength, sensorChallenge)
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "base64 decoded challenge token must be %d bytes long, got %s", centralsensor.ChallengeTokenLength, sensorChallenge)
 	}
 
 	// Create central challenge token
 	nonceGenerator := cryptoutils.NewNonceGenerator(centralsensor.ChallengeTokenLength, nil)
 	centralChallenge, err := nonceGenerator.Nonce()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not create central challenge: %s", err)
+		return nil, errors.Errorf("Could not create central challenge: %s", err)
 	}
 
 	_, caCertDERBytes, err := mtls.CACert()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not read CA cert and private key: %s", err)
+		return nil, errors.Errorf("Could not read CA cert and private key: %s", err)
 	}
 
 	leafCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not load leaf certificate: %s", err)
+		return nil, errors.Errorf("Could not load leaf certificate: %s", err)
 	}
 
 	additionalCAs, err := tlsconfig.GetAdditionalCAs()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "reading additional CAs: %s", err)
+		return nil, errors.Errorf("reading additional CAs: %s", err)
 	}
 
 	// add default leaf cert to additional CAs
 	defaultCertChain, err := tlsconfig.GetDefaultCertChain()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not read default CA cert: %s", err)
+		return nil, errors.Errorf("could not read default CA cert: %s", err)
 	}
 	if len(defaultCertChain) > 0 {
 		additionalCAs = append(additionalCAs, defaultCertChain[0])
@@ -116,13 +116,13 @@ func (s *serviceImpl) TLSChallenge(ctx context.Context, req *v1.TLSChallengeRequ
 	}
 	trustInfoBytes, err := proto.Marshal(trustInfo)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not marshal trust info: %s", err)
+		return nil, errors.Errorf("Could not marshal trust info: %s", err)
 	}
 
 	// Create signature from CA key
 	sign, err := cTLS.CreateSignature(cryptoutils.DerefPrivateKey(leafCert.PrivateKey), cTLS.SHA256, trustInfoBytes)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not sign trust info: %s", err)
+		return nil, errors.Errorf("Could not sign trust info: %s", err)
 	}
 
 	resp := &v1.TLSChallengeResponse{

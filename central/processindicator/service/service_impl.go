@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/processbaseline"
 	baselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -13,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -20,8 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -60,14 +60,14 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetDeployment returns the deployment with given id.
 func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetProcessesResponse, error) {
 	if req.GetDeploymentId() == "" {
-		return nil, status.Error(codes.Internal, "Deployment ID must be specified when retrieving processes")
+		return nil, errors.New("Deployment ID must be specified when retrieving processes")
 	}
 	_, exists, err := s.deployments.GetDeployment(ctx, req.GetDeploymentId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", req.GetDeploymentId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", req.GetDeploymentId())
 	}
 	indicators, err := s.processIndicators.SearchRawProcessIndicators(ctx,
 		search.NewQueryBuilder().
@@ -75,7 +75,7 @@ func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetP
 			ProtoQuery(),
 	)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return &v1.GetProcessesResponse{
 		Processes: indicators,
@@ -108,10 +108,10 @@ func (s *serviceImpl) setSuspicious(ctx context.Context, groupedIndicators []*v1
 func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, containerName string) (*set.StringSet, error) {
 	deployment, exists, err := s.deployments.GetDeployment(ctx, deploymentID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", deploymentID)
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", deploymentID)
 	}
 
 	key := &storage.ProcessBaselineKey{
@@ -234,7 +234,7 @@ func (s *serviceImpl) GetGroupedProcessByDeployment(ctx context.Context, req *v1
 
 func (s *serviceImpl) validateGetProcesses(ctx context.Context, req *v1.GetProcessesByDeploymentRequest) ([]*storage.ProcessIndicator, error) {
 	if req.GetDeploymentId() == "" {
-		return nil, status.Error(codes.Internal, "Deployment ID must be specified when retrieving processes")
+		return nil, errors.New("Deployment ID must be specified when retrieving processes")
 	}
 	indicators, err := s.processIndicators.SearchRawProcessIndicators(ctx,
 		search.NewQueryBuilder().
@@ -242,7 +242,7 @@ func (s *serviceImpl) validateGetProcesses(ctx context.Context, req *v1.GetProce
 			ProtoQuery(),
 	)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return indicators, nil

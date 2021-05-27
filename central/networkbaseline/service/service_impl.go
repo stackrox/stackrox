@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -60,10 +60,10 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 	// Check if the baseline for deployment indeed exists
 	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetDeploymentId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !found {
-		return nil, status.Error(codes.Internal, "network baseline for the deployment does not exist")
+		return nil, errors.New("network baseline for the deployment does not exist")
 	}
 
 	// Got the baseline, check status of each passed in peer
@@ -76,14 +76,14 @@ func (s *serviceImpl) GetNetworkBaseline(
 	request *v1.ResourceByID,
 ) (*storage.NetworkBaseline, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Network baseline id must be provided")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Network baseline id must be provided")
 	}
 	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !found {
-		return nil, status.Errorf(codes.NotFound, "network baseline with id %q does not exist", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "network baseline with id %q does not exist", request.GetId())
 	}
 
 	return baseline, nil

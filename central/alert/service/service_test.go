@@ -2,25 +2,23 @@ package service
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"math"
 	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/alerttest"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -97,7 +95,7 @@ func (s *getAlertTests) TestGetAlertWhenTheDataAccessLayerFails() {
 
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
-	s.Equal(status.Error(codes.Internal, "fake error"), err)
+	s.EqualError(err, "fake error")
 	s.Equal((*storage.Alert)(nil), result)
 }
 
@@ -108,7 +106,7 @@ func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
 
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
-	s.Equal(status.Errorf(codes.NotFound, "alert with id '%s' does not exist", alerttest.FakeAlertID), err)
+	s.EqualError(err, errors.Wrapf(errorhelpers.ErrNotFound, "alert with id '%s' does not exist", alerttest.FakeAlertID).Error())
 	s.Equal((*storage.Alert)(nil), result)
 }
 
@@ -200,7 +198,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
 		Query: "",
 	})
 
-	s.Equal(status.Error(codes.Internal, "fake error"), err)
+	s.EqualError(err, "fake error")
 	s.Equal((*v1.ListAlertsResponse)(nil), result)
 }
 
@@ -377,7 +375,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 		Query: "",
 	})
 
-	s.Equal(status.Error(codes.Internal, "fake error"), err)
+	s.EqualError(err, "fake error")
 	s.Equal((*v1.GetAlertsGroupResponse)(nil), result)
 }
 
@@ -794,7 +792,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		Query: "",
 	}, GroupBy: unknownGroupBy})
 
-	s.Equal(status.Error(codes.InvalidArgument, fmt.Sprintf("unknown group by: %v", unknownGroupBy)), err)
+	s.EqualError(err, errors.Wrapf(errorhelpers.ErrInvalidArgs, "unknown group by: %v", unknownGroupBy).Error())
 	s.Equal((*v1.GetAlertsCountsResponse)(nil), result)
 }
 
@@ -809,7 +807,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() 
 		Query: "",
 	}})
 
-	s.Equal(status.Error(codes.Internal, "fake error"), err)
+	s.EqualError(err, "fake error")
 	s.Equal((*v1.GetAlertsCountsResponse)(nil), result)
 }
 
@@ -944,7 +942,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFa
 		Query: "",
 	})
 
-	s.Equal(status.Error(codes.Internal, "fake error"), err)
+	s.EqualError(err, "fake error")
 	s.Equal((*v1.GetAlertTimeseriesResponse)(nil), result)
 }
 
@@ -995,7 +993,7 @@ func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 	snoozeTill, err := types.TimestampProto(time.Now().Add(-1 * time.Hour))
 	s.NoError(err)
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
-	s.Equal(status.Error(codes.InvalidArgument, badSnoozeErrorMsg), err)
+	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, badSnoozeErrorMsg).Error())
 }
 
 func (s *patchAlertTests) TestResolveAlert() {

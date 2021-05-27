@@ -16,9 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -66,7 +64,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	incomingMD := metautils.ExtractIncoming(stream.Context())
 	hostname = incomingMD.Get("rox-collector-hostname")
 	if hostname == "" {
-		return status.Error(codes.Internal, "collector did not transmit a hostname in initial metadata")
+		return errors.New("collector did not transmit a hostname in initial metadata")
 	}
 
 	capsStr := incomingMD.Get(capMetadataKey)
@@ -76,7 +74,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	}
 
 	if err := stream.SendHeader(metadata.MD{}); err != nil {
-		return status.Errorf(codes.Internal, "error sending initial metadata: %v", err)
+		return errors.Errorf("error sending initial metadata: %v", err)
 	}
 
 	hostConnections, sequenceID := s.manager.RegisterCollector(hostname)
@@ -132,12 +130,12 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 			networkInfoMsgTimestamp := timestamp.Now()
 
 			if networkInfoMsg == nil {
-				return status.Errorf(codes.Internal, "received unexpected message type %T from hostname %s", networkInfoMsg, hostname)
+				return errors.Errorf("received unexpected message type %T from hostname %s", networkInfoMsg, hostname)
 			}
 
 			metrics.IncrementTotalNetworkFlowsReceivedCounter(len(msg.GetInfo().GetUpdatedConnections()))
 			if err := hostConnections.Process(networkInfoMsg, networkInfoMsgTimestamp, sequenceID); err != nil {
-				return status.Errorf(codes.Internal, "could not process connections: %v", err)
+				return errors.Errorf("could not process connections: %v", err)
 			}
 
 		case <-publicIPItrDoneC:

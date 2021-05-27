@@ -113,14 +113,14 @@ func addDefaults(cluster *storage.Cluster) error {
 // PostCluster creates a new cluster.
 func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() != "" {
-		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new cluster")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id field should be empty when posting a new cluster")
 	}
 	if err := normalizeCluster(request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	if err := validateInput(request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	id, err := s.datastore.AddCluster(ctx, request)
@@ -128,7 +128,7 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 		if errors.Is(err, errorhelpers.ErrAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	request.Id = id
 	return s.getCluster(ctx, request.GetId())
@@ -137,17 +137,17 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 // PutCluster creates a new cluster.
 func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Id must be provided")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id must be provided")
 	}
 	if err := normalizeCluster(request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := validateInput(request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	err := s.datastore.UpdateCluster(ctx, request)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return s.getCluster(ctx, request.GetId())
 }
@@ -155,7 +155,7 @@ func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) 
 // GetCluster returns the specified cluster.
 func (s *serviceImpl) GetCluster(ctx context.Context, request *v1.ResourceByID) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Id must be provided")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id must be provided")
 	}
 	return s.getCluster(ctx, request.GetId())
 }
@@ -163,10 +163,10 @@ func (s *serviceImpl) GetCluster(ctx context.Context, request *v1.ResourceByID) 
 func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterResponse, error) {
 	cluster, ok, err := s.datastore.GetCluster(ctx, id)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not get cluster: %s", err)
+		return nil, errors.Errorf("Could not get cluster: %s", err)
 	}
 	if !ok {
-		return nil, status.Error(codes.NotFound, "Not found")
+		return nil, errors.Wrap(errorhelpers.ErrNotFound, "Not found")
 	}
 
 	return &v1.ClusterResponse{
@@ -178,12 +178,12 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	q, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid query %q: %v", req.GetQuery(), err)
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
 	}
 
 	clusters, err := s.datastore.SearchRawClusters(ctx, q)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return &v1.ClustersList{
 		Clusters: clusters,
@@ -193,7 +193,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 // DeleteCluster removes a cluster
 func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Request must have a id")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Request must have a id")
 	}
 	if err := s.datastore.RemoveCluster(ctx, request.GetId(), nil); err != nil {
 		return nil, err

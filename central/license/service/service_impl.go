@@ -5,10 +5,12 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/license/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -104,12 +106,12 @@ var (
 
 func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v1.AddLicenseResponse, error) {
 	if req.GetLicenseKey() == "" {
-		return nil, status.Error(codes.InvalidArgument, "must provide a non-empty license key")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "must provide a non-empty license key")
 	}
 
 	licenseInfo, err := s.licenseMgr.AddLicenseKey(req.GetLicenseKey(), req.GetActivate())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to add license key: %v", err)
+		return nil, errors.Errorf("failed to add license key: %v", err)
 	}
 
 	_, licenseAccepted := licenseAcceptedStates[licenseInfo.GetStatus()]

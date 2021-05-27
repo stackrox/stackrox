@@ -17,8 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -84,37 +82,37 @@ func (s *serviceImpl) GetSummaryCounts(ctx context.Context, _ *v1.Empty) (*v1.Su
 	alerts, err := s.alerts.CountAlerts(ctx)
 	if err != nil {
 		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	numClusters, err := s.clusters.CountClusters(ctx)
 	if err != nil {
 		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	numNodes, err := s.nodes.CountAllNodes(ctx)
 	if err != nil {
 		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	deployments, err := s.deployments.CountDeployments(ctx)
 	if err != nil {
 		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	images, err := s.images.CountImages(ctx)
 	if err != nil {
 		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	secrets, err := s.secrets.CountSecrets(ctx)
 	if err != nil {
 		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &v1.SummaryCountsResponse{

@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -54,7 +54,7 @@ func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Emp
 
 func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
 	if !strings.HasPrefix(req.GetUrl(), "https://") {
-		return nil, status.Errorf(codes.InvalidArgument, "url %q must start with https", req.GetUrl())
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "url %q must start with https", req.GetUrl())
 	}
 	_, err := s.client.Get(req.GetUrl())
 	if err == nil {

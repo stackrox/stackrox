@@ -2,6 +2,7 @@ package networkflowupdate
 
 import (
 	"context"
+	"errors"
 
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -10,8 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -48,7 +47,7 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	update := msg.GetNetworkFlowUpdate()
 
 	if len(update.GetUpdated())+len(update.GetUpdatedEndpoints()) == 0 {
-		return status.Error(codes.Internal, "received empty updated flows")
+		return errors.New("received empty updated flows")
 	}
 
 	countMetrics.IncrementTotalNetworkFlowsReceivedCounter(s.clusterID, len(update.GetUpdated()))
@@ -64,7 +63,7 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	if err = s.storeUpdater.update(ctx, allUpdatedFlows, update.Time); err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 	return nil
 }

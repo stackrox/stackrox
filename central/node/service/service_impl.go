@@ -4,18 +4,18 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/node/globaldatastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -54,12 +54,12 @@ func (s *nodeServiceImpl) AuthFuncOverride(ctx context.Context, fullMethodName s
 func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesRequest) (*v1.ListNodesResponse, error) {
 	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(ctx, req.GetClusterId(), false)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
+		return nil, errors.Errorf("could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
 	}
 
 	nodes, err := clusterLocalStore.ListNodes()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not list notes in cluster %s: %v", req.GetClusterId(), err)
+		return nil, errors.Errorf("could not list notes in cluster %s: %v", req.GetClusterId(), err)
 	}
 	return &v1.ListNodesResponse{
 		Nodes: nodes,
@@ -69,16 +69,16 @@ func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesReques
 func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (*storage.Node, error) {
 	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(ctx, req.GetClusterId(), false)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
+		return nil, errors.Errorf("could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
 	}
 
 	node, err := clusterLocalStore.GetNode(req.GetNodeId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not locate node %q in per-cluster node store for cluster %s: %v", req.GetNodeId(), req.GetClusterId(), err)
+		return nil, errors.Errorf("could not locate node %q in per-cluster node store for cluster %s: %v", req.GetNodeId(), req.GetClusterId(), err)
 	}
 
 	if node == nil {
-		return nil, status.Errorf(codes.NotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
 	}
 
 	return node, nil

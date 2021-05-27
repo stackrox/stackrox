@@ -5,17 +5,17 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	storageMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/notifier/processor/mocks"
 	_ "github.com/stackrox/rox/central/notifiers/all"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func TestNotifierService(t *testing.T) {
@@ -95,7 +95,7 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	updateReq := createUpdateNotifierRequest()
 	updateReq.GetNotifier().GetEmail().Password = "updatePassword"
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
-	s.Equal(err, status.Error(codes.InvalidArgument, "non-zero or unmasked credential field 'Notifier.Notifier_Email.Email.Password'"))
+	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, "non-zero or unmasked credential field 'Notifier.Notifier_Email.Email.Password'").Error())
 
 	updateReq.UpdatePassword = true
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
@@ -110,7 +110,7 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	secrets.ScrubSecretsFromStructWithReplacement(updateDependentReq, secrets.ScrubReplacementStr)
 	updateDependentReq.UpdatePassword = false
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateDependentReq)
-	s.Equal(err, status.Error(codes.InvalidArgument, "credentials required to update field 'Notifier.Notifier_Email.Email.Server'"))
+	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, "credentials required to update field 'Notifier.Notifier_Email.Email.Server'").Error())
 
 	updateBasic := createUpdateNotifierRequest()
 	updateBasic.GetNotifier().GetEmail().From = "support@stackrox.com"

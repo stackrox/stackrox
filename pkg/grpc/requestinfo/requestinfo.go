@@ -21,15 +21,14 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -240,7 +239,7 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 		// This should only happen if someone is trying to spoof a RequestInfo. Log, but don't return any details in the
 		// error message.
 		log.Errorf("error extracting RequestInfo from incoming metadata: %v", err)
-		return nil, status.Error(codes.InvalidArgument, "malformed request")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "malformed request")
 	}
 
 	tlsState := tlsStateFromContext(ctx)

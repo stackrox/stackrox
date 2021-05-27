@@ -5,20 +5,20 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/enrichment/mocks"
 	integrationMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	loopMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type fakeScanner struct{}
@@ -136,7 +136,7 @@ func TestValidateIntegration(t *testing.T) {
 
 	_, err := s.TestUpdatedImageIntegration(testCtx, request)
 	assert.Error(t, err)
-	assert.Equal(t, err, status.Error(codes.InvalidArgument, "the request doesn't have a valid integration config type"))
+	assert.EqualError(t, err, errors.Wrap(errorhelpers.ErrInvalidArgs, "the request doesn't have a valid integration config type").Error())
 
 	dockerConfig := &storage.DockerConfig{
 		Endpoint: "endpoint",

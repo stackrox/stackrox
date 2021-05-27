@@ -5,12 +5,11 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/service"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func init() {
@@ -32,7 +31,7 @@ func (resolver *Resolver) Roles(ctx context.Context) ([]*roleResolver, error) {
 	}
 	roles, err := resolver.RoleDataStore.GetAllRoles(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "unable to retrieve roles")
+		return nil, errors.New("unable to retrieve roles")
 	}
 	return resolver.wrapRoles(roles, nil)
 }

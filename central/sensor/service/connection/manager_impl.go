@@ -19,8 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -38,9 +36,9 @@ var (
 
 func checkClusterWriteAccess(ctx context.Context, clusterID string) error {
 	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	} else if !ok {
-		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
+		return sac.ErrPermissionDenied
 	}
 	return nil
 }

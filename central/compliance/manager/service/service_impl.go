@@ -5,17 +5,17 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -70,7 +70,7 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRunsRequest) (*v1.TriggerComplianceRunsResponse, error) {
 	expanded, err := s.manager.ExpandSelection(ctx, req.GetSelection().GetClusterId(), req.GetSelection().GetStandardId())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "could not expand cluster/standard selection: %v", err)
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not expand cluster/standard selection: %v", err)
 	}
 
 	runs, err := s.manager.TriggerRuns(ctx, expanded...)

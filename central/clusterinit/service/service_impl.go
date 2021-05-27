@@ -43,7 +43,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetInitBundles(ctx context.Context, empty *v1.Empty) (*v1.InitBundleMetasResponse, error) {
 	initBundleMetas, err := s.backend.GetAll(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "retrieving meta data for all init bundles: %s", err)
+		return nil, errors.Errorf("retrieving meta data for all init bundles: %s", err)
 	}
 
 	v1InitBundleMetas := make([]*v1.InitBundleMeta, 0, len(initBundleMetas))
@@ -57,12 +57,12 @@ func (s *serviceImpl) GetInitBundles(ctx context.Context, empty *v1.Empty) (*v1.
 func (s *serviceImpl) GetCAConfig(ctx context.Context, _ *v1.Empty) (*v1.GetCAConfigResponse, error) {
 	caConfig, err := s.backend.GetCAConfig(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "retrieving meta data for all ")
+		return nil, errors.New("retrieving meta data for all ")
 	}
 
 	caConfigYAML, err := caConfig.RenderAsYAML()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to render CA config to YAML: %v", err)
+		return nil, errors.Errorf("failed to render CA config to YAML: %v", err)
 	}
 
 	return &v1.GetCAConfigResponse{
@@ -76,17 +76,17 @@ func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBu
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {
 			return nil, status.Errorf(codes.AlreadyExists, "generating new init bundle: %s", err)
 		}
-		return nil, status.Errorf(codes.Internal, "generating new init bundle: %s", err)
+		return nil, errors.Errorf("generating new init bundle: %s", err)
 	}
 	meta := InitBundleMetaStorageToV1(generated.Meta)
 
 	bundleYaml, err := generated.RenderAsYAML()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "rendering init bundle as YAML: %s", err)
+		return nil, errors.Errorf("rendering init bundle as YAML: %s", err)
 	}
 	bundleK8sManifest, err := generated.RenderAsK8sSecrets()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "rendering init bundle as Kubernetes secrets: %s", err)
+		return nil, errors.Errorf("rendering init bundle as Kubernetes secrets: %s", err)
 	}
 
 	return &v1.InitBundleGenResponse{

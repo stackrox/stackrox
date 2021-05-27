@@ -1,9 +1,9 @@
 package scanners
 
 import (
+	"errors"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // VulnDefsInfoProvider provides functionality to obtain vulnerability definitions information.
@@ -24,7 +24,7 @@ type vulnDefsInfoProviderImpl struct {
 
 func (p *vulnDefsInfoProviderImpl) GetVulnDefsInfo() (*v1.VulnDefinitionsInfo, error) {
 	if len(p.scanners.GetAll()) == 0 {
-		return nil, status.Error(codes.Internal, "no image integrations found")
+		return nil, errors.New("no image integrations found")
 	}
 
 	for _, scanner := range p.scanners.GetAll() {
@@ -37,5 +37,5 @@ func (p *vulnDefsInfoProviderImpl) GetVulnDefsInfo() (*v1.VulnDefinitionsInfo, e
 			return info, nil
 		}
 	}
-	return nil, status.Error(codes.Internal, "no vulnerability definitions information found")
+	return nil, errors.New("no vulnerability definitions information found")
 }

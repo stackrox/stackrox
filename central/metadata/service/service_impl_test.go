@@ -112,7 +112,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
 
 	resp, err := service.TLSChallenge(context.TODO(), req)
 	s.Require().Error(err)
-	s.Equal("rpc error: code = InvalidArgument desc = challenge token must be a valid base64 string: illegal base64 data at input byte 4", err.Error())
+	s.EqualError(err, "challenge token must be a valid base64 string: illegal base64 data at input byte 4: invalid arguments")
 	s.Nil(resp)
 }
 

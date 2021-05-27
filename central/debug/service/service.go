@@ -39,8 +39,6 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type logsMode int
@@ -150,7 +148,7 @@ func (s *serviceImpl) GetLogLevel(ctx context.Context, req *v1.GetLogLevelReques
 	logging.ForEachModule(forEachModule, req.GetModules())
 
 	if len(unknownModules) > 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
 	}
 
 	return resp, nil
@@ -161,7 +159,7 @@ func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) 
 	levelStr := req.GetLevel()
 	zapLevel, ok := logging.LevelForLabel(levelStr)
 	if !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "Unknown log level %s", levelStr)
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Unknown log level %s", levelStr)
 	}
 
 	// If this is a global request, then set the global level and return
@@ -180,7 +178,7 @@ func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) 
 	}, req.GetModules())
 
 	if len(unknownModules) > 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
 	}
 
 	return &types.Empty{}, nil

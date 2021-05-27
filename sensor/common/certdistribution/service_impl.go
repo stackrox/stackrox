@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/services"
@@ -66,18 +68,18 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 func (s *service) verifyToken(ctx context.Context, token string, expectedSubject string) error {
 	parsedToken, err := jwt.ParseSigned(token)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid JWT: %s", err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid JWT: %s", err)
 	}
 
 	var claims map[string]interface{}
 	if err := parsedToken.UnsafeClaimsWithoutVerification(&claims); err != nil {
-		return status.Errorf(codes.InvalidArgument, "unparseable claims in token: %s", err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "unparseable claims in token: %s", err)
 	}
 
 	if sub, ok := claims["sub"].(string); !ok {
-		return status.Error(codes.InvalidArgument, "non-string subject claim in token")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "non-string subject claim in token")
 	} else if sub != expectedSubject {
-		return status.Errorf(codes.InvalidArgument, "unexpected subject %s", sub)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "unexpected subject %s", sub)
 	}
 
 	// Now, create the token review
@@ -90,18 +92,18 @@ func (s *service) verifyToken(ctx context.Context, token string, expectedSubject
 
 	reviewWithStatus, err := s.k8sAuthnClient.TokenReviews().Create(ctx, review, metav1.CreateOptions{})
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "failed to authenticate with Kubernetes API server: %s", err)
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to authenticate with Kubernetes API server: %s", err)
 	}
 
 	reviewStatus := reviewWithStatus.Status
 	if reviewStatus.Error != "" {
-		return status.Errorf(codes.Internal, "failed to review authentication token: %s", reviewStatus.Error)
+		return errors.Errorf("failed to review authentication token: %s", reviewStatus.Error)
 	}
 	if !reviewStatus.Authenticated {
 		return status.Error(codes.Unauthenticated, "token not authenticated")
 	}
 	if reviewStatus.User.Username != expectedSubject {
-		return status.Errorf(codes.Internal, "authorized unexpected user %q", reviewStatus.User.Username)
+		return errors.Errorf("authorized unexpected user %q", reviewStatus.User.Username)
 	}
 
 	return nil
@@ -112,18 +114,18 @@ func (s *service) loadCertsForService(serviceName string) (certPEM, keyPEM strin
 	keyFileName := filepath.Join(cacheDir, serviceName+"-key.pem")
 
 	if allExist, err := fileutils.AllExist(certFileName, keyFileName); err != nil {
-		return "", "", status.Error(codes.Internal, "failed to check for existence of certificates")
+		return "", "", errors.New("failed to check for existence of certificates")
 	} else if !allExist {
-		return "", "", status.Errorf(codes.NotFound, "no set of certificates for service %s is available", serviceName)
+		return "", "", errors.Wrapf(errorhelpers.ErrNotFound, "no set of certificates for service %s is available", serviceName)
 	}
 
 	certBytes, err := ioutil.ReadFile(certFileName)
 	if err != nil {
-		return "", "", status.Errorf(codes.Internal, "failed to read certificate file: %s", err)
+		return "", "", errors.Errorf("failed to read certificate file: %s", err)
 	}
 	keyBytes, err := ioutil.ReadFile(keyFileName)
 	if err != nil {
-		return "", "", status.Errorf(codes.Internal, "failed to read key file: %s", err)
+		return "", "", errors.Errorf("failed to read key file: %s", err)
 	}
 
 	return string(certBytes), string(keyBytes), nil
@@ -136,12 +138,12 @@ func (s *service) FetchCertificate(ctx context.Context, req *sensor.FetchCertifi
 
 	token := req.GetServiceAccountToken()
 	if token == "" {
-		return nil, status.Error(codes.InvalidArgument, "no token specified")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "no token specified")
 	}
 
 	serviceName := services.ServiceTypeToSlugName(req.GetServiceType())
 	if serviceName == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid service type %s", req.GetServiceType())
+		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid service type %s", req.GetServiceType())
 	}
 
 	expectedSubject := fmt.Sprintf("system:serviceaccount:%s:%s", s.namespace, serviceName)

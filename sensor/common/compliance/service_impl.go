@@ -14,8 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // BenchmarkResultsService is the struct that manages the benchmark results API
@@ -93,7 +91,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 	incomingMD := metautils.ExtractIncoming(server.Context())
 	hostname := incomingMD.Get("rox-compliance-nodename")
 	if hostname == "" {
-		return status.Error(codes.Internal, "compliance did not transmit a hostname in initial metadata")
+		return errors.New("compliance did not transmit a hostname in initial metadata")
 	}
 
 	log.Infof("Received connection from %q", hostname)

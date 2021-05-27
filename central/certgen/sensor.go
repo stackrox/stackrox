@@ -5,50 +5,50 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/clusters/zip"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/renderer"
 	pkgZip "github.com/stackrox/rox/pkg/zip"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster, error) {
 	var params apiparams.ClusterCertGen
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
-		return nil, nil, status.Errorf(codes.Internal, "invalid params: %v", err)
+		return nil, nil, errors.Errorf("invalid params: %v", err)
 	}
 
 	clusterID := params.ID
 	if clusterID == "" {
-		return nil, nil, status.Error(codes.InvalidArgument, "no cluster ID specified")
+		return nil, nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "no cluster ID specified")
 	}
 
 	cluster, _, err := s.clusters.GetCluster(r.Context(), clusterID)
 	if err != nil {
-		return nil, nil, status.Errorf(codes.Internal, "failed to retrieve cluster: %v", err)
+		return nil, nil, errors.Errorf("failed to retrieve cluster: %v", err)
 	}
 	if cluster == nil {
-		return nil, nil, status.Errorf(codes.NotFound, "cluster with ID %q not found", clusterID)
+		return nil, nil, errors.Wrapf(errorhelpers.ErrNotFound, "cluster with ID %q not found", clusterID)
 	}
 
 	certs, err := zip.GenerateCertsAndAddToZip(nil, cluster, s.serviceIdentities)
 	if err != nil {
-		return nil, nil, status.Errorf(codes.Internal, "could not generate certs: %v", err)
+		return nil, nil, errors.Errorf("could not generate certs: %v", err)
 	}
 
 	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, clusters.RenderOptions{})
 	if err != nil {
-		return nil, nil, status.Error(codes.Internal, err.Error())
+		return nil, nil, err
 	}
 
 	rendered, err := renderer.RenderSensorTLSSecretsOnly(fields, &certs)
 	if err != nil {
-		return nil, nil, status.Error(codes.Internal, err.Error())
+		return nil, nil, err
 	}
 	return rendered, cluster, nil
 }

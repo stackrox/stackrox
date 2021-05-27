@@ -4,11 +4,11 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -96,5 +96,5 @@ func GetSubject(subjectName string, bindings []*storage.K8SRoleBinding) (*storag
 			}
 		}
 	}
-	return nil, false, status.Errorf(codes.NotFound, "subject not found: %s", subjectName)
+	return nil, false, errors.Wrapf(errorhelpers.ErrNotFound, "subject not found: %s", subjectName)
 }

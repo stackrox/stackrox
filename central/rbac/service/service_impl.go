@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	rolesDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingsDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	bindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -61,10 +61,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetRole(ctx context.Context, request *v1.ResourceByID) (*v1.GetRoleResponse, error) {
 	role, exists, err := s.roles.GetRole(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "k8s role with id '%q' does not exist", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "k8s role with id '%q' does not exist", request.GetId())
 	}
 
 	return &v1.GetRoleResponse{Role: role}, nil
@@ -76,12 +76,12 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 	// roles that can get pods are returned, not roles that can get anything, and can do any operation on Pods.
 	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	roles, err := s.roles.SearchRawRoles(ctx, q)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to retrieve k8s roles: %v", err)
+		return nil, errors.Errorf("failed to retrieve k8s roles: %v", err)
 	}
 
 	return &v1.ListRolesResponse{Roles: roles}, nil
@@ -91,10 +91,10 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceByID) (*v1.GetRoleBindingResponse, error) {
 	binding, exists, err := s.bindings.GetRoleBinding(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "k8s role binding with id '%q' does not exist", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "k8s role binding with id '%q' does not exist", request.GetId())
 	}
 
 	return &v1.GetRoleBindingResponse{Binding: binding}, nil
@@ -104,11 +104,11 @@ func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceBy
 func (s *serviceImpl) ListRoleBindings(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListRoleBindingsResponse, error) {
 	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	bindings, err := s.bindings.SearchRawRoleBindings(ctx, q)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 	return &v1.ListRoleBindingsResponse{Bindings: bindings}, nil
 }
@@ -129,7 +129,7 @@ func (s *serviceImpl) ListSubjects(ctx context.Context, rawQuery *v1.RawQuery) (
 	}
 	bindingsSearch, err := s.ListRoleBindings(ctx, bindingQuery)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	// Use all roles (filtered bindings will do what we need).

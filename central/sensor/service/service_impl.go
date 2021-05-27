@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -22,9 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -122,7 +121,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	// Generate a pipeline for the cluster to use.
 	eventPipeline, err := s.pf.PipelineForCluster(server.Context(), cluster.GetId())
 	if err != nil {
-		return status.Errorf(codes.Internal, "unable to generate a pipeline for cluster %q", cluster.GetId())
+		return errors.Errorf("unable to generate a pipeline for cluster %q", cluster.GetId())
 	}
 
 	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())
@@ -139,7 +138,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 	clusterIDFromCert := serviceID.GetId()
 	if features.SensorInstallationExperience.Enabled() {
 		if helmConfigInit == nil && clusterIDFromCert == centralsensor.InitCertClusterID {
-			return nil, status.Error(codes.InvalidArgument, "sensor using cluster init certificate must transmit a helm-managed configuration")
+			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
 		}
 	}
 
@@ -148,13 +147,13 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 		var err error
 		clusterID, err = centralsensor.GetClusterID(clusterID, clusterIDFromCert)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "incompatible cluster IDs in config init and certificate: %v", err)
+			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "incompatible cluster IDs in config init and certificate: %v", err)
 		}
 	}
 
 	cluster, err := s.clusters.LookupOrCreateClusterFromConfig(clusterDSSAC, clusterID, sensorHello)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not fetch cluster for sensor: %v", err)
+		return nil, errors.Errorf("could not fetch cluster for sensor: %v", err)
 	}
 
 	return cluster, nil
