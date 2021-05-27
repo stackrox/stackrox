@@ -338,7 +338,7 @@ storeDiagnosticBundle: &storeDiagnosticBundle
 
 collectK8sLogs: &collectK8sLogs
   run:
-    name: Collect k8s logs
+    name: Collect k8s logs and metrics
 
     command: |
       set +e
@@ -348,6 +348,7 @@ collectK8sLogs: &collectK8sLogs
       ./scripts/ci/collect-service-logs.sh squid
       ./scripts/ci/collect-qa-service-logs.sh
       ./scripts/ci/collect-infrastructure-logs.sh
+      ./scripts/ci/collect-collector-metrics.sh stackrox
     when: always
 
 connectToMonitoring: &connectToMonitoring
