@@ -59,6 +59,7 @@ var (
 			"/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment",
 			"/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment",
 			"/v1.NetworkPolicyService/GetUndoModificationForDeployment",
+			"/v1.NetworkPolicyService/GetDiffFlowsFromUndoModificationForDeployment",
 		},
 		user.With(permissions.Modify(resources.NetworkPolicy)): {
 			"/v1.NetworkPolicyService/ApplyNetworkPolicy",
@@ -492,12 +493,18 @@ func (s *serviceImpl) getRelevantClusterObjectsForDeployment(ctx context.Context
 func (s *serviceImpl) getAllowedPeersForDeployment(ctx context.Context, deployment *storage.Deployment,
 	networkTree tree.ReadOnlyNetworkTree, deploymentsInCluster []*storage.Deployment) (
 	groupedEntitiesWithProperties, error) {
-
 	// Get the policies in the cluster
 	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, deployment.GetClusterId(), "")
 	if err != nil {
 		return nil, err
 	}
+	return s.getAllowedPeersForDeploymentWithNetPols(deployment, networkTree, deploymentsInCluster, networkPolicies)
+}
+
+func (s *serviceImpl) getAllowedPeersForDeploymentWithNetPols(deployment *storage.Deployment,
+	networkTree tree.ReadOnlyNetworkTree, deploymentsInCluster []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) (
+	groupedEntitiesWithProperties, error) {
+
 	// Only get the network policies that are applied to the deployment
 	networkPolicies = s.graphEvaluator.GetAppliedPolicies([]*storage.Deployment{deployment}, networkTree, networkPolicies)
 	// Build a graph out of the network policies. We can later remove all the deployments/nodes that do not have any out
@@ -694,6 +701,67 @@ func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, requ
 	}, nil
 }
 
+type nameNSPair struct {
+	name      string
+	namespace string
+}
+
+func (s *serviceImpl) GetDiffFlowsFromUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetDiffFlowsResponse, error) {
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return nil, errors.New("network baseline policy simulator is currently not enabled")
+	}
+
+	// First get allowed peers from current network policies
+	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	currentAllowedPeers, err := s.getAllowedPeersForDeployment(ctx, dep, networkTree, deploymentsInCluster)
+	if err != nil {
+		return nil, err
+	}
+
+	undoRecord, found, err := s.networkPolicies.GetUndoDeploymentRecord(ctx, request.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	} else if !found {
+		return nil, status.Errorf(codes.NotFound, "no undo record stored for deployment %q", request.GetId())
+	}
+
+	undoModification := undoRecord.GetUndoRecord().GetUndoModification()
+	// Get the policies in the cluster
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, dep.GetClusterId(), "")
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	conflictingNetPols := make(map[nameNSPair]struct{})
+	for _, toDelete := range undoModification.GetToDelete() {
+		conflictingNetPols[nameNSPair{name: toDelete.GetName(), namespace: toDelete.GetNamespace()}] = struct{}{}
+	}
+
+	policiesViaUndo, err := compileValidateYaml(undoModification.GetApplyYaml())
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range policiesViaUndo {
+		conflictingNetPols[nameNSPair{name: p.GetName(), namespace: p.GetName()}] = struct{}{}
+	}
+
+	networkPoliciesPostUndo := policiesViaUndo
+	for _, netPol := range networkPolicies {
+		if _, isConflicting := conflictingNetPols[nameNSPair{name: netPol.GetName(), namespace: netPol.GetNamespace()}]; !isConflicting {
+			networkPoliciesPostUndo = append(networkPoliciesPostUndo, netPol)
+		}
+	}
+
+	allowedPeersPostUndo, err := s.getAllowedPeersForDeploymentWithNetPols(dep, networkTree, deploymentsInCluster, networkPoliciesPostUndo)
+	if err != nil {
+		return nil, err
+	}
+	return s.computeDiffBetweenPeerGroups(currentAllowedPeers, allowedPeersPostUndo), nil
+}
+
 func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetDiffFlowsResponse, error) {
 	if !features.NetworkDetectionBaselineSimulation.Enabled() {
 		return nil, errors.New("network baseline policy simulator is currently not enabled")
@@ -755,34 +823,33 @@ func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx cont
 		}
 	}
 
-	rsp := s.computeDiffFlowsBetweenPolicyAllowedAndBaseline(allowedPeers, baselinePeers)
+	rsp := s.computeDiffBetweenPeerGroups(allowedPeers, baselinePeers)
 	return rsp, nil
 }
 
-func (s *serviceImpl) computeDiffFlowsBetweenPolicyAllowedAndBaseline(
-	allowedPeers groupedEntitiesWithProperties,
-	baselinePeers groupedEntitiesWithProperties,
+func (s *serviceImpl) computeDiffBetweenPeerGroups(
+	previousPeers, currentPeers groupedEntitiesWithProperties,
 ) *v1.GetDiffFlowsResponse {
 	rsp := &v1.GetDiffFlowsResponse{}
-	for _, baselinePeer := range baselinePeers {
-		entity := baselinePeer.entity
-		if allowedPeer, ok := allowedPeers[entity.GetId()]; !ok {
-			// Baseline peer not found in the current set of allowed peers. This is a newly added peer
+	for _, currentPeer := range currentPeers {
+		entity := currentPeer.entity
+		if previousPeer, ok := previousPeers[entity.GetId()]; !ok {
+			// Previous peer not found in the list of current peers. This is a newly added peer
 			rsp.Added = append(rsp.Added, &v1.GetDiffFlowsGroupedFlow{
-				Entity:     baselinePeer.entity,
-				Properties: baselinePeer.properties,
+				Entity:     currentPeer.entity,
+				Properties: currentPeer.properties,
 			})
 		} else {
 			// A new set of flows might be configured for this entity. Reconcile the difference if there is any
-			rsp.Reconciled = append(rsp.Reconciled, s.reconcileFlowDifferences(entity, allowedPeer.properties, baselinePeer.properties))
-			delete(allowedPeers, entity.GetId())
+			rsp.Reconciled = append(rsp.Reconciled, s.reconcileFlowDifferences(entity, previousPeer.properties, currentPeer.properties))
+			delete(previousPeers, entity.GetId())
 		}
 	}
 
-	// Since we have deleted matched peers from the currently allowed peers map. The peers left
-	// are the ones that will be removed.
-	for _, allowedPeer := range allowedPeers {
-		rsp.Removed = append(rsp.Removed, &v1.GetDiffFlowsGroupedFlow{Entity: allowedPeer.entity, Properties: allowedPeer.properties})
+	// Since we have deleted matched peers from the previous peers map, the peers left
+	// are removed in the diff.
+	for _, previousPeer := range previousPeers {
+		rsp.Removed = append(rsp.Removed, &v1.GetDiffFlowsGroupedFlow{Entity: previousPeer.entity, Properties: previousPeer.properties})
 	}
 
 	return rsp

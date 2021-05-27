@@ -264,4 +264,10 @@ service NetworkPolicyService {
             get: "/v1/networkpolicies/baselinecomparison/{id}"
         };
     }
+
+    rpc GetDiffFlowsFromUndoModificationForDeployment (ResourceByID) returns (GetDiffFlowsResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkpolicies/undobaselinecomparison/{id}"
+        };
+    }
 }
