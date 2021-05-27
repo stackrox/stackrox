@@ -121,6 +121,8 @@ service RoleService {
         };
     }
 
+    // PostSimpleAccessScope
+    //
     // SimpleAccessScope.id is disallowed in request and set in response.
     rpc PostSimpleAccessScope (storage.SimpleAccessScope) returns (storage.SimpleAccessScope) {
         option (google.api.http) = {
@@ -142,6 +144,8 @@ service RoleService {
         };
     }
 
+    // ComputeEffectiveAccessScope
+    //
     // Returns effective access scope based on the rules in the request. Does
     // not persist anything; not idempotent due to possible changes to clusters
     // and namespaces. POST is chosen due to potentially large payload.
