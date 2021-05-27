@@ -62,6 +62,22 @@ export function fetchBaselineComparison({ deploymentId }) {
         });
 }
 
+// TODO: wire this through redux saga, like the `fetchBaselineComparison` above
+/*
+ * Fetches the diff view of flows between the network policies last applied by ACS to the
+ * specified deployment and the previous state before that application.
+ *
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function fetchUndoComparison({ deploymentId }) {
+    return axios
+        .get(`${networkPoliciesBaseUrl}/undobaselinecomparison/${deploymentId}`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
 /*
  * Fetches the baselines status of the network flow
  *
@@ -112,6 +128,20 @@ export function toggleAlertBaselineViolations({ deploymentId, enable }) {
     const baseURL = `${networkBaselineBaseUrl}/${deploymentId}`;
     const URL = enable ? `${baseURL}/lock` : `${baseURL}/unlock`;
     return axios.patch(URL).then((response) => {
+        return response.data;
+    });
+}
+
+/*
+ * Retrieves the last StackRox-applied policy for a deployement
+ *
+ * @param   {string}  deploymentId
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function getUndoModificationForDeployment(deploymentId) {
+    const url = `${networkPoliciesBaseUrl}/undo/deployment/${deploymentId}`;
+    return axios.get(url).then((response) => {
         return response.data;
     });
 }

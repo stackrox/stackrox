@@ -34,18 +34,24 @@ const selectedClusterId = createSelector(
 
 export type NetworkPolicyYAMLOptionsProps = {
     networkPolicy: FetchBaselineGeneratedNetworkPolicyResult['data'];
+    loadUndo: (() => void) | null;
+    undoAvailable: boolean;
 };
 
-function NetworkPolicyYAMLOptions({ networkPolicy }: NetworkPolicyYAMLOptionsProps): ReactElement {
+function NetworkPolicyYAMLOptions({
+    networkPolicy,
+    loadUndo,
+    undoAvailable,
+}: NetworkPolicyYAMLOptionsProps): ReactElement {
     const [isNotifiersModalOpen, setIsNotifiersModalOpen] = useState(false);
     const deploymentName = useSelector(selectedDeploymentNameSelector);
     const clusterId = useSelector(selectedClusterId);
     const hasYaml = !!networkPolicy?.modification?.applyYaml;
 
-    function revertPolicy() {
-        // TODO: work with Saif to display the undo policy in the graph
-        // eslint-disable-next-line no-console
-        console.log({ networkPolicy });
+    function toggleUndoLoad() {
+        if (loadUndo) {
+            loadUndo();
+        }
     }
 
     function toggleNotifiersModal() {
@@ -83,8 +89,8 @@ function NetworkPolicyYAMLOptions({ networkPolicy }: NetworkPolicyYAMLOptionsPro
                             variant="tertiary"
                             isSmall
                             aria-label={revertButtonLabel}
-                            onClick={revertPolicy}
-                            isDisabled={!hasYaml}
+                            onClick={toggleUndoLoad}
+                            isDisabled={!loadUndo || !undoAvailable}
                         >
                             <UndoIcon />
                         </Button>
@@ -97,7 +103,7 @@ function NetworkPolicyYAMLOptions({ networkPolicy }: NetworkPolicyYAMLOptionsPro
                             isSmall
                             aria-label={shareButtonLabel}
                             onClick={toggleNotifiersModal}
-                            isDisabled={!hasYaml}
+                            isDisabled={!hasYaml || !undoAvailable}
                         >
                             <ShareSquareIcon />
                         </Button>
@@ -115,7 +121,7 @@ function NetworkPolicyYAMLOptions({ networkPolicy }: NetworkPolicyYAMLOptionsPro
                             isSmall
                             aria-label={downloadButtonLabel}
                             onClick={downloadYamlFile}
-                            isDisabled={!hasYaml}
+                            isDisabled={!hasYaml || !undoAvailable}
                         >
                             <DownloadIcon />
                         </Button>

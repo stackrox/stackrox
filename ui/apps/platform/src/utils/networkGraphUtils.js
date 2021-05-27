@@ -185,9 +185,9 @@ export const createPortsAndProtocolsSelector = (
                 (sourceNode.entity.type === entityTypes.DEPLOYMENT ||
                     sourceNode.entity.type === nodeTypes.EXTERNAL_ENTITIES ||
                     sourceNode.entity.type === nodeTypes.CIDR_BLOCK) &&
-                (targetNode.entity.type === entityTypes.DEPLOYMENT ||
-                    targetNode.entity.type === nodeTypes.EXTERNAL_ENTITIES ||
-                    targetNode.entity.type === nodeTypes.CIDR_BLOCK)
+                (targetNode?.entity?.type === entityTypes.DEPLOYMENT ||
+                    targetNode?.entity?.type === nodeTypes.EXTERNAL_ENTITIES ||
+                    targetNode?.entity?.type === nodeTypes.CIDR_BLOCK)
             ) {
                 const nodeLinkKey = getSourceTargetKey(sourceNode.entity.id, targetNode.entity.id);
                 const traffic =

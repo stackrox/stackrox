@@ -1,10 +1,12 @@
-import React, { useState, ReactElement } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
 import useNetworkBaselineSimulation from 'Containers/Network/useNetworkBaselineSimulation';
 import useFetchBaselineComparison from 'Containers/Network/useFetchBaselineComparisons';
+import { getUndoModificationForDeployment } from 'services/NetworkService';
+import { getDateTime } from 'utils/dateUtils';
 import NetworkPolicyYAMLOptions from './NetworkPolicyYAMLOptions';
 import SimulatedNetworkBaselines from './SimulatedNetworkBaselines';
 import ApplyBaselineNetworkPolicy from './ApplyBaselineNetworkPolicy';
@@ -12,6 +14,19 @@ import BaselineSimulationSearch, {
     getSimulatedBaselineValueByCategory,
 } from './BaselineSimulationSearch';
 import useFetchBaselineGeneratedNetworkPolicy from './useFetchBaselineGeneratedNetworkPolicy';
+
+type UndoModfication = {
+    undoRecord: {
+        user: string;
+        applyTimestamp: string; // ISO 8601 timestamp
+        originalModification: {
+            applyYaml: string;
+        };
+        undoModification: {
+            applyYaml: string;
+        };
+    };
+};
 
 export type BaselineSimulationProps = {
     deploymentId: string;
@@ -37,6 +52,29 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
         searchOptions,
         getSimulatedBaselineValueByCategory
     );
+    const [undoModification, setUndoModification] = useState<UndoModfication | null>(null);
+    const [undoLoadedIntoSimulator, setUndoLoadedIntoSimulator] = useState(false);
+
+    useEffect(() => {
+        getUndoModificationForDeployment(deploymentId)
+            .then((response) => {
+                setUndoModification(response);
+            })
+            .catch((err) => {
+                // if there is no ACS-applied undo record, that is returned as an error
+                // so we filter that type of error out, before throwing
+                if (!err?.response?.data?.message?.includes('no undo record stored')) {
+                    throw Error('Error retrieving possible undo network policy');
+                }
+            });
+    }, [deploymentId]);
+
+    function loadUndo() {
+        setUndoLoadedIntoSimulator(true);
+    }
+
+    const undoCallback = undoModification ? loadUndo : null;
+    const undoAvailable = !!undoModification && !undoLoadedIntoSimulator;
 
     return (
         <div className="bg-primary-100 rounded-b rounded-tr-lg shadow flex flex-1 flex-col">
@@ -44,7 +82,11 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
                 <PanelHead>
                     <PanelTitle text="Baseline Simulation" />
                     <PanelHeadEnd>
-                        <NetworkPolicyYAMLOptions networkPolicy={networkPolicy} />
+                        <NetworkPolicyYAMLOptions
+                            networkPolicy={networkPolicy}
+                            loadUndo={undoCallback}
+                            undoAvailable={undoAvailable}
+                        />
                         <TablePagination
                             page={page}
                             dataLength={filteredBaselines.length}
@@ -52,6 +94,16 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
                         />
                     </PanelHeadEnd>
                 </PanelHead>
+                {!!undoModification && (
+                    <p className="px-3 py-2">
+                        The last policy applied through Red Hat Advanced Cluster Security was
+                        applied by <strong>{undoModification?.undoRecord?.user}</strong> on{' '}
+                        <strong>
+                            {getDateTime(undoModification?.undoRecord?.applyTimestamp || '')}
+                        </strong>
+                        .
+                    </p>
+                )}
                 <PanelHead>
                     <PanelHeadEnd>
                         <div className="pr-3 w-full">
