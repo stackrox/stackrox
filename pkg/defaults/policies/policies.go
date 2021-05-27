@@ -1,10 +1,8 @@
-package defaults
+package policies
 
 import (
 	"bytes"
-	"io/ioutil"
-	"os"
-	"path"
+	"embed"
 	"path/filepath"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -13,33 +11,31 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	policiesDir = "files"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	// PoliciesPath is the path containing default out of the box policies.
-	PoliciesPath = `/stackrox/static-data/policies`
+	//go:embed files/*.json
+	policiesFS embed.FS
 )
 
-// Policies returns a list of default policies.
-func Policies() (policies []*storage.Policy, err error) {
-	dir := path.Join(PoliciesPath, "files")
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		log.Errorf("Unable to list files in directory: %s", err)
-		return
-	}
+// DefaultPolicies returns a slice of the default policies.
+func DefaultPolicies() ([]*storage.Policy, error) {
+	files, err := policiesFS.ReadDir(policiesDir)
+	// Sanity check embedded directory.
+	utils.Must(err)
+
+	var policies []*storage.Policy
 
 	errList := errorhelpers.NewErrorList("Default policy validation")
 	for _, f := range files {
-		if filepath.Ext(f.Name()) != `.json` {
-			log.Debugf("Ignoring non-json file: %s", f.Name())
-			continue
-		}
-
-		var p *storage.Policy
-		p, err = readPolicyFile(path.Join(dir, f.Name()))
+		p, err := readPolicyFile(filepath.Join(policiesDir, f.Name()))
 		if err != nil {
 			errList.AddError(err)
 			continue
@@ -65,18 +61,16 @@ func Policies() (policies []*storage.Policy, err error) {
 }
 
 func readPolicyFile(path string) (*storage.Policy, error) {
-	contents, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Errorf("Unable to read file %s: %s", path, err)
-		return nil, err
-	}
+	contents, err := policiesFS.ReadFile(path)
+	// We must be able to read the embedded files.
+	utils.Must(err)
 
-	r := new(storage.Policy)
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), r)
+	var policy storage.Policy
+	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
 	if err != nil {
 		log.Errorf("Unable to unmarshal policy (%s) json: %s", path, err)
 		return nil, err
 	}
 
-	return r, nil
+	return &policy, nil
 }

@@ -9,8 +9,7 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,8 +29,7 @@ func TestDetector(t *testing.T) {
 	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller))
 	detector := NewDetector(policySet)
 
-	defaults.PoliciesPath = policies.Directory()
-	defaultPolicies, err := defaults.Policies()
+	defaultPolicies, err := policies.DefaultPolicies()
 	require.NoError(t, err)
 
 	// Load the latest tag policy since that has image fields, and add the BUILD lifecycle so it gets compiled for the

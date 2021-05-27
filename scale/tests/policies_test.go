@@ -5,9 +5,8 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/roxctl/common"
 )
 
@@ -76,8 +75,7 @@ func BenchmarkDryRunPolicies(b *testing.B) {
 	}
 
 	policyService := v1.NewPolicyServiceClient(connection)
-	defaults.PoliciesPath = policies.Directory()
-	defPolicies, err := defaults.Policies()
+	defPolicies, err := policies.DefaultPolicies()
 	if err != nil {
 		log.Fatal(err)
 	}

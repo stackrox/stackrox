@@ -4,17 +4,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAllDefaultCategoriesHaveMappings(t *testing.T) {
-	defaults.PoliciesPath = policies.Directory()
-
-	defaultPolicies, err := defaults.Policies()
+	defaultPolicies, err := policies.DefaultPolicies()
 	require.NoError(t, err)
 
 	categoryMapSet := set.NewStringSet()

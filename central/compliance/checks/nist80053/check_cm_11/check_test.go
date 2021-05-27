@@ -6,16 +6,14 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultPoliciesListUpToDate(t *testing.T) {
-	defaults.PoliciesPath = policies.Directory()
-	defaultPolicies, err := defaults.Policies()
+	defaultPolicies, err := policies.DefaultPolicies()
 	require.NoError(t, err)
 
 	for _, checkedPolicy := range defaultRuntimePackageManagementPolicies {

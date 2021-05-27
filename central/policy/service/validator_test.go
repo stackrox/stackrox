@@ -10,10 +10,9 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -497,8 +496,7 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 }
 
 func (s *PolicyValidatorTestSuite) TestAllDefaultPoliciesValidate() {
-	defaults.PoliciesPath = policies.Directory()
-	defaultPolicies, err := defaults.Policies()
+	defaultPolicies, err := policies.DefaultPolicies()
 	s.Require().NoError(err)
 
 	for _, policy := range defaultPolicies {

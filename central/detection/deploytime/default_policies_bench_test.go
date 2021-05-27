@@ -4,8 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/detection"
-	imagePolicies "github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/fixtures"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
@@ -17,8 +16,7 @@ func BenchmarkDefaultPolicies(b *testing.B) {
 
 	policySet = detection.NewPolicySet(nil)
 
-	defaults.PoliciesPath = imagePolicies.Directory()
-	policies, err := defaults.Policies()
+	policies, err := policies.DefaultPolicies()
 	require.NoError(b, err)
 
 	for _, policy := range policies {

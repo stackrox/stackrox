@@ -1,5 +1,4 @@
-// This uses a separate package to avoid import cycles with pkg/defaults.
-package booleanpolicy_test
+package booleanpolicy
 
 import (
 	"fmt"
@@ -12,13 +11,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
-	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -65,9 +62,7 @@ type DefaultPoliciesTestSuite struct {
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupSuite() {
-	defaults.PoliciesPath = policies.Directory()
-
-	defaultPolicies, err := defaults.Policies()
+	defaultPolicies, err := policies.DefaultPolicies()
 	suite.Require().NoError(err)
 
 	suite.defaultPolicies = make(map[string]*storage.Policy, len(defaultPolicies))
@@ -229,11 +224,11 @@ func (suite *DefaultPoliciesTestSuite) getImagesForDeployment(deployment *storag
 	return images
 }
 
-func getViolationsWithAndWithoutCaching(t *testing.T, matcher func(cache *booleanpolicy.CacheReceptacle) (booleanpolicy.Violations, error)) booleanpolicy.Violations {
+func getViolationsWithAndWithoutCaching(t *testing.T, matcher func(cache *CacheReceptacle) (Violations, error)) Violations {
 	violations, err := matcher(nil)
 	require.NoError(t, err)
 
-	var cache booleanpolicy.CacheReceptacle
+	var cache CacheReceptacle
 	violationsWithEmptyCache, err := matcher(&cache)
 	require.NoError(t, err)
 	require.Equal(t, violations, violationsWithEmptyCache)
@@ -1373,11 +1368,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				assert.Nil(t, c.expectedProcessViolations, "Cannot specify shouldNotMatch AND expectedProcessViolations")
 			}
 
-			m, err := booleanpolicy.BuildDeploymentMatcher(p)
+			m, err := BuildDeploymentMatcher(p)
 			require.NoError(t, err)
 
 			if c.expectedProcessViolations != nil {
-				processMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(p)
+				processMatcher, err := BuildDeploymentWithProcessMatcher(p)
 				require.NoError(t, err)
 				for deploymentID, processes := range c.expectedProcessViolations {
 					expectedProcesses := set.NewStringSet(sliceutils.Map(processes, func(p *storage.ProcessIndicator) string {
@@ -1386,7 +1381,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					deployment := suite.deployments[deploymentID]
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
-						match := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (booleanpolicy.Violations, error) {
+						match := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
 							return processMatcher.MatchDeploymentWithProcess(nil, deployment, suite.getImagesForDeployment(deployment), process, false)
 						})
 						require.NoError(t, err)
@@ -1402,7 +1397,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for id, deployment := range suite.deployments {
-				violationsForDep := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (booleanpolicy.Violations, error) {
+				violationsForDep := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
 					return m.MatchDeployment(cache, deployment, suite.getImagesForDeployment(deployment))
 				})
 				assert.Nil(t, violationsForDep.ProcessViolation)
@@ -1699,12 +1694,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
 			assert.Nil(t, c.expectedProcessViolations)
 
-			m, err := booleanpolicy.BuildImageMatcher(p)
+			m, err := BuildImageMatcher(p)
 			require.NoError(t, err)
 
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for id, image := range suite.images {
-				violationsForImg := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (booleanpolicy.Violations, error) {
+				violationsForImg := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
 					return m.MatchImage(cache, image)
 				})
 				suite.Nil(violationsForImg.ProcessViolation)
@@ -1767,7 +1762,7 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 
 	policy := suite.defaultPolicies["Required Annotation: Email"]
 
-	m, err := booleanpolicy.BuildDeploymentMatcher(policy)
+	m, err := BuildDeploymentMatcher(policy)
 	suite.NoError(err)
 
 	for _, testCase := range []struct {
@@ -1954,7 +1949,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c.expectedMatches), func(t *testing.T) {
-			matcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.MinimumRBACPermissions, c.value, c.negate))
+			matcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.MinimumRBACPermissions, c.value, c.negate))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -2014,7 +2009,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			matcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.PortExposure, c.values, c.negate, storage.BooleanOperator_OR))
+			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.PortExposure, c.values, c.negate, storage.BooleanOperator_OR))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -2075,7 +2070,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 		c := testCase
 
 		suite.T().Run(fmt.Sprintf("DeploymentMatcher %+v", c), func(t *testing.T) {
-			depMatcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.ImageOS, c.value, false))
+			depMatcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.ImageOS, c.value, false))
 			require.NoError(t, err)
 			depMatched := set.NewStringSet()
 			for dep, img := range depToImg {
@@ -2091,7 +2086,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 		})
 
 		suite.T().Run(fmt.Sprintf("ImageMatcher %+v", c), func(t *testing.T) {
-			imgMatcher, err := booleanpolicy.BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageOS, c.value, false))
+			imgMatcher, err := BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageOS, c.value, false))
 			require.NoError(t, err)
 			imgMatched := set.NewStringSet()
 			for _, img := range depToImg {
@@ -2160,7 +2155,7 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 		c := testCase
 
 		suite.T().Run(fmt.Sprintf("DeploymentMatcher %+v", c), func(t *testing.T) {
-			depMatcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.ContainerName, c.value, c.negate))
+			depMatcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.ContainerName, c.value, c.negate))
 			require.NoError(t, err)
 			containerNameMatched := set.NewStringSet()
 			for _, dep := range deps {
@@ -2226,7 +2221,7 @@ func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 		c := testCase
 
 		suite.T().Run(fmt.Sprintf("DeploymentMatcher %+v", c), func(t *testing.T) {
-			depMatcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.Namespace, c.value, c.negate))
+			depMatcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.Namespace, c.value, c.negate))
 			require.NoError(t, err)
 			namespacesMatched := set.NewStringSet()
 			for _, dep := range deps {
@@ -2300,7 +2295,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			matcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.DropCaps, c.values, false, c.op))
+			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.DropCaps, c.values, false, c.op))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -2428,7 +2423,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
-			m, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policyWithGroups(c.groups...))
+			m, err := BuildDeploymentWithProcessMatcher(policyWithGroups(c.groups...))
 			require.NoError(t, err)
 
 			actualMatches := make(map[string][]string)
@@ -2513,7 +2508,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 					&storage.PolicySection{PolicyGroups: []*storage.PolicyGroup{aptGetGroup}})
 			}
 
-			m, err := booleanpolicy.BuildKubeEventMatcher(policy)
+			m, err := BuildKubeEventMatcher(policy)
 			if c.builderErr {
 				require.Error(t, err)
 				return
@@ -2589,7 +2584,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 	} {
 		suite.T().Run(fmt.Sprintf("%s:%s", c.policyName, kubernetes.EventAsString(c.event)), func(t *testing.T) {
 			policy := suite.MustGetPolicy(c.policyName)
-			m, err := booleanpolicy.BuildKubeEventMatcher(policy)
+			m, err := BuildKubeEventMatcher(policy)
 			require.NoError(t, err)
 
 			actualViolations, err := m.MatchKubeEvent(nil, c.event, &storage.Deployment{})
@@ -2621,7 +2616,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	// Create a policy for triggering flows that are not in baseline
 	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedNetworkFlowDetected, "true", false)
 
-	m, err := booleanpolicy.BuildDeploymentWithNetworkFlowMatcher(policyWithGroups(whitelistGroup))
+	m, err := BuildDeploymentWithNetworkFlowMatcher(policyWithGroups(whitelistGroup))
 	suite.NoError(err)
 
 	srcName, dstName, port, protocol := "deployment-name", "ext-source-name", 1, storage.L4Protocol_L4_PROTOCOL_TCP
@@ -2795,7 +2790,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 	} {
 		c := testCase
 		b.Run(fmt.Sprintf("%+v", c.groups), func(b *testing.B) {
-			m, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policyWithGroups(c.groups...))
+			m, err := BuildDeploymentWithProcessMatcher(policyWithGroups(c.groups...))
 			require.NoError(b, err)
 
 			b.ResetTimer()
@@ -2810,14 +2805,14 @@ func BenchmarkProcessPolicies(b *testing.B) {
 		})
 	}
 
-	m, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policyWithGroups(aptGetGroup, privilegedGroup, baselineGroup))
+	m, err := BuildDeploymentWithProcessMatcher(policyWithGroups(aptGetGroup, privilegedGroup, baselineGroup))
 	require.NoError(b, err)
 	for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 		for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
 			indicator := indicators[dep.GetId()][key]
 			notInBaseline := processesNotInBaseline[dep.GetId()].Contains(key)
 			b.Run(fmt.Sprintf("benchmark caching: %s/%s", dep.GetId(), key), func(b *testing.B) {
-				var resNoCaching booleanpolicy.Violations
+				var resNoCaching Violations
 				b.Run("no caching", func(b *testing.B) {
 					for i := 0; i < b.N; i++ {
 						var err error
@@ -2826,9 +2821,9 @@ func BenchmarkProcessPolicies(b *testing.B) {
 					}
 				})
 
-				var resWithCaching booleanpolicy.Violations
+				var resWithCaching Violations
 				b.Run("with caching", func(b *testing.B) {
-					var cache booleanpolicy.CacheReceptacle
+					var cache CacheReceptacle
 					for i := 0; i < b.N; i++ {
 						var err error
 						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, privilegedDep, images, indicator, notInBaseline)

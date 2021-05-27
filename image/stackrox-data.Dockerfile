@@ -35,6 +35,4 @@ RUN mkdir -p /stackrox-data/external-networks && \
 
 RUN zip -jr /stackrox-data/external-networks/external-networks.zip /stackrox-data/external-networks
 
-COPY ./policies/files /stackrox-data/policies/files
 COPY ./docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json
-

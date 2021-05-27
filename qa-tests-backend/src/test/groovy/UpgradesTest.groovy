@@ -22,7 +22,8 @@ import util.Env
 
 class UpgradesTest extends BaseSpecification {
     private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
-    private final static String POLICIES_JSON_PATH = Env.get("POLICIES_JSON_RELATIVE_PATH", "../image/policies/files")
+    private final static String POLICIES_JSON_PATH =
+            Env.get("POLICIES_JSON_RELATIVE_PATH", "../pkg/defaults/policies/files")
 
     private static final COMPLIANCE_QUERY = """query getAggregatedResults(
         \$groupBy: [ComplianceAggregation_Scope!],

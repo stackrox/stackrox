@@ -597,13 +597,16 @@ commands:
         type: string
       desc:
         type: string
+      policies-dir:
+        type: string
+        default: "../pkg/defaults/policies/files"
     steps:
       - run:
           name: "<< parameters.desc >>"
           command: |
             export CLUSTER=K8S
             cci-export UPGRADE_CLUSTER_ID << parameters.upgrade-cluster-id >>
-            cci-export POLICIES_JSON_RELATIVE_PATH "../image/policies/files"
+            cci-export POLICIES_JSON_RELATIVE_PATH << parameters.policies-dir >>
             make -C qa-tests-backend upgrade-test
 
   validate-upgrade-and-check-logs-with-bouncing:
@@ -613,10 +616,14 @@ commands:
         type: string
       desc:
         type: string
+      policies-dir:
+        type: string
+        default: "../pkg/defaults/policies/files"
     steps:
       - validate-upgrade:
           upgrade-cluster-id: "<< parameters.upgrade-cluster-id >>"
           desc: "<< parameters.desc >> (pre bounce)"
+          policies-dir: "<< parameters.policies-dir >>"
       - check-stackrox-logs:
           collect: true
       - *bounceCentral
@@ -624,6 +631,7 @@ commands:
       - validate-upgrade:
           upgrade-cluster-id: "<< parameters.upgrade-cluster-id >>"
           desc: "<< parameters.desc >> (post bounce)"
+          policies-dir: "<< parameters.policies-dir >>"
       - check-stackrox-logs:
           collect: true
 
@@ -2204,12 +2212,12 @@ jobs:
       - setup-go-build-env
 
       - run:
-          name: Ensure that all JSON policies in "./image/policies/" are of latest version. (If this fails, run `policyutil` on failed policies and commit the result.)
+          name: Ensure all JSON policies in "./pkg/defaults/policies/" are of latest version. (If this fails, run `policyutil` on failed policies and commit the result.)
           command: |
             make deps
             make policyutil
-            policyutil upgrade -d image/policies/files -o /tmp/policies-in-standard-form
-            diff image/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff
+            policyutil upgrade -d pkg/defaults/policies/files -o /tmp/policies-in-standard-form
+            diff pkg/defaults/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff
             if [[ -s /tmp/policies-diff ]]; then
               echo 'Found policies that are not in standard form. Check "policies-diff" for affected policies; use "policyutil" to fix them.'
               cat /tmp/policies-diff
@@ -3777,7 +3785,7 @@ jobs:
             rm -rf sensor-remote
 
       - run:
-          name: Install the metrics server, and inactivate it, to reproduce ROX-4429
+          name: Install the metrics server and deactivate it to reproduce ROX-4429
           command: |
             kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
 
@@ -4001,6 +4009,7 @@ jobs:
       - validate-upgrade:
           upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
           desc: "Validate Central is functional after setting to 3.0.58.x by running upgrade test as a smoke test"
+          policies-dir: "../image/policies/files"
 
       - run:
           name: Checkout current commit again
@@ -4046,6 +4055,7 @@ jobs:
       - validate-upgrade:
           upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
           desc: "Validate Central is functional after force rollback to 58 by running upgrade test as a smoke test"
+          policies-dir: "../image/policies/files"
 
       - run:
           name: Checkout current commit again
