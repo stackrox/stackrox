@@ -42,6 +42,14 @@ message Policy {
     bool   SORT_enforcement                        = 18 [(gogoproto.moretags) = "search:\"SORT_Enforcement,hidden\""];
     string policy_version                          = 19;
     repeated PolicySection policy_sections         = 20;
+
+    EventSource event_source                       = 22;
+}
+
+enum EventSource {
+    NOT_APPLICABLE        = 0;
+    DEPLOYMENT_EVENT      = 1;
+    AUDIT_LOG_EVENT       = 2;
 }
 
 message PolicySection {

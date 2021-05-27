@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
@@ -86,6 +87,8 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	errorList.AddError(s.validateScopes(policy))
 	errorList.AddError(s.validateExclusions(policy))
 	errorList.AddError(s.validateCapabilities(policy))
+	errorList.AddError(s.validateEventSource(policy))
+
 	for _, validator := range additionalValidators {
 		errorList.AddError(validator(policy))
 	}
@@ -135,6 +138,24 @@ func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage
 	if !policies.AppliesAtRunTime(policy) {
 		removeEnforcementForLifecycle(policy, storage.LifecycleStage_RUNTIME)
 	}
+}
+
+func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
+	if !features.K8sAuditLogDetection.Enabled() && policy.GetEventSource() != storage.EventSource_NOT_APPLICABLE {
+		return errors.New("event source is not applicable to policies unless ROX_K8S_AUDIT_LOG_DETECTION feature flag is turned on")
+	}
+
+	if features.K8sAuditLogDetection.Enabled() && policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+		if len(policy.GetEnforcementActions()) != 0 {
+			return errors.New("enforcement actions are not applicable for runtime policies with audit log as the event source")
+		}
+		if len(policy.GetExclusions()) != 0 {
+			return errors.New("build image exclusions are not applicable for runtime policies with audit log as the event source")
+		}
+	}
+
+	//TODO(@khushboo): ROX-7252: Modify this validation once migration to account for new policy field event source is in
+	return nil
 }
 
 func (s *policyValidator) validateSeverity(policy *storage.Policy) error {

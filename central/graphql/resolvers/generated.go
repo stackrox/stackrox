@@ -534,6 +534,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_VulnerabilityType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EventSource(0)))
 	utils.Must(builder.AddType("Exclusion", []string{
 		"deployment: Exclusion_Deployment",
 		"expiration: Time",
@@ -859,6 +860,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"disabled: Boolean!",
 		"enforcementActions: [EnforcementAction!]!",
+		"eventSource: EventSource!",
 		"exclusions: [Exclusion]!",
 		"fields: PolicyFields",
 		"id: ID!",
@@ -5347,6 +5349,24 @@ func toEnforcementActions(values *[]string) []storage.EnforcementAction {
 	return output
 }
 
+func toEventSource(value *string) storage.EventSource {
+	if value != nil {
+		return storage.EventSource(storage.EventSource_value[*value])
+	}
+	return storage.EventSource(0)
+}
+
+func toEventSources(values *[]string) []storage.EventSource {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.EventSource, len(*values))
+	for i, v := range *values {
+		output[i] = toEventSource(&v)
+	}
+	return output
+}
+
 type exclusionResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -7800,6 +7820,11 @@ func (resolver *policyResolver) Disabled(ctx context.Context) bool {
 func (resolver *policyResolver) EnforcementActions(ctx context.Context) []string {
 	value := resolver.data.GetEnforcementActions()
 	return stringSlice(value)
+}
+
+func (resolver *policyResolver) EventSource(ctx context.Context) string {
+	value := resolver.data.GetEventSource()
+	return value.String()
 }
 
 func (resolver *policyResolver) Exclusions(ctx context.Context) ([]*exclusionResolver, error) {
