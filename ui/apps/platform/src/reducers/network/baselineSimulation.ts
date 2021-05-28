@@ -20,25 +20,39 @@ export type StopBaselineSimulationAction = {
 export type BaselineSimulationState = {
     isOn: boolean;
     options: { excludePortsAndProtocols: boolean };
-    baselineComparisons: BaselineComparisonsResult;
+    baselineComparisons: ComparisonsResult;
+    undoComparisons: ComparisonsResult;
+    isUndoOn: boolean;
 };
 
-export type BaselineComparisonsAction = {
-    type:
-        | 'network/FETCH_BASELINE_COMPARISONS_REQUEST'
-        | 'network/FETCH_BASELINE_COMPARISONS_SUCCESS'
-        | 'network/FETCH_BASELINE_COMPARISONS_FAILURE';
+export type FetchBaselineActions =
+    | 'network/FETCH_BASELINE_COMPARISONS_REQUEST'
+    | 'network/FETCH_BASELINE_COMPARISONS_SUCCESS'
+    | 'network/FETCH_BASELINE_COMPARISONS_FAILURE';
+
+export type FetchUndoActions =
+    | 'network/FETCH_UNDO_COMPARISONS_REQUEST'
+    | 'network/FETCH_UNDO_COMPARISONS_SUCCESS'
+    | 'network/FETCH_UNDO_COMPARISONS_FAILURE';
+
+export type ComparisonsAction = {
+    type: FetchBaselineActions | FetchUndoActions;
     response: BaselineComparisonsResponse;
     error: Error | null;
 };
 
-export type BaselineComparisonsResult = {
+export type ToggleUndoPreviewAction = {
+    type: 'network/TOGGLE_UNDO_PREVIEW';
+    isOn: boolean;
+};
+
+export type ComparisonsResult = {
     isLoading: boolean;
     data: BaselineComparisonsResponse;
     error: Error | null;
 };
 
-const baselineComparisonsDefaultState = {
+const comparisonsDefaultState = {
     isLoading: false,
     data: { added: [], removed: [], reconciled: [] },
     error: null,
@@ -51,6 +65,8 @@ export const types = {
     START_BASELINE_SIMULATION: 'network/START_BASELINE_SIMULATION',
     STOP_BASELINE_SIMULATION: 'network/STOP_BASELINE_SIMULATION',
     FETCH_BASELINE_COMPARISONS: createFetchingActionTypes('network/FETCH_BASELINE_COMPARISONS'),
+    FETCH_UNDO_COMPARISONS: createFetchingActionTypes('network/FETCH_UNDO_COMPARISONS'),
+    TOGGLE_UNDO_PREVIEW: 'network/TOGGLE_UNDO_PREVIEW',
 };
 
 // Actions
@@ -67,6 +83,11 @@ export const actions = {
         type: 'network/STOP_BASELINE_SIMULATION',
     }),
     fetchBaselineComparisons: createFetchingActions(types.FETCH_BASELINE_COMPARISONS),
+    fetchUndoComparisons: createFetchingActions(types.FETCH_UNDO_COMPARISONS),
+    toggleUndoPreview: (isOn: boolean): ToggleUndoPreviewAction => ({
+        type: 'network/TOGGLE_UNDO_PREVIEW',
+        isOn,
+    }),
 };
 
 // Reducers
@@ -104,22 +125,52 @@ const options = (
 };
 
 const baselineComparisons = (
-    state: BaselineComparisonsResult = baselineComparisonsDefaultState,
-    action: BaselineComparisonsAction
-): BaselineComparisonsResult => {
+    state: ComparisonsResult = comparisonsDefaultState,
+    action: ComparisonsAction
+): ComparisonsResult => {
     const { type } = action;
     if (type === 'network/FETCH_BASELINE_COMPARISONS_REQUEST') {
-        const newState = { ...baselineComparisonsDefaultState, isLoading: true };
+        const newState = { ...comparisonsDefaultState, isLoading: true };
         return isEqual(newState, state) ? state : newState;
     }
     if (type === 'network/FETCH_BASELINE_COMPARISONS_SUCCESS') {
         const { response } = action;
-        const newState = { ...baselineComparisonsDefaultState, data: response };
+        const newState = { ...comparisonsDefaultState, data: response };
         return isEqual(newState, state) ? state : newState;
     }
     if (type === 'network/FETCH_BASELINE_COMPARISONS_FAILURE') {
         const { error } = action;
-        const newState = { ...baselineComparisonsDefaultState, error };
+        const newState = { ...comparisonsDefaultState, error };
+        return isEqual(newState, state) ? state : newState;
+    }
+    return state;
+};
+
+const undoComparisons = (
+    state: ComparisonsResult = comparisonsDefaultState,
+    action: ComparisonsAction
+): ComparisonsResult => {
+    const { type } = action;
+    if (type === 'network/FETCH_UNDO_COMPARISONS_REQUEST') {
+        const newState = { ...comparisonsDefaultState, isLoading: true };
+        return isEqual(newState, state) ? state : newState;
+    }
+    if (type === 'network/FETCH_UNDO_COMPARISONS_SUCCESS') {
+        const { response } = action;
+        const newState = { ...comparisonsDefaultState, data: response };
+        return isEqual(newState, state) ? state : newState;
+    }
+    if (type === 'network/FETCH_UNDO_COMPARISONS_FAILURE') {
+        const { error } = action;
+        const newState = { ...comparisonsDefaultState, error };
+        return isEqual(newState, state) ? state : newState;
+    }
+    return state;
+};
+
+const isUndoOn = (state = false, action: ToggleUndoPreviewAction) => {
+    if (action.type === 'network/TOGGLE_UNDO_PREVIEW') {
+        const newState = action.isOn;
         return isEqual(newState, state) ? state : newState;
     }
     return state;
@@ -129,6 +180,8 @@ const reducer = combineReducers({
     isOn,
     options,
     baselineComparisons,
+    undoComparisons,
+    isUndoOn,
 });
 
 export default reducer;
@@ -140,11 +193,16 @@ export default reducer;
 const getIsBaselineSimulationOn = (state: BaselineSimulationState): boolean => state.isOn;
 const getBaselineSimulationOptions = (state: BaselineSimulationState): BaselineSimulationOptions =>
     state.options;
-const getBaselineComparisons = (state: BaselineSimulationState): BaselineComparisonsResult =>
+const getBaselineComparisons = (state: BaselineSimulationState): ComparisonsResult =>
     state.baselineComparisons;
+const getUndoComparisons = (state: BaselineSimulationState): ComparisonsResult =>
+    state.undoComparisons;
+const getIsUndoOn = (state: BaselineSimulationState): boolean => state.isUndoOn;
 
 export const selectors = {
     getIsBaselineSimulationOn,
     getBaselineSimulationOptions,
     getBaselineComparisons,
+    getUndoComparisons,
+    getIsUndoOn,
 };

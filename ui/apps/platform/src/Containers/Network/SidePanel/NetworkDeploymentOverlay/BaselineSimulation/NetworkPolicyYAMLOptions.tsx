@@ -1,17 +1,16 @@
-/* eslint-disable no-console */
 import React, { ReactElement, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { createSelector } from 'reselect';
 import { Button, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import { UndoIcon, ShareSquareIcon, DownloadIcon } from '@patternfly/react-icons';
 
+import { actions as baselineSimulationActions } from 'reducers/network/baselineSimulation';
 import { selectors } from 'reducers';
 import { notifyNetworkPolicyModification } from 'services/NetworkService';
 import download from 'utils/download';
 import { FetchBaselineGeneratedNetworkPolicyResult } from './useFetchBaselineGeneratedNetworkPolicy';
 import NotifiersModal from './NotifiersModal';
 
-// TODO: decide if this way of overriding PatternFly vars is worth adopting
 import './NetworkPolicyYAMLOptions.css';
 
 const revertButtonLabel = 'Revert to most recently applied YAML.';
@@ -34,24 +33,25 @@ const selectedClusterId = createSelector(
 
 export type NetworkPolicyYAMLOptionsProps = {
     networkPolicy: FetchBaselineGeneratedNetworkPolicyResult['data'];
-    loadUndo: (() => void) | null;
     undoAvailable: boolean;
+    isUndoOn: boolean;
 };
 
 function NetworkPolicyYAMLOptions({
     networkPolicy,
-    loadUndo,
     undoAvailable,
+    isUndoOn,
 }: NetworkPolicyYAMLOptionsProps): ReactElement {
     const [isNotifiersModalOpen, setIsNotifiersModalOpen] = useState(false);
     const deploymentName = useSelector(selectedDeploymentNameSelector);
     const clusterId = useSelector(selectedClusterId);
+    const dispatch = useDispatch();
+
     const hasYaml = !!networkPolicy?.modification?.applyYaml;
 
-    function toggleUndoLoad() {
-        if (loadUndo) {
-            loadUndo();
-        }
+    function toggleUndoPreview() {
+        const newState = !isUndoOn;
+        dispatch(baselineSimulationActions.toggleUndoPreview(newState));
     }
 
     function toggleNotifiersModal() {
@@ -89,8 +89,8 @@ function NetworkPolicyYAMLOptions({
                             variant="tertiary"
                             isSmall
                             aria-label={revertButtonLabel}
-                            onClick={toggleUndoLoad}
-                            isDisabled={!loadUndo || !undoAvailable}
+                            onClick={toggleUndoPreview}
+                            isDisabled={isUndoOn || !undoAvailable}
                         >
                             <UndoIcon />
                         </Button>
@@ -103,7 +103,7 @@ function NetworkPolicyYAMLOptions({
                             isSmall
                             aria-label={shareButtonLabel}
                             onClick={toggleNotifiersModal}
-                            isDisabled={!hasYaml || !undoAvailable}
+                            isDisabled={!hasYaml || isUndoOn}
                         >
                             <ShareSquareIcon />
                         </Button>
@@ -121,7 +121,7 @@ function NetworkPolicyYAMLOptions({
                             isSmall
                             aria-label={downloadButtonLabel}
                             onClick={downloadYamlFile}
-                            isDisabled={!hasYaml || !undoAvailable}
+                            isDisabled={!hasYaml || isUndoOn}
                         >
                             <DownloadIcon />
                         </Button>

@@ -36,6 +36,7 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
     const {
         baselineSimulationOptions: { excludePortsAndProtocols },
         stopBaselineSimulation,
+        isUndoOn,
     } = useNetworkBaselineSimulation();
     const { simulatedBaselines, isLoading } = useFetchBaselineComparison();
     const {
@@ -53,7 +54,6 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
         getSimulatedBaselineValueByCategory
     );
     const [undoModification, setUndoModification] = useState<UndoModfication | null>(null);
-    const [undoLoadedIntoSimulator, setUndoLoadedIntoSimulator] = useState(false);
 
     useEffect(() => {
         getUndoModificationForDeployment(deploymentId)
@@ -69,12 +69,7 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
             });
     }, [deploymentId]);
 
-    function loadUndo() {
-        setUndoLoadedIntoSimulator(true);
-    }
-
-    const undoCallback = undoModification ? loadUndo : null;
-    const undoAvailable = !!undoModification && !undoLoadedIntoSimulator;
+    const undoAvailable = !!undoModification && !isUndoOn;
 
     return (
         <div className="bg-primary-100 rounded-b rounded-tr-lg shadow flex flex-1 flex-col">
@@ -84,8 +79,8 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
                     <PanelHeadEnd>
                         <NetworkPolicyYAMLOptions
                             networkPolicy={networkPolicy}
-                            loadUndo={undoCallback}
                             undoAvailable={undoAvailable}
+                            isUndoOn={isUndoOn}
                         />
                         <TablePagination
                             page={page}

@@ -16,19 +16,29 @@ const selectBaselineComparisons = createSelector(
     (baselineComparisons) => baselineComparisons
 );
 
+const selectUndoComparisons = createSelector(
+    [selectors.getUndoComparisons],
+    (undoComparisons) => undoComparisons
+);
+
 const selectNetworkFilterMode = createSelector(
     [selectors.getNetworkGraphFilterMode],
     (filterMode) => filterMode as FilterState
 );
 
-function useFetchBaselineComparisons(): FetchBaselineComparisonsResult {
-    const result = useSelector(selectBaselineComparisons);
-    const filterState = useSelector(selectNetworkFilterMode);
+const selectIsUndoOn = createSelector([selectors.getIsUndoOn], (isUndoOn) => isUndoOn);
 
-    const simulatedBaselines = processBaselineComparisons(result.data, filterState);
+function useFetchBaselineComparisons(): FetchBaselineComparisonsResult {
+    const baselineComparisons = useSelector(selectBaselineComparisons);
+    const undoComparisons = useSelector(selectUndoComparisons);
+    const filterState = useSelector(selectNetworkFilterMode);
+    const isUndoOn = useSelector(selectIsUndoOn);
+
+    const comparisonsToUse = isUndoOn ? undoComparisons : baselineComparisons;
+    const simulatedBaselines = processBaselineComparisons(comparisonsToUse.data, filterState);
 
     return {
-        ...result,
+        ...comparisonsToUse,
         simulatedBaselines,
     };
 }
