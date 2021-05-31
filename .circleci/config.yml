@@ -2751,6 +2751,10 @@ jobs:
       - run:
           name: Check that Secured Cluster Operator image is runnable
           command: docker run --rm stackrox.io/securedcluster-operator:$(make --no-print-directory -C operator/securedcluster tag) --help
+      # TODO(ROX-7264): build bundle during CI. Currently blocked because operator-sdk binary should be present during build.
+      #- run:
+      #    name: Build Secured Cluster Operator Bundle image
+      #    command: make -C operator/securedcluster bundle bundle-build
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
