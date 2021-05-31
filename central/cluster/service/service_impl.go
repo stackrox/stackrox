@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -14,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -24,10 +21,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	defaultAdmissionControllerTimeout = 3
 )
 
 var (
@@ -67,60 +60,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func normalizeCluster(cluster *storage.Cluster) error {
-	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
-	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
-
-	return addDefaults(cluster)
-}
-
-func validateInput(cluster *storage.Cluster) error {
-	return clusterValidation.Validate(cluster).ToError()
-}
-
-func addDefaults(cluster *storage.Cluster) error {
-	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
-	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
-		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
-	}
-	cluster.RuntimeSupport = cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION
-
-	if cluster.GetTolerationsConfig() == nil {
-		cluster.TolerationsConfig = &storage.TolerationsConfig{
-			Disabled: false,
-		}
-	}
-
-	if cluster.GetDynamicConfig() == nil {
-		cluster.DynamicConfig = &storage.DynamicClusterConfig{}
-	}
-	acConfig := cluster.DynamicConfig.GetAdmissionControllerConfig()
-	if acConfig == nil {
-		acConfig = &storage.AdmissionControllerConfig{
-			Enabled: false,
-		}
-		cluster.DynamicConfig.AdmissionControllerConfig = acConfig
-	}
-	if acConfig.GetTimeoutSeconds() < 0 {
-		return fmt.Errorf("timeout of %d is invalid", acConfig.GetTimeoutSeconds())
-	}
-	if acConfig.GetTimeoutSeconds() == 0 {
-		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
-	}
-	return nil
-}
-
 // PostCluster creates a new cluster.
 func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() != "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id field should be empty when posting a new cluster")
-	}
-	if err := normalizeCluster(request); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-	}
-
-	if err := validateInput(request); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	id, err := s.datastore.AddCluster(ctx, request)
@@ -138,12 +81,6 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id must be provided")
-	}
-	if err := normalizeCluster(request); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-	}
-	if err := validateInput(request); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	err := s.datastore.UpdateCluster(ctx, request)
 	if err != nil {

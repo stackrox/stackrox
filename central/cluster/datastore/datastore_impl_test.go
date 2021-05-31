@@ -32,7 +32,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const fakeClusterID = "FAKECLUSTERID"
+const (
+	fakeClusterID   = "FAKECLUSTERID"
+	mainImage       = "docker.io/stackrox/rox:latest"
+	centralEndpoint = "central.stackrox:443"
+)
 
 func TestClusterDataStore(t *testing.T) {
 	suite.Run(t, new(ClusterDataStoreTestSuite))
@@ -260,7 +264,7 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsAdd() {
 	suite.indexer.EXPECT().AddCluster(gomock.Any()).Return(nil)
 	suite.flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(suite.mockCtrl), nil)
 
-	_, err := suite.clusterDataStore.AddCluster(suite.hasWriteCtx, &storage.Cluster{Name: "blah"})
+	_, err := suite.clusterDataStore.AddCluster(suite.hasWriteCtx, &storage.Cluster{Name: "blah", MainImage: mainImage, CentralApiEndpoint: centralEndpoint})
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
@@ -275,12 +279,12 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsUpdate() {
-	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah"}, true, nil)
+	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah", MainImage: mainImage, CentralApiEndpoint: centralEndpoint}, true, nil)
 	suite.clusters.EXPECT().Upsert(gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddCluster(gomock.Any()).Return(nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 
-	err := suite.clusterDataStore.UpdateCluster(suite.hasWriteCtx, &storage.Cluster{Id: "1", Name: "blah"})
+	err := suite.clusterDataStore.UpdateCluster(suite.hasWriteCtx, &storage.Cluster{Id: "1", Name: "blah", MainImage: mainImage, CentralApiEndpoint: centralEndpoint})
 	suite.NoError(err, "expected no error trying to write with permissions")
 
 	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah"}, true, nil)
@@ -660,4 +664,192 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
 
 	err := suite.clusterDataStore.UpdateClusterHealth(suite.hasWriteCtx, "", &storage.ClusterHealthStatus{})
 	suite.Error(err)
+}
+
+func (suite *ClusterDataStoreTestSuite) TestNormalizeCluster() {
+	cases := []struct {
+		name     string
+		cluster  *storage.Cluster
+		expected string
+	}{
+		{
+			name: "Happy path",
+			cluster: &storage.Cluster{
+				CentralApiEndpoint: "localhost:8080",
+			},
+			expected: "localhost:8080",
+		},
+		{
+			name: "http",
+			cluster: &storage.Cluster{
+				CentralApiEndpoint: "http://localhost:8080",
+			},
+			expected: "localhost:8080",
+		},
+		{
+			name: "https",
+			cluster: &storage.Cluster{
+				CentralApiEndpoint: "https://localhost:8080",
+			},
+			expected: "localhost:8080",
+		},
+	}
+
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			suite.NoError(normalizeCluster(c.cluster))
+			suite.Equal(c.expected, c.cluster.GetCentralApiEndpoint())
+		})
+	}
+}
+
+func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
+	cases := []struct {
+		name          string
+		cluster       *storage.Cluster
+		expectedError bool
+	}{
+		{
+			name:          "Empty Cluster",
+			cluster:       &storage.Cluster{},
+			expectedError: true,
+		},
+		{
+			name: "No name",
+			cluster: &storage.Cluster{
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: true,
+		},
+		{
+			name: "No Image",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: true,
+		},
+		{
+			name: "Image without tag",
+			cluster: &storage.Cluster{
+				MainImage:          "stackrox/main",
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: false,
+		},
+		{
+			name: "Non-trivial image",
+			cluster: &storage.Cluster{
+				MainImage:          "stackrox/main:1.2",
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: false,
+		},
+		{
+			name: "Moderately complex image",
+			cluster: &storage.Cluster{
+				MainImage:          "stackrox.io/main:1.2.512-125125",
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: false,
+		},
+		{
+			name: "Image with SHA",
+			cluster: &storage.Cluster{
+				MainImage:          "stackrox.io/main@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: false,
+		},
+		{
+			name: "Invalid image - contains spaces",
+			cluster: &storage.Cluster{
+				MainImage:          "stackrox.io/main:1.2.3 injectedCommand",
+				Name:               "name",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: true,
+		},
+		{
+			name: "No Central Endpoint",
+			cluster: &storage.Cluster{
+				Name:      "name",
+				MainImage: "image",
+			},
+			expectedError: true,
+		},
+		{
+			name: "Central Endpoint w/o port",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central",
+			},
+			expectedError: true,
+		},
+		{
+			name: "Valid collector registry",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+				CollectorImage:     "collector.stackrox.io/collector",
+			},
+			expectedError: false,
+		},
+		{
+			name: "Empty string collector registry",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+				CollectorImage:     "",
+			},
+		},
+		{
+			name: "Invalid collector registry",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+				CollectorImage:     "collector.stackrox.io/collector injectedCommand",
+			},
+			expectedError: true,
+		},
+		{
+			name: "Happy path K8s",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: false,
+		},
+		{
+			name: "Happy path",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+			},
+			expectedError: false,
+		},
+	}
+
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			err := validateInput(c.cluster)
+			if c.expectedError {
+				suite.Error(err)
+			} else {
+				suite.Nil(err)
+			}
+		})
+	}
+
 }

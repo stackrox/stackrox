@@ -2,6 +2,8 @@ package datastore
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -25,6 +27,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
@@ -44,6 +47,10 @@ const (
 	// clusterMoveGracePeriod determines the amount of time that has to pass before a (logical) StackRox cluster can
 	// be moved to a different (physical) Kubernetes cluster.
 	clusterMoveGracePeriod = 3 * time.Minute
+)
+
+const (
+	defaultAdmissionControllerTimeout = 3
 )
 
 var (
@@ -667,6 +674,13 @@ func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
 }
 
 func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
+	if err := normalizeCluster(cluster); err != nil {
+		return err
+	}
+	if err := validateInput(cluster); err != nil {
+		return err
+	}
+
 	if err := ds.clusterStorage.Upsert(cluster); err != nil {
 		return err
 	}
@@ -773,6 +787,49 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	return cluster, nil
+}
+
+func normalizeCluster(cluster *storage.Cluster) error {
+	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
+	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
+
+	return addDefaults(cluster)
+}
+
+func validateInput(cluster *storage.Cluster) error {
+	return clusterValidation.Validate(cluster).ToError()
+}
+
+func addDefaults(cluster *storage.Cluster) error {
+	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
+	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
+		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
+	}
+	cluster.RuntimeSupport = cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION
+
+	if cluster.GetTolerationsConfig() == nil {
+		cluster.TolerationsConfig = &storage.TolerationsConfig{
+			Disabled: false,
+		}
+	}
+
+	if cluster.GetDynamicConfig() == nil {
+		cluster.DynamicConfig = &storage.DynamicClusterConfig{}
+	}
+	acConfig := cluster.DynamicConfig.GetAdmissionControllerConfig()
+	if acConfig == nil {
+		acConfig = &storage.AdmissionControllerConfig{
+			Enabled: false,
+		}
+		cluster.DynamicConfig.AdmissionControllerConfig = acConfig
+	}
+	if acConfig.GetTimeoutSeconds() < 0 {
+		return fmt.Errorf("timeout of %d is invalid", acConfig.GetTimeoutSeconds())
+	}
+	if acConfig.GetTimeoutSeconds() == 0 {
+		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
+	}
+	return nil
 }
 
 func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.CompleteClusterConfig) {
