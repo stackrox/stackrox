@@ -13,21 +13,19 @@ import (
 
 // Translate translates a SecuredCluster CR into helm values.
 func Translate(ctx context.Context, clientSet kubernetes.Interface, sc securedcluster.SecuredCluster) (chartutil.Values, error) {
-	v := chartutil.Values{}
+	v := translation.NewValuesBuilder()
 
-	v["clusterName"] = sc.Spec.ClusterName
 	// TODO(ROX-7125): prevent/allow cluster name change?
+	v.SetStringValue("clusterName", sc.Spec.ClusterName)
 
-	if sc.Spec.CentralEndpoint != nil {
-		v["centralEndpoint"] = *sc.Spec.CentralEndpoint
-	}
+	v.SetString("centralEndpoint", sc.Spec.CentralEndpoint)
 
 	if sc.Spec.TLS != nil && len(sc.Spec.TLS.AdditionalCAs) > 0 {
 		var cas []chartutil.Values
 		for _, ca := range sc.Spec.TLS.AdditionalCAs {
 			cas = append(cas, chartutil.Values{ca.Name: ca.Content})
 		}
-		v["additionalCAs"] = cas
+		v.SetChartutilValuesSlice("additionalCAs", cas)
 	}
 
 	// TODO(ROX-7179): support imagePullSecrets.allowNone and/or disabling fromDefaultServiceAccount?
@@ -36,167 +34,129 @@ func Translate(ctx context.Context, clientSet kubernetes.Interface, sc securedcl
 		for _, secret := range sc.Spec.ImagePullSecrets {
 			ps = append(ps, secret.Name)
 		}
-		v["imagePullSecrets"] = chartutil.Values{"useExisting": ps}
+		v.SetChartutilValues("imagePullSecrets", chartutil.Values{"useExisting": ps})
 	}
 
 	// TODO(ROX-7178): support explicit env.openshift and env.istio setting
 	// TODO(ROX-7148): support setting ca.cert
 	// TODO(ROX-7150): support setting/overriding images
 
-	if err := setSensorValues(ctx, clientSet, sc.Namespace, v, sc.Spec.Sensor); err != nil {
-		return nil, err
-	}
-	if err := setAdmissionControlValues(ctx, clientSet, sc.Namespace, v, sc.Spec.AdmissionControl); err != nil {
-		return nil, err
-	}
-	if err := setCollectorValues(ctx, clientSet, sc.Namespace, v, sc.Spec.Collector); err != nil {
-		return nil, err
+	customize := translation.NewValuesBuilder()
+
+	if sc.Spec.Sensor != nil {
+		v.AddChild("sensor", getSensorValues(ctx, clientSet, sc.Namespace, sc.Spec.Sensor))
+		customize.AddChild("sensor", translation.GetCustomize(sc.Spec.Sensor.Customize))
 	}
 
-	translation.SetCustomize(sc.Spec.Customize, v, translation.CustomizeTopLevel)
+	if sc.Spec.AdmissionControl != nil {
+		v.AddChild("admissionControl", getAdmissionControlValues(ctx, clientSet, sc.Namespace, sc.Spec.AdmissionControl))
+		customize.AddChild("admission-control", translation.GetCustomize(sc.Spec.AdmissionControl.Customize))
+	}
 
-	return v, nil
+	if sc.Spec.Collector != nil {
+		v.AddChild("collector", getCollectorValues(ctx, clientSet, sc.Namespace, sc.Spec.Collector))
+		customize.AddChild("collector", translation.GetCustomize(sc.Spec.Collector.Customize))
+	}
+
+	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
+	v.AddChild("customize", &customize)
+
+	return v.Build()
 }
 
-func setSensorValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, v chartutil.Values, sensor *securedcluster.SensorComponentSpec) error {
-	if sensor == nil {
-		return nil
-	}
-	sv := chartutil.Values{}
-	if sensor.ImagePullPolicy != nil {
-		sv["imagePullPolicy"] = *sensor.ImagePullPolicy
-	}
+func getSensorValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, sensor *securedcluster.SensorComponentSpec) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
 
-	translation.SetResources(sensor.Resources, sv, translation.ResourcesLabel)
+	sv.SetPullPolicy("imagePullPolicy", sensor.ImagePullPolicy)
+	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
+	sv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, sensor.ServiceTLS))
+	sv.SetStringMap("nodeSelector", sensor.NodeSelector)
+	sv.SetString("endpoint", sensor.Endpoint)
 
-	err := translation.SetServiceTLS(ctx, clientSet, namespace, sensor.ServiceTLS, sv)
-	if err != nil {
-		return err
-	}
-
-	if sensor.NodeSelector != nil {
-		sv["nodeSelector"] = sensor.NodeSelector
-	}
-
-	if sensor.Endpoint != nil {
-		sv["endpoint"] = *sensor.Endpoint
-	}
-
-	translation.SetCustomize(sensor.Customize, v, translation.CustomizeSensor)
-
-	if len(sv) > 0 {
-		v["sensor"] = sv
-	}
-	return nil
+	return &sv
 }
 
-func setAdmissionControlValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, v chartutil.Values, admissionControl *securedcluster.AdmissionControlComponentSpec) error {
-	if admissionControl == nil {
-		return nil
-	}
+func getAdmissionControlValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, admissionControl *securedcluster.AdmissionControlComponentSpec) *translation.ValuesBuilder {
+	acv := translation.NewValuesBuilder()
 
-	acv := chartutil.Values{}
+	acv.SetPullPolicy("imagePullPolicy", admissionControl.ImagePullPolicy)
+	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
+	acv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, admissionControl.ServiceTLS))
+	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
+	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
+	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
 
-	if admissionControl.ImagePullPolicy != nil {
-		acv["imagePullPolicy"] = *admissionControl.ImagePullPolicy
-	}
-
-	translation.SetResources(admissionControl.Resources, acv, translation.ResourcesLabel)
-
-	err := translation.SetServiceTLS(ctx, clientSet, namespace, admissionControl.ServiceTLS, acv)
-	if err != nil {
-		return err
-	}
-
-	translation.SetBool(admissionControl.ListenOnCreates, "listenOnCreates", acv)
-	translation.SetBool(admissionControl.ListenOnUpdates, "listenOnUpdates", acv)
-	translation.SetBool(admissionControl.ListenOnEvents, "listenOnEvents", acv)
-
-	translation.SetCustomize(admissionControl.Customize, v, translation.CustomizeAdmissionControl)
-
-	if len(acv) > 0 {
-		v["admissionControl"] = acv
-	}
-	return nil
+	return &acv
 }
 
-func setCollectorValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, v chartutil.Values, collector *securedcluster.CollectorComponentSpec) error {
-	if collector == nil {
-		return nil
-	}
-
-	cv := chartutil.Values{}
+func getCollectorValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, collector *securedcluster.CollectorComponentSpec) *translation.ValuesBuilder {
+	cv := translation.NewValuesBuilder()
 
 	if collector.Collection != nil {
 		switch *collector.Collection {
 		case securedcluster.CollectionEBPF:
-			cv["collectionMethod"] = storage.CollectionMethod_EBPF.String()
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
 		case securedcluster.CollectionKernelModule:
-			cv["collectionMethod"] = storage.CollectionMethod_KERNEL_MODULE.String()
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_KERNEL_MODULE.String())
 		case securedcluster.CollectionNone:
-			cv["collectionMethod"] = storage.CollectionMethod_NO_COLLECTION.String()
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		default:
-			return fmt.Errorf("invalid spec.collector.collection %q", *collector.Collection)
+			return cv.SetError(fmt.Errorf("invalid spec.collector.collection %q", *collector.Collection))
 		}
 	}
 
 	if collector.TaintToleration != nil {
 		switch *collector.TaintToleration {
 		case securedcluster.TaintTolerate:
-			cv["disableTaintTolerations"] = false
+			cv.SetBoolValue("disableTaintTolerations", false)
 		case securedcluster.TaintAvoid:
-			cv["disableTaintTolerations"] = true
+			cv.SetBoolValue("disableTaintTolerations", true)
 		default:
-			return fmt.Errorf("invalid spec.collector.taintToleration %q", *collector.TaintToleration)
+			return cv.SetError(fmt.Errorf("invalid spec.collector.taintToleration %q", *collector.TaintToleration))
 		}
 	}
 
-	if err := setCollectorContainerValues(collector.Collector, cv); err != nil {
-		return err
-	}
-	setComplianceContainerValues(collector.Compliance, cv)
+	cv.AddAllFrom(getCollectorContainerValues(collector.Collector))
+	cv.AddAllFrom(getComplianceContainerValues(collector.Compliance))
+	cv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, collector.ServiceTLS))
 
-	if err := translation.SetServiceTLS(ctx, clientSet, namespace, collector.ServiceTLS, cv); err != nil {
-		return err
-	}
-
-	translation.SetCustomize(collector.Customize, v, translation.CustomizeCollector)
-
-	if len(cv) > 0 {
-		v["collector"] = cv
-	}
-	return nil
+	return &cv
 }
 
-func setCollectorContainerValues(collectorContainerSpec *securedcluster.CollectorContainerSpec, cv chartutil.Values) error {
+func getCollectorContainerValues(collectorContainerSpec *securedcluster.CollectorContainerSpec) *translation.ValuesBuilder {
 	if collectorContainerSpec == nil {
 		return nil
 	}
+
+	cv := translation.NewValuesBuilder()
+
 	if collectorContainerSpec.ImageFlavor != nil {
 		switch *collectorContainerSpec.ImageFlavor {
 		case securedcluster.ImageFlavorSlim:
-			cv["slimMode"] = true
+			cv.SetBoolValue("slimMode", true)
 		case securedcluster.ImageFlavorRegular:
-			cv["slimMode"] = false
+			cv.SetBoolValue("slimMode", false)
 		default:
-			return fmt.Errorf("invalid spec.collector.collector.imageFlavor %q", *collectorContainerSpec.ImageFlavor)
+			return cv.SetError(fmt.Errorf("invalid spec.collector.collector.imageFlavor %q", *collectorContainerSpec.ImageFlavor))
 		}
 	}
-	if collectorContainerSpec.ImagePullPolicy != nil {
-		cv["imagePullPolicy"] = *collectorContainerSpec.ImagePullPolicy
-	}
-	translation.SetResources(collectorContainerSpec.Resources, cv, translation.ResourcesLabel)
+
+	cv.SetPullPolicy("imagePullPolicy", collectorContainerSpec.ImagePullPolicy)
+	cv.AddChild(translation.ResourcesKey, translation.GetResources(collectorContainerSpec.Resources))
+
 	// TODO(ROX-7176): make "customize" work for collector container
-	return nil
+	return &cv
 }
 
-func setComplianceContainerValues(compliance *securedcluster.ContainerSpec, cv chartutil.Values) {
+func getComplianceContainerValues(compliance *securedcluster.ContainerSpec) *translation.ValuesBuilder {
 	if compliance == nil {
-		return
+		return nil
 	}
-	if compliance.ImagePullPolicy != nil {
-		cv["complianceImagePullPolicy"] = *compliance.ImagePullPolicy
-	}
-	translation.SetResources(compliance.Resources, cv, translation.ResourcesComplianceLabel)
+
+	cv := translation.NewValuesBuilder()
+	cv.SetPullPolicy("complianceImagePullPolicy", compliance.ImagePullPolicy)
+	cv.AddChild("complianceResources", translation.GetResources(compliance.Resources))
+
 	// TODO(ROX-7176): make "customize" work for compliance container
+	return &cv
 }
