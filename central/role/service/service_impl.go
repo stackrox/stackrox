@@ -289,24 +289,14 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 // Helpers                                                                    //
 //                                                                            //
 
-type effectiveAccessScopeTreeExtras struct {
-	id     string
-	name   string
-	labels map[string]string
-}
-
 // effectiveAccessScopeForSimpleAccessScope computes the effective access scope
 // for the given rules and converts it to the desired response.
 func effectiveAccessScopeForSimpleAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*storage.EffectiveAccessScope, error) {
-	tree, err := sac.ComputeEffectiveAccessScope(scopeRules, clusters, namespaces)
+	tree, err := sac.ComputeEffectiveAccessScope(scopeRules, clusters, namespaces, detail)
 	if err != nil {
 		return nil, err
 	}
 
-	augmentEffectiveAccessScopeTreeWithExtras(tree, clusters, namespaces, detail)
-	if detail == v1.ComputeEffectiveAccessScopeRequest_MINIMAL {
-		compactifyEffectiveAccessScopeTree(tree)
-	}
 	response, err := convertEffectiveAccessScopeTreeToEffectiveAccessScope(tree)
 	if err != nil {
 		return nil, err
@@ -314,83 +304,6 @@ func effectiveAccessScopeForSimpleAccessScope(scopeRules *storage.SimpleAccessSc
 	sortScopesInEffectiveAccessScope(response)
 
 	return response, nil
-}
-
-// augmentEffectiveAccessScopeTreeWithExtras enriches the effective access scope
-// tree with scopes' IDs and labels based on the desired detail level.
-func augmentEffectiveAccessScopeTreeWithExtras(tree *sac.EffectiveAccessScopeTree, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
-	// Augment clusters. Assume cluster name is unique.
-	for _, clusterExtra := range clusters {
-		cluster, found := tree.Clusters[clusterExtra.GetName()]
-		if !found {
-			log.Warnf("cluster %q not found in effective access scope tree", clusterExtra.GetName())
-			continue
-		}
-
-		extras := effectiveAccessScopeTreeExtras{
-			id: clusterExtra.GetId(),
-		}
-		if detail != v1.ComputeEffectiveAccessScopeRequest_MINIMAL {
-			extras.name = clusterExtra.GetName()
-		}
-		if detail == v1.ComputeEffectiveAccessScopeRequest_HIGH {
-			extras.labels = clusterExtra.GetLabels()
-		}
-
-		cluster.Extras = &extras
-	}
-
-	// Augment namespaces. Assume pair <cluster name, namespace name> is unique.
-	for _, namespacesExtra := range namespaces {
-		cluster, found := tree.Clusters[namespacesExtra.GetClusterName()]
-		if !found {
-			log.Warnf("cluster %q not found in effective access scope tree", namespacesExtra.GetClusterName())
-		}
-
-		namespace, found := cluster.Namespaces[namespacesExtra.GetName()]
-		if !found {
-			log.Warnf("namespace %q not found in effective access scope tree", namespacesExtra.GetName())
-		}
-
-		extras := effectiveAccessScopeTreeExtras{
-			id: namespacesExtra.GetId(),
-		}
-		if detail != v1.ComputeEffectiveAccessScopeRequest_MINIMAL {
-			extras.name = namespacesExtra.GetName()
-		}
-		if detail == v1.ComputeEffectiveAccessScopeRequest_HIGH {
-			extras.labels = namespacesExtra.GetLabels()
-		}
-
-		namespace.Extras = &extras
-	}
-}
-
-// compactifyEffectiveAccessScopeTree removes subtrees with roots in the
-// Excluded state from the effective access scope tree, as well as subtrees of
-// nodes in the Included state. The resulting tree tallies with the MINIMAL
-// level of detail for ComputeEffectiveAccessScopeRequest.
-func compactifyEffectiveAccessScopeTree(tree *sac.EffectiveAccessScopeTree) {
-	for clusterName, clusterSubTree := range tree.Clusters {
-		if clusterSubTree.State == sac.Included {
-			clusterSubTree.Namespaces = nil
-			continue
-		}
-		if clusterSubTree.State == sac.Excluded {
-			delete(tree.Clusters, clusterName)
-			continue
-		}
-
-		for namespaceName, namespaceSubTree := range clusterSubTree.Namespaces {
-			if namespaceSubTree.State == sac.Excluded {
-				delete(clusterSubTree.Namespaces, namespaceName)
-			}
-		}
-
-		if len(clusterSubTree.Namespaces) == 0 {
-			delete(tree.Clusters, clusterName)
-		}
-	}
 }
 
 // convertEffectiveAccessScopeTreeToEffectiveAccessScope converts effective
@@ -402,30 +315,30 @@ func convertEffectiveAccessScopeTreeToEffectiveAccessScope(tree *sac.EffectiveAc
 	}
 
 	for clusterName, clusterSubTree := range tree.Clusters {
-		extras, ok := clusterSubTree.Extras.(*effectiveAccessScopeTreeExtras)
+		extras, ok := clusterSubTree.Extras.(*sac.EffectiveAccessScopeTreeExtras)
 		if !ok {
 			return nil, errors.Errorf("rich data not available for cluster %q", clusterName)
 		}
 		cluster := &storage.EffectiveAccessScope_Cluster{
-			Id:     extras.id,
-			Name:   extras.name,
+			Id:     extras.ID,
+			Name:   extras.Name,
 			State:  convertScopeStateToEffectiveAccessScopeState(clusterSubTree.State),
-			Labels: extras.labels,
+			Labels: extras.Labels,
 		}
 		if len(clusterSubTree.Namespaces) != 0 {
 			cluster.Namespaces = make([]*storage.EffectiveAccessScope_Namespace, 0, len(clusterSubTree.Namespaces))
 		}
 
 		for namespaceName, namespaceSubTree := range clusterSubTree.Namespaces {
-			extras, ok := namespaceSubTree.Extras.(*effectiveAccessScopeTreeExtras)
+			extras, ok := namespaceSubTree.Extras.(*sac.EffectiveAccessScopeTreeExtras)
 			if !ok {
 				return nil, errors.Errorf("rich data not available for namespace '%s::%s'", clusterName, namespaceName)
 			}
 			namespace := &storage.EffectiveAccessScope_Namespace{
-				Id:     extras.id,
-				Name:   extras.name,
+				Id:     extras.ID,
+				Name:   extras.Name,
 				State:  convertScopeStateToEffectiveAccessScopeState(namespaceSubTree.State),
-				Labels: extras.labels,
+				Labels: extras.Labels,
 			}
 
 			cluster.Namespaces = append(cluster.Namespaces, namespace)

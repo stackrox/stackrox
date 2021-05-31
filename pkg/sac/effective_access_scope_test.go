@@ -1,8 +1,10 @@
 package sac
 
 import (
+	"fmt"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	labelUtils "github.com/stackrox/rox/pkg/labels"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +45,19 @@ var clusters = []*storage.Cluster{
 
 var namespaces = []*storage.NamespaceMetadata{
 	// Earth
-	{
+	skunkWorks,
+	fraunhofer,
+	cern,
+	jpl,
+	// Arrakis
+	atreides,
+	harkonnen,
+	spacingGuild,
+	bene,
+	fremen,
+}
+var (
+	skunkWorks = &storage.NamespaceMetadata{
 		Id:          "lab.skunkworks",
 		Name:        "Skunk Works",
 		ClusterId:   "planet.earth",
@@ -53,8 +67,8 @@ var namespaces = []*storage.NamespaceMetadata{
 			"region":    "NA",
 			"clearance": "yes",
 		},
-	},
-	{
+	}
+	fraunhofer = &storage.NamespaceMetadata{
 		Id:          "lab.fraunhofer",
 		Name:        "Fraunhofer",
 		ClusterId:   "planet.earth",
@@ -65,8 +79,8 @@ var namespaces = []*storage.NamespaceMetadata{
 			"clearance": "no",
 			"founded":   "1949",
 		},
-	},
-	{
+	}
+	cern = &storage.NamespaceMetadata{
 		Id:          "lab.cern",
 		Name:        "CERN",
 		ClusterId:   "planet.earth",
@@ -75,8 +89,8 @@ var namespaces = []*storage.NamespaceMetadata{
 			"focus":  "physics",
 			"region": "EU",
 		},
-	},
-	{
+	}
+	jpl = &storage.NamespaceMetadata{
 		Id:          "lab.jpl",
 		Name:        "JPL",
 		ClusterId:   "planet.earth",
@@ -85,9 +99,9 @@ var namespaces = []*storage.NamespaceMetadata{
 			"focus":  "applied_research",
 			"region": "NA",
 		},
-	},
-	// Arrakis
-	{
+	}
+
+	atreides = &storage.NamespaceMetadata{
 		Id:          "house.atreides",
 		Name:        "Atreides",
 		ClusterId:   "planet.arrakis",
@@ -96,8 +110,8 @@ var namespaces = []*storage.NamespaceMetadata{
 			"focus":     "melange",
 			"homeworld": "Caladan",
 		},
-	},
-	{
+	}
+	harkonnen = &storage.NamespaceMetadata{
 		Id:          "house.harkonnen",
 		Name:        "Harkonnen",
 		ClusterId:   "planet.arrakis",
@@ -105,8 +119,8 @@ var namespaces = []*storage.NamespaceMetadata{
 		Labels: map[string]string{
 			"focus": "melange",
 		},
-	},
-	{
+	}
+	spacingGuild = &storage.NamespaceMetadata{
 		Id:          "org.spacingguild",
 		Name:        "Spacing Guild",
 		ClusterId:   "planet.arrakis",
@@ -116,8 +130,8 @@ var namespaces = []*storage.NamespaceMetadata{
 			"region":    "dune_universe",
 			"depend-on": "melange",
 		},
-	},
-	{
+	}
+	bene = &storage.NamespaceMetadata{
 		Id:          "org.benegesserit",
 		Name:        "Bene Gesserit",
 		ClusterId:   "planet.arrakis",
@@ -126,14 +140,14 @@ var namespaces = []*storage.NamespaceMetadata{
 			"region": "dune_universe",
 			"alias":  "witches",
 		},
-	},
-	{
+	}
+	fremen = &storage.NamespaceMetadata{
 		Id:          "tribe.fremen",
 		Name:        "Fremen",
 		ClusterId:   "planet.arrakis",
 		ClusterName: "Arrakis",
-	},
-}
+	}
+)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Tests                                                                      //
@@ -164,8 +178,11 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		scope     *storage.SimpleAccessScope
 		expected  *EffectiveAccessScopeTree
 		hasError  bool
+		detail    v1.ComputeEffectiveAccessScopeRequest_Detail
 	}
 
+	arrakisExtras := &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis", Labels: map[string]string{"focus": "melange"}}
+	earthExtras := &EffectiveAccessScopeTreeExtras{ID: "planet.earth", Name: "Earth"}
 	goodTestCases := []testCase{
 		{
 			desc:      "no access scope includes nothing",
@@ -176,25 +193,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Excluded},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Excluded},
-							"Harkonnen":     {State: Excluded},
-							"Spacing Guild": {State: Excluded},
-							"Bene Gesserit": {State: Excluded},
-							"Fremen":        {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(atreides),
+							excluded(harkonnen),
+							excluded(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -209,25 +229,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Excluded},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Excluded},
-							"Harkonnen":     {State: Excluded},
-							"Spacing Guild": {State: Excluded},
-							"Bene Gesserit": {State: Excluded},
-							"Fremen":        {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(atreides),
+							excluded(harkonnen),
+							excluded(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -245,25 +268,50 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Excluded},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Included,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Included},
-							"Harkonnen":     {State: Included},
-							"Spacing Guild": {State: Included},
-							"Bene Gesserit": {State: Included},
-							"Fremen":        {State: Included},
-						},
+						Namespaces: namespacesTree(
+							included(atreides),
+							included(harkonnen),
+							included(spacingGuild),
+							included(bene),
+							included(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			hasError: false,
+		},
+		{
+			desc:      "cluster included have empty namespaces in minimal form",
+			scopeDesc: `cluster: "Arrakis" => { "Arrakis::*" }`,
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusters: []string{"Arrakis"},
+				},
+			},
+			expected: &EffectiveAccessScopeTree{
+				Partial,
+				map[string]*ClustersScopeSubTree{
+					"Arrakis": {
+						State:  Included,
+						Extras: &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis"},
+					},
+				},
+			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
 			hasError: false,
 		},
 		{
@@ -281,25 +329,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Excluded},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Included,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Included},
-							"Harkonnen":     {State: Included},
-							"Spacing Guild": {State: Included},
-							"Bene Gesserit": {State: Included},
-							"Fremen":        {State: Included},
-						},
+						Namespaces: namespacesTree(
+							included(atreides),
+							included(harkonnen),
+							included(spacingGuild),
+							included(bene),
+							included(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -322,25 +373,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Excluded},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Included},
-							"Harkonnen":     {State: Excluded},
-							"Spacing Guild": {State: Excluded},
-							"Bene Gesserit": {State: Excluded},
-							"Fremen":        {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							included(atreides),
+							excluded(harkonnen),
+							excluded(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -358,25 +412,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Excluded},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Included},
-							"Harkonnen":     {State: Included},
-							"Spacing Guild": {State: Excluded},
-							"Bene Gesserit": {State: Excluded},
-							"Fremen":        {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							included(atreides),
+							included(harkonnen),
+							excluded(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -394,25 +451,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Included},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							included(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Excluded},
-							"Harkonnen":     {State: Excluded},
-							"Spacing Guild": {State: Included},
-							"Bene Gesserit": {State: Excluded},
-							"Fremen":        {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(atreides),
+							excluded(harkonnen),
+							included(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -437,25 +497,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Included},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Included},
-						},
+						Namespaces: namespacesTree(
+							included(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							included(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Excluded},
-							"Harkonnen":     {State: Excluded},
-							"Spacing Guild": {State: Included},
-							"Bene Gesserit": {State: Excluded},
-							"Fremen":        {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(atreides),
+							excluded(harkonnen),
+							included(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -481,25 +544,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Included},
-							"Fraunhofer":  {State: Excluded},
-							"CERN":        {State: Excluded},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							included(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Excluded},
-							"Harkonnen":     {State: Excluded},
-							"Spacing Guild": {State: Excluded},
-							"Bene Gesserit": {State: Excluded},
-							"Fremen":        {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(atreides),
+							excluded(harkonnen),
+							excluded(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -526,25 +592,28 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Included},
-							"Fraunhofer":  {State: Included},
-							"CERN":        {State: Included},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							included(skunkWorks),
+							included(fraunhofer),
+							included(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Excluded,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Excluded},
-							"Harkonnen":     {State: Excluded},
-							"Spacing Guild": {State: Excluded},
-							"Bene Gesserit": {State: Excluded},
-							"Fremen":        {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							excluded(atreides),
+							excluded(harkonnen),
+							excluded(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			hasError: false,
 		},
 		{
@@ -569,25 +638,99 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Skunk Works": {State: Included},
-							"Fraunhofer":  {State: Included},
-							"CERN":        {State: Included},
-							"JPL":         {State: Excluded},
-						},
+						Namespaces: namespacesTree(
+							included(skunkWorks),
+							included(fraunhofer),
+							included(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
 					},
 					"Arrakis": {
 						State: Included,
-						Namespaces: map[string]*NamespacesScopeSubTree{
-							"Atreides":      {State: Included},
-							"Harkonnen":     {State: Included},
-							"Spacing Guild": {State: Included},
-							"Bene Gesserit": {State: Included},
-							"Fremen":        {State: Included},
-						},
+						Namespaces: namespacesTree(
+							included(atreides),
+							included(harkonnen),
+							included(spacingGuild),
+							included(bene),
+							included(fremen),
+						),
+						Extras: arrakisExtras,
 					},
 				},
 			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			hasError: false,
+		},
+		{
+			desc:      "all excluded namespaces are removed from cluster in minimal form",
+			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
+				},
+			},
+			expected: &EffectiveAccessScopeTree{
+				State: Partial,
+				Clusters: map[string]*ClustersScopeSubTree{
+					"Arrakis": {
+						State: Partial,
+						Namespaces: map[string]*NamespacesScopeSubTree{
+							"Atreides": {
+								State:  Included,
+								Extras: &EffectiveAccessScopeTreeExtras{ID: "house.atreides"},
+							},
+							"Harkonnen": {
+								State:  Included,
+								Extras: &EffectiveAccessScopeTreeExtras{ID: "house.harkonnen"},
+							},
+						},
+						Extras: &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis"},
+					},
+				},
+			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			hasError: false,
+		},
+		{
+			desc:      "no labels in standard form",
+			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
+				},
+			},
+			expected: &EffectiveAccessScopeTree{
+				State: Partial,
+				Clusters: map[string]*ClustersScopeSubTree{
+					"Earth": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excludedStandard(skunkWorks),
+							excludedStandard(fraunhofer),
+							excludedStandard(cern),
+							excludedStandard(jpl),
+						),
+						Extras: earthExtras,
+					},
+					"Arrakis": {
+						State: Partial,
+						Namespaces: namespacesTree(
+							includedStandard(atreides),
+							includedStandard(harkonnen),
+							excludedStandard(spacingGuild),
+							excludedStandard(bene),
+							excludedStandard(fremen),
+						),
+						Extras: &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis"},
+					},
+				},
+			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_STANDARD,
 			hasError: false,
 		},
 	}
@@ -604,7 +747,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				clonedNamespaces = append(clonedNamespaces, ns.Clone())
 			}
 
-			result, err := ComputeEffectiveAccessScope(tc.scope.GetRules(), clusters, namespaces)
+			result, err := ComputeEffectiveAccessScope(tc.scope.GetRules(), clusters, namespaces, tc.detail)
 			assert.Truef(t, tc.hasError == (err != nil), "error: %v", err)
 			assert.Exactly(t, tc.expected, result, tc.scopeDesc)
 			assert.Exactly(t, clusters, clonedClusters, "clusters have been modified")
@@ -619,22 +762,22 @@ func TestEffectiveAccessScopeAllowEverything(t *testing.T) {
 		map[string]*ClustersScopeSubTree{
 			"Earth": {
 				State: Included,
-				Namespaces: map[string]*NamespacesScopeSubTree{
-					"Skunk Works": {State: Included},
-					"Fraunhofer":  {State: Included},
-					"CERN":        {State: Included},
-					"JPL":         {State: Included},
-				},
+				Namespaces: namespacesTree(
+					included(skunkWorks),
+					included(fraunhofer),
+					included(cern),
+					included(jpl),
+				),
 			},
 			"Arrakis": {
 				State: Included,
-				Namespaces: map[string]*NamespacesScopeSubTree{
-					"Atreides":      {State: Included},
-					"Harkonnen":     {State: Included},
-					"Spacing Guild": {State: Included},
-					"Bene Gesserit": {State: Included},
-					"Fremen":        {State: Included},
-				},
+				Namespaces: namespacesTree(
+					included(atreides),
+					included(harkonnen),
+					included(spacingGuild),
+					included(bene),
+					included(fremen),
+				),
 			},
 		},
 	}
@@ -649,7 +792,7 @@ func TestEffectiveAccessScopeAllowEverything(t *testing.T) {
 		clonedNamespaces = append(clonedNamespaces, ns.Clone())
 	}
 
-	result := EffectiveAccessScopeAllowEverything(clusters, namespaces)
+	result := EffectiveAccessScopeAllowEverything(clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
 	assert.Exactly(t, expected, result)
 	assert.Exactly(t, clusters, clonedClusters, "clusters have been modified")
 	assert.Exactly(t, namespaces, clonedNamespaces, "namespaces have been modified")
@@ -687,4 +830,47 @@ func TestNewUnvalidatedRequirement(t *testing.T) {
 	for _, tc := range testCasesBad {
 		assert.Falsef(t, selector.Matches(tc), "%q should not match %q", selector.String(), tc.String())
 	}
+}
+
+func namespacesTree(namespaces ...*NamespacesScopeSubTree) map[string]*NamespacesScopeSubTree {
+	m := map[string]*NamespacesScopeSubTree{}
+	for _, n := range namespaces {
+		e, ok := n.Extras.(*EffectiveAccessScopeTreeExtras)
+		if !ok {
+			panic(fmt.Sprintf("could not convert %v to %T", n, e))
+		}
+		m[e.Name] = n
+	}
+	return m
+}
+
+func included(n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
+	return namespace(Included, n)
+}
+
+func includedStandard(n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
+	return namespaceStandard(Included, n)
+}
+
+func excluded(n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
+	return namespace(Excluded, n)
+}
+
+func excludedStandard(n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
+	return namespaceStandard(Excluded, n)
+}
+
+func namespace(scope ScopeState, n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
+	return &NamespacesScopeSubTree{State: scope, Extras: &EffectiveAccessScopeTreeExtras{
+		ID:     n.Id,
+		Name:   n.Name,
+		Labels: n.Labels,
+	}}
+}
+
+func namespaceStandard(scope ScopeState, n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
+	return &NamespacesScopeSubTree{State: scope, Extras: &EffectiveAccessScopeTreeExtras{
+		ID:   n.Id,
+		Name: n.Name,
+	}}
 }
