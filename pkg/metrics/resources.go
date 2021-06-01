@@ -18,6 +18,7 @@ const (
 	ComplianceReturn
 	ImageIntegration
 	ServiceAccount
+	PermissionSet
 	Role
 	RoleBinding
 	DeploymentReprocess

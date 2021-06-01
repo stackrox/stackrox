@@ -20,21 +20,22 @@ func _() {
 	_ = x[Namespaces-9]
 	_ = x[Nodes-10]
 	_ = x[Notifiers-11]
-	_ = x[Policies-12]
-	_ = x[Roles-13]
-	_ = x[Root-14]
-	_ = x[Secrets-15]
-	_ = x[ServiceAccounts-16]
-	_ = x[Subjects-17]
-	_ = x[Tokens-18]
-	_ = x[Violations-19]
-	_ = x[Pods-20]
-	_ = x[ContainerInstances-21]
+	_ = x[PermissionSets-12]
+	_ = x[Policies-13]
+	_ = x[Roles-14]
+	_ = x[Root-15]
+	_ = x[Secrets-16]
+	_ = x[ServiceAccounts-17]
+	_ = x[Subjects-18]
+	_ = x[Tokens-19]
+	_ = x[Violations-20]
+	_ = x[Pods-21]
+	_ = x[ContainerInstances-22]
 }
 
-const _Resolver_name = "ClusterComplianceComlianceControlCVEsDeploymentsGroupsImagesImageComponentsK8sRolesNamespacesNodesNotifiersPoliciesRolesRootSecretsServiceAccountsSubjectsTokensViolationsPodsContainerInstances"
+const _Resolver_name = "ClusterComplianceComlianceControlCVEsDeploymentsGroupsImagesImageComponentsK8sRolesNamespacesNodesNotifiersPermissionSetsPoliciesRolesRootSecretsServiceAccountsSubjectsTokensViolationsPodsContainerInstances"
 
-var _Resolver_index = [...]uint8{0, 7, 17, 33, 37, 48, 54, 60, 75, 83, 93, 98, 107, 115, 120, 124, 131, 146, 154, 160, 170, 174, 192}
+var _Resolver_index = [...]uint8{0, 7, 17, 33, 37, 48, 54, 60, 75, 83, 93, 98, 107, 121, 129, 134, 138, 145, 160, 168, 174, 184, 188, 206}
 
 func (i Resolver) String() string {
 	if i < 0 || i >= Resolver(len(_Resolver_index)-1) {

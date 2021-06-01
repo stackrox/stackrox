@@ -8,6 +8,63 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestValidatePermissionSet(t *testing.T) {
+	mockGoodID := permissionSetIDPrefix + "Tanis Half-Elven"
+	mockBadID := "Tanis Half-Elven"
+	mockName := "Hero of the Lance"
+	mockGoodResource := "K8sRoleBinding"
+	mockBadResource := "K8sWitchcraftAndWizardry"
+
+	testCasesGood := map[string]*storage.PermissionSet{
+		"id and name are set": {
+			Id:   mockGoodID,
+			Name: mockName,
+		},
+		"id, name, and a resource are set": {
+			Id:   mockGoodID,
+			Name: mockName,
+			ResourceToAccess: map[string]storage.Access{
+				mockGoodResource: storage.Access_READ_ACCESS,
+			},
+		},
+	}
+
+	testCasesBad := map[string]*storage.PermissionSet{
+		"empty permissionSet": {},
+		"id is missing": {
+			Name: mockName,
+		},
+		"name is missing": {
+			Id: mockGoodID,
+		},
+		"bad id": {
+			Id:   mockBadID,
+			Name: mockName,
+		},
+		"bad resource": {
+			Id:   mockGoodID,
+			Name: mockName,
+			ResourceToAccess: map[string]storage.Access{
+				mockBadResource: storage.Access_NO_ACCESS,
+			},
+		},
+	}
+
+	for desc, permissionSet := range testCasesGood {
+		t.Run(desc, func(t *testing.T) {
+			err := ValidatePermissionSet(permissionSet)
+			assert.NoErrorf(t, err, "permission set: '%+v'", permissionSet)
+		})
+	}
+
+	for desc, permissionSet := range testCasesBad {
+		t.Run(desc, func(t *testing.T) {
+			err := ValidatePermissionSet(permissionSet)
+			assert.Errorf(t, err, "permission set: '%+v'", permissionSet)
+		})
+	}
+}
+
 func TestValidateSimpleAccessScope(t *testing.T) {
 	mockGoodID := EnsureValidAccessScopeID("42")
 	mockBadID := "42"

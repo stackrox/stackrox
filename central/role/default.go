@@ -1,10 +1,8 @@
 package role
 
 import (
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // All builtin, immutable role names are declared in the block below.
@@ -25,28 +23,5 @@ const (
 	SensorCreator = "Sensor Creator"
 )
 
-// DefaultRoles are the pre-defined roles available.
-var defaultRoles = []*storage.Role{
-	permissions.NewRoleWithAccess(None),
-	permissions.NewRoleWithAccess(Admin, resources.AllResourcesModifyPermissions()...),
-	permissions.NewRoleWithAccess(Analyst, resources.AllResourcesViewPermissions()...),
-	permissions.NewRoleWithAccess(ContinuousIntegration,
-		permissions.View(resources.Detection),
-		permissions.Modify(resources.Image),
-	),
-	permissions.NewRoleWithAccess(SensorCreator,
-		permissions.View(resources.Cluster),
-		permissions.Modify(resources.Cluster),
-		permissions.Modify(resources.ServiceIdentity),
-	),
-}
-
-// DefaultRolesByName holds the default roles mapped by name.
-var DefaultRolesByName map[string]*storage.Role
-
-func init() {
-	DefaultRolesByName = make(map[string]*storage.Role)
-	for _, role := range defaultRoles {
-		DefaultRolesByName[role.GetName()] = role
-	}
-}
+// DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
+var DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, SensorCreator)

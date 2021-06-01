@@ -18,6 +18,7 @@ const (
 	Namespaces
 	Nodes
 	Notifiers
+	PermissionSets
 	Policies
 	Roles
 	Root

@@ -13,11 +13,11 @@ import (
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
 	_ "github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/alerttest"
-	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -307,14 +307,17 @@ func (s *alertDataStoreWithSACTestSuite) TestUpdateCommentAllowed() {
 	s.NoError(err)
 }
 
-func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID, roleName string) context.Context {
+func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID string, resourceWithAccess ...permissions.ResourceWithAccess) context.Context {
 	identity := mocks.NewMockIdentity(s.mockCtrl)
 	identity.EXPECT().UID().AnyTimes().Return(userID)
 	identity.EXPECT().FullName().AnyTimes().Return(userID)
 	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
 	identity.EXPECT().User().AnyTimes().Return(nil)
+
+	role := permissions.NewRoleWithAccess("roleNameNotUsed", resourceWithAccess...)
 	identity.EXPECT().Permissions().AnyTimes().Return(&storage.ResourceToAccess{
-		ResourceToAccess: role.DefaultRolesByName[roleName].GetResourceToAccess()})
+		ResourceToAccess: role.GetResourceToAccess(),
+	})
 
 	return authn.ContextWithIdentity(ctx, identity, s.T())
 }
@@ -326,9 +329,9 @@ func (s *alertDataStoreTestSuite) TestAlertAccessControl() {
 		&storage.Comment{User: &storage.Comment_User{Id: "1"}}, nil,
 	).AnyTimes()
 
-	uid1Ctx := s.ctxWithUIDAndRole(s.hasWriteCtx, "1", role.None)
-	uid2Ctx := s.ctxWithUIDAndRole(s.hasWriteCtx, "2", role.None)
-	uid2ButAdminCtx := s.ctxWithUIDAndRole(s.hasWriteCtx, "2", role.Admin)
+	uid1Ctx := s.ctxWithUIDAndRole(s.hasWriteCtx, "1")
+	uid2Ctx := s.ctxWithUIDAndRole(s.hasWriteCtx, "2")
+	uid2ButAdminCtx := s.ctxWithUIDAndRole(s.hasWriteCtx, "2", resources.AllResourcesModifyPermissions()...)
 
 	fakeComment := alerttest.NewFakeAlertComment()
 	s.commentsStorage.EXPECT().UpdateAlertComment(testutils.PredMatcher("check comment", func(comment *storage.Comment) bool {

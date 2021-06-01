@@ -71,6 +71,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"node_to_comp":            (*storage.NodeComponentEdge)(nil),
 	"node_to_cve":             (*storage.NodeCVEEdge)(nil),
 	"nodes":                   (*storage.Node)(nil),
+	"permission_sets":         (*storage.PermissionSet)(nil),
 	"pods":                    (*storage.Pod)(nil),
 	"processWhitelistResults": (*storage.ProcessBaselineResults)(nil),
 	"processWhitelists2":      (*storage.ProcessBaseline)(nil),
@@ -79,6 +80,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"rolebindings":            (*storage.K8SRoleBinding)(nil),
 	"secrets":                 (*storage.Secret)(nil),
 	"service_accounts":        (*storage.ServiceAccount)(nil),
+	"simple_access_scopes":    (*storage.SimpleAccessScope)(nil),
 	"version":                 (*storage.Version)(nil),
 }
 

@@ -1,8 +1,6 @@
 package store
 
 import (
-	"github.com/pkg/errors"
-	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 )
@@ -21,9 +19,6 @@ func (s *storeImpl) AddRole(role *storage.Role) error {
 // Returns an error if the role does not already exist, or if the role is a pre-loaded role.
 // Pre-loaded roles cannot be updated./
 func (s *storeImpl) UpdateRole(role *storage.Role) error {
-	if isDefaultRole(role) {
-		return errors.Errorf("cannot modify default role %s", role.GetName())
-	}
 	_, _, err := s.roleCrud.Update(role)
 	return err
 }
@@ -31,10 +26,6 @@ func (s *storeImpl) UpdateRole(role *storage.Role) error {
 // RemoveRole removes a role from the store.
 // Pre-loaded roles cannot be removed.
 func (s *storeImpl) RemoveRole(name string) error {
-	if isDefaultRoleName(name) {
-		return errors.Errorf("cannot modify default role %s", name)
-	}
-
 	_, _, err := s.roleCrud.Delete(name)
 	return err
 }
@@ -65,14 +56,4 @@ func (s *storeImpl) GetAllRoles() ([]*storage.Role, error) {
 		Roles = append(Roles, msg.(*storage.Role))
 	}
 	return Roles, nil
-}
-
-// Helper functions to check if a given role/name corresponds to a pre-loaded role.
-func isDefaultRoleName(name string) bool {
-	_, ok := rolePkg.DefaultRolesByName[name]
-	return ok
-}
-
-func isDefaultRole(role *storage.Role) bool {
-	return isDefaultRoleName(role.GetName())
 }

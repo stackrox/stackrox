@@ -38,6 +38,7 @@ var (
 			reflect.TypeOf((*storage.NetworkFlow)(nil)),
 			reflect.TypeOf((*storage.Node)(nil)),
 			reflect.TypeOf((*storage.Notifier)(nil)),
+			reflect.TypeOf((*storage.PermissionSet)(nil)),
 			reflect.TypeOf((*v1.ProcessNameGroup)(nil)),
 			reflect.TypeOf((*storage.Risk)(nil)),
 			reflect.TypeOf((*storage.Role)(nil)),

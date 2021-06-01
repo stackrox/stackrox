@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	roleStoreMocks "github.com/stackrox/rox/central/role/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/central/role/utils"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,12 +23,12 @@ func TestRoleDataStore(t *testing.T) {
 	suite.Run(t, new(roleDataStoreTestSuite))
 }
 
-// Note that the access scope tests deviate from the testing style used by the
-// role tests: instead of using store's mock, an instance of the underlying
-// storage layer (rocksdb) is created. We do not really care about how the
-// validation logic is split between the access scope datastore and the
-// underlying rocksdb CRUD layer, but we verify if the datastore as a whole
-// behaves as expected.
+// Note that the access scope and permission set tests deviate from the testing
+// style used by the role tests: instead of using store's mock, an instance of
+// the underlying storage layer (rocksdb) is created. We do not really care
+// about how the validation logic is split between the access scope datastore
+// and the underlying rocksdb CRUD layer, but we verify if the datastore as a
+// whole behaves as expected.
 type roleDataStoreTestSuite struct {
 	suite.Suite
 
@@ -39,7 +40,8 @@ type roleDataStoreTestSuite struct {
 	roleStorage *roleStoreMocks.MockStore
 	rocksie     *rocksdb.RocksDB
 
-	existingScope *storage.SimpleAccessScope
+	existingPermissionSet *storage.PermissionSet
+	existingScope         *storage.SimpleAccessScope
 
 	mockCtrl *gomock.Controller
 }
@@ -59,12 +61,16 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 	s.roleStorage = roleStoreMocks.NewMockStore(s.mockCtrl)
 
 	s.rocksie = rocksdbtest.RocksDBForT(s.T())
+	permissionSetStorage, err := permissionSetStore.New(s.rocksie)
+	s.Require().NoError(err)
 	scopeStorage, err := simpleAccessScopeStore.New(s.rocksie)
 	s.Require().NoError(err)
 
-	s.dataStore = New(s.roleStorage, scopeStorage)
+	s.dataStore = New(s.roleStorage, permissionSetStorage, scopeStorage)
 
-	// Insert an access scope into the test DB.
+	// Insert a permission set and an access scope into the test DB.
+	s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
+	s.Require().NoError(permissionSetStorage.Upsert(s.existingPermissionSet))
 	s.existingScope = getValidAccessScope("scope.existing", "existing scope")
 	s.Require().NoError(scopeStorage.Upsert(s.existingScope))
 }
@@ -163,6 +169,137 @@ func (s *roleDataStoreTestSuite) TestAllowsRemove() {
 
 	err := s.dataStore.RemoveRole(s.hasWriteCtx, "role")
 	s.NoError(err, "expected no error trying to write with permissions")
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Permission sets                                                            //
+//                                                                            //
+
+func getValidPermissionSet(id string, name string) *storage.PermissionSet {
+	return &storage.PermissionSet{
+		Id:   utils.EnsureValidPermissionSetID(id),
+		Name: name,
+	}
+}
+
+func getInvalidPermissionSet(id string, name string) *storage.PermissionSet {
+	return &storage.PermissionSet{
+		Id:   utils.EnsureValidPermissionSetID(id),
+		Name: name,
+		ResourceToAccess: map[string]storage.Access{
+			"Some non-existent resource": storage.Access_NO_ACCESS,
+		},
+	}
+}
+
+func (s *roleDataStoreTestSuite) TestPermissionSetPermissions() {
+	goodPermissionSet := getValidPermissionSet("permissionset.valid", "new valid permission set")
+	badPermissionSet := getInvalidPermissionSet("permissionset.invalid", "new invalid permission set")
+
+	permissionSet, found, err := s.dataStore.GetPermissionSet(s.hasNoneCtx, s.existingPermissionSet.GetId())
+	s.NoError(err, "no access for Get*() is not an error")
+	s.False(found)
+	s.Nil(permissionSet)
+
+	permissionSet, found, err = s.dataStore.GetPermissionSet(s.hasNoneCtx, goodPermissionSet.GetId())
+	s.NoError(err, "no error even if the object does not exist")
+	s.False(found)
+	s.Nil(permissionSet)
+
+	permissionSets, err := s.dataStore.GetAllPermissionSets(s.hasNoneCtx)
+	s.NoError(err, "no access for Get*() is not an error")
+	s.Empty(permissionSets)
+
+	err = s.dataStore.AddPermissionSet(s.hasNoneCtx, goodPermissionSet)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Add*() yields a permission error")
+
+	err = s.dataStore.AddPermissionSet(s.hasReadCtx, goodPermissionSet)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Add*() yields a permission error")
+
+	err = s.dataStore.AddPermissionSet(s.hasReadCtx, badPermissionSet)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error for invalid permissionSet")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasNoneCtx, s.existingPermissionSet)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Update*() yields a permission error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasReadCtx, s.existingPermissionSet)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Update*() yields a permission error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasReadCtx, goodPermissionSet)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
+
+	err = s.dataStore.RemovePermissionSet(s.hasNoneCtx, s.existingPermissionSet.GetId())
+	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Remove*() yields a permission error")
+
+	err = s.dataStore.RemovePermissionSet(s.hasReadCtx, s.existingPermissionSet.GetId())
+	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Remove*() yields a permission error")
+
+	err = s.dataStore.RemovePermissionSet(s.hasReadCtx, goodPermissionSet.GetId())
+	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
+}
+
+func (s *roleDataStoreTestSuite) TestPermissionSetReadOperations() {
+	misplacedPermissionSet := getValidPermissionSet("permissionset.misplaced", "non-existing permission set")
+
+	permissionSet, found, err := s.dataStore.GetPermissionSet(s.hasReadCtx, misplacedPermissionSet.GetId())
+	s.NoError(err, "not found for Get*() is not an error")
+	s.False(found)
+	s.Nil(permissionSet)
+
+	permissionSet, found, err = s.dataStore.GetPermissionSet(s.hasReadCtx, s.existingPermissionSet.GetId())
+	s.NoError(err)
+	s.True(found)
+	s.Equal(s.existingPermissionSet, permissionSet, "with READ access existing object is returned")
+
+	permissionSets, err := s.dataStore.GetAllPermissionSets(s.hasReadCtx)
+	s.NoError(err)
+	s.Len(permissionSets, 1, "with READ access all objects are returned")
+}
+
+func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
+	goodPermissionSet := getValidPermissionSet("permissionset.new", "new valid permissionset")
+	badPermissionSet := getInvalidPermissionSet("permissionset.new", "new invalid permissionset")
+	mimicPermissionSet := getValidPermissionSet("permissionset.new", "existing permissionset")
+	clonePermissionSet := getValidPermissionSet("permissionset.existing", "new existing permissionset")
+
+	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, badPermissionSet)
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid permission set for Add*() yields an error")
+
+	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, clonePermissionSet)
+	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "adding permission set with an existing ID yields an error")
+
+	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, mimicPermissionSet)
+	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "adding permission set with an existing name yields an error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
+	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing permission set yields an error")
+
+	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId())
+	s.ErrorIs(err, errorhelpers.ErrNotFound, "removing non-existing permission set yields an error")
+
+	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, goodPermissionSet)
+	s.NoError(err)
+
+	permissionSets, _ := s.dataStore.GetAllPermissionSets(s.hasReadCtx)
+	s.Len(permissionSets, 2, "added permission set should be visible in the subsequent Get*()")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, badPermissionSet)
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid permission set for Update*() yields an error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, mimicPermissionSet)
+	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "introducing a name collision with Update*() yields an error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
+	s.NoError(err)
+
+	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId())
+	s.NoError(err)
+
+	permissionSets, _ = s.dataStore.GetAllPermissionSets(s.hasReadCtx)
+	s.Len(permissionSets, 1, "removed permission set should be absent in the subsequent Get*()")
+
+	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, goodPermissionSet)
+	s.NoError(err, "adding a permission set with ID and name that used to exist is not an error")
 }
 
 ////////////////////////////////////////////////////////////////////////////////

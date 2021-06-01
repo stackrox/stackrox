@@ -1,6 +1,8 @@
 package permissions
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // PermissionMap maps resources to access levels. This can be used to realize an access-mode aware
 // set of permissions.

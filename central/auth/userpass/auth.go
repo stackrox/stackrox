@@ -4,7 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role"
+	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
@@ -12,6 +14,7 @@ import (
 	basicAuthn "github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -29,10 +32,11 @@ var (
 )
 
 // CreateManager creates and returns a manager for user/password authentication.
-func CreateManager() *basicAuthn.Manager {
-	adminRole := role.DefaultRolesByName[role.Admin]
-	if adminRole == nil {
-		log.Panic("Could not look up admin role")
+func CreateManager(store roleDatastore.DataStore) (*basicAuthn.Manager, error) {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	adminRole, err := store.GetRole(ctx, role.Admin)
+	if err != nil || adminRole == nil {
+		return nil, errors.Wrap(err, "Could not look up admin role")
 	}
 
 	mgr := basicAuthn.NewManager(nil, adminRole)
@@ -48,7 +52,7 @@ func CreateManager() *basicAuthn.Manager {
 
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), htpasswdDir, k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
 
-	return mgr
+	return mgr, nil
 }
 
 // RegisterAuthProviderOrPanic sets up basic authentication with the builtin htpasswd file. It panics if the basic auth
@@ -88,11 +92,13 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 }
 
 // IdentityExtractorOrPanic creates and returns the identity extractor for basic authentication.
-func IdentityExtractorOrPanic(mgr *basicAuthn.Manager, authProvider authproviders.Provider) authn.IdentityExtractor {
-	adminRole := role.DefaultRolesByName[role.Admin]
-	if adminRole == nil {
+func IdentityExtractorOrPanic(store roleDatastore.DataStore, mgr *basicAuthn.Manager, authProvider authproviders.Provider) authn.IdentityExtractor {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+	adminRole, err := store.GetRole(ctx, role.Admin)
+	if err != nil || adminRole == nil {
 		log.Panic("Could not look up admin role")
 	}
+
 	extractor, err := basicAuthn.NewExtractor(mgr, authProvider)
 	if err != nil {
 		log.Panicf("Could not create identity extractor for basic auth: %v", err)

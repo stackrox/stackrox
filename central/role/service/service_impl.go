@@ -33,6 +33,8 @@ var (
 		user.With(permissions.View(resources.Role)): {
 			"/v1.RoleService/GetRoles",
 			"/v1.RoleService/GetRole",
+			"/v1.RoleService/ListPermissionSets",
+			"/v1.RoleService/GetPermissionSet",
 			"/v1.RoleService/ListSimpleAccessScopes",
 			"/v1.RoleService/GetSimpleAccessScope",
 		},
@@ -44,6 +46,9 @@ var (
 			"/v1.RoleService/SetDefaultRole",
 			"/v1.RoleService/UpdateRole",
 			"/v1.RoleService/DeleteRole",
+			"/v1.RoleService/PostPermissionSet",
+			"/v1.RoleService/PutPermissionSet",
+			"/v1.RoleService/DeletePermissionSet",
 			"/v1.RoleService/PostSimpleAccessScope",
 			"/v1.RoleService/PutSimpleAccessScope",
 			"/v1.RoleService/DeleteSimpleAccessScope",
@@ -163,6 +168,81 @@ func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
 	return &v1.GetPermissionsResponse{
 		ResourceToAccess: id.Permissions().Clone().GetResourceToAccess(),
 	}, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Permission sets                                                            //
+//                                                                            //
+
+func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID) (*storage.PermissionSet, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+	permissionSet, found, err := s.roleDataStore.GetPermissionSet(ctx, id.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve permission set %q", id.GetId())
+	}
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "failed to retrieve permission set %q: not found", id.GetId())
+	}
+
+	return permissionSet, nil
+}
+
+func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.ListPermissionSetsResponse, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+	permissionSets, err := s.roleDataStore.GetAllPermissionSets(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve permission sets")
+	}
+	return &v1.ListPermissionSetsResponse{PermissionSets: permissionSets}, nil
+}
+
+func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*storage.PermissionSet, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+	if permissionSet.GetId() != "" {
+		return nil, status.Error(codes.InvalidArgument, "setting id field is not allowed")
+	}
+	permissionSet.Id = utils.GeneratePermissionSetID()
+
+	// Store the augmented permission set; report back on error. Note the
+	// permission set is referenced by its name because that's what the caller
+	// knows.
+	err := s.roleDataStore.AddPermissionSet(ctx, permissionSet)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to store permission set %q", permissionSet.GetName())
+	}
+
+	// Assume AddPermissionSet() does not make modifications to the protobuf.
+	return permissionSet, nil
+}
+
+func (s *serviceImpl) PutPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*v1.Empty, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+	err := s.roleDataStore.UpdatePermissionSet(ctx, permissionSet)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to update permission set %q", permissionSet.GetId())
+	}
+
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) DeletePermissionSet(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
+	if !features.ScopedAccessControl.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+	err := s.roleDataStore.RemovePermissionSet(ctx, id.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to delete permission set %q", id.GetId())
+	}
+
+	return &v1.Empty{}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

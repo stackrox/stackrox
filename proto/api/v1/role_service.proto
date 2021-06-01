@@ -34,6 +34,10 @@ message GetResourcesResponse {
     repeated string resources = 1;
 }
 
+message ListPermissionSetsResponse {
+    repeated storage.PermissionSet permission_sets = 1;
+}
+
 message ListSimpleAccessScopesResponse {
     repeated storage.SimpleAccessScope access_scopes = 1;
 }
@@ -102,6 +106,49 @@ service RoleService {
             get: "/v1/resources"
         };
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Permission sets                                                        //
+    //                                                                        //
+
+    // BEGIN EXPERIMENTAL/UNSTABLE API
+
+    rpc GetPermissionSet (ResourceByID) returns (storage.PermissionSet) {
+        option (google.api.http) = {
+            get: "/v1/permissionsets/{id}"
+        };
+    }
+
+    rpc ListPermissionSets (Empty) returns (ListPermissionSetsResponse) {
+        option (google.api.http) = {
+            get: "/v1/permissionsets"
+        };
+    }
+
+    // PostPermissionSet
+    //
+    // PermissionSet.id is disallowed in request and set in response.
+    rpc PostPermissionSet (storage.PermissionSet) returns (storage.PermissionSet) {
+        option (google.api.http) = {
+            post: "/v1/permissionsets"
+            body: "*"
+        };
+    }
+
+    rpc PutPermissionSet (storage.PermissionSet) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/permissionsets/{id}"
+            body: "*"
+        };
+    }
+
+    rpc DeletePermissionSet (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/permissionsets/{id}"
+        };
+    }
+
+    // END EXPERIMENTAL/UNSTABLE API
 
     ////////////////////////////////////////////////////////////////////////////
     // Access scopes                                                          //

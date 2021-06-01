@@ -39,6 +39,18 @@ enum Access {
     READ_WRITE_ACCESS = 2;
 }
 
+// This encodes a set of permissions for StackRox resources.
+message PermissionSet {
+    // id is generated and cannot be changed.
+    string id          = 1;
+
+    // `name` and `description` are provided by the user and can be changed.
+    string name        = 2;
+    string description = 3;
+
+    map<string, Access> resource_to_access = 4;
+}
+
 // Simple access scope is a (simple) selection criteria for scoped resources.
 // It does *not* allow multi-component AND-rules nor set operations on names.
 message SimpleAccessScope {

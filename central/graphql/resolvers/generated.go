@@ -842,6 +842,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("PermissionPolicy", []string{
 		"permissionLevel: PermissionLevel!",
 	}))
+	utils.Must(builder.AddType("PermissionSet", []string{
+		"description: String!",
+		"id: ID!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddType("Pod", []string{
 		"clusterId: String!",
 		"deploymentId: String!",
@@ -7683,6 +7688,45 @@ func (resolver *Resolver) wrapPermissionPolicies(values []*storage.PermissionPol
 func (resolver *permissionPolicyResolver) PermissionLevel(ctx context.Context) string {
 	value := resolver.data.GetPermissionLevel()
 	return value.String()
+}
+
+type permissionSetResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.PermissionSet
+}
+
+func (resolver *Resolver) wrapPermissionSet(value *storage.PermissionSet, ok bool, err error) (*permissionSetResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &permissionSetResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPermissionSets(values []*storage.PermissionSet, err error) ([]*permissionSetResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*permissionSetResolver, len(values))
+	for i, v := range values {
+		output[i] = &permissionSetResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *permissionSetResolver) Description(ctx context.Context) string {
+	value := resolver.data.GetDescription()
+	return value
+}
+
+func (resolver *permissionSetResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *permissionSetResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 type podResolver struct {
