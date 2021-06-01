@@ -1,25 +1,27 @@
 import React, { ReactElement } from 'react';
+import { PageSection, Title, Gallery, GalleryItem } from '@patternfly/react-core';
 
 type IntegrationsSectionProps = {
     headerName: string;
-    tiles: ReactElement[];
+    children: ReactElement[];
     testId: string;
 };
 
 const IntegrationsSection = ({
     headerName,
-    tiles,
+    children,
     testId,
 }: IntegrationsSectionProps): ReactElement => {
+    const galleryItems = React.Children.map(children, (child) => {
+        return <GalleryItem>{child}</GalleryItem>;
+    });
     return (
-        <section className="mb-6" id={testId}>
-            <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                {headerName}
-            </h2>
-            <div className="flex flex-col items-center w-full">
-                <div className="flex flex-wrap w-full -mx-6 p-3">{tiles}</div>
+        <PageSection variant="light" id={testId} className="pf-u-mb-xl">
+            <div className="pf-u-mb-md">
+                <Title headingLevel="h2">{headerName}</Title>
             </div>
-        </section>
+            <Gallery hasGutter>{galleryItems}</Gallery>
+        </PageSection>
     );
 };
 

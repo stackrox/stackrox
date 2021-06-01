@@ -57,7 +57,7 @@ describe('System Health Integrations local deployment', () => {
         ).click();
         cy.wait('@GetImageIntegrations');
 
-        cy.get('[data-testid="header-text"]').should('have.text', 'Integrations');
+        cy.url().should('include', '/integrations');
         cy.get('#image-integrations h2:contains("Image Integrations")').should('be.visible');
     });
 
@@ -70,7 +70,7 @@ describe('System Health Integrations local deployment', () => {
         ).click();
         cy.wait('@GetNotifiers');
 
-        cy.get('[data-testid="header-text"]').should('have.text', 'Integrations');
+        cy.url().should('include', '/integrations');
         cy.get('#notifier-integrations h2:contains("Notifier Integrations")').should('be.visible');
     });
 
@@ -83,7 +83,7 @@ describe('System Health Integrations local deployment', () => {
         ).click();
         cy.wait('@GetExternalBackups');
 
-        cy.get('[data-testid="header-text"]').should('have.text', 'Integrations');
+        cy.url().should('include', '/integrations');
         cy.get('#backup-integrations h2:contains("Backup Integrations")').should('be.visible');
     });
 });

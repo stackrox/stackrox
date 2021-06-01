@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import PageHeader from 'Components/PageHeader';
+import { PageSection, Title } from '@patternfly/react-core';
 
 import integrationsList from 'Containers/Integrations/integrationsList';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
@@ -159,44 +159,35 @@ const IntegrationsPage = ({
     const logIntegrationTiles = renderIntegrationTiles('logIntegrations');
 
     return (
-        <div className="h-full flex flex-col md:w-full bg-base-200" id="integrationsPage">
-            <div className="flex flex-shrink-0">
-                <PageHeader header="Integrations" subHeader="Setup & Configuration" />
-            </div>
-            <div className="w-full h-full overflow-auto">
-                <IntegrationsSection
-                    headerName="Image Integrations"
-                    tiles={imageIntegrationTiles}
-                    testId="image-integrations"
-                />
+        <>
+            <PageSection variant="light">
+                <Title headingLevel="h1">Integrations</Title>
+            </PageSection>
+            <PageSection>
+                <IntegrationsSection headerName="Image Integrations" testId="image-integrations">
+                    {imageIntegrationTiles}
+                </IntegrationsSection>
                 <IntegrationsSection
                     headerName="Notifier Integrations"
-                    tiles={pluginTiles}
                     testId="notifier-integrations"
-                />
-                <IntegrationsSection
-                    headerName="Backup Integrations"
-                    tiles={backupTiles}
-                    testId="backup-integrations"
-                />
-                <IntegrationsSection
-                    headerName="Authentication Tokens"
-                    tiles={authProviderTiles}
-                    testId="token-integrations"
-                />
-                <IntegrationsSection
-                    headerName="Authorization Plugins"
-                    tiles={authPluginTiles}
-                    testId="auth-integrations"
-                />
+                >
+                    {pluginTiles}
+                </IntegrationsSection>
+                <IntegrationsSection headerName="Backup Integrations" testId="backup-integrations">
+                    {backupTiles}
+                </IntegrationsSection>
+                <IntegrationsSection headerName="Authentication Tokens" testId="token-integrations">
+                    {authProviderTiles}
+                </IntegrationsSection>
+                <IntegrationsSection headerName="Authorization Plugins" testId="auth-integrations">
+                    {authPluginTiles}
+                </IntegrationsSection>
                 {isK8sAuditLoggingEnabled && (
-                    <IntegrationsSection
-                        headerName="Log Consumption"
-                        tiles={logIntegrationTiles}
-                        testId="log-integrations"
-                    />
+                    <IntegrationsSection headerName="Log Consumption" testId="log-integrations">
+                        {logIntegrationTiles}
+                    </IntegrationsSection>
                 )}
-            </div>
+            </PageSection>
             {modalOpen && (
                 <GenericIntegrationModal
                     apiTokens={apiTokens}
@@ -206,7 +197,7 @@ const IntegrationsPage = ({
                     selectedTile={selectedTile}
                 />
             )}
-        </div>
+        </>
     );
 };
 
