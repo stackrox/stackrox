@@ -10,8 +10,7 @@ ARG roxpath
 # when this flag is on. Here we clear it out.
 ENV GOFLAGS=""
 
-# Defines which operator image we're building, should correspond to one of subdirectory names: central or securedcluster.
-ARG operator_name
+ARG operator_name="stackrox"
 
 WORKDIR ${roxpath}/
 ENV GOPATH=/workspace
@@ -42,8 +41,7 @@ ENV GOPRIVATE="github.com/stackrox/*"
 RUN --mount=type=ssh,required=true go mod download
 
 # Copy operator source
-COPY operator/${operator_name}/ operator/${operator_name}/
-COPY operator/common/ operator/common/
+COPY operator/ operator/
 
 # Copy common packages from repo root
 COPY pkg/ pkg/
@@ -54,12 +52,12 @@ COPY image/ image/
 COPY generated/ generated/
 
 # Build
-RUN CGO_ENABLED=0 go build -a -o ${operator_name}-operator operator/${operator_name}/main.go
+RUN CGO_ENABLED=0 go build -a -o ${operator_name}-operator operator/main.go
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
 FROM registry.access.redhat.com/ubi8-minimal:8.3
 ARG roxpath
-ARG operator_name
+ARG operator_name="stackrox"
 
 RUN microdnf update && microdnf clean all && rm -rf /var/cache/yum/*
 

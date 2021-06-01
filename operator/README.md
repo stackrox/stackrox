@@ -1,11 +1,8 @@
-# StackRox Operators
+# StackRox Operator
 
-* Central Services Operator is in `central/`
-* Secured Cluster Services Operator is in  `securedcluster/`
+Central Services and Secured Cluster Services operator.
 
 ## Quickstart
-
-Run the following commands while being in a directory of the operator (i.e. `central/` or `securedcluster`).
 
 1. Build and run operator locally. Note that this starts the operator without deploying it as a container in the cluster.
 

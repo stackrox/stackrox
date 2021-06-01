@@ -2719,7 +2719,7 @@ jobs:
 
       - cleanup-clusters-on-fail
 
-  build-operators:
+  build-operator:
     executor: custom
     resource_class: large
     steps:
@@ -2739,22 +2739,16 @@ jobs:
       - setup-go-build-env
 
       - run:
-          name: Build Central Operator image
-          command: make -C operator/central build docker-build
+          name: Build Operator image
+          command: make -C operator/ build docker-build
       - run:
-          name: Check that Central Operator image is runnable
-          command: docker run --rm stackrox.io/central-operator:$(make --no-print-directory -C operator/central tag) --help
+          name: Check that Operator image is runnable
+          command: docker run --rm stackrox.io/stackrox-operator:$(make --no-print-directory -C operator tag) --help
 
-      - run:
-          name: Build Secured Cluster Operator image
-          command: make -C operator/securedcluster build docker-build
-      - run:
-          name: Check that Secured Cluster Operator image is runnable
-          command: docker run --rm stackrox.io/securedcluster-operator:$(make --no-print-directory -C operator/securedcluster tag) --help
       # TODO(ROX-7264): build bundle during CI. Currently blocked because operator-sdk binary should be present during build.
       #- run:
-      #    name: Build Secured Cluster Operator Bundle image
-      #    command: make -C operator/securedcluster bundle bundle-build
+      #    name: Build Operator Bundle image
+      #    command: make -C operator bundle bundle-build
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
@@ -5099,7 +5093,7 @@ workflows:
             - pre-build-go-binaries
       - build-rhel:
           <<: *runOnAllTagsWithDockerIOPushCtx
-      - build-operators:
+      - build-operator:
           <<: *runOnAllTagsWithDockerIOPushCtx
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithDockerIOPushCtx
