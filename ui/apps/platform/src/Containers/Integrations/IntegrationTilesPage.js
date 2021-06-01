@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { PageSection, Title } from '@patternfly/react-core';
+import { useParams, useHistory } from 'react-router-dom';
 
+import { integrationsPath } from 'routePaths';
 import integrationsList from 'Containers/Integrations/integrationsList';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import { actions as authActions } from 'reducers/auth';
@@ -16,13 +18,7 @@ import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import IntegrationsSection from './IntegrationsSection';
 import GenericIntegrationModal from './GenericIntegrationModal';
 
-const emptyTile = {
-    source: '',
-    type: '',
-    label: '',
-};
-
-const IntegrationsPage = ({
+const IntegrationTilesPage = ({
     apiTokens,
     clusterInitBundles,
     authProviders,
@@ -41,14 +37,13 @@ const IntegrationsPage = ({
     fetchLogIntegrations,
     featureFlags,
 }) => {
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedTile, setSelectedTile] = useState(emptyTile);
+    const { source: selectedSource, type: selectedType } = useParams();
+    const history = useHistory();
     const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
     );
 
-    function getSelectedEntities() {
-        const { source, type } = selectedTile;
+    function getSelectedEntities(source, type) {
         switch (source) {
             case 'authPlugins':
                 fetchAuthPlugins();
@@ -78,17 +73,6 @@ const IntegrationsPage = ({
             default:
                 throw new Error(`Unknown source ${source}`);
         }
-    }
-
-    function openIntegrationModal(selectedIntegrationTile) {
-        setModalOpen(true);
-        setSelectedTile(selectedIntegrationTile);
-    }
-
-    function fetchEntitiesAndCloseModal() {
-        getSelectedEntities();
-        setModalOpen(false);
-        setSelectedTile(emptyTile);
     }
 
     function findIntegrations(source, type) {
@@ -126,37 +110,79 @@ const IntegrationsPage = ({
         }
     }
 
-    function renderIntegrationTiles(source) {
-        return integrationsList[source].map((tile) => {
-            if (tile.featureFlagDependency) {
-                if (
-                    isBackendFeatureFlagEnabled(
-                        featureFlags,
-                        tile.featureFlagDependency.featureFlag,
-                        tile.featureFlagDependency.defaultValue
-                    ) !== tile.featureFlagDependency.showIfValueIs
-                ) {
-                    return null;
-                }
-            }
+    function getIntegration(source, type) {
+        return integrationsList[source].find((integration) => integration.type === type);
+    }
 
-            return (
-                <IntegrationTile
-                    key={tile.label}
-                    integration={tile}
-                    onClick={openIntegrationModal}
-                    numIntegrations={findIntegrations(tile.source, tile.type).length}
-                />
-            );
-        });
+    function fetchEntitiesAndCloseModal() {
+        getSelectedEntities(selectedSource, selectedType);
+        history.push(integrationsPath);
+    }
+
+    function getIsIntegrationFeatureFlagEnabled(integration) {
+        if (integration.featureFlagDependency) {
+            return isBackendFeatureFlagEnabled(featureFlags, integration.featureFlagDependency);
+        }
+        return true;
+    }
+
+    function renderIntegrationTiles(source) {
+        return (
+            integrationsList[source]
+                // filter out non-visible integrations
+                .filter((integration) => {
+                    const isIntegrationFeatureFlagEnabled = getIsIntegrationFeatureFlagEnabled(
+                        integration
+                    );
+                    if (!isIntegrationFeatureFlagEnabled) {
+                        return false;
+                    }
+                    if (source !== 'authPlugins') {
+                        return true;
+                    }
+                    const numIntegrations = findIntegrations(integration.source, integration.type)
+                        .length;
+                    return numIntegrations !== 0;
+                })
+                // get a list of rendered integration tiles
+                .map((integration) => {
+                    const numIntegrations = findIntegrations(integration.source, integration.type)
+                        .length;
+                    const linkTo = `${integrationsPath}/${integration.source}/${integration.type}`;
+
+                    return (
+                        <IntegrationTile
+                            key={integration.label}
+                            integration={integration}
+                            numIntegrations={numIntegrations}
+                            linkTo={linkTo}
+                        />
+                    );
+                })
+        );
     }
 
     const imageIntegrationTiles = renderIntegrationTiles('imageIntegrations');
-    const pluginTiles = renderIntegrationTiles('plugins');
+    const notifierTiles = renderIntegrationTiles('notifiers');
     const authPluginTiles = renderIntegrationTiles('authPlugins');
     const authProviderTiles = renderIntegrationTiles('authProviders');
     const backupTiles = renderIntegrationTiles('backups');
     const logIntegrationTiles = renderIntegrationTiles('logIntegrations');
+
+    let modal;
+
+    if (selectedSource && selectedType) {
+        const selectedTile = getIntegration(selectedSource, selectedType);
+        modal = (
+            <GenericIntegrationModal
+                apiTokens={apiTokens}
+                clusterInitBundles={clusterInitBundles}
+                fetchEntitiesAndCloseModal={fetchEntitiesAndCloseModal}
+                findIntegrations={findIntegrations}
+                selectedTile={selectedTile}
+            />
+        );
+    }
 
     return (
         <>
@@ -171,7 +197,7 @@ const IntegrationsPage = ({
                     headerName="Notifier Integrations"
                     testId="notifier-integrations"
                 >
-                    {pluginTiles}
+                    {notifierTiles}
                 </IntegrationsSection>
                 <IntegrationsSection headerName="Backup Integrations" testId="backup-integrations">
                     {backupTiles}
@@ -179,29 +205,27 @@ const IntegrationsPage = ({
                 <IntegrationsSection headerName="Authentication Tokens" testId="token-integrations">
                     {authProviderTiles}
                 </IntegrationsSection>
-                <IntegrationsSection headerName="Authorization Plugins" testId="auth-integrations">
-                    {authPluginTiles}
-                </IntegrationsSection>
+                {authPluginTiles.length !== 0 && (
+                    <IntegrationsSection
+                        headerName="Authorization Plugins"
+                        testId="auth-integrations"
+                    >
+                        {authPluginTiles}
+                    </IntegrationsSection>
+                )}
+
                 {isK8sAuditLoggingEnabled && (
                     <IntegrationsSection headerName="Log Consumption" testId="log-integrations">
                         {logIntegrationTiles}
                     </IntegrationsSection>
                 )}
             </PageSection>
-            {modalOpen && (
-                <GenericIntegrationModal
-                    apiTokens={apiTokens}
-                    clusterInitBundles={clusterInitBundles}
-                    fetchEntitiesAndCloseModal={fetchEntitiesAndCloseModal}
-                    findIntegrations={findIntegrations}
-                    selectedTile={selectedTile}
-                />
-            )}
+            {modal}
         </>
     );
 };
 
-IntegrationsPage.propTypes = {
+IntegrationTilesPage.propTypes = {
     authPlugins: PropTypes.arrayOf(
         PropTypes.shape({
             endpoint: PropTypes.string.isRequired,
@@ -273,4 +297,4 @@ const mapDispatchToProps = (dispatch) => ({
     fetchAuthPlugins: () => dispatch(integrationActions.fetchAuthPlugins.request()),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(IntegrationsPage);
+export default connect(mapStateToProps, mapDispatchToProps)(IntegrationTilesPage);

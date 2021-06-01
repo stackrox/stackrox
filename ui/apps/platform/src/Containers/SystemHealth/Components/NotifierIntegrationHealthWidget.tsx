@@ -21,7 +21,7 @@ const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEl
                     mergeIntegrationResponses(
                         integrationsHealth,
                         response.notifiers,
-                        integrationsList.plugins
+                        integrationsList.notifiers
                     )
                 );
                 setNotifiersRequestHasError(false);

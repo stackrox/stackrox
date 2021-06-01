@@ -173,7 +173,7 @@ const integrationsList = {
             disabled: false,
         },
     ],
-    plugins: [
+    notifiers: [
         {
             label: 'Slack',
             type: 'slack',
