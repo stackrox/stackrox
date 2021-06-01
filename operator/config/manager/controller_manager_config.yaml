@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: bf7ea6a2.platform.stackrox.io
+  resourceName: bf7ea6a2.stackrox.io

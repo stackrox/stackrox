@@ -2,6 +2,10 @@
 
 Central Services and Secured Cluster Services operator.
 
+## Requirements
+
+ - operator-sdk 1.5.x
+
 ## Quickstart
 
 1. Build and run operator locally. Note that this starts the operator without deploying it as a container in the cluster.
