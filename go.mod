@@ -75,7 +75,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v3.9.0+incompatible
-	github.com/operator-framework/operator-lib v0.4.0
+	github.com/operator-framework/operator-lib v0.4.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
@@ -110,7 +110,6 @@ require (
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	golang.org/x/tools v0.1.0
 	golang.stackrox.io/grpc-http1 v0.2.3
-	gomodules.xyz/jsonpatch/v3 v3.0.1
 	google.golang.org/api v0.33.0
 	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a
 	google.golang.org/grpc v1.33.2
@@ -123,10 +122,8 @@ require (
 	helm.sh/helm/v3 v3.5.4
 	honnef.co/go/tools v0.0.1-2020.1.6
 	k8s.io/api v0.20.4
-	k8s.io/apiextensions-apiserver v0.20.4
 	k8s.io/apimachinery v0.20.4
 	k8s.io/apiserver v0.20.4
-	k8s.io/cli-runtime v0.20.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
 	k8s.io/kubectl v0.20.4
