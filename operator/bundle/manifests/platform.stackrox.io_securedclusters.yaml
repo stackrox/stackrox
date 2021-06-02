@@ -36,10 +36,30 @@ spec:
                   customize:
                     description: Customize specifies additional attributes for all containers.
                     properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Custom annotations to set on all objects apart from Pods.
+                        type: object
                       envVars:
                         additionalProperties:
                           type: string
-                        description: EnvVars specify environment variables available for the container. When applied to admission controller, EnvVars can specify feature flags.
+                        description: Custom environment variables to set on pods' containers.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Custom labels to set on all objects apart from Pods.
+                        type: object
+                      podAnnotations:
+                        additionalProperties:
+                          type: string
+                        description: Custom annotations to set on Pods.
+                        type: object
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Custom labels to set on Pods.
                         type: object
                     type: object
                   imagePullPolicy:
@@ -271,10 +291,30 @@ spec:
                   customize:
                     description: Customize specifies additional attributes for all containers.
                     properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Custom annotations to set on all objects apart from Pods.
+                        type: object
                       envVars:
                         additionalProperties:
                           type: string
-                        description: EnvVars specify environment variables available for the container. When applied to admission controller, EnvVars can specify feature flags.
+                        description: Custom environment variables to set on pods' containers.
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Custom labels to set on all objects apart from Pods.
+                        type: object
+                      podAnnotations:
+                        additionalProperties:
+                          type: string
+                        description: Custom annotations to set on Pods.
+                        type: object
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Custom labels to set on Pods.
                         type: object
                     type: object
                   endpoint:
@@ -348,7 +388,6 @@ spec:
                     type: object
                 type: object
             required:
-            - centralEndpoint
             - clusterName
             type: object
           status:

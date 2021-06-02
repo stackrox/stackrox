@@ -3,6 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
+# TODO(ROX-7165): ensure version is populated correctly
 VERSION ?= 0.0.1
 
 # CHANNELS define the bundle channels used in the bundle.

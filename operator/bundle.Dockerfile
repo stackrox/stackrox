@@ -8,7 +8,7 @@ LABEL operators.operatorframework.io.bundle.package.v1=stackrox-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=alpha
 LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3
 LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
-LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.5.0
+LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.5.0+git
 
 # Labels for testing.
 LABEL operators.operatorframework.io.test.mediatype.v1=scorecard+v1

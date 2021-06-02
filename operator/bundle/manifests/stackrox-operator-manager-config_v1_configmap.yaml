@@ -11,7 +11,7 @@ data:
       port: 9443
     leaderElection:
       leaderElect: true
-      resourceName: a1d85e78.platform.stackrox.io
+      resourceName: bf7ea6a2.stackrox.io
 kind: ConfigMap
 metadata:
-  name: securedcluster-manager-config
+  name: stackrox-operator-manager-config

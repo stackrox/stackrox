@@ -2,19 +2,50 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[]'
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "platform.stackrox.io/v1alpha1",
+          "kind": "Central",
+          "metadata": {
+            "name": "stackrox-central-services",
+            "namespace": "stackrox"
+          },
+          "spec": {}
+        },
+        {
+          "apiVersion": "platform.stackrox.io/v1alpha1",
+          "kind": "SecuredCluster",
+          "metadata": {
+            "name": "stackrox-secured-cluster-services",
+            "namespace": "stackrox"
+          },
+          "spec": {
+            "centralEndpoint": "changeme",
+            "clusterName": "changeme"
+          }
+        }
+      ]
     capabilities: Basic Install
     categories: Security
     containerImage: TODO
     createdAt: TODO
     description: Red Hat Advanced Cluster Security (RHACS) secured cluster services operator provisions the services necessary to secure each of your OpenShift clusters.
+    operators.openshift.io/infrastructure-features: '["disconnected"]'
+    operators.operatorframework.io/builder: operator-sdk-v1.5.0+git
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     support: Red Hat, Inc.
-  name: securedcluster.v0.0.0
+  name: stackrox-operator.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - description: Central is the Schema for the centrals API
+      displayName: Central
+      kind: Central
+      name: centrals.platform.stackrox.io
+      version: v1alpha1
     - description: SecuredCluster is the configuration template for the secured cluster services.
       displayName: Secured Cluster
       kind: SecuredCluster
@@ -84,8 +115,156 @@ spec:
     mediatype: image/png
   install:
     spec:
-      deployments: null
-    strategy: ""
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - platform.stackrox.io
+          resources:
+          - centrals
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - platform.stackrox.io
+          resources:
+          - centrals/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - platform.stackrox.io
+          resources:
+          - centrals/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - platform.stackrox.io
+          resources:
+          - securedclusters
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - platform.stackrox.io
+          resources:
+          - securedclusters/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - platform.stackrox.io
+          resources:
+          - securedclusters/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: stackrox-operator-controller-manager
+      deployments:
+      - name: stackrox-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                command:
+                - /manager
+                image: stackrox.io/stackrox-operator:0.0.1
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 30Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: stackrox-operator-controller-manager
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          - coordination.k8s.io
+          resources:
+          - configmaps
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: stackrox-operator-controller-manager
+    strategy: deployment
   installModes:
   - supported: false
     type: OwnNamespace
@@ -123,5 +302,4 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat, Inc.
-  # TODO(ROX-7165): ensure version is populated correctly.
-  version: 0.0.0
+  version: 0.0.1
