@@ -127,6 +127,7 @@ spec:
   - email: rhacs-pm@redhat.com
     name: Advanced Cluster Security product team
   maturity: alpha
+  minKubeVersion: 1.15.0
   provider:
     name: Red Hat, Inc.
   version: 0.0.0
