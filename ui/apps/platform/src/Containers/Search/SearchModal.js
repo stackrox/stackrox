@@ -44,7 +44,7 @@ class SearchModal extends Component {
     render() {
         return (
             <div className="flex flex-col h-full w-full">
-                <div className="flex w-full">
+                <div className="flex w-full z-xs-101">
                     <PageHeader header="Search All:">
                         <ReduxSearchInput
                             className="w-full flex-shrink"
