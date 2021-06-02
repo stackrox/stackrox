@@ -184,9 +184,13 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		return nil, httputil.Errorf(http.StatusInternalServerError, "failed to obtain new access token for refresh token: %v", err)
 	}
 
-	token, _, err := r.issueTokenForResponse(req.Context(), provider, authResp)
+	token, newRefreshCookie, err := r.issueTokenForResponse(req.Context(), provider, authResp)
 	if err != nil {
 		return nil, httputil.Errorf(http.StatusInternalServerError, "failed to issue Rox token: %v", err)
+	}
+
+	if newRefreshCookie != nil {
+		httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), newRefreshCookie)
 	}
 
 	return &tokenRefreshResponse{

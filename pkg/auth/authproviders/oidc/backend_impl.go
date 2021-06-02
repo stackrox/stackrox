@@ -115,7 +115,16 @@ func (p *backendImpl) refreshWithRefreshToken(ctx context.Context, refreshToken 
 		return nil, errors.New("did not receive an identity token in exchange for the refresh token")
 	}
 
-	return p.verifyIDToken(ctx, rawIDToken, dontVerifyNonce)
+	authResp, err := p.verifyIDToken(ctx, rawIDToken, dontVerifyNonce)
+	if err != nil {
+		return nil, errors.Wrap(err, "verifying ID token after refresh")
+	}
+	if token.RefreshToken != "" && token.RefreshToken != refreshToken {
+		authResp.RefreshTokenType = "refresh_token"
+		authResp.RefreshToken = token.RefreshToken
+	}
+
+	return authResp, nil
 }
 
 func (p *backendImpl) refreshWithAccessToken(ctx context.Context, accessToken string) (*authproviders.AuthResponse, error) {
