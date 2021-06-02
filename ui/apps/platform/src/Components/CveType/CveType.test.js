@@ -23,6 +23,12 @@ describe('CveType', () => {
             expect(asFragment()).toMatchSnapshot();
         });
 
+        test('should show an OpenShift CVE type in default style', async () => {
+            const { asFragment } = render(<CveType types={['OPENSHIFT_CVE']} />);
+
+            expect(asFragment()).toMatchSnapshot();
+        });
+
         test('should show an Istio CVE type in default style', async () => {
             const { asFragment } = render(<CveType types={['ISTIO_CVE']} />);
 
@@ -37,6 +43,12 @@ describe('CveType', () => {
 
         test('should show a Node and Kubernetes CVE type in default style', async () => {
             const { asFragment } = render(<CveType types={['NODE_CVE', 'K8S_CVE']} />);
+
+            expect(asFragment()).toMatchSnapshot();
+        });
+
+        test('should show a Kubernetes and OpenShift CVE type in default style', async () => {
+            const { asFragment } = render(<CveType types={['K8S_CVE', 'OPENSHIFT_CVE']} />);
 
             expect(asFragment()).toMatchSnapshot();
         });
@@ -61,6 +73,12 @@ describe('CveType', () => {
             expect(asFragment()).toMatchSnapshot();
         });
 
+        test('should show an OpenShift CVE type in callout style', async () => {
+            const { asFragment } = render(<CveType context="callout" types={['OPENSHIFT_CVE']} />);
+
+            expect(asFragment()).toMatchSnapshot();
+        });
+
         test('should show an Istio CVE type in callout style', async () => {
             const { asFragment } = render(<CveType context="callout" types={['ISTIO_CVE']} />);
 
@@ -78,6 +96,14 @@ describe('CveType', () => {
         test('should show a Node and Kubernetes CVE type in default style', async () => {
             const { asFragment } = render(
                 <CveType context="callout" types={['NODE_CVE', 'K8S_CVE']} />
+            );
+
+            expect(asFragment()).toMatchSnapshot();
+        });
+
+        test('should show a Kubernetes and OpenShift CVE type in callout style', async () => {
+            const { asFragment } = render(
+                <CveType context="callout" types={['K8S_CVE', 'OPENSHIFT_CVE']} />
             );
 
             expect(asFragment()).toMatchSnapshot();

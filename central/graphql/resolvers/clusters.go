@@ -62,6 +62,8 @@ func init() {
 		schema.AddExtraResolver("Cluster", `k8sVulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `istioVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `istioVulnCount(query: String): Int!`),
+		schema.AddExtraResolver("Cluster", `openShiftVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Cluster", `openShiftVulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policies(query: String, pagination: Pagination): [Policy!]!`),
 		schema.AddExtraResolver("Cluster", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `policyStatus(query: String): PolicyStatus!`),
@@ -561,6 +563,24 @@ func (resolver *clusterResolver) K8sVulnCount(ctx context.Context, args RawQuery
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sVulnCount")
 
 	vulns, err := resolver.K8sVulns(ctx, PaginatedQuery{Query: args.Query})
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(vulns)), nil
+}
+
+func (resolver *clusterResolver) OpenShiftVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftVulns")
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+
+	return resolver.root.OpenShiftVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+func (resolver *clusterResolver) OpenShiftVulnCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftVulnCount")
+
+	vulns, err := resolver.OpenShiftVulns(ctx, PaginatedQuery{Query: args.Query})
 	if err != nil {
 		return 0, err
 	}

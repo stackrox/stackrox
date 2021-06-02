@@ -3,12 +3,13 @@ import PropTypes from 'prop-types';
 
 import LabelChip from 'Components/LabelChip';
 
-const cveTypes = ['IMAGE_CVE', 'K8S_CVE', 'ISTIO_CVE', 'NODE_CVE'];
+const cveTypes = ['IMAGE_CVE', 'K8S_CVE', 'ISTIO_CVE', 'NODE_CVE', 'OPENSHIFT_CVE'];
 const cveTypeMap = {
     IMAGE_CVE: 'Image CVE',
     K8S_CVE: 'Kubernetes CVE',
     ISTIO_CVE: 'Istio CVE',
     NODE_CVE: 'Node CVE',
+    OPENSHIFT_CVE: 'OpenShift CVE',
 };
 
 const CveType = ({ types, context }) => {

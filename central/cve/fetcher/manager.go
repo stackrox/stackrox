@@ -39,7 +39,7 @@ type orchestratorIstioCVEManagerImpl struct {
 func NewOrchestratorIstioCVEManagerImpl(clusterDataStore clusterDataStore.DataStore, cveDataStore cveDataStore.DataStore, cveMatcher *cveMatcher.CVEMatcher) (OrchestratorIstioCVEManager, error) {
 	m := &orchestratorIstioCVEManagerImpl{
 		orchestratorCVEMgr: &orchestratorCVEManager{
-			embeddedCVEIdToClusters: make(map[string][]*storage.Cluster),
+			embeddedCVEIdToClusters: make(map[converter.CVEType]map[string][]*storage.Cluster),
 			clusterDataStore:        clusterDataStore,
 			cveDataStore:            cveDataStore,
 			cveMatcher:              cveMatcher,

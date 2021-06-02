@@ -68,7 +68,12 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const cveItems =
         !cveLoading && cveData && cveData.results && cveData.results.length ? cveData.results : [];
 
-    const { IMAGE_CVE: allowedCves, K8S_CVE: disallowedCves } = splitCvesByType(cveItems);
+    const {
+        IMAGE_CVE: allowedCves,
+        K8S_CVE: k8sCves,
+        OPENSHIFT_CVE: openShiftCves,
+    } = splitCvesByType(cveItems);
+    const disallowedCves = k8sCves.concat(openShiftCves);
 
     // only the allowed CVEs are combined for use in the policy
     const allowedCvesValues = allowedCves.map((cve) => ({ value: cve.cve }));

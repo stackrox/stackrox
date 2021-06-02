@@ -291,7 +291,7 @@ func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, c
 	return len(affectedClusters), len(clusters), nil
 }
 
-func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
+func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
 	clusters, err := evr.root.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -357,9 +357,11 @@ func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float6
 
 		switch vulnType {
 		case storage.EmbeddedVulnerability_K8S_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForK8sIstioVuln(ctx, converter.K8s)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.K8s)
 		case storage.EmbeddedVulnerability_ISTIO_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForK8sIstioVuln(ctx, converter.Istio)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.Istio)
+		case storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY:
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.OpenShift)
 		case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
 			n, d, err = evr.getEnvImpactComponentsForImages(ctx)
 		case storage.EmbeddedVulnerability_NODE_VULNERABILITY:

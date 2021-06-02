@@ -13,6 +13,19 @@ exports[`CveType callout style should show a Kubernetes CVE type in callout styl
 </DocumentFragment>
 `;
 
+exports[`CveType callout style should show a Kubernetes and OpenShift CVE type in callout style 1`] = `
+<DocumentFragment>
+  <span
+    class="inline-block border rounded font-600 text-center whitespace-nowrap min-h-6 flex justify-center items-center text-base px-2 bg-base-200 border-base-400 text-base-800 capitalize "
+    data-testid="label-chip"
+  >
+    <span>
+      Type: Kubernetes CVE, OpenShift CVE
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
 exports[`CveType callout style should show a Node and Kubernetes CVE type in default style 1`] = `
 <DocumentFragment>
   <span
@@ -65,6 +78,19 @@ exports[`CveType callout style should show an Istio CVE type in callout style 1`
 </DocumentFragment>
 `;
 
+exports[`CveType callout style should show an OpenShift CVE type in callout style 1`] = `
+<DocumentFragment>
+  <span
+    class="inline-block border rounded font-600 text-center whitespace-nowrap min-h-6 flex justify-center items-center text-base px-2 bg-base-200 border-base-400 text-base-800 capitalize "
+    data-testid="label-chip"
+  >
+    <span>
+      Type: OpenShift CVE
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
 exports[`CveType callout style should show an image CVE type in callout style 1`] = `
 <DocumentFragment>
   <span
@@ -88,6 +114,27 @@ exports[`CveType default style should show a Kubernetes CVE type in default styl
         class="flex justify-center"
       >
         Kubernetes CVE
+      </div>
+    </div>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`CveType default style should show a Kubernetes and OpenShift CVE type in default style 1`] = `
+<DocumentFragment>
+  <span>
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex justify-center"
+      >
+        Kubernetes CVE
+      </div>
+      <div
+        class="flex justify-center"
+      >
+        OpenShift CVE
       </div>
     </div>
   </span>
@@ -162,6 +209,22 @@ exports[`CveType default style should show an Istio CVE type in default style 1`
         class="flex justify-center"
       >
         Istio CVE
+      </div>
+    </div>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`CveType default style should show an OpenShift CVE type in default style 1`] = `
+<DocumentFragment>
+  <span>
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex justify-center"
+      >
+        OpenShift CVE
       </div>
     </div>
   </span>

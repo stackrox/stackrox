@@ -322,6 +322,16 @@ func (resolver *Resolver) istioVulnerabilitiesV2(ctx context.Context, q Paginate
 	return resolver.vulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 }
 
+func (resolver *Resolver) openShiftVulnerabilityV2(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+	return resolver.vulnerabilityV2(ctx, args)
+}
+
+func (resolver *Resolver) openShiftVulnerabilitiesV2(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
+	query := search.AddRawQueriesAsConjunction(q.String(),
+		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_OPENSHIFT_CVE.String()).Query())
+	return resolver.vulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
+}
+
 // Implemented Resolver.
 ////////////////////////
 
@@ -420,9 +430,11 @@ func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 
 		switch vulnType {
 		case storage.CVE_K8S_CVE:
-			n, d, err = resolver.getEnvImpactComponentsForK8sIstioVuln(ctx, converter.K8s)
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.K8s)
 		case storage.CVE_ISTIO_CVE:
-			n, d, err = resolver.getEnvImpactComponentsForK8sIstioVuln(ctx, converter.Istio)
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.Istio)
+		case storage.CVE_OPENSHIFT_CVE:
+			n, d, err = resolver.getEnvImpactComponentsForPerClusterVuln(ctx, converter.OpenShift)
 		case storage.CVE_IMAGE_CVE:
 			n, d, err = resolver.getEnvImpactComponentsForImages(ctx)
 		case storage.CVE_NODE_CVE:
@@ -446,7 +458,7 @@ func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	return float64(numerator) / float64(denominator), nil
 }
 
-func (resolver *cVEResolver) getEnvImpactComponentsForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
+func (resolver *cVEResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
 	clusters, err := resolver.root.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err

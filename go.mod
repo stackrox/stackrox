@@ -89,7 +89,7 @@ require (
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
 	github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
-	github.com/stackrox/scanner v0.0.0-20210513233124-463cefc804fa
+	github.com/stackrox/scanner v0.0.0-20210602003504-057b882c8d87
 	github.com/stretchr/testify v1.7.0
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3

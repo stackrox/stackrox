@@ -102,8 +102,8 @@ func (m *orchestratorIstioCVEManagerImpl) Update(zipPath string, forceUpdate boo
 
 // GetAffectedClusters returns the affected clusters for a CVE
 func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(cveID string, ct converter.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
-	if ct == converter.K8s {
-		clusters, err := m.orchestratorCVEMgr.getAffectedClusters(cveID)
+	if ct == converter.K8s || ct == converter.OpenShift {
+		clusters, err := m.orchestratorCVEMgr.getAffectedClusters(cveID, ct)
 		if err != nil {
 			return nil, err
 		}
@@ -118,11 +118,7 @@ func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(cveID string, ct c
 }
 
 func (m *orchestratorIstioCVEManagerImpl) reconcile() {
-	if err := m.orchestratorCVEMgr.ReconcileK8sCVEs(); err != nil {
-		log.Errorf("scan and reconcile failed for k8s CVEs with error %v", err)
-	} else {
-		m.lastUpdatedTime = time.Now()
-	}
+	m.orchestratorCVEMgr.Reconcile()
 }
 
 func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOnlineMode(forceUpdate bool) {

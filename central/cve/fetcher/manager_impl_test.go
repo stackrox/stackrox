@@ -202,9 +202,10 @@ func TestReconcileCVEsInDB(t *testing.T) {
 
 	cveManager := &orchestratorIstioCVEManagerImpl{
 		orchestratorCVEMgr: &orchestratorCVEManager{
-			clusterDataStore: mockClusters,
-			cveDataStore:     mockCVEs,
-			cveMatcher:       cveMatcher,
+			embeddedCVEIdToClusters: make(map[converter.CVEType]map[string][]*storage.Cluster),
+			clusterDataStore:        mockClusters,
+			cveDataStore:            mockCVEs,
+			cveMatcher:              cveMatcher,
 		},
 	}
 
@@ -215,11 +216,11 @@ func TestReconcileCVEsInDB(t *testing.T) {
 	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), cvesToUpsert).Return(nil)
 	mockCVEs.EXPECT().Delete(gomock.Any(), []*storage.CVE{}).Return(nil)
 
-	err = cveManager.orchestratorCVEMgr.updateCVEs(embeddedCVEs, embeddedCVEToClusters)
+	err = cveManager.orchestratorCVEMgr.updateCVEs(embeddedCVEs, embeddedCVEToClusters, converter.K8s)
 	assert.NoError(t, err)
 }
 
-func TestK8sCVEManager_ReconcileCVEs(t *testing.T) {
+func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -252,13 +253,15 @@ func TestK8sCVEManager_ReconcileCVEs(t *testing.T) {
 			Status: &storage.ClusterStatus{
 				OrchestratorMetadata: &storage.OrchestratorMetadata{
 					Version: "v1.10.10",
+					IsOpenshift: &storage.OrchestratorMetadata_OpenshiftVersion{
+						OpenshiftVersion: "4.7.7",
+					},
 				},
 			},
 		},
 	}
 
-	mockCVEs.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).Times(2)
-	mockClusters.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).Times(1)
+	mockCVEs.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).Times(4)
 
 	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
 		assert.Equal(t, len(cves), 3)
@@ -362,6 +365,60 @@ func TestK8sCVEManager_ReconcileCVEs(t *testing.T) {
 				kubernetes.KubeAggregator,
 			},
 		},
+		{
+			nvdCVE: &schema.NVDCVEFeedJSON10DefCVEItem{
+				CVE: &schema.CVEJSON40{
+					CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
+						ID: "CVE-4",
+					},
+				},
+				Configurations: &schema.NVDCVEFeedJSON10DefConfigurations{
+					Nodes: []*schema.NVDCVEFeedJSON10DefNode{
+						{
+							Operator: "OR",
+							CPEMatch: []*schema.NVDCVEFeedJSON10DefCPEMatch{
+								{
+									Vulnerable:            true,
+									Cpe23Uri:              "cpe:2.3:a:openshift:openshift:*:*:*:*:*:*:*:*",
+									VersionStartIncluding: "4.7.3",
+									VersionEndIncluding:   "4.7.10",
+								},
+							},
+						},
+					},
+				},
+			},
+			components: []string{
+				"openshift",
+			},
+		},
+		{
+			nvdCVE: &schema.NVDCVEFeedJSON10DefCVEItem{
+				CVE: &schema.CVEJSON40{
+					CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
+						ID: "CVE-5",
+					},
+				},
+				Configurations: &schema.NVDCVEFeedJSON10DefConfigurations{
+					Nodes: []*schema.NVDCVEFeedJSON10DefNode{
+						{
+							Operator: "OR",
+							CPEMatch: []*schema.NVDCVEFeedJSON10DefCPEMatch{
+								{
+									Vulnerable:            true,
+									Cpe23Uri:              "cpe:2.3:a:openshift:openshift:*:*:*:*:*:*:*:*",
+									VersionStartIncluding: "4.7.8",
+									VersionEndIncluding:   "4.7.12",
+								},
+							},
+						},
+					},
+				},
+			},
+			components: []string{
+				"openshift",
+			},
+		},
 	}
 
 	cveMatcher, err := matcher.NewCVEMatcher(mockClusters, mockNamespaces, mockImages)
@@ -373,21 +430,42 @@ func TestK8sCVEManager_ReconcileCVEs(t *testing.T) {
 	}
 
 	orchestratorCVEMgr := &orchestratorCVEManager{
-		clusterDataStore: mockClusters,
-		cveDataStore:     mockCVEs,
-		cveMatcher:       cveMatcher,
-		scanners:         make(map[string]types.OrchestratorScanner),
+		embeddedCVEIdToClusters: make(map[converter.CVEType]map[string][]*storage.Cluster),
+		clusterDataStore:        mockClusters,
+		cveDataStore:            mockCVEs,
+		cveMatcher:              cveMatcher,
+		scanners:                make(map[string]types.OrchestratorScanner),
 	}
 	orchestratorCVEMgr.scanners["someName"] = &scanner
 
-	err = orchestratorCVEMgr.ReconcileK8sCVEs()
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.K8s)
 	assert.NoError(t, err)
+	assert.Equal(t, 3, len(orchestratorCVEMgr.embeddedCVEIdToClusters[converter.K8s]))
 
 	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
-		assert.Equal(t, len(cves), 2) // CVE 1, 3
+		assert.Equal(t, 1, len(cves))
+		assert.Equal(t, "CVE-4", cves[0].CVE.GetId())
+		assert.Equal(t, 1, len(cves[0].Children))
+		assert.Contains(t, clusters[2].GetId(), cves[0].Children[0].ClusterID)
+	})
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.OpenShift)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(orchestratorCVEMgr.embeddedCVEIdToClusters[converter.OpenShift]))
+
+	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
+		assert.Equal(t, 2, len(cves)) // CVE 1, 3
 	})
 
-	mockClusters.EXPECT().GetClusters(gomock.Any()).Return(clusters[1:2], nil).Times(1)
-	err = orchestratorCVEMgr.ReconcileK8sCVEs()
+	clusters = clusters[1:2]
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.K8s)
 	assert.NoError(t, err)
+	assert.Equal(t, 2, len(orchestratorCVEMgr.embeddedCVEIdToClusters[converter.K8s]))
+
+	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
+		assert.Equal(t, 0, len(cves)) // CVE 1, 3
+	})
+
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.OpenShift)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(orchestratorCVEMgr.embeddedCVEIdToClusters[converter.OpenShift]))
 }

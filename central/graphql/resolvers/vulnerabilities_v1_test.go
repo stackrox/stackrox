@@ -187,4 +187,10 @@ func TestK8sCVEEnvImpact(t *testing.T) {
 
 		assert.Equal(t, float64(numerator)/float64(denominator), expected[i])
 	}
+	for i, cve := range cves {
+		numerator, denominator, err := resolver.getComponentsForAffectedCluster(context.Background(), cve, converter.OpenShift)
+		assert.Nil(t, err)
+
+		assert.Equal(t, float64(numerator)/float64(denominator), expected[i])
+	}
 }

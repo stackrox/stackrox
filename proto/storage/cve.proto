@@ -24,11 +24,12 @@ message CVE {
         UNKNOWN = 2;
     }
     enum CVEType {
-        UNKNOWN_CVE = 0;
-        IMAGE_CVE   = 1;
-        K8S_CVE     = 2;
-        ISTIO_CVE   = 3;
-        NODE_CVE    = 4;
+        UNKNOWN_CVE   = 0;
+        IMAGE_CVE     = 1;
+        K8S_CVE       = 2;
+        ISTIO_CVE     = 3;
+        NODE_CVE      = 4;
+        OPENSHIFT_CVE = 5;
     }
 
     message Reference {
