@@ -7,7 +7,7 @@ import MastheadToolbar from './MastheadToolbar';
 function Masthead(): ReactElement {
     return (
         <PageHeader
-            className="z-20 ignore-react-onclickoutside theme-dark"
+            className="ignore-react-onclickoutside theme-dark"
             showNavToggle
             logo={<Brand src={rhacsLogo} alt="Red Hat Advanced Cluster Security" />}
             headerTools={<MastheadToolbar />}

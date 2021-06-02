@@ -38,3 +38,53 @@ body {
 .search-modal .pf-c-tab-content {
     height: calc(100% - 112px) !important;
 }
+
+/* For classic components to equal or exceed z-index of PatternFly elements. */
+
+.z-xs-100 {
+    z-index: 100; /* --pf-global--ZIndex--xs */
+}
+
+.z-xs-101 {
+    z-index: 101;
+}
+
+.z-sm-200 {
+    z-index: 200; /* --pf-global--ZIndex--sm */
+}
+
+.z-sm-201 {
+    z-index: 201;
+}
+
+.z-md-300 {
+    z-index: 300; /* --pf-global--ZIndex--md */
+}
+
+.z-md-301 {
+    z-index: 301;
+}
+
+.z-lg-400 {
+    z-index: 400; /* --pf-global--ZIndex--lg */
+}
+
+.z-lg-401 {
+    z-index: 401;
+}
+
+.z-xl-500 {
+    z-index: 500; /* --pf-global--ZIndex--xl */
+}
+
+.z-xl-501 {
+    z-index: 501;
+}
+
+.z-2xl-600 {
+    z-index: 600; /* --pf-global--ZIndex--2xl */
+}
+
+.z-2xl-601 {
+    z-index: 601;
+}
