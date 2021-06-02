@@ -340,13 +340,16 @@ func getVersionAndUpdateFromCpe(cpe string, ct converter.CVEType) string {
 	if len(ss) != 13 {
 		return ""
 	}
-	if ct != converter.K8s && ct != converter.Istio {
+	if ct != converter.K8s && ct != converter.Istio && ct != converter.OpenShift {
 		return ""
 	}
 	if ct == converter.K8s && (ss[3] != "kubernetes" || ss[4] != "kubernetes") {
 		return ""
 	}
 	if ct == converter.Istio && (ss[3] != "istio" || ss[4] != "istio") {
+		return ""
+	}
+	if ct == converter.OpenShift && (ss[3] != "openshift" || ss[4] != "openshift") {
 		return ""
 	}
 

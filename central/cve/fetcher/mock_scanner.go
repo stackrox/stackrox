@@ -32,6 +32,9 @@ func (o *mockScanner) Type() string {
 func (o *mockScanner) KubernetesScan(version string) (map[string][]*storage.EmbeddedVulnerability, error) {
 	vulnsMap := make(map[string][]*storage.EmbeddedVulnerability)
 	for _, cve := range o.nvdCVEs {
+		if len(cve.components) == 1 && cve.components[0] == "openshift" {
+			continue
+		}
 		for _, node := range cve.nvdCVE.Configurations.Nodes {
 			embeddedCve, err := converter.NvdCVEToEmbeddedCVE(cve.nvdCVE, converter.K8s)
 			if err != nil {
@@ -53,4 +56,28 @@ func (o *mockScanner) KubernetesScan(version string) (map[string][]*storage.Embe
 		}
 	}
 	return vulnsMap, nil
+}
+
+func (o *mockScanner) OpenShiftScan(version string) ([]*storage.EmbeddedVulnerability, error) {
+	var vulns []*storage.EmbeddedVulnerability
+	for _, cve := range o.nvdCVEs {
+		if len(cve.components) != 1 || cve.components[0] != "openshift" {
+			continue
+		}
+		for _, node := range cve.nvdCVE.Configurations.Nodes {
+			embeddedCve, err := converter.NvdCVEToEmbeddedCVE(cve.nvdCVE, converter.OpenShift)
+			if err != nil {
+				return nil, err
+			}
+			matched, err := o.cveMatcher.MatchVersions(node, version, converter.OpenShift)
+			if err != nil {
+				return nil, err
+			}
+			if matched {
+				vulns = append(vulns, embeddedCve)
+				break
+			}
+		}
+	}
+	return vulns, nil
 }

@@ -168,6 +168,26 @@ func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args Paginat
 	return resolver.istioVulnerabilitiesV2(ctx, args)
 }
 
+// OpenShiftVulnerability resolves a single OpenShift vulnerability based on an id (the CVE value).
+func (resolver *Resolver) OpenShiftVulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftVulnerability")
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+
+	return resolver.openShiftVulnerabilityV2(ctx, args)
+}
+
+// OpenShiftVulnerabilities resolves a set of OpenShift vulnerabilities based on a query.
+func (resolver *Resolver) OpenShiftVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftVulnerabilities")
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+
+	return resolver.openShiftVulnerabilitiesV2(ctx, args)
+}
+
 func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
 	var suppressedSet bool
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {

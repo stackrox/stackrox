@@ -20,10 +20,11 @@ const (
 // CVEType is the type of a CVE fetched by fetcher
 type CVEType int32
 
-// K8s is type for k8s CVEs, Istio is type for istio CVEs
+// K8s is type for k8s CVEs, Istio is type for istio CVEs, OpenShift is type from OpenShift CVEs.
 const (
 	K8s = iota
 	Istio
+	OpenShift
 )
 
 func (c CVEType) String() string {
@@ -32,22 +33,35 @@ func (c CVEType) String() string {
 		return "Kubernetes"
 	case Istio:
 		return "Istio"
+	case OpenShift:
+		return "OpenShift"
 	}
 	return "Unknown"
 }
 
+// ToStorageCVEType convert a CVEType to its corresponding storage CVE type.
+func (c CVEType) ToStorageCVEType() storage.CVE_CVEType {
+	switch c {
+	case K8s:
+		return storage.CVE_K8S_CVE
+	case Istio:
+		return storage.CVE_ISTIO_CVE
+	case OpenShift:
+		return storage.CVE_OPENSHIFT_CVE
+	}
+	return storage.CVE_UNKNOWN_CVE
+}
+
 // NvdCVEToProtoCVE converts a nvd.CVEEntry object to *storage.CVE object
+// Deprecated: Consider using scanner to fetch CVEs.
 func NvdCVEToProtoCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) (*storage.CVE, error) {
 	protoCVE := &storage.CVE{
 		Id: nvdCVE.CVE.CVEDataMeta.ID,
 	}
 
-	if ct == K8s {
-		protoCVE.Type = storage.CVE_K8S_CVE
-	} else if ct == Istio {
-		protoCVE.Type = storage.CVE_ISTIO_CVE
-	} else {
-		return nil, errors.Errorf("unknown CVE type: %d", ct)
+	protoCVE.Type = ct.ToStorageCVEType()
+	if protoCVE.Type == storage.CVE_UNKNOWN_CVE {
+		return nil, errors.Errorf("unknown CVE type: %s", ct)
 	}
 
 	protoCVE.ScoreVersion = storage.CVE_UNKNOWN
@@ -96,11 +110,14 @@ func NvdCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) 
 		Cve: nvdCVE.CVE.CVEDataMeta.ID,
 	}
 
-	if ct == K8s {
+	switch ct {
+	case K8s:
 		cve.VulnerabilityType = storage.EmbeddedVulnerability_K8S_VULNERABILITY
-	} else if ct == Istio {
+	case Istio:
 		cve.VulnerabilityType = storage.EmbeddedVulnerability_ISTIO_VULNERABILITY
-	} else {
+	case OpenShift:
+		cve.VulnerabilityType = storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY
+	default:
 		return nil, errors.Errorf("unknown CVE type: %d", ct)
 	}
 
@@ -266,6 +283,8 @@ func protoToEmbeddedVulnType(protoCVEType storage.CVE_CVEType) storage.EmbeddedV
 		return storage.EmbeddedVulnerability_ISTIO_VULNERABILITY
 	case storage.CVE_NODE_CVE:
 		return storage.EmbeddedVulnerability_NODE_VULNERABILITY
+	case storage.CVE_OPENSHIFT_CVE:
+		return storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY
 	default:
 		return storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 	}
@@ -330,6 +349,8 @@ func embeddedVulnTypeToProtoType(protoCVEType storage.EmbeddedVulnerability_Vuln
 		return storage.CVE_ISTIO_CVE
 	case storage.EmbeddedVulnerability_NODE_VULNERABILITY:
 		return storage.CVE_NODE_CVE
+	case storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY:
+		return storage.CVE_OPENSHIFT_CVE
 	default:
 		return storage.CVE_UNKNOWN_CVE
 	}

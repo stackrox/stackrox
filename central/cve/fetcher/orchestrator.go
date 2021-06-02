@@ -28,7 +28,7 @@ var (
 )
 
 type orchestratorCVEManager struct {
-	embeddedCVEIdToClusters map[string][]*storage.Cluster
+	embeddedCVEIdToClusters map[converter.CVEType]map[string][]*storage.Cluster
 
 	clusterDataStore clusterDataStore.DataStore
 	cveDataStore     cveDataStore.DataStore
@@ -41,13 +41,42 @@ type orchestratorCVEManager struct {
 }
 
 func (m *orchestratorCVEManager) initialize() {
-	err := m.ReconcileK8sCVEs()
+	m.Reconcile()
+}
+
+// Reconcile fetches new CVEs from scanner and reconciles them
+func (m *orchestratorCVEManager) Reconcile() {
+	clusters, err := m.clusterDataStore.GetClusters(readCtx)
 	if err != nil {
-		log.Errorf("failed to reconcile orchestrator CVEs: %v", err)
+		log.Errorf("failed to get clusters %v", err)
+		return
+	}
+	log.Infof("Found %d clusters to scan for orchestrator vulnerabilities.", len(clusters))
+
+	err = m.reconcileCVEs(clusters, converter.K8s)
+	if err != nil {
+		log.Errorf("failed to reconcile orchestrator Kubernetes CVEs: %v", err)
+	}
+	err = m.reconcileCVEs(clusters, converter.OpenShift)
+	if err != nil {
+		log.Errorf("failed to reconcile orchestrator OpenShift CVEs: %v", err)
 	}
 }
 
-func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVulnerability, embeddedCVEToClusters map[string][]*storage.Cluster) error {
+func (m *orchestratorCVEManager) Scan(version string, cveType converter.CVEType) ([]*storage.EmbeddedVulnerability, error) {
+	if len(m.scanners) == 0 {
+		return nil, errors.New("no orchestrator scanners are integrated")
+	}
+	switch cveType {
+	case converter.K8s:
+		return m.k8sScan(version)
+	case converter.OpenShift:
+		return m.openShiftScan(version)
+	}
+	return nil, errors.Errorf("unexpected kind %s", cveType)
+}
+
+func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVulnerability, embeddedCVEToClusters map[string][]*storage.Cluster, cveType converter.CVEType) error {
 	newCVEIDs := set.NewStringSet()
 	var newCVEs []converter.ClusterCVEParts
 	for _, embeddedCVE := range embeddedCVEs {
@@ -56,15 +85,15 @@ func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVuln
 		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))
 	}
 
-	m.embeddedCVEIdToClusters = embeddedCVEToClusters
-	return m.updateCVEsInDB(newCVEIDs, newCVEs)
+	m.embeddedCVEIdToClusters[cveType] = embeddedCVEToClusters
+	return m.updateCVEsInDB(newCVEIDs, newCVEs, cveType)
 }
 
-func (m *orchestratorCVEManager) updateCVEsInDB(cveIds set.StringSet, cves []converter.ClusterCVEParts) error {
+func (m *orchestratorCVEManager) updateCVEsInDB(cveIds set.StringSet, cves []converter.ClusterCVEParts, cveType converter.CVEType) error {
 	if err := m.cveDataStore.UpsertClusterCVEs(cveElevatedCtx, cves...); err != nil {
 		return err
 	}
-	return reconcileCVEsInDB(m.cveDataStore, storage.CVE_K8S_CVE, cveIds)
+	return reconcileCVEsInDB(m.cveDataStore, cveType.ToStorageCVEType(), cveIds)
 }
 
 // CreateOrchestratorScanner creates a types.OrchestratorScanner out of the given storage.OrchestratorIntegration.
@@ -99,13 +128,8 @@ func (m *orchestratorCVEManager) RemoveIntegration(integrationID string) {
 	delete(m.scanners, integrationID)
 }
 
-// Scan calls orchestrator scanner to scan the CVEs for kube vulnerabilities.
-func (m *orchestratorCVEManager) Scan(version string) ([]*storage.EmbeddedVulnerability, error) {
+func (m *orchestratorCVEManager) k8sScan(version string) ([]*storage.EmbeddedVulnerability, error) {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Kubernetes:%s", version))
-	if len(m.scanners) == 0 {
-		errorList.AddError(errors.New("no orchestrator scanners are integrated"))
-		return nil, errorList.ToError()
-	}
 
 	var allVulns []*storage.EmbeddedVulnerability
 	for _, scanner := range m.scanners {
@@ -128,24 +152,41 @@ func (m *orchestratorCVEManager) Scan(version string) ([]*storage.EmbeddedVulner
 	return nil, errorList.ToError()
 }
 
-// ReconcileK8sCVEs fetches new CVEs from scanner and reconciles them
-func (m *orchestratorCVEManager) ReconcileK8sCVEs() error {
-	clusters, err := m.clusterDataStore.GetClusters(readCtx)
-	if err != nil {
-		return err
+func (m *orchestratorCVEManager) openShiftScan(version string) ([]*storage.EmbeddedVulnerability, error) {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for OpenShift:%s", version))
+	for _, scanner := range m.scanners {
+		result, err := scanner.OpenShiftScan(version)
+		if err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		return result, nil
 	}
 
-	log.Infof("Found %d clusters to scan for orchestrator vulnerabilities.", len(clusters))
+	return nil, errorList.ToError()
+}
+
+func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveType converter.CVEType) error {
 	versionToClusters := make(map[string][]*storage.Cluster)
 	for _, cluster := range clusters {
-		version := cluster.GetStatus().GetOrchestratorMetadata().GetVersion()
+		var version string
+		switch cveType {
+		case converter.K8s:
+			version = cluster.GetStatus().GetOrchestratorMetadata().GetVersion()
+		case converter.OpenShift:
+			version = cluster.GetStatus().GetOrchestratorMetadata().GetOpenshiftVersion()
+		}
+
+		if version == "" {
+			continue
+		}
 		versionToClusters[version] = append(versionToClusters[version], cluster)
 	}
 
 	embeddedCVEIDToClusters := make(map[string][]*storage.Cluster)
 	var allEmbeddedCVEs []*storage.EmbeddedVulnerability
 	for version := range versionToClusters {
-		vulns, err := m.Scan(version)
+		vulns, err := m.Scan(version, cveType)
 		if err != nil {
 			return err
 		}
@@ -157,17 +198,19 @@ func (m *orchestratorCVEManager) ReconcileK8sCVEs() error {
 		}
 	}
 
-	err = m.updateCVEs(allEmbeddedCVEs, embeddedCVEIDToClusters)
+	err := m.updateCVEs(allEmbeddedCVEs, embeddedCVEIDToClusters, cveType)
 	if err != nil {
 		return err
 	}
-	log.Infof("Successfully fetched %d k8s CVEs", len(m.embeddedCVEIdToClusters))
+	log.Infof("Successfully fetched %d %s CVEs", len(m.embeddedCVEIdToClusters[cveType]), cveType)
 	return nil
 }
 
-func (m *orchestratorCVEManager) getAffectedClusters(cveID string) ([]*storage.Cluster, error) {
-	if clusters, ok := m.embeddedCVEIdToClusters[cveID]; ok {
-		return clusters, nil
+func (m *orchestratorCVEManager) getAffectedClusters(cveID string, cveType converter.CVEType) ([]*storage.Cluster, error) {
+	if cveToClusters, ok := m.embeddedCVEIdToClusters[cveType]; ok {
+		if clusters, ok := cveToClusters[cveID]; ok {
+			return clusters, nil
+		}
 	}
-	return nil, errors.Errorf("Cannot find cve with id %s", cveID)
+	return nil, errors.Errorf("Cannot find cve with type %v id %s", cveType, cveID)
 }
