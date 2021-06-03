@@ -19,18 +19,18 @@ var (
 				PodWorkload: podWorkload{
 					NumPods:           5,
 					NumContainers:     3,
-					LifecycleDuration: 2 * time.Minute,
+					LifecycleDuration: 10 * time.Minute,
 
 					ProcessWorkload: processWorkload{
-						ProcessInterval: 30 * time.Second, // deployments * pods / rate = process / second
-						AlertRate:       0.005,            // 0.5% of all processes will trigger a runtime alert
+						ProcessInterval: 1 * time.Minute, // deployments * pods / rate = process / second
+						AlertRate:       0.001,           // 0.5% of all processes will trigger a runtime alert
 					},
 					ContainerWorkload: containerWorkload{
 						NumImages: 0, // 0 => use all images in the fixtures list
 					},
 				},
-				UpdateInterval:    100 * time.Second,
-				LifecycleDuration: 10 * time.Minute,
+				UpdateInterval:    10 * time.Minute,
+				LifecycleDuration: 30 * time.Minute,
 				NumLifecycles:     0, // 0 => Cycle indefinitely
 			},
 		},
