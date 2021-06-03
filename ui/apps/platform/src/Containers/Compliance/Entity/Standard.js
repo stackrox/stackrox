@@ -2,9 +2,6 @@ import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import ComplianceList from 'Containers/Compliance/List/List';
-import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
-import ComplianceAcrossEntities from 'Containers/Compliance/widgets/ComplianceAcrossEntities';
-import ControlsMostFailed from 'Containers/Compliance/widgets/ControlsMostFailed';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import SearchInput from '../SearchInput';
 import Header from '../List/Header';
@@ -28,10 +25,6 @@ const StandardPage = ({
                     <SearchInput categories={['COMPLIANCE']} shouldAddComplianceState />
                 }
             />
-            <CollapsibleBanner className="pdf-page">
-                <ComplianceAcrossEntities entityType={entityTypes.CONTROL} query={listQuery} />
-                <ControlsMostFailed entityType={entityTypes.CONTROL} query={listQuery} showEmpty />
-            </CollapsibleBanner>
             <ComplianceList
                 entityType={listEntityType1}
                 query={listQuery}

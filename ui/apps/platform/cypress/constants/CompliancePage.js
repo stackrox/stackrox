@@ -48,10 +48,6 @@ export const selectors = {
         panels: '[data-testid="panel"]',
         sidePanelHeader: '[data-testid="panel-header"]:last',
         sidePanelCloseBtn: '[data-testid="panel"] .close-button',
-        banner: {
-            content: '[data-testid="collapsible-banner"]',
-            collapseButton: '[data-testid="banner-collapse-button"]',
-        },
         table: {
             header: '[data-testid="panel-header"]',
             firstGroup: '.table-group-active:first',
@@ -65,16 +61,6 @@ export const selectors = {
     },
     widgets: "[data-testid='widget']",
     widget: {
-        controlsInCompliance: {
-            widget: '[data-testid="compliance-across-entities"]',
-            centerLabel:
-                '[data-testid="compliance-across-entities"] svg .rv-xy-plot__series--label text',
-            passingControls:
-                '[data-testid="compliance-across-entities"] [data-testid="passing-controls-value"]',
-            failingControls:
-                '[data-testid="compliance-across-entities"] [data-testid="failing-controls-value"]',
-            arcs: '[data-testid="compliance-across-entities"] svg path',
-        },
         passingStandardsAcrossClusters: {
             widget: '[data-testid="standards-across-cluster"]',
             axisLinks: '[data-testid="standards-across-cluster"] a',
