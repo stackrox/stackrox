@@ -9,15 +9,16 @@ import (
 	"github.com/gookit/color"
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cvss"
 )
 
 /**
  * Print scan result in a human readable format as follows:
  * Layer: ADD file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /
  *   apt 1.0.9.8.4
- *     CVE-2019-3462 (CVSS 8.2) - fixed by 1.0.9.8.5
+ *     CVE-2019-3462 (CVSS 8.2) (Severity Important) - fixed by 1.0.9.8.5
  *       * Incorrect sanitation of the 302 redirect field in HTTP transport method of apt versions 1.4.8 and earlier can lead to content injection by a MITM attacker, potentially leading to remote code execution on the target machine.
- *     CVE-2011-3374 (CVSS 3.7)
+ *     CVE-2011-3374 (CVSS 3.7) (Severity Low)
  *       * It was found that apt-key in apt, all versions, do not correctly validate gpg keys with the master keyring, leading to a potential man-in-the- middle attack
  */
 
@@ -25,7 +26,7 @@ import (
 const (
 	layerFormat     = "Layer: %s %s\n"
 	componentFormat = "  %s %s\n"
-	vulnFormat      = "    %s (CVSS %g)%s\n"
+	vulnFormat      = "    %s (CVSS %g) (Severity %s)%s\n"
 	summaryFormat   = "      * %s\n"
 	fixedByFormat   = " - fixed by %s"
 )
@@ -60,31 +61,34 @@ func PrintPretty(imageResult *storage.Image) {
 			} else {
 				color.Bold.Printf(componentFormat, component.GetName(), component.GetVersion())
 			}
-			// Sort vulns reversely by CVSS score
-			sort.SliceStable(vulns, func(p, q int) bool { return vulns[p].GetCvss() > vulns[q].GetCvss() })
+			// Sort vulns in increasing Severity order.
+			sort.SliceStable(vulns, func(p, q int) bool { return vulns[p].GetSeverity() > vulns[q].GetSeverity() })
 			for _, vuln := range vulns {
 				var colorPrint func(format string, a ...interface{})
+				severity := vuln.GetSeverity()
 				switch {
-				case vuln.Cvss < 4 || noColor:
+				case severity < storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY || noColor:
 					colorPrint = color.Printf
-				case vuln.Cvss >= 7:
+				case severity >= storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
 					colorPrint = color.Danger.Printf
 				default:
 					colorPrint = color.Warn.Printf
 				}
 
+				formattedSeverity := cvss.FormatSeverity(severity)
+
 				if vuln.GetFixedBy() == "" {
-					colorPrint(vulnFormat, vuln.GetCve(), vuln.GetCvss(), "")
+					colorPrint(vulnFormat, vuln.GetCve(), vuln.GetCvss(), formattedSeverity, "")
 				} else {
 					fixedBy := fmt.Sprintf(fixedByFormat, vuln.GetFixedBy())
-					colorPrint(vulnFormat, vuln.GetCve(), vuln.GetCvss(), fixedBy)
+					colorPrint(vulnFormat, vuln.GetCve(), vuln.GetCvss(), formattedSeverity, fixedBy)
 				}
 				wrapped := wordwrap.WrapString(vuln.GetSummary(), 120)
 				wrapped = strings.TrimSpace(wrapped)
 				wrapped = strings.Replace(wrapped, "\n", "\n        ", -1)
 				fmt.Printf(summaryFormat, wrapped)
 			}
-			fmt.Println("")
+			fmt.Println()
 		}
 	}
 }

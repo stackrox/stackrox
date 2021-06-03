@@ -7,11 +7,12 @@ import (
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cvss"
 )
 
 type sortRecord struct {
-	index     int
-	cvssScore float32
+	index    int
+	severity storage.VulnerabilitySeverity
 }
 
 // PrintCSV prints image scan result in csv format
@@ -21,7 +22,7 @@ func PrintCSV(imageResult *storage.Image) error {
 
 	defer w.Flush()
 
-	header := []string{"CVE", "CVSS Score", "Summary", "Component", "Version", "Fixed By", "Layer Instruction"}
+	header := []string{"CVE", "CVSS Score", "Severity Rating", "Summary", "Component", "Version", "Fixed By", "Layer Instruction"}
 	if err := w.Write(header); err != nil {
 		return err
 	}
@@ -51,16 +52,17 @@ func PrintCSV(imageResult *storage.Image) error {
 			currentLayerIndex = component.GetLayerIndex()
 		}
 		for _, vuln := range component.GetVulns() {
-			sortRecords = append(sortRecords, sortRecord{len(records), vuln.GetCvss()})
+			sortRecords = append(sortRecords, sortRecord{len(records), vuln.GetSeverity()})
 			layer := layers[component.GetLayerIndex()]
-			records = append(records, []string{vuln.GetCve(), fmt.Sprintf("%g", vuln.GetCvss()), vuln.GetSummary(), component.GetName(), component.GetVersion(), vuln.GetFixedBy(), layer.GetInstruction() + " " + layer.GetValue()})
+			formattedSeverity := cvss.FormatSeverity(vuln.GetSeverity())
+			records = append(records, []string{vuln.GetCve(), fmt.Sprintf("%g", vuln.GetCvss()), formattedSeverity, vuln.GetSummary(), component.GetName(), component.GetVersion(), vuln.GetFixedBy(), layer.GetInstruction() + " " + layer.GetValue()})
 		}
 	}
 	return sortAndPrint(w, records, sortRecords)
 }
 
 func sortAndPrint(w *csv.Writer, records [][]string, sortRecords []sortRecord) error {
-	sort.SliceStable(sortRecords, func(p, q int) bool { return sortRecords[p].cvssScore > sortRecords[q].cvssScore })
+	sort.SliceStable(sortRecords, func(p, q int) bool { return sortRecords[p].severity > sortRecords[q].severity })
 	for _, sr := range sortRecords {
 		if err := w.Write(records[sr.index]); err != nil {
 			return err

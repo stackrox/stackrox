@@ -38,7 +38,7 @@ func maybeGetSingleValueFromFieldMap(f string, fieldMap map[string][]string) str
 	if !ok {
 		return ""
 	}
-	if lenValues := len(values); lenValues != 1 {
+	if len(values) != 1 {
 		return ""
 	}
 	return values[0]

@@ -20,6 +20,7 @@ var (
 	kubernetesResourceValueRegex             = createRegex(`(?i:PODS_EXEC|PODS_PORTFORWARD)`)
 	mountPropagationValueRegex               = createRegex("(?i:NONE|HOSTTOCONTAINER|BIDIRECTIONAL)")
 	seccompProfileTypeValueRegex             = createRegex(`(?i:UNCONFINED|RUNTIME_DEFAULT|LOCALHOST)`)
+	severityValueRegex                       = createRegex(`(<|>|<=|>=)?[[:space:]]*(?i:UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL)`)
 )
 
 func createRegex(s string) *regexp.Regexp {

@@ -19,9 +19,9 @@ func getComponentAndVersion(fieldMap map[string][]string) (component string, ver
 }
 
 const (
-	// Example message: Fixable CVE-2020-0101 (CVSS 8.2) found in component 'nginx' (version 1.12.0-debian1ubuntu2) in container 'nginx-proxy', resolved by version 1.13.0-debian0ubuntu1
+	// Example message: Fixable CVE-2020-0101 (CVSS 8.2) (severity Important) found in component 'nginx' (version 1.12.0-debian1ubuntu2) in container 'nginx-proxy', resolved by version 1.13.0-debian0ubuntu1
 	cveTemplate = `
-    {{- if .FixedBy}}Fixable {{end}}{{.CVE}}{{if .CVSS}} (CVSS {{.CVSS}}){{end}} found
+    {{- if .FixedBy}}Fixable {{end}}{{.CVE}}{{if .CVSS}} (CVSS {{.CVSS}}){{end}}{{if .Severity}} (severity {{.Severity}}){{end}} found
     {{- if .Component}} in component '{{.Component}}' (version {{.ComponentVersion}}){{end}}
     {{- if .ContainerName }} in container '{{.ContainerName}}'{{end}}
     {{- if .FixedBy}}, resolved by version {{.FixedBy}}{{end}}`
@@ -34,6 +34,7 @@ func cvePrinter(fieldMap map[string][]string) ([]string, error) {
 		ImageName        string
 		CVE              string
 		CVSS             string
+		Severity         string
 		FixedBy          string
 		Component        string
 		ComponentVersion string
@@ -46,6 +47,7 @@ func cvePrinter(fieldMap map[string][]string) ([]string, error) {
 	}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	r.CVSS = maybeGetSingleValueFromFieldMap(search.CVSS.String(), fieldMap)
+	r.Severity = strings.Title(strings.TrimSuffix(strings.ToLower(maybeGetSingleValueFromFieldMap(search.Severity.String(), fieldMap)), "_vulnerability_severity"))
 	r.FixedBy = maybeGetSingleValueFromFieldMap(search.FixedBy.String(), fieldMap)
 	r.Component, r.ComponentVersion = getComponentAndVersion(fieldMap)
 	return executeTemplate(cveTemplate, r)

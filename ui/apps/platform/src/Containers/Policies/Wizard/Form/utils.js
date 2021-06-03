@@ -82,6 +82,7 @@ const nonStandardNumberFields = [
     'Container CPU Limit',
     'Container Memory Request',
     'Container Memory Limit',
+    'Severity',
 ];
 
 function isCompoundField(fieldName = '') {
@@ -99,7 +100,7 @@ function isCompoundField(fieldName = '') {
     return compoundValueFields.includes(fieldName);
 }
 
-const numericCompRe = /^([><=]+)?\D*(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$/;
+const numericCompRe = /^([><=]+)?\D*(?=.)(([+-]?([0-9]*)(\.([0-9]+))?)|(UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL))$/;
 
 export function parseNumericComparisons(str) {
     const matches = str.match(numericCompRe);

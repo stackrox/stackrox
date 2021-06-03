@@ -1,6 +1,10 @@
 package cvss
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"strings"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 type vulnI interface {
 	GetSeverity() storage.VulnerabilitySeverity
@@ -41,4 +45,10 @@ func VulnToSeverity(v vulnI) storage.VulnerabilitySeverity {
 		}
 	}
 	return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
+// FormatSeverity converts the given storage.VulnerabilitySeverity to a more human-readable string.
+// ex: LOW_VULNERABILITY_SEVERITY -> Low
+func FormatSeverity(severity storage.VulnerabilitySeverity) string {
+	return strings.Title(strings.ToLower(strings.TrimSuffix(severity.String(), "_VULNERABILITY_SEVERITY")))
 }

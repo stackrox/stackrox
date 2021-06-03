@@ -11,6 +11,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `globalAccess` field in roles is no longer supported
 - Policy matching on all fields has been made case-insensitive. For example, if you set "Volume Type" to "hostpath",
   that will match volumes that are "HostPath".
+- Added the ability to make policies based on `Severity` (ROX-6639)
+  - Added new default policy (disabled by default) for a `High` alert for fixable
+    CVEs with severity at least Important (includes Important and Critical).
+- roxctl image scan --format {csv,pretty} are now sorted by layer and severity
+  instead of layer and CVSS.
 
 ## [60.0]
 

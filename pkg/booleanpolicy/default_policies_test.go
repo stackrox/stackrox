@@ -442,7 +442,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	strutsImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
 		{Name: "struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
+			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
 		}},
 		{Name: "OTHER", Version: "1.3", Vulns: []*storage.EmbeddedVulnerability{
 			{Cve: "CVE-1223-451", Link: "https://cvefake"},
@@ -453,7 +453,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	strutsImageSuppressed := imageWithComponents([]*storage.EmbeddedImageScanComponent{
 		{Name: "struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-2017-5638", Link: "https://struts", Suppressed: true, Cvss: 8, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
+			{Cve: "CVE-2017-5638", Link: "https://struts", Suppressed: true, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
 		}},
 		{Name: "OTHER", Version: "1.3", Vulns: []*storage.EmbeddedVulnerability{
 			{Cve: "CVE-1223-451", Link: "https://cvefake"},
@@ -652,10 +652,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	imgWithFixedByEmptyOnlyForSome := suite.addImage(imageWithComponents([]*storage.EmbeddedImageScanComponent{
 		{Name: "EXplicitlyEmptyFixedBy", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-1234-5678", Cvss: 8, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{}},
+			{Cve: "CVE-1234-5678", Cvss: 8, Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{}},
 		}},
 		{Name: "Normal", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-5612-1245", Cvss: 8, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "actually_fixable"}},
+			{Cve: "CVE-5612-1245", Cvss: 8, Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "actually_fixable"}},
 		}},
 	}))
 
@@ -1060,12 +1060,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				shellshockDep.GetId(): {
 					{
-						Message: "CVE-2014-6271 (CVSS 6) found in component 'shellshock' (version 1.2) in container 'ASFASF'",
+						Message: "CVE-2014-6271 (CVSS 6) (severity Unknown) found in component 'shellshock' (version 1.2) in container 'ASFASF'",
 					},
 				},
 				fixtureDep.GetId(): {
 					{
-						Message: "CVE-2014-6271 (CVSS 5) found in component 'name' (version 1.2.3.4) in container 'supervulnerable'",
+						Message: "CVE-2014-6271 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4) in container 'supervulnerable'",
 					},
 				},
 			},
@@ -1075,7 +1075,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				strutsDep.GetId(): {
 					{
-						Message: "CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF'",
+						Message: "CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF'",
 					},
 				},
 			},
@@ -1085,7 +1085,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				heartbleedDep.GetId(): {
 					{
-						Message: "CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2) in container 'nginx'",
+						Message: "CVE-2014-0160 (CVSS 6) (severity Unknown) found in component 'heartbleed' (version 1.2) in container 'nginx'",
 					},
 				},
 			},
@@ -1128,7 +1128,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Container 'nginx' is privileged",
 					},
 					{
-						Message: "Fixable CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2) in container 'nginx', resolved by version v1.2",
+						Message: "Fixable CVE-2014-0160 (CVSS 6) (severity Unknown) found in component 'heartbleed' (version 1.2) in container 'nginx', resolved by version v1.2",
 					},
 				},
 			},
@@ -1138,7 +1138,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				strutsDep.GetId(): {
 					{
-						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Fixable Severity at least Important",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				strutsDep.GetId(): {
+					{
+						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
 			},
@@ -1318,27 +1328,27 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				strutsDep.GetId(): {
 					{
-						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
 				heartbleedDep.GetId(): {
 					{
-						Message: "Fixable CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2) in container 'nginx', resolved by version v1.2",
+						Message: "Fixable CVE-2014-0160 (CVSS 6) (severity Unknown) found in component 'heartbleed' (version 1.2) in container 'nginx', resolved by version v1.2",
 					},
 				},
 				fixtureDep.GetId(): {
 					{
-						Message: "Fixable CVE-2014-6200 (CVSS 5) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
+						Message: "Fixable CVE-2014-6200 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
 					},
 				},
 				fixtures.LightweightDeployment().GetId(): {
 					{
-						Message: "Fixable CVE-2014-6200 (CVSS 5) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
+						Message: "Fixable CVE-2014-6200 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
 					},
 				},
 				strutsDepSuppressed.GetId(): {
 					{
-						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
 			},
@@ -1615,12 +1625,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(shellshockDep): {
 					{
-						Message: "CVE-2014-6271 (CVSS 6) found in component 'shellshock' (version 1.2)",
+						Message: "CVE-2014-6271 (CVSS 6) (severity Unknown) found in component 'shellshock' (version 1.2)",
 					},
 				},
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {
 					{
-						Message: "CVE-2014-6271 (CVSS 5) found in component 'name' (version 1.2.3.4)",
+						Message: "CVE-2014-6271 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4)",
 					},
 				},
 			},
@@ -1630,7 +1640,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(strutsDep): {
 					{
-						Message: "CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2)",
+						Message: "CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2)",
 					},
 				},
 			},
@@ -1640,7 +1650,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(heartbleedDep): {
 					{
-						Message: "CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2)",
+						Message: "CVE-2014-0160 (CVSS 6) (severity Unknown) found in component 'heartbleed' (version 1.2)",
 					},
 				},
 			},
@@ -1650,12 +1660,27 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(strutsDep): {
 					{
-						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2), resolved by version v1.3",
+						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2), resolved by version v1.3",
 					},
 				},
 				imgWithFixedByEmptyOnlyForSome.GetId(): {
 					{
-						Message: "Fixable CVE-5612-1245 (CVSS 8) found in component 'Normal' (version 2.3), resolved by version actually_fixable",
+						Message: "Fixable CVE-5612-1245 (CVSS 8) (severity Critical) found in component 'Normal' (version 2.3), resolved by version actually_fixable",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Fixable Severity at least Important",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				suite.imageIDFromDep(strutsDep): {
+					{
+						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2), resolved by version v1.3",
+					},
+				},
+				imgWithFixedByEmptyOnlyForSome.GetId(): {
+					{
+						Message: "Fixable CVE-5612-1245 (CVSS 8) (severity Critical) found in component 'Normal' (version 2.3), resolved by version actually_fixable",
 					},
 				},
 			},
