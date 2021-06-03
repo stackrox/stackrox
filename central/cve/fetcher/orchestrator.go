@@ -64,14 +64,22 @@ func (m *orchestratorCVEManager) Reconcile() {
 }
 
 func (m *orchestratorCVEManager) Scan(version string, cveType converter.CVEType) ([]*storage.EmbeddedVulnerability, error) {
-	if len(m.scanners) == 0 {
+	scanners := map[string]types.OrchestratorScanner{}
+
+	m.mutex.Lock()
+	for k, v := range m.scanners {
+		scanners[k] = v
+	}
+	m.mutex.Unlock()
+
+	if len(scanners) == 0 {
 		return nil, errors.New("no orchestrator scanners are integrated")
 	}
 	switch cveType {
 	case converter.K8s:
-		return m.k8sScan(version)
+		return k8sScan(version, scanners)
 	case converter.OpenShift:
-		return m.openShiftScan(version)
+		return openShiftScan(version, scanners)
 	}
 	return nil, errors.Errorf("unexpected kind %s", cveType)
 }
@@ -96,7 +104,7 @@ func (m *orchestratorCVEManager) updateCVEsInDB(cveIds set.StringSet, cves []con
 	return reconcileCVEsInDB(m.cveDataStore, cveType.ToStorageCVEType(), cveIds)
 }
 
-// CreateOrchestratorScanner creates a types.OrchestratorScanner out of the given storage.OrchestratorIntegration.
+// createOrchestratorScanner creates a types.OrchestratorScanner out of the given storage.OrchestratorIntegration.
 func (m *orchestratorCVEManager) createOrchestratorScanner(source *storage.OrchestratorIntegration) (types.OrchestratorScanner, error) {
 	creator, exists := m.creators[source.GetType()]
 	if !exists {
@@ -128,11 +136,11 @@ func (m *orchestratorCVEManager) RemoveIntegration(integrationID string) {
 	delete(m.scanners, integrationID)
 }
 
-func (m *orchestratorCVEManager) k8sScan(version string) ([]*storage.EmbeddedVulnerability, error) {
+func k8sScan(version string, scanners map[string]types.OrchestratorScanner) ([]*storage.EmbeddedVulnerability, error) {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Kubernetes:%s", version))
 
 	var allVulns []*storage.EmbeddedVulnerability
-	for _, scanner := range m.scanners {
+	for _, scanner := range scanners {
 		result, err := scanner.KubernetesScan(version)
 		if err != nil {
 			errorList.AddError(err)
@@ -152,9 +160,9 @@ func (m *orchestratorCVEManager) k8sScan(version string) ([]*storage.EmbeddedVul
 	return nil, errorList.ToError()
 }
 
-func (m *orchestratorCVEManager) openShiftScan(version string) ([]*storage.EmbeddedVulnerability, error) {
+func openShiftScan(version string, scanners map[string]types.OrchestratorScanner) ([]*storage.EmbeddedVulnerability, error) {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for OpenShift:%s", version))
-	for _, scanner := range m.scanners {
+	for _, scanner := range scanners {
 		result, err := scanner.OpenShiftScan(version)
 		if err != nil {
 			errorList.AddError(err)
