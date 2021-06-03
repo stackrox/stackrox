@@ -40,8 +40,8 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, component scancompo
 		Name: c.heading,
 		Factors: []*storage.Risk_Result_Factor{
 			{
-				Message: fmt.Sprintf("%s Component %s version %s contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f",
-					c.typ, component.GetName(), component.GetVersion(), numCVEs, min, max),
+				Message: fmt.Sprintf("%s Component %s version %s contains %d CVEs with severities ranging between %s and %s",
+					c.typ, component.GetName(), component.GetVersion(), numCVEs, min.Severity, max.Severity),
 			},
 		},
 		Score: multipliers.NormalizeScore(sum, vulnSaturation, vulnMaxScore),

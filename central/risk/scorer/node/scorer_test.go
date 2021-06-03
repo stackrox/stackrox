@@ -17,14 +17,14 @@ func TestScore(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	expectedRiskScore := 1.15
+	expectedRiskScore := 1.1027501
 	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name: nodeMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Node \"node1\" contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
+				{Message: "Node \"node1\" contains 2 CVEs with severities ranging between Low and Moderate"},
 			},
-			Score: 1.15,
+			Score: 1.1027501,
 		},
 	}
 

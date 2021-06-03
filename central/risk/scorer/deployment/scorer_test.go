@@ -57,7 +57,7 @@ func TestScore(t *testing.T) {
 	mockEvaluator.EXPECT().EvaluateBaselinesAndPersistResult(deployment).MaxTimes(2).Return(nil, nil)
 
 	// Without user defined function
-	expectedRiskScore := 9.016
+	expectedRiskScore := 12.1794405
 	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name:    deploymentMultiplier.PolicyViolationsHeading,
@@ -67,9 +67,9 @@ func TestScore(t *testing.T) {
 		{
 			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
+				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"},
 			},
-			Score: 1.15,
+			Score: 1.5535,
 		},
 		{
 			Name: deploymentMultiplier.ServiceConfigHeading,
@@ -106,7 +106,7 @@ func TestScore(t *testing.T) {
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
-	expectedRiskScore = 9.016
+	expectedRiskScore = 12.1794405
 
 	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
 

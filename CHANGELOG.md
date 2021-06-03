@@ -16,6 +16,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     CVEs with severity at least Important (includes Important and Critical).
 - roxctl image scan --format {csv,pretty} are now sorted by layer and severity
   instead of layer and CVSS.
+- Image risk is now calculated using a score assigned to the Severity Rating,
+  opposed to using the CVSS score. Severity Rating is a more accurate measure of
+  a vulnerability's risk. (ROX-7133)
 
 ## [60.0]
 

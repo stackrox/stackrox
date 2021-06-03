@@ -43,8 +43,8 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, node *storage.Node)
 		Name: VulnerabilitiesHeading,
 		Factors: []*storage.Risk_Result_Factor{
 			{
-				Message: fmt.Sprintf("Node %q contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f",
-					node.GetName(), num, min, max),
+				Message: fmt.Sprintf("Node %q contains %d CVEs with severities ranging between %s and %s",
+					node.GetName(), num, min.Severity, max.Severity),
 			},
 		},
 		Score: score,

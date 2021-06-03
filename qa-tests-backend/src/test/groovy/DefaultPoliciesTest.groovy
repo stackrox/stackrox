@@ -339,10 +339,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "Port 80 is exposed in the cluster"  | null | []
 
         "Image Vulnerabilities"           | 4.0f     | null |
-                // This makes sure it has at least a 100 CVEs.
+                // This makes sure it has at least 100 CVEs.
                 "Image \"docker.io/stackrox/qa:struts-app\"" +
-                     " contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
-                     "\\d+(\\.\\d{1,2})? and \\d+(\\.\\d{1,2})?" | []
+                     " contains \\d{2,3}\\d+ CVEs with severities ranging between " +
+                     "Low and Critical" | []
 
         "Service Configuration"           | 2.0f     |
                 "No capabilities were dropped" | null | []
