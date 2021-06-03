@@ -16,22 +16,25 @@ func TestScore(t *testing.T) {
 
 	mockCtrl := gomock.NewController(t)
 
-	imageComponent := scorer.GetMockNode().GetScan().GetComponents()[0]
+	nodeComponent := scorer.GetMockNode().GetScan().GetComponents()[0]
+	nodeComponent.GetVulns()[0].Severity = storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+	nodeComponent.GetVulns()[1].ScoreVersion = storage.EmbeddedVulnerability_V3
+	nodeComponent.GetVulns()[1].Severity = storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
 	nodeScorer := NewNodeComponentScorer()
 
 	// Without user defined function
-	expectedRiskScore := 1.15
+	expectedRiskScore := 1.28275
 	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name: nodeComponentMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Node Component ComponentX version v1 contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
+				{Message: "Node Component ComponentX version v1 contains 2 CVEs with severities ranging between Low and Critical"},
 			},
-			Score: 1.15,
+			Score: 1.28275,
 		},
 	}
 
-	actualRisk := nodeScorer.Score(ctx, imageComponent)
+	actualRisk := nodeScorer.Score(ctx, nodeComponent)
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 

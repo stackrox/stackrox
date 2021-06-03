@@ -17,17 +17,20 @@ func TestScore(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
 	imageComponent := pkgScorer.GetMockImage().GetScan().GetComponents()[0]
+	imageComponent.GetVulns()[0].Severity = storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+	imageComponent.GetVulns()[1].ScoreVersion = storage.EmbeddedVulnerability_V3
+	imageComponent.GetVulns()[1].Severity = storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
 	scorer := NewImageComponentScorer()
 
 	// Without user defined function
-	expectedRiskScore := 1.15
+	expectedRiskScore := 1.5534999
 	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name: imageComponentMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image Component ComponentX version v1 contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
+				{Message: "Image Component ComponentX version v1 contains 3 CVEs with severities ranging between Low and Critical"},
 			},
-			Score: 1.15,
+			Score: 1.5534999,
 		},
 	}
 

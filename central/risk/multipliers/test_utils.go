@@ -25,12 +25,14 @@ func GetMockImages() []*storage.Image {
 						Version: "1.1.1",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:  "CVE-2019-0001",
-								Cvss: 5,
+								Cve:      "CVE-2019-0001",
+								Cvss:     5,
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 							},
 							{
-								Cve:  "CVE-2019-0002",
-								Cvss: 5,
+								Cve:      "CVE-2019-0002",
+								Cvss:     5,
+								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -39,12 +41,15 @@ func GetMockImages() []*storage.Image {
 						Version: "1.1.1",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:  "CVE-2019-0001",
-								Cvss: 5,
+								Cve:          "CVE-2019-0001",
+								Cvss:         5,
+								ScoreVersion: storage.EmbeddedVulnerability_V3,
+								Severity:     storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							},
 							{
-								Cve:  "CVE-2019-0002",
-								Cvss: 5,
+								Cve:      "CVE-2019-0002",
+								Cvss:     5,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -139,8 +144,10 @@ func GetMockNodes() []*storage.Node {
 						Version: "1.16.9",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:  "CVE-2020-8558",
-								Cvss: 5.4,
+								Cve:          "CVE-2020-8558",
+								Cvss:         5.4,
+								ScoreVersion: storage.EmbeddedVulnerability_V3,
+								Severity:     storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -149,8 +156,10 @@ func GetMockNodes() []*storage.Node {
 						Version: "1.16.9",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:  "CVE-2020-8558",
-								Cvss: 5.4,
+								Cve:          "CVE-2020-8558",
+								Cvss:         5.4,
+								ScoreVersion: storage.EmbeddedVulnerability_V3,
+								Severity:     storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -166,8 +175,10 @@ func GetMockNodes() []*storage.Node {
 						Version: "1.14.3",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:  "CVE-2019-11248",
-								Cvss: 6.5,
+								Cve:          "CVE-2019-11248",
+								Cvss:         6.5,
+								ScoreVersion: storage.EmbeddedVulnerability_V2,
+								Severity:     storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							},
 						},
 					},

@@ -25,16 +25,21 @@ func GetMockImage() *storage.Image {
 					Version: "v1",
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
-							Cve:  "CVE-2019-0001",
-							Cvss: 5,
+							Cve:          "CVE-2019-0001",
+							Cvss:         5,
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+							Severity:     storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 						},
 						{
-							Cve:  "CVE-2019-0002",
-							Cvss: 5,
+							Cve:      "CVE-2019-0002",
+							Cvss:     5,
+							Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 						},
 						{
-							Cve:  "RHSA-2019:0002",
-							Cvss: 10,
+							Cve:          "RHSA-2019:0002",
+							Cvss:         10,
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+							Severity:     storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 						},
 					},
 				},
@@ -117,12 +122,14 @@ func GetMockNode() *storage.Node {
 					Version: "v1",
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
-							Cve:  "CVE-2019-0001",
-							Cvss: 5,
+							Cve:      "CVE-2019-0001",
+							Cvss:     5,
+							Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 						},
 						{
-							Cve:  "CVE-2019-0002",
-							Cvss: 5,
+							Cve:      "CVE-2019-0002",
+							Cvss:     5,
+							Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 						},
 					},
 				},
