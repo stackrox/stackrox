@@ -138,6 +138,7 @@ func init() {
 	registerFieldMetadata(fieldnames.RequiredLabel, querybuilders.ForFieldLabelMap(search.Label, query.MapShouldNotContain), nil, keyValueValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.SeccompProfileType, querybuilders.ForFieldLabel(search.SeccompProfileType), violationmessages.ContainerContextFields, seccompProfileTypeValueRegex, operatorsForbidden)
 	registerFieldMetadata(fieldnames.ServiceAccount, querybuilders.ForFieldLabelRegex(search.ServiceAccountName), nil, stringValueRegex)
+	registerFieldMetadata(fieldnames.Severity, querybuilders.ForSeverity(), violationmessages.VulnContextFields, severityValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.UnscannedImage, querybuilders.ForFieldLabelNil(augmentedobjs.ImageScanCustomTag), violationmessages.ImageContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.VolumeDestination, querybuilders.ForFieldLabelRegex(search.VolumeDestination), violationmessages.VolumeContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.VolumeName, querybuilders.ForFieldLabelRegex(search.VolumeName), violationmessages.VolumeContextFields, stringValueRegex)

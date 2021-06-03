@@ -142,3 +142,13 @@ export const policyCriteriaCategories = Object.freeze({
     KUBERNETES_ACCESS: 'Kubernetes Access',
     KUBERNETES_EVENTS: 'Kubernetes Events',
 });
+
+// For any update to severityRatings, please also update cve.proto,
+// pkg/booleanpolicy/value_regex.go, and Containers/Policies/Wizard/Form/utils.js.
+export const severityRatings = Object.freeze({
+    UNKNOWN: 'Unknown',
+    LOW: 'Low',
+    MODERATE: 'Moderate',
+    IMPORTANT: 'Important',
+    CRITICAL: 'Critical',
+});

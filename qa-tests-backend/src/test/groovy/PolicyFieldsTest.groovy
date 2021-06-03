@@ -152,6 +152,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITH_BASH_EXEC = DEP_B
     static final private WITHOUT_PROCESS_UID_1 = DEP_B
     static final private WITH_A_RO_HOST_BAR_VOLUME = DEP_B
+    static final private WITH_SEVERITY_GT_IMPORTANT = DEP_B
 
     static final private CONFIG_MAP_NAME = "test-config-map"
     static final private SECRET_NAME = "test-secret"
@@ -679,6 +680,14 @@ class PolicyFieldsTest extends BaseSpecification {
             ["im-a-key="]
     )
 
+    // "Severity"
+
+    static final private EXCLUDE_SEVERITY_GT_IMPORTANT = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_EXCLUDE_SEVERITY_GT_IMPORTANT"),
+            "Severity",
+            [">= IMPORTANT"]
+    )
+
     static final private REQUIRED_LABEL_KEY_AND_VALUE = setPolicyFieldANDValues(
             BASE_POLICY.clone().setName("AAA_REQUIRED_LABEL_KEY_AND_VALUE"),
             "Required Label",
@@ -876,6 +885,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Required Image Label"      | REQUIRED_IMAGE_LABEL_NO_MATCH_II     | WITH_IMAGE_LABELS                      | "no match II"
         "Required Label"            | REQUIRED_LABEL_KEY_AND_VALUE         | WITH_KEY_ONLY_LABEL                    | "no key only when value required"
         "Required Label"            | REQUIRED_LABEL_KEY_AND_VALUE         | WITH_MISMATCHED_LABELS                 | "both required"
+        "Severity"                  | EXCLUDE_SEVERITY_GT_IMPORTANT        | WITH_SEVERITY_GT_IMPORTANT             | "match"
         "Unscanned Image"           | IMAGES_ARE_UNSCANNED                 | UNSCANNED                              | "match"
         "Volume Destination"        | NO_FOO_VOLUME_DESTINATIONS           | WITH_A_RW_FOO_VOLUME                   | "match"
         "Volume Name"               | NO_FOO_VOLUME_NAME                   | WITH_A_RW_FOO_VOLUME                   | "match"

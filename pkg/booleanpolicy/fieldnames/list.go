@@ -50,6 +50,7 @@ var (
 	RequiredLabel                 = newFieldName("Required Label")
 	SeccompProfileType            = newFieldName("Seccomp Profile Type")
 	ServiceAccount                = newFieldName("Service Account")
+	Severity                      = newFieldName("Severity")
 	UnexpectedNetworkFlowDetected = newFieldName("Unexpected Network Flow Detected")
 	UnexpectedProcessExecuted     = newFieldName("Unexpected Process Executed")
 	UnscannedImage                = newFieldName("Unscanned Image")

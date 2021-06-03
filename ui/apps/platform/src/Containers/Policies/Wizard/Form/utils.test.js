@@ -120,6 +120,52 @@ describe('policyFormUtils', () => {
                 expect(valueObj.source).toBeUndefined();
             });
         });
+
+        describe('parsing Severity field', () => {
+            it('should parse Severity with no space between operator and Severity', () => {
+                const value = `>=IMPORTANT`;
+                const fieldName = 'Severity';
+
+                const valueObj = parseValueStr(value, fieldName);
+
+                expect(valueObj.key).toEqual('>=');
+                expect(valueObj.value).toEqual('IMPORTANT');
+                expect(valueObj.source).toBeUndefined();
+            });
+
+            it('should parse Severity with a space between operator and number', () => {
+                const value = `>= MODERATE`;
+                const fieldName = 'Severity';
+
+                const valueObj = parseValueStr(value, fieldName);
+
+                expect(valueObj.key).toEqual('>=');
+                expect(valueObj.value).toEqual('MODERATE');
+                expect(valueObj.source).toBeUndefined();
+            });
+
+            it('should parse Severity with no space or operator, and number, as equals', () => {
+                const value = `CRITICAL`;
+                const fieldName = 'Severity';
+
+                const valueObj = parseValueStr(value, fieldName);
+
+                expect(valueObj.key).toEqual('=');
+                expect(valueObj.value).toEqual('CRITICAL');
+                expect(valueObj.source).toBeUndefined();
+            });
+
+            it('should parse Severity with a space but no operator, and number, as equals', () => {
+                const value = ` LOW`;
+                const fieldName = 'Severity';
+
+                const valueObj = parseValueStr(value, fieldName);
+
+                expect(valueObj.key).toEqual('=');
+                expect(valueObj.value).toEqual('LOW');
+                expect(valueObj.source).toBeUndefined();
+            });
+        });
     });
 
     describe('formatValueStr', () => {

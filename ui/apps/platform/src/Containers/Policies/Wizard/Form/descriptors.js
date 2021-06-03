@@ -6,6 +6,7 @@ import {
     policyCriteriaCategories,
     mountPropagationLabels,
     seccompProfileTypeLabels,
+    severityRatings,
 } from 'messages/common';
 import { resourceTypes } from 'constants/entityTypes';
 import { knownBackendFlags } from 'utils/featureFlags';
@@ -404,6 +405,32 @@ const policyConfigurationDescriptor = [
                 max: 10,
                 min: 0,
                 step: 0.1,
+                subpath: 'value',
+            },
+        ],
+        required: false,
+        default: false,
+        canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
+    },
+    {
+        label: 'Severity',
+        name: 'Severity',
+        longName: 'Vulnerability Severity Rating',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'group',
+        jsonpaths: [
+            {
+                type: 'select',
+                options: equalityOptions,
+                subpath: 'key',
+            },
+            {
+                type: 'select',
+                options: Object.keys(severityRatings).map((key) => ({
+                    label: severityRatings[key],
+                    value: key,
+                })),
                 subpath: 'value',
             },
         ],

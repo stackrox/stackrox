@@ -16,8 +16,8 @@ var (
 		nil,
 		[]string{augmentedobjs.ContainerNameCustomTag})
 	VulnContextFields = newContextFields(
-		[]string{search.CVE.String(), search.CVSS.String(), augmentedobjs.ComponentAndVersionCustomTag},
-		[]string{augmentedobjs.ContainerNameCustomTag, search.CVE.String(), search.CVSS.String(), augmentedobjs.ComponentAndVersionCustomTag})
+		[]string{search.CVE.String(), search.CVSS.String(), search.Severity.String(), augmentedobjs.ComponentAndVersionCustomTag},
+		[]string{augmentedobjs.ContainerNameCustomTag, search.CVE.String(), search.CVSS.String(), search.Severity.String(), augmentedobjs.ComponentAndVersionCustomTag})
 	VolumeContextFields = newContextFields(
 		nil,
 		[]string{augmentedobjs.ContainerNameCustomTag, search.VolumeName.String(), search.VolumeSource.String(), search.VolumeDestination.String(), search.VolumeReadonly.String(), search.VolumeType.String()})

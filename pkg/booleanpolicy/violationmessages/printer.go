@@ -60,6 +60,7 @@ var (
 			fieldnames.RequiredLabel:          {{required: set.NewStringSet(search.Label.String()), printerFuncKey: printer.RequiredLabelKey}},
 			fieldnames.SeccompProfileType:     {{required: set.NewStringSet(search.SeccompProfileType.String()), printerFuncKey: printer.SeccompProfileTypeKey}},
 			fieldnames.ServiceAccount:         {{required: set.NewStringSet(search.ServiceAccountName.String()), printerFuncKey: printer.ServiceAccountKey}},
+			fieldnames.Severity:               {{required: set.NewStringSet(search.Severity.String()), printerFuncKey: printer.CveKey}},
 			fieldnames.UnscannedImage:         {{required: set.NewStringSet(augmentedobjs.ImageScanCustomTag), printerFuncKey: printer.ImageScanKey}},
 			fieldnames.VolumeDestination:      {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
 			fieldnames.VolumeName:             {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
@@ -83,6 +84,7 @@ var (
 			fieldnames.ImageTag:             {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
 			fieldnames.ImageUser:            {{required: set.StringSet{}, printerFuncKey: printer.ImageUserKey}},
 			fieldnames.RequiredImageLabel:   {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.RequiredImageLabelKey}},
+			fieldnames.Severity:             {{required: set.NewStringSet(search.Severity.String()), printerFuncKey: printer.CveKey}},
 			fieldnames.UnscannedImage:       {{required: set.NewStringSet(augmentedobjs.ImageScanCustomTag), printerFuncKey: printer.ImageScanKey}},
 		},
 	}

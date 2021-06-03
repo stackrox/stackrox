@@ -40,27 +40,43 @@ func ForDropCaps() QueryBuilder {
 
 // ForCVE returns a query builder for CVEs.
 func ForCVE() QueryBuilder {
-	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
 		return []*query.FieldQuery{
 			fieldQueryFromGroup(group, search.CVE, valueToStringRegex),
-			{
-				Field:  search.CVESuppressed.String(),
-				Values: []string{"false"},
-			},
 		}
 	})
 }
 
 // ForCVSS returns a query builder for CVSS scores.
 func ForCVSS() QueryBuilder {
-	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
 		return []*query.FieldQuery{
 			fieldQueryFromGroup(group, search.CVSS, nil),
-			{
-				Field:  search.CVESuppressed.String(),
-				Values: []string{"false"},
-			},
 		}
+	})
+}
+
+// ForSeverity returns a query builder for Severity ratings.
+func ForSeverity() QueryBuilder {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.Severity, func(value string) string {
+				// The full enum is `<SEVERITY>_VULNERABILITY_SEVERITY`
+				// For UX purposes when people write their own JSON policies,
+				// we do not require people to write the entire enum,
+				// but instead just the `<SEVERITY> part.`
+				return value + "_VULNERABILITY_SEVERITY"
+			}),
+		}
+	})
+}
+
+func wrapForVulnMgmt(f queryBuilderFunc) QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return append(f(group), &query.FieldQuery{
+			Field:  search.CVESuppressed.String(),
+			Values: []string{"false"},
+		})
 	})
 }
 
