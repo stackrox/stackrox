@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import without from 'lodash/without';
 
 import useAutoCompleteResults from 'hooks/useAutoCompleteResults';
 import { networkFlowStatus } from 'constants/networkGraph';
@@ -39,14 +40,19 @@ const dataResolversByCategory = {
 export function getNetworkBaselineValueByCategory(datum, category) {
     return dataResolversByCategory[category]?.(datum);
 }
+function NetworkBaselinesSearch({
+    networkBaselines,
+    searchOptions,
+    setSearchOptions,
+    excludedSearchCategories,
+}) {
+    const includedSearchCategories = without(searchCategories, ...excludedSearchCategories);
+    const networkFlowSearchModifiers = createSearchModifiers(includedSearchCategories);
 
-const networkFlowSearchModifiers = createSearchModifiers(searchCategories);
-
-function NetworkBaselinesSearch({ networkBaselines, searchOptions, setSearchOptions }) {
     const autoCompleteResults = useAutoCompleteResults(
         networkBaselines,
         searchOptions,
-        searchCategories,
+        includedSearchCategories,
         getNetworkBaselineValueByCategory
     );
 
@@ -82,11 +88,13 @@ NetworkBaselinesSearch.propTypes = {
     ),
     searchOptions: PropTypes.arrayOf(PropTypes.shape),
     setSearchOptions: PropTypes.func.isRequired,
+    excludedSearchCategories: PropTypes.arrayOf(PropTypes.string),
 };
 
 NetworkBaselinesSearch.defaultProps = {
     networkBaselines: [],
     searchOptions: [],
+    excludedSearchCategories: [],
 };
 
 export default NetworkBaselinesSearch;

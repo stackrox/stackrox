@@ -33,6 +33,7 @@ function NetworkBaselines({
     filterState,
     onNavigateToEntity,
     includedBaselineStatuses,
+    excludedSearchCategories,
 }) {
     const toggleBaselineStatuses = useToggleBaselineStatuses(deploymentId);
     const [page, setPage] = useState(0);
@@ -73,6 +74,7 @@ function NetworkBaselines({
                             networkBaselines={networkBaselines}
                             searchOptions={searchOptions}
                             setSearchOptions={setSearchOptions}
+                            excludedSearchCategories={excludedSearchCategories}
                         />
                     </div>
                 </PanelHeadEnd>
@@ -85,6 +87,7 @@ function NetworkBaselines({
                     onNavigateToEntity={onNavigateToEntity}
                     toggleBaselineStatuses={toggleBaselineStatuses}
                     includedBaselineStatuses={includedBaselineStatuses}
+                    excludedColumns={excludedSearchCategories}
                 />
             </PanelBody>
         </PanelNew>

@@ -20,7 +20,7 @@ export type FlattenedPeer = {
     port: string;
     protocol: Protocol;
     ingress: boolean;
-    state: ConnectionState;
+    state?: ConnectionState;
 };
 
 export type Peer = {
@@ -32,7 +32,7 @@ export type Peer = {
     }[];
     ingress: boolean;
     egress: boolean;
-    state: ConnectionState;
+    state?: ConnectionState;
 };
 
 export type FlattenedNetworkBaseline = {

@@ -53,6 +53,7 @@ function NetworkFlows({
             filterState={filterModes}
             onNavigateToEntity={onNavigateToEntity}
             includedBaselineStatuses={[networkFlowStatus.ANOMALOUS, networkFlowStatus.BASELINE]}
+            excludedSearchCategories={[]}
         />
     );
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
 import { fetchNetworkBaselines } from 'services/NetworkService';
-import { filterLabels } from 'constants/networkFilterModes';
 import { BaselineStatus, FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
 import { networkFlowStatus, nodeTypes } from 'constants/networkGraph';
 
@@ -62,7 +61,6 @@ function useFetchNetworkBaselines({
                                 ingress: property.ingress,
                                 port: property.port,
                                 protocol: property.protocol,
-                                state: filterLabels[filterState],
                             };
                             acc.push({
                                 peer,

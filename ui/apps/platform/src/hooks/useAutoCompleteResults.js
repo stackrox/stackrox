@@ -23,7 +23,7 @@ export function getAutoCompleteResultsByCategories(data, categories, getDataValu
             // if the value is an array, we need to add each item to the set
             if (Array.isArray(value)) {
                 value.forEach((item) => acc[category].add(item.toString()));
-            } else {
+            } else if (value) {
                 acc[category].add(value.toString());
             }
         });

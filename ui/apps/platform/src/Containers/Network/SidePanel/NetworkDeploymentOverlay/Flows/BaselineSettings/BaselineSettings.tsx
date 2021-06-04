@@ -58,6 +58,7 @@ function BaselineSettings({
                 filterState={filterModes}
                 onNavigateToEntity={onNavigateToEntity}
                 includedBaselineStatuses={[networkFlowStatus.BASELINE]}
+                excludedSearchCategories={['State']}
             />
             {isBaselineSimulationFeatureEnabled && (
                 <div className="flex justify-center items-center py-4 border-t border-base-300 bg-base-100">

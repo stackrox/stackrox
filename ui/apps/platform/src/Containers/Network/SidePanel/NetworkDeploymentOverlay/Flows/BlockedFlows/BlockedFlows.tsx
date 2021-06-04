@@ -47,6 +47,7 @@ function BlockedFlows({
             filterState={filterModes}
             onNavigateToEntity={onNavigateToEntity}
             includedBaselineStatuses={[networkFlowStatus.BLOCKED]}
+            excludedSearchCategories={[]}
         />
     );
 }

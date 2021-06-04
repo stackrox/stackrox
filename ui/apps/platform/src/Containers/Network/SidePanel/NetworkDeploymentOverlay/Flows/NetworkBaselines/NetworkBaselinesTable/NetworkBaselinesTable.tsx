@@ -36,6 +36,7 @@ export type NetworkBaselinesTableProps = {
     toggleBaselineStatuses: (networkBaselines: FlattenedNetworkBaseline[]) => void;
     onNavigateToEntity: () => void;
     includedBaselineStatuses: BaselineStatus[];
+    excludedColumns: string[];
 };
 
 function getEmptyGroupRow(status: BaselineStatus): Row {
@@ -131,7 +132,7 @@ const columns = [
         Header: 'State',
         id: 'state',
         accessor: (datum: FlattenedNetworkBaseline): string => {
-            return networkConnectionLabels[datum.peer.state];
+            return datum.peer.state ? networkConnectionLabels[datum.peer.state] : '-';
         },
         aggregate: (leafValues: string[]): string => {
             return getAggregateText(leafValues);
@@ -144,10 +145,18 @@ function NetworkBaselinesTable({
     toggleBaselineStatuses,
     onNavigateToEntity,
     includedBaselineStatuses,
+    excludedColumns = [],
 }: NetworkBaselinesTableProps): ReactElement {
+    const includedColumns = React.useMemo(() => {
+        if (!excludedColumns.length) {
+            return columns;
+        }
+        const result = columns.filter(({ Header }) => !excludedColumns.includes(Header));
+        return result;
+    }, [excludedColumns]);
     const { headerGroups, rows, prepareRow, selectedFlatRows } = useTable(
         {
-            columns,
+            columns: includedColumns,
             data: networkBaselines,
             initialState: {
                 sortBy: [
@@ -298,7 +307,7 @@ function NetworkBaselinesTable({
                                     !row.leafRows.length && (
                                         <EmptyGroupedStatusRow
                                             baselineStatus={row.groupByVal}
-                                            columnCount={columns.length}
+                                            columnCount={includedColumns.length}
                                         />
                                     )}
                             </>
