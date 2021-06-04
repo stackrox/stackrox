@@ -41,8 +41,11 @@ type CentralSpec struct {
 
 // Egress defines settings related to outgoing network traffic.
 type Egress struct {
-	ConnectivityPolicy *ConnectivityPolicy          `json:"connectivityPolicy,omitempty"`
-	ProxyConfigSecret  *corev1.LocalObjectReference `json:"proxyConfigSecret,omitempty"`
+	ConnectivityPolicy *ConnectivityPolicy `json:"connectivityPolicy,omitempty"`
+	// TODO(ROX-7272): support proxy-aware openshift infrastructure feature
+
+	// Reference to a secret which must contain a member named "config.yaml" that specifies the proxy configuration for central and scanner.
+	ProxyConfigSecret *corev1.LocalObjectReference `json:"proxyConfigSecret,omitempty"`
 }
 
 // ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.
@@ -61,9 +64,13 @@ type CentralComponentSpec struct {
 	TelemetryPolicy       *TelemetryPolicy     `json:"telemetryPolicy,omitempty"`
 	Endpoint              *CentralEndpointSpec `json:"endpoint,omitempty"`
 	Crypto                *CentralCryptoSpec   `json:"crypto,omitempty"`
-	// Points to a Secret with admin password stored in data item "value"
-	// If omitted, the operator will generate a password, create such secret and expose its name in status.central.generatedAdminPasswordSecret
+
 	// Implementation note: this is distinct from the secret that contains the htpasswd-encoded password mounted in central.
+	// TODO(ROX-7242): expose the secret name unconditionally
+
+	// Reference to a user-created Secret with admin password stored in data item "value".
+	// If omitted, the operator will instead auto-generate a password, create such secret and
+	// expose the name of that secret (if it is different from the name "central-admin-password") in status.central.generatedAdminPasswordSecret
 	AdminPasswordSecret *corev1.LocalObjectReference `json:"adminPasswordSecret,omitempty"`
 	Persistence         *Persistence                 `json:"persistence,omitempty"`
 	Exposure            *Exposure                    `json:"exposure,omitempty"`
@@ -217,6 +224,7 @@ type CentralStatus struct {
 // CentralComponentStatus describes status specific to the central component.
 type CentralComponentStatus struct {
 	// If the admin password was auto-generated, it will be stored in this secret.
+	// This field is omitted if the name of the secret is "central-admin-password".
 	// See also spec.central.adminPasswordSecret
 	GeneratedAdminPasswordSecret *corev1.LocalObjectReference `json:"generatedAdminPasswordSecret"`
 }

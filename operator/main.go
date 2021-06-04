@@ -23,10 +23,9 @@ import (
 	"github.com/stackrox/rox/image"
 	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
 	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
+	centraltranslation "github.com/stackrox/rox/operator/pkg/central/values/translation"
 	helmReconciler "github.com/stackrox/rox/operator/pkg/reconciler"
-	"github.com/stackrox/rox/operator/pkg/securedcluster/values/translation"
-	"helm.sh/helm/v3/pkg/chartutil"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	securedclustertranslation "github.com/stackrox/rox/operator/pkg/securedcluster/values/translation"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -54,21 +53,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
-}
-
-type translator struct{}
-
-func (translator) Translate(u *unstructured.Unstructured) (chartutil.Values, error) {
-	central := centralv1Alpha1.Central{}
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &central)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO(ROX-7088): replace this placeholder translation
-	v := chartutil.Values{}
-
-	return v, err
 }
 
 func main() {
@@ -102,13 +86,13 @@ func main() {
 	}
 
 	centralGVK := schema.GroupVersionKind{Group: centralv1Alpha1.GroupVersion.Group, Version: centralv1Alpha1.GroupVersion.Version, Kind: centralKind}
-	if err := helmReconciler.SetupReconcilerWithManager(mgr, centralGVK, image.CentralServicesChartPrefix, translator{}); err != nil {
+	if err := helmReconciler.SetupReconcilerWithManager(mgr, centralGVK, image.CentralServicesChartPrefix, centraltranslation.Translator{Config: mgr.GetConfig()}); err != nil {
 		setupLog.Error(err, "unable to setup central reconciler")
 		os.Exit(1)
 	}
 
 	securedClusterGVK := schema.GroupVersionKind{Group: securedClusterv1Alpha1.GroupVersion.Group, Version: securedClusterv1Alpha1.GroupVersion.Version, Kind: securedClusterKind}
-	if err := helmReconciler.SetupReconcilerWithManager(mgr, securedClusterGVK, image.SecuredClusterServicesChartPrefix, translation.Translator{Config: mgr.GetConfig()}); err != nil {
+	if err := helmReconciler.SetupReconcilerWithManager(mgr, securedClusterGVK, image.SecuredClusterServicesChartPrefix, securedclustertranslation.Translator{Config: mgr.GetConfig()}); err != nil {
 		setupLog.Error(err, "unable to setup secured cluster reconciler")
 		os.Exit(1)
 	}

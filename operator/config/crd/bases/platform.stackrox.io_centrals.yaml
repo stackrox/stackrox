@@ -41,11 +41,11 @@ spec:
                   component.
                 properties:
                   adminPasswordSecret:
-                    description: 'Points to a Secret with admin password stored in
-                      data item "value" If omitted, the operator will generate a password,
-                      create such secret and expose its name in status.central.generatedAdminPasswordSecret
-                      Implementation note: this is distinct from the secret that contains
-                      the htpasswd-encoded password mounted in central.'
+                    description: Reference to a user-created Secret with admin password
+                      stored in data item "value". If omitted, the operator will instead
+                      auto-generate a password, create such secret and expose the
+                      name of that secret (if it is different from the name "central-admin-password")
+                      in status.central.generatedAdminPasswordSecret
                     properties:
                       name:
                         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -231,8 +231,9 @@ spec:
                     description: ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.
                     type: string
                   proxyConfigSecret:
-                    description: LocalObjectReference contains enough information
-                      to let you locate the referenced object inside the same namespace.
+                    description: Reference to a secret which must contain a member
+                      named "config.yaml" that specifies the proxy configuration for
+                      central and scanner.
                     properties:
                       name:
                         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -494,7 +495,8 @@ spec:
                 properties:
                   generatedAdminPasswordSecret:
                     description: If the admin password was auto-generated, it will
-                      be stored in this secret. See also spec.central.adminPasswordSecret
+                      be stored in this secret. This field is omitted if the name
+                      of the secret is "central-admin-password". See also spec.central.adminPasswordSecret
                     properties:
                       name:
                         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names

@@ -118,6 +118,14 @@ func (v *ValuesBuilder) SetBoolValue(key string, value bool) {
 	v.getData()[key] = value
 }
 
+// SetInt32 adds int32 value, if present, under the given key.  Records error on attempt to overwrite key.
+func (v *ValuesBuilder) SetInt32(key string, value *int32) {
+	if value == nil || v.validateKey(key) != nil {
+		return
+	}
+	v.getData()[key] = *value
+}
+
 // SetString adds string value, if present, under the given key. Records error on attempt to overwrite key.
 func (v *ValuesBuilder) SetString(key string, value *string) {
 	if value == nil || v.validateKey(key) != nil {
@@ -137,6 +145,14 @@ func (v *ValuesBuilder) SetStringValue(key string, value string) {
 // SetPullPolicy adds pull policy value, if present, under the given key. Records error on attempt to overwrite key.
 func (v *ValuesBuilder) SetPullPolicy(key string, value *v1.PullPolicy) {
 	v.SetString(key, (*string)(value))
+}
+
+// SetStringSlice adds slice, if not empty, under the given key. Records error on attempt to overwrite key.
+func (v *ValuesBuilder) SetStringSlice(key string, value []string) {
+	if len(value) == 0 || v.validateKey(key) != nil {
+		return
+	}
+	v.getData()[key] = value
 }
 
 // SetStringMap adds map, if not empty, under the given key. Records error on attempt to overwrite key.

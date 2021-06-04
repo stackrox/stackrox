@@ -161,7 +161,7 @@ func TestGetServiceTLS(t *testing.T) {
 				clientSet:  fake.NewSimpleClientset(),
 				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
 			},
-			wantErr: "failed to fetch.* secret.* secrets \"secret-name\" not found",
+			wantErr: "failed to retrieve.* secret.* secrets \"secret-name\" not found",
 		},
 		"key-fail": {
 			args: args{
@@ -173,7 +173,7 @@ func TestGetServiceTLS(t *testing.T) {
 				}),
 				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
 			},
-			wantErr: "secret \"secret-name\" in namespace \"nsname\" does not contain member \"key\"",
+			wantErr: "secret \"secret-name\" in namespace \"nsname\".* does not contain member \"key\"",
 		},
 		"data-fail": {
 			args: args{
@@ -186,12 +186,12 @@ func TestGetServiceTLS(t *testing.T) {
 				}),
 				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
 			},
-			wantErr: "secret \"secret-name\" in namespace \"nsname\" does not contain member \"cert\"",
+			wantErr: "secret \"secret-name\" in namespace \"nsname\".* does not contain member \"cert\"",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			values, err := GetServiceTLS(context.Background(), tt.args.clientSet, "nsname", tt.args.serviceTLS).Build()
+			values, err := GetServiceTLS(context.Background(), tt.args.clientSet, "nsname", tt.args.serviceTLS, "spec.fake.path").Build()
 			if tt.wantErr != "" {
 				assert.Regexp(t, tt.wantErr, err)
 			} else {

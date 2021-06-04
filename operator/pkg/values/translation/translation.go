@@ -49,33 +49,69 @@ func GetCustomize(customizeSpec *common.CustomizeSpec) *ValuesBuilder {
 }
 
 // GetServiceTLS reads given secret and returns "serviceTLS" chart values.
-func GetServiceTLS(ctx context.Context, clientSet kubernetes.Interface, namespace string, serviceTLS *corev1.LocalObjectReference) *ValuesBuilder {
+func GetServiceTLS(ctx context.Context, clientSet kubernetes.Interface, namespace string, serviceTLS *corev1.LocalObjectReference, crPath string) *ValuesBuilder {
+	return GetServiceTLSWithKey(ctx, clientSet, namespace, serviceTLS, crPath, "serviceTLS")
+}
+
+// GetServiceTLSWithKey reads given secret and returns chart values with given key.
+func GetServiceTLSWithKey(ctx context.Context, clientSet kubernetes.Interface, namespace string, serviceTLS *corev1.LocalObjectReference, crPath string, key string) *ValuesBuilder {
 	if serviceTLS == nil {
 		return nil
 	}
 
-	tlsValues := NewValuesBuilder()
-
-	secretName := serviceTLS.Name
-	secret, err := clientSet.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
-	if err != nil {
-		return tlsValues.SetError(errors.Wrapf(err, "failed to fetch ServiceTLS secret %q", secretName))
-	}
-
-	if key, ok := secret.StringData["key"]; ok {
-		tlsValues.SetStringValue("key", key)
-	} else {
-		return tlsValues.SetError(fmt.Errorf("secret %q in namespace %q does not contain member %q", secretName, namespace, "key"))
-	}
-
-	if cert, ok := secret.StringData["cert"]; ok {
-		tlsValues.SetStringValue("cert", cert)
-	} else {
-		return tlsValues.SetError(fmt.Errorf("secret %q in namespace %q does not contain member %q", secretName, namespace, "cert"))
-	}
-
 	res := NewValuesBuilder()
-	res.AddChild("serviceTLS", &tlsValues)
-
+	res.AddChild(key, NewBuilderFromSecret(ctx, clientSet, namespace, serviceTLS, map[string]string{"key": "key", "cert": "cert"}, crPath))
 	return &res
+}
+
+// GetImagePullSecrets converts corev1.LocalObjectReference to a *ValuesBuilder with an "imagePullSecrets" field.
+func GetImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) *ValuesBuilder {
+	res := NewValuesBuilder()
+	// TODO(ROX-7179): support imagePullSecrets.allowNone and/or disabling fromDefaultServiceAccount?
+	if len(imagePullSecrets) > 0 {
+		var ps []string
+		for _, secret := range imagePullSecrets {
+			ps = append(ps, secret.Name)
+		}
+		existing := NewValuesBuilder()
+		existing.SetStringSlice("useExisting", ps)
+		res.AddChild("imagePullSecrets", &existing)
+	}
+	return &res
+}
+
+// GetTLSConfig converts common.TLSConfig to a *ValuesBuilder with an "additionalCAs" field.
+func GetTLSConfig(tls *common.TLSConfig) *ValuesBuilder {
+	res := NewValuesBuilder()
+	// TODO(ROX-7148): support setting ca.cert (and for central also ca.key)
+	if tls != nil && len(tls.AdditionalCAs) > 0 {
+		cas := NewValuesBuilder()
+		for _, ca := range tls.AdditionalCAs {
+			cas.SetStringValue(ca.Name, ca.Content)
+		}
+		res.AddChild("additionalCAs", &cas)
+	}
+	return &res
+}
+
+// NewBuilderFromSecret returns a *ValuesBuilder with string values with given keys based on components in the referred kubernetes Secret.
+func NewBuilderFromSecret(ctx context.Context, clientSet kubernetes.Interface, namespace string, secret *corev1.LocalObjectReference, membersToKeys map[string]string, crPath string) *ValuesBuilder {
+	v := NewValuesBuilder()
+	if secret == nil {
+		return &v
+	}
+	secretObj, err := clientSet.CoreV1().Secrets(namespace).Get(ctx, secret.Name, metav1.GetOptions{})
+	if err != nil {
+		return v.SetError(errors.Wrapf(err, "failed to retrieve secret %q in namespace %q configured in %s", secret.Name, namespace, crPath))
+	}
+	for secretMember, builderKey := range membersToKeys {
+		value, ok := secretObj.StringData[secretMember]
+		if ok {
+			v.SetStringValue(builderKey, value)
+		} else {
+			// Check all items in map before returning.
+			v.SetError(fmt.Errorf("secret %q in namespace %q configured in %s does not contain member %q", secret.Name, namespace, crPath, secretMember))
+		}
+	}
+	return &v
 }

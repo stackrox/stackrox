@@ -173,9 +173,19 @@ func TestSetValues(t *testing.T) {
 	v.SetStringValue("string", word)
 	v.SetStringValue("empty-string", noWord)
 
+	numberInt32 := int32(42)
+	zeroInt32 := int32(0)
+	v.SetInt32("int32", &numberInt32)
+	v.SetInt32("zero-int32", &zeroInt32)
+
 	pullPolicy := v1.PullAlways
 	v.SetPullPolicy("pull-policy", &pullPolicy)
 	v.SetPullPolicy("nil-pull-policy", nil)
+
+	stringSlice := []string{"string1", ""}
+	v.SetStringSlice("string-slice", stringSlice)
+	v.SetStringSlice("nil-string-slice", nil)
+	v.SetStringSlice("empty-string-slice", []string{})
 
 	stringMap := map[string]string{"string-key": "string-value"}
 	v.SetStringMap("string-map", stringMap)
@@ -200,11 +210,14 @@ func TestSetValues(t *testing.T) {
 	assert.Equal(t, chartutil.Values{
 		"bool-pointer":           true,
 		"bool":                   true,
+		"int32":                  int32(42),
+		"zero-int32":             int32(0),
 		"string-pointer":         "freedom",
 		"empty-string-pointer":   "",
 		"string":                 "freedom",
 		"empty-string":           "",
 		"pull-policy":            "Always",
+		"string-slice":           []string{"string1", ""},
 		"string-map":             map[string]string{"string-key": "string-value"},
 		"resources":              v1.ResourceList{v1.ResourceCPU: resource.Quantity{Format: "6"}},
 		"chartutil-values":       chartutil.Values{"chartutil-key": "chartutil-anything"},

@@ -41,25 +41,10 @@ func Translate(ctx context.Context, clientSet kubernetes.Interface, sc securedcl
 
 	v.SetString("centralEndpoint", sc.Spec.CentralEndpoint)
 
-	if sc.Spec.TLS != nil && len(sc.Spec.TLS.AdditionalCAs) > 0 {
-		var cas []chartutil.Values
-		for _, ca := range sc.Spec.TLS.AdditionalCAs {
-			cas = append(cas, chartutil.Values{ca.Name: ca.Content})
-		}
-		v.SetChartutilValuesSlice("additionalCAs", cas)
-	}
-
-	// TODO(ROX-7179): support imagePullSecrets.allowNone and/or disabling fromDefaultServiceAccount?
-	if len(sc.Spec.ImagePullSecrets) > 0 {
-		var ps []string
-		for _, secret := range sc.Spec.ImagePullSecrets {
-			ps = append(ps, secret.Name)
-		}
-		v.SetChartutilValues("imagePullSecrets", chartutil.Values{"useExisting": ps})
-	}
+	v.AddAllFrom(translation.GetTLSConfig(sc.Spec.TLS))
+	v.AddAllFrom(translation.GetImagePullSecrets(sc.Spec.ImagePullSecrets))
 
 	// TODO(ROX-7178): support explicit env.openshift and env.istio setting
-	// TODO(ROX-7148): support setting ca.cert
 	// TODO(ROX-7150): support setting/overriding images
 
 	customize := translation.NewValuesBuilder()
@@ -90,7 +75,7 @@ func getSensorValues(ctx context.Context, clientSet kubernetes.Interface, namesp
 
 	sv.SetPullPolicy("imagePullPolicy", sensor.ImagePullPolicy)
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
-	sv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, sensor.ServiceTLS))
+	sv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, sensor.ServiceTLS, "spec.sensor.serviceTLS"))
 	sv.SetStringMap("nodeSelector", sensor.NodeSelector)
 	sv.SetString("endpoint", sensor.Endpoint)
 
@@ -102,7 +87,7 @@ func getAdmissionControlValues(ctx context.Context, clientSet kubernetes.Interfa
 
 	acv.SetPullPolicy("imagePullPolicy", admissionControl.ImagePullPolicy)
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
-	acv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, admissionControl.ServiceTLS))
+	acv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, admissionControl.ServiceTLS, "spec.admissionControl.serviceTLS"))
 	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
 	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
 	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
@@ -139,7 +124,7 @@ func getCollectorValues(ctx context.Context, clientSet kubernetes.Interface, nam
 
 	cv.AddAllFrom(getCollectorContainerValues(collector.Collector))
 	cv.AddAllFrom(getComplianceContainerValues(collector.Compliance))
-	cv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, collector.ServiceTLS))
+	cv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, collector.ServiceTLS, "spec.collector.serviceTLS"))
 
 	return &cv
 }
