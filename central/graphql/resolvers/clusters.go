@@ -76,6 +76,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `complianceControlCount(query: String): ComplianceControlCount!`),
 		schema.AddExtraResolver("Cluster", `risk: Risk`),
 		schema.AddExtraResolver("Cluster", `isGKECluster: Boolean!`),
+		schema.AddExtraResolver("Cluster", `isOpenShiftCluster: Boolean!`),
 		schema.AddExtraResolver("Cluster", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("Cluster", `istioEnabled: Boolean!`),
 		schema.AddExtraResolver("Cluster", "plottedVulns(query: String): PlottedVulnerabilities!"),
@@ -909,6 +910,11 @@ func (resolver *clusterResolver) IsGKECluster() (bool, error) {
 	version := resolver.data.GetStatus().GetOrchestratorMetadata().GetVersion()
 	ok := resolver.root.cveMatcher.IsGKEVersion(version)
 	return ok, nil
+}
+
+func (resolver *clusterResolver) IsOpenShiftCluster() (bool, error) {
+	metadata := resolver.data.GetStatus().GetOrchestratorMetadata()
+	return metadata.GetIsOpenshift() != nil, nil
 }
 
 func (resolver *clusterResolver) IstioEnabled(ctx context.Context) (bool, error) {

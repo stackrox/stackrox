@@ -814,7 +814,7 @@ describe('WorkflowState', () => {
      * &workflowState[1][t]=COMPONENT
      *
      * 1. In Vulnerability Management Dashboard, click View All
-     *    at the right of Clusters with the most k8s & istio vulnerabilities
+     *    at the right of Clusters with the most orchestrator & istio vulnerabilities
      * 2. In Clusters Entity List, click a row
      * 3. In Cluster side panel, click Components under Related entities
      */

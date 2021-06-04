@@ -178,11 +178,16 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 	versionToClusters := make(map[string][]*storage.Cluster)
 	for _, cluster := range clusters {
 		var version string
+		metadata := cluster.GetStatus().GetOrchestratorMetadata()
 		switch cveType {
 		case converter.K8s:
-			version = cluster.GetStatus().GetOrchestratorMetadata().GetVersion()
+			// Skip K8S scan if this is an OpenShift cluster.
+			if metadata.GetIsOpenshift() != nil {
+				continue
+			}
+			version = metadata.GetVersion()
 		case converter.OpenShift:
-			version = cluster.GetStatus().GetOrchestratorMetadata().GetOpenshiftVersion()
+			version = metadata.GetOpenshiftVersion()
 		}
 
 		if version == "" {
