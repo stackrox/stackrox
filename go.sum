@@ -1577,8 +1577,8 @@ github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a h
 github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a/go.mod h1:faUw9vx/mA7ql41Ftlst5MYar2DT3nnS6oK94lbaW0g=
 github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca h1:teIgFfrO9MJjja7m3vCWjXeFfYh90/yOLhRNW1BoIfM=
 github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca/go.mod h1:4DO5Bk5QEsgH2AyJowQ/hP+RzfAb9JanP6W3USogT9E=
-github.com/stackrox/helm-operator v0.0.8-0.20210525092525-88508a237f9f h1:/pO3Uy4zgQD0b8CQUMXbFK9mXNrMEk2timkhHYvlVO0=
-github.com/stackrox/helm-operator v0.0.8-0.20210525092525-88508a237f9f/go.mod h1:u5rkZgJvT0MfanZCoq/lCqY+3Ixr+CbPxYNnhvsggHg=
+github.com/stackrox/helm-operator v0.0.8-0.20210601093410-c3df552af1b1 h1:KUpGzcXh3fcv9eBpJYrtM2IBf46zuxmwp9CEMawLW9c=
+github.com/stackrox/helm-operator v0.0.8-0.20210601093410-c3df552af1b1/go.mod h1:u5rkZgJvT0MfanZCoq/lCqY+3Ixr+CbPxYNnhvsggHg=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab h1:77xJmm1YkqbgrQzHI3C4MyPckWL+PYRLWakQRC6Mzj8=
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab/go.mod h1:EBskgGC5Gzt/r8ToNsuD6tYMcf+AWY0ubaFSRy5/3QM=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9 h1:IXESjfBZNfZjU+VuVdxLZvkeiMPlodw94++hjOLORis=

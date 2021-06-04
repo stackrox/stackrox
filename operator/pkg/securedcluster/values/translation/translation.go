@@ -20,16 +20,15 @@ type Translator struct {
 }
 
 // Translate translates and enriches helm values
-func (t Translator) Translate(u *unstructured.Unstructured) (chartutil.Values, error) {
+func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
 	sc := securedcluster.SecuredCluster{}
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &sc)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(ROX-7250): propagate context to Translators
 	// TODO(ROX-7251): make sure that the client we create here is kosher
-	return Translate(context.TODO(), kubernetes.NewForConfigOrDie(t.Config), sc)
+	return Translate(ctx, kubernetes.NewForConfigOrDie(t.Config), sc)
 }
 
 // Translate translates a SecuredCluster CR into helm values.
