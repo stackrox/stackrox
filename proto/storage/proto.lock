@@ -2655,6 +2655,10 @@
               {
                 "name": "NODE_CVE",
                 "integer": 4
+              },
+              {
+                "name": "OPENSHIFT_CVE",
+                "integer": 5
               }
             ]
           },

@@ -20,7 +20,7 @@ import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
 import RecentlyDetectedVulnerabilities from '../widgets/RecentlyDetectedVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
-import ClustersWithMostK8sIstioVulnerabilities from '../widgets/ClustersWithMostK8sIstioVulnerabilities';
+import ClustersWithMostOrchestratorIstioVulnerabilities from '../widgets/ClustersWithMostOrchestratorIstioVulnerabilities';
 
 const entityMenuTypes = [
     entityTypes.CLUSTER,
@@ -118,7 +118,7 @@ const VulnDashboardPage = ({ history }) => {
                 <DeploymentsWithMostSeverePolicyViolations limit={DASHBOARD_LIMIT} />
             </div>
             <div className="s-2 xxxl:sx-2">
-                <ClustersWithMostK8sIstioVulnerabilities />
+                <ClustersWithMostOrchestratorIstioVulnerabilities />
             </div>
         </DashboardLayout>
     );

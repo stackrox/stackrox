@@ -275,10 +275,10 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 				assert.Equal(t, len(cve.Children), 1) // Cluster 2
 				assert.Equal(t, cve.Children[0].ClusterID, clusters[0].GetId())
 			case "CVE-3":
-				assert.Equal(t, len(cve.Children), 3) // Cluster 1, 2, 3
+				assert.Equal(t, len(cve.Children), 2) // Cluster 1, 2
 				ss := set.StringSet{}
-				ss.AddAll(cve.Children[0].ClusterID, cve.Children[1].ClusterID, cve.Children[2].ClusterID)
-				assert.Equal(t, len(ss), 3)
+				ss.AddAll(cve.Children[0].ClusterID, cve.Children[1].ClusterID)
+				assert.Equal(t, len(ss), 2)
 			}
 		}
 	})
