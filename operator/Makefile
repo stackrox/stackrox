@@ -143,7 +143,7 @@ operator-sdk: ## Download operator-sdk locally if necessary.
 	@[ -f $(OPERATOR_SDK) ] || { \
 	set -euo pipefail ;\
 	OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v1.5.2 ;\
-	ARCH=$$(case $$(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $$(uname -m) ;; esac) ;\
+	ARCH=$$(case $$(uname -m) in (x86_64) echo -n amd64 ;; (aarch64) echo -n arm64 ;; (*) echo -n $$(uname -m) ;; esac) ;\
 	OS=$$(uname | awk '{print tolower($$0)}') ;\
 	set -x ;\
 	curl --fail --location --output $(OPERATOR_SDK) $${OPERATOR_SDK_DL_URL}/operator-sdk_$${OS}_$${ARCH} ;\
@@ -174,3 +174,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 .PHONY: bundle-build
 bundle-build: ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+.PHONY: bundle-test
+bundle-test: operator-sdk ## Run bundle tests.
+	$(OPERATOR_SDK) scorecard bundle

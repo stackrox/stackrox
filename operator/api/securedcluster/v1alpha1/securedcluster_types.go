@@ -30,20 +30,29 @@ import (
 
 // SecuredClusterSpec defines the desired configuration state of a secured cluster.
 type SecuredClusterSpec struct {
-	// ClusterName should specify the name assigned to your secured cluster.
 	// TODO(ROX-7125): decide how to guarantee immutability; use metadata.name instead?
+
+	// ClusterName should specify the name assigned to your secured cluster.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	ClusterName string `json:"clusterName"`
 	// CentralEndpoint should specify the address of the Central endpoint, including the port number.
 	// If using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address
 	// with wss://.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	CentralEndpoint *string `json:"centralEndpoint,omitempty"`
 
-	TLS              *common.TLSConfig              `json:"tls,omitempty"`
-	ImagePullSecrets []corev1.LocalObjectReference  `json:"imagePullSecrets,omitempty"`
-	Sensor           *SensorComponentSpec           `json:"sensor,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	TLS *common.TLSConfig `json:"tls,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	Sensor *SensorComponentSpec `json:"sensor,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	AdmissionControl *AdmissionControlComponentSpec `json:"admissionControl,omitempty"`
-	Collector        *CollectorComponentSpec        `json:"collector,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	Collector *CollectorComponentSpec `json:"collector,omitempty"`
 	// Customizations to apply on all secured cluster components.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 	// TODO(ROX-7150): We do not support setting image in the CRs because they are determined by
 	// the operator version whose lifecycle is orthogonal to that of the CR.
@@ -158,9 +167,12 @@ const (
 
 // SecuredClusterStatus defines the observed state of SecuredCluster
 type SecuredClusterStatus struct {
-	Conditions      []common.StackRoxCondition `json:"conditions"`
-	DeployedRelease *common.StackRoxRelease    `json:"deployedRelease,omitempty"`
-	SensorStatus    *SensorComponentStatus     `json:"sensorStatus,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	Conditions []common.StackRoxCondition `json:"conditions"`
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	DeployedRelease *common.StackRoxRelease `json:"deployedRelease,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	SensorStatus *SensorComponentStatus `json:"sensorStatus,omitempty"`
 }
 
 // SensorComponentStatus describes status specific to the sensor component.
@@ -170,6 +182,7 @@ type SensorComponentStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,admission-control},{DaemonSet,v1,collector},{Deployment,v1,sensor}}
 
 // SecuredCluster is the configuration template for the secured cluster services.
 type SecuredCluster struct {

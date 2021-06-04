@@ -112,7 +112,7 @@ spec:
                 description: CentralEndpoint should specify the address of the Central endpoint, including the port number. If using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with wss://.
                 type: string
               clusterName:
-                description: 'ClusterName should specify the name assigned to your secured cluster. TODO(ROX-7125): decide how to guarantee immutability; use metadata.name instead?'
+                description: ClusterName should specify the name assigned to your secured cluster.
                 type: string
               collector:
                 description: CollectorComponentSpec declares configuration settings for the collector component.

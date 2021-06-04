@@ -45,11 +45,99 @@ spec:
       displayName: Central
       kind: Central
       name: centrals.platform.stackrox.io
+      resources:
+      - kind: Deployment
+        name: central
+        version: v1
+      - kind: Deployment
+        name: scanner
+        version: v1
+      - kind: Deployment
+        name: scanner-db
+        version: v1
+      specDescriptors:
+      - displayName: Central
+        path: central
+      - description: Customizations to apply on all central components.
+        displayName: Customize
+        path: customize
+      - displayName: Egress
+        path: egress
+      - displayName: Image Pull Secrets
+        path: imagePullSecrets
+      - displayName: Scanner
+        path: scanner
+      - displayName: TLS
+        path: tls
+      statusDescriptors:
+      - displayName: Central Status
+        path: centralStatus
+      - displayName: Conditions
+        path: conditions
+      - displayName: Last Transition Time
+        path: conditions[0].lastTransitionTime
+      - displayName: Message
+        path: conditions[0].message
+      - displayName: Reason
+        path: conditions[0].reason
+      - displayName: Status
+        path: conditions[0].status
+      - displayName: Type
+        path: conditions[0].type
+      - displayName: Deployed Release
+        path: deployedRelease
       version: v1alpha1
     - description: SecuredCluster is the configuration template for the secured cluster services.
       displayName: Secured Cluster
       kind: SecuredCluster
       name: securedclusters.platform.stackrox.io
+      resources:
+      - kind: Deployment
+        name: admission-control
+        version: v1
+      - kind: DaemonSet
+        name: collector
+        version: v1
+      - kind: Deployment
+        name: sensor
+        version: v1
+      specDescriptors:
+      - displayName: Admission Control
+        path: admissionControl
+      - description: CentralEndpoint should specify the address of the Central endpoint, including the port number. If using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with wss://.
+        displayName: Central Endpoint
+        path: centralEndpoint
+      - description: ClusterName should specify the name assigned to your secured cluster.
+        displayName: Cluster Name
+        path: clusterName
+      - displayName: Collector
+        path: collector
+      - description: Customizations to apply on all secured cluster components.
+        displayName: Customize
+        path: customize
+      - displayName: Image Pull Secrets
+        path: imagePullSecrets
+      - displayName: Sensor
+        path: sensor
+      - displayName: TLS
+        path: tls
+      statusDescriptors:
+      - displayName: Conditions
+        path: conditions
+      - displayName: Last Transition Time
+        path: conditions[0].lastTransitionTime
+      - displayName: Message
+        path: conditions[0].message
+      - displayName: Reason
+        path: conditions[0].reason
+      - displayName: Status
+        path: conditions[0].status
+      - displayName: Type
+        path: conditions[0].type
+      - displayName: Deployed Release
+        path: deployedRelease
+      - displayName: Sensor Status
+        path: sensorStatus
       version: v1alpha1
   description: |
     ## Why use Red Hat Advanced Cluster Security for Kubernetes?

@@ -30,12 +30,18 @@ import (
 
 // CentralSpec defines the desired state of Central
 type CentralSpec struct {
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	Egress           *Egress                       `json:"egress,omitempty"`
-	TLS              *common.TLSConfig             `json:"tls,omitempty"`
-	Central          *CentralComponentSpec         `json:"central,omitempty"`
-	Scanner          *ScannerComponentSpec         `json:"scanner,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	Egress *Egress `json:"egress,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	TLS *common.TLSConfig `json:"tls,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	Central *CentralComponentSpec `json:"central,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 	// Customizations to apply on all central components.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
@@ -216,9 +222,12 @@ type ScannerLogging struct {
 
 // CentralStatus defines the observed state of Central.
 type CentralStatus struct {
-	Conditions      []common.StackRoxCondition `json:"conditions"`
-	DeployedRelease *common.StackRoxRelease    `json:"deployedRelease,omitempty"`
-	CentralStatus   *CentralComponentStatus    `json:"centralStatus,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	Conditions []common.StackRoxCondition `json:"conditions"`
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	DeployedRelease *common.StackRoxRelease `json:"deployedRelease,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	CentralStatus *CentralComponentStatus `json:"centralStatus,omitempty"`
 }
 
 // CentralComponentStatus describes status specific to the central component.
@@ -231,6 +240,7 @@ type CentralComponentStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,central},{Deployment,v1,scanner},{Deployment,v1,scanner-db}}
 
 // Central is the Schema for the centrals API
 type Central struct {
