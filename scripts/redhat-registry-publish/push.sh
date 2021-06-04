@@ -45,7 +45,7 @@ done
 echo "Pushing the following images:"
 printf " - %s\n" "${dst_imgs[@]}"
 
-push_cmd=(docker push)
+push_cmd=("${DIR}/../ci/push-as-manifest-list.sh")
 if [[ "${DRY_RUN:-}" != "false" ]]; then
   echo
   echo "==================================================================================="
