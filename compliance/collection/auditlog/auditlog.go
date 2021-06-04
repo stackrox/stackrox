@@ -22,10 +22,10 @@ type Reader interface {
 }
 
 // NewReader returns a new instance of Reader
-func NewReader(client sensor.ComplianceService_CommunicateClient) Reader {
+func NewReader(client sensor.ComplianceService_CommunicateClient, nodeName string, clusterID string) Reader {
 	return &auditLogReaderImpl{
 		logPath: defaultLogPath,
 		stopC:   concurrency.NewSignal(),
-		sender:  newAuditLogSender(client),
+		sender:  newAuditLogSender(client, nodeName, clusterID),
 	}
 }

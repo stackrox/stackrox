@@ -28,7 +28,7 @@ message KubernetesEvent {
             PODS_EXEC        = 1;
             PODS_PORTFORWARD = 2;
             SECRETS          = 3;
-            CONFIG_MAPS      = 4;
+            CONFIGMAPS       = 4;
         }
 
         string   name       = 1 [(gogoproto.moretags) = "policy:\"Kubernetes Resource Name\""];

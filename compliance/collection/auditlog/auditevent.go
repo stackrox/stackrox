@@ -1,5 +1,17 @@
 package auditlog
 
+import (
+	"strings"
+	"time"
+
+	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/storage"
+)
+
+const (
+	reasonAnnotationKey = "authorization.k8s.io/reason"
+)
+
 type auditEvent struct {
 	Annotations              map[string]string `json:"annotations"`
 	APIVersion               string            `json:"apiVersion"`
@@ -37,4 +49,65 @@ type responseStatusRef struct {
 	Status   string                 `json:"status"`
 	Message  string                 `json:"message"`
 	Code     int32                  `json:"code"`
+}
+
+func (u *userRef) ToKubernetesEventUser() *storage.KubernetesEvent_User {
+	return &storage.KubernetesEvent_User{
+		Username: u.Username,
+		Groups:   u.Groups,
+	}
+}
+
+func (e *auditEvent) parseTimestamp(timestamp string) (*types.Timestamp, error) {
+	t, err := time.Parse(time.RFC3339Nano, timestamp)
+	if err != nil {
+		return nil, err
+	}
+	protoTime, err := types.TimestampProto(t)
+	if err != nil {
+		return nil, err
+	}
+	return protoTime, nil
+}
+
+func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEvent {
+	protoTime, err := e.parseTimestamp(e.StageTimestamp)
+	if err != nil {
+		log.Errorf("Failed to parse stage time %s from audit log, so falling back to received time: %v", e.StageTimestamp, err)
+		// If StageTimestamp (which is the time for this particular stage) is not parsable, try the RequestReceivedTimestamp
+		// While it's not as accurate it should be relatively close. This should also be a rare occurrence.
+		protoTime, err = e.parseTimestamp(e.RequestReceivedTimestamp)
+		if err != nil {
+			// If we're still not able to get a valid time, fall back to "now".
+			log.Errorf("Failed to parse received time %s from audit log, so falling back to current time: %v", e.RequestReceivedTimestamp, err)
+			protoTime = types.TimestampNow()
+		}
+	}
+
+	reason := e.Annotations[reasonAnnotationKey]
+
+	k8sEvent := &storage.KubernetesEvent{
+		Id: e.AuditID,
+		Object: &storage.KubernetesEvent_Object{
+			Name:      e.ObjectRef.Name,
+			Resource:  storage.KubernetesEvent_Object_Resource(storage.KubernetesEvent_Object_Resource_value[strings.ToUpper(e.ObjectRef.Resource)]),
+			ClusterId: clusterID,
+			Namespace: e.ObjectRef.Namespace,
+		},
+		Timestamp: protoTime,
+		ApiVerb:   storage.KubernetesEvent_APIVerb(storage.KubernetesEvent_APIVerb_value[strings.ToUpper(e.Verb)]),
+		User:      e.User.ToKubernetesEventUser(),
+		SourceIps: e.SourceIPs,
+		UserAgent: e.UserAgent,
+		ResponseStatus: &storage.KubernetesEvent_ResponseStatus{
+			StatusCode: e.ResponseStatus.Code,
+			Reason:     reason,
+		},
+	}
+
+	if e.ImpersonatedUser != nil {
+		k8sEvent.ImpersonatedUser = e.ImpersonatedUser.ToKubernetesEventUser()
+	}
+
+	return k8sEvent
 }

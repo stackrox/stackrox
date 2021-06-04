@@ -94,8 +94,11 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 
 			if s.shouldSendEvent(&auditLine) {
 				if err := s.sender.Send(ctx, &auditLine); err != nil {
+					// It's very likely that this failure is due to Sensor being unavailable
+					// In that case when Sensor next comes available it will ask to restart from the last
+					// message it got. Therefore this event will end up being sent at that point.
+					// Therefore, we skip retrying at this point in time.
 					log.Errorf("Failed sending event to Sensor: %v", line.Err)
-					// TODO: report health, etc
 				}
 			}
 		}

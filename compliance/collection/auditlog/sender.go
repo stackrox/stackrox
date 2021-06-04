@@ -13,8 +13,10 @@ type auditLogSender interface {
 }
 
 // newAuditLogSender returns a new instance of AuditLogSender
-func newAuditLogSender(client sensor.ComplianceService_CommunicateClient) auditLogSender {
+func newAuditLogSender(client sensor.ComplianceService_CommunicateClient, nodeName string, clusterID string) auditLogSender {
 	return &auditLogSenderImpl{
-		client: client,
+		client:    client,
+		nodeName:  nodeName,
+		clusterID: clusterID,
 	}
 }
