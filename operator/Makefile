@@ -109,6 +109,21 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	../scripts/go-run.sh ./main.go
 
 docker-build: test ## Build docker image with the manager.
+	@( \
+		# status.sh file is used by scripts/go-build.sh which we try to run in the docker container. \
+		# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple. \
+		# Here we grab the output and create a new build/status.sh from it. That file will be copied into the \
+		# container and used there without having to bring all dependencies. \
+		set -euxo pipefail ;\
+		smuggled_status_sh="$(PROJECT_DIR)/build/status.sh" ;\
+		mkdir -p "$(PROJECT_DIR)/build" ;\
+		cd "$(PROJECT_DIR)/.." ;\
+		echo "#!/bin/sh" > "$${smuggled_status_sh}" ;\
+		./status.sh | awk '{print "echo \"" $$0 "\""}' >> "$${smuggled_status_sh}" ;\
+		chmod +x "$${smuggled_status_sh}" ;\
+		# Verify that the resulting status.sh is actually runnable \
+		"$${smuggled_status_sh}" ;\
+	)
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build -t ${IMG} --ssh default=${SSH_AUTH_SOCK} -f Dockerfile ..
 
 docker-push: ## Push docker image with the manager.
@@ -126,7 +141,7 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen

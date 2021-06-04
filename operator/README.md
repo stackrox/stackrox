@@ -2,11 +2,9 @@
 
 Central Services and Secured Cluster Services operator.
 
-## Requirements
-
- - operator-sdk 1.5.x
-
 ## Quickstart
+
+All following commands should be ran from this directory (`operator/`).
 
 1. Build and run operator locally. Note that this starts the operator without deploying it as a container in the cluster.
 
@@ -46,8 +44,61 @@ or
 $ kubectl delete securedclusters.platform.stackrox.io stackrox-secured-cluster-services
 ```
 
-To see help on other `Makefile` targets, run
+## List all available commands/targets
+
+To see help on other available `Makefile` targets, run
 
 ```bash
 $ make help
 ```
+
+## Advanced usage
+
+### Launch the operator on the (local) cluster
+
+While `make install run` can launch the operator, the operator is running outside of the cluster and this approach may not be sufficient to test all aspects of it.
+
+The recommended approach is the following.
+
+1. Build operator image
+   ```bash
+   $ make docker-build
+   ```
+2. Make the image available for the cluster, this depends on k8s distribution you use.  
+   You don't need to do anything when using KIND.  
+   For minikube it could be done like this
+   ```bash
+   $ docker save stackrox.io/stackrox-operator:$(make tag) | ssh -o StrictHostKeyChecking=no -i $(minikube ssh-key) docker@$(minikube ip) docker load
+   ```
+3. Install CRDs and deploy operator resources
+   ```bash
+   $ make install deploy
+   ```
+4. Validate that the operator's pod has started successfully
+   ```bash
+   $ kubectl -n stackrox-operator-system describe pods
+   ```
+   Check logs
+   ```bash
+   $ kubectl -n stackrox-operator-system logs deploy/stackrox-operator-controller-manager manager -f
+   ```
+5. Create CRs and have fun testing.
+6. When done
+   ```bash
+   $ make undeploy
+   ```
+
+### Bundling
+
+```bash
+# Refresh bundle metadata, make sure to check the diff and commit it.
+$ make bundle
+# Build bundle image
+$ make bundle-build
+# Run scorecard tests for the bundle
+$ operator-sdk scorecard bundle
+```
+
+### Launch the operator on the cluster with OLM and the bundle
+
+TODO
