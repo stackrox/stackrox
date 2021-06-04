@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PagerDuty/go-pagerduty v0.0.0-20191002190746-f60f4fc45222
+	github.com/PagerDuty/go-pagerduty v1.4.1
 	github.com/RoaringBitmap/roaring v0.6.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.10.0
@@ -134,7 +134,6 @@ require (
 )
 
 replace (
-	github.com/PagerDuty/go-pagerduty => github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca
 	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20200807170555-6c4fa9f5e726
 	github.com/couchbase/ghistogram => github.com/couchbase/ghistogram v0.0.1-0.20170308220240-d910dd063dd6
 	github.com/couchbase/vellum => github.com/couchbase/vellum v0.0.0-20190829182332-ef2e028c01fd

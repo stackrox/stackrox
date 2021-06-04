@@ -43,9 +43,9 @@ var (
 )
 
 type pagerDuty struct {
-	apikey string
 	*storage.Notifier
-	client *http.Client
+	pdClient   *pd.Client
+	routingKey string
 }
 
 func init() {
@@ -64,12 +64,14 @@ func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
 	if err := validate(conf); err != nil {
 		return nil, err
 	}
+	pdClient := pd.NewClient("")
+	pdClient.HTTPClient = &http.Client{
+		Transport: proxy.RoundTripper(),
+	}
 	return &pagerDuty{
-		apikey:   conf.ApiKey,
-		Notifier: notifier,
-		client: &http.Client{
-			Transport: proxy.RoundTripper(),
-		},
+		Notifier:   notifier,
+		pdClient:   pdClient,
+		routingKey: conf.GetApiKey(),
 	}, nil
 }
 
@@ -126,7 +128,7 @@ func (p *pagerDuty) postAlert(ctx context.Context, alert *storage.Alert, eventTy
 		return err
 	}
 
-	resp, err := pd.ManageEventWithHTTPClient(pagerDutyEvent, p.client)
+	resp, err := p.pdClient.ManageEvent(&pagerDutyEvent)
 	if err != nil {
 		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
 
@@ -174,7 +176,7 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 	}
 	return pd.V2Event{
 		Action:     eventType,
-		RoutingKey: p.apikey,
+		RoutingKey: p.routingKey,
 		Client:     client,
 		ClientURL:  notifiers.AlertLink(p.Notifier.UiEndpoint, alert),
 		DedupKey:   alert.GetId(),
