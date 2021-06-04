@@ -5,18 +5,29 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { reduxForm, formValueSelector, change } from 'redux-form';
 import sortBy from 'lodash/sortBy';
 
+import { selectors } from 'reducers';
 import Select from 'Components/ReactSelect';
 import flattenObject from 'utils/flattenObject';
 import { removeEmptyPolicyFields } from 'utils/policyUtils';
+import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import { getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
 import FormField from 'Components/FormField';
 import Field from 'Containers/Policies/Wizard/Form/Field';
+import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
 class FieldGroupCards extends Component {
     static propTypes = {
         fieldGroups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         formData: PropTypes.shape({}).isRequired,
+        includesRuntimeLifecycleStage: PropTypes.bool.isRequired,
+        includesAuditLogEventSource: PropTypes.bool.isRequired,
+        hasExcludedImageNames: PropTypes.bool.isRequired,
         change: PropTypes.func.isRequired,
+        featureFlags: PropTypes.arrayOf(PropTypes.shape),
+    };
+
+    static defaultProps = {
+        featureFlags: [],
     };
 
     constructor(props) {
@@ -80,19 +91,60 @@ class FieldGroupCards extends Component {
             return <div className="p-3 text-base-500 font-500">No Fields Added</div>;
         }
 
+        const {
+            includesRuntimeLifecycleStage,
+            includesAuditLogEventSource,
+            hasExcludedImageNames,
+            featureFlags,
+        } = this.props;
         return (
             <div className="h-full p-3">
                 {filteredFields.map((field) => {
                     const removeField = !field.default ? this.removeField : null;
+                    // TODO: refactor FieldGroupCards to be iterative to avoid injecting logic in loops
+                    const isEventSource = field.jsonpath === 'eventSource';
+                    const isExcludedImages =
+                        field.jsonpath === clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES;
+                    if (
+                        isBackendFeatureFlagEnabled(
+                            featureFlags,
+                            knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
+                        )
+                    ) {
+                        // clear Event Source if Runtime lifecycle stage is not included
+                        if (!includesRuntimeLifecycleStage && isEventSource) {
+                            this.props.change('eventSource', undefined);
+                        }
+                        // clear Excluded Images if Audit Log Event Source is selected
+                        if (
+                            includesRuntimeLifecycleStage &&
+                            includesAuditLogEventSource &&
+                            hasExcludedImageNames &&
+                            isExcludedImages
+                        ) {
+                            this.props.change(
+                                clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES,
+                                []
+                            );
+                        }
+                    }
                     return (
                         <FormField
                             key={field.jsonpath}
                             label={field.label}
                             name={field.jsonpath}
-                            required={field.required}
+                            required={
+                                field.required || (isEventSource && includesRuntimeLifecycleStage)
+                            }
                             onRemove={removeField}
                         >
-                            <Field field={field} />
+                            <Field
+                                field={field}
+                                readOnly={
+                                    (isEventSource && !includesRuntimeLifecycleStage) ||
+                                    (isExcludedImages && includesAuditLogEventSource)
+                                }
+                            />
                         </FormField>
                     );
                 })}
@@ -182,7 +234,24 @@ const formFields = (state) =>
 const getFormData = createSelector([formFields], (formData) => formData);
 
 const mapStateToProps = createStructuredSelector({
+    includesRuntimeLifecycleStage: (state) => {
+        const lifecycleStagesValue =
+            formValueSelector('policyCreationForm')(state, 'lifecycleStages') || [];
+        return lifecycleStagesValue.includes('RUNTIME');
+    },
+    includesAuditLogEventSource: (state) => {
+        const eventSourceValue = formValueSelector('policyCreationForm')(state, 'eventSource');
+        return eventSourceValue === 'AUDIT_LOG';
+    },
+    hasExcludedImageNames: (state) => {
+        const excludedImageNamesValue = formValueSelector('policyCreationForm')(
+            state,
+            clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES
+        );
+        return excludedImageNamesValue.length > 0;
+    },
     formData: getFormData,
+    featureFlags: selectors.getFeatureFlags,
 });
 
 const mapDispatchToProps = (dispatch) => ({

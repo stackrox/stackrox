@@ -13,7 +13,7 @@ import { actions as wizardActions } from 'reducers/policies/wizard';
 import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import WizardPanel from 'Containers/Policies/Wizard/WizardPanel';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
-import { policyStatus, policyDetails } from 'Containers/Policies/Wizard/Form/descriptors';
+import { policyStatus, getPolicyDetails } from 'Containers/Policies/Wizard/Form/descriptors';
 import { clientOnlyExclusionFieldNames } from 'Containers/Policies/Wizard/Form/whitelistFieldNames';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 
@@ -76,8 +76,14 @@ Wizard.defaultProps = {
 };
 
 const getFieldGroups = createSelector(
-    [selectors.getNotifiers, selectors.getImages, selectors.getPolicyCategories],
-    (notifiers, images, policyCategories) => {
+    [
+        selectors.getNotifiers,
+        selectors.getImages,
+        selectors.getPolicyCategories,
+        selectors.getFeatureFlags,
+    ],
+    (notifiers, images, policyCategories, featureFlags) => {
+        const policyDetails = getPolicyDetails(featureFlags);
         const { descriptor } = policyDetails;
         const policyDetailsFormFields = descriptor.map((field) => {
             const newField = { ...field };

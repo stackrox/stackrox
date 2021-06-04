@@ -9,7 +9,7 @@ import {
     severityRatings,
 } from 'messages/common';
 import { resourceTypes } from 'constants/entityTypes';
-import { knownBackendFlags } from 'utils/featureFlags';
+import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
 const equalityOptions = [
@@ -169,6 +169,21 @@ const policyDetailsFormDescriptor = [
         })),
         required: true,
         default: true,
+    },
+    {
+        label: 'Event Sources',
+        hideInnerLabel: true,
+        jsonpath: 'eventSource',
+        type: 'select',
+        options: [
+            {
+                label: 'Deployment',
+                value: 'DEPLOYMENT',
+            },
+            { label: 'Audit Log', value: 'AUDIT_LOG' },
+        ],
+        default: true,
+        featureFlag: knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION,
     },
     {
         label: 'Description',
@@ -1222,6 +1237,18 @@ export const policyConfiguration = {
 };
 
 let isFirstLoad = true;
+
+export const getPolicyDetails = (featureFlags) => {
+    const newPolicyDetails = { ...policyDetails };
+    // these feature flags are structured differently than the ones in getPolicyConfiguration
+    // because this is data directly from the featureflags endpoint
+    if (!isBackendFeatureFlagEnabled(featureFlags, knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION)) {
+        newPolicyDetails.descriptor = policyDetails.descriptor.filter((field) => {
+            return field.featureFlag !== knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION;
+        });
+    }
+    return newPolicyDetails;
+};
 
 export const getPolicyConfiguration = (featureFlags) => {
     const newPolicyConfiguration = { ...policyConfiguration };
