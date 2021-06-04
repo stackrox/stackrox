@@ -2204,12 +2204,19 @@ jobs:
             ./scripts/check-todos.sh 'do\s?n.*merge'
 
       - run:
-          name: Check operator files are up to date (If this fails, run `make -C operator manifests generate` and commit the result.)
+          name: Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)
           no_output_timeout: 30m
           command: |
+            set -e
             make -C operator/ generate
             make -C operator/ manifests
             git diff --exit-code HEAD
+            make -C operator/ bundle
+            # make bundle sometimes reorders annotations in bundle therefore the following files are excluded from diff.
+            git diff --exit-code HEAD -- . ':(exclude)bundle.Dockerfile' ':(exclude)bundle/metadata/annotations.yaml'
+            # compare the said files ignoring different lines order
+            diff -sU999 <(git show HEAD:./operator/bundle.Dockerfile | sort) <(sort ./operator/bundle.Dockerfile)
+            diff -sU999 <(git show HEAD:./operator/bundle/metadata/annotations.yaml | sort) <(sort ./operator/bundle/metadata/annotations.yaml)
 
   check-policy-files-up-to-date:
     executor: custom
