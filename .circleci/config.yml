@@ -2629,14 +2629,14 @@ jobs:
           name: Push new Docker image
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker push "docker.io/stackrox/main:$(make --quiet tag)" | cat
-            docker push "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
+            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:$(make --quiet tag)" | cat
+            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
               docker tag "docker.io/stackrox/main:$(make --quiet tag)" docker.io/stackrox/main:latest
-              docker push docker.io/stackrox/main:latest
+              ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/main:latest
 
               docker tag "docker.io/stackrox/roxctl:$(make --quiet tag)" docker.io/stackrox/roxctl:latest
-              docker push docker.io/stackrox/roxctl:latest
+              ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/roxctl:latest
             fi
 
       - run:
@@ -2714,10 +2714,10 @@ jobs:
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
 
             TAG="$(make --quiet tag)"
-            docker push "docker.io/stackrox/main-rhel:${TAG}" | cat
+            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main-rhel:${TAG}" | cat
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
               docker tag "docker.io/stackrox/main-rhel:${TAG}" docker.io/stackrox/main-rhel:latest
-              docker push docker.io/stackrox/main-rhel:latest
+              ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/main-rhel:latest
             fi
 
       - persist_to_workspace:
@@ -4798,12 +4798,7 @@ jobs:
             # for convenience before running the stackrox.io push.
             docker pull docker.io/stackrox/docs:$DOCS_TAG | cat
             docker tag  docker.io/stackrox/docs:$DOCS_TAG docker.io/stackrox/docs:$MAIN_TAG
-            docker push docker.io/stackrox/docs:$MAIN_TAG | cat
-
-            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              docker tag "docker.io/stackrox/docs:$MAIN_TAG" docker.io/stackrox/docs:latest
-              docker push docker.io/stackrox/docs:latest
-            fi
+            ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/docs:$MAIN_TAG | cat
 
 
       - run:
@@ -4818,16 +4813,16 @@ jobs:
 
             docker pull docker.io/stackrox/main:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/main:$MAIN_TAG stackrox.io/main:$MAIN_TAG
-            docker push        stackrox.io/main:$MAIN_TAG | cat
+            ./scripts/ci/push-as-manifest-list.sh stackrox.io/main:$MAIN_TAG | cat
 
             # The docs image uses the same tag as main for releases.
             docker pull docker.io/stackrox/docs:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/docs:$MAIN_TAG stackrox.io/docs:$MAIN_TAG
-            docker push        stackrox.io/docs:$MAIN_TAG | cat
+            ./scripts/ci/push-as-manifest-list.sh stackrox.io/docs:$MAIN_TAG | cat
 
             docker pull docker.io/stackrox/roxctl:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/roxctl:$MAIN_TAG stackrox.io/roxctl:$MAIN_TAG
-            docker push        stackrox.io/roxctl:$MAIN_TAG | cat
+            ./scripts/ci/push-as-manifest-list.sh stackrox.io/roxctl:$MAIN_TAG | cat
 
             docker pull    docker.io/stackrox/collector:$COLLECTOR_TAG | cat
             docker pull    "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" | cat
@@ -4835,14 +4830,14 @@ jobs:
             docker tag     docker.io/stackrox/collector:$COLLECTOR_TAG collector.stackrox.io/collector:$COLLECTOR_TAG
             docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest"
             docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-base" "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"
-            docker push collector.stackrox.io/collector:$COLLECTOR_TAG | cat
-            docker push "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" | cat
-            docker push "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim" | cat
+            ./scripts/ci/push-as-manifest-list.sh collector.stackrox.io/collector:$COLLECTOR_TAG | cat
+            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" | cat
+            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim" | cat
 
             # RHEL images
             docker pull docker.io/stackrox/main-rhel:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/main-rhel:$MAIN_TAG stackrox.io/main-rhel:$MAIN_TAG
-            docker push        stackrox.io/main-rhel:$MAIN_TAG | cat
+            ./scripts/ci/push-as-manifest-list.sh stackrox.io/main-rhel:$MAIN_TAG | cat
 
             docker pull    docker.io/stackrox/collector-rhel:$COLLECTOR_TAG | cat
             docker pull    "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-latest" | cat
@@ -4850,9 +4845,9 @@ jobs:
             docker tag     docker.io/stackrox/collector-rhel:$COLLECTOR_TAG collector.stackrox.io/collector-rhel:$COLLECTOR_TAG
             docker tag     "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest"
             docker tag     "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-base" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim"
-            docker push collector.stackrox.io/collector-rhel:$COLLECTOR_TAG | cat
-            docker push "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
-            docker push "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim" | cat
+            ./scripts/ci/push-as-manifest-list.sh collector.stackrox.io/collector-rhel:$COLLECTOR_TAG | cat
+            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
+            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim" | cat
 
 
       - run:
