@@ -104,7 +104,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 
 	registries := e.integrations.RegistrySet()
 	if !ctx.Internal && registries.IsEmpty() {
-		errorList.AddError(errors.New("no image registries are integrated"))
+		errorList.AddError(errors.Errorf("no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry()))
 		return false, errorList.ToError()
 	}
 
@@ -157,7 +157,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 	}
 
 	if !ctx.Internal && len(errorList.ErrorStrings()) == 0 {
-		errorList.AddError(errors.New("no matching image registries found"))
+		errorList.AddError(errors.Errorf("no matching image registries found: please add an image integration for %s", image.GetName().GetRegistry()))
 	}
 
 	return false, errorList.ToError()
