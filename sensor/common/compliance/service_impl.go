@@ -9,9 +9,11 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
 )
@@ -116,14 +118,43 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		return errors.Wrapf(err, "sending config to %q", hostname)
 	}
 
+	// [TEMPORARY] This will automatically enable audit log collection on all collector nodes running on master nodes
+	// as long as the feature is enabled. This will be migrated out to respond to changes to DynamicClusterConfig
+	// when that part is fully implemented. Currently there is no way to disable this setting other than to disable
+	// the feature flag itself.
+	if features.K8sAuditLogDetection.Enabled() {
+		if conf.GetIsMasterNode() {
+			log.Infof("Sending message to start audit collection to %v because it is on master node", hostname)
+			err := server.Send(&sensor.MsgToCompliance{
+				Msg: &sensor.MsgToCompliance_AuditLogCollectionRequest_{
+					AuditLogCollectionRequest: &sensor.MsgToCompliance_AuditLogCollectionRequest{
+						Req: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq{
+							StartReq: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest{
+								ClusterId: clusterid.Get(),
+							},
+						},
+					},
+				},
+			})
+			if err != nil {
+				return errors.Wrapf(err, "sending audit log enable to %q", hostname)
+			}
+		}
+	}
+
 	for {
 		msg, err := server.Recv()
 		if err != nil {
 			log.Errorf("error receiving from compliance %q: %v", hostname, err)
 			return err
 		}
-		log.Infof("Received compliance return from %q", msg.GetNode())
-		s.output <- msg.GetReturn()
+		switch t := msg.Msg.(type) {
+		case *sensor.MsgFromCompliance_Return:
+			log.Infof("Received compliance return from %q", msg.GetNode())
+			s.output <- t.Return
+		case *sensor.MsgFromCompliance_AuditEvents:
+			// TODO: Send to policy detection
+		}
 	}
 }
 

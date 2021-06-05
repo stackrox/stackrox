@@ -39,7 +39,8 @@ message MsgToCompliance {
     }
     message AuditLogCollectionRequest {
         message StartRequest {
-            storage.AuditLogFileState collect_start_state = 1;
+            string                    cluster_id = 1;
+            storage.AuditLogFileState collect_start_state = 2;
         }
         message StopRequest {}
 

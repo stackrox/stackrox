@@ -98,7 +98,7 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 					// In that case when Sensor next comes available it will ask to restart from the last
 					// message it got. Therefore this event will end up being sent at that point.
 					// Therefore, we skip retrying at this point in time.
-					log.Errorf("Failed sending event to Sensor: %v", line.Err)
+					log.Errorf("Failed sending event to Sensor: %v", err)
 				}
 			}
 		}

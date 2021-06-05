@@ -9,6 +9,7 @@ import (
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/compliance/collection/auditlog"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -41,7 +42,15 @@ func getNode() string {
 	return node
 }
 
-func runRecv(client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
+func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
+	var auditReader auditlog.Reader
+	defer func() {
+		if auditReader != nil {
+			// Stopping is idempotent so no need to check if it's already been called
+			auditReader.StopReader()
+		}
+	}()
+
 	for {
 		msg, err := client.Recv()
 		if err != nil {
@@ -52,10 +61,40 @@ func runRecv(client sensor.ComplianceService_CommunicateClient, config *sensor.M
 			if err := runChecks(client, config, t.Trigger); err != nil {
 				return errors.Wrap(err, "error running checks")
 			}
+		case *sensor.MsgToCompliance_AuditLogCollectionRequest_:
+			switch r := t.AuditLogCollectionRequest.GetReq().(type) {
+			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq:
+				if auditReader != nil {
+					log.Info("Audit log reader is being restarted")
+					auditReader.StopReader() // stop the old one
+				}
+				auditReader = startAuditLogCollection(ctx, client, r.StartReq.GetClusterId())
+			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StopReq:
+				if auditReader != nil {
+					auditReader.StopReader()
+					auditReader = nil
+				} else {
+					log.Warn("Attempting to stop an un-started audit log reader - this is a no-op")
+				}
+			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
 	}
+}
+
+func startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, clusterID string) auditlog.Reader {
+	auditReader := auditlog.NewReader(client, getNode(), clusterID)
+	//TODO: Use AuditLogFileState here to restart processing based on previous state: ROX-7175
+	start, err := auditReader.StartReader(ctx)
+	if err != nil {
+		log.Errorf("Failed to start audit log reader %v", err)
+		// TODO: Report health
+	} else if !start {
+		// It shouldn't get here unless Sensor mistakenly sends a start event to a non-master node
+		log.Error("Audit log reader did not start because audit logs do not exist on this node")
+	}
+	return auditReader
 }
 
 func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal) {
@@ -73,7 +112,7 @@ func manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *
 				}
 				log.Fatalf("error initializing stream to sensor: %v", err)
 			}
-			if err := runRecv(client, config); err != nil {
+			if err := runRecv(ctx, client, config); err != nil {
 				log.Errorf("error running recv: %v", err)
 			}
 		}
