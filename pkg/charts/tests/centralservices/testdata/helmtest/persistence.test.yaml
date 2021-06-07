@@ -1,0 +1,12 @@
+tests:
+- name: "Should create PVC"
+  values:
+    central:
+      persistence:
+        persistentVolumeClaim:
+          claimName: "stackrox-db-test"
+          size: "1000Gi"
+          storageClass: "testStorageClass"
+  expect: |
+    .persistentvolumeclaims["stackrox-db-test"].spec.resources.requests | assertThat(.storage == "1000Gi")
+    .persistentvolumeclaims["stackrox-db-test"].spec | assertThat(.storageClassName == "testStorageClass")
