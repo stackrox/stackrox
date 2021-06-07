@@ -56,7 +56,6 @@ class RuleGroups extends Component {
         roles: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string,
-                globalAccess: PropTypes.string,
             })
         ).isRequired,
         usersAttributes: PropTypes.arrayOf(

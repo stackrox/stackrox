@@ -28,7 +28,6 @@ describe('userRolePermissions selector', () => {
     it('should get the property from partial state', () => {
         const expected = {
             name: '',
-            globalAccess: 'READ_WRITE_ACCESS',
             userRolePermissions: {
                 Deployment: 'READ_ACCESS',
                 ServiceIdentity: 'NO_ACCESS',
@@ -53,10 +52,9 @@ describe('getHasReadPermission', () => {
         expect(received).toEqual(false);
     });
 
-    it('should not have access if user role has no access', () => {
+    it('should not have access if resource has no access', () => {
         const state = {
             name: '',
-            globalAccess: 'READ_ACCESS',
             resourceToAccess: {
                 Deployment: 'NO_ACCESS',
             },
@@ -66,21 +64,29 @@ describe('getHasReadPermission', () => {
         expect(received).toEqual(false);
     });
 
-    it('should have access if no user roles but global read access', () => {
+    it('should not have access if resourceToAccess is null', () => {
         const state = {
             name: '',
-            globalAccess: 'READ_ACCESS',
             resourceToAccess: null,
         };
         const received = getHasReadPermission(permission, state);
 
-        expect(received).toEqual(true);
+        expect(received).toEqual(false);
     });
 
-    it('should have access if user role has read access', () => {
+    it('should not have access if resourceToAccess does not have the resource', () => {
         const state = {
             name: '',
-            globalAccess: 'NO_ACCESS',
+            resourceToAccess: {},
+        };
+        const received = getHasReadPermission(permission, state);
+
+        expect(received).toEqual(false);
+    });
+
+    it('should have access if resource has read access', () => {
+        const state = {
+            name: '',
             resourceToAccess: {
                 Deployment: 'READ_ACCESS',
             },
@@ -90,10 +96,9 @@ describe('getHasReadPermission', () => {
         expect(received).toEqual(true);
     });
 
-    it('should have access if user role has read-write access', () => {
+    it('should have access if resource has read-write access', () => {
         const state = {
             name: '',
-            globalAccess: 'NO_ACCESS',
             resourceToAccess: {
                 Deployment: 'READ_WRITE_ACCESS',
             },
@@ -114,10 +119,9 @@ describe('getHasReadWritePermission', () => {
         expect(received).toEqual(false);
     });
 
-    it('should not have access if user role has no access', () => {
+    it('should not have access if resource has no access', () => {
         const state = {
             name: '',
-            globalAccess: 'READ_ACCESS',
             resourceToAccess: {
                 Deployment: 'NO_ACCESS',
             },
@@ -127,21 +131,29 @@ describe('getHasReadWritePermission', () => {
         expect(received).toEqual(false);
     });
 
-    it('should have access if no user roles but global read-write access', () => {
+    it('should not have access if resourceToAccess is null', () => {
         const state = {
             name: '',
-            globalAccess: 'READ_WRITE_ACCESS',
             resourceToAccess: null,
         };
         const received = getHasReadWritePermission(permission, state);
 
-        expect(received).toEqual(true);
+        expect(received).toEqual(false);
     });
 
-    it('should have access if user role has read-write access', () => {
+    it('should not have access if resourceToAccess does not have the resource', () => {
         const state = {
             name: '',
-            globalAccess: 'NO_ACCESS',
+            resourceToAccess: {},
+        };
+        const received = getHasReadWritePermission(permission, state);
+
+        expect(received).toEqual(false);
+    });
+
+    it('should have access if resource has read-write access', () => {
+        const state = {
+            name: '',
             resourceToAccess: {
                 Deployment: 'READ_WRITE_ACCESS',
             },
@@ -151,10 +163,9 @@ describe('getHasReadWritePermission', () => {
         expect(received).toEqual(true);
     });
 
-    it('should not have access if user role has read access', () => {
+    it('should not have access if resource has read access', () => {
         const state = {
             name: '',
-            globalAccess: 'READ_WRITE_ACCESS',
             resourceToAccess: {
                 Deployment: 'READ_ACCESS',
             },

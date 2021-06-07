@@ -82,22 +82,21 @@ const getResources = (state) => state.resources;
 const getSelectedRole = (state) => state.selectedRole;
 const getUserRolePermissions = (state) => state.userRolePermissions;
 
-const getAccessForPermission = (permission, userRolePermissionsArg) => {
-    if (!userRolePermissionsArg) {
-        return ACCESS_LEVEL.NO_ACCESS;
-    }
-    const { globalAccess, resourceToAccess } = userRolePermissionsArg;
-    const access = !resourceToAccess ? globalAccess : resourceToAccess[permission];
-    return access;
+/*
+ * Given resource string (for example, "APIToken") and role or permissionSet object,
+ * return access level (for example, "READ_ACCESS").
+ */
+const getAccessForPermission = (resource, userRolePermissionsArg) => {
+    return userRolePermissionsArg?.resourceToAccess?.[resource] ?? ACCESS_LEVEL.NO_ACCESS;
 };
 
-export const getHasReadPermission = (permission, userRolePermissionsArg) => {
-    const access = getAccessForPermission(permission, userRolePermissionsArg);
+export const getHasReadPermission = (resource, userRolePermissionsArg) => {
+    const access = getAccessForPermission(resource, userRolePermissionsArg);
     return access === ACCESS_LEVEL.READ_WRITE_ACCESS || access === ACCESS_LEVEL.READ_ACCESS;
 };
 
-export const getHasReadWritePermission = (permission, userRolePermissionsArg) => {
-    const access = getAccessForPermission(permission, userRolePermissionsArg);
+export const getHasReadWritePermission = (resource, userRolePermissionsArg) => {
+    const access = getAccessForPermission(resource, userRolePermissionsArg);
     return access === ACCESS_LEVEL.READ_WRITE_ACCESS;
 };
 

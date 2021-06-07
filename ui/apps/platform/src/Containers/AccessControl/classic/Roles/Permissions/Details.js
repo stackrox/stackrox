@@ -35,7 +35,6 @@ const Details = (props) => {
 Details.propTypes = {
     role: PropTypes.shape({
         name: PropTypes.string.isRequired,
-        globalAccess: PropTypes.string.isRequired,
         resourceToAccess: PropTypes.shape({}),
         authProviderName: PropTypes.string,
         username: PropTypes.string,

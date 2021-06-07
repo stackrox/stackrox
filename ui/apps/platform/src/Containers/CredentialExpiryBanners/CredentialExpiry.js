@@ -79,7 +79,9 @@ const CredentialExpiry = ({
 CredentialExpiry.propTypes = {
     component: PropTypes.string.isRequired,
     expiryFetchFunc: PropTypes.func.isRequired,
-    userRolePermissions: PropTypes.shape({ globalAccess: PropTypes.string.isRequired }),
+    userRolePermissions: PropTypes.shape({
+        resourceToAccess: PropTypes.shape({}),
+    }),
     downloadYAMLFunc: PropTypes.func.isRequired,
 };
 

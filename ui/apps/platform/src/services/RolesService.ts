@@ -8,7 +8,6 @@ export type AccessType = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
 
 export type Role = {
     name: string;
-    globalAccess: AccessType;
     resourceToAccess: Record<string, AccessType>;
 };
 

@@ -25,7 +25,6 @@ class Form extends Component {
         roles: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string,
-                globalAccess: PropTypes.string,
             })
         ).isRequired,
     };

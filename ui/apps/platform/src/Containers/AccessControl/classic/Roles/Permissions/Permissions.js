@@ -63,7 +63,6 @@ Permissions.propTypes = {
     resources: PropTypes.arrayOf(PropTypes.string).isRequired,
     selectedRole: PropTypes.shape({
         name: PropTypes.string,
-        globalAccess: PropTypes.string,
         resourceToAccess: PropTypes.shape({}),
         username: PropTypes.string,
     }),

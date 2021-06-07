@@ -74,6 +74,5 @@ export const defaultNewRolePermissions = defaultMinimalReadAccessResources.reduc
 
 export const defaultSelectedRole = {
     name: '',
-    globalAccess: 'NO_ACCESS',
     resourceToAccess: defaultNewRolePermissions,
 };

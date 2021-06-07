@@ -106,12 +106,10 @@ Roles.propTypes = {
     roles: PropTypes.arrayOf(
         PropTypes.shape({
             name: PropTypes.string,
-            globalAccess: PropTypes.string,
         })
     ).isRequired,
     selectedRole: PropTypes.shape({
         name: PropTypes.string,
-        globalAccess: PropTypes.string,
     }),
     selectRole: PropTypes.func.isRequired,
     saveRole: PropTypes.func.isRequired,

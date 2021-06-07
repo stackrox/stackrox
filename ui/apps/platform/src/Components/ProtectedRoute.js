@@ -18,7 +18,9 @@ class ProtectedRoute extends Component {
         location: ReactRouterPropTypes.location.isRequired,
         devOnly: PropTypes.bool,
         requiredPermission: PropTypes.string,
-        userRolePermissions: PropTypes.shape({ globalAccess: PropTypes.string.isRequired }),
+        userRolePermissions: PropTypes.shape({
+            resourceToAccess: PropTypes.shape({}),
+        }),
         featureFlagEnabled: PropTypes.bool,
     };
 
