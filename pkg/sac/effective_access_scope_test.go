@@ -44,6 +44,7 @@ var clusters = []*storage.Cluster{
 }
 
 var namespaces = []*storage.NamespaceMetadata{
+	errored,
 	// Earth
 	skunkWorks,
 	fraunhofer,
@@ -147,6 +148,15 @@ var (
 		ClusterId:   "planet.arrakis",
 		ClusterName: "Arrakis",
 	}
+	errored = &storage.NamespaceMetadata{
+		Id:          "not.found",
+		Name:        "Not Found",
+		ClusterId:   "not.found",
+		ClusterName: "Not Found",
+		Labels: map[string]string{
+			"code": "404",
+		},
+	}
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,8 +179,6 @@ const (
 	opNOTEXISTS = storage.SetBasedLabelSelector_NOT_EXISTS
 )
 
-// TODO(ROX-7136): Add tests to cover error paths (matcher can't be constructed
-//   because of violated constraints) and empty cluster / namespaces.
 func TestComputeEffectiveAccessScope(t *testing.T) {
 	type testCase struct {
 		desc      string
@@ -181,9 +189,16 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		detail    v1.ComputeEffectiveAccessScopeRequest_Detail
 	}
 
+	notFoundCluster := &ClustersScopeSubTree{
+		State:      Excluded,
+		Namespaces: namespacesTree(excluded(errored)),
+		Extras: &EffectiveAccessScopeTreeExtras{
+			Name: "Not Found",
+		},
+	}
 	arrakisExtras := &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis", Labels: map[string]string{"focus": "melange"}}
 	earthExtras := &EffectiveAccessScopeTreeExtras{ID: "planet.earth", Name: "Earth"}
-	goodTestCases := []testCase{
+	testCases := []testCase{
 		{
 			desc:      "no access scope includes nothing",
 			scopeDesc: `nil => { }`,
@@ -212,6 +227,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -248,6 +264,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -287,6 +304,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -348,6 +366,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -392,6 +411,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -431,6 +451,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -470,6 +491,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -516,6 +538,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -563,6 +586,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -611,6 +635,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -657,6 +682,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: arrakisExtras,
 					},
+					"Not Found": notFoundCluster,
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
@@ -728,14 +754,43 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Extras: &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis"},
 					},
+					"Not Found": {
+						State:      Excluded,
+						Namespaces: namespacesTree(excludedStandard(errored)),
+						Extras: &EffectiveAccessScopeTreeExtras{
+							Name: "Not Found",
+						},
+					},
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_STANDARD,
 			hasError: false,
 		},
+		{
+			desc: "no key in cluster label selector",
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					ClusterLabelSelectors: labelUtils.LabelSelectors("", opIN, []string{"melange"}),
+				},
+			},
+			hasError: true,
+		},
+		{
+			desc: "no key in namespace label selector",
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					NamespaceLabelSelectors: labelUtils.LabelSelectors("", opIN, []string{"melange"}),
+				},
+			},
+			hasError: true,
+		},
 	}
 
-	for _, tc := range goodTestCases {
+	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			var clonedClusters []*storage.Cluster
 			for _, c := range clusters {
@@ -779,6 +834,10 @@ func TestEffectiveAccessScopeAllowEverything(t *testing.T) {
 					included(fremen),
 				),
 			},
+			"Not Found": {
+				State:      Included,
+				Namespaces: namespacesTree(included(errored)),
+			},
 		},
 	}
 
@@ -820,7 +879,9 @@ func TestNewUnvalidatedRequirement(t *testing.T) {
 		labels.Set(map[string]string{validKey: invalidTokenValue}),
 	}
 	for _, tc := range testCasesGood {
-		assert.Truef(t, selector.Matches(tc), "%q should match %q", selector.String(), tc.String())
+		t.Run(tc.String(), func(t *testing.T) {
+			assert.Truef(t, selector.Matches(tc), "%q should match %q", selector.String(), tc.String())
+		})
 	}
 
 	testCasesBad := []labels.Set{
@@ -828,7 +889,9 @@ func TestNewUnvalidatedRequirement(t *testing.T) {
 		labels.Set(map[string]string{"random.key": tooLongValue}),
 	}
 	for _, tc := range testCasesBad {
-		assert.Falsef(t, selector.Matches(tc), "%q should not match %q", selector.String(), tc.String())
+		t.Run(tc.String(), func(t *testing.T) {
+			assert.Falsef(t, selector.Matches(tc), "%q should not match %q", selector.String(), tc.String())
+		})
 	}
 }
 

@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -110,8 +112,6 @@ func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
 
 // ValidateSimpleAccessScopeRules checks whether the supplied protobuf message
 // represents valid simple access scope rules.
-//
-// TODO(ROX-7136): Add checks to verify that supplied keys and values are valid.
 func ValidateSimpleAccessScopeRules(scopeRules *storage.SimpleAccessScope_Rules) error {
 	var multiErr error
 
@@ -128,6 +128,11 @@ func ValidateSimpleAccessScopeRules(scopeRules *storage.SimpleAccessScope_Rules)
 				"requirements field must be set in every cluster label selector"))
 			break
 		}
+
+		err := validateSelectorRequirement(labelSelector)
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		}
 	}
 	for _, labelSelector := range scopeRules.GetNamespaceLabelSelectors() {
 		if len(labelSelector.GetRequirements()) == 0 {
@@ -135,7 +140,23 @@ func ValidateSimpleAccessScopeRules(scopeRules *storage.SimpleAccessScope_Rules)
 				"requirements field must be set in every namespace label selector"))
 			break
 		}
+		err := validateSelectorRequirement(labelSelector)
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		}
 	}
 
+	return multiErr
+}
+
+func validateSelectorRequirement(labelSelector *storage.SetBasedLabelSelector) error {
+	var multiErr error
+	for _, requirement := range labelSelector.GetRequirements() {
+		op := sac.ConvertLabelSelectorOperatorToSelectionOperator(requirement.GetOp())
+		_, err := labels.NewRequirement(requirement.GetKey(), op, requirement.Values)
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		}
+	}
 	return multiErr
 }

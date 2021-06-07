@@ -293,7 +293,7 @@ func convertEachSetBasedLabelSelectorToK8sLabelSelector(selectors []*storage.Set
 func convertSetBasedLabelSelectorToK8sLabelSelector(selector *storage.SetBasedLabelSelector) (labels.Selector, error) {
 	compiled := labels.NewSelector()
 	for _, elem := range selector.GetRequirements() {
-		req, err := labels.NewRequirement(elem.GetKey(), convertLabelSelectorOperatorToSelectionOperator(elem.GetOp()), elem.GetValues())
+		req, err := labels.NewRequirement(elem.GetKey(), ConvertLabelSelectorOperatorToSelectionOperator(elem.GetOp()), elem.GetValues())
 		if err != nil {
 			return nil, err
 		}
@@ -303,7 +303,8 @@ func convertSetBasedLabelSelectorToK8sLabelSelector(selector *storage.SetBasedLa
 	return compiled, nil
 }
 
-func convertLabelSelectorOperatorToSelectionOperator(op storage.SetBasedLabelSelector_Operator) selection.Operator {
+// ConvertLabelSelectorOperatorToSelectionOperator translates storage selection operator into k8s type.
+func ConvertLabelSelectorOperatorToSelectionOperator(op storage.SetBasedLabelSelector_Operator) selection.Operator {
 	switch op {
 	case storage.SetBasedLabelSelector_IN:
 		return selection.In

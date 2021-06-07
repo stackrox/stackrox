@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/generated/storage"
 	labelUtils "github.com/stackrox/rox/pkg/labels"
 	"github.com/stretchr/testify/assert"
@@ -104,22 +106,97 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		},
 	}
 
-	testCasesBad := map[string]*storage.SimpleAccessScope{
-		"empty simple access scope": {},
-		"id is missing": {
-			Name: mockName,
+	testCasesBad := []struct {
+		name                   string
+		scope                  *storage.SimpleAccessScope
+		expectedNumberOfErrors int
+	}{
+		{
+			name:                   "empty simple access scope",
+			scope:                  &storage.SimpleAccessScope{},
+			expectedNumberOfErrors: 2,
 		},
-		"name is missing": {
-			Id: mockGoodID,
+		{
+			name:                   "id is missing",
+			scope:                  &storage.SimpleAccessScope{Name: mockName},
+			expectedNumberOfErrors: 1,
+		}, {
+			name:                   "name is missing",
+			scope:                  &storage.SimpleAccessScope{Id: mockGoodID},
+			expectedNumberOfErrors: 1,
+		}, {
+			name: "bad id",
+			scope: &storage.SimpleAccessScope{
+				Id:   mockBadID,
+				Name: mockName,
+			},
+			expectedNumberOfErrors: 1,
 		},
-		"bad id": {
-			Id:   mockBadID,
-			Name: mockName,
-		},
-		"bad rules": {
-			Id:    mockGoodID,
-			Name:  mockName,
-			Rules: mockBadRules,
+		{
+			name: "bad rules",
+			scope: &storage.SimpleAccessScope{
+				Id:    mockGoodID,
+				Name:  mockName,
+				Rules: mockBadRules,
+			},
+			expectedNumberOfErrors: 1,
+		}, {
+
+			name: "missing cluster name in namespace rule",
+			scope: &storage.SimpleAccessScope{
+				Id:   mockGoodID,
+				Name: mockName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{ClusterName: "Atomic Vector Plotter"}}}},
+			expectedNumberOfErrors: 1,
+		}, {
+			name: "missing namespace name name in namespace rule",
+			scope: &storage.SimpleAccessScope{
+				Id:   mockGoodID,
+				Name: mockName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{NamespaceName: "Advanced Tea Substitute"}}}},
+			expectedNumberOfErrors: 1,
+		}, {
+			name: "missing label selector",
+			scope: &storage.SimpleAccessScope{
+				Id:   mockGoodID,
+				Name: mockName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
+						{Requirements: nil}}}},
+			expectedNumberOfErrors: 1,
+		}, {
+			name: "multiple errors",
+			scope: &storage.SimpleAccessScope{
+				Id:   mockGoodID,
+				Name: mockName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{NamespaceName: "Advanced Tea Substitute"}},
+					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
+						{Requirements: nil}}}},
+			expectedNumberOfErrors: 2,
+		}, {
+			name: "invalid selectors",
+			scope: &storage.SimpleAccessScope{
+				Id:   mockGoodID,
+				Name: mockName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
+						{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							{Key: "valid", Op: storage.SetBasedLabelSelector_UNKNOWN, Values: []string{"values"}},
+							{Key: "valid", Op: storage.SetBasedLabelSelector_NOT_EXISTS},
+						}}},
+					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
+						{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							{Key: "", Op: storage.SetBasedLabelSelector_EXISTS, Values: nil},
+							{Key: "valid", Op: storage.SetBasedLabelSelector_IN, Values: []string{"good"}},
+							{Key: "valid", Op: storage.SetBasedLabelSelector_NOT_IN, Values: nil},
+						}}}}},
+			expectedNumberOfErrors: 3,
 		},
 	}
 
@@ -130,10 +207,16 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		})
 	}
 
-	for desc, scope := range testCasesBad {
-		t.Run(desc, func(t *testing.T) {
-			err := ValidateSimpleAccessScope(scope)
-			assert.Errorf(t, err, "simple access scope: '%+v'", scope)
+	for _, tc := range testCasesBad {
+		t.Run(tc.name, func(t *testing.T) {
+			err := ValidateSimpleAccessScope(tc.scope)
+			var target *multierror.Error
+			if errors.As(err, &target) {
+				assert.Equal(t, target.Len(), tc.expectedNumberOfErrors)
+			} else {
+				assert.Zero(t, tc.expectedNumberOfErrors)
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
@@ -213,4 +296,10 @@ func TestValidateSimpleAccessScopeRules(t *testing.T) {
 			assert.Errorf(t, err, "simple access scope rules: '%+v'", scopeRules)
 		})
 	}
+}
+
+func TestGenerateAccessScopeID(t *testing.T) {
+	id := GenerateAccessScopeID()
+	validID := EnsureValidAccessScopeID(id)
+	assert.Equal(t, id, validID)
 }
