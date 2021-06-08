@@ -1,5 +1,4 @@
 [![CircleCI][circleci-badge]][circleci-link]
-[![Coverage Status][coveralls-badge]][coveralls-link]
 
 # StackRox Kubernetes Security Platform
 
@@ -488,5 +487,3 @@ went into the current release ([filter](https://stack-rox.atlassian.net/issues/?
 
 [circleci-badge]: https://circleci.com/gh/stackrox/rox.svg?&style=shield&circle-token=140f88ea9dfd594ff68b71eaf1d4407c4331833d
 [circleci-link]:  https://circleci.com/gh/stackrox/workflows/rox/tree/master
-[coveralls-badge]: https://coveralls.io/repos/github/stackrox/rox/badge.svg?t=uFuaaq
-[coveralls-link]: https://coveralls.io/github/stackrox/rox

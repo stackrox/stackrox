@@ -92,11 +92,7 @@ dependencies {
     compile group: 'com.opencsv', name: 'opencsv', version: '4.0'
 
     testCompile group: 'com.google.code.gson', name: 'gson', version: '2.7'
-    compile group: 'com.codepine.api', name: 'testrail-api-java-client', version: '2.0.1'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
-
-    //jsoup for testrailupdater
-    compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
 
     //JavaMail for mail verifications
     compile group: 'com.sun.mail', name: 'javax.mail', version: '1.6.0'
@@ -143,12 +139,4 @@ test {
     // which is not the behaviour we expect of E2Es.
     // https://stackoverflow.com/questions/42175235/force-gradle-to-run-task-even-if-it-is-up-to-date/42185919
     outputs.upToDateWhen { false }
-}
-
-task updateTestRail(type: JavaExec) {
-    // Set main property to name of Groovy script class.
-    main = 'testrailupdater.TestRailUpdater'
-
-    // Set classpath for running the Groovy script.
-    classpath = sourceSets.main.runtimeClasspath
 }

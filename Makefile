@@ -500,9 +500,6 @@ test: go-unit-tests ui-test shell-unit-tests
 integration-unit-tests: build-prep
 	 GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 $(shell go list ./... | grep  "registries\|scanners\|notifiers")
 
-upload-coverage: $(GOVERALLS_BIN)
-	$(GOVERALLS_BIN) -coverprofile="test-output/coverage.out" -ignore 'central/graphql/resolvers/generated.go,generated/storage/*,generated/*/*/*' -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
-
 generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 	$(BASE_DIR)/scripts/generate-junit-reports.sh
 

@@ -477,25 +477,6 @@ restoreDB: &restoreDB
     command: |
       roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/stackrox_db_* |head -n1`
 
-updateTestRail: &updateTestRail
-  run:
-    name: Update test results in TestRail
-    command: |
-      if [[ -z "${CIRCLE_TAG}" ]] || .circleci/is-nightly-tag.sh; then
-        echo "Only run TestRail updater on tagged release/RC builds... skipping."
-        exit 0
-      fi
-
-      ls -la qa-tests-backend/gradle-results
-      export RESULTS_FILE_PATH=$(pwd)/qa-tests-backend/gradle-results
-      export CI_JOB_NAME=${CIRCLE_JOB}
-      export IMAGE_TAG=${CIRCLE_TAG}
-      echo $RESULTS_FILE_PATH
-      echo $CI_JOB_NAME
-      echo $IMAGE_TAG
-      make -C qa-tests-backend update-test-rail
-    when: always
-
 getPrometheusMetricParser: &getPrometheusMetricParser
   run:
     name: Get prometheus-metric-parser
@@ -1412,8 +1393,6 @@ commands:
       - get-central-data
       - *storeQATestResults
       - *checkQASpockResults
-      - copy-gradle-files:
-          target-dir: ${CIRCLE_JOB}-part1
 
       - run:
           name: QA Automation Platform Part 2
@@ -1437,10 +1416,6 @@ commands:
 
       - *storeQATestResults
       - *storeQASpockReports
-      - copy-gradle-files:
-          target-dir: ${CIRCLE_JOB}-part2
-
-      - *updateTestRail
 
       - *collectK8sLogs
       - get-and-store-debug-dump
@@ -1722,8 +1697,6 @@ commands:
 
       - *storeQATestResults
       - *checkQASpockResults
-      - copy-gradle-files:
-          target-dir: openshift-part1
 
       - run:
           name: QA Automation Platform Part 2
@@ -1742,10 +1715,6 @@ commands:
 
       - *storeQATestResults
       - *storeQASpockReports
-      - copy-gradle-files:
-          target-dir: openshift-part2
-
-      - *updateTestRail
 
       - *backupCentral
       - *storeCentralBackupArtifact
@@ -1925,19 +1894,6 @@ commands:
             merge_base="$(git merge-base HEAD origin/master)"
             { git diff --name-only "${merge_base}" || echo "???" ; } | egrep -qv '^ui/' || circleci step halt
 
-  copy-gradle-files:
-    description: "Copy the gradle results files into a common directory to later parse by the TestRail updater"
-    parameters:
-      target-dir:
-        type: string
-    steps:
-      - run:
-          name: Copy gradle test result files
-          command: |
-            mkdir -p qa-tests-backend/gradle-results
-            mv qa-tests-backend/build/reports/tests/test/classes/ qa-tests-backend/gradle-results/<< parameters.target-dir >> || true
-          when: always
-
   compare-with-stored-metrics:
     parameters:
       cluster-flavor:
@@ -2057,18 +2013,6 @@ commands:
 
       - store-test-results-and-artifacts:
           path: << parameters.path >>
-
-      - run:
-          name: Upload coverage information
-          command: |
-            retries=0
-            success=0
-            while (( retries < 5 && success == 0 )); do
-              retries=$((retries + 1))
-              success=1
-              make upload-coverage || success=0
-            done
-          when: always
 
 jobs:
   ###
@@ -3760,10 +3704,6 @@ jobs:
 
       - *storeQATestResults
       - *storeQASpockReports
-      - copy-gradle-files:
-          target-dir: upgrade-test
-
-      - *updateTestRail
 
       - run:
           name: Fetch bundle for the "remote" cluster in the DB
@@ -4471,10 +4411,6 @@ jobs:
 
       - *storeQATestResults
       - *storeQASpockReports
-      - copy-gradle-files:
-          target-dir: eks-tests
-
-      - *updateTestRail
 
       - *collectK8sLogs
       - *backupCentral
@@ -4578,10 +4514,6 @@ jobs:
 
       - *storeQATestResults
       - *storeQASpockReports
-      - copy-gradle-files:
-          target-dir: kops-tests
-
-      - *updateTestRail
 
       - *collectK8sLogs
       - *backupCentral

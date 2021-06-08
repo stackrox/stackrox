@@ -86,8 +86,3 @@ sensor-bounce-test: proto-generated-srcs
 	@echo "+ $@"
 	gradle test -Dgroups=SensorBounce
 	gradle test -Dgroups=SensorBounceNext
-
-.PHONY: update-test-rail
-update-test-rail:
-	@echo "+ $@"
-	gradle updateTestRail

@@ -192,10 +192,6 @@ class Env {
         return mustGet("RESULTS_FILE_PATH")
     }
 
-    static String mustGetTestRailPassword() {
-        return mustGet("TESTRAIL_PASSWORD")
-    }
-
     static String mustGetDockerIOUserName() {
         return mustGet("DOCKER_IO_PULL_USERNAME")
     }

@@ -184,11 +184,6 @@ class BaseSpecification extends Specification {
             println "Error setting up orchestrator: ${e.message}"
             throw e
         }
-        /*    if (isTestrail == true) {
-            tc.createTestRailInstance()
-            tc.setProjectSectionId("Prevent", "Policies")
-            tc.createRun()
-        }*/
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
         try {
@@ -236,15 +231,6 @@ class BaseSpecification extends Specification {
             println "Error to clean up orchestrator: ${e.message}"
             throw e
         }
-        /* if (isTestrail == true) {
-            List<Integer> caseids = new ArrayList<Integer>(resultMap.keySet());
-            tc.updateRun(caseids)
-            resultMap.each { entry ->
-            println "testcaseId: $entry.key status: $entry.value"
-            Integer status = Integer.parseInt(entry.key.toString());
-            Integer testcaseId = Integer.parseInt(entry.value.toString());
-            tc.addStatusForCase(testcaseId, status);
-        }*/
         disableAuthzPlugin()
     }
 
