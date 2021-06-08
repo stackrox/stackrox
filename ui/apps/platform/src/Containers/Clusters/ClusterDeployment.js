@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { CheckCircle, Download } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
 import { Message } from '@stackrox/ui-components';
+import { Spinner } from '@patternfly/react-core';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import ToggleSwitch from 'Components/ToggleSwitch';
@@ -11,6 +12,7 @@ const baseClass = 'py-6';
 
 const ClusterDeploymentPage = ({
     onFileDownload,
+    isDownloadingBundle,
     clusterCheckedIn,
     editing,
     createUpgraderSA,
@@ -50,14 +52,18 @@ const ClusterDeploymentPage = ({
                             />
                         </div>
                         <div className="flex justify-center px-3">
-                            <button
-                                type="button"
-                                className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100 flex items-center"
-                                onClick={onFileDownload}
-                            >
-                                <span className="pr-2">Download YAML file and keys</span>
-                                <Download className="h-3 w-3" />
-                            </button>
+                            {isDownloadingBundle ? (
+                                <Spinner isSVG size="lg" />
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100 flex items-center"
+                                    onClick={onFileDownload}
+                                >
+                                    <span className="pr-2">Download YAML file and keys</span>
+                                    <Download className="h-3 w-3" />
+                                </button>
+                            )}
                         </div>
                         <div className="py-2 text-xs text-center text-base-600">
                             <p className="pb-2">
@@ -107,6 +113,7 @@ const ClusterDeploymentPage = ({
 
 ClusterDeploymentPage.propTypes = {
     onFileDownload: PropTypes.func.isRequired,
+    isDownloadingBundle: PropTypes.bool.isRequired,
     clusterCheckedIn: PropTypes.bool.isRequired,
     editing: PropTypes.bool.isRequired,
     createUpgraderSA: PropTypes.bool.isRequired,
