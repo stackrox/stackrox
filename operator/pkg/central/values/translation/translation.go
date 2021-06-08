@@ -126,6 +126,7 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 					return cv.SetError(fmt.Errorf("invalid spec.central.persistence.persistentVolumeClaim.createClaim %q", *c.Persistence.PersistentVolumeClaim.CreateClaim))
 				}
 			}
+			// TODO(ROX-7149): more details TBD, values files are inconsistent and require more investigation and template reading
 			persistence.AddChild("persistentVolumeClaim", &pvc)
 		}
 		cv.AddChild("persistence", &persistence)
