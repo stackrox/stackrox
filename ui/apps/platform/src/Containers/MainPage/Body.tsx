@@ -42,8 +42,8 @@ const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPage = asyncComponent(
     () => import('Containers/AccessControl/classic/Page')
 );
-const AsyncAccessControlRoutes = asyncComponent(
-    () => import('Containers/AccessControl/AccessControlRoutes')
+const AsyncAccessControlPageV2 = asyncComponent(
+    () => import('Containers/AccessControl/AccessControl')
 );
 const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
@@ -75,7 +75,7 @@ function Body(): ReactElement {
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute
                         path={accessControlPathV2}
-                        component={AsyncAccessControlRoutes}
+                        component={AsyncAccessControlPageV2}
                         featureFlagEnabled={isScopedAccessControlEnabled}
                     />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />

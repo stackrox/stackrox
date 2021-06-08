@@ -1,20 +1,25 @@
+import { History } from 'react-router-dom';
 import qs from 'qs';
 
-import { accessControlBasePathV2 } from 'routePaths'; // import { accessControlPath } from 'routePaths';
+import { accessControlBasePathV2, accessControlPathV2 } from 'routePaths'; // import { accessControlPath } from 'routePaths';
 import { AccessControlEntityType } from 'constants/entityTypes';
 
-export const accessControlBasePath = accessControlBasePathV2; // export { accessControlPath };
+import { AccessControlQueryObject } from './accessControlTypes';
 
-export const entityPathSegment: Record<AccessControlEntityType, string> = {
-    ACCESS_SCOPE: 'access-scopes',
-    AUTH_PROVIDER: 'auth-providers',
-    PERMISSION_SET: 'permission-sets',
-    ROLE: 'roles',
+export const accessControlBasePath = accessControlBasePathV2; // export { accessControlBasePath };
+export const accessControlPath = accessControlPathV2; // export { accessControlPath };
+
+export type AccessControlContainerProps = {
+    entityId: string;
+    history: History;
+    queryObject: AccessControlQueryObject;
 };
 
-type AccessControlQueryObject = {
-    action?: 'create' | 'update';
-    s?: Partial<Record<AccessControlEntityType, string>>;
+export const entityPathSegment: Record<AccessControlEntityType, string> = {
+    AUTH_PROVIDER: 'auth-providers',
+    ROLE: 'roles',
+    PERMISSION_SET: 'permission-sets',
+    ACCESS_SCOPE: 'access-scopes',
 };
 
 export function getEntityPath(

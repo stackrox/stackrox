@@ -1,60 +1,164 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
+import {
+    Alert,
+    AlertVariant,
+    Button,
+    Form,
+    FormGroup,
+    TextInput,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+    ToolbarItem,
+} from '@patternfly/react-core';
 
-import FormFieldRequired from 'Components/forms/FormFieldRequired';
+import { AccessControlQueryAction, AccessScope, PermissionSet, Role } from '../accessControlTypes';
 
-import { inputTextClassName, labelClassName } from '../AccessControlComponents';
-import { Role } from '../accessControlTypes';
+import AccessScopesTable from './AccessScopesTable';
+import PermissionSetsTable from './PermissionSetsTable';
 
 export type RoleFormProps = {
+    isActionable: boolean;
+    action?: AccessControlQueryAction;
     role: Role;
-    isEditing: boolean;
+    permissionSets: PermissionSet[];
+    accessScopes: AccessScope[];
+    onClickCancel: () => void;
+    onClickEdit: () => void;
+    submitValues: (values: Role) => Promise<Role>;
 };
 
-function RoleForm({ role, isEditing }: RoleFormProps): ReactElement {
-    const { handleChange, values } = useFormik({
+function RoleForm({
+    isActionable,
+    action,
+    role,
+    permissionSets,
+    accessScopes,
+    onClickCancel,
+    onClickEdit,
+    submitValues,
+}: RoleFormProps): ReactElement {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+
+    // TODO Why does browser refresh when form is open cause values to be undefined?
+    const { dirty, handleChange, isValid, values } = useFormik({
         initialValues: role,
         onSubmit: () => {},
         validationSchema: yup.object({
             name: yup.string().required(),
             description: yup.string(),
-            // permissionSet: yup.string().required(),
-            // accessScope: yup.string().required(),
+            permissionSetId: yup.string().required(),
+            accessScopeId: yup.string().required(),
         }),
     });
 
-    const disabled = !isEditing;
+    function onChange(_value, event) {
+        handleChange(event);
+    }
+
+    function onClickSubmit() {
+        // TODO submit through Formik, especially to update its initialValue.
+        // For example, to make a change, submit, and then make the opposite change.
+        setIsSubmitting(true);
+        setAlertSubmit(null);
+        submitValues(values)
+            .catch((error) => {
+                setAlertSubmit(
+                    <Alert title="Failed to submit role" variant={AlertVariant.danger} isInline>
+                        {error.message}
+                    </Alert>
+                );
+            })
+            .finally(() => {
+                setIsSubmitting(false);
+            });
+    }
+
+    const hasAction = Boolean(action);
+    const isViewing = !hasAction;
 
     return (
-        <form className="pt-4 px-4 text-base-600">
-            <div className="pb-4">
-                <label htmlFor="name" className={labelClassName}>
-                    Name <FormFieldRequired empty={values.name.length === 0} />
-                </label>
-                <input
+        <Form>
+            {isActionable && (
+                <Toolbar inset={{ default: 'insetNone' }}>
+                    <ToolbarContent>
+                        {action !== 'create' && (
+                            <ToolbarItem spacer={{ default: 'spacerLg' }}>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickEdit}
+                                    isDisabled={action === 'update'}
+                                    isSmall
+                                >
+                                    Edit role
+                                </Button>
+                            </ToolbarItem>
+                        )}
+                        {hasAction && (
+                            <ToolbarGroup variant="button-group">
+                                <ToolbarItem>
+                                    <Button
+                                        variant="primary"
+                                        onClick={onClickSubmit}
+                                        isDisabled={!dirty || !isValid || isSubmitting}
+                                        isLoading={isSubmitting}
+                                        isSmall
+                                    >
+                                        Submit
+                                    </Button>
+                                </ToolbarItem>
+                                <ToolbarItem>
+                                    <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                        Cancel
+                                    </Button>
+                                </ToolbarItem>
+                            </ToolbarGroup>
+                        )}
+                    </ToolbarContent>
+                </Toolbar>
+            )}
+            {alertSubmit}
+            <FormGroup label="Name" fieldId="name" isRequired>
+                <TextInput
+                    type="text"
                     id="name"
-                    name="name"
                     value={values.name}
-                    onChange={handleChange}
-                    disabled={disabled}
-                    className={inputTextClassName}
+                    onChange={onChange}
+                    isDisabled={isViewing}
+                    isRequired
                 />
-            </div>
-            <div className="pb-4">
-                <label htmlFor="description" className={labelClassName}>
-                    Description
-                </label>
-                <input
+            </FormGroup>
+            <FormGroup label="Description" fieldId="description">
+                <TextInput
+                    type="text"
                     id="description"
-                    name="description"
                     value={values.description}
-                    onChange={handleChange}
-                    disabled={disabled}
-                    className={inputTextClassName}
+                    onChange={onChange}
+                    isDisabled={isViewing}
                 />
-            </div>
-        </form>
+            </FormGroup>
+            <FormGroup label="Permission set" fieldId="permissionSetId" isRequired>
+                <PermissionSetsTable
+                    fieldId="permissionSetId"
+                    permissionSetId={values.permissionSetId}
+                    permissionSets={permissionSets}
+                    handleChange={handleChange}
+                    isDisabled={isViewing}
+                />
+            </FormGroup>
+            <FormGroup label="Access scope" fieldId="accessScopeId" isRequired>
+                <AccessScopesTable
+                    fieldId="accessScopeId"
+                    accessScopeId={values.accessScopeId}
+                    accessScopes={accessScopes}
+                    handleChange={handleChange}
+                    isDisabled={isViewing}
+                />
+            </FormGroup>
+        </Form>
     );
 }
 

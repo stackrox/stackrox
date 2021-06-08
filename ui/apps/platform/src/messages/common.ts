@@ -80,9 +80,9 @@ export const rbacConfigLabels: Record<RbacConfigType, string> = Object.freeze({
 });
 
 export const accessControlLabels: Record<AccessControlEntityType, string> = {
-    ACCESS_SCOPE: 'Access Scope',
-    AUTH_PROVIDER: 'Auth Provider',
-    PERMISSION_SET: 'Permission Set',
+    ACCESS_SCOPE: 'Access scope',
+    AUTH_PROVIDER: 'Auth provider',
+    PERMISSION_SET: 'Permission set',
     ROLE: 'Role',
 };
 
