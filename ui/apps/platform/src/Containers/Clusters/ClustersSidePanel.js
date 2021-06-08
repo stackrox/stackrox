@@ -75,7 +75,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState(null);
     const [submissionError, setSubmissionError] = useState('');
-
+    const [isDownloadingBundle, setIsDownloadingBundle] = useState(false);
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
 
     function unselectCluster() {
@@ -244,11 +244,17 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
 
     function onDownload() {
         setSubmissionError('');
-        downloadClusterYaml(selectedCluster.id, createUpgraderSA).catch((error) => {
-            setSubmissionError(
-                error?.response?.data?.message || 'We could not download the configuration files.'
-            );
-        });
+        setIsDownloadingBundle(true);
+        downloadClusterYaml(selectedCluster.id, createUpgraderSA)
+            .catch((error) => {
+                setSubmissionError(
+                    error?.response?.data?.message ||
+                        'We could not download the configuration files.'
+                );
+            })
+            .finally(() => {
+                setIsDownloadingBundle(false);
+            });
     }
 
     /**
@@ -330,6 +336,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                 createUpgraderSA={createUpgraderSA}
                                 toggleSA={toggleSA}
                                 onFileDownload={onDownload}
+                                isDownloadingBundle={isDownloadingBundle}
                                 clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
                             />
                             {!!selectedCluster.id && (
