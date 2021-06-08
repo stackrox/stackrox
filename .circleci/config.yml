@@ -2154,10 +2154,13 @@ jobs:
             set -e
             make -C operator/ generate
             make -C operator/ manifests
+            echo 'Checking for diffs after making generate and manifests...'
             git diff --exit-code HEAD
             make -C operator/ bundle
+            echo 'Checking for diffs after making bundle (ignoring certain files)...'
             # make bundle sometimes reorders annotations in bundle therefore the following files are excluded from diff.
             git diff --exit-code HEAD -- . ':(exclude)bundle.Dockerfile' ':(exclude)bundle/metadata/annotations.yaml'
+            echo 'Checking for diffs after making bundle (in files with variable order)...'
             # compare the said files ignoring different lines order
             diff -sU999 <(git show HEAD:./operator/bundle.Dockerfile | sort) <(sort ./operator/bundle.Dockerfile)
             diff -sU999 <(git show HEAD:./operator/bundle/metadata/annotations.yaml | sort) <(sort ./operator/bundle/metadata/annotations.yaml)
