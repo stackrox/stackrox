@@ -1570,8 +1570,9 @@ github.com/stackrox/badger v1.6.1-0.20200807170638-4177b4beb2ed/go.mod h1:y1nZD3
 github.com/stackrox/bleve v0.0.0-20200807170555-6c4fa9f5e726 h1:mgY/2FQz67/zbDEkfr8YcMMyhAl4n83F2I9ffAgo5FU=
 github.com/stackrox/bleve v0.0.0-20200807170555-6c4fa9f5e726/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
 github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5/go.mod h1:WEQ9k54XQ6lpPUwqpIuLYjZN6P28o56QIxp6K5PWP30=
-github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e h1:tehRH8Wf03sV5pnp17+WNNHzkUgX30p2bxMOv9hFHb8=
 github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e/go.mod h1:j8TgcsyLxEaGufGNdkDQg6YG7ySHVNUlOnxI/akj1iY=
+github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855 h1:5pQczch8XO6MddfAHXdoYEVFMv5kqBBrpzJ/p5M5AkA=
+github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855/go.mod h1:hJeI5MbszujJq1W6nrGMoO0ACa85iQi5pqHl68id0h0=
 github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5 h1:p5sUiceOopvsnBVFcS+vKwWdV2Z/o+J/theHMyrGaqc=
 github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5/go.mod h1:tEU0CD7y2mq9HAWFZY48THyKPFy6oMv19UT5bnTvrRo=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q66zd4W72//Uk3uyVN50Mh/nFLbN9pb7CVK7mE=
@@ -1808,8 +1809,8 @@ golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPh
 golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
-golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b h1:7mWr3k41Qtv8XlltBkDkl8LoP3mpSgBW8BUoxtEdbXg=
-golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b/go.mod h1:T9bdIzuCu7OtxOm1hfPfRQxPLYneinmdGuTeoZ9dtd4=
+golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a h1:kr2P4QFmQr29mSLA43kwrOcgcReGTfbE9N577tCTuBc=
+golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a/go.mod h1:P+XmwS30IXTQdn5tA2iutPOUgjI07+tq3H3K9MVA1s8=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190125153040-c74c464bbbf2/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=

@@ -138,7 +138,13 @@ func idToPrincipal(id authn.Identity) *payload.Principal {
 	for k, v := range id.Attributes() {
 		attributes[k] = v
 	}
-	return &payload.Principal{AuthProvider: authProvider, Attributes: attributes}
+
+	roleNames := make([]string, 0, len(id.Roles()))
+	for _, role := range id.Roles() {
+		roleNames = append(roleNames, role.GetName())
+	}
+
+	return &payload.Principal{AuthProvider: authProvider, Attributes: attributes, Roles: roleNames}
 }
 
 func newConfiguredCache() expiringcache.Cache {

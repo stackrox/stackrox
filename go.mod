@@ -86,7 +86,7 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
-	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
+	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
 	github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
 	github.com/stackrox/scanner v0.0.0-20210602003504-057b882c8d87
@@ -101,7 +101,7 @@ require (
 	go.etcd.io/bbolt v1.3.5
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.15.1-0.20200717220000-53a387079b46
-	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
