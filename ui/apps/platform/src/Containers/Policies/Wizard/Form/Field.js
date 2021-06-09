@@ -14,14 +14,16 @@ import ReduxRadioButtonGroupField from 'Components/forms/ReduxRadioButtonGroupFi
 import RestrictToScope from './RestrictToScope';
 import ExcludedScope from './ExcludedScope';
 
-export default function Field({ field, name, readOnly, BPLenabled }) {
+export default function Field({ field, name, readOnly }) {
     if (field === undefined) {
         return null;
     }
     // this is to accomodate for recursive Fields (when type is 'group')
     const pathName = field.subpath ? name : `${name}.value`;
+
     // we use jsonpath for non-policy configuration fields
     const path = name ? pathName : field.jsonpath;
+
     switch (field.type) {
         case 'text':
             return (
@@ -56,7 +58,6 @@ export default function Field({ field, name, readOnly, BPLenabled }) {
                     key={path}
                     buttons={field.radioButtons}
                     groupClassName="w-full"
-                    useBoolean={!BPLenabled}
                     disabled={readOnly}
                 />
             );
@@ -110,7 +111,7 @@ export default function Field({ field, name, readOnly, BPLenabled }) {
                 />
             );
         case 'group':
-            return field.jsonpaths.map((subField) => {
+            return field.subComponents.map((subField) => {
                 const subFieldName = name ? `${name}.${subField.subpath}` : subField.jsonpath;
                 return (
                     <Field

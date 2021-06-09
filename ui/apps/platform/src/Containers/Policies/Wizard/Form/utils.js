@@ -1,10 +1,6 @@
 import { keyBy } from 'lodash';
 
-import {
-    policyDetails,
-    policyConfiguration,
-    policyStatus,
-} from 'Containers/Policies/Wizard/Form/descriptors';
+import { policyDetails, policyConfiguration } from 'Containers/Policies/Wizard/Form/descriptors';
 import { removeEmptyPolicyFields } from 'utils/policyUtils';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
@@ -231,8 +227,8 @@ export function mapDescriptorToKey(descriptor) {
 export function getPolicyFormDataKeys() {
     const policyDetailsKeys = mapDescriptorToKey(policyDetails.descriptor);
     const policyConfigurationKeys = mapDescriptorToKey(policyConfiguration.descriptor);
-    const policyStatusKeys = mapDescriptorToKey(policyStatus.descriptor);
-    return [...policyDetailsKeys, ...policyConfigurationKeys, ...policyStatusKeys];
+    const policyStatusKey = 'disabled';
+    return [...policyDetailsKeys, ...policyConfigurationKeys, policyStatusKey];
 }
 
 export function getPolicyCriteriaFieldKeys(fields) {

@@ -4,10 +4,10 @@ import PropTypes from 'prop-types';
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import FormButtons from 'Containers/Policies/Wizard/Form/FormButtons';
-import FieldGroupCards from 'Containers/Policies/Wizard/Form/FieldGroupCards';
+import PolicyDetailsForm from 'Containers/Policies/Wizard/Form/PolicyDetailsForm';
 import FormMessages from './FormMessages';
 
-function FormPanel({ header, fieldGroups, onClose, initialValues }) {
+function FormPanel({ header, policyDetailsFormFields, onClose, initialValues }) {
     return (
         <PanelNew test id="side-panel">
             <PanelHead>
@@ -19,9 +19,10 @@ function FormPanel({ header, fieldGroups, onClose, initialValues }) {
             </PanelHead>
             <PanelBody>
                 <FormMessages />
-                <form className="flex flex-col w-full overflow-auto pb-5">
-                    <FieldGroupCards initialValues={initialValues} fieldGroups={fieldGroups} />
-                </form>
+                <PolicyDetailsForm
+                    initialValues={initialValues}
+                    formFields={policyDetailsFormFields}
+                />
             </PanelBody>
         </PanelNew>
     );
@@ -29,7 +30,7 @@ function FormPanel({ header, fieldGroups, onClose, initialValues }) {
 
 FormPanel.propTypes = {
     header: PropTypes.string,
-    fieldGroups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    policyDetailsFormFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     onClose: PropTypes.func.isRequired,
     initialValues: PropTypes.shape({}).isRequired,
 };

@@ -19,7 +19,7 @@ function Panel({
     wizardPolicy,
     wizardStage,
     initialValues,
-    fieldGroups,
+    policyDetailsFormFields,
     onClose,
 }) {
     if (isFetchingPolicy || wizardPolicy == null) {
@@ -34,7 +34,7 @@ function Panel({
                     header={header}
                     onClose={onClose}
                     initialValues={initialValues}
-                    fieldGroups={fieldGroups}
+                    policyDetailsFormFields={policyDetailsFormFields}
                 />
             );
         case wizardStages.editBPL:
@@ -57,7 +57,7 @@ Panel.propTypes = {
     }),
     wizardStage: PropTypes.string.isRequired,
     initialValues: PropTypes.shape({}),
-    fieldGroups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    policyDetailsFormFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     onClose: PropTypes.func.isRequired,
 };
 
