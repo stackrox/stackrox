@@ -5,8 +5,6 @@ import PageHeader from 'Components/PageHeader';
 import Widget from 'Components/Widget';
 import ViewAllButton from 'Components/ViewAllButton';
 import useInterval from 'hooks/useInterval';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { clustersBasePath } from 'routePaths';
 import { fetchClustersAsArray } from 'services/ClustersService';
 import { fetchVulnerabilityDefinitionsInfo } from 'services/IntegrationHealthService';
@@ -22,12 +20,8 @@ import VulnerabilityDefinitions from './Components/VulnerabilityDefinitions';
 import ImageIntegrationHealthWidget from './Components/ImageIntegrationHealthWidget';
 import NotifierIntegrationHealthWidget from './Components/NotifierIntegrationHealthWidget';
 import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthWidget';
-import LogIntegrationHealthWidget from './Components/LogIntegrationHealthWidget';
 
 const SystemHealthDashboardPage = () => {
-    const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
-    );
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
     const [pollingCountSlower, setPollingCountSlower] = useState(0);
     const [currentDatetime, setCurrentDatetime] = useState(null);
@@ -166,9 +160,6 @@ const SystemHealthDashboardPage = () => {
                     <ImageIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     <NotifierIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     <BackupIntegrationHealthWidget pollingCount={pollingCountFaster} />
-                    {isK8sAuditLoggingEnabled && (
-                        <LogIntegrationHealthWidget pollingCount={pollingCountFaster} />
-                    )}
                 </div>
             </div>
         </section>

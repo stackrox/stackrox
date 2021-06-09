@@ -13,7 +13,6 @@ export const types = {
     FETCH_IMAGE_INTEGRATIONS: createFetchingActionTypes(
         'imageIntegrations/FETCH_IMAGE_INTEGRATIONS'
     ),
-    FETCH_LOG_INTEGRATIONS: createFetchingActionTypes('logIntegrations/FETCH_LOG_INTEGRATIONS'),
     TEST_INTEGRATION: 'integrations/TEST_INTEGRATION',
     DELETE_INTEGRATIONS: 'integrations/DELETE_INTEGRATIONS',
     SAVE_INTEGRATION: createFetchingActionTypes('integrations/SAVE_INTEGRATION'),
@@ -27,7 +26,6 @@ export const actions = {
     fetchNotifiers: createFetchingActions(types.FETCH_NOTIFIERS),
     fetchBackups: createFetchingActions(types.FETCH_BACKUPS),
     fetchImageIntegrations: createFetchingActions(types.FETCH_IMAGE_INTEGRATIONS),
-    fetchLogIntegrations: createFetchingActions(types.FETCH_LOG_INTEGRATIONS),
     testIntegration: (source, integration, options) => ({
         type: types.TEST_INTEGRATION,
         source,
@@ -83,13 +81,6 @@ const imageIntegrations = (state = [], action) => {
     return state;
 };
 
-const logIntegrations = (state = [], action) => {
-    if (action.type === types.FETCH_LOG_INTEGRATIONS.SUCCESS) {
-        return isEqual(action.response.integrations, state) ? state : action.response.integrations;
-    }
-    return state;
-};
-
 const isCreating = (state = false, action) => {
     if (action.type === types.SET_CREATE_STATE) {
         return action.state;
@@ -103,7 +94,6 @@ const reducer = combineReducers({
     notifiers,
     imageIntegrations,
     isCreating,
-    logIntegrations,
 });
 
 // Selectors
@@ -113,7 +103,6 @@ const getBackups = (state) => state.backups;
 const getNotifiers = (state) => state.notifiers;
 const getImageIntegrations = (state) => state.imageIntegrations;
 const getCreationState = (state) => state.isCreating;
-const getLogIntegrations = (state) => state.logIntegrations;
 
 export const selectors = {
     getAuthPlugins,
@@ -121,7 +110,6 @@ export const selectors = {
     getNotifiers,
     getImageIntegrations,
     getCreationState,
-    getLogIntegrations,
 };
 
 export default reducer;

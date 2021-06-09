@@ -26,7 +26,6 @@ class IntegrationTable extends Component {
             'imageIntegrations',
             'notifiers',
             'authProviders',
-            'logIntegrations',
         ]).isRequired,
         type: PropTypes.string.isRequired,
         label: PropTypes.string.isRequired,

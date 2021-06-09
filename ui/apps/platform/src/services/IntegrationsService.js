@@ -16,8 +16,6 @@ function getPath(type, action) {
                 return '/v1/scopedaccessctrl/configs';
             }
             return '/v1/scopedaccessctrl/config';
-        case 'logIntegrations':
-            return '/v1/logintegrations';
         default:
             return '';
     }

@@ -20,7 +20,6 @@ const SOURCE_LABELS = Object.freeze({
     imageIntegrations: 'image integrations',
     notifiers: 'notifier integrations',
     backups: 'backup integrations',
-    logIntegrations: 'integrations',
 });
 
 class IntegrationModal extends Component {
@@ -36,7 +35,6 @@ class IntegrationModal extends Component {
             'notifiers',
             'authProviders',
             'backups',
-            'logIntegrations',
         ]).isRequired,
         type: PropTypes.string.isRequired,
         label: PropTypes.string.isRequired,
