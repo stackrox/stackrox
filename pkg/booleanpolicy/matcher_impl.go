@@ -163,7 +163,6 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 
 type matcherImpl struct {
 	evaluators []sectionAndEvaluator
-	stage      storage.LifecycleStage
 }
 
 func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.AugmentedObj) (*evaluator.Result, error) {
@@ -225,7 +224,7 @@ func (m *matcherImpl) getViolations(
 		}
 
 		alertViolations, isProcessViolation, isKubeEventViolation, isNetworkFlowViolation, err :=
-			violationmessages.Render(m.stage, eval.section, result, indicator, kubeEvent, networkFlow)
+			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow)
 		if err != nil {
 			return nil, err
 		}

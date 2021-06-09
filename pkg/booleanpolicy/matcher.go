@@ -110,7 +110,6 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 
 	return &kubeEventMatcherImpl{
 		matcherImpl: matcherImpl{
-			stage:      storage.LifecycleStage_DEPLOY,
 			evaluators: sectionsAndEvals,
 		},
 		kubeEventOnlyEvaluators: kubeEventOnlyEvaluators,
@@ -158,7 +157,6 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 
 	return &processMatcherImpl{
 		matcherImpl: matcherImpl{
-			stage:      storage.LifecycleStage_DEPLOY,
 			evaluators: sectionsAndEvals,
 		},
 		processOnlyEvaluators: processOnlyEvaluators,
@@ -203,7 +201,6 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 	return &networkFlowMatcherImpl{
 		matcherImpl: matcherImpl{
 			evaluators: sectionsAndEvals,
-			stage:      storage.LifecycleStage_DEPLOY,
 		},
 		networkFlowOnlyEvaluators: networkFlowOnlyEvaluators,
 	}, nil
@@ -219,7 +216,6 @@ func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (Deplo
 
 	return &matcherImpl{
 		evaluators: sectionsAndEvals,
-		stage:      storage.LifecycleStage_DEPLOY,
 	}, nil
 }
 
@@ -232,7 +228,6 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 	}
 	return &matcherImpl{
 		evaluators: sectionsAndEvals,
-		stage:      storage.LifecycleStage_BUILD,
 	}, nil
 }
 
