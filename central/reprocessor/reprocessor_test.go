@@ -119,17 +119,18 @@ func (suite *loopTestSuite) TestTimerTicksTwice() {
 	loop.Stop()
 }
 
-func (suite *loopTestSuite) TestShortCircuitOnce() {
-	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages).(*loopImpl)
-	suite.expectCalls(2, false)
-	loop.Start()
-
-	timeout := 100 * time.Millisecond
-	suite.True(suite.waitForRun(loop, timeout))
-	loop.ShortCircuit()
-	suite.True(suite.waitForRun(loop, timeout))
-	loop.Stop()
-}
+// ROX-7334 tracks re-enabling this test
+//func (suite *loopTestSuite) TestShortCircuitOnce() {
+//	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages).(*loopImpl)
+//	suite.expectCalls(2, false)
+//	loop.Start()
+//
+//	timeout := 100 * time.Millisecond
+//	suite.True(suite.waitForRun(loop, timeout))
+//	loop.ShortCircuit()
+//	suite.True(suite.waitForRun(loop, timeout))
+//	loop.Stop()
+//}
 
 func (suite *loopTestSuite) TestShortCircuitTwice() {
 	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages).(*loopImpl)
