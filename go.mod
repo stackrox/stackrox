@@ -16,8 +16,6 @@ require (
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 	github.com/aws/aws-sdk-go v1.38.29
 	github.com/blevesearch/bleve v0.8.0
-	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
-	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.1
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
@@ -34,7 +32,6 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fullsailor/pkcs7 v0.0.0
-	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/godbus/dbus/v5 v5.0.3
@@ -47,12 +44,11 @@ require (
 	github.com/google/go-cmp v0.5.4
 	github.com/googleapis/gnostic v0.5.1
 	github.com/gookit/color v1.4.2
-	github.com/gorilla/handlers v1.4.2 // indirect
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v0.0.0-20190513003547-158e7b876106
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.11.4-0.20191004150533-c677e419aa5c
+	github.com/grpc-ecosystem/grpc-gateway v1.12.1
 	github.com/hako/durafmt v0.0.0-20180520121703-7b7ae1e72ead
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.3.0
@@ -61,7 +57,6 @@ require (
 	github.com/itchyny/gojq v0.12.1
 	github.com/joelanford/helm-operator v0.0.7
 	github.com/jstemmer/go-junit-report v0.9.1
-	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.1
 	github.com/mailru/easyjson v0.7.6
@@ -71,11 +66,14 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/nilslice/protolock v0.0.0
 	github.com/nxadm/tail v1.4.8
+	github.com/onsi/ginkgo v1.14.1
+	github.com/onsi/gomega v1.10.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/operator-framework/operator-lib v0.4.0 // indirect
+	github.com/operator-framework/operator-sdk v0.19.4
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
@@ -95,9 +93,6 @@ require (
 	github.com/tkuchiki/go-timezone v0.1.3
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
-	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
-	github.com/yvasiyarov/gorelic v0.0.7 // indirect
-	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.etcd.io/bbolt v1.3.5
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.15.1-0.20200717220000-53a387079b46

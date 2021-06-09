@@ -1,5 +1,7 @@
 run:
   timeout: 5m
+  skip-dirs:
+  - sensor/kubernetes/listener/resources/complianceoperator
 
 issues:
   exclude-use-default: false
