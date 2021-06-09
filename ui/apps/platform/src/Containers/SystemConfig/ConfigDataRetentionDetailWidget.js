@@ -1,24 +1,29 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
+import {
+    Card,
+    CardBody,
+    CardTitle,
+    Divider,
+    Gallery,
+    GalleryItem,
+    Hint,
+    HintTitle,
+    HintBody,
+} from '@patternfly/react-core';
 
 const UNKNOWN_FLAG = -1;
 
 const NumberBox = ({ label, value, suffix }) => (
-    <div className="min-h-32 w-full md:w-1/4 px-2 py-4 md:pb-0" data-testid="number-box">
-        <div className="border border-base-400 rounded bg-tertiary-200 flex flex-col min-h-32 items-center justify-between">
-            <header className="w-full">
-                <h1 className="flex flex-col w-full border-b border-base-400 font-700 h-12 px-2 justify-center text-center capitalize leading-tight">
-                    {label}
-                </h1>
-            </header>
-            <div className="flex flex-col justify-center flex-grow font-600 text-primary-700 text-5xl">
-                {value === UNKNOWN_FLAG && `Unknown`}
-                {!value && `Never deleted`}
-                {value > 0 && `${value} ${pluralize(suffix, value)}`}
-            </div>
-        </div>
-    </div>
+    <Hint data-testid="number-box" className="pf-u-h-100">
+        <HintTitle className="pf-u-font-size-sm">{label}</HintTitle>
+        <HintBody className="pf-u-font-size-xl pf-u-font-weight-bold">
+            {value === UNKNOWN_FLAG && `Unknown`}
+            {!value && `Never deleted`}
+            {value > 0 && `${value} ${pluralize(suffix, value)}`}
+        </HintBody>
+    </Hint>
 );
 
 NumberBox.propTypes = {
@@ -38,43 +43,56 @@ const DataRetentionDetailWidget = ({ config }) => {
     const alertConfig = privateConfig.alertConfig || {};
 
     return (
-        <div className="bg-base-100 border-base-200 shadow" data-testid="data-retention-config">
-            <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center h-10">
-                Data Retention Configuration
-            </div>
-            <div className="flex sm:flex-col md:flex-row flex-wrap px-2 pb-4 w-full">
-                <NumberBox
-                    label="All Runtime Violations"
-                    value={alertConfig.allRuntimeRetentionDurationDays}
-                    suffix="Day"
-                />
-                <NumberBox
-                    label="Runtime Violations For Deleted Deployments"
-                    value={alertConfig.deletedRuntimeRetentionDurationDays}
-                    suffix="Day"
-                />
-                <NumberBox
-                    label="Resolved Deploy-Phase Violations"
-                    value={alertConfig.resolvedDeployRetentionDurationDays}
-                    suffix="Day"
-                />
-                <NumberBox
-                    label="Attempted Deploy-Phase Violations"
-                    value={alertConfig.attemptedDeployRetentionDurationDays}
-                    suffix="Day"
-                />
-                <NumberBox
-                    label="Attempted Runtime Violations"
-                    value={alertConfig.attemptedRuntimeRetentionDurationDays}
-                    suffix="Day"
-                />
-                <NumberBox
-                    label="Images No Longer Deployed"
-                    value={privateConfig.imageRetentionDurationDays}
-                    suffix="Day"
-                />
-            </div>
-        </div>
+        <Card data-testid="data-retention-config">
+            <CardTitle>Data Retention Configuration</CardTitle>
+            <Divider component="div" />
+            <CardBody>
+                <Gallery hasGutter>
+                    <GalleryItem>
+                        <NumberBox
+                            label="All Runtime Violations"
+                            value={alertConfig.allRuntimeRetentionDurationDays}
+                            suffix="Day"
+                        />
+                    </GalleryItem>
+                    <GalleryItem>
+                        <NumberBox
+                            label="Runtime Violations For Deleted Deployments"
+                            value={alertConfig.deletedRuntimeRetentionDurationDays}
+                            suffix="Day"
+                        />
+                    </GalleryItem>
+                    <GalleryItem>
+                        <NumberBox
+                            label="Resolved Deploy-Phase Violations"
+                            value={alertConfig.resolvedDeployRetentionDurationDays}
+                            suffix="Day"
+                        />
+                    </GalleryItem>
+                    <GalleryItem>
+                        <NumberBox
+                            label="Attempted Deploy-Phase Violations"
+                            value={alertConfig.attemptedDeployRetentionDurationDays}
+                            suffix="Day"
+                        />
+                    </GalleryItem>
+                    <GalleryItem>
+                        <NumberBox
+                            label="Attempted Runtime Violations"
+                            value={alertConfig.attemptedRuntimeRetentionDurationDays}
+                            suffix="Day"
+                        />
+                    </GalleryItem>
+                    <GalleryItem>
+                        <NumberBox
+                            label="Images No Longer Deployed"
+                            value={privateConfig.imageRetentionDurationDays}
+                            suffix="Day"
+                        />
+                    </GalleryItem>
+                </Gallery>
+            </CardBody>
+        </Card>
     );
 };
 

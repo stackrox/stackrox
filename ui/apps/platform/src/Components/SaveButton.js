@@ -2,33 +2,31 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { submit, isPristine, isValid } from 'redux-form';
+import { Button } from '@patternfly/react-core';
 
 const onClickHandler = (dispatch, formName) => () => {
     dispatch(submit(formName));
 };
 
-const SaveButton = ({ dispatch, formName, className, isPristineForm, isValidForm }) => (
-    <button
-        className={`btn btn-success ${className}`}
-        type="button"
+const SaveButton = ({ dispatch, formName, isPristineForm, isValidForm }) => (
+    <Button
+        variant="primary"
         disabled={isPristineForm || !isValidForm}
         onClick={onClickHandler(dispatch, formName)}
         data-testid="save-btn"
     >
         Save
-    </button>
+    </Button>
 );
 
 SaveButton.propTypes = {
     dispatch: PropTypes.func.isRequired,
     formName: PropTypes.string.isRequired,
-    className: PropTypes.string,
     isPristineForm: PropTypes.bool,
     isValidForm: PropTypes.bool,
 };
 
 SaveButton.defaultProps = {
-    className: '',
     isPristineForm: false,
     isValidForm: true,
 };

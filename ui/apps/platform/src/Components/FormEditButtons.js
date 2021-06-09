@@ -1,6 +1,8 @@
 import React from 'react';
-import SaveButton from 'Components/SaveButton';
 import PropTypes from 'prop-types';
+import { Button } from '@patternfly/react-core';
+
+import SaveButton from 'Components/SaveButton';
 
 function FormEditButtons({ formName, isEditing, setIsEditing }) {
     function setEditingFalse() {
@@ -12,28 +14,22 @@ function FormEditButtons({ formName, isEditing, setIsEditing }) {
     if (isEditing) {
         return (
             <>
-                <button
-                    className="btn btn-base mr-2"
-                    type="button"
+                <Button
+                    variant="secondary"
+                    className="pf-u-mr-sm"
                     onClick={setEditingFalse}
                     data-testid="cancel-btn"
                 >
                     Cancel
-                </button>
+                </Button>
                 <SaveButton formName={formName} />
             </>
         );
     }
     return (
-        <button
-            data-testid="edit-btn"
-            className="btn btn-base"
-            type="button"
-            onClick={setEditingTrue}
-            disabled={isEditing}
-        >
+        <Button variant="primary" data-testid="edit-btn" onClick={setEditingTrue}>
             Edit
-        </button>
+        </Button>
     );
 }
 

@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import { PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions } from 'reducers/systemConfig';
 import { actions as telemetryActions } from 'reducers/telemetryConfig';
 
-import PageHeader from 'Components/PageHeader';
 import FormEditButtons from 'Components/FormEditButtons';
 import Form from './Form';
-import Detail from './Detail';
+import Details from './Details';
 
 const defaultPublicConfig = {
     header: {
@@ -33,47 +33,47 @@ const Page = ({ systemConfig, saveSystemConfig, telemetryConfig, saveTelemetryCo
         setIsEditing(false);
     }
 
-    function getContent() {
-        const modifiedSystemConfig = { ...systemConfig };
-        if (!systemConfig.publicConfig) {
-            modifiedSystemConfig.publicConfig = defaultPublicConfig;
-        }
-        const modifiedTelemetryConfig = { ...telemetryConfig };
-
-        if (isEditing) {
-            const safePrivateConfig = systemConfig.privateConfig;
-            const safeEditConfig = {
-                ...modifiedSystemConfig,
-                privateConfig: safePrivateConfig,
-                telemetryConfig: modifiedTelemetryConfig,
-            };
-
-            return (
-                <Form
-                    initialValues={safeEditConfig}
-                    onSubmit={saveHandler}
-                    config={safeEditConfig}
-                />
-            );
-        }
-        return <Detail config={modifiedSystemConfig} telemetryConfig={modifiedTelemetryConfig} />;
+    const modifiedSystemConfig = { ...systemConfig };
+    if (!systemConfig.publicConfig) {
+        modifiedSystemConfig.publicConfig = defaultPublicConfig;
     }
+    const safePrivateConfig = systemConfig.privateConfig;
+    const safeEditConfig = {
+        ...modifiedSystemConfig,
+        privateConfig: safePrivateConfig,
+        telemetryConfig,
+    };
 
     return (
-        <section className="flex flex-1 flex-col h-full w-full">
-            <div className="flex flex-1 flex-col w-full">
-                <PageHeader header="System Configuration">
-                    <div className="flex flex-1 justify-end">
-                        <FormEditButtons
-                            formName="system-config-form"
-                            isEditing={isEditing}
-                            setIsEditing={setIsEditing}
-                        />
-                    </div>
-                </PageHeader>
-                <div className="w-full h-full flex pb-0 overflow-auto">{getContent()}</div>
-            </div>
-        </section>
+        <>
+            <PageSection variant="light">
+                <Flex>
+                    <FlexItem flex={{ default: 'flex_1' }}>
+                        <Title headingLevel="h1">System Configuration</Title>
+                    </FlexItem>
+                    <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
+                        <FlexItem>
+                            <FormEditButtons
+                                formName="system-config-form"
+                                isEditing={isEditing}
+                                setIsEditing={setIsEditing}
+                            />
+                        </FlexItem>
+                    </Flex>
+                </Flex>
+            </PageSection>
+            <PageSection>
+                {isEditing ? (
+                    <Form
+                        initialValues={safeEditConfig}
+                        onSubmit={saveHandler}
+                        config={safeEditConfig}
+                    />
+                ) : (
+                    <Details systemConfig={systemConfig} telemetryConfig={telemetryConfig} />
+                )}
+            </PageSection>
+        </>
     );
 };
 
