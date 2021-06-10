@@ -27,6 +27,11 @@ func hardPanic(v interface{}) {
 
 // Must panics if any of the given errors is non-nil, and does nothing otherwise.
 func Must(errs ...error) {
+	CrashOnError(errs...)
+}
+
+// CrashOnError is an alternative to `Must`. It was introduced because `Must(err)` looks confusing.
+func CrashOnError(errs ...error) {
 	for _, err := range errs {
 		if err != nil {
 			hardPanic(fmt.Sprintf("%+v", err))

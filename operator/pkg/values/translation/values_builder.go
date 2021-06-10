@@ -8,9 +8,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// ValuesBuilder helps assemble chartutil.Values in slightly less verbose way than otherwise with plain maps and errors.
+// ValuesBuilder helps assemble a values map in slightly less verbose way than otherwise with plain maps and errors.
 type ValuesBuilder struct {
-	data   chartutil.Values
+	data   map[string]interface{}
 	errors *multierror.Error
 }
 
@@ -19,7 +19,7 @@ func NewValuesBuilder() ValuesBuilder {
 	return ValuesBuilder{}
 }
 
-// Build unwraps ValuesBuilder and returns contained chartutil.Values or error.
+// Build unwraps ValuesBuilder and returns contained map or error.
 // Normally Build should only be called once per constructed values graph to get the eventual results.
 func (v *ValuesBuilder) Build() (chartutil.Values, error) {
 	if v == nil {
@@ -28,13 +28,14 @@ func (v *ValuesBuilder) Build() (chartutil.Values, error) {
 	if v.errors != nil && v.errors.Len() != 0 {
 		return nil, v.errors
 	}
-	return v.getData(), nil
+
+	return ToHelmValues(v.getData())
 }
 
 // getData allows deferring allocation of ValuesBuilder.data map until it is actually needed.
-func (v *ValuesBuilder) getData() chartutil.Values {
+func (v *ValuesBuilder) getData() map[string]interface{} {
 	if v.data == nil {
-		v.data = chartutil.Values{}
+		v.data = map[string]interface{}{}
 	}
 	return v.data
 }
@@ -171,16 +172,16 @@ func (v *ValuesBuilder) SetResourceList(key string, value v1.ResourceList) {
 	v.getData()[key] = value
 }
 
-// SetChartutilValues adds values, if not empty, under the given key. Records error on attempt to overwrite key.
-func (v *ValuesBuilder) SetChartutilValues(key string, values chartutil.Values) {
+// SetMap adds values, if not empty, under the given key. Records error on attempt to overwrite key.
+func (v *ValuesBuilder) SetMap(key string, values map[string]interface{}) {
 	if len(values) == 0 || v.validateKey(key) != nil {
 		return
 	}
 	v.getData()[key] = values
 }
 
-// SetChartutilValuesSlice adds values slice, if not empty, under the given key. Records error on attempt to overwrite key.
-func (v *ValuesBuilder) SetChartutilValuesSlice(key string, values []chartutil.Values) {
+// SetMapSlice adds values slice, if not empty, under the given key. Records error on attempt to overwrite key.
+func (v *ValuesBuilder) SetMapSlice(key string, values []map[string]interface{}) {
 	if len(values) == 0 || v.validateKey(key) != nil {
 		return
 	}

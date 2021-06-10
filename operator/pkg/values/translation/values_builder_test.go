@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"helm.sh/helm/v3/pkg/chartutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -23,7 +22,7 @@ func TestBuildNil(t *testing.T) {
 func TestBuildWithValue(t *testing.T) {
 	v := NewValuesBuilder()
 	v.SetBoolValue("flag", true)
-	assert.Equal(t, chartutil.Values{"flag": true}, build(t, &v))
+	assert.Equal(t, map[string]interface{}{"flag": true}, build(t, &v))
 }
 
 func TestBuildWithError(t *testing.T) {
@@ -55,7 +54,7 @@ func TestAddAllFrom(t *testing.T) {
 
 	host.AddAllFrom(&donor)
 
-	assert.Equal(t, chartutil.Values{
+	assert.Equal(t, map[string]interface{}{
 		"host-string":  "bar",
 		"donor-string": "foo",
 		"donor-flag":   false,
@@ -67,7 +66,7 @@ func TestAllFromEmpty(t *testing.T) {
 	v.SetStringValue("foo", "bar")
 	v.AddAllFrom(nil)
 	v.AddAllFrom(&empty)
-	assert.Equal(t, chartutil.Values{"foo": "bar"}, build(t, &v))
+	assert.Equal(t, map[string]interface{}{"foo": "bar"}, build(t, &v))
 }
 
 func TestAddAllFromError(t *testing.T) {
@@ -109,9 +108,9 @@ func TestAddChild(t *testing.T) {
 
 	parent.AddChild("child", &child)
 
-	assert.Equal(t, chartutil.Values{
+	assert.Equal(t, map[string]interface{}{
 		"parent-foo": "foo1",
-		"child": chartutil.Values{
+		"child": map[string]interface{}{
 			"child-foo": "foo6",
 		},
 	}, build(t, &parent))
@@ -122,7 +121,7 @@ func TestAddChildEmpty(t *testing.T) {
 	v.SetStringValue("foo", "bar")
 	v.AddChild("nil-child", nil)
 	v.AddChild("empty-child", &empty)
-	assert.Equal(t, chartutil.Values{"foo": "bar"}, build(t, &v))
+	assert.Equal(t, map[string]interface{}{"foo": "bar"}, build(t, &v))
 }
 
 func TestAddChildWithError(t *testing.T) {
@@ -197,17 +196,17 @@ func TestSetValues(t *testing.T) {
 	v.SetResourceList("nil-resources", nil)
 	v.SetResourceList("empty-resources", v1.ResourceList{})
 
-	values := chartutil.Values{"chartutil-key": "chartutil-anything"}
-	v.SetChartutilValues("chartutil-values", values)
-	v.SetChartutilValues("nil-chartutil-values", nil)
-	v.SetChartutilValues("empty-chartutil-values", chartutil.Values{})
+	values := map[string]interface{}{"chartutil-key": "chartutil-anything"}
+	v.SetMap("chartutil-values", values)
+	v.SetMap("nil-chartutil-values", nil)
+	v.SetMap("empty-chartutil-values", map[string]interface{}{})
 
-	valuesSlice := []chartutil.Values{{"chartutil-1": 1}, {"chartutil-2": 2}}
-	v.SetChartutilValuesSlice("chartutil-values-slice", valuesSlice)
-	v.SetChartutilValuesSlice("nil-chartutil-values-slice", nil)
-	v.SetChartutilValuesSlice("empty-chartutil-values-slice", []chartutil.Values{})
+	valuesSlice := []map[string]interface{}{{"chartutil-1": 1}, {"chartutil-2": 2}}
+	v.SetMapSlice("chartutil-values-slice", valuesSlice)
+	v.SetMapSlice("nil-chartutil-values-slice", nil)
+	v.SetMapSlice("empty-chartutil-values-slice", []map[string]interface{}{})
 
-	assert.Equal(t, chartutil.Values{
+	assert.Equal(t, map[string]interface{}{
 		"bool-pointer":           true,
 		"bool":                   true,
 		"int32":                  int32(42),
@@ -220,8 +219,8 @@ func TestSetValues(t *testing.T) {
 		"string-slice":           []string{"string1", ""},
 		"string-map":             map[string]string{"string-key": "string-value"},
 		"resources":              v1.ResourceList{v1.ResourceCPU: resource.Quantity{Format: "6"}},
-		"chartutil-values":       chartutil.Values{"chartutil-key": "chartutil-anything"},
-		"chartutil-values-slice": []chartutil.Values{{"chartutil-1": 1}, {"chartutil-2": 2}},
+		"chartutil-values":       map[string]interface{}{"chartutil-key": "chartutil-anything"},
+		"chartutil-values-slice": []map[string]interface{}{{"chartutil-1": 1}, {"chartutil-2": 2}},
 	}, build(t, &v))
 }
 
@@ -254,10 +253,10 @@ func TestSetClashingKey(t *testing.T) {
 			v.SetResourceList(key, v1.ResourceList{v1.ResourcePods: resource.Quantity{Format: "14"}})
 		},
 		"chartutil-values": func(v *ValuesBuilder) {
-			v.SetChartutilValues(key, chartutil.Values{"foo": 100500})
+			v.SetMap(key, map[string]interface{}{"foo": 100500})
 		},
 		"chartutil-values-slice": func(v *ValuesBuilder) {
-			v.SetChartutilValuesSlice(key, []chartutil.Values{{"bar": -1}})
+			v.SetMapSlice(key, []map[string]interface{}{{"bar": -1}})
 		},
 	}
 
@@ -277,9 +276,12 @@ func TestEmptyKey(t *testing.T) {
 	assertBuildError(t, &v, "attempt to set empty key")
 }
 
-func build(t *testing.T, b *ValuesBuilder) chartutil.Values {
-	val, err := b.Build()
-	require.NoError(t, err)
+func build(t *testing.T, b *ValuesBuilder) map[string]interface{} {
+	if b == nil {
+		return map[string]interface{}{}
+	}
+	require.NoError(t, b.errors.ErrorOrNil())
+	val := b.getData()
 	assert.NotNil(t, val)
 	return val
 }

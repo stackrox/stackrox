@@ -6,7 +6,9 @@ import (
 
 	"github.com/stackrox/rox/operator/api/central/v1alpha1"
 	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -14,6 +16,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
+
+func TestReadBaseValues(t *testing.T) {
+	_, err := chartutil.ReadValues(baseValuesYAML)
+	assert.NoError(t, err)
+}
 
 func TestTranslate(t *testing.T) {
 	type args struct {
@@ -46,7 +53,7 @@ func TestTranslate(t *testing.T) {
 			args: args{
 				c: v1alpha1.Central{},
 			},
-			want: map[string]interface{}{},
+			want: chartutil.Values{},
 		},
 
 		"empty spec": {
@@ -55,7 +62,7 @@ func TestTranslate(t *testing.T) {
 					Spec: v1alpha1.CentralSpec{},
 				},
 			},
-			want: map[string]interface{}{},
+			want: chartutil.Values{},
 		},
 
 		"everything and the kitchen sink": {
@@ -293,26 +300,26 @@ func TestTranslate(t *testing.T) {
 				),
 			},
 			want: chartutil.Values{
-				"additionalCAs": chartutil.Values{
+				"additionalCAs": map[string]interface{}{
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
 				},
-				"central": chartutil.Values{
-					"adminPassword": chartutil.Values{
+				"central": map[string]interface{}{
+					"adminPassword": map[string]interface{}{
 						"value": "admin-password-plaintext",
 					},
 					"disableTelemetry": false,
-					"exposure": chartutil.Values{
-						"loadBalancer": chartutil.Values{
+					"exposure": map[string]interface{}{
+						"loadBalancer": map[string]interface{}{
 							"enabled": true,
 							"ip":      "1.1.1.1",
 							"port":    int32(12345),
 						},
-						"nodePort": chartutil.Values{
+						"nodePort": map[string]interface{}{
 							"enabled": true,
 							"port":    int32(23456),
 						},
-						"route": chartutil.Values{
+						"route": map[string]interface{}{
 							"enabled": true,
 						},
 					},
@@ -320,15 +327,15 @@ func TestTranslate(t *testing.T) {
 						"central-node-selector-label1": "central-node-selector-value1",
 						"central-node-selector-label2": "central-node-selector-value2",
 					},
-					"persistence": chartutil.Values{
+					"persistence": map[string]interface{}{
 						"hostPath": "/central/host/path",
-						"persistentVolumeClaim": chartutil.Values{
+						"persistentVolumeClaim": map[string]interface{}{
 							"claimName":   "central-claim-name",
 							"createClaim": true,
 							// TODO(ROX-7149): more details TBD, values files are inconsistent and require more investigation and template reading
 						},
 					},
-					"resources": chartutil.Values{
+					"resources": map[string]interface{}{
 						"limits": corev1.ResourceList{
 							"cpu":    resource.Quantity{Format: "10"},
 							"memory": resource.Quantity{Format: "20"},
@@ -338,22 +345,22 @@ func TestTranslate(t *testing.T) {
 							"memory": resource.Quantity{Format: "40"},
 						},
 					},
-					"serviceTLS": chartutil.Values{
+					"serviceTLS": map[string]interface{}{
 						"cert": "central-tls-spec-secret-cert-content",
 						"key":  "central-tls-spec-secret-key-content",
 					},
 				},
-				"env": chartutil.Values{
+				"env": map[string]interface{}{
 					"offlineMode": true,
 					"proxyConfig": "proxy-config-secret-content",
 				},
-				"imagePullSecrets": chartutil.Values{
+				"imagePullSecrets": map[string]interface{}{
 					"useExisting": []string{
 						"image-pull-secrets-secret1",
 						"image-pull-secrets-secret2",
 					},
 				},
-				"customize": chartutil.Values{
+				"customize": map[string]interface{}{
 					"annotations": map[string]string{
 						"customize-annotation1": "customize-annotation1-value",
 						"customize-annotation2": "customize-annotation2-value",
@@ -374,7 +381,7 @@ func TestTranslate(t *testing.T) {
 						"customize-pod-label1": "customize-pod-label1-value",
 						"customize-pod-label2": "customize-pod-label2-value",
 					},
-					"central": chartutil.Values{
+					"central": map[string]interface{}{
 						"annotations": map[string]string{
 							"central-customize-annotation1": "central-customize-annotation1-value",
 							"central-customize-annotation2": "central-customize-annotation2-value",
@@ -396,7 +403,7 @@ func TestTranslate(t *testing.T) {
 							"central-customize-pod-label2": "central-customize-pod-label2-value",
 						},
 					},
-					"scanner": chartutil.Values{
+					"scanner": map[string]interface{}{
 						"annotations": map[string]string{
 							"scanner-customize-annotation1": "scanner-customize-annotation1-value",
 							"scanner-customize-annotation2": "scanner-customize-annotation2-value",
@@ -418,7 +425,7 @@ func TestTranslate(t *testing.T) {
 							"scanner-customize-pod-label2": "scanner-customize-pod-label2-value",
 						},
 					},
-					"scanner-db": chartutil.Values{
+					"scanner-db": map[string]interface{}{
 						"annotations": map[string]string{
 							"scanner-db-customize-annotation1": "scanner-db-customize-annotation1-value",
 							"scanner-db-customize-annotation2": "scanner-db-customize-annotation2-value",
@@ -441,11 +448,11 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
-				"scanner": chartutil.Values{
+				"scanner": map[string]interface{}{
 					"disable":  false,
 					"replicas": int32(7),
 					"logLevel": "DEBUG",
-					"autoscaling": chartutil.Values{
+					"autoscaling": map[string]interface{}{
 						"disable":     false,
 						"minReplicas": int32(6),
 						"maxReplicas": int32(8),
@@ -458,7 +465,7 @@ func TestTranslate(t *testing.T) {
 						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
 					},
-					"resources": chartutil.Values{
+					"resources": map[string]interface{}{
 						"limits": corev1.ResourceList{
 							"cpu":    resource.Quantity{Format: "50"},
 							"memory": resource.Quantity{Format: "60"},
@@ -468,7 +475,7 @@ func TestTranslate(t *testing.T) {
 							"memory": resource.Quantity{Format: "80"},
 						},
 					},
-					"dbResources": chartutil.Values{
+					"dbResources": map[string]interface{}{
 						"limits": corev1.ResourceList{
 							"cpu":    resource.Quantity{Format: "90"},
 							"memory": resource.Quantity{Format: "100"},
@@ -478,11 +485,11 @@ func TestTranslate(t *testing.T) {
 							"memory": resource.Quantity{Format: "120"},
 						},
 					},
-					"serviceTLS": chartutil.Values{
+					"serviceTLS": map[string]interface{}{
 						"cert": "scanner-tls-spec-secret-cert-content",
 						"key":  "scanner-tls-spec-secret-key-content",
 					},
-					"dbServiceTLS": chartutil.Values{
+					"dbServiceTLS": map[string]interface{}{
 						"cert": "scanner-db-tls-spec-secret-cert-content",
 						"key":  "scanner-db-tls-spec-secret-key-content",
 					},
@@ -492,9 +499,13 @@ func TestTranslate(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := Translate(context.Background(), tt.args.clientSet, tt.args.c)
+			wantAsValues, err := translation.ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			got, err := translate(context.Background(), tt.args.clientSet, tt.args.c)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+
+			assert.Equal(t, wantAsValues, got)
 		})
 	}
 }

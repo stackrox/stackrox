@@ -6,6 +6,7 @@ import (
 
 	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -55,9 +56,11 @@ func TestGetCustomize(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			wantNormalized, err := ToHelmValues(tt.wantValues)
+			require.NoError(t, err, "error in test specification: cannot normalize want values")
 			values, err := GetCustomize(tt.customizeSpec).Build()
 			assert.NoError(t, err)
-			assert.Equal(t, tt.wantValues, values)
+			assert.Equal(t, wantNormalized, values)
 		})
 	}
 }
@@ -114,9 +117,11 @@ func TestGetResources(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			wantNormalized, err := ToHelmValues(tt.wantValues)
+			require.NoError(t, err, "error in test specification: cannot normalize want values")
 			values, err := GetResources(tt.resources).Build()
 			assert.NoError(t, err)
-			assert.Equal(t, tt.wantValues, values)
+			assert.Equal(t, wantNormalized, values)
 		})
 	}
 }
@@ -150,7 +155,7 @@ func TestGetServiceTLS(t *testing.T) {
 				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
 			},
 			wantValues: chartutil.Values{
-				"serviceTLS": chartutil.Values{
+				"serviceTLS": map[string]interface{}{
 					"cert": "mock-cert",
 					"key":  "mock-key",
 				},
@@ -191,12 +196,14 @@ func TestGetServiceTLS(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			wantNormalized, err := ToHelmValues(tt.wantValues)
+			require.NoError(t, err, "error in test specification: cannot normalize want values")
 			values, err := GetServiceTLS(context.Background(), tt.args.clientSet, "nsname", tt.args.serviceTLS, "spec.fake.path").Build()
 			if tt.wantErr != "" {
 				assert.Regexp(t, tt.wantErr, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.wantValues, values)
+				assert.Equal(t, wantNormalized, values)
 			}
 		})
 	}

@@ -4,14 +4,23 @@ import (
 	"context"
 	"fmt"
 
+	// Required for the usage of go:embed below.
+	_ "embed"
+
 	"github.com/pkg/errors"
 	central "github.com/stackrox/rox/operator/api/central/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+)
+
+var (
+	//go:embed base-values.yaml
+	baseValuesYAML []byte
 )
 
 // Translator translates and enriches helm values
@@ -21,18 +30,26 @@ type Translator struct {
 
 // Translate translates and enriches helm values
 func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
+	baseValues, err := chartutil.ReadValues(baseValuesYAML)
+	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
+
 	c := central.Central{}
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &c)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &c)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO(ROX-7251): make sure that the client we create here is kosher
-	return Translate(ctx, kubernetes.NewForConfigOrDie(t.Config), c)
+	valsFromCR, err := translate(ctx, kubernetes.NewForConfigOrDie(t.Config), c)
+	if err != nil {
+		return nil, err
+	}
+
+	return chartutil.CoalesceTables(baseValues, valsFromCR), nil
 }
 
-// Translate translates a Central CR into helm values.
-func Translate(ctx context.Context, clientSet kubernetes.Interface, c central.Central) (chartutil.Values, error) {
+// translate translates a Central CR into helm values.
+func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Central) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
