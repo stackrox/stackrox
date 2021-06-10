@@ -28,6 +28,8 @@ import (
 const (
 	// Wait at least this long before determining that an unresolvable IP is "outside of the cluster".
 	clusterEntityResolutionWaitPeriod = 10 * time.Second
+	// Wait at least this long before giving up on resolving the container for a connection
+	maxContainerResolutionWaitPeriod = 2 * time.Minute
 
 	connectionDeletionGracePeriod = 5 * time.Minute
 )
@@ -58,6 +60,8 @@ type connStatus struct {
 	firstSeen timestamp.MicroTS
 	lastSeen  timestamp.MicroTS
 	used      bool
+	// rotten implies we expected to correlate the flow with a container, but were unable to
+	rotten bool
 }
 
 type networkConnIndicator struct {
@@ -245,12 +249,18 @@ func (m *networkFlowManager) enrichAndSend() {
 }
 
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
-	isFresh := timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod
+	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
+	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
-		flowMetrics.ContainerIDMisses.Inc()
-		log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
+		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+			status.rotten = true
+			// Only increment metric once the connection is marked rotten
+			flowMetrics.ContainerIDMisses.Inc()
+			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+		}
 		return
 	}
 
@@ -340,15 +350,21 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 }
 
 func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
-	isFresh := timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod
+	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
+	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	if !isFresh {
 		status.used = true
 	}
 
 	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
 	if !ok {
-		flowMetrics.ContainerIDMisses.Inc()
-		log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
+		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
+		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+			status.rotten = true
+			// Only increment metric once the connection is marked rotten
+			flowMetrics.ContainerIDMisses.Inc()
+			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
+		}
 		return
 	}
 
@@ -374,7 +390,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
 		m.enrichConnection(&conn, status, enrichedConnections)
-		if status.used && status.lastSeen != timestamp.InfiniteFuture {
+		if status.rotten || (status.used && status.lastSeen != timestamp.InfiniteFuture) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
 		}

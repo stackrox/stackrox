@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -133,6 +134,9 @@ func (w *WorkloadManager) manageFlows(ctx context.Context, workload networkWorkl
 				continue
 			}
 
+			closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
+			utils.Must(err)
+
 			conn := &sensor.NetworkConnection{
 				SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
 				LocalAddress: &sensor.NetworkAddress{
@@ -143,9 +147,10 @@ func (w *WorkloadManager) manageFlows(ctx context.Context, workload networkWorkl
 					AddressData: net.ParseIP(dst).AsNetIP(),
 					Port:        rand.Uint32() % 63556,
 				},
-				Protocol:    storage.L4Protocol_L4_PROTOCOL_TCP,
-				Role:        sensor.ClientServerRole_ROLE_CLIENT,
-				ContainerId: containerID,
+				Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+				Role:           sensor.ClientServerRole_ROLE_CLIENT,
+				ContainerId:    containerID,
+				CloseTimestamp: closeTS,
 			}
 			conns = append(conns, conn)
 		}
