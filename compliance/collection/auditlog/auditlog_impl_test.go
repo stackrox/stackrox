@@ -87,6 +87,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsErrorIfReaderIsAlre
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
+	s.T().Skip("Skipping until ROX-7291/ROX-7354 is fixed")
 	tempDir, err := ioutil.TempDir("", "")
 	s.NoError(err)
 	defer func() {
