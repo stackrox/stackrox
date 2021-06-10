@@ -95,10 +95,13 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests manifests generate fmt vet ## Run tests.
+test: manifests generate fmt vet ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+
+test-e2e: install kuttl  ## Run e2e tests.
+	$(KUTTL) test --namespace stackrox
 
 ##@ Build
 
@@ -163,6 +166,20 @@ operator-sdk: ## Download operator-sdk locally if necessary.
 	set -x ;\
 	curl --fail --location --output $(OPERATOR_SDK) $${OPERATOR_SDK_DL_URL}/operator-sdk_$${OS}_$${ARCH} ;\
 	chmod +x $(OPERATOR_SDK) ;\
+	}
+
+KUTTL = $(PROJECT_DIR)/bin/kubectl-kuttl
+.PHONY: kuttl
+kuttl: ## Download kuttl locally if necessary
+	@[ -f $(KUTTL) ] || { \
+	set -euo pipefail ;\
+	KUTTL_VER=0.10.0 ;\
+	KUTTL_DL_URL=https://github.com/kudobuilder/kuttl/releases/download/v$${KUTTL_VER} ;\
+	ARCH=$$(case $$(uname -m) in (aarch64) echo -n armv6 ;; (*) echo -n $$(uname -m) ;; esac) ;\
+	OS=$$(uname | awk '{print tolower($$0)}') ;\
+	set -x ;\
+	curl --fail --location --output $(KUTTL) $${KUTTL_DL_URL}/kubectl-kuttl_$${KUTTL_VER}_$${OS}_$${ARCH} ;\
+	chmod +x $(KUTTL) ;\
 	}
 
 # go-get-tool will 'go get' any package $2 and install it to $1.

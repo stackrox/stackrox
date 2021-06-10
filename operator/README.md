@@ -44,6 +44,23 @@ or
 $ kubectl delete securedclusters.platform.stackrox.io stackrox-secured-cluster-services
 ```
 
+## Automated testing
+
+This runs unit and integration tests using a minimum k8s control plane (just apiserver and etcd).
+Simply run:
+
+```bash
+$ make test
+```
+
+This runs end-to-end tests. Requires that your kubectl is configured to connect to a k8s cluster.
+Simply run:
+
+```bash
+$ make test-e2e
+```
+
+
 ## List all available commands/targets
 
 To see help on other available `Makefile` targets, run
