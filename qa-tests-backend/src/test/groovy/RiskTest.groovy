@@ -41,16 +41,20 @@ class RiskTest extends BaseSpecification {
     static final private int RETRY_DELAY = 5
     static final private List<Deployment> DEPLOYMENTS = []
     static final private String TEST_NAMESPACE = "qa-risk"
+    static final private String TEST_IMAGE = "busybox:1.31"
 
     def setupSpec() {
         clusterId = ClusterService.getClusterId()
+
+        // ROX-6260: pre scan the image to avoid different risk scores
+        Services.scanImage(TEST_IMAGE)
 
         for (int i = 0; i < 2; i++) {
             DEPLOYMENTS.push(
                     new Deployment()
                             .setName("risk-deployment-${i}")
                             .setNamespace(TEST_NAMESPACE)
-                            .setImage("busybox:1.31")
+                            .setImage(TEST_IMAGE)
                             .setCommand(["/bin/sh", "-c",])
                             .setArgs(["sleep 36000",])
             )
