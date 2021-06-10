@@ -412,6 +412,42 @@ func (suite *policyMigratorTestSuite) TestStringFieldsAreUpdatedIfNecessary() {
 	comparePolicyWithDB(suite, bucket, &policy)
 }
 
+// Test that policy section property is updated if asked
+func (suite *policyMigratorTestSuite) TestPolicySectionIsUpdatedIfNecessary() {
+	bucket := bolthelpers.TopLevelRef(suite.db, policyBucketName)
+	policy := testPolicy(policyID)
+
+	policiesToMigrate := map[string]PolicyChanges{
+		policyID: {
+			FieldsToCompare: []FieldComparator{DescriptionComparator},
+			ToChange: PolicyUpdates{
+				PolicySections: []*storage.PolicySection{
+					{
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: "My field",
+								Values:    []*storage.PolicyValue{{Value: "abcdef"}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	comparisonPolicies := map[string]*storage.Policy{
+		policyID: &policy,
+	}
+
+	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(MigratePolicies(suite.db, policiesToMigrate, comparisonPolicies))
+
+	// Policy section should have been updated
+	policy.PolicySections = policiesToMigrate[policyID].ToChange.PolicySections
+
+	comparePolicyWithDB(suite, bucket, &policy)
+}
+
 // Test that comparisons only compare the specified string field even if the other ones don't match
 func (suite *policyMigratorTestSuite) TestPolicyIsUpdatedOnlyIfStringFieldComparisonsPass() {
 	bucket := bolthelpers.TopLevelRef(suite.db, policyBucketName)

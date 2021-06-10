@@ -19,7 +19,7 @@
           "fieldName": "Process Name",
           "values": [
             {
-              "value": ".*sgminer|.*cgminer|.*cpuminer|.*minerd|.*geth|.*ethminer|.*xmr-stak.*|.*xmrminer|.*cpuminer-multi|.*xmrig"
+              "value": ".*sgminer|.*cgminer|.*cpuminer|.*minerd|.*geth|.*ethminer|.*xmr-stak.*|.*xmrminer|.*cpuminer-multi"
             }
           ]
         }

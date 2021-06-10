@@ -55,4 +55,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_66_to_m_67_missing_policy_migrations"
 	_ "github.com/stackrox/rox/migrator/migrations/m_67_to_m_68_exclude_pdcsi_from_mount_propagation"
 	_ "github.com/stackrox/rox/migrator/migrations/m_68_to_m_69_update_global_access_roles"
+	_ "github.com/stackrox/rox/migrator/migrations/m_69_to_m_70_add_xmrig_to_crypto_policy"
 )

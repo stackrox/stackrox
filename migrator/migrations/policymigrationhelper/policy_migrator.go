@@ -21,6 +21,8 @@ type PolicyChanges struct {
 // PolicyUpdates lists the possible fields of a policy that can be updated. Any nil fields will not be updated
 // In order to change an item in an array (e.g. exclusions), remove the existing one and add the updated one back in.
 type PolicyUpdates struct {
+	// PolicySections is the new policy sections
+	PolicySections []*storage.PolicySection
 	// ExclusionsToAdd is a list of exclusions to insert (or append) to policy
 	ExclusionsToAdd []*storage.Exclusion
 	// ExclusionsToRemove is a list of exclusions to remove from policy
@@ -50,6 +52,11 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	// Add new exclusions as needed
 	if u.ExclusionsToAdd != nil {
 		policy.Exclusions = append(policy.Exclusions, u.ExclusionsToAdd...)
+	}
+
+	// If policy section is to be updated, just clear the old one for the new
+	if u.PolicySections != nil {
+		policy.PolicySections = u.PolicySections
 	}
 
 	// Update string fields as needed
