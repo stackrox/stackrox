@@ -20,10 +20,19 @@ message ComplianceAggregationRequest {
 }
 
 message ComplianceStandardMetadata {
+    enum Scope {
+        UNSET      = 0;
+        CLUSTER    = 1;
+        NAMESPACE  = 2;
+        DEPLOYMENT = 3;
+        NODE       = 4;
+    }
+
     string id                     = 1 [(gogoproto.moretags) = "search:\"Standard ID,hidden\""];
     string name                   = 2 [(gogoproto.moretags) = "search:\"Standard,store,hidden\""];
     string description            = 3;
     int32  num_implemented_checks = 4;
+    repeated Scope scopes         = 5;
 }
 
 message ComplianceControlGroup {

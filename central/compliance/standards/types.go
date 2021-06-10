@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -14,6 +15,7 @@ type Standard struct {
 	metadata.Standard
 	allChecks   []framework.Check
 	allDataDeps set.StringSet
+	scopes      []pkgFramework.TargetKind
 
 	categories map[string]*Category
 	controls   map[string]*Control
@@ -56,6 +58,25 @@ func (s *Standard) AllChecks() []framework.Check {
 	return s.allChecks
 }
 
+func (s *Standard) protoScopes() []v1.ComplianceStandardMetadata_Scope {
+	scopes := []v1.ComplianceStandardMetadata_Scope{
+		v1.ComplianceStandardMetadata_CLUSTER,
+	}
+	for _, s := range s.scopes {
+		switch s {
+		case pkgFramework.DeploymentKind:
+			scopes = append(scopes, v1.ComplianceStandardMetadata_DEPLOYMENT)
+			scopes = append(scopes, v1.ComplianceStandardMetadata_NAMESPACE)
+		case pkgFramework.NodeKind:
+			scopes = append(scopes, v1.ComplianceStandardMetadata_NODE)
+		}
+	}
+	sort.Slice(scopes, func(i, j int) bool {
+		return scopes[i] < scopes[j]
+	})
+	return scopes
+}
+
 // MetadataProto returns the proto representation of the standard's metadata.
 func (s *Standard) MetadataProto() *v1.ComplianceStandardMetadata {
 	return &v1.ComplianceStandardMetadata{
@@ -63,6 +84,7 @@ func (s *Standard) MetadataProto() *v1.ComplianceStandardMetadata {
 		Name:                 s.Name,
 		Description:          s.Description,
 		NumImplementedChecks: int32(len(s.allChecks)),
+		Scopes:               s.protoScopes(),
 	}
 }
 
@@ -196,6 +218,8 @@ func newStandard(standardMD metadata.Standard, checkRegistry framework.CheckRegi
 		controls:   make(map[string]*Control),
 	}
 
+	scopeMap := make(map[pkgFramework.TargetKind]struct{})
+
 	for _, categoryMD := range standardMD.Categories {
 		cat := &Category{
 			Category: categoryMD,
@@ -212,6 +236,9 @@ func newStandard(standardMD metadata.Standard, checkRegistry framework.CheckRegi
 
 			if checkRegistry != nil {
 				ctrl.Check = checkRegistry.Lookup(ctrl.QualifiedID())
+				if ctrl.Check != nil {
+					scopeMap[ctrl.Check.Scope()] = struct{}{}
+				}
 			}
 			if ctrl.Check != nil {
 				cat.allChecks = append(cat.allChecks, ctrl.Check)
@@ -227,6 +254,15 @@ func newStandard(standardMD metadata.Standard, checkRegistry framework.CheckRegi
 	}
 	s.allDataDeps = gatherDataDependencies(s.allChecks)
 	sortChecks(s.allChecks)
+
+	scopes := make([]pkgFramework.TargetKind, 0, len(scopeMap))
+	for s := range scopeMap {
+		scopes = append(scopes, s)
+	}
+	sort.Slice(scopes, func(i, j int) bool {
+		return scopes[i] < scopes[j]
+	})
+	s.scopes = scopes
 
 	return s
 }

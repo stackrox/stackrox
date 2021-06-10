@@ -13,6 +13,9 @@ type Check interface {
 	// are detected.
 	AppliesToScope(scope pkgFramework.TargetKind) bool
 
+	// Scope returns the target of the check
+	Scope() pkgFramework.TargetKind
+
 	// DataDependencies is a list of IDs for data required by a check.
 	DataDependencies() []string
 
@@ -60,6 +63,10 @@ func (c *checkFromFunc) ID() string {
 
 func (c *checkFromFunc) InterpretationText() string {
 	return c.metadata.InterpretationText
+}
+
+func (c *checkFromFunc) Scope() pkgFramework.TargetKind {
+	return c.metadata.Scope
 }
 
 func (c *checkFromFunc) AppliesToScope(scope pkgFramework.TargetKind) bool {

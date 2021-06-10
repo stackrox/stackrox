@@ -415,7 +415,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"name: String!",
 		"numImplementedChecks: Int!",
+		"scopes: [ComplianceStandardMetadata_Scope!]!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceStandardMetadata_Scope(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ComplianceState(0)))
 	utils.Must(builder.AddType("Component", []string{
 		"name: String!",
@@ -4416,6 +4418,29 @@ func (resolver *complianceStandardMetadataResolver) Name(ctx context.Context) st
 func (resolver *complianceStandardMetadataResolver) NumImplementedChecks(ctx context.Context) int32 {
 	value := resolver.data.GetNumImplementedChecks()
 	return value
+}
+
+func (resolver *complianceStandardMetadataResolver) Scopes(ctx context.Context) []string {
+	value := resolver.data.GetScopes()
+	return stringSlice(value)
+}
+
+func toComplianceStandardMetadata_Scope(value *string) v1.ComplianceStandardMetadata_Scope {
+	if value != nil {
+		return v1.ComplianceStandardMetadata_Scope(v1.ComplianceStandardMetadata_Scope_value[*value])
+	}
+	return v1.ComplianceStandardMetadata_Scope(0)
+}
+
+func toComplianceStandardMetadata_Scopes(values *[]string) []v1.ComplianceStandardMetadata_Scope {
+	if values == nil {
+		return nil
+	}
+	output := make([]v1.ComplianceStandardMetadata_Scope, len(*values))
+	for i, v := range *values {
+		output[i] = toComplianceStandardMetadata_Scope(&v)
+	}
+	return output
 }
 
 func toComplianceState(value *string) storage.ComplianceState {
