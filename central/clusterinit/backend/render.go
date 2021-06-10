@@ -144,9 +144,9 @@ func (b *InitBundleWithMeta) RenderAsK8sSecrets() ([]byte, error) {
 				},
 			},
 			StringData: map[string]string{
-				"ca.pem":                     b.CACert,
-				serviceTypeStr + "-cert.pem": string(cert.CertPEM),
-				serviceTypeStr + "-key.pem":  string(cert.KeyPEM),
+				mtls.CACertFileName:                             b.CACert,
+				serviceTypeStr + "-" + mtls.ServiceCertFileName: string(cert.CertPEM),
+				serviceTypeStr + "-" + mtls.ServiceKeyFileName:  string(cert.KeyPEM),
 			},
 		}
 

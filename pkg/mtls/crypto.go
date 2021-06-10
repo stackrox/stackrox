@@ -23,16 +23,31 @@ import (
 )
 
 const (
-	certsPrefix = "/run/secrets/stackrox.io/certs/"
+	// CACertFileName is the canonical file name (basename) of the file storing the CA certificate.
+	CACertFileName = "ca.pem"
+	// CAKeyFileName is the canonical file name (basename) of the file storing the CA certificate private key.
+	CAKeyFileName = "ca-key.pem"
+
+	// ServiceCertFileName is the canonical file name (basename) of the file storing the public part of
+	// an internal service certificate. Note that if files for several services are stored in the same
+	// location (directory or file map), it is common to prefix the file name with the service name in
+	// slug-case (e.g., `scanner-db-cert.pem`).
+	ServiceCertFileName = "cert.pem"
+	// ServiceKeyFileName is the canonical file name (basename) of the file storing the private key for
+	// an internal service certificate. The same remark as above regarding prefixes applies.
+	ServiceKeyFileName = "key.pem"
+
+	// CertsPrefix is the filesystem prefix under which service certificates and keys are stored.
+	CertsPrefix = "/run/secrets/stackrox.io/certs/"
 	// defaultCACertFilePath is where the certificate is stored.
-	defaultCACertFilePath = certsPrefix + "ca.pem"
+	defaultCACertFilePath = CertsPrefix + CACertFileName
 	// defaultCAKeyFilePath is where the key is stored.
-	defaultCAKeyFilePath = certsPrefix + "ca-key.pem"
+	defaultCAKeyFilePath = CertsPrefix + CAKeyFileName
 
 	// defaultCertFilePath is where the certificate is stored.
-	defaultCertFilePath = certsPrefix + "cert.pem"
+	defaultCertFilePath = CertsPrefix + ServiceCertFileName
 	// defaultKeyFilePath is where the key is stored.
-	defaultKeyFilePath = certsPrefix + "key.pem"
+	defaultKeyFilePath = CertsPrefix + ServiceKeyFileName
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
@@ -155,20 +170,6 @@ func CACert() (*x509.Certificate, []byte, error) {
 	return caCert, caCertDER, caCertErr
 }
 
-func signerFromCABytes(caCert, caKey []byte) (cfsigner.Signer, error) {
-	parsedCa, err := helpers.ParseCertificatePEM(caCert)
-	if err != nil {
-		return nil, err
-	}
-
-	priv, err := helpers.ParsePrivateKeyPEMWithPassword(caKey, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return local.NewSigner(priv, parsedCa, cfsigner.DefaultSigAlgo(priv), signingPolicy())
-}
-
 func signer() (cfsigner.Signer, error) {
 	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), signingPolicy())
 }
@@ -187,29 +188,6 @@ func signingPolicy() *config.Signing {
 			ClientProvidesSerialNumbers: true,
 		},
 	}
-}
-
-// CACertAndKey returns the contents of the ca cert and ca key files.
-func CACertAndKey() ([]byte, []byte, error) {
-	_, caCertFileContents, _, err := readCA()
-	if err != nil {
-		return nil, nil, err
-	}
-	caKeyFileContents, err := readCAKey()
-	if err != nil {
-		return nil, nil, err
-	}
-	return caCertFileContents, caKeyFileContents, nil
-}
-
-// IssueNewCertFromCA issues a certificate from the CA that is passed in
-func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (cert *IssuedCert, err error) {
-	s, err := signerFromCABytes(caCert, caKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "signer creation")
-	}
-
-	return issueNewCertFromSigner(subj, s)
 }
 
 func validateSubject(subj Subject) error {

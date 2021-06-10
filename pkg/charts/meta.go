@@ -1,6 +1,7 @@
 package charts
 
 import (
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/version"
@@ -56,6 +57,11 @@ func RHACSMetaValues() MetaValues {
 		"ImagePullSecrets": ImagePullSecrets{
 			AllowNone: true,
 		},
+	}
+
+	if !buildinfo.ReleaseBuild {
+		metaValues["MainRegistry"] = "docker.io/stackrox"
+		metaValues["CollectorRegistry"] = "docker.io/stackrox"
 	}
 
 	featureFlagVals := make(map[string]interface{})

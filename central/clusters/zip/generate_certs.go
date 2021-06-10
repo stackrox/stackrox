@@ -95,9 +95,9 @@ func GenerateCertsAndAddToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, id
 		return certs, err
 	}
 	if wrapper != nil {
-		wrapper.AddFiles(zip.NewFile("ca.pem", ca, 0))
+		wrapper.AddFiles(zip.NewFile(mtls.CACertFileName, ca, 0))
 	}
-	certs.Files["secrets/ca.pem"] = ca
+	certs.Files["secrets/"+mtls.CACertFileName] = ca
 
 	identities, err := clusters.IssueSecuredClusterCertificates(cluster, identityStore)
 	if err != nil {

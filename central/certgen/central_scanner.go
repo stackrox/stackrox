@@ -13,16 +13,15 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func initializeSecretsWithCACertAndKey() (map[string][]byte, error) {
-	ca, caKey, err := mtls.CACertAndKey()
+func initializeSecretsWithCACertAndKey() (map[string][]byte, mtls.CA, error) {
+	ca, err := mtls.LoadDefaultCA()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return map[string][]byte{
-		"ca.pem":     ca,
-		"ca-key.pem": caKey,
-	}, nil
+	fileMap := make(map[string][]byte)
+	certgen.AddCAToFileMap(fileMap, ca)
+	return fileMap, ca, nil
 }
 
 func writeFile(w http.ResponseWriter, contents []byte, fileName string) {
@@ -37,12 +36,12 @@ func (s *serviceImpl) centralHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secrets, err := initializeSecretsWithCACertAndKey()
+	secrets, ca, err := initializeSecretsWithCACertAndKey()
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
-	if err := certgen.IssueCentralCert(secrets); err != nil {
+	if err := certgen.IssueCentralCert(secrets, ca); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
@@ -52,8 +51,8 @@ func (s *serviceImpl) centralHandler(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to read JWT key: %v", err)
 		return
 	}
-	secrets["jwt-key.der"] = jwtKey
-	secrets["jwt-key.pem"] = pem.EncodeToMemory(&pem.Block{
+	secrets[certgen.JWTKeyDERFileName] = jwtKey
+	secrets[certgen.JWTKeyPEMFileName] = pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: jwtKey,
 	})
@@ -76,12 +75,12 @@ func (s *serviceImpl) scannerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secrets, err := initializeSecretsWithCACertAndKey()
+	secrets, ca, err := initializeSecretsWithCACertAndKey()
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
-	if err := certgen.IssueScannerCerts(secrets); err != nil {
+	if err := certgen.IssueScannerCerts(secrets, ca); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}

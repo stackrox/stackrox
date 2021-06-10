@@ -26,6 +26,7 @@ require (
 	github.com/dave/jennifer v1.4.1
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dgraph-io/badger v0.0.0-20190131175406-28ef9bfd2438
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/docker/go-connections v0.4.0

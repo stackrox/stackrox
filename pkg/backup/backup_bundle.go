@@ -1,14 +1,19 @@
 package backup
 
+import (
+	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/mtls"
+)
+
 // Backup bundle structure in zip archive.
 const (
 	BoltFileName     = "bolt.db"
 	BadgerFileName   = "badger.db"
 	RocksFileName    = "rocks.db"
 	KeysBaseFolder   = "keys"
-	CaKeyPem         = "ca-key.pem"
-	CaCertPem        = "ca.pem"
-	JwtKeyInDer      = "jwt-key.der"
-	JwtKeyInPem      = "jwt-key.pem"
+	CaKeyPem         = mtls.CAKeyFileName
+	CaCertPem        = mtls.CACertFileName
+	JwtKeyInDer      = certgen.JWTKeyDERFileName
+	JwtKeyInPem      = certgen.JWTKeyPEMFileName
 	MigrationVersion = "migration_version.yaml"
 )

@@ -92,6 +92,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 			verify := func(path string, checksum string) {
 				content, err := values.PathValue(path)
 				assert.NoError(t, err)
+				require.NotNilf(t, content, "value for %s is missing", path)
 				assert.Equal(t, getSha256Sum(content.(string)) == checksum, testCase.equal)
 			}
 			verify("ca.cert", checksumCaCert)
