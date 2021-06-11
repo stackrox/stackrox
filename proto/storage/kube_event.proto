@@ -56,10 +56,11 @@ message KubernetesEvent {
     repeated string           source_ips           = 17 [(gogoproto.moretags) = "policy:\"Source IP Address\""];
     string                    user_agent           = 18 [(gogoproto.moretags) = "policy:\"User Agent\""];
     ResponseStatus            response_status      = 19;
+    string                    request_uri          = 20; // Field will not be used for policy detection
 
     message PodExecArgs {
         string          container = 1;
-        repeated string commands   = 2;
+        repeated string commands  = 2;
     }
 
     message PodPortForwardArgs {

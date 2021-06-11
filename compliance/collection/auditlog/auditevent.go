@@ -103,6 +103,7 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 			StatusCode: e.ResponseStatus.Code,
 			Reason:     reason,
 		},
+		RequestUri: e.RequestURI,
 	}
 
 	if e.ImpersonatedUser != nil {

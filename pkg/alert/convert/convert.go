@@ -1,6 +1,8 @@
 package convert
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -74,7 +76,7 @@ func toAlertDeploymentContainer(c *storage.Container) *storage.Alert_Deployment_
 	}
 }
 
-// ToAlertDeployment converts a storage.Deployment to a Alert_Deployment
+// ToAlertDeployment converts a storage.Deployment to an Alert_Deployment
 func ToAlertDeployment(deployment *storage.Deployment) *storage.Alert_Deployment_ {
 	alertDeployment := &storage.Alert_Deployment{
 		Id:          deployment.GetId(),
@@ -93,4 +95,19 @@ func ToAlertDeployment(deployment *storage.Deployment) *storage.Alert_Deployment
 		alertDeployment.Containers = append(alertDeployment.Containers, toAlertDeploymentContainer(c))
 	}
 	return &storage.Alert_Deployment_{Deployment: alertDeployment}
+}
+
+// ToAlertResource converts a storage.KubernetesEvent to an Alert_Resource_
+func ToAlertResource(kubeEvent *storage.KubernetesEvent) *storage.Alert_Resource_ {
+	// TODO: Cluster name and namespace id will have to be passed in here
+	// That will come from runtime detector (currently detector.detectForDeployment). This is TBD until the detection piece is completed
+	// (and ROX-7355 is done for cluster name)
+	return &storage.Alert_Resource_{
+		Resource: &storage.Alert_Resource{
+			ResourceType: storage.Alert_Resource_ResourceType(storage.Alert_Resource_ResourceType_value[strings.ToUpper(kubeEvent.GetObject().GetResource().String())]),
+			Name:         kubeEvent.GetObject().GetName(),
+			ClusterId:    kubeEvent.GetObject().GetClusterId(),
+			Namespace:    kubeEvent.GetObject().GetNamespace(),
+		},
+	}
 }

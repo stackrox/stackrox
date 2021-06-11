@@ -35,6 +35,14 @@ func constructKubeEventAlert(
 		return nil
 	}
 
+	// NOTE: Most Kube Event alerts will have a Resource entity instead of a Deployment. However, there are a few exceptions
+	// such as pod exec/port forward policies that have deployment. To differentiate we will be using the policy event source
+	// Currently all audit log events have Resource
+	if policy.EventSource == storage.EventSource_AUDIT_LOG_EVENT {
+		return constructResourceRuntimeAlert(policy, kubeEvent, violations.AlertViolations)
+		// Audit Log event source policies cannot have enforcement (for now)
+	}
+
 	alert := constructGenericRuntimeAlert(policy, kubeResource.(*storage.Deployment), violations.AlertViolations)
 	if action, msg := buildKubeEventEnforcement(policy, kubeEvent); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
 		alert.Enforcement = &storage.Alert_Enforcement{
@@ -69,6 +77,21 @@ func constructGenericRuntimeAlert(
 		Policy:         policy.Clone(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertDeployment(deployment),
+		Violations:     violations,
+		Time:           ptypes.TimestampNow(),
+	}
+}
+
+func constructResourceRuntimeAlert(
+	policy *storage.Policy,
+	kubeEvent *storage.KubernetesEvent,
+	violations []*storage.Alert_Violation,
+) *storage.Alert {
+	return &storage.Alert{
+		Id:             uuid.NewV4().String(),
+		Policy:         policy.Clone(),
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity:         convert.ToAlertResource(kubeEvent),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}

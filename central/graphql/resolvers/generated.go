@@ -47,6 +47,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lifecycleStage: LifecycleStage!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
+		"resource: Alert_Resource",
 		"snoozeTill: Time",
 		"state: ViolationState!",
 		"tags: [String!]!",
@@ -57,6 +58,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddUnionType("AlertEntity", []string{
 		"Alert_Deployment",
 		"ContainerImage",
+		"Alert_Resource",
 	}))
 	utils.Must(builder.AddType("Alert_Deployment", []string{
 		"annotations: [Label!]!",
@@ -83,6 +85,15 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"message: String!",
 		"processes: [ProcessIndicator]!",
 	}))
+	utils.Must(builder.AddType("Alert_Resource", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"name: String!",
+		"namespace: String!",
+		"namespaceId: String!",
+		"resourceType: Alert_Resource_ResourceType!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Resource_ResourceType(0)))
 	utils.Must(builder.AddType("Alert_Violation", []string{
 		"keyValueAttrs: Alert_Violation_KeyValueAttrs",
 		"message: String!",
@@ -1594,6 +1605,12 @@ func (resolver *alertResolver) ProcessViolation(ctx context.Context) (*alert_Pro
 	return resolver.root.wrapAlert_ProcessViolation(value, true, nil)
 }
 
+func (resolver *alertResolver) Resource(ctx context.Context) (*alert_ResourceResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetResource()
+	return resolver.root.wrapAlert_Resource(value, true, nil)
+}
+
 func (resolver *alertResolver) SnoozeTill(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetSnoozeTill()
@@ -1645,6 +1662,11 @@ func (resolver *alertResolver) Entity() *alertEntityResolver {
 			resolver: &containerImageResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetResource(); val != nil {
+		return &alertEntityResolver{
+			resolver: &alert_ResourceResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
@@ -1655,6 +1677,11 @@ func (resolver *alertEntityResolver) ToAlert_Deployment() (*alert_DeploymentReso
 
 func (resolver *alertEntityResolver) ToContainerImage() (*containerImageResolver, bool) {
 	res, ok := resolver.resolver.(*containerImageResolver)
+	return res, ok
+}
+
+func (resolver *alertEntityResolver) ToAlert_Resource() (*alert_ResourceResolver, bool) {
+	res, ok := resolver.resolver.(*alert_ResourceResolver)
 	return res, ok
 }
 
@@ -1837,6 +1864,78 @@ func (resolver *alert_ProcessViolationResolver) Message(ctx context.Context) str
 func (resolver *alert_ProcessViolationResolver) Processes(ctx context.Context) ([]*processIndicatorResolver, error) {
 	value := resolver.data.GetProcesses()
 	return resolver.root.wrapProcessIndicators(value, nil)
+}
+
+type alert_ResourceResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Resource
+}
+
+func (resolver *Resolver) wrapAlert_Resource(value *storage.Alert_Resource, ok bool, err error) (*alert_ResourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_ResourceResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Resources(values []*storage.Alert_Resource, err error) ([]*alert_ResourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_ResourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_ResourceResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_ResourceResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) NamespaceId(ctx context.Context) string {
+	value := resolver.data.GetNamespaceId()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) ResourceType(ctx context.Context) string {
+	value := resolver.data.GetResourceType()
+	return value.String()
+}
+
+func toAlert_Resource_ResourceType(value *string) storage.Alert_Resource_ResourceType {
+	if value != nil {
+		return storage.Alert_Resource_ResourceType(storage.Alert_Resource_ResourceType_value[*value])
+	}
+	return storage.Alert_Resource_ResourceType(0)
+}
+
+func toAlert_Resource_ResourceTypes(values *[]string) []storage.Alert_Resource_ResourceType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Alert_Resource_ResourceType, len(*values))
+	for i, v := range *values {
+		output[i] = toAlert_Resource_ResourceType(&v)
+	}
+	return output
 }
 
 type alert_ViolationResolver struct {

@@ -204,3 +204,30 @@ var (
 func GetPolicy() *storage.Policy {
 	return booleanPolicy.Clone()
 }
+
+// GetAuditLogEventSourcePolicy returns a Mock Policy with source set to Audit Log Event
+func GetAuditLogEventSourcePolicy() *storage.Policy {
+	p := booleanPolicy.Clone()
+	p.EventSource = storage.EventSource_AUDIT_LOG_EVENT
+	// Limit scope to things that are supported by audit log event source
+	p.Scope = []*storage.Scope{
+		{
+			Cluster:   "prod cluster",
+			Namespace: "stackrox",
+		},
+	}
+	// Only runtime policies can have audit log event source
+	p.LifecycleStages = []storage.LifecycleStage{storage.LifecycleStage_RUNTIME}
+	// Switch the policy values to things related to kube events
+	p.PolicySections[0].PolicyGroups = []*storage.PolicyGroup{
+		{
+			FieldName: "Kubernetes Resource",
+			Values:    []*storage.PolicyValue{{Value: "SECRETS"}},
+		},
+		{
+			FieldName: "Kubernetes API Verb",
+			Values:    []*storage.PolicyValue{{Value: "CREATE"}},
+		},
+	}
+	return p
+}

@@ -58,6 +58,44 @@ func GetAlert() *storage.Alert {
 	}
 }
 
+// GetResourceAlert returns a Mock Alert with a resource entity
+func GetResourceAlert() *storage.Alert {
+	return &storage.Alert{
+		Id: "Alert1",
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Access to secret \"my-secret\" in \"cluster-id / stackrox\"",
+				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							{Key: "Kubernetes API Verb", Value: "CREATE"},
+							{Key: "username", Value: "test-user"},
+							{Key: "user groups", Value: "groupA, groupB"},
+							{Key: "resource", Value: "/api/v1/namespace/stackrox/secrets/my-secret"},
+							{Key: "user agent", Value: "oc/4.7.0 (darwin/amd64) kubernetes/c66c03f"},
+							{Key: "IP address", Value: "192.168.0.1, 127.0.0.1"},
+							{Key: "impersonated username", Value: "central-service-account"},
+							{Key: "impersonated user groups", Value: "service-accounts, groupB"},
+						},
+					},
+				},
+			},
+		},
+		Time:   ptypes.TimestampNow(),
+		Policy: GetAuditLogEventSourcePolicy(),
+		Entity: &storage.Alert_Resource_{
+			Resource: &storage.Alert_Resource{
+				ResourceType: storage.Alert_Resource_SECRETS,
+				Name:         "my-secret",
+				ClusterId:    "cluster-id",
+				ClusterName:  "prod cluster",
+				Namespace:    "stackrox",
+				NamespaceId:  "aaaa-bbbb-cccc-dddd",
+			},
+		},
+	}
+}
+
 // GetAlertWithID returns a mock alert with the specified id.
 func GetAlertWithID(id string) *storage.Alert {
 	alert := GetAlert()
