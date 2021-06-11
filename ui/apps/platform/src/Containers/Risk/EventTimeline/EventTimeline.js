@@ -57,7 +57,7 @@ const EventTimeline = ({ deploymentId }) => {
     if (!Component) {
         return (
             <NotFoundMessage
-                message="The Event Timeline for this view was not found."
+                title="The Event Timeline for this view was not found."
                 actionText="Go back"
                 onClick={goToRootView}
             />

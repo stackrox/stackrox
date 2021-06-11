@@ -1,7 +1,10 @@
 import React, { ReactElement } from 'react';
 import { Route, Switch } from 'react-router-dom';
+
 import { integrationsPath } from 'routePaths';
+
 import IntegrationTilesPage from './IntegrationTilesPage';
+import IntegrationsNotFoundPage from './IntegrationsNotFoundPage';
 
 const integrationsListPath = `${integrationsPath}/:source/:type`;
 
@@ -11,6 +14,7 @@ const Page = (): ReactElement => (
     <Switch>
         <Route exact path={integrationsPath} component={IntegrationTilesPage} />
         <Route path={integrationsListPath} component={IntegrationTilesPage} />
+        <Route component={IntegrationsNotFoundPage} />
     </Switch>
 );
 

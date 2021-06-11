@@ -16,6 +16,7 @@ import { selectors } from 'reducers';
 import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import IntegrationsSection from './IntegrationsSection';
 import GenericIntegrationModal from './GenericIntegrationModal';
+import IntegrationsNotFoundPage from './IntegrationsNotFoundPage';
 
 const IntegrationTilesPage = ({
     apiTokens,
@@ -99,7 +100,7 @@ const IntegrationTilesPage = ({
     }
 
     function getIntegration(source, type) {
-        return integrationsList[source].find((integration) => integration.type === type);
+        return integrationsList[source]?.find((integration) => integration.type === type);
     }
 
     function fetchEntitiesAndCloseModal() {
@@ -160,6 +161,9 @@ const IntegrationTilesPage = ({
 
     if (selectedSource && selectedType) {
         const selectedTile = getIntegration(selectedSource, selectedType);
+        if (!selectedTile) {
+            return <IntegrationsNotFoundPage />;
+        }
         modal = (
             <GenericIntegrationModal
                 apiTokens={apiTokens}
