@@ -242,7 +242,7 @@ type CentralComponentStatus struct {
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,central},{Deployment,v1,scanner},{Deployment,v1,scanner-db}}
 
-// Central is the Schema for the centrals API
+// Central is the configuration template for the central services.
 type Central struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
