@@ -75,11 +75,6 @@ function go_build() (
   export GOOS="${GOOS:-${DEFAULT_GOOS}}"
   [[ -n "$GOOS" ]] || die "GOOS must be set"
 
-  local gcflags=()
-  if [[ "$DEBUG_BUILD" == "yes" ]]; then
-    gcflags+=(-gcflags "all=-N -l")
-  fi
-
   for main_srcdir in "$@"; do
     if ! [[ "${main_srcdir}" =~ ^\.?/ ]]; then
       main_srcdir="./${main_srcdir}"
@@ -91,9 +86,23 @@ function go_build() (
     fi
     mkdir -p "$(dirname "$output_file")"
     echo >&2 "Compiling Go source in ${main_srcdir} to ${output_file}"
-    invoke_go build "${gcflags[@]}" -o "$output_file" "$main_srcdir"
+    invoke_go_build -o "$output_file" "$main_srcdir"
   done
 )
+
+function go_build_file() {
+    local input_file="$1"
+    local output_file="$2"
+    invoke_go_build -o "${output_file}" "${input_file}"
+}
+
+function invoke_go_build() {
+  local gcflags=()
+  if [[ "$DEBUG_BUILD" == "yes" ]]; then
+    gcflags+=(-gcflags "all=-N -l")
+  fi
+  invoke_go build "${gcflags[@]}" "$@"
+}
 
 function go_run() (
   invoke_go run "$@"
@@ -107,6 +116,9 @@ function go_test() (
 case "$TOOL" in
   build)
     go_build "$@"
+    ;;
+  build-file)
+    go_build_file "$1" "$2"
     ;;
   test)
     go_test "$@"

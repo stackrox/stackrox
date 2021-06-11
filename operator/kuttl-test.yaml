@@ -2,8 +2,10 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 testDirs:
 - ./tests/central
+reportFormat: xml
+artifactsDir: kuttl-test-artifacts
 commands:
-- command: make run
+- command: ./bin/manager
   background: true
 # The following commands are only necessary because we only support a fixed namespace name, which in turn requires
 # kuttl --namespace flag, and this in turn requires namespace to be in place before we start testing.

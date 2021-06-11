@@ -3163,6 +3163,14 @@ jobs:
       - remove-existing-stackrox-resources
 
       - run:
+          name: Run operator e2e tests
+          command: make -C operator test-e2e
+      - store-test-results-and-artifacts:
+          path: operator/kuttl-test-artifacts
+
+      - remove-existing-stackrox-resources
+
+      - run:
           name: Export Trusted CA file
           command: cci-export TRUSTED_CA_FILE "$PWD/tests/bad-ca/untrusted-root-badssl-com.pem"
 
