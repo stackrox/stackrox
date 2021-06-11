@@ -191,36 +191,36 @@ func TestSetValues(t *testing.T) {
 	v.SetStringMap("nil-string-map", nil)
 	v.SetStringMap("empty-string-map", map[string]string{})
 
-	resources := v1.ResourceList{v1.ResourceCPU: resource.Quantity{Format: "6"}}
+	resources := v1.ResourceList{v1.ResourceCPU: resource.MustParse("6")}
 	v.SetResourceList("resources", resources)
 	v.SetResourceList("nil-resources", nil)
 	v.SetResourceList("empty-resources", v1.ResourceList{})
 
 	values := map[string]interface{}{"chartutil-key": "chartutil-anything"}
-	v.SetMap("chartutil-values", values)
-	v.SetMap("nil-chartutil-values", nil)
-	v.SetMap("empty-chartutil-values", map[string]interface{}{})
+	v.SetMap("map", values)
+	v.SetMap("nil-map", nil)
+	v.SetMap("empty-map", map[string]interface{}{})
 
 	valuesSlice := []map[string]interface{}{{"chartutil-1": 1}, {"chartutil-2": 2}}
-	v.SetMapSlice("chartutil-values-slice", valuesSlice)
-	v.SetMapSlice("nil-chartutil-values-slice", nil)
-	v.SetMapSlice("empty-chartutil-values-slice", []map[string]interface{}{})
+	v.SetMapSlice("map-slice", valuesSlice)
+	v.SetMapSlice("nil-map-slice", nil)
+	v.SetMapSlice("empty-map-slice", []map[string]interface{}{})
 
 	assert.Equal(t, map[string]interface{}{
-		"bool-pointer":           true,
-		"bool":                   true,
-		"int32":                  int32(42),
-		"zero-int32":             int32(0),
-		"string-pointer":         "freedom",
-		"empty-string-pointer":   "",
-		"string":                 "freedom",
-		"empty-string":           "",
-		"pull-policy":            "Always",
-		"string-slice":           []string{"string1", ""},
-		"string-map":             map[string]string{"string-key": "string-value"},
-		"resources":              v1.ResourceList{v1.ResourceCPU: resource.Quantity{Format: "6"}},
-		"chartutil-values":       map[string]interface{}{"chartutil-key": "chartutil-anything"},
-		"chartutil-values-slice": []map[string]interface{}{{"chartutil-1": 1}, {"chartutil-2": 2}},
+		"bool-pointer":         true,
+		"bool":                 true,
+		"int32":                float64(42),
+		"zero-int32":           float64(0),
+		"string-pointer":       "freedom",
+		"empty-string-pointer": "",
+		"string":               "freedom",
+		"empty-string":         "",
+		"pull-policy":          "Always",
+		"string-slice":         []interface{}{"string1", ""},
+		"string-map":           map[string]interface{}{"string-key": "string-value"},
+		"resources":            map[string]interface{}{"cpu": "6"},
+		"map":                  map[string]interface{}{"chartutil-key": "chartutil-anything"},
+		"map-slice":            []interface{}{map[string]interface{}{"chartutil-1": float64(1)}, map[string]interface{}{"chartutil-2": float64(2)}},
 	}, build(t, &v))
 }
 
@@ -250,7 +250,7 @@ func TestSetClashingKey(t *testing.T) {
 			v.SetStringMap(key, map[string]string{"foo": "bar"})
 		},
 		"resources": func(v *ValuesBuilder) {
-			v.SetResourceList(key, v1.ResourceList{v1.ResourcePods: resource.Quantity{Format: "14"}})
+			v.SetResourceList(key, v1.ResourceList{v1.ResourcePods: resource.MustParse("14")})
 		},
 		"chartutil-values": func(v *ValuesBuilder) {
 			v.SetMap(key, map[string]interface{}{"foo": 100500})
@@ -277,11 +277,8 @@ func TestEmptyKey(t *testing.T) {
 }
 
 func build(t *testing.T, b *ValuesBuilder) map[string]interface{} {
-	if b == nil {
-		return map[string]interface{}{}
-	}
-	require.NoError(t, b.errors.ErrorOrNil())
-	val := b.getData()
+	val, err := b.Build()
+	require.NoError(t, err)
 	assert.NotNil(t, val)
 	return val
 }

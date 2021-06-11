@@ -82,21 +82,21 @@ func TestGetResources(t *testing.T) {
 			resources: &common.Resources{
 				Override: &corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:              resource.Quantity{Format: "1"},
-						corev1.ResourceEphemeralStorage: resource.Quantity{Format: "3"},
+						corev1.ResourceCPU:              resource.MustParse("1"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("3"),
 					},
 					Requests: corev1.ResourceList{
-						corev1.ResourceMemory: resource.Quantity{Format: "2"},
+						corev1.ResourceMemory: resource.MustParse("2"),
 					},
 				},
 			},
 			wantValues: chartutil.Values{
 				"limits": corev1.ResourceList{
-					"cpu":               resource.Quantity{Format: "1"},
-					"ephemeral-storage": resource.Quantity{Format: "3"},
+					"cpu":               *resource.NewQuantity(1, resource.DecimalSI),
+					"ephemeral-storage": *resource.NewQuantity(3, resource.DecimalSI),
 				},
 				"requests": corev1.ResourceList{
-					"memory": resource.Quantity{Format: "2"},
+					"memory": *resource.NewQuantity(2, resource.DecimalSI),
 				},
 			},
 		},
@@ -104,13 +104,13 @@ func TestGetResources(t *testing.T) {
 			resources: &common.Resources{
 				Override: &corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceMemory: resource.Quantity{Format: "5"},
+						corev1.ResourceMemory: resource.MustParse("5"),
 					},
 				},
 			},
 			wantValues: chartutil.Values{
 				"requests": corev1.ResourceList{
-					"memory": resource.Quantity{Format: "5"},
+					"memory": *resource.NewQuantity(5, resource.DecimalSI),
 				},
 			},
 		},
