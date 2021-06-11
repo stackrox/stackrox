@@ -114,10 +114,10 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 docker-build: test ## Build docker image with the manager.
 	@( \
-		# status.sh file is used by scripts/go-build.sh which we try to run in the docker container. \
-		# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple. \
-		# Here we grab the output and create a new build/status.sh from it. That file will be copied into the \
-		# container and used there without having to bring all dependencies. \
+		`# status.sh file is used by scripts/go-build.sh which we try to run in the docker container.` \
+		`# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple.` \
+		`# Here we grab the output and create a new build/status.sh from it. That file will be copied into the` \
+		`# container and used there without having to bring all dependencies.` \
 		set -euxo pipefail ;\
 		smuggled_status_sh="$(PROJECT_DIR)/build/status.sh" ;\
 		mkdir -p "$(PROJECT_DIR)/build" ;\
@@ -125,7 +125,7 @@ docker-build: test ## Build docker image with the manager.
 		echo "#!/bin/sh" > "$${smuggled_status_sh}" ;\
 		./status.sh | awk '{print "echo \"" $$0 "\""}' >> "$${smuggled_status_sh}" ;\
 		chmod +x "$${smuggled_status_sh}" ;\
-		# Verify that the resulting status.sh is actually runnable \
+		`# Verify that the resulting status.sh is actually runnable` \
 		"$${smuggled_status_sh}" ;\
 	)
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build -t ${IMG} --ssh default=${SSH_AUTH_SOCK} -f Dockerfile ..
