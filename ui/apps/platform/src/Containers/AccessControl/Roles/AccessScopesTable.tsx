@@ -1,7 +1,7 @@
 import React, { ChangeEventHandler, ReactElement } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { AccessScope } from '../accessControlTypes';
+import { AccessScope } from 'services/RolesService';
 
 export type AccessScopesTableProps = {
     fieldId: string;

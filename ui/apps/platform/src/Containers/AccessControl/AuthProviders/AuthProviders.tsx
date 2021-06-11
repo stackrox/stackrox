@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
@@ -21,28 +22,29 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { getEntityPath, getQueryObject } from '../accessControlPaths';
+import { filterAuthProviders } from 'reducers/auth';
 import {
     AuthProvider,
     createAuthProvider,
     fetchAuthProviders,
-    fetchRoles,
-    Role,
     updateAuthProvider,
-} from '../accessControlTypes';
+} from 'services/AuthService';
+import { Role, fetchRolesAsArray } from 'services/RolesService';
+
+import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import AccessControlNav from '../AccessControlNav';
+
 import AuthProviderForm from './AuthProviderForm';
 import AuthProvidersList from './AuthProvidersList';
 
 const entityType = 'AUTH_PROVIDER';
 
-const authProviderNew: AuthProvider = {
+const authProviderNew = {
     id: '',
     name: '',
-    authProvider: '',
-    minimumAccessRole: '',
-};
+    type: '',
+} as AuthProvider; // TODO what are the minimum properties for create request?
 
 function AuthProviders(): ReactElement {
     const history = useHistory();
@@ -62,8 +64,8 @@ function AuthProviders(): ReactElement {
         setIsFetching(true);
         setAlertAuthProviders(null);
         fetchAuthProviders()
-            .then((authProvidersFetched) => {
-                setAuthProviders(authProvidersFetched);
+            .then((data) => {
+                setAuthProviders(filterAuthProviders(data.response)); // filter out Login with username/password
             })
             .catch((error) => {
                 setAlertAuthProviders(
@@ -82,12 +84,11 @@ function AuthProviders(): ReactElement {
 
         // TODO Until secondary requests succeed, disable Create and Edit because selections might be incomplete?
         setAlertRoles(null);
-        fetchRoles()
+        fetchRolesAsArray()
             .then((rolesFetched) => {
                 setRoles(rolesFetched);
             })
             .catch((error) => {
-                // eslint-disable-next-line react/jsx-no-bind
                 const actionClose = <AlertActionCloseButton onClose={() => setAlertRoles(null)} />;
                 setAlertRoles(
                     <Alert
@@ -120,6 +121,8 @@ function AuthProviders(): ReactElement {
     }
 
     function submitValues(values: AuthProvider): Promise<AuthProvider> {
+        // TODO research special case for update active auth provider
+        // See saveAuthProvider function in AuthService.ts
         return action === 'create'
             ? createAuthProvider(values).then((entityCreated) => {
                   // Append the created entity.

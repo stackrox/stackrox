@@ -1,30 +1,76 @@
 import axios from './instance';
 
-const rolesUrl = '/v1/roles';
-const permissionsURL = '/v1/mypermissions';
-const resourcesURL = '/v1/resources';
-
-export type AccessType = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
-
-export type Role = {
-    name: string;
-    resourceToAccess: Record<string, AccessType>;
-};
+const resourcesUrl = '/v1/resources';
 
 export function fetchResources(): Promise<{ response: { resources: string[] } }> {
-    return axios.get<{ resources: string[] }>(resourcesURL).then((response) => ({
+    return axios.get<{ resources: string[] }>(resourcesUrl).then((response) => ({
         response: response.data,
     }));
 }
 
+// TODO After classic Access Control code has been deleted,
+// delete preceding function fetchResources also its Redux support,
+// and then rename the following function as fetchResources.
+export function fetchResourcesAsArray(): Promise<string[]> {
+    return axios
+        .get<{ resources: string[] }>(resourcesUrl)
+        .then((response) => response.data.resources);
+}
+
+const rolesUrl = '/v1/roles';
+
+export type AccessLevel = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
+
+export type Role = {
+    name: string;
+    // globalAccess is deprecated
+    resourceToAccess: Record<string, AccessLevel>; // deprecated: use only for classic UI
+    id: string;
+    description: string;
+    permissionSetId: string;
+    accessScopeId: string;
+};
+
 /**
- * Fetches list of roles
+ * Fetch entities and return object.response.roles :(
  */
 export function fetchRoles(): Promise<{ response: { roles: Role[] } }> {
     return axios.get<{ roles: Role[] }>(rolesUrl).then((response) => ({
         response: response.data,
     }));
 }
+
+/*
+ * Fetch entities and return array of objects.
+ */
+export function fetchRolesAsArray(): Promise<Role[]> {
+    return axios.get<{ roles: Role[] }>(rolesUrl).then((response) => response.data.roles);
+}
+
+/*
+ * Create entity and return empty object (unlike most create requests).
+ */
+export function createRole(entity: Role): Promise<Record<string, never>> {
+    const { name } = entity;
+    return axios.post(`${rolesUrl}/${name}`, entity);
+}
+
+/**
+ * Update entity and return empty object.
+ */
+export function updateRole(entity: Role): Promise<Record<string, never>> {
+    const { name } = entity;
+    return axios.put(`${rolesUrl}/${name}`, entity);
+}
+
+/*
+ * Delete entity which has name and return empty object.
+ */
+export function deleteRole(name: string): Promise<Record<string, never>> {
+    return axios.delete(`${rolesUrl}/${name}`);
+}
+
+const permissionsURL = '/v1/mypermissions';
 
 /**
  * Fetches current user's role permissions
@@ -35,25 +81,148 @@ export function fetchUserRolePermissions(): Promise<{ response: Role }> {
     }));
 }
 
-/**
- * Creates a role.
+const permissionSetsUrl = '/v1/permissionsets';
+
+export type PermissionSet = {
+    id: string;
+    name: string;
+    description: string;
+    minimumAccessLevel: AccessLevel;
+    resourceToAccess: Record<string, AccessLevel>;
+};
+
+/*
+ * Fetch entities and return array of objects.
  */
-export function createRole(data: Role): Promise<Role> {
-    const { name } = data;
-    return axios.post(`${rolesUrl}/${name}`, data);
+export function fetchPermissionSets(): Promise<PermissionSet[]> {
+    return axios
+        .get<{ permissionSets: PermissionSet[] }>(permissionSetsUrl)
+        .then((response) => response?.data?.permissionSets ?? []);
 }
 
-/**
- * Updates a role.
+/*
+ * Create entity and return object with id assigned by backend.
  */
-export function updateRole(data: Role): Promise<Role> {
-    const { name } = data;
-    return axios.put(`${rolesUrl}/${name}`, data);
+export function createPermissionSet(entity: PermissionSet): Promise<PermissionSet> {
+    return axios.post<PermissionSet>(permissionSetsUrl, entity).then((response) => response.data);
 }
 
-/**
- * Deletes a role. Returns an empty object.
+/*
+ * Update entity and return empty object.
  */
-export function deleteRole(name: string): Promise<Record<string, never>> {
-    return axios.delete(`${rolesUrl}/${name}`);
+export function updatePermissionSet(entity: PermissionSet): Promise<Record<string, never>> {
+    const { id } = entity;
+    return axios.put(`${permissionSetsUrl}/${id}`, entity);
+}
+
+/*
+ * Delete entity which has id and return empty object.
+ */
+export function deletePermissionSet(id: string): Promise<Record<string, never>> {
+    return axios.delete(`${permissionSetsUrl}/${id}`);
+}
+
+const accessScopessUrl = '/v1/simpleaccessscopes';
+
+export type SimpleAccessScopeNamespace = {
+    clusterName: string;
+    namespaceName: string;
+};
+
+export type LabelSelectorOperator = 'UNKNOWN' | 'IN' | 'NOT_IN' | 'EXISTS' | 'NOT_EXISTS';
+
+export type LabelSelectorRequirement = {
+    key: string;
+    op: LabelSelectorOperator;
+    values: string[];
+};
+
+export type LabelSelector = {
+    requirements: LabelSelectorRequirement[];
+};
+
+export type SimpleAccessScopeRules = {
+    includedClusters: string[];
+    includedNamespaces: SimpleAccessScopeNamespace[];
+    clusterLabelSelectors: LabelSelector[];
+    namespaceLabelSelectors: LabelSelector[];
+};
+
+export type AccessScope = {
+    id: string;
+    name: string;
+    description: string;
+    rules: SimpleAccessScopeRules;
+};
+
+/*
+ * Fetch entities and return array of objects.
+ */
+export function fetchAccessScopes(): Promise<AccessScope[]> {
+    return axios
+        .get<{ accessScopes: AccessScope[] }>(accessScopessUrl)
+        .then((response) => response?.data?.accessScopes ?? []);
+}
+
+/*
+ * Create entity and return object with id assigned by backend.
+ */
+export function createAccessScope(entity: AccessScope): Promise<AccessScope> {
+    return axios.post(accessScopessUrl, entity);
+}
+
+/*
+ * Update entity and return empty object.
+ */
+export function updateAccessScope(entity: AccessScope): Promise<Record<string, never>> {
+    const { id } = entity;
+    return axios.put(`${accessScopessUrl}/${id}`, entity);
+}
+
+/*
+ * Delete entity which has id and return empty object.
+ */
+export function deleteAccessScope(id: string): Promise<Record<string, never>> {
+    return axios.delete(`${accessScopessUrl}/${id}`);
+}
+
+const computeEffectiveAccessScopeUrl = '/v1/computeeffectiveaccessscope';
+
+export type EffectiveAccessScopeDetail = 'STANDARD' | 'MINIMAL' | 'HIGH';
+
+export type EffectiveAccessScopeState = 'UNKNOWN' | 'INCLUDED' | 'EXCLUDED' | 'PARTIAL';
+
+export type EffectiveAccessScopeNamespace = {
+    id: string;
+    name: string;
+    state: EffectiveAccessScopeState;
+    labels: Record<string, string>;
+};
+
+export type EffectiveAccessScopeCluster = {
+    id: string;
+    name: string;
+    state: EffectiveAccessScopeState;
+    namespaces: EffectiveAccessScopeNamespace[];
+    labels: Record<string, string>;
+};
+
+export type EffectiveAccessScope = {
+    clusters: EffectiveAccessScopeCluster[];
+};
+
+/*
+ * Given rules from simple access scope and detail option,
+ * return effective access scope for clusters (which include namespaces).
+ */
+export function computeEffectiveAccessScopeClusters(
+    simpleRules: SimpleAccessScopeRules,
+    detail: EffectiveAccessScopeDetail = 'HIGH'
+): Promise<EffectiveAccessScopeCluster[]> {
+    return axios
+        .post<EffectiveAccessScope>(computeEffectiveAccessScopeUrl, {
+            detail,
+            accessScope: { simpleRules },
+        })
+        .then((response) => response.data.clusters);
 }

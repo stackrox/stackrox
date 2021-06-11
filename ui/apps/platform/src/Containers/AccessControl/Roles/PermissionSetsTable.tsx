@@ -1,7 +1,7 @@
 import React, { ChangeEventHandler, ReactElement } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { PermissionSet } from '../accessControlTypes';
+import { PermissionSet } from 'services/RolesService';
 
 export type PermissionSetsTableProps = {
     fieldId: string;

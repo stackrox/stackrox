@@ -2,9 +2,9 @@ import React, { ReactElement } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { accessControl as accessControlTypeLabels } from 'messages/common';
+import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
-import { PermissionSet, Role } from '../accessControlTypes';
 
 // TODO import from where?
 const unselectedRowStyle = {};

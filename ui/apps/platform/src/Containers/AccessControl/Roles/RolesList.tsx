@@ -1,8 +1,9 @@
 import React, { ReactElement } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
+import { AccessScope, PermissionSet, Role } from 'services/RolesService';
+
 import { AccessControlEntityLink } from '../AccessControlLinks';
-import { AccessScope, PermissionSet, Role } from '../accessControlTypes';
 
 // TODO import from where?
 const unselectedRowStyle = {};
@@ -13,14 +14,14 @@ const selectedRowStyle = {
 const entityType = 'ROLE';
 
 export type RolesListProps = {
-    entityId?: string;
+    entityName?: string;
     roles: Role[];
     permissionSets: PermissionSet[];
     accessScopes: AccessScope[];
 };
 
 function RolesList({
-    entityId,
+    entityName,
     roles,
     permissionSets,
     accessScopes,
@@ -44,12 +45,15 @@ function RolesList({
                 </Tr>
             </Thead>
             <Tbody>
-                {roles.map(({ id, name, description, permissionSetId, accessScopeId }) => (
-                    <Tr key={id} style={id === entityId ? selectedRowStyle : unselectedRowStyle}>
+                {roles.map(({ name, description, permissionSetId, accessScopeId }) => (
+                    <Tr
+                        key={name}
+                        style={name === entityName ? selectedRowStyle : unselectedRowStyle}
+                    >
                         <Td dataLabel="Name">
                             <AccessControlEntityLink
                                 entityType={entityType}
-                                entityId={id}
+                                entityId={name}
                                 entityName={name}
                             />
                         </Td>

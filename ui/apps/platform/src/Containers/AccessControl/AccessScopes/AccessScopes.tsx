@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
@@ -21,16 +22,18 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import AccessControlNav from '../AccessControlNav';
-import { getEntityPath, getQueryObject } from '../accessControlPaths';
 import {
     AccessScope,
-    createAccessScope,
-    fetchAccessScopes,
-    fetchRoles,
     Role,
+    createAccessScope,
+    // deleteAccessScope,
+    fetchAccessScopes,
+    fetchRolesAsArray,
     updateAccessScope,
-} from '../accessControlTypes';
+} from 'services/RolesService';
+
+import AccessControlNav from '../AccessControlNav';
+import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import AccessScopeForm from './AccessScopeForm';
 import AccessScopesList from './AccessScopesList';
@@ -39,6 +42,12 @@ const accessScopeNew: AccessScope = {
     id: '',
     name: '',
     description: '',
+    rules: {
+        includedClusters: [],
+        includedNamespaces: [],
+        clusterLabelSelectors: [],
+        namespaceLabelSelectors: [],
+    },
 };
 
 const entityType = 'ACCESS_SCOPE';
@@ -81,12 +90,11 @@ function AccessScopes(): ReactElement {
 
         // TODO Until secondary requests succeed, disable Create and Edit because selections might be incomplete?
         setAlertRoles(null);
-        fetchRoles()
+        fetchRolesAsArray()
             .then((rolesFetched) => {
                 setRoles(rolesFetched);
             })
             .catch((error) => {
-                // eslint-disable-next-line react/jsx-no-bind
                 const actionClose = <AlertActionCloseButton onClose={() => setAlertRoles(null)} />;
                 setAlertRoles(
                     <Alert
@@ -118,7 +126,7 @@ function AccessScopes(): ReactElement {
         history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
     }
 
-    function submitValues(values: AccessScope): Promise<AccessScope> {
+    function submitValues(values: AccessScope): Promise<null> {
         return action === 'create'
             ? createAccessScope(values).then((entityCreated) => {
                   // Append the created entity.
@@ -127,20 +135,18 @@ function AccessScopes(): ReactElement {
                   // Clear the action and also any filtering (in case the created entity does not match).
                   history.push(getEntityPath(entityType, entityCreated.id));
 
-                  return entityCreated;
+                  return null; // because the form has only catch and finally
               })
-            : updateAccessScope(values).then((entityUpdated) => {
+            : updateAccessScope(values).then(() => {
                   // Replace the updated entity.
                   setAccessScopes(
-                      accessScopes.map((entity) =>
-                          entity.id === entityUpdated.id ? entityUpdated : entity
-                      )
+                      accessScopes.map((entity) => (entity.id === values.id ? values : entity))
                   );
 
                   // Clear the action and also any filtering (in case the updated entity does not match).
                   history.push(getEntityPath(entityType, entityId));
 
-                  return entityUpdated;
+                  return null; // because the form has only catch and finally
               });
     }
 

@@ -4,10 +4,15 @@ import qs from 'qs';
 import { accessControlBasePathV2, accessControlPathV2 } from 'routePaths'; // import { accessControlPath } from 'routePaths';
 import { AccessControlEntityType } from 'constants/entityTypes';
 
-import { AccessControlQueryObject } from './accessControlTypes';
-
 export const accessControlBasePath = accessControlBasePathV2; // export { accessControlBasePath };
 export const accessControlPath = accessControlPathV2; // export { accessControlPath };
+
+export type AccessControlQueryAction = 'create' | 'update';
+
+export type AccessControlQueryObject = {
+    action?: AccessControlQueryAction;
+    s?: Partial<Record<AccessControlEntityType, string>>;
+};
 
 export type AccessControlContainerProps = {
     entityId: string;

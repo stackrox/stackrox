@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
@@ -21,26 +22,28 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessType as AccessLevel, fetchResources } from 'services/RolesService';
+import {
+    AccessLevel,
+    PermissionSet,
+    Role,
+    createPermissionSet,
+    // deletePermissionSet,
+    fetchPermissionSets,
+    fetchResourcesAsArray,
+    fetchRolesAsArray,
+    updatePermissionSet,
+} from 'services/RolesService';
 
 import AccessControlNav from '../AccessControlNav';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
-import {
-    createPermissionSet,
-    fetchPermissionSets,
-    fetchRoles,
-    PermissionSet,
-    Role,
-    updatePermissionSet,
-} from '../accessControlTypes';
 
 import PermissionSetForm from './PermissionSetForm';
 import PermissionSetsList from './PermissionSetsList';
 
 function getNewPermissionSet(resources: string[]): PermissionSet {
-    const resourceIdToAccess: Record<string, AccessLevel> = {};
+    const resourceToAccess: Record<string, AccessLevel> = {};
     resources.forEach((resource) => {
-        resourceIdToAccess[resource] = 'NO_ACCESS';
+        resourceToAccess[resource] = 'NO_ACCESS';
     });
 
     return {
@@ -48,7 +51,7 @@ function getNewPermissionSet(resources: string[]): PermissionSet {
         name: '',
         description: '',
         minimumAccessLevel: 'NO_ACCESS',
-        resourceIdToAccess,
+        resourceToAccess,
     };
 }
 
@@ -94,12 +97,11 @@ function PermissionSets(): ReactElement {
 
         // TODO Until secondary requests succeed, disable Create and Edit because selections might be incomplete?
         setAlertResources(null);
-        fetchResources()
-            .then((data) => {
-                setResources(data.response.resources);
+        fetchResourcesAsArray()
+            .then((resourcesFetched) => {
+                setResources(resourcesFetched);
             })
             .catch((error) => {
-                // eslint-disable-next-line react/jsx-no-bind
                 const actionClose = <AlertActionCloseButton onClose={() => setAlertRoles(null)} />;
                 setAlertRoles(
                     <Alert
@@ -114,12 +116,11 @@ function PermissionSets(): ReactElement {
             });
 
         setAlertRoles(null);
-        fetchRoles()
+        fetchRolesAsArray()
             .then((rolesFetched) => {
                 setRoles(rolesFetched);
             })
             .catch((error) => {
-                // eslint-disable-next-line react/jsx-no-bind
                 const actionClose = <AlertActionCloseButton onClose={() => setAlertRoles(null)} />;
                 setAlertRoles(
                     <Alert
@@ -151,7 +152,7 @@ function PermissionSets(): ReactElement {
         history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
     }
 
-    function submitValues(values: PermissionSet): Promise<PermissionSet> {
+    function submitValues(values: PermissionSet): Promise<null> {
         return action === 'create'
             ? createPermissionSet(values).then((entityCreated) => {
                   // Append the created entity.
@@ -160,20 +161,18 @@ function PermissionSets(): ReactElement {
                   // Clear the action and also any filtering (in case the created entity does not match).
                   history.push(getEntityPath(entityType, entityCreated.id));
 
-                  return entityCreated;
+                  return null; // because the form has only catch and finally
               })
-            : updatePermissionSet(values).then((entityUpdated) => {
+            : updatePermissionSet(values).then(() => {
                   // Replace the updated entity.
                   setPermissionSets(
-                      permissionSets.map((entity) =>
-                          entity.id === entityUpdated.id ? entityUpdated : entity
-                      )
+                      permissionSets.map((entity) => (entity.id === values.id ? values : entity))
                   );
 
                   // Clear the action and also any filtering (in case the updated entity does not match).
                   history.push(getEntityPath(entityType, entityId));
 
-                  return entityUpdated;
+                  return null; // because the form has only catch and finally
               });
     }
 

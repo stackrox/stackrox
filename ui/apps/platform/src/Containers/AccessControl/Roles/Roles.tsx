@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
@@ -22,19 +23,20 @@ import {
 } from '@patternfly/react-core';
 
 import { defaultRoles } from 'constants/accessControl';
+import {
+    AccessScope,
+    PermissionSet,
+    Role,
+    createRole,
+    // deleteRole,
+    fetchAccessScopes,
+    fetchPermissionSets,
+    fetchRolesAsArray,
+    updateRole,
+} from 'services/RolesService';
 
 import AccessControlNav from '../AccessControlNav';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
-import {
-    AccessScope,
-    createRole,
-    fetchAccessScopes,
-    fetchPermissionSets,
-    fetchRoles,
-    PermissionSet,
-    Role,
-    updateRole,
-} from '../accessControlTypes';
 
 import RoleForm from './RoleForm';
 import RolesList from './RolesList';
@@ -42,10 +44,11 @@ import RolesList from './RolesList';
 const entityType = 'ROLE';
 
 const roleNew: Role = {
+    name: '',
+    resourceToAccess: {},
     id: '',
     description: '',
     permissionSetId: '',
-    name: '',
     accessScopeId: '',
 };
 
@@ -54,7 +57,7 @@ function Roles(): ReactElement {
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
     const { action } = queryObject;
-    const { entityId } = useParams();
+    const { entityId: entityName } = useParams(); // identify role by name in routes
 
     const [isFetching, setIsFetching] = useState(false);
     const [roles, setRoles] = useState<Role[]>([]);
@@ -68,7 +71,7 @@ function Roles(): ReactElement {
         // The primary request has fetching spinner and unclosable alert.
         setIsFetching(true);
         setAlertRoles(null);
-        fetchRoles()
+        fetchRolesAsArray()
             .then((rolesFetched) => {
                 setRoles(rolesFetched);
             })
@@ -90,7 +93,6 @@ function Roles(): ReactElement {
                 setPermissionSets(permissionSetsFetched);
             })
             .catch((error) => {
-                // eslint-disable-next-line react/jsx-no-bind
                 const actionClose = <AlertActionCloseButton onClose={() => setAlertRoles(null)} />;
                 setAlertPermissionSets(
                     <Alert
@@ -110,7 +112,6 @@ function Roles(): ReactElement {
                 setAccessScopes(accessScopesFetched);
             })
             .catch((error) => {
-                // eslint-disable-next-line react/jsx-no-bind
                 const actionClose = <AlertActionCloseButton onClose={() => setAlertRoles(null)} />;
                 setAlertAccessScopes(
                     <Alert
@@ -134,44 +135,40 @@ function Roles(): ReactElement {
     }
 
     function onClickEdit() {
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: 'update' }));
+        history.push(getEntityPath(entityType, entityName, { ...queryObject, action: 'update' }));
     }
 
     function onClickCancel() {
-        // The entityId is undefined for create and defined for update.
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
+        // The entityName is undefined for create and defined for update.
+        history.push(getEntityPath(entityType, entityName, { ...queryObject, action: undefined }));
     }
 
-    function submitValues(values: Role): Promise<Role> {
+    function submitValues(values: Role): Promise<null> {
         return action === 'create'
-            ? createRole(values).then((entityCreated) => {
-                  // Append the created entity.
-                  setRoles([...roles, entityCreated]);
+            ? createRole(values).then(() => {
+                  // Append the values, because backend does not assign an id to the role.
+                  setRoles([...roles, values]);
 
                   // Clear the action and also any filtering (in case the created entity does not match).
-                  history.push(getEntityPath(entityType, entityCreated.id));
+                  history.push(getEntityPath(entityType, values.name));
 
-                  return entityCreated;
+                  return null; // because the form has only catch and finally
               })
-            : updateRole(values).then((entityUpdated) => {
+            : updateRole(values).then(() => {
                   // Replace the updated entity.
-                  setRoles(
-                      roles.map((entity) =>
-                          entity.id === entityUpdated.id ? entityUpdated : entity
-                      )
-                  );
+                  setRoles(roles.map((entity) => (entity.name === values.name ? values : entity)));
 
                   // Clear the action and also any filtering (in case the updated entity does not match).
-                  history.push(getEntityPath(entityType, entityId));
+                  history.push(getEntityPath(entityType, entityName));
 
-                  return entityUpdated;
+                  return null; // because the form has only catch and finally
               });
     }
 
-    const role = roles.find(({ id }) => id === entityId) || roleNew;
-    const isActionable = !defaultRoles[entityId];
+    const role = roles.find(({ name }) => name === entityName) || roleNew;
+    const isActionable = !defaultRoles[role.name];
     const hasAction = Boolean(action);
-    const isExpanded = hasAction || Boolean(entityId);
+    const isExpanded = hasAction || Boolean(entityName);
 
     const panelContent = (
         <DrawerPanelContent minSize="90%">
@@ -228,7 +225,7 @@ function Roles(): ReactElement {
                                 </ToolbarContent>
                             </Toolbar>
                             <RolesList
-                                entityId={entityId}
+                                entityName={entityName}
                                 roles={roles}
                                 permissionSets={permissionSets}
                                 accessScopes={accessScopes}

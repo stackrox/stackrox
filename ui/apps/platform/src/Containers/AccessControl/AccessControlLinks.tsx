@@ -4,9 +4,9 @@ import { Button } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
 import { AccessControlEntityType } from 'constants/entityTypes';
+import { Role } from 'services/RolesService';
 
 import { getEntityPath } from './accessControlPaths';
-import { Role } from './accessControlTypes';
 
 export type AccessControlEntityLinkProps = {
     entityType: AccessControlEntityType;

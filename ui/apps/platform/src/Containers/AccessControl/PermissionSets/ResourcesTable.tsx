@@ -3,19 +3,19 @@ import { SelectOption } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { accessControl as accessTypeLabels } from 'messages/common';
-import { AccessType as AccessLevel } from 'services/RolesService';
+import { AccessLevel } from 'services/RolesService';
 
 import SelectSingle from '../SelectSingle'; // TODO import from where?
 import { ReadAccessIcon, WriteAccessIcon } from './AccessIcons';
 
 export type ResourcesTableProps = {
-    resourceIdToAccess: Record<string, AccessLevel>;
+    resourceToAccess: Record<string, AccessLevel>;
     setResourceValue: (resource: string, value: string) => void;
     isDisabled: boolean;
 };
 
 function ResourcesTable({
-    resourceIdToAccess,
+    resourceToAccess,
     setResourceValue,
     isDisabled,
 }: ResourcesTableProps): ReactElement {
@@ -31,7 +31,7 @@ function ResourcesTable({
                 </Tr>
             </Thead>
             <Tbody>
-                {Object.entries(resourceIdToAccess).map(([resource, accessType]) => (
+                {Object.entries(resourceToAccess).map(([resource, accessType]) => (
                     <Tr key={resource}>
                         <Td key="resourceName" dataLabel="Resource">
                             {resource}

@@ -14,7 +14,9 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessControlQueryAction, AccessScope, PermissionSet, Role } from '../accessControlTypes';
+import { AccessScope, PermissionSet, Role } from 'services/RolesService';
+
+import { AccessControlQueryAction } from '../accessControlPaths';
 
 import AccessScopesTable from './AccessScopesTable';
 import PermissionSetsTable from './PermissionSetsTable';
@@ -27,7 +29,7 @@ export type RoleFormProps = {
     accessScopes: AccessScope[];
     onClickCancel: () => void;
     onClickEdit: () => void;
-    submitValues: (values: Role) => Promise<Role>;
+    submitValues: (values: Role) => Promise<null>; // because the form has only catch and finally
 };
 
 function RoleForm({
@@ -43,7 +45,6 @@ function RoleForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
-    // TODO Why does browser refresh when form is open cause values to be undefined?
     const { dirty, handleChange, isValid, values } = useFormik({
         initialValues: role,
         onSubmit: () => {},
@@ -51,7 +52,7 @@ function RoleForm({
             name: yup.string().required(),
             description: yup.string(),
             permissionSetId: yup.string().required(),
-            accessScopeId: yup.string().required(),
+            accessScopeId: yup.string(),
         }),
     });
 

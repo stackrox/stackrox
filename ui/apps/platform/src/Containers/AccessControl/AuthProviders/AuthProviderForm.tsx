@@ -16,8 +16,11 @@ import {
 } from '@patternfly/react-core';
 
 import { availableAuthProviders } from 'constants/accessControl';
+import { AuthProvider } from 'services/AuthService';
+import { Role } from 'services/RolesService';
 
-import { AccessControlQueryAction, AuthProvider, Role } from '../accessControlTypes';
+import { AccessControlQueryAction } from '../accessControlPaths';
+
 import SelectSingle from '../SelectSingle'; // TODO import from where?
 
 export type AuthProviderFormProps = {
@@ -42,14 +45,12 @@ function AuthProviderForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
-    // TODO Why does browser refresh when form is open cause values to be undefined?
     const { dirty, handleChange, isValid, setFieldValue, values } = useFormik({
         initialValues: authProvider,
         onSubmit: () => {},
         validationSchema: yup.object({
             name: yup.string().required(),
-            // authProvider
-            // minimumAccessRole
+            type: yup.string().required(),
         }),
     });
 
@@ -134,10 +135,10 @@ function AuthProviderForm({
                     isRequired
                 />
             </FormGroup>
-            <FormGroup label="Auth provider" fieldId="authProvider" isRequired>
+            <FormGroup label="Auth provider" fieldId="type" isRequired>
                 <SelectSingle
-                    id="authProvider"
-                    value={values.authProvider}
+                    id="type"
+                    value={values.type}
                     setFieldValue={setFieldValue}
                     isDisabled={isViewing}
                 >
@@ -151,7 +152,7 @@ function AuthProviderForm({
             <FormGroup label="Minimum access role" fieldId="minimumAccessRole" isRequired>
                 <SelectSingle
                     id="minimumAccessRole"
-                    value={values.minimumAccessRole}
+                    value="" // TODO see getDefaultRoleByAuthProviderId in classic code
                     setFieldValue={setFieldValue}
                     isDisabled={isViewing}
                 >
@@ -160,6 +161,7 @@ function AuthProviderForm({
                     ))}
                 </SelectSingle>
             </FormGroup>
+            <FormGroup label="Rules" fieldId="rules" />
         </Form>
     );
 }

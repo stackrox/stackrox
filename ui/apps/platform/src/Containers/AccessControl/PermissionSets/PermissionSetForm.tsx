@@ -16,8 +16,10 @@ import {
 } from '@patternfly/react-core';
 
 import { accessControl as accessControlTypeLabels } from 'messages/common';
+import { PermissionSet } from 'services/RolesService';
 
-import { AccessControlQueryAction, PermissionSet } from '../accessControlTypes';
+import { AccessControlQueryAction } from '../accessControlPaths';
+
 import ResourcesTable from './ResourcesTable';
 import SelectSingle from '../SelectSingle'; // TODO import from where?
 
@@ -27,7 +29,7 @@ export type PermissionSetFormProps = {
     permissionSet: PermissionSet;
     onClickCancel: () => void;
     onClickEdit: () => void;
-    submitValues: (values: PermissionSet) => Promise<PermissionSet>;
+    submitValues: (values: PermissionSet) => Promise<null>; // because the form has only catch and finally
 };
 
 function PermissionSetForm({
@@ -41,7 +43,6 @@ function PermissionSetForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
-    // TODO Why does browser refresh when form is open cause values to be undefined?
     const { dirty, handleChange, isValid, setFieldValue, values } = useFormik({
         initialValues: permissionSet,
         onSubmit: () => {},
@@ -54,9 +55,9 @@ function PermissionSetForm({
     });
 
     function setResourceValue(resource, value) {
-        const { resourceIdToAccess } = values;
-        return setFieldValue('resourceIdToAccess', {
-            ...resourceIdToAccess,
+        const { resourceToAccess } = values;
+        return setFieldValue('resourceToAccess', {
+            ...resourceToAccess,
             [resource]: value,
         });
     }
@@ -166,7 +167,7 @@ function PermissionSetForm({
                 </SelectSingle>
             </FormGroup>
             <ResourcesTable
-                resourceIdToAccess={values.resourceIdToAccess}
+                resourceToAccess={values.resourceToAccess}
                 setResourceValue={setResourceValue}
                 isDisabled={isViewing}
             />

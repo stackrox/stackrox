@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
-import { AccessType } from 'constants/accessControl';
+import { AccessLevel } from 'services/RolesService';
 
 const forbiddenIcon = (
     <TimesIcon aria-label="forbidden" color="var(--pf-global--danger-color--100)" size="sm" />
@@ -11,7 +11,7 @@ const permittedIcon = (
 );
 
 export type AccessIconProps = {
-    accessType: AccessType;
+    accessType: AccessLevel;
 };
 
 export function ReadAccessIcon({ accessType }: AccessIconProps): ReactElement {

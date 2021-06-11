@@ -3,7 +3,7 @@ export const NO_ACCESS = 'NO_ACCESS';
 export const READ_ACCESS = 'READ_ACCESS';
 export const READ_WRITE_ACCESS = 'READ_WRITE_ACCESS';
 
-export type AccessType = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
+export type AccessLevel = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
 
 export const defaultRoles = {
     Admin: true,

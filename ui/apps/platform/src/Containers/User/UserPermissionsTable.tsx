@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { AccessType } from 'services/RolesService';
+import { AccessLevel } from 'services/RolesService';
 
 import {
     ReadAccessIcon,
@@ -9,7 +9,7 @@ import {
 } from 'Containers/AccessControl/PermissionSets/AccessIcons';
 
 export type UserPermissionsTableProps = {
-    permissions: Record<string, AccessType>;
+    permissions: Record<string, AccessLevel>;
 };
 
 function UserPermissionsTable({ permissions }: UserPermissionsTableProps): ReactElement {

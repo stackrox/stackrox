@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
@@ -14,7 +14,13 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessControlQueryAction, AccessScope } from '../accessControlTypes';
+import {
+    AccessScope,
+    EffectiveAccessScopeCluster,
+    computeEffectiveAccessScopeClusters,
+} from 'services/RolesService';
+
+import { AccessControlQueryAction } from '../accessControlPaths';
 
 export type AccessScopeFormProps = {
     isActionable: boolean;
@@ -22,7 +28,7 @@ export type AccessScopeFormProps = {
     accessScope: AccessScope;
     onClickCancel: () => void;
     onClickEdit: () => void;
-    submitValues: (values: AccessScope) => Promise<AccessScope>;
+    submitValues: (values: AccessScope) => Promise<null>; // because the form has only catch and finally
 };
 
 function AccessScopeForm({
@@ -35,8 +41,8 @@ function AccessScopeForm({
 }: AccessScopeFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const [clusters, setClusters] = useState<EffectiveAccessScopeCluster[]>([]);
 
-    // TODO Why does browser refresh when form is open cause values to be undefined?
     const { dirty, handleChange, isValid, values } = useFormik({
         initialValues: accessScope,
         onSubmit: () => {},
@@ -45,6 +51,20 @@ function AccessScopeForm({
             description: yup.string(),
         }),
     });
+
+    useEffect(() => {
+        // TODO set computing true
+        computeEffectiveAccessScopeClusters(accessScope.rules)
+            .then((clustersArg) => {
+                setClusters(clustersArg);
+            })
+            .catch(() => {
+                // TODO display alert
+            })
+            .finally(() => {
+                // TODO set computing false
+            });
+    }, [accessScope.rules]);
 
     function onChange(_value, event) {
         handleChange(event);
@@ -134,6 +154,9 @@ function AccessScopeForm({
                     onChange={onChange}
                     isDisabled={isViewing}
                 />
+            </FormGroup>
+            <FormGroup label="Effective Access Scope" fieldId="effectiveAccessScope">
+                <pre className="pf-u-font-size-sm">{JSON.stringify(clusters, null, 2)}</pre>
             </FormGroup>
         </Form>
     );

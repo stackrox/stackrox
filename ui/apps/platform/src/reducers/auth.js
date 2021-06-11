@@ -5,7 +5,7 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 
 // Helper functions
 
-const filterAuthProviders = (providers) => {
+export const filterAuthProviders = (providers) => {
     const availableTypes = availableAuthProviders.map((provider) => provider.value);
     const filteredProviders = providers.filter(
         (provider) => availableTypes.indexOf(provider.type) !== -1
