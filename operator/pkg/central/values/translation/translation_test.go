@@ -511,8 +511,12 @@ func TestTranslate(t *testing.T) {
 }
 
 func makeSecret(name string, stringData map[string]string) *corev1.Secret {
+	data := map[string][]byte{}
+	for key, val := range stringData {
+		data[key] = []byte(val)
+	}
 	return &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{Name: name, Namespace: "stackrox"},
-		StringData: stringData,
+		Data:       data,
 	}
 }

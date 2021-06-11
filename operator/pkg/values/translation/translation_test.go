@@ -147,9 +147,9 @@ func TestGetServiceTLS(t *testing.T) {
 			args: args{
 				clientSet: fake.NewSimpleClientset(&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{Name: "secret-name", Namespace: "nsname"},
-					StringData: map[string]string{
-						"key":  "mock-key",
-						"cert": "mock-cert",
+					Data: map[string][]byte{
+						"key":  []byte("mock-key"),
+						"cert": []byte("mock-cert"),
 					},
 				}),
 				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
@@ -172,8 +172,8 @@ func TestGetServiceTLS(t *testing.T) {
 			args: args{
 				clientSet: fake.NewSimpleClientset(&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{Name: "secret-name", Namespace: "nsname"},
-					StringData: map[string]string{
-						"not-cert": "something else",
+					Data: map[string][]byte{
+						"not-cert": []byte("something else"),
 					},
 				}),
 				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
@@ -184,9 +184,9 @@ func TestGetServiceTLS(t *testing.T) {
 			args: args{
 				clientSet: fake.NewSimpleClientset(&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{Name: "secret-name", Namespace: "nsname"},
-					StringData: map[string]string{
-						"key":      "mock-key",
-						"not-cert": "something else",
+					Data: map[string][]byte{
+						"key":      []byte("mock-key"),
+						"not-cert": []byte("something else"),
 					},
 				}),
 				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},

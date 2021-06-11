@@ -105,9 +105,9 @@ func NewBuilderFromSecret(ctx context.Context, clientSet kubernetes.Interface, n
 		return v.SetError(errors.Wrapf(err, "failed to retrieve secret %q in namespace %q configured in %s", secret.Name, namespace, crPath))
 	}
 	for secretMember, builderKey := range membersToKeys {
-		value, ok := secretObj.StringData[secretMember]
+		value, ok := secretObj.Data[secretMember]
 		if ok {
-			v.SetStringValue(builderKey, value)
+			v.SetStringValue(builderKey, string(value))
 		} else {
 			// Check all items in map before returning.
 			v.SetError(fmt.Errorf("secret %q in namespace %q configured in %s does not contain member %q", secret.Name, namespace, crPath, secretMember))
