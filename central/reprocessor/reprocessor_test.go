@@ -35,7 +35,22 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	// avoidTickerTriggerDuration is the duration value that we use in the test to avoid any reprocessings
+	// being triggered by the normal trigger. The value has to be chosen such that it is strictly larger than
+	// the maximal runtime of an individual test case.
+	avoidTickerTriggerDuration = 1 * time.Hour
+
+	// maxReprocessDuration is the maximum duration a reprocess loop iteration must last.
+	// This is not related to anything under test - we only need some value here such that we can
+	// wait safely for a started reprocessing iteration to complete. Therefore, we can chose an almost
+	// arbitrarily large value here, since it would only matter if a reprocessing loop iteration would
+	// in fact take much longer than expected.
+	maxReprocessDuration = 1 * time.Second
+)
+
 func TestLoop(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(loopTestSuite))
 }
 
@@ -87,56 +102,55 @@ func (suite *loopTestSuite) waitForRun(loop *loopImpl, timeout time.Duration) bo
 	if !concurrency.WaitWithTimeout(&loop.reprocessingStarted, timeout) {
 		return false
 	}
-	if !concurrency.WaitWithTimeout(&loop.reprocessingComplete, 100*time.Millisecond) {
-		return false
-	}
+	suite.Require().Truef(
+		concurrency.WaitWithTimeout(&loop.reprocessingComplete, maxReprocessDuration),
+		"reprocessing did not finish within %v", maxReprocessDuration)
 	return true
 }
 
 func (suite *loopTestSuite) TestTimerTicksOnce() {
 	duration := 1 * time.Second // Need this to be long enough that the enrichAndDetectTicker won't get called twice during the test.
-	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages, duration, duration, duration).(*loopImpl)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages, duration, duration)
 	suite.expectCalls(2, false)
 	loop.Start()
 	// Wait for initial to complete
 	suite.True(suite.waitForRun(loop, 500*time.Millisecond))
-	// Wait for next tick
-	suite.True(suite.waitForRun(loop, duration+10*time.Millisecond))
+	// Wait for next tick, allowing for some margin of error due to a slow machine or similar.
+	suite.True(suite.waitForRun(loop, duration+500*time.Millisecond))
 
 	loop.Stop()
 }
 
 func (suite *loopTestSuite) TestTimerTicksTwice() {
-	duration := 100 * time.Millisecond
-	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages, duration, duration, duration).(*loopImpl)
+	duration := 500 * time.Millisecond
+	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages, duration, duration)
 	suite.expectCalls(3, false)
 	loop.Start()
 
-	paddedDuration := duration + 10*time.Millisecond
+	paddedDuration := duration + 250*time.Millisecond
 	suite.True(suite.waitForRun(loop, paddedDuration))
 	suite.True(suite.waitForRun(loop, paddedDuration))
 	suite.True(suite.waitForRun(loop, paddedDuration))
 	loop.Stop()
 }
 
-// ROX-7334 tracks re-enabling this test
-//func (suite *loopTestSuite) TestShortCircuitOnce() {
-//	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages).(*loopImpl)
-//	suite.expectCalls(2, false)
-//	loop.Start()
-//
-//	timeout := 100 * time.Millisecond
-//	suite.True(suite.waitForRun(loop, timeout))
-//	loop.ShortCircuit()
-//	suite.True(suite.waitForRun(loop, timeout))
-//	loop.Stop()
-//}
+func (suite *loopTestSuite) TestShortCircuitOnce() {
+	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages, avoidTickerTriggerDuration, avoidTickerTriggerDuration)
+	suite.expectCalls(2, false)
+	loop.Start()
+
+	timeout := 500 * time.Millisecond
+	suite.True(suite.waitForRun(loop, timeout))
+	loop.ShortCircuit()
+	suite.True(suite.waitForRun(loop, timeout))
+	loop.Stop()
+}
 
 func (suite *loopTestSuite) TestShortCircuitTwice() {
-	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages).(*loopImpl)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages, avoidTickerTriggerDuration, avoidTickerTriggerDuration)
 	suite.expectCalls(2, true)
 	loop.Start()
-	timeout := 100 * time.Millisecond
+	timeout := 500 * time.Millisecond
 	suite.True(suite.waitForRun(loop, timeout))
 	loop.ShortCircuit()
 	suite.True(suite.waitForRun(loop, timeout))
@@ -146,10 +160,10 @@ func (suite *loopTestSuite) TestShortCircuitTwice() {
 }
 
 func (suite *loopTestSuite) TestStopWorks() {
-	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages).(*loopImpl)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, suite.mockWatchedImages, avoidTickerTriggerDuration, avoidTickerTriggerDuration)
 	suite.expectCalls(1, false)
 	loop.Start()
-	timeout := 100 * time.Millisecond
+	timeout := 500 * time.Millisecond
 	suite.True(suite.waitForRun(loop, timeout))
 	loop.Stop()
 	loop.ShortCircuit()
@@ -157,6 +171,8 @@ func (suite *loopTestSuite) TestStopWorks() {
 }
 
 func TestGetActiveImageIDs(t *testing.T) {
+	t.Parallel()
+
 	rocksDB := rocksdbtest.RocksDBForT(t)
 
 	indexingQ := queue.NewWaitableQueue()
