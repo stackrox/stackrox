@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 )
@@ -31,6 +32,11 @@ type DispatcherRegistry interface {
 	ForServiceAccounts() Dispatcher
 	ForRBAC() Dispatcher
 	ForClusterOperators() Dispatcher
+
+	ForComplianceOperatorResults() Dispatcher
+	ForComplianceOperatorProfiles() Dispatcher
+	ForComplianceOperatorRules() Dispatcher
+	ForComplianceOperatorScanSettingBindings() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
@@ -57,6 +63,11 @@ func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLi
 		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
 		serviceAccountDispatcher:  newServiceAccountDispatcher(),
 		clusterOperatorDispatcher: newClusterOperatorDispatcher(namespaces),
+
+		complianceOperatorResultDispatcher:              complianceOperatorDispatchers.NewResultDispatcher(),
+		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),
+		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
+		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(),
 	}
 }
 
@@ -71,6 +82,11 @@ type registryImpl struct {
 	nodeDispatcher            *nodeDispatcher
 	serviceAccountDispatcher  *serviceAccountDispatcher
 	clusterOperatorDispatcher *clusterOperatorDispatcher
+
+	complianceOperatorResultDispatcher              *complianceOperatorDispatchers.ResultDispatcher
+	complianceOperatorProfileDispatcher             *complianceOperatorDispatchers.ProfileDispatcher
+	complianceOperatorScanSettingBindingsDispatcher *complianceOperatorDispatchers.ScanSettingBindings
+	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
 }
 
 func (d *registryImpl) ForDeployments(deploymentType string) Dispatcher {
@@ -111,4 +127,20 @@ func (d *registryImpl) ForRBAC() Dispatcher {
 
 func (d *registryImpl) ForClusterOperators() Dispatcher {
 	return d.clusterOperatorDispatcher
+}
+
+func (d *registryImpl) ForComplianceOperatorResults() Dispatcher {
+	return d.complianceOperatorResultDispatcher
+}
+
+func (d *registryImpl) ForComplianceOperatorProfiles() Dispatcher {
+	return d.complianceOperatorProfileDispatcher
+}
+
+func (d *registryImpl) ForComplianceOperatorRules() Dispatcher {
+	return d.complianceOperatorRulesDispatcher
+}
+
+func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
+	return d.complianceOperatorScanSettingBindingsDispatcher
 }

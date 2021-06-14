@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -51,6 +52,11 @@ func (c *clientSetImpl) OpenshiftApps() appVersioned.Interface {
 
 // OpenshiftConfig returns nil for the openshift client for apps
 func (c *clientSetImpl) OpenshiftConfig() configVersioned.Interface {
+	return nil
+}
+
+// Dynamic returns nil
+func (c *clientSetImpl) Dynamic() dynamic.Interface {
 	return nil
 }
 
