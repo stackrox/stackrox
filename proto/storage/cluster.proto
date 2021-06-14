@@ -87,7 +87,8 @@ message StaticClusterConfig {
 
 message DynamicClusterConfig {
     AdmissionControllerConfig admission_controller_config = 1;
-    string registry_override = 2;
+    string registry_override                              = 2;
+    bool   disable_audit_logs                             = 3;
 }
 
 // Encodes a complete cluster configuration minus ID/Name identifiers
