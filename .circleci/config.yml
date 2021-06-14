@@ -3166,7 +3166,7 @@ jobs:
           name: Run operator e2e tests
           command: make -C operator test-e2e
       - store-test-results-and-artifacts:
-          path: operator/kuttl-test-artifacts
+          path: operator/build/kuttl-test-artifacts
 
       - remove-existing-stackrox-resources
 
