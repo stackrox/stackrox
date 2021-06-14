@@ -4,7 +4,7 @@ ARG roxpath=/workspace/src/github.com/stackrox/rox
 # Use CentOS Stream 8 image as the base builder because it has recent Go and git packages needed for the build.
 # https://wiki.centos.org/FAQ/CentOSStream#Where_do_I_get_CentOS_Stream_container_images.3F
 FROM quay.io/centos/centos:stream8 as builder-base
-RUN yum update -y && yum install -y golang git
+RUN yum update --security -y && yum install -y golang git
 
 # Build the manager binary
 FROM builder-base as builder

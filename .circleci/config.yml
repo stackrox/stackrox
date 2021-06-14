@@ -2157,12 +2157,9 @@ jobs:
             echo 'Checking for diffs after making generate and manifests...'
             git diff --exit-code HEAD
             make -C operator/ bundle
-            # make bundle sometimes reorders annotations in bundle therefore the following files are checked ignoring line order
-            echo 'Checking for diffs after making bundle (in files with variable order)...'
-            diff -sU999 <(git show HEAD:./operator/bundle.Dockerfile | sort) <(sort ./operator/bundle.Dockerfile)
-            diff -sU999 <(git show HEAD:./operator/bundle/metadata/annotations.yaml | sort) <(sort ./operator/bundle/metadata/annotations.yaml)
-            git checkout -- ./operator/bundle.Dockerfile ./operator/bundle/metadata/annotations.yaml
-            echo 'Checking for diffs after making bundle (all remaining files)...'
+            echo 'Checking for diffs after making bundle...'
+            echo 'If this fails, check if the invocation of the normalize-metadata.py script in operator/Makefile'
+            echo 'needs to change due to formatting changes in the generated files.'
             git diff --exit-code HEAD
 
   check-policy-files-up-to-date:
@@ -2702,6 +2699,7 @@ jobs:
 
       - run:
           name: Build Operator image
+          no_output_timeout: 30m
           command: make -C operator/ build docker-build
       - run:
           name: Check that Operator image is runnable
