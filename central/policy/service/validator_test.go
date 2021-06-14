@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,7 +30,8 @@ type PolicyValidatorTestSuite struct {
 	nStorage       *notifierMocks.MockDataStore
 	cStorage       *clusterMocks.MockDataStore
 
-	mockCtrl *gomock.Controller
+	mockCtrl    *gomock.Controller
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *PolicyValidatorTestSuite) SetupTest() {
@@ -40,6 +43,7 @@ func (s *PolicyValidatorTestSuite) SetupTest() {
 	s.cStorage = clusterMocks.NewMockDataStore(s.mockCtrl)
 
 	s.validator = newPolicyValidator(s.nStorage)
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *PolicyValidatorTestSuite) TearDownTest() {
@@ -503,4 +507,116 @@ func (s *PolicyValidatorTestSuite) TestAllDefaultPoliciesValidate() {
 		err = s.validator.validate(context.Background(), policy)
 		s.NoError(err, fmt.Sprintf("Policy %q failed validation with error: %v", policy.GetName(), err))
 	}
+}
+
+func (s *PolicyValidatorTestSuite) TestNoScopeLabelsForAuditEventSource() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+	validPolicy := &storage.Policy{
+		Name:            "runtime-policy-valid",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "SECRETS",
+							},
+						},
+					},
+				},
+			},
+		},
+		Scope: []*storage.Scope{
+			{
+				Cluster: "cluster-remote",
+			},
+			{
+				Namespace: "cluster-namespace",
+			},
+		},
+	}
+	assert.NoError(s.T(), s.validator.validateEventSource(validPolicy))
+
+	invalidScopePolicy := &storage.Policy{
+		Name:            "runtime-policy-invalid-scope",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "SECRETS",
+							},
+						},
+					},
+				},
+			},
+		},
+		Scope: []*storage.Scope{
+			{
+				Label: &storage.Scope_Label{
+					Key:   "label",
+					Value: "label-value",
+				},
+			},
+		},
+	}
+	assert.Error(s.T(), s.validator.validateEventSource(invalidScopePolicy))
+}
+
+func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "false")
+
+	assert.Error(s.T(), s.validator.validateEventSource(&storage.Policy{
+		Name:            "deploy-policy",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "SECRETS",
+							},
+						},
+					},
+				},
+			},
+		},
+	}))
+
+	assert.Error(s.T(), s.validator.validateEventSource(&storage.Policy{
+		Name:            "build-policy",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+		EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "SECRETS",
+							},
+						},
+					},
+				},
+			},
+		},
+	}))
 }

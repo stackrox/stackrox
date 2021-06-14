@@ -145,16 +145,35 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 		return errors.New("event source is not applicable to policies unless ROX_K8S_AUDIT_LOG_DETECTION feature flag is turned on")
 	}
 
-	if features.K8sAuditLogDetection.Enabled() && policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+	if s.isAuditEventPolicy(policy) {
 		if len(policy.GetEnforcementActions()) != 0 {
 			return errors.New("enforcement actions are not applicable for runtime policies with audit log as the event source")
 		}
-		if len(policy.GetExclusions()) != 0 {
-			return errors.New("build image exclusions are not applicable for runtime policies with audit log as the event source")
+
+		for _, s := range policy.GetScope() {
+			if err := validateNoLabelsInScopeForAuditEvent(s, "restrict to scope"); err != nil {
+				return err
+			}
+		}
+		for _, e := range policy.GetExclusions() {
+			if e.GetDeployment() != nil {
+				if e.GetDeployment().GetName() != "" {
+					return errors.New("deployment level exclusion is not applicable runtime policies with audit log as the event source")
+				}
+				if err := validateNoLabelsInScopeForAuditEvent(e.GetDeployment().GetScope(), "exclude by scope"); err != nil {
+					return err
+				}
+			}
 		}
 	}
-
 	//TODO(@khushboo): ROX-7252: Modify this validation once migration to account for new policy field event source is in
+	return nil
+}
+
+func validateNoLabelsInScopeForAuditEvent(scope *storage.Scope, context string) error {
+	if scope.GetLabel() != nil {
+		return errors.Errorf("labels in `%s` section are not permitted for audit log events based policies", context)
+	}
 	return nil
 }
 
@@ -343,4 +362,9 @@ func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.Lifecyc
 		}
 	}
 	policy.EnforcementActions = newActions
+}
+
+func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {
+	return features.K8sAuditLogDetection.Enabled() &&
+		policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT
 }

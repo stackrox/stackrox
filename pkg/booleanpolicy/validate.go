@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -15,6 +17,7 @@ type validateConfiguration struct {
 	//
 	// See ROX-5208 for details.
 	validateEnvVarSourceRestrictions bool
+	sourceIsAuditLogEvents           bool
 }
 
 // ValidateOption models an option for validation.
@@ -28,8 +31,18 @@ func ValidateEnvVarSourceRestrictions() ValidateOption {
 	}
 }
 
+// ValidateSourceIsAuditLogEvents enables validation audit log event based criteria
+func ValidateSourceIsAuditLogEvents() ValidateOption {
+	return func(c *validateConfiguration) {
+		c.sourceIsAuditLogEvents = true
+	}
+}
+
 // Validate validates the policy, to make sure it's a well-formed Boolean policy.
 func Validate(p *storage.Policy, options ...ValidateOption) error {
+	if features.K8sAuditLogDetection.Enabled() && p.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+		options = append(options, ValidateSourceIsAuditLogEvents())
+	}
 	configuration := &validateConfiguration{}
 	for _, option := range options {
 		option(configuration)
@@ -42,14 +55,15 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	if p.GetName() == "" {
 		errorList.AddString("no name specified")
 	}
+
 	for _, section := range p.GetPolicySections() {
-		errorList.AddError(validatePolicySection(section, configuration))
+		errorList.AddError(validatePolicySection(section, configuration, p.GetEventSource()))
 	}
 	return errorList.ToError()
 }
 
 // validatePolicySection validates the format of a policy section
-func validatePolicySection(s *storage.PolicySection, configuration *validateConfiguration) error {
+func validatePolicySection(s *storage.PolicySection, configuration *validateConfiguration, eventSource storage.EventSource) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validation of section %q", s.GetSectionName()))
 
 	seenFields := set.NewStringSet()
@@ -82,6 +96,18 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			if !m.valueRegex.MatchString(v.GetValue()) {
 				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must match regex %q", g.GetFieldName(), idx, v.GetValue(), m.valueRegex)
 			}
+		}
+
+		if features.K8sAuditLogDetection.Enabled() {
+			if !isApplicableToEventSource(m, eventSource) {
+				errorList.AddStringf("policy criteria %q is invalid for event source: %s", g.GetFieldName(), eventSource)
+			}
+		}
+	}
+
+	if features.K8sAuditLogDetection.Enabled() && eventSource == storage.EventSource_AUDIT_LOG_EVENT {
+		if !seenFields.Contains(fieldnames.KubeResource) {
+			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeResource)
 		}
 	}
 	return errorList.ToError()

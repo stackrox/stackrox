@@ -1,7 +1,13 @@
 package booleanpolicy
 
 import (
+	"fmt"
 	"regexp"
+)
+
+const (
+	ipv4Regex = "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"
+	ipv6Regex = "((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}"
 )
 
 var (
@@ -21,6 +27,10 @@ var (
 	mountPropagationValueRegex               = createRegex("(?i:NONE|HOSTTOCONTAINER|BIDIRECTIONAL)")
 	seccompProfileTypeValueRegex             = createRegex(`(?i:UNCONFINED|RUNTIME_DEFAULT|LOCALHOST)`)
 	severityValueRegex                       = createRegex(`(<|>|<=|>=)?[[:space:]]*(?i:UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL)`)
+	kubernetesNameRegex                      = createRegex(`[[a-z0-9]([-a-z0-9]*[a-z0-9])?]]`)
+	auditEventAPIVerbValueRegex              = createRegex(`(?i:CREATE|DELETE|GET|LIST|PATCH|PROXY|UPDATE|WATCH)`)
+	auditEventResourceValueRegex             = createRegex(`(?i:SECRETS|CONFIGMAPS)`)
+	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 )
 
 func createRegex(s string) *regexp.Regexp {

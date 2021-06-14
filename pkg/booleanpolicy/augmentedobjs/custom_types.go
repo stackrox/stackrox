@@ -7,19 +7,20 @@ import (
 
 // This block enumerates custom tags.
 const (
-	ComponentAndVersionCustomTag  = "Component And Version"
-	ContainerNameCustomTag        = "Container Name"
-	DockerfileLineCustomTag       = "Dockerfile Line"
-	EnvironmentVarCustomTag       = "Environment Variable"
-	ImageScanCustomTag            = "Image Scan"
-	NetworkFlowSrcNameCustomTag   = "Network Flow Source Name"
-	NetworkFlowDstNameCustomTag   = "Network Flow Destination Name"
-	NetworkFlowDstPortCustomTag   = "Network Flow Destination Port"
-	NetworkFlowL4Protocol         = "Network Flow L4 Protocol"
-	NotInNetworkBaselineCustomTag = "Not In Network Baseline"
-	NotInProcessBaselineCustomTag = "Not In Baseline"
-	KubernetesAPIVerbCustomTag    = "Kubernetes API Verb"
-	KubernetesResourceCustomTag   = "Kubernetes Resource"
+	ComponentAndVersionCustomTag       = "Component And Version"
+	ContainerNameCustomTag             = "Container Name"
+	DockerfileLineCustomTag            = "Dockerfile Line"
+	EnvironmentVarCustomTag            = "Environment Variable"
+	ImageScanCustomTag                 = "Image Scan"
+	NotInNetworkBaselineCustomTag      = "Not In Network Baseline"
+	NotInProcessBaselineCustomTag      = "Not In Baseline"
+	KubernetesAPIVerbCustomTag         = "Kubernetes API Verb"
+	KubernetesResourceCustomTag        = "Kubernetes Resource"
+	KubernetesResourceNameCustomTag    = "Kubernetes Resource Name"
+	KubernetesUserNameCustomTag        = "Kubernetes User Name"
+	KubernetesUserGroupsCustomTag      = "Kubernetes User Groups"
+	KubernetesSourceIPAddressCustomTag = "Source IP Address"
+	KubernetesUserAgentCustomTag       = "User Agent"
 )
 
 type dockerfileLine struct {

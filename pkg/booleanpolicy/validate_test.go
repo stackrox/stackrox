@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -18,6 +20,12 @@ func TestPolicyValueValidator(t *testing.T) {
 
 type PolicyValueValidator struct {
 	suite.Suite
+
+	envIsolator *envisolator.EnvIsolator
+}
+
+func (s *PolicyValueValidator) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *PolicyValueValidator) TestRegex() {
@@ -113,13 +121,13 @@ func (s *PolicyValueValidator) TestRegex() {
 	}
 }
 
-func TestEnvKeyValuePolicyValidation(t *testing.T) {
+func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 	for _, p := range []storage.ContainerConfig_EnvironmentConfig_EnvVarSource{
 		storage.ContainerConfig_EnvironmentConfig_UNSET,
 		storage.ContainerConfig_EnvironmentConfig_UNKNOWN,
 		storage.ContainerConfig_EnvironmentConfig_RAW,
 	} {
-		assert.NoError(t, Validate(&storage.Policy{
+		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
 			Fields: &storage.PolicyFields{
@@ -145,7 +153,7 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 			},
 		}, ValidateEnvVarSourceRestrictions()))
 
-		assert.NoError(t, Validate(&storage.Policy{
+		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
 			Fields: &storage.PolicyFields{
@@ -177,7 +185,7 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 		storage.ContainerConfig_EnvironmentConfig_FIELD,
 		storage.ContainerConfig_EnvironmentConfig_RESOURCE_FIELD,
 	} {
-		assert.Error(t, Validate(&storage.Policy{
+		assert.Error(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
 			Fields: &storage.PolicyFields{
@@ -203,7 +211,7 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 			},
 		}, ValidateEnvVarSourceRestrictions()))
 
-		assert.NoError(t, Validate(&storage.Policy{
+		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
 			Fields: &storage.PolicyFields{
@@ -230,12 +238,124 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 	}
 }
 
-func TestValidateMultipleSections(t *testing.T) {
+func (s *PolicyValueValidator) TestValidateMultipleSections() {
 	group := &storage.PolicyGroup{FieldName: fieldnames.CVE, Values: []*storage.PolicyValue{{Value: "CVE-2017-1234"}}}
-	assert.NoError(t, Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+	assert.NoError(s.T(), Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
 		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
 	}}))
-	assert.Error(t, Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+	assert.Error(s.T(), Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
 		{SectionName: "bad", PolicyGroups: []*storage.PolicyGroup{group, group}},
 	}}))
+}
+
+func (s *PolicyValueValidator) TestValidateKubeResourceSpecifiedForAuditEventSource() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+	assert.NoError(s.T(), Validate(&storage.Policy{
+		Name:            "runtime-policy-valid",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "SECRETS",
+							},
+						},
+					},
+				},
+			},
+		},
+	}, ValidateSourceIsAuditLogEvents()))
+
+	assert.Error(s.T(), Validate(&storage.Policy{
+		Name:            "runtime-policy-no-resource",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "GET",
+							},
+						},
+					},
+				},
+			},
+		},
+	}, ValidateSourceIsAuditLogEvents()))
+}
+
+func (s *PolicyValueValidator) TestValidatePolicyCriteriaForAuditEventSource() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+	assert.NoError(s.T(), Validate(&storage.Policy{
+		Name:            "runtime-policy-valid-criteria",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "SECRETS",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "GET",
+							},
+						},
+					},
+				},
+			},
+		},
+	}, ValidateSourceIsAuditLogEvents()))
+
+	assert.Error(s.T(), Validate(&storage.Policy{
+		Name:            "runtime-policy-incorrect-criteria",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "CONFIGMAPS",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.ProcessName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "ps",
+							},
+						},
+					},
+				},
+			},
+		},
+	}, ValidateSourceIsAuditLogEvents()))
 }

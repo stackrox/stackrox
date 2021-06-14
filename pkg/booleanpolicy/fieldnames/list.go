@@ -62,6 +62,11 @@ var (
 	WritableMountedVolume         = newFieldName("Writable Mounted Volume")
 	KubeResource                  = newFieldName("Kubernetes Resource")
 	KubeAPIVerb                   = newFieldName("Kubernetes API Verb")
+	KubeResourceName              = newFieldName("Kubernetes Resource Name")
+	UserAgent                     = newFieldName("User Agent")
+	KubeUserName                  = newFieldName("Kubernetes User Name")
+	KubeUserGroups                = newFieldName("Kubernetes User Groups")
+	SourceIPAddress               = newFieldName("Source IP Address")
 )
 
 func newFieldName(field string) string {
