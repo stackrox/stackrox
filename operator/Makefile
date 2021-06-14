@@ -101,7 +101,7 @@ test: manifests generate fmt vet ## Run tests.
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
 test-e2e: build install kuttl  ## Run e2e tests.
-	mkdir -p $(PROJECT_DIR)/kuttl-test-artifacts
+	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	$(KUTTL) test --namespace stackrox
 
 ##@ Build

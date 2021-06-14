@@ -26,6 +26,5 @@ testbin/*
 
 # Temp files created during build process
 build/
-kuttl-test-artifacts/
 # Workaround for https://github.com/kudobuilder/kuttl/issues/297
 kubeconfig

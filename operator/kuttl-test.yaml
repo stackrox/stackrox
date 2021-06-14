@@ -3,7 +3,7 @@ kind: TestSuite
 testDirs:
 - ./tests/central
 reportFormat: xml
-artifactsDir: kuttl-test-artifacts
+artifactsDir: build/kuttl-test-artifacts
 commands:
 - command: ./bin/manager
   background: true
