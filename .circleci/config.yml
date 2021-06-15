@@ -4401,15 +4401,15 @@ jobs:
           name: Sanity check KUBECONFIG
           command: |
             ls -lh $PWD/eks/data
-            export KUBECONFIG=$PWD/eks/data/eks-kube.yaml
+            cci-export KUBECONFIG $PWD/eks/data/eks-kube.yaml
             kubectl get nodes
+      - remove-existing-stackrox-resources
 
       - *setupRoxctl
 
       - run:
           name: Configure Deployment Environment
           command: |
-            cci-export KUBECONFIG "$PWD/eks/data/eks-kube.yaml"
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
             cci-export ROX_IMAGE_REGISTRY docker.io
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
@@ -4503,15 +4503,15 @@ jobs:
           name: Sanity check KUBECONFIG
           command: |
             ls -lh $PWD/kops
-            export KUBECONFIG=$PWD/kops/kube.yaml
+            cci-export KUBECONFIG $PWD/kops/kube.yaml
             kubectl get nodes
+      - remove-existing-stackrox-resources
 
       - *setupRoxctl
 
       - run:
           name: Configure Deployment Environment
           command: |
-            cci-export KUBECONFIG "$PWD/kops/kube.yaml"
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
             cci-export KOPS_HOST "$(cat kops/master)"
             cci-export ROX_IMAGE_REGISTRY docker.io
