@@ -5,8 +5,8 @@ metadata:
     alm-examples: '[]'
     capabilities: Basic Install
     categories: Security
-    containerImage: TODO
-    createdAt: TODO
+    containerImage: docker.io/stackrox/stackrox-operator:0.0.1
+    createdAt: "1999-12-31T23:59:59Z"
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the services necessary to secure each of your OpenShift and Kubernetes clusters.
     operators.openshift.io/infrastructure-features: '["disconnected"]'
     support: Red Hat

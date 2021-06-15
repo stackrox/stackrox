@@ -28,3 +28,6 @@ testbin/*
 build/
 # Workaround for https://github.com/kudobuilder/kuttl/issues/297
 kubeconfig
+
+# Python virtualenv directory for dependencies of bundle build helpers.
+bundle_build/.venv/

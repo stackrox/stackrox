@@ -115,12 +115,20 @@ The recommended approach is the following.
 ### Bundling
 
 ```bash
-# Refresh bundle metadata, make sure to check the diff and commit it.
+# Refresh bundle metadata. Make sure to check the diff and commit it.
 $ make bundle
-# Build bundle image
-$ make bundle-build
+# Make sure that the operator is built and pushed
+$ make docker-build docker-push
+# Build and push bundle image
+$ make bundle-build docker-push-bundle
 # Run scorecard tests for the bundle
-$ operator-sdk scorecard bundle
+$ make bundle-test
+```
+
+Build and push as one-liner
+
+```bash
+$ make bundle docker-build docker-push bundle-build docker-push-bundle
 ```
 
 ### Launch the operator on the cluster with OLM and the bundle

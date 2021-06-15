@@ -2689,7 +2689,7 @@ jobs:
           version: 20.10.2
       - run:
           name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+          command: docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -2698,15 +2698,25 @@ jobs:
       - setup-go-build-env
 
       - run:
+          name: Install Python's Virtualenv
+          command: sudo apt-get install -y --no-install-recommends python3-venv
+
+      - run:
           name: Build Operator image
           no_output_timeout: 30m
           command: make -C operator/ build docker-build
       - run:
           name: Check that Operator image is runnable
-          command: docker run --rm stackrox.io/stackrox-operator:$(make --no-print-directory -C operator tag) --help
+          command: docker run --rm stackrox/stackrox-operator:$(make --quiet -C operator tag) --help
       - run:
           name: Build Operator Bundle image
-          command: make -C operator bundle bundle-build
+          command: |
+            make -C operator/ bundle bundle-build
+
+      - run:
+          name: Push images
+          command: |
+            make -C operator/ docker-push docker-push-bundle | cat
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
