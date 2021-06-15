@@ -2,6 +2,7 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 testDirs:
 - ./tests/central
+- ./tests/securedcluster
 reportFormat: xml
 artifactsDir: build/kuttl-test-artifacts
 commands:
@@ -17,3 +18,4 @@ commands:
 - command: kubectl delete -f tests/stackrox_namespaces.yaml
 # Namespace needs to exist to use kuttl with --namespace
 - command: kubectl apply -f tests/stackrox_namespaces.yaml
+parallel: 1  # because we share the namespace :-(
