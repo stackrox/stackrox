@@ -23,7 +23,6 @@ import (
 )
 
 // Important: Run "make generate manifests" to regenerate code after modifying this file
-// TODO(ROX-7110): prevent merging PRs if manifests are not up to date.
 
 // -------------------------------------------------------------
 // Spec
@@ -42,7 +41,7 @@ type SecuredClusterSpec struct {
 	CentralEndpoint *string `json:"centralEndpoint,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	TLS *common.TLSConfig `json:"tls,omitempty"`
+	TLS *TLSConfig `json:"tls,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
@@ -60,8 +59,7 @@ type SecuredClusterSpec struct {
 
 // SensorComponentSpec defines settings for sensor.
 type SensorComponentSpec struct {
-	ContainerSpec         `json:",inline"`
-	common.ServiceTLSSpec `json:",inline"`
+	ContainerSpec `json:",inline"`
 
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
@@ -73,10 +71,14 @@ type SensorComponentSpec struct {
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
+// TLSConfig defines TLS-related settings
+type TLSConfig struct {
+	AdditionalCAs []common.AdditionalCA `json:"additionalCAs,omitempty"`
+}
+
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.
 type AdmissionControlComponentSpec struct {
-	ContainerSpec         `json:",inline"`
-	common.ServiceTLSSpec `json:",inline"`
+	ContainerSpec `json:",inline"`
 
 	// ListenOnCreates controls whether Kubernetes is configured to contact Secured Cluster Services with
 	// `AdmissionReview` requests for workload creation events.
@@ -97,8 +99,6 @@ type AdmissionControlComponentSpec struct {
 
 // CollectorComponentSpec declares configuration settings for the collector component.
 type CollectorComponentSpec struct {
-	common.ServiceTLSSpec `json:",inline"`
-
 	Collection      *CollectionMethod      `json:"collection,omitempty"`
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 

@@ -78,17 +78,17 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 	customize := translation.NewValuesBuilder()
 
 	if sc.Spec.Sensor != nil {
-		v.AddChild("sensor", getSensorValues(ctx, t.clientSet, sc.Namespace, sc.Spec.Sensor))
+		v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor))
 		customize.AddChild("sensor", translation.GetCustomize(sc.Spec.Sensor.Customize))
 	}
 
 	if sc.Spec.AdmissionControl != nil {
-		v.AddChild("admissionControl", t.getAdmissionControlValues(ctx, sc.Namespace, sc.Spec.AdmissionControl))
+		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
 		customize.AddChild("admission-control", translation.GetCustomize(sc.Spec.AdmissionControl.Customize))
 	}
 
 	if sc.Spec.Collector != nil {
-		v.AddChild("collector", t.getCollectorValues(ctx, sc.Namespace, sc.Spec.Collector))
+		v.AddChild("collector", t.getCollectorValues(sc.Spec.Collector))
 		customize.AddChild("collector", translation.GetCustomize(sc.Spec.Collector.Customize))
 	}
 
@@ -117,7 +117,6 @@ func (t Translator) getTLSValues(ctx context.Context, sc securedcluster.SecuredC
 	}
 
 	v.SetBoolValue("createSecrets", false)
-	v.AddAllFrom(translation.GetTLSConfig(sc.Spec.TLS))
 	sensorSecret, err := t.clientSet.CoreV1().Secrets(sc.Namespace).Get(ctx, sensorTLSSecretName, metav1.GetOptions{})
 	if err != nil {
 		return v.SetError(errors.Wrapf(err, "failed reading %q secret", sensorTLSSecretName))
@@ -128,6 +127,10 @@ func (t Translator) getTLSValues(ctx context.Context, sc securedcluster.SecuredC
 		return v.SetError(errors.Errorf("could not find centrals ca certificate 'ca.pem' in secret/%s", sensorTLSSecretName))
 	}
 	v.SetStringMap("ca", map[string]string{"cert": string(centralCA)})
+
+	if sc.Spec.TLS != nil {
+		v.AddAllFrom(translation.AddAdditionalCAs(sc.Spec.TLS.AdditionalCAs))
+	}
 
 	return &v
 }
@@ -152,24 +155,22 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc securedcluster
 	return nil
 }
 
-func getSensorValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, sensor *securedcluster.SensorComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getSensorValues(sensor *securedcluster.SensorComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	sv.SetPullPolicy("imagePullPolicy", sensor.ImagePullPolicy)
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
-	sv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, sensor.ServiceTLS, "spec.sensor.serviceTLS"))
 	sv.SetStringMap("nodeSelector", sensor.NodeSelector)
 	sv.SetString("endpoint", sensor.Endpoint)
 
 	return &sv
 }
 
-func (t Translator) getAdmissionControlValues(ctx context.Context, namespace string, admissionControl *securedcluster.AdmissionControlComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getAdmissionControlValues(admissionControl *securedcluster.AdmissionControlComponentSpec) *translation.ValuesBuilder {
 	acv := translation.NewValuesBuilder()
 
 	acv.SetPullPolicy("imagePullPolicy", admissionControl.ImagePullPolicy)
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
-	acv.AddAllFrom(translation.GetServiceTLS(ctx, t.clientSet, namespace, admissionControl.ServiceTLS, "spec.admissionControl.serviceTLS"))
 	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
 	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
 	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
@@ -177,7 +178,7 @@ func (t Translator) getAdmissionControlValues(ctx context.Context, namespace str
 	return &acv
 }
 
-func (t Translator) getCollectorValues(ctx context.Context, namespace string, collector *securedcluster.CollectorComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getCollectorValues(collector *securedcluster.CollectorComponentSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
 	if collector.Collection != nil {
@@ -206,7 +207,6 @@ func (t Translator) getCollectorValues(ctx context.Context, namespace string, co
 
 	cv.AddAllFrom(t.getCollectorContainerValues(collector.Collector))
 	cv.AddAllFrom(t.getComplianceContainerValues(collector.Compliance))
-	cv.AddAllFrom(translation.GetServiceTLS(ctx, t.clientSet, namespace, collector.ServiceTLS, "spec.collector.serviceTLS"))
 
 	return &cv
 }

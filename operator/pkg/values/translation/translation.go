@@ -80,13 +80,12 @@ func GetImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) *Values
 	return &res
 }
 
-// GetTLSConfig converts common.TLSConfig to a *ValuesBuilder with an "additionalCAs" field.
-func GetTLSConfig(tls *common.TLSConfig) *ValuesBuilder {
+// AddAdditionalCAs converts common.TLSConfig to a *ValuesBuilder with an "additionalCAs" field.
+func AddAdditionalCAs(additionalCAS []common.AdditionalCA) *ValuesBuilder {
 	res := NewValuesBuilder()
-	// TODO(ROX-7148): support setting ca.cert (and for central also ca.key)
-	if tls != nil && len(tls.AdditionalCAs) > 0 {
+	if len(additionalCAS) > 0 {
 		cas := NewValuesBuilder()
-		for _, ca := range tls.AdditionalCAs {
+		for _, ca := range additionalCAS {
 			cas.SetStringValue(ca.Name, ca.Content)
 		}
 		res.AddChild("additionalCAs", &cas)

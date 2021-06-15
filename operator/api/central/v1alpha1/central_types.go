@@ -23,7 +23,6 @@ import (
 )
 
 // Important: Run "make generate manifests" to regenerate code after modifying this file
-// TODO(ROX-7110): prevent merging PRs if manifests are not up to date.
 
 // -------------------------------------------------------------
 // Spec

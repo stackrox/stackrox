@@ -129,16 +129,6 @@ spec:
                             type: object
                         type: object
                     type: object
-                  serviceTLS:
-                    description: ServiceTLS is a secret certificate and keypair used
-                      to secure internal service to service communications. By default,
-                      this certificate is automatically generated.
-                    properties:
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
-                    type: object
                 type: object
               centralEndpoint:
                 description: CentralEndpoint should specify the address of the Central
@@ -304,16 +294,6 @@ spec:
                         description: Custom labels to set on Pods.
                         type: object
                     type: object
-                  serviceTLS:
-                    description: ServiceTLS is a secret certificate and keypair used
-                      to secure internal service to service communications. By default,
-                      this certificate is automatically generated.
-                    properties:
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
-                    type: object
                   taintToleration:
                     description: TaintTolerationPolicy is a type for values of spec.collector.taintToleration
                     type: string
@@ -441,20 +421,9 @@ spec:
                             type: object
                         type: object
                     type: object
-                  serviceTLS:
-                    description: ServiceTLS is a secret certificate and keypair used
-                      to secure internal service to service communications. By default,
-                      this certificate is automatically generated.
-                    properties:
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
-                    type: object
                 type: object
               tls:
-                description: TLSConfig defines common TLS-related settings for all
-                  components.
+                description: TLSConfig defines TLS-related settings
                 properties:
                   additionalCAs:
                     items:
@@ -472,15 +441,6 @@ spec:
                       - name
                       type: object
                     type: array
-                  caSecret:
-                    description: LocalObjectReference contains enough information
-                      to let you locate the referenced object inside the same namespace.
-                    properties:
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
-                    type: object
                 type: object
             required:
             - clusterName
