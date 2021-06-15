@@ -32,7 +32,7 @@ func NewCachedStore(store store.Store) store.Store {
 	// This is a size based cache, where we use LRU to determine which of the oldest elements should
 	// be removed to allow a new element
 	cache, err := sizeboundedcache.New(maxCacheSize, maxCachedPodSize, sizeFunc)
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	return &cachedStore{
 		store: store,

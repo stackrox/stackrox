@@ -31,9 +31,9 @@ var (
 
 func initialize() {
 	clusterStorage, err := clusterRocksDB.New(globaldb.GetRocksDB())
-	utils.Must(err)
+	utils.CrashOnError(err)
 	clusterHealthStorage, err := healthRocksDB.New(globaldb.GetRocksDB())
-	utils.Must(err)
+	utils.CrashOnError(err)
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
 
 	ad, err = New(clusterStorage,
@@ -52,7 +52,7 @@ func initialize() {
 		dackbox.GetGlobalDackBox(),
 		ranking.ClusterRanker(),
 		networkBaselineManager.Singleton())
-	utils.Must(err)
+	utils.CrashOnError(err)
 }
 
 // Singleton provides the interface for non-service external interaction.

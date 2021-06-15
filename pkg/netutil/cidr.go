@@ -10,7 +10,7 @@ import (
 // function panics.
 func MustParseCIDR(cidr string) *net.IPNet {
 	_, ipNet, err := net.ParseCIDR(cidr)
-	utils.Must(err)
+	utils.CrashOnError(err)
 	return ipNet
 }
 

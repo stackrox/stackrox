@@ -24,7 +24,7 @@ func initialize() {
 
 	var err error
 	as, err = New(storage, dackbox.GetGlobalDackBox(), indexer, deploymentDataStore.Singleton(), ranking.NamespaceRanker())
-	utils.Must(err)
+	utils.CrashOnError(err)
 }
 
 // Singleton provides the interface for non-service external interaction.

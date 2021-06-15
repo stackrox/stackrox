@@ -18,10 +18,10 @@ var (
 func RegistrySingleton() *Registry {
 	registryInstanceInit.Do(func() {
 		memIndex, err := globalindex.MemOnlyIndex()
-		utils.Must(err)
+		utils.CrashOnError(err)
 		indexer := index.New(memIndex)
 		registryInstance, err = NewRegistry(indexer, framework.RegistrySingleton(), metadata.AllStandards...)
-		utils.Must(err)
+		utils.CrashOnError(err)
 	})
 	return registryInstance
 }

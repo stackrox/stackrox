@@ -29,7 +29,7 @@ func GetSACFilters() []filtered.Filter {
 			dackbox.WithCluster(clusterCVESAC, dackbox.ClusterVulnSACTransform, dackbox.CVEToClusterExistenceTransformation),
 			dackbox.WithSharedObjectAccess(storage.Access_READ_ACCESS),
 		)
-		utils.Must(err)
+		utils.CrashOnError(err)
 	})
 	return []filtered.Filter{combinedFilter}
 }

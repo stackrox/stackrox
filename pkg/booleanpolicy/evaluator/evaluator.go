@@ -23,7 +23,7 @@ type Factory struct {
 // MustCreateNewFactory is like NewFactory, but panics if there's an error.
 func MustCreateNewFactory(objMeta *pathutil.AugmentedObjMeta) Factory {
 	f, err := NewFactory(objMeta)
-	utils.Must(err)
+	utils.CrashOnError(err)
 	return f
 }
 

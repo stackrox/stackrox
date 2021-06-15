@@ -26,7 +26,7 @@ func AlwaysAdminRoleMapper() permissions.RoleMapper {
 	// immutable, otherwise we would fetch it on every FromUserDescriptor call.
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	adminRole, err := roleDatastore.Singleton().GetRole(ctx, role.Admin)
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	return &alwaysAdminMapperImpl{
 		adminRole: adminRole,

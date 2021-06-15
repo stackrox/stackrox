@@ -27,7 +27,7 @@ func GetSACFilter() filtered.Filter {
 			dackbox.WithImage(imageComponentSAC, dackbox.ImageComponentSACTransform, dackbox.ComponentToImageExistenceTransformation),
 			dackbox.WithSharedObjectAccess(storage.Access_READ_ACCESS),
 		)
-		utils.Must(err)
+		utils.CrashOnError(err)
 	})
 	return combinedFilter
 }

@@ -18,7 +18,7 @@ func SingletonManager() OrchestratorIstioCVEManager {
 	var err error
 	once.Do(func() {
 		manager, err = NewOrchestratorIstioCVEManagerImpl(clusterDataStore.Singleton(), cveDataStore.Singleton(), cveMatcher.Singleton())
-		utils.Must(err)
+		utils.CrashOnError(err)
 	})
 
 	return manager

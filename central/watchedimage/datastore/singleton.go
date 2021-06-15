@@ -16,7 +16,7 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		store, err := rocksdb.New(globaldb.GetRocksDB())
-		utils.Must(err)
+		utils.CrashOnError(err)
 		instance = New(store)
 	})
 	return instance

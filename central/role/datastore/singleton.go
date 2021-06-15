@@ -25,9 +25,9 @@ func Singleton() DataStore {
 	once.Do(func() {
 		roleStorage := roleStore.New(globaldb.GetGlobalDB())
 		permissionSetStorage, err := permissionSetStore.New(globaldb.GetRocksDB())
-		utils.Must(err)
+		utils.CrashOnError(err)
 		accessScopeStorage, err := simpleAccessScopeStore.New(globaldb.GetRocksDB())
-		utils.Must(err)
+		utils.CrashOnError(err)
 
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
 

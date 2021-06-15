@@ -26,7 +26,7 @@ func Singleton() Manager {
 				deploymentDS.Singleton(),
 				networkPolicyDS.Singleton(),
 				connection.ManagerSingleton())
-		utils.Must(err)
+		utils.CrashOnError(err)
 	})
 	return instance
 }

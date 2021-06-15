@@ -110,7 +110,7 @@ func (i *Image) getChartTemplate(prefix string) (*helmtpl.ChartTemplate, error) 
 
 func (i *Image) mustGetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
 	ch, err := i.getSensorChart(values, certs)
-	utils.Must(err)
+	utils.CrashOnError(err)
 	return ch
 }
 

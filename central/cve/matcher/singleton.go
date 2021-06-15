@@ -16,7 +16,7 @@ var (
 func initialize() {
 	var err error
 	cveMatcher, err = NewCVEMatcher(clusterDataStore.Singleton(), nsDataStore.Singleton(), imageDataStore.Singleton())
-	utils.Must(err)
+	utils.CrashOnError(err)
 }
 
 // Singleton returns singleton instance of CVEMatcher

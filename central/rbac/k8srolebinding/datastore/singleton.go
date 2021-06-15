@@ -21,7 +21,7 @@ var (
 
 func initialize() {
 	storage, err := rocksdb.New(globaldb.GetRocksDB())
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	index := index.New(globalindex.GetGlobalTmpIndex())
 	ad, err = New(storage, index, search.New(storage, index))

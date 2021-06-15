@@ -39,7 +39,7 @@ func initialize() {
 
 	var err error
 	ad, err = New(storage, commentsStorage, indexer, searcher, p)
-	utils.Must(errors.Wrap(err, "unable to load datastore for process indicators"))
+	utils.CrashOnError(errors.Wrap(err, "unable to load datastore for process indicators"))
 }
 
 // Singleton provides the interface for non-service external interaction.

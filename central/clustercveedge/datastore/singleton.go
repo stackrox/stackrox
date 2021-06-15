@@ -18,12 +18,12 @@ var (
 
 func initialize() {
 	storage, err := dackbox.New(globaldb.GetGlobalDackBox())
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	searcher := search.New(storage, index.New(globalindex.GetGlobalIndex()))
 
 	ad, err = New(globaldb.GetGlobalDackBox(), storage, index.New(globalindex.GetGlobalIndex()), searcher)
-	utils.Must(err)
+	utils.CrashOnError(err)
 }
 
 // Singleton provides the interface for non-service external interaction.

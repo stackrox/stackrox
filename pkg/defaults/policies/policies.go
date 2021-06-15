@@ -29,7 +29,7 @@ var (
 func DefaultPolicies() ([]*storage.Policy, error) {
 	files, err := policiesFS.ReadDir(policiesDir)
 	// Sanity check embedded directory.
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	var policies []*storage.Policy
 
@@ -63,7 +63,7 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 func readPolicyFile(path string) (*storage.Policy, error) {
 	contents, err := policiesFS.ReadFile(path)
 	// We must be able to read the embedded files.
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	var policy storage.Policy
 	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)

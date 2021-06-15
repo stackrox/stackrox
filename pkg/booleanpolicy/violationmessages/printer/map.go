@@ -44,7 +44,7 @@ func getMapPrinterFor(fieldLabel search.FieldLabel, disallowed bool) func(map[st
 		baseResourceName = "label"
 	default:
 		// Panic here is okay, since this function is called at program-init time.
-		utils.Must(errors.Errorf("unknown field label: %v", fieldLabel))
+		utils.CrashOnError(errors.Errorf("unknown field label: %v", fieldLabel))
 	}
 	return func(fieldMap map[string][]string) ([]string, error) {
 		type resultFields struct {

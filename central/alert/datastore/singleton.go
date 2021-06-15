@@ -24,7 +24,7 @@ func initialize() {
 	searcher := search.New(storage, indexer)
 	var err error
 	soleInstance, err = New(storage, commentsStorage, indexer, searcher)
-	utils.Must(errors.Wrap(err, "unable to load datastore for alerts"))
+	utils.CrashOnError(errors.Wrap(err, "unable to load datastore for alerts"))
 }
 
 // Singleton returns the sole instance of the DataStore service.

@@ -32,11 +32,11 @@ func CurrentPath() string {
 // If path is a symbolic link, remove it and the database it points to.
 func SafeRemoveDBWithSymbolicLink(path string) error {
 	currentDB, err := fileutils.ResolveIfSymlink(CurrentPath())
-	utils.Must(errors.Wrap(err, "no current database"))
+	utils.CrashOnError(errors.Wrap(err, "no current database"))
 
 	switch path {
 	case CurrentPath(), currentDB:
-		utils.Must(errors.Errorf("Database in use. Cannot remove %s", path))
+		utils.CrashOnError(errors.Errorf("Database in use. Cannot remove %s", path))
 	default:
 		if exists, err := fileutils.Exists(path); err != nil {
 			return err

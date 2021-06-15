@@ -61,7 +61,7 @@ func capitalizeFirstLetter(k string) string {
 
 func main() {
 	goFiles, err := getGoFiles()
-	utils.Must(err)
+	utils.CrashOnError(err)
 	knownKeys := set.NewStringSet()
 	for _, goFile := range goFiles {
 		utils.Must(processGoFile(goFile, knownKeys))

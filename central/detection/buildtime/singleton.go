@@ -38,7 +38,7 @@ func SingletonPolicySet() detection.PolicySet {
 func initialize() {
 	policySet = detection.NewPolicySet(policyDataStore.Singleton())
 	policies, err := policyDataStore.Singleton().GetAllPolicies(policyCtx)
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	for _, policy := range policies {
 		if policyUtils.AppliesAtBuildTime(policy) {

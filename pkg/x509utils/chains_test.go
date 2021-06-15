@@ -80,7 +80,7 @@ var (
 func init() {
 	var err error
 	certChain, err = helpers.ParseCertificatesPEM([]byte(pemChain))
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	for _, cert := range certChain {
 		derChain = append(derChain, cert.Raw)

@@ -52,7 +52,7 @@ func main() {
 		sharedClientInterface = client.MustCreateInterface()
 	}
 	s, err := sensor.CreateSensor(sharedClientInterface, workloadManager)
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	s.Start()
 

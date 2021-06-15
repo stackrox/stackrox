@@ -29,7 +29,7 @@ func Singleton() DataStore {
 			piDS.Singleton(),
 			filter.Singleton(),
 		)
-		utils.Must(errors.Wrap(err, "unable to load datastore for pods"))
+		utils.CrashOnError(errors.Wrap(err, "unable to load datastore for pods"))
 	})
 	return ps
 }

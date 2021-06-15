@@ -25,7 +25,7 @@ func Singleton() DataStore {
 		} else {
 			dbStore, err = bolt.NewBoltStore(globaldb.GetGlobalDB())
 		}
-		utils.Must(err)
+		utils.CrashOnError(err)
 
 		dsInstance = NewDataStore(dbStore, NewSacFilter())
 	})

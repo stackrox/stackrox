@@ -15,7 +15,7 @@ var (
 func Singleton() Store {
 	singletonInit.Do(func() {
 		store, err := New(globaldb.GetGlobalDB())
-		utils.Must(err)
+		utils.CrashOnError(err)
 		singleton = store
 	})
 	return singleton

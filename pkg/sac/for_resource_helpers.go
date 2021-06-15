@@ -46,6 +46,6 @@ func (h ForResourceHelper) WriteAllowed(ctx context.Context, keys ...ScopeKey) (
 // search helper could not be created.
 func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap) SearchHelper {
 	searchHelper, err := NewSearchHelper(h.resourceMD, options)
-	utils.Must(err)
+	utils.CrashOnError(err)
 	return searchHelper
 }

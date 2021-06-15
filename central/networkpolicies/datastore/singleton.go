@@ -17,7 +17,7 @@ var (
 
 func initialize() {
 	undoDeploymentStorage, err := rocksdb.New(globaldb.GetRocksDB())
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	as = New(store.Singleton(), undostore.Singleton(), undoDeploymentStorage)
 }

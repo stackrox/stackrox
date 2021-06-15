@@ -35,7 +35,7 @@ func initialize() {
 	)
 
 	policies, err := policyDataStore.Singleton().GetAllPolicies(lifecycleMgrCtx)
-	utils.Must(err)
+	utils.CrashOnError(err)
 	log.Infof("Injecting %d policies into detectors.", len(policies))
 	for _, policy := range policies {
 		err = manager.UpsertPolicy(policy)

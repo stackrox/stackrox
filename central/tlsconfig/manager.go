@@ -53,7 +53,7 @@ var (
 func ManagerInstance() Manager {
 	instanceOnce.Do(func() {
 		i, err := newManager()
-		utils.Must(err)
+		utils.CrashOnError(err)
 		instance = i
 	})
 	return instance

@@ -25,7 +25,7 @@ func GetSACFilter() filtered.Filter {
 			filtered.WithScopeTransform(dackbox.ClusterVulnEdgeSACTransform),
 			filtered.WithReadAccess(),
 		)
-		utils.Must(err)
+		utils.CrashOnError(err)
 	})
 	return clusterCVEEdgeSACFilter
 }

@@ -485,13 +485,13 @@ var (
 
 func makeTimestamp(timeStr string) *types.Timestamp {
 	ts, err := types.TimestampProto(mustParseTime(timeStr))
-	utils.Must(err)
+	utils.CrashOnError(err)
 	return ts
 }
 
 func mustParseTime(timeStr string) time.Time {
 	ts, err := time.Parse(time.RFC3339Nano, timeStr)
-	utils.Must(err)
+	utils.CrashOnError(err)
 	return ts
 }
 

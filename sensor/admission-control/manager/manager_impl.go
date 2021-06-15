@@ -99,7 +99,7 @@ func newManager(conn *grpc.ClientConn) *manager {
 	cache, err := sizeboundedcache.New(200*size.MB, 2*size.MB, func(key interface{}, value interface{}) int64 {
 		return int64(len(key.(string)) + value.(imageCacheEntry).Size())
 	})
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	podStore := resources.NewPodStore()
 	depStore := resources.NewDeploymentStore(podStore)

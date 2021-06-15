@@ -318,7 +318,7 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 		for _, dep := range fw.Annotations[flags.DependenciesKey] {
 			flag := flagsByName[dep]
 			if flag == nil {
-				utils.Must(errors.Errorf("invalid flag dependency %q", dep))
+				utils.CrashOnError(errors.Errorf("invalid flag dependency %q", dep))
 			}
 			//lint:ignore SA5011 flag is definitely not nil because utils.Must panics.
 			if !argSlice.flagNameIsSetExplicitly(flag.Name) {

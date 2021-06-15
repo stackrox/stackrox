@@ -10,9 +10,9 @@ import (
 
 func testImages() []*storage.Image {
 	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
-	utils.Must(err)
+	utils.CrashOnError(err)
 	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
-	utils.Must(err)
+	utils.CrashOnError(err)
 	return []*storage.Image{
 		{
 			Id: "sha1",

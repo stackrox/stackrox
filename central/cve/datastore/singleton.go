@@ -42,7 +42,7 @@ func initialize() {
 
 	var err error
 	ds, err = New(globaldb.GetGlobalDackBox(), storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)
-	utils.Must(err)
+	utils.CrashOnError(err)
 }
 
 // Singleton returns a singleton instance of cve datastore

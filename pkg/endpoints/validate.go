@@ -28,7 +28,7 @@ func ValidateEndpoints(obj interface{}) error {
 				return err
 			}
 			if field.Kind() != reflect.String {
-				utils.Must(errors.Errorf("expected string kind, got %s", field.Kind()))
+				utils.CrashOnError(errors.Errorf("expected string kind, got %s", field.Kind()))
 			}
 			if field.String() != "" {
 				if err := validate(url.Hostname()); err != nil {

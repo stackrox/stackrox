@@ -135,7 +135,7 @@ func (w *WorkloadManager) manageFlows(ctx context.Context, workload networkWorkl
 			}
 
 			closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
-			utils.Must(err)
+			utils.CrashOnError(err)
 
 			conn := &sensor.NetworkConnection{
 				SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,

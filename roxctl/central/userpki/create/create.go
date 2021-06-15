@@ -66,7 +66,7 @@ func createProvider(c *cobra.Command, args []string) error {
 			return errors.Wrap(errNotCA, fn)
 		}
 		_, err = pems.Write(b)
-		utils.Must(err)
+		utils.CrashOnError(err)
 		utils.Must(pems.WriteByte('\n'))
 	}
 

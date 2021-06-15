@@ -8,7 +8,7 @@ import (
 
 func registerFunc(key string, f Func) {
 	if _, ok := knownFuncs[key]; ok {
-		utils.Must(errors.Errorf("duplicate key: %s", key))
+		utils.CrashOnError(errors.Errorf("duplicate key: %s", key))
 	}
 	knownFuncs[key] = f
 }

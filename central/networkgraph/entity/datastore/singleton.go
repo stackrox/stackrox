@@ -18,7 +18,7 @@ var (
 // Singleton provides the instance of EntityDataStore to use.
 func Singleton() EntityDataStore {
 	storage, err := rocksdb.New(globaldb.GetRocksDB())
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	once.Do(func() {
 		ds = NewEntityDataStore(storage, graphConfigDS.Singleton(), networktree.Singleton(), connection.ManagerSingleton())

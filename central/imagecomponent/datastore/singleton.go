@@ -28,7 +28,7 @@ var (
 
 func initialize() {
 	storage, err := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	searcher := search.New(storage, globaldb.GetGlobalDackBox(),
 		cveIndexer.New(globalindex.GetGlobalIndex()),
@@ -42,7 +42,7 @@ func initialize() {
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
 	ad, err = New(globaldb.GetGlobalDackBox(), storage, componentIndexer.New(globalindex.GetGlobalIndex()), searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
-	utils.Must(err)
+	utils.CrashOnError(err)
 }
 
 // Singleton provides the interface for non-service external interaction.

@@ -96,7 +96,7 @@ func addDefaults(store Store) {
 	// Preload the default policies.
 	policies, err := policies.DefaultPolicies()
 	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policies out.
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	var count int
 	for _, p := range policies {

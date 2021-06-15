@@ -18,7 +18,7 @@ func Singleton() store.Store {
 	instanceInit.Do(func() {
 		var err error
 		instance, err = rocksdb.NewStore(globaldb.GetRocksDB())
-		utils.Must(err)
+		utils.CrashOnError(err)
 	})
 	return instance
 }

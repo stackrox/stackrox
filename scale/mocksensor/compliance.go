@@ -25,7 +25,7 @@ func init() {
 
 func loadComplianceReturn(path string) *compliance.ComplianceReturn {
 	complianceBytes, err := ioutil.ReadFile(path)
-	utils.Must(err)
+	utils.CrashOnError(err)
 
 	buf := bytes.NewBuffer(complianceBytes)
 	var complianceReturn compliance.ComplianceReturn

@@ -63,7 +63,7 @@ yAiLr6nkk69Tr/MITnmmsZJZPetshqBndRyL+DaTRnF0/xvBQXj5tEh+AmRjvGtp
 6iS1rQoNanN8oEcT2j4b48rmCmnDhRoBcFHwCYs/3w==
 -----END CERTIFICATE-----
 `))
-	utils.Must(err)
+	utils.CrashOnError(err)
 }
 
 func getIdentityDocFromPKCS7(ctx context.Context) (*ec2metadata.EC2InstanceIdentityDocument, error) {

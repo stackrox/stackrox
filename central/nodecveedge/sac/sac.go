@@ -25,7 +25,7 @@ func GetSACFilter() filtered.Filter {
 			filtered.WithScopeTransform(dackbox.NodeCVEEdgeSACTransform),
 			filtered.WithReadAccess(),
 		)
-		utils.Must(err)
+		utils.CrashOnError(err)
 	})
 	return nodeCVEEdgeSACFilter
 }

@@ -244,7 +244,7 @@ func (d *DBReplicaManager) GetReplicaToMigrate() (string, string, error) {
 // Persist replaces current replica with upgraded one.
 func (d *DBReplicaManager) Persist(replica string) error {
 	if !d.contains(replica) {
-		utils.Must(errors.New("Unexpected replica to persist"))
+		utils.CrashOnError(errors.New("Unexpected replica to persist"))
 	}
 	log.Infof("Persisting upgraded replica: %s", replica)
 
@@ -258,7 +258,7 @@ func (d *DBReplicaManager) Persist(replica string) error {
 	case previousReplica:
 		return d.doPersist(replica, "")
 	default:
-		utils.Must(errors.Errorf("commit with unknown replica: %s", replica))
+		utils.CrashOnError(errors.Errorf("commit with unknown replica: %s", replica))
 	}
 	return nil
 }

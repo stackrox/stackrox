@@ -86,7 +86,7 @@ func (r *slidingReaderWithChecksum) resetReader() error {
 
 func (r *slidingReaderWithChecksum) checksumStateCopy() hash.Hash {
 	data, err := r.startOfWindowChecksumState.MarshalBinary()
-	utils.Must(err) // should not happen for hashes
+	utils.CrashOnError(err) // should not happen for hashes
 	utils.Must(r.tempChecksumState.UnmarshalBinary(data))
 	return r.tempChecksumState
 }
