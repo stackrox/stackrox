@@ -8,7 +8,7 @@ total=0
 
 [[ -x "$(command -v staticcheck)" ]] || { echo >&2 "staticcheck binary not found in path!"; exit 1; }
 
-allowlisted_regexes=(.*var\ log\ is\ unused generated/.*\.pb\.go sensor/kubernetes/listener/resources/complianceoperator/*\.go)
+allowlisted_regexes=(.*var\ log\ is\ unused generated/.*\.pb\.go pkg/complianceoperator/api/.*\.go)
 
 while read -r line; do
     total=$((total + 1))

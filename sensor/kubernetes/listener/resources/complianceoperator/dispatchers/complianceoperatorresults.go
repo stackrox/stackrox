@@ -3,7 +3,7 @@ package dispatchers
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	v1alpha1 "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator"
+	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
