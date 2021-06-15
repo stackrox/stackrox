@@ -17,7 +17,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		return err
 	}
 
-	reconciler, err := reconciler.New(
+	r, err := reconciler.New(
 		reconciler.WithChart(*chart),
 		reconciler.WithGroupVersionKind(gvk),
 		reconciler.WithValueTranslator(translator),
@@ -26,7 +26,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		return errors.Wrapf(err, "unable to create %s reconciler", gvk)
 	}
 
-	if err := reconciler.SetupWithManager(mgr); err != nil {
+	if err := r.SetupWithManager(mgr, reconciler.SetupOpts{DisableSetupScheme: true}); err != nil {
 		return errors.Wrapf(err, "unable to setup %s reconciler", gvk)
 	}
 	return nil

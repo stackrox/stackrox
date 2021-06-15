@@ -21,8 +21,7 @@ metadata:
             "namespace": "stackrox"
           },
           "spec": {
-            "centralEndpoint": "changeme",
-            "clusterName": "changeme"
+            "clusterName": "my-cluster"
           }
         }
       ]

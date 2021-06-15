@@ -2,6 +2,10 @@
 
 Central Services and Secured Cluster Services operator.
 
+## Requirements
+
+ - operator-sdk 1.5.x
+
 ## Quickstart
 
 All following commands should be ran from this directory (`operator/`).
@@ -60,6 +64,9 @@ Simply run:
 $ make test-e2e
 ```
 
+### Secured Cluster Services
+
+An example can be found in `config/samples/platform_v1alpha1_securedcluster.yaml`.
 
 ## List all available commands/targets
 

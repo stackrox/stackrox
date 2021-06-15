@@ -20,14 +20,11 @@ import (
 	"flag"
 	"os"
 
-	"github.com/stackrox/rox/image"
 	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
 	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
-	centraltranslation "github.com/stackrox/rox/operator/pkg/central/values/translation"
-	helmReconciler "github.com/stackrox/rox/operator/pkg/reconciler"
-	securedclustertranslation "github.com/stackrox/rox/operator/pkg/securedcluster/values/translation"
+	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
+	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
@@ -39,11 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-const (
-	centralKind        = "Central"
-	securedClusterKind = "SecuredCluster"
-)
-
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -52,6 +44,16 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	err := centralv1Alpha1.AddToScheme(clientgoscheme.Scheme)
+	if err != nil {
+		setupLog.Error(err, "could not register central scheme")
+		os.Exit(1)
+	}
+	err = securedClusterv1Alpha1.AddToScheme(clientgoscheme.Scheme)
+	if err != nil {
+		setupLog.Error(err, "could not register secured cluster scheme")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -85,14 +87,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	centralGVK := schema.GroupVersionKind{Group: centralv1Alpha1.GroupVersion.Group, Version: centralv1Alpha1.GroupVersion.Version, Kind: centralKind}
-	if err := helmReconciler.SetupReconcilerWithManager(mgr, centralGVK, image.CentralServicesChartPrefix, centraltranslation.Translator{Config: mgr.GetConfig()}); err != nil {
+	if err := centralReconciler.RegisterNewReconciler(mgr); err != nil {
 		setupLog.Error(err, "unable to setup central reconciler")
 		os.Exit(1)
 	}
 
-	securedClusterGVK := schema.GroupVersionKind{Group: securedClusterv1Alpha1.GroupVersion.Group, Version: securedClusterv1Alpha1.GroupVersion.Version, Kind: securedClusterKind}
-	if err := helmReconciler.SetupReconcilerWithManager(mgr, securedClusterGVK, image.SecuredClusterServicesChartPrefix, securedclustertranslation.Translator{Config: mgr.GetConfig()}); err != nil {
+	if err := securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
 		setupLog.Error(err, "unable to setup secured cluster reconciler")
 		os.Exit(1)
 	}

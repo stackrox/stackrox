@@ -5,6 +5,5 @@ metadata:
   # Different values aren't supported by operators at the moment.
   name: stackrox-secured-cluster-services
   namespace: stackrox
-spec: # TODO: Add fields here
-  clusterName: changeme
-  centralEndpoint: changeme
+spec:
+  clusterName: my-cluster
