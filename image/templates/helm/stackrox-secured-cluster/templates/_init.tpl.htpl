@@ -37,7 +37,8 @@
 {{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml)) }}
 {{ $_ = set $ "_rox" $rox }}
 
-{{/* Set the config fingerprint */}}
+{{/* Set the config fingerprint as computed or overridden via values. */}}
+{{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
 {{ $_ = set $._rox "_configFP" $configFP }}
 
 {{/* Global state (accessed from sub-templates) */}}

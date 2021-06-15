@@ -116,6 +116,7 @@ meta:
   namespaceOverride: null # bool
   useLookup: null # bool
   fileOverrides: {} # dict
+  configFingerprintOverride: null # string
   apiServer:
     version: null # string
     overrideAPIResources: null # [string]
