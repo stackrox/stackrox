@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,12 @@ import (
 func AssertEqualPathValue(t *testing.T, values chartutil.Values, expected interface{}, path string, msgAndArgs ...interface{}) {
 	v := readPath(t, values, path)
 	assert.Equal(t, expected, v, msgAndArgs)
+}
+
+// AssertPathValueMatches helps asserting path values which requires a path to exist, otherwise it fails.
+func AssertPathValueMatches(t *testing.T, values chartutil.Values, regex *regexp.Regexp, path string, msgAndArgs ...interface{}) {
+	v := readPath(t, values, path)
+	assert.Regexp(t, regex, v, msgAndArgs)
 }
 
 // AssertNotNilPathValue helps asserting path values which requires a path to exist, otherwise it fails.

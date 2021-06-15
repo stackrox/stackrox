@@ -3,6 +3,7 @@ package translation
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -37,6 +38,7 @@ func TestTranslate(t *testing.T) {
 	//TODO: Assert whole values tree to detect unwanted values (which may be added by accident)
 	testingUtils.AssertNotNilPathValue(t, vals, "ca.cert")
 	testingUtils.AssertEqualPathValue(t, vals, "my-cluster", "clusterName")
+	testingUtils.AssertPathValueMatches(t, vals, regexp.MustCompile("[0-9a-f]{32}"), "meta.configFingerprintOverride")
 }
 
 func createSecret(name string) *v1.Secret {

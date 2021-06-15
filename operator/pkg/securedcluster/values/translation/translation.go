@@ -2,6 +2,7 @@ package translation
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
 
@@ -18,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -92,6 +94,7 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 	v.AddChild("customize", &customize)
+	v.AddChild("meta", getMetaValues(sc))
 
 	return v.Build()
 }
@@ -264,4 +267,14 @@ func (t Translator) getHelmDevelopmentDefaults(sc securedcluster.SecuredCluster)
 	}
 
 	return &rootBuilder
+}
+
+func getMetaValues(sc securedcluster.SecuredCluster) *translation.ValuesBuilder {
+	meta := translation.NewValuesBuilder()
+	specAsYaml, err := yaml.Marshal(sc.Spec)
+	if err != nil {
+		return meta.SetError(errors.Wrap(err, "marshaling SecuredCluster spec"))
+	}
+	meta.SetStringValue("configFingerprintOverride", fmt.Sprintf("%x", sha256.Sum256(specAsYaml)))
+	return &meta
 }
