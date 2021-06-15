@@ -58,6 +58,9 @@ var (
 	User                  = newResourceMetadata("User", permissions.GlobalScope)
 	WatchedImage          = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
+	// Internal Resources
+	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
+
 	resourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
 )
 
@@ -68,6 +71,13 @@ func newResourceMetadata(name permissions.Resource, scope permissions.ResourceSc
 	}
 	resourceToMetadata[name] = md
 	return md
+}
+
+func newInternalResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
+	return permissions.ResourceMetadata{
+		Resource: name,
+		Scope:    scope,
+	}
 }
 
 // ListAll returns a list of all resources.

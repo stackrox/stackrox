@@ -23,4 +23,8 @@ const (
 	RoleBinding
 	DeploymentReprocess
 	Pod
+	ComplianceOperatorCheckResult
+	ComplianceOperatorProfile
+	ComplianceOperatorScanSettingBinding
+	ComplianceOperatorRule
 )
