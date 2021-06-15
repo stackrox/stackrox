@@ -39,6 +39,9 @@ IMAGE_TAG_BASE ?= docker.io/stackrox/stackrox-operator
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
+# INDEX_IMG defines the image:tag used for the index image, containing the single operator bundle image.
+INDEX_IMG ?= $(IMAGE_TAG_BASE)-index:v$(VERSION)
+
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -139,6 +142,10 @@ docker-push: ## Push docker image with the manager.
 docker-push-bundle: ## Push docker image with the bundle.
 	docker push ${BUNDLE_IMG}
 
+.PHONY: docker-push-index
+docker-push-index: ## Push docker image with the index.
+	docker push ${INDEX_IMG}
+
 ##@ Deployment
 
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
@@ -163,11 +170,13 @@ kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
 # See https://sdk.operatorframework.io/docs/installation/#install-from-github-release
-OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk
+OPERATOR_SDK_VERSION = 1.5.2
+
+OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
 operator-sdk: ## Download operator-sdk locally if necessary.
 	@[ -f $(OPERATOR_SDK) ] || { \
 	set -euo pipefail ;\
-	OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v1.5.2 ;\
+	OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$(OPERATOR_SDK_VERSION) ;\
 	ARCH=$$(case $$(uname -m) in (x86_64) echo -n amd64 ;; (aarch64) echo -n arm64 ;; (*) echo -n $$(uname -m) ;; esac) ;\
 	OS=$$(uname | awk '{print tolower($$0)}') ;\
 	set -x ;\
@@ -188,6 +197,20 @@ kuttl: ## Download kuttl locally if necessary
 	curl --fail --location --output $(KUTTL) $${KUTTL_DL_URL}/kubectl-kuttl_$${KUTTL_VER}_$${OS}_$${ARCH} ;\
 	chmod +x $(KUTTL) ;\
 	}
+
+OPM_VERSION = 1.17.3
+OPM = $(PROJECT_DIR)/bin/opm-$(OPM_VERSION)
+$(OPM): ## Download opm locally if necessary
+	@[ -f $(OPM) ] || { \
+	set -euo pipefail ; \
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	curl --fail --location --output $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v$(OPM_VERSION)/$${OS}-$${ARCH}-opm ; \
+	chmod +x $(OPM) ; \
+	[[ $$(uname -s) != "Darwin" ]] || xattr -c $(OPM) ; \
+	}
+
+.PHONY: opm
+opm: $(OPM)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -248,3 +271,7 @@ bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
 .PHONY: bundle-test
 bundle-test: operator-sdk ## Run bundle tests.
 	$(OPERATOR_SDK) scorecard build/bundle/
+
+.PHONY: index-build
+index-build: opm
+	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(BUNDLE_IMG) --tag $(INDEX_IMG) --build-tool docker

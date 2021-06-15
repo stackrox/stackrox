@@ -2718,6 +2718,16 @@ jobs:
           command: |
             make -C operator/ docker-push docker-push-bundle | cat
 
+      # Index image can only be built once bundle was pushed
+      - run:
+          name: Build index
+          command: |
+            make -C operator/ index-build
+      - run:
+          name: Push index image
+          command: |
+            make -C operator/ docker-push-index | cat
+
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
   # Recommended naming format: provision-{test_job_name}
