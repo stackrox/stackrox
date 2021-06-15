@@ -14,7 +14,8 @@ var log = logging.LoggerForModule()
 // DropThrottle assumes run is called with the same input function, such that calls above throttled rate can be thrown
 // away. If calls are drops, another call of the input function will always happen afterwards.
 type DropThrottle interface {
-	Run(f func())
+	// Run submits a function for execution, if possible. If it is dropped, `false` will be returned.
+	Run(f func()) bool
 }
 
 // NewDropThrottle returns a new instance of a DropThrottle.
@@ -31,17 +32,21 @@ type throttleImpl struct {
 	scheduled bool
 }
 
-// Run will run the input function now, after some period of time, or drop it.
-func (t *throttleImpl) Run(f func()) {
+// Run will run the input function now, after some period of time, or drop it (and return `false` in that case).
+func (t *throttleImpl) Run(f func()) bool {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
 	if t.limiter.Allow() {
 		go f()
-	} else if !t.scheduled {
+		return true
+	}
+	if !t.scheduled {
 		t.scheduled = true
 		go t.schedule(f)
+		return true
 	}
+	return false
 }
 
 func (t *throttleImpl) schedule(f func()) {

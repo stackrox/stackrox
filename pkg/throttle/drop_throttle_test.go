@@ -9,37 +9,55 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// maybeRunAndTrack submits a function for execution through a throttler. If the submission succeeds,
+// the run is tracked through the waitgroup.
+func maybeRunAndTrack(throttler DropThrottle, wg *sync.WaitGroup, f func()) {
+	// We need to increment the waitgroup before submitting for execution. Would we do it afterwards,
+	// the run might already have completed and the waitgroup counter might run below 0.
+	wg.Add(1)
+	willRun := throttler.Run(func() {
+		defer wg.Done()
+		f()
+	})
+	if !willRun {
+		wg.Done()
+	}
+}
+
 func TestThrottlesFastCalls(t *testing.T) {
-	throttler := NewDropThrottle(10 * time.Millisecond)
+	t.Parallel()
+
+	throttler := NewDropThrottle(500 * time.Millisecond)
 
 	// Run count should be two, one for the first, and one for the end of the window since more were called.
 	var ran string
 	var ranMutex sync.Mutex
-	throttler.Run(func() {
+	var wg sync.WaitGroup
+	maybeRunAndTrack(throttler, &wg, func() {
 		concurrency.WithLock(&ranMutex, func() {
 			ran = ran + "1"
 		})
 	})
 
-	throttler.Run(func() {
+	maybeRunAndTrack(throttler, &wg, func() {
 		concurrency.WithLock(&ranMutex, func() {
 			ran = ran + "2"
 		})
 	})
 
-	throttler.Run(func() {
+	maybeRunAndTrack(throttler, &wg, func() {
 		concurrency.WithLock(&ranMutex, func() {
 			ran = ran + "3"
 		})
 	})
 
-	throttler.Run(func() {
+	maybeRunAndTrack(throttler, &wg, func() {
 		concurrency.WithLock(&ranMutex, func() {
 			ran = ran + "4"
 		})
 	})
 
-	time.Sleep(20 * time.Millisecond)
+	wg.Wait()
 
 	ranMutex.Lock()
 	defer ranMutex.Unlock()
@@ -47,42 +65,44 @@ func TestThrottlesFastCalls(t *testing.T) {
 }
 
 func TestThrottlesSlowCalls(t *testing.T) {
-	throttler := NewDropThrottle(10 * time.Millisecond)
+	t.Parallel()
+
+	throttler := NewDropThrottle(500 * time.Millisecond)
 
 	// Run count should be two, one for the first, and one for the end of the window since more were called.
 	var ran string
 	var ranMutex sync.Mutex
-	throttler.Run(func() {
-		time.Sleep(20 * time.Millisecond)
+	var wg sync.WaitGroup
+	maybeRunAndTrack(throttler, &wg, func() {
+		time.Sleep(200 * time.Millisecond)
 		concurrency.WithLock(&ranMutex, func() {
 			ran = ran + "1"
 		})
 	})
 
-	throttler.Run(func() {
-		time.Sleep(20 * time.Millisecond)
+	maybeRunAndTrack(throttler, &wg, func() {
+		time.Sleep(200 * time.Millisecond)
 		concurrency.WithLock(&ranMutex, func() {
 			ran = ran + "2"
 		})
 	})
 
-	throttler.Run(func() {
-		time.Sleep(20 * time.Millisecond)
+	maybeRunAndTrack(throttler, &wg, func() {
+		time.Sleep(200 * time.Millisecond)
 		concurrency.WithLock(&ranMutex, func() {
 			ran = ran + "3"
 		})
 	})
 
-	throttler.Run(func() {
-		time.Sleep(20 * time.Millisecond)
+	maybeRunAndTrack(throttler, &wg, func() {
+		time.Sleep(200 * time.Millisecond)
 		concurrency.WithLock(&ranMutex, func() {
 			ran = ran + "4"
 		})
 	})
 
-	// Both should complete by 30 millis.
-	// the first will Run in 20, and the last will Run in 20 after a 10 millisecond wait window)
-	time.Sleep(40 * time.Millisecond)
+	wg.Wait()
+
 	ranMutex.Lock()
 	defer ranMutex.Unlock()
 	assert.Equal(t, "12", ran)
