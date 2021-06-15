@@ -1,17 +1,14 @@
 import React, { useContext } from 'react';
-import entityTypes, {
-    resourceTypes,
-    resourceTypeToApplicableStandards,
-} from 'constants/entityTypes';
-import { NODE_QUERY } from 'queries/node';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
+import entityTypes from 'constants/entityTypes';
+import { NODE_QUERY } from 'queries/node';
 import Cluster from 'images/cluster.svg';
 import IpAddress from 'images/ip-address.svg';
 import Hostname from 'images/hostname.svg';
 import ContainerRuntime from 'images/container-runtime.svg';
-import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
+import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import IconWidget from 'Components/IconWidget';
@@ -202,19 +199,7 @@ const NodePage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-
-                                {resourceTypeToApplicableStandards[resourceTypes.NODE].map(
-                                    (standardType) => (
-                                        <ComplianceByStandard
-                                            key={standardType}
-                                            standardType={standardType}
-                                            entityName={name}
-                                            entityId={id}
-                                            entityType={entityTypes.NODE}
-                                            className={pdfClassName}
-                                        />
-                                    )
-                                )}
+                                <ComplianceByStandards entityType={entityTypes.NODE} />
                             </div>
                         </div>
                     );

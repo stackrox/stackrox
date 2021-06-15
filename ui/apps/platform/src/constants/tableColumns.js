@@ -1,11 +1,7 @@
 import React from 'react';
+
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import {
-    resourceTypes,
-    standardEntityTypes,
-    standardBaseTypes,
-    resourceTypeToApplicableStandards,
-} from 'constants/entityTypes';
+import { resourceTypes, standardBaseTypes } from 'constants/entityTypes';
 import { sortVersion } from 'sorters/sorters';
 
 const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A');
@@ -23,11 +19,7 @@ const columnsForStandard = (function getColumnsForStandards() {
     return ret;
 })();
 
-function columnsForResourceType(resourceType) {
-    return resourceTypeToApplicableStandards[resourceType].map((id) => columnsForStandard[id]);
-}
-
-const clusterColumns = [
+const getClusterColumns = (standards) => [
     {
         accessor: 'id',
         Header: 'id',
@@ -39,7 +31,7 @@ const clusterColumns = [
         Header: 'Cluster',
         Cell: ({ original }) => getNameCell(original.name),
     },
-    ...columnsForResourceType(resourceTypes.CLUSTER),
+    ...standards.map(({ id }) => columnsForStandard[id]),
     {
         accessor: 'overall.average',
         Header: 'Overall',
@@ -69,7 +61,7 @@ const getStandardColumns = (standard) => [
     },
 ];
 
-const nodeColumns = [
+const getNodeColumns = (standards) => [
     {
         accessor: 'id',
         Header: 'id',
@@ -85,14 +77,14 @@ const nodeColumns = [
         accessor: 'cluster',
         Header: 'Cluster',
     },
-    ...columnsForResourceType(resourceTypes.NODE),
+    ...standards.map(({ id }) => columnsForStandard[id]),
     {
         accessor: 'overall.average',
         Header: 'Overall',
     },
 ];
 
-const namespaceColumns = [
+const getNamespaceColumns = (standards) => [
     {
         accessor: 'id',
         Header: 'id',
@@ -108,14 +100,14 @@ const namespaceColumns = [
         accessor: 'cluster',
         Header: 'Cluster',
     },
-    ...columnsForResourceType(resourceTypes.NAMESPACE),
+    ...standards.map(({ id }) => columnsForStandard[id]),
     {
         accessor: 'overall.average',
         Header: 'Overall',
     },
 ];
 
-const deploymentColumns = [
+const getDeploymentColumns = (standards) => [
     {
         accessor: 'id',
         Header: 'id',
@@ -137,7 +129,7 @@ const deploymentColumns = [
         Header: 'Namespace',
         Cell: ({ original }) => getNameCell(original.namespace),
     },
-    ...columnsForResourceType(resourceTypes.DEPLOYMENT),
+    ...standards.map(({ id }) => columnsForStandard[id]),
     {
         accessor: 'overall.average',
         Header: 'Overall',
@@ -167,30 +159,22 @@ const controlColumns = [
     },
 ];
 
-const entityTypesToColumns = {
-    [resourceTypes.CLUSTER]: clusterColumns,
-    [resourceTypes.NODE]: nodeColumns,
-    [resourceTypes.NAMESPACE]: namespaceColumns,
-    [resourceTypes.DEPLOYMENT]: deploymentColumns,
-    [standardEntityTypes.CONTROL]: controlColumns,
-};
-
-function filterColumnsByStandardType(columns, excludedStandardTypes) {
-    if (!columns || !columns.length) {
-        return columns;
+export function getColumnsByEntity(entityType, standards) {
+    const filteredStandards = standards.filter(({ scopes }) => scopes.includes(entityType));
+    switch (entityType) {
+        case resourceTypes.CLUSTER:
+            return getClusterColumns(filteredStandards);
+        case resourceTypes.NODE:
+            return getNodeColumns(filteredStandards);
+        case resourceTypes.NAMESPACE:
+            return getNamespaceColumns(filteredStandards);
+        case resourceTypes.DEPLOYMENT:
+            return getDeploymentColumns(filteredStandards);
+        default:
+            return controlColumns;
     }
-    if (!excludedStandardTypes || !excludedStandardTypes.length) {
-        return columns;
-    }
-    return columns.filter(
-        (column) => !excludedStandardTypes.find((standardType) => standardType === column.accessor)
-    );
-}
-
-export function getColumnsByEntity(entityID, excludedStandardTypes) {
-    return filterColumnsByStandardType(entityTypesToColumns[entityID], excludedStandardTypes);
 }
 
 export function getColumnsByStandard(standardID) {
-    return filterColumnsByStandardType(getStandardColumns(standardBaseTypes[standardID]));
+    return getStandardColumns(standardBaseTypes[standardID]);
 }

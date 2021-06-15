@@ -1,9 +1,10 @@
 import React, { useContext } from 'react';
-import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
+import pluralize from 'pluralize';
+
+import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Query from 'Components/CacheFirstQuery';
 import IconWidget from 'Components/IconWidget';
 import CountWidget from 'Components/CountWidget';
-import pluralize from 'pluralize';
 import Cluster from 'images/cluster.svg';
 import { NAMESPACE_QUERY as QUERY } from 'queries/namespace';
 import Widget from 'Components/Widget';
@@ -17,10 +18,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
-import entityTypes, {
-    resourceTypes,
-    resourceTypeToApplicableStandards,
-} from 'constants/entityTypes';
+import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
@@ -147,18 +145,7 @@ const NamespacePage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                {resourceTypeToApplicableStandards[resourceTypes.NAMESPACE].map(
-                                    (standardType) => (
-                                        <ComplianceByStandard
-                                            key={standardType}
-                                            standardType={standardType}
-                                            entityName={name}
-                                            entityId={id}
-                                            entityType={entityTypes.NAMESPACE}
-                                            className={pdfClassName}
-                                        />
-                                    )
-                                )}
+                                <ComplianceByStandards entityType={entityTypes.NAMESPACE} />
                                 {sidePanelMode && (
                                     <>
                                         <div

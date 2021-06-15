@@ -1,14 +1,13 @@
 import React, { useContext } from 'react';
-import entityTypes, {
-    resourceTypes,
-    resourceTypeToApplicableStandards,
-} from 'constants/entityTypes';
+import { useRouteMatch, useLocation } from 'react-router-dom';
+import pluralize from 'pluralize';
+
+import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENT_QUERY } from 'queries/deployment';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
-import { withRouter } from 'react-router-dom';
 import URLService from 'utils/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
@@ -18,9 +17,8 @@ import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Cluster from 'images/cluster.svg';
 import Namespace from 'images/ns-icon.svg';
 import IconWidget from 'Components/IconWidget';
-import pluralize from 'pluralize';
 import Labels from 'Containers/Compliance/widgets/Labels';
-import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
+import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 
@@ -36,8 +34,6 @@ function processData(data) {
 }
 
 const DeploymentPage = ({
-    match,
-    location,
     entityId,
     listEntityType1,
     entityId1,
@@ -48,6 +44,8 @@ const DeploymentPage = ({
     sidePanelMode,
 }) => {
     const searchParam = useContext(searchContext);
+    const match = useRouteMatch();
+    const location = useLocation();
 
     return (
         <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
@@ -151,18 +149,7 @@ const DeploymentPage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                {resourceTypeToApplicableStandards[resourceTypes.DEPLOYMENT].map(
-                                    (standardType) => (
-                                        <ComplianceByStandard
-                                            key={standardType}
-                                            standardType={standardType}
-                                            entityName={name}
-                                            entityId={id}
-                                            entityType={entityTypes.DEPLOYMENT}
-                                            className={pdfClassName}
-                                        />
-                                    )
-                                )}
+                                <ComplianceByStandards entityType={entityTypes.DEPLOYMENT} />
                             </div>
                         </div>
                     );
@@ -196,4 +183,4 @@ const DeploymentPage = ({
 DeploymentPage.propTypes = entityPagePropTypes;
 DeploymentPage.defaultProps = entityPageDefaultProps;
 
-export default withRouter(DeploymentPage);
+export default DeploymentPage;

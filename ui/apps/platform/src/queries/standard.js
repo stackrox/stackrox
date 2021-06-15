@@ -163,3 +163,13 @@ export const RUN_STATUSES = gql`
         }
     }
 `;
+
+export const STANDARDS_QUERY = gql`
+    query getComplianceStandards {
+        results: complianceStandards {
+            id
+            name
+            scopes
+        }
+    }
+`;

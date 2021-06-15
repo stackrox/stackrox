@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+
 import URLService from 'utils/URLService';
 import { PageBody } from 'Components/Panel';
 import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
@@ -14,15 +14,10 @@ import ListTable from './Table';
 import SidePanel from './SidePanel';
 import SearchInput from '../SearchInput';
 
-const ComplianceList = ({
-    match,
-    location,
-    history,
-    entityType,
-    query,
-    selectedRowId,
-    noSearch,
-}) => {
+const ComplianceList = ({ entityType, query, selectedRowId, noSearch }) => {
+    const history = useHistory();
+    const location = useLocation();
+    const match = useRouteMatch();
     function setSelectedRowId(row) {
         const { id } = row;
         const url = URLService.getURL(match, location)
@@ -59,7 +54,7 @@ const ComplianceList = ({
     );
 };
 
-export default withRouter(ComplianceList);
+export default ComplianceList;
 
 ComplianceList.propTypes = {
     entityType: PropTypes.string.isRequired,
@@ -67,9 +62,6 @@ ComplianceList.propTypes = {
     selectedRowId: PropTypes.string,
     // entityType2: PropTypes.string,
     // entityId2: PropTypes.string,
-    match: ReactRouterPropTypes.match.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     noSearch: PropTypes.bool,
 };
 

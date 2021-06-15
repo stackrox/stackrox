@@ -12,14 +12,10 @@ export const entityPagePropTypes = {
     query: PropTypes.shape({}),
     sidePanelMode: PropTypes.bool,
     controlResult: PropTypes.shape({}),
-    match: ReactRouterPropTypes.match,
-    location: ReactRouterPropTypes.location,
     original: PropTypes.shape({}),
 };
 
 export const entityPageDefaultProps = {
-    match: null,
-    location: null,
     listEntityType1: null,
     entityType1: null,
     entityId1: null,

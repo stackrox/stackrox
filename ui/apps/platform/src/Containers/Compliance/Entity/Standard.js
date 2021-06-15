@@ -1,6 +1,6 @@
 import React from 'react';
+
 import entityTypes from 'constants/entityTypes';
-import { withRouter } from 'react-router-dom';
 import ComplianceList from 'Containers/Compliance/List/List';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import SearchInput from '../SearchInput';
@@ -40,4 +40,4 @@ const StandardPage = ({
 StandardPage.propTypes = entityPagePropTypes;
 StandardPage.defaultProps = entityPageDefaultProps;
 
-export default withRouter(StandardPage);
+export default StandardPage;

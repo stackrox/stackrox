@@ -1,19 +1,17 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { standardLabels } from 'messages/standards';
+import capitalize from 'lodash/capitalize';
+import { Link, useLocation, useRouteMatch } from 'react-router-dom';
+
 import URLService from 'utils/URLService';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
-import capitalize from 'lodash/capitalize';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
 import queryService from 'utils/queryService';
-import { Link, withRouter } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';
-import ReactSelect from 'Components/ReactSelect';
 import isGQLLoading from 'utils/gqlLoading';
 
 const passColor = 'var(--tertiary-400)';
@@ -68,7 +66,7 @@ const sunburstLegendData = [
     { title: 'Skipped', color: skippedColor },
 ];
 
-const processSunburstData = (match, location, data, type) => {
+const processSunburstData = (match, location, data, standard) => {
     const groupMapping = {};
     let controlKeyIndex = 0;
     let categoryKeyIndex = 0;
@@ -100,7 +98,7 @@ const processSunburstData = (match, location, data, type) => {
     const groupStatsMapping = data.results.results.reduce(statsReducer, {});
     const controlStatsMapping = data.checks.results.reduce(statsReducer, {});
 
-    const { groups, controls } = data.complianceStandards.find((datum) => datum.id === type);
+    const { groups, controls } = data.complianceStandards.find((datum) => datum.id === standard);
 
     groups.forEach((datum) => {
         const groupStat = groupStatsMapping[datum.id];
@@ -117,7 +115,7 @@ const processSunburstData = (match, location, data, type) => {
     });
 
     controls
-        .filter((control) => control.standardId === type)
+        .filter((control) => control.standardId === standard)
         .forEach((datum) => {
             const group = groupMapping[datum.groupId];
             const controlStat = controlStatsMapping[datum.id];
@@ -157,7 +155,7 @@ const processSunburstData = (match, location, data, type) => {
 const getNumControls = (sunburstData) =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
-const createURLLink = (match, location, entityType, standardId, entityName, searchParam) => {
+const createURLLink = (match, location, entityType, standardName, entityName, searchParam) => {
     const query = { groupBy: entityTypes.CATEGORY };
     if (entityName) {
         const entityKey = capitalize(entityType);
@@ -165,30 +163,29 @@ const createURLLink = (match, location, entityType, standardId, entityName, sear
     }
     return URLService.getURL(match, location)
         .base(entityTypes.CONTROL)
-        .query({ [searchParam]: { standard: standardLabels[standardId] } })
+        .query({ [searchParam]: { standard: standardName } })
         .url();
 };
 
 const ComplianceByStandard = ({
-    match,
-    location,
-    standardType,
+    standardName,
+    standardId,
     entityName,
     entityType,
     entityId,
     className,
-    standardOptions,
-    onStandardChange,
 }) => {
+    const location = useLocation();
+    const match = useRouteMatch();
+    const searchParam = useContext(searchContext);
     const groupBy = [
         entityTypes.STANDARD,
         entityTypes.CATEGORY,
         entityTypes.CONTROL,
         ...(entityType ? [entityType] : []),
     ];
-    const searchParam = useContext(searchContext);
     const where = {
-        Standard: standardLabels[standardType],
+        Standard: standardName,
     };
     if (entityType && entityId) {
         where[`${entityType} ID`] = entityId;
@@ -198,66 +195,10 @@ const ComplianceByStandard = ({
         where: queryService.objectToWhereClause(where),
     };
 
-    function getTitleComponent() {
-        if (!standardOptions) {
-            return null;
-        }
-
-        const options = standardOptions
-            .filter((standard) => standard !== standardType)
-            .map((standard) => ({
-                value: standard,
-                label: standardLabels[standard],
-            }));
-
-        return (
-            <ReactSelect
-                options={options}
-                className="inline-block cursor-pointer"
-                placeholder={`${standardLabels[standardType]} across Clusters`}
-                onChange={onStandardChange}
-                isSearchable={false}
-                styles={{
-                    indicatorSeparator: () => ({
-                        display: 'none',
-                    }),
-                    control: () => ({
-                        border: 'none',
-                    }),
-                    placeholder: () => ({
-                        fontWeight: 700,
-                        fontSize: '11px',
-                        letterSpacing: '.5px',
-                        textTransform: 'uppercase',
-                    }),
-                    valueContainer: (provided) => ({
-                        ...provided,
-                        paddingRight: 0,
-                        cursor: 'pointer',
-                    }),
-                    dropdownIndicator: (provided) => ({
-                        ...provided,
-                        color: 'var(--base-500)',
-                        paddingLeft: 0,
-                    }),
-                }}
-            />
-        );
-    }
-    function getHeaderText() {
-        if (standardOptions) {
-            return null;
-        }
-
-        return `${standardLabels[standardType]} Compliance`;
-    }
-
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
                 let contents = null;
-                const titleComponent = getTitleComponent();
-                const headerText = getHeaderText();
                 let viewStandardLink = null;
                 if (isGQLLoading(loading, data)) {
                     contents = <Loader />;
@@ -266,14 +207,14 @@ const ComplianceByStandard = ({
                         match,
                         location,
                         data,
-                        standardType
+                        standardId
                     );
 
                     const url = createURLLink(
                         match,
                         location,
                         entityType,
-                        standardType,
+                        standardName,
                         entityName,
                         searchParam
                     );
@@ -292,7 +233,7 @@ const ComplianceByStandard = ({
                         .base(entityTypes.CONTROL)
                         .query({
                             [searchParam]: {
-                                standard: standardLabels[standardType],
+                                standard: standardName,
                                 groupBy: entityTypes.CATEGORY,
                             },
                         })
@@ -329,10 +270,9 @@ const ComplianceByStandard = ({
                 return (
                     <Widget
                         className={`s-2 ${className}`}
-                        header={headerText}
-                        titleComponents={titleComponent}
+                        header={`${standardName} Compliance`}
                         headerComponents={viewStandardLink}
-                        id={`${standardBaseTypes[standardType]}-compliance`}
+                        id={`${standardBaseTypes[standardId]}-compliance`}
                     >
                         {contents}
                     </Widget>
@@ -343,15 +283,12 @@ const ComplianceByStandard = ({
 };
 
 ComplianceByStandard.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    standardType: PropTypes.string.isRequired,
+    standardName: PropTypes.string.isRequired,
+    standardId: PropTypes.string.isRequired,
     entityName: PropTypes.string,
     entityType: PropTypes.string,
     entityId: PropTypes.string,
     className: PropTypes.string,
-    standardOptions: PropTypes.arrayOf(PropTypes.string),
-    onStandardChange: PropTypes.func,
 };
 
 ComplianceByStandard.defaultProps = {
@@ -359,8 +296,6 @@ ComplianceByStandard.defaultProps = {
     entityType: null,
     entityName: null,
     className: '',
-    standardOptions: null,
-    onStandardChange: null,
 };
 
-export default withRouter(ComplianceByStandard);
+export default ComplianceByStandard;

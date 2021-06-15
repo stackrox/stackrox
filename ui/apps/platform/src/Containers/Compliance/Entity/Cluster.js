@@ -1,8 +1,6 @@
 import React, { useContext } from 'react';
-import entityTypes, {
-    resourceTypes,
-    resourceTypeToApplicableStandards,
-} from 'constants/entityTypes';
+
+import entityTypes from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
@@ -11,9 +9,8 @@ import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
-import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
+import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Loader from 'Components/Loader';
-import { withRouter } from 'react-router-dom';
 import ResourceTabs from 'Components/ResourceTabs';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
@@ -103,18 +100,7 @@ const ClusterPage = ({
                                         <ClusterVersion clusterId={id} />
                                     </div>
                                 </div>
-                                {resourceTypeToApplicableStandards[resourceTypes.CLUSTER].map(
-                                    (standardType) => (
-                                        <ComplianceByStandard
-                                            key={standardType}
-                                            standardType={standardType}
-                                            entityName={name}
-                                            entityId={id}
-                                            entityType={entityTypes.CLUSTER}
-                                            className={pdfClassName}
-                                        />
-                                    )
-                                )}
+                                <ComplianceByStandards entityType={entityTypes.CLUSTER} />
 
                                 {sidePanelMode && (
                                     <>
@@ -185,4 +171,4 @@ const ClusterPage = ({
 ClusterPage.propTypes = entityPagePropTypes;
 ClusterPage.defaultProps = entityPageDefaultProps;
 
-export default withRouter(ClusterPage);
+export default ClusterPage;

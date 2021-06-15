@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+
 import { standardLabels } from 'messages/standards';
 import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
@@ -8,7 +9,6 @@ import ControlDetails from 'Components/ControlDetails';
 import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRelatedResourceList';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
-import { withRouter } from 'react-router-dom';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
@@ -178,4 +178,4 @@ const ControlPage = ({
 ControlPage.propTypes = entityPagePropTypes;
 ControlPage.defaultProps = entityPageDefaultProps;
 
-export default withRouter(ControlPage);
+export default ControlPage;

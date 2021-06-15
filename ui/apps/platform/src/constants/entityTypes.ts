@@ -64,37 +64,6 @@ export const standardBaseTypes = {
     [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s',
 };
 
-// resourceTypeToApplicableStandards maps a resource type to the standards that apply to it.
-// This is required because not all standards have node and deployment checks.
-// (Although every standard will be in the cluster sub-list, in the current data model.)
-export const resourceTypeToApplicableStandards = {
-    [resourceTypes.CLUSTER]: [
-        standardTypes.CIS_Docker_v1_2_0,
-        standardTypes.CIS_Kubernetes_v1_5,
-        standardTypes.HIPAA_164,
-        standardTypes.NIST_800_190,
-        standardTypes.NIST_SP_800_53_Rev_4,
-        standardTypes.PCI_DSS_3_2,
-    ],
-    [resourceTypes.NODE]: [
-        standardTypes.CIS_Docker_v1_2_0,
-        standardTypes.CIS_Kubernetes_v1_5,
-        standardTypes.NIST_800_190,
-    ],
-    [resourceTypes.NAMESPACE]: [
-        standardTypes.HIPAA_164,
-        standardTypes.NIST_800_190,
-        standardTypes.NIST_SP_800_53_Rev_4,
-        standardTypes.PCI_DSS_3_2,
-    ],
-    [resourceTypes.DEPLOYMENT]: [
-        standardTypes.HIPAA_164,
-        standardTypes.NIST_800_190,
-        standardTypes.NIST_SP_800_53_Rev_4,
-        standardTypes.PCI_DSS_3_2,
-    ],
-};
-
 export const searchCategories = {
     NAMESPACE: 'NAMESPACES',
     NODE: 'NODES',

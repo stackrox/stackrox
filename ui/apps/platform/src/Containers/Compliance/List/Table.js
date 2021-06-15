@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import orderBy from 'lodash/orderBy';
+import { useQuery } from '@apollo/client';
 import { Message } from '@stackrox/ui-components';
 
 import entityTypes, { standardTypes } from 'constants/entityTypes';
@@ -10,7 +11,6 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 import Table from 'Components/Table';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Loader from 'Components/Loader';
-
 import TablePagination from 'Components/TablePagination';
 import TableGroup from 'Components/TableGroup';
 import { getColumnsByEntity, getColumnsByStandard } from 'constants/tableColumns';
@@ -19,7 +19,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 
 import createPDFTable from 'utils/pdfUtils';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from 'queries/table';
-import { LIST_STANDARD } from 'queries/standard';
+import { LIST_STANDARD, STANDARDS_QUERY } from 'queries/standard';
 import queryService from 'utils/queryService';
 
 function getQuery(entityType) {
@@ -258,6 +258,10 @@ const ListTable = ({
         return data.reduce((acc, group) => acc + group.rows.length, 0);
     }
 
+    const { loading: loadingStandards, data: standardsData } = useQuery(STANDARDS_QUERY);
+    if (loadingStandards) {
+        return <Loader />;
+    }
     const { standardId } = query;
     const gqlQuery = getQuery(entityType);
     const variables = getVariables(entityType, query);
@@ -267,15 +271,11 @@ const ListTable = ({
     if (standardId) {
         tableColumns = getColumnsByStandard(standardId);
     } else {
-        tableColumns = getColumnsByEntity(entityType);
+        tableColumns = getColumnsByEntity(entityType, standardsData.results);
     }
 
     let tableData;
-    useEffect(() => {
-        if (tableData && tableData.length) {
-            createPDFTable(tableData, entityType, query, pdfId, tableColumns);
-        }
-    }, [entityType, pdfId, query, tableColumns, tableData]);
+
     return (
         <Query query={gqlQuery} variables={variables}>
             {({ loading, data }) => {
