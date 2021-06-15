@@ -31,3 +31,6 @@ kubeconfig
 
 # Python virtualenv directory for dependencies of bundle build helpers.
 bundle_build/.venv/
+
+# Backups for what we've edited with sed
+*.bak
