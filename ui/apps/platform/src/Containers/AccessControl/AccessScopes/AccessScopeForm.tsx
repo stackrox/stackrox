@@ -5,6 +5,8 @@ import {
     Alert,
     AlertVariant,
     Button,
+    Flex,
+    FlexItem,
     Form,
     FormGroup,
     TextInput,
@@ -12,7 +14,9 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    Tooltip,
 } from '@patternfly/react-core';
+import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import {
     AccessScope,
@@ -22,28 +26,71 @@ import {
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
+import EffectiveAccessScopeTable from './EffectiveAccessScopeTable';
+import LabelInclusion from './LabelInclusion';
+
+// Form group label icon style rule in AccessScopes.css mimics info prop in table head cells.
+
+const labelIconEffectiveAccessScope = (
+    <Tooltip
+        content={
+            <div>
+                Status of clusters and namespaces
+                <br />
+                from manual inclusion, or label inclusion, or both
+            </div>
+        }
+        isContentLeftAligned
+        maxWidth="24em"
+    >
+        <div className="pf-c-button pf-m-plain pf-m-small">
+            <OutlinedQuestionCircleIcon />
+        </div>
+    </Tooltip>
+);
+
+const labelIconLabelInclusion = (
+    <Tooltip
+        content={
+            <div>
+                You can specify label selectors
+                <br />
+                in addition to, or instead of, manual inclusion
+            </div>
+        }
+        isContentLeftAligned
+        maxWidth="24em"
+    >
+        <div className="pf-c-button pf-m-plain pf-m-small">
+            <OutlinedQuestionCircleIcon />
+        </div>
+    </Tooltip>
+);
+
 export type AccessScopeFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     accessScope: AccessScope;
-    onClickCancel: () => void;
-    onClickEdit: () => void;
-    submitValues: (values: AccessScope) => Promise<null>; // because the form has only catch and finally
+    handleCancel: () => void;
+    handleEdit: () => void;
+    handleSubmit: (values: AccessScope) => Promise<null>; // because the form has only catch and finally
 };
 
 function AccessScopeForm({
     isActionable,
     action,
     accessScope,
-    onClickCancel,
-    onClickEdit,
-    submitValues,
+    handleCancel,
+    handleEdit,
+    handleSubmit,
 }: AccessScopeFormProps): ReactElement {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const [counterComputing, setCounterComputing] = useState(0);
     const [clusters, setClusters] = useState<EffectiveAccessScopeCluster[]>([]);
 
-    const { dirty, handleChange, isValid, values } = useFormik({
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+
+    const { dirty, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: accessScope,
         onSubmit: () => {},
         validationSchema: yup.object({
@@ -53,18 +100,65 @@ function AccessScopeForm({
     });
 
     useEffect(() => {
-        // TODO set computing true
-        computeEffectiveAccessScopeClusters(accessScope.rules)
-            .then((clustersArg) => {
-                setClusters(clustersArg);
+        setCounterComputing((counterPrev) => counterPrev + 1);
+        computeEffectiveAccessScopeClusters(values.rules)
+            .then((clustersComputed) => {
+                setClusters(clustersComputed);
             })
             .catch(() => {
                 // TODO display alert
             })
             .finally(() => {
-                // TODO set computing false
+                setCounterComputing((counterPrev) => counterPrev - 1);
             });
-    }, [accessScope.rules]);
+    }, [values.rules]);
+
+    function handleChangeIncludedClusters(clusterName: string, isChecked: boolean) {
+        const {
+            includedClusters,
+            includedNamespaces,
+            clusterLabelSelectors,
+            namespaceLabelSelectors,
+        } = values.rules;
+        return setFieldValue('rules', {
+            includedClusters: isChecked
+                ? [...includedClusters, clusterName]
+                : includedClusters.filter(
+                      (includedClusterName) => includedClusterName !== clusterName
+                  ),
+            includedNamespaces,
+            clusterLabelSelectors,
+            namespaceLabelSelectors,
+        });
+    }
+
+    function handleChangeIncludedNamespaces(
+        clusterName: string,
+        namespaceName: string,
+        isChecked: boolean
+    ) {
+        const {
+            includedClusters,
+            includedNamespaces,
+            clusterLabelSelectors,
+            namespaceLabelSelectors,
+        } = values.rules;
+        return setFieldValue('rules', {
+            includedClusters,
+            includedNamespaces: isChecked
+                ? [...includedNamespaces, { clusterName, namespaceName }]
+                : includedNamespaces.filter(
+                      ({
+                          clusterName: includedClusterName,
+                          namespaceName: includedNamespaceName,
+                      }) =>
+                          includedClusterName !== clusterName ||
+                          includedNamespaceName !== namespaceName
+                  ),
+            clusterLabelSelectors,
+            namespaceLabelSelectors,
+        });
+    }
 
     function onChange(_value, event) {
         handleChange(event);
@@ -75,7 +169,7 @@ function AccessScopeForm({
         // For example, to make a change, submit, and then make the opposite change.
         setIsSubmitting(true);
         setAlertSubmit(null);
-        submitValues(values)
+        handleSubmit(values)
             .catch((error) => {
                 setAlertSubmit(
                     <Alert
@@ -92,11 +186,16 @@ function AccessScopeForm({
             });
     }
 
+    function onClickCancel() {
+        resetForm();
+        handleCancel(); // close form if action=create but not if action=update
+    }
+
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
 
     return (
-        <Form>
+        <Form id="access-scope-form">
             {isActionable && (
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>
@@ -104,7 +203,7 @@ function AccessScopeForm({
                             <ToolbarItem spacer={{ default: 'spacerLg' }}>
                                 <Button
                                     variant="primary"
-                                    onClick={onClickEdit}
+                                    onClick={handleEdit}
                                     isDisabled={action === 'update'}
                                     isSmall
                                 >
@@ -155,9 +254,38 @@ function AccessScopeForm({
                     isDisabled={isViewing}
                 />
             </FormGroup>
-            <FormGroup label="Effective Access Scope" fieldId="effectiveAccessScope">
-                <pre className="pf-u-font-size-sm">{JSON.stringify(clusters, null, 2)}</pre>
-            </FormGroup>
+            <Flex>
+                <FlexItem className="pf-u-flex-basis-0 pf-u-flex-grow-1">
+                    <FormGroup
+                        label="Effective access scope"
+                        fieldId="effectiveAccessScope"
+                        labelIcon={labelIconEffectiveAccessScope}
+                    >
+                        <EffectiveAccessScopeTable
+                            counterComputing={counterComputing}
+                            clusters={clusters}
+                            includedClusters={values.rules.includedClusters}
+                            includedNamespaces={values.rules.includedNamespaces}
+                            handleChangeIncludedClusters={handleChangeIncludedClusters}
+                            handleChangeIncludedNamespaces={handleChangeIncludedNamespaces}
+                            hasAction={hasAction}
+                        />
+                    </FormGroup>
+                </FlexItem>
+                <FlexItem className="pf-u-flex-basis-0 pf-u-flex-grow-1">
+                    <FormGroup
+                        label="Label inclusion"
+                        fieldId="labelInclusion"
+                        labelIcon={labelIconLabelInclusion}
+                    >
+                        <LabelInclusion
+                            clusterLabelSelectors={values.rules.clusterLabelSelectors}
+                            namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
+                            hasAction={hasAction}
+                        />
+                    </FormGroup>
+                </FlexItem>
+            </Flex>
         </Form>
     );
 }

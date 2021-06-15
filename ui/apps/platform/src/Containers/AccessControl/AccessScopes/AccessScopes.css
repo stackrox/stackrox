@@ -1,0 +1,48 @@
+/*
+ * Make form group labelIcon prop look similar to info prop in table head cell.
+ * From PatternFly rule with selector: .pf-c-table__column-help-action .pf-c-button
+ */
+#access-scope-form .pf-c-form__group-label .pf-c-button {
+    padding-right: 8px;
+    padding-left: 8px;
+    margin-top: -6px;
+    margin-bottom: -6px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+/*
+ * Override annoying reset rule for info icon.
+ * However, table column help action svg does have display: block!
+ */
+ #access-scope-form .pf-c-form__group-label .pf-c-button svg {
+    display: inline;
+}
+
+/*
+ * Align table head row with tabs because they are side by side.
+ */
+#access-scope-form .pf-c-table {
+    --pf-c-table--m-compact-th--PaddingTop: var(--pf-global--spacer--sm)
+}
+
+/*
+ * Align tab text with table head row cells because they are side by side.
+ */
+#access-scope-form .pf-c-tabs {
+    --pf-c-tabs__link--FontSize: var(--pf-global--FontSize--sm);
+}
+
+/*
+ * Override annoying reset rule for Status icon.
+ */
+#access-scope-form td svg {
+    display: inline;
+}
+
+/*
+ * Replace primary blue with success green like included state.
+ */
+#access-scope-form .pf-c-switch.acs-m-manual-inclusion {
+    --pf-c-switch__input--checked__toggle--BackgroundColor: var(--pf-global--success-color--100);
+}

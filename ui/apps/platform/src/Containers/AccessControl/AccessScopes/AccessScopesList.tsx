@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { AccessScope, Role } from 'services/RolesService';
@@ -17,9 +17,24 @@ export type AccessScopesListProps = {
     entityId?: string;
     accessScopes: AccessScope[];
     roles: Role[];
+    handleDelete: (id: string) => Promise<void>;
 };
 
-function AccessScopesList({ entityId, accessScopes, roles }: AccessScopesListProps): ReactElement {
+function AccessScopesList({
+    entityId,
+    accessScopes,
+    roles,
+    handleDelete,
+}: AccessScopesListProps): ReactElement {
+    const [idDeleting, setIdDeleting] = useState('');
+
+    function onClickDelete(id: string) {
+        setIdDeleting(id);
+        handleDelete(id).finally(() => {
+            setIdDeleting('');
+        });
+    }
+
     return (
         <TableComposable variant="compact">
             <Thead>
@@ -27,6 +42,7 @@ function AccessScopesList({ entityId, accessScopes, roles }: AccessScopesListPro
                     <Th>Name</Th>
                     <Th>Description</Th>
                     <Th>Roles</Th>
+                    <Th aria-label="Row actions" />
                 </Tr>
             </Thead>
             <Tbody>
@@ -47,6 +63,21 @@ function AccessScopesList({ entityId, accessScopes, roles }: AccessScopesListPro
                                 entityId={id}
                             />
                         </Td>
+                        {roles.some(({ accessScopeId }) => accessScopeId === id) ? (
+                            <Td />
+                        ) : (
+                            <Td
+                                actions={{
+                                    disable: Boolean(entityId) || idDeleting === id,
+                                    items: [
+                                        {
+                                            title: 'Delete access scope',
+                                            onClick: () => onClickDelete(id),
+                                        },
+                                    ],
+                                }}
+                            />
+                        )}
                     </Tr>
                 ))}
             </Tbody>

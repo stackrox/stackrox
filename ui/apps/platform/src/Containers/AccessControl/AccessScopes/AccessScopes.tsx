@@ -26,7 +26,7 @@ import {
     AccessScope,
     Role,
     createAccessScope,
-    // deleteAccessScope,
+    deleteAccessScope,
     fetchAccessScopes,
     fetchRolesAsArray,
     updateAccessScope,
@@ -37,6 +37,8 @@ import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import AccessScopeForm from './AccessScopeForm';
 import AccessScopesList from './AccessScopesList';
+
+import './AccessScopes.css';
 
 const accessScopeNew: AccessScope = {
     id: '',
@@ -117,16 +119,23 @@ function AccessScopes(): ReactElement {
         history.push(getEntityPath(entityType, undefined, { ...queryObject, action: 'create' }));
     }
 
-    function onClickEdit() {
+    function handleDelete(idDelete: string) {
+        return deleteAccessScope(idDelete).then(() => {
+            // Remove the deleted entity.
+            setAccessScopes(accessScopes.filter(({ id }) => id !== idDelete));
+        }); // TODO catch error display alert
+    }
+
+    function handleEdit() {
         history.push(getEntityPath(entityType, entityId, { ...queryObject, action: 'update' }));
     }
 
-    function onClickCancel() {
+    function handleCancel() {
         // The entityId is undefined for create and defined for update.
         history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
     }
 
-    function submitValues(values: AccessScope): Promise<null> {
+    function handleSubmit(values: AccessScope): Promise<null> {
         return action === 'create'
             ? createAccessScope(values).then((entityCreated) => {
                   // Append the created entity.
@@ -138,7 +147,7 @@ function AccessScopes(): ReactElement {
                   return null; // because the form has only catch and finally
               })
             : updateAccessScope(values).then(() => {
-                  // Replace the updated entity.
+                  // Replace the updated entity with values because response is empty object.
                   setAccessScopes(
                       accessScopes.map((entity) => (entity.id === values.id ? values : entity))
                   );
@@ -169,12 +178,13 @@ function AccessScopes(): ReactElement {
             </DrawerHead>
             <DrawerPanelBody>
                 <AccessScopeForm
+                    // key={entityId}
                     isActionable={isActionable}
                     action={action}
                     accessScope={accessScope}
-                    onClickCancel={onClickCancel}
-                    onClickEdit={onClickEdit}
-                    submitValues={submitValues}
+                    handleCancel={handleCancel}
+                    handleEdit={handleEdit}
+                    handleSubmit={handleSubmit}
                 />
             </DrawerPanelBody>
         </DrawerPanelContent>
@@ -212,6 +222,7 @@ function AccessScopes(): ReactElement {
                                 entityId={entityId}
                                 accessScopes={accessScopes}
                                 roles={roles}
+                                handleDelete={handleDelete}
                             />
                         </DrawerContentBody>
                     </DrawerContent>

@@ -168,7 +168,7 @@ export function fetchAccessScopes(): Promise<AccessScope[]> {
  * Create entity and return object with id assigned by backend.
  */
 export function createAccessScope(entity: AccessScope): Promise<AccessScope> {
-    return axios.post(accessScopessUrl, entity);
+    return axios.post<AccessScope>(accessScopessUrl, entity).then((response) => response.data);
 }
 
 /*
@@ -222,7 +222,7 @@ export function computeEffectiveAccessScopeClusters(
     return axios
         .post<EffectiveAccessScope>(computeEffectiveAccessScopeUrl, {
             detail,
-            accessScope: { simpleRules },
+            simpleRules,
         })
         .then((response) => response.data.clusters);
 }
