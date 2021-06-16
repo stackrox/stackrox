@@ -46,7 +46,7 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state
 		return nil, "", authproviders.CreateError("failed to parse credentials form data", err)
 	}
 	username, password := urlValues.Get("username"), urlValues.Get("password")
-	id, err := p.basicAuthMgr.IdentityForCreds(username, password, nil)
+	id, err := p.basicAuthMgr.IdentityForCreds(ctx, username, password, nil)
 	if err != nil {
 		return nil, "", authproviders.CreateError("failed to authenticate", err)
 	}

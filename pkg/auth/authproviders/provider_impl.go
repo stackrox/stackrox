@@ -22,6 +22,8 @@ var (
 	errProviderDisabled = errors.New("provider has been deleted or disabled")
 )
 
+var _ Provider = (*providerImpl)(nil)
+
 // If you add new data fields to this class, make sure you make commensurate modifications
 // to the cloneWithoutMutex and copyWithoutMutex functions below.
 type providerImpl struct {

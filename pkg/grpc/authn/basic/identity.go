@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -21,7 +22,7 @@ func IsBasicIdentity(id authn.Identity) bool {
 // Basic identity implementation.
 type identity struct {
 	username     string
-	role         *storage.Role
+	resolvedRole *permissions.ResolvedRole
 	authProvider authproviders.Provider
 }
 
@@ -39,12 +40,12 @@ func (i identity) FullName() string {
 
 func (i identity) Permissions() *storage.ResourceToAccess {
 	return &storage.ResourceToAccess{
-		ResourceToAccess: i.role.GetResourceToAccess(),
+		ResourceToAccess: i.resolvedRole.GetResourceToAccess(),
 	}
 }
 
 func (i identity) Roles() []*storage.Role {
-	return []*storage.Role{i.role}
+	return []*storage.Role{i.resolvedRole.Role}
 }
 
 func (i identity) Service() *storage.ServiceIdentity {
@@ -53,11 +54,9 @@ func (i identity) Service() *storage.ServiceIdentity {
 
 func (i identity) User() *storage.UserInfo {
 	return &storage.UserInfo{
-		Username: i.username,
-		Permissions: &storage.ResourceToAccess{
-			ResourceToAccess: i.role.GetResourceToAccess(),
-		},
-		Roles: []*storage.Role{i.role},
+		Username:    i.username,
+		Permissions: i.Permissions(),
+		Roles:       i.Roles(),
 	}
 }
 
@@ -81,7 +80,7 @@ func (i identity) AsExternalUser() *tokens.ExternalUserClaim {
 func (i identity) Attributes() map[string][]string {
 	return map[string][]string{
 		"username": {i.username},
-		"role":     {i.role.GetName()},
+		"role":     {i.resolvedRole.Role.GetName()},
 	}
 }
 

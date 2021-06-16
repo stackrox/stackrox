@@ -34,7 +34,7 @@ func parseBasicAuthToken(basicAuthToken string) (string, string, error) {
 
 // IdentityForRequest returns an identity for the given request if it contains valid basic auth credentials.
 // If non-nil, the returned identity implements `basic.Identity`.
-func (e *Extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	md := metautils.NiceMD(ri.Metadata)
 	authHeader := md.Get("Authorization")
 	if authHeader == "" {
@@ -51,7 +51,7 @@ func (e *Extractor) IdentityForRequest(_ context.Context, ri requestinfo.Request
 		return nil, err
 	}
 
-	return e.manager.IdentityForCreds(username, password, e.authProvider)
+	return e.manager.IdentityForCreds(ctx, username, password, e.authProvider)
 }
 
 // NewExtractor returns a new identity extractor for basic auth.

@@ -11,6 +11,7 @@ import (
 	roleUtils "github.com/stackrox/rox/central/role/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -29,7 +30,8 @@ func Singleton() DataStore {
 		accessScopeStorage, err := simpleAccessScopeStore.New(globaldb.GetRocksDB())
 		utils.CrashOnError(err)
 
-		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
+		sacV2Enabled := features.ScopedAccessControl.Enabled()
+		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, sacV2Enabled)
 
 		roles, permissionSets := getDefaultObjects()
 		utils.Must(upsertDefaultRoles(roleStorage, roles))

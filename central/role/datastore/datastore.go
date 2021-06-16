@@ -6,6 +6,7 @@ import (
 	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // DataStore is the datastore for roles.
@@ -28,13 +29,17 @@ type DataStore interface {
 	AddAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
 	UpdateAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
 	RemoveAccessScope(ctx context.Context, id string) error
+
+	ResolveRoles(ctx context.Context, roles []*storage.Role) ([]*permissions.ResolvedRole, error)
+	GetAndResolveRole(ctx context.Context, name string) (*permissions.ResolvedRole, error)
 }
 
 // New returns a new DataStore instance.
-func New(roleStorage roleStore.Store, permissionSetStore rocksDBStore.PermissionSetStore, accessScopeStore rocksDBStore.SimpleAccessScopeStore) DataStore {
+func New(roleStorage roleStore.Store, permissionSetStore rocksDBStore.PermissionSetStore, accessScopeStore rocksDBStore.SimpleAccessScopeStore, sacV2Enabled bool) DataStore {
 	return &dataStoreImpl{
 		roleStorage:          roleStorage,
 		permissionSetStorage: permissionSetStore,
 		accessScopeStorage:   accessScopeStore,
+		sacV2Enabled:         sacV2Enabled,
 	}
 }

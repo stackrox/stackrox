@@ -1,19 +1,20 @@
 package basic
 
 import (
+	"context"
 	"sync/atomic"
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // Manager manages basic auth user identities.
 type Manager struct {
 	hashFilePtr unsafe.Pointer
-	userRole    *storage.Role
+	mapper      permissions.RoleMapper
 }
 
 func (m *Manager) hashFile() *htpasswd.HashFile {
@@ -26,22 +27,29 @@ func (m *Manager) SetHashFile(hashFile *htpasswd.HashFile) {
 }
 
 // IdentityForCreds returns an identity for the given credentials.
-func (m *Manager) IdentityForCreds(username, password string, authProvider authproviders.Provider) (Identity, error) {
+func (m *Manager) IdentityForCreds(ctx context.Context, username, password string, authProvider authproviders.Provider) (Identity, error) {
 	if !m.hashFile().Check(username, password) {
 		return nil, errors.New("invalid username and/or password")
 	}
 
+	resolved, err := m.mapper.FromUserDescriptor(ctx, &permissions.UserDescriptor{
+		UserID:     username,
+		Attributes: map[string][]string{},
+	})
+	if err != nil {
+		panic(errors.Wrap(err, "Wrong mapper: always_admin_mapper should not return error"))
+	}
 	return identity{
 		username:     username,
-		role:         m.userRole,
+		resolvedRole: resolved[0],
 		authProvider: authProvider,
 	}, nil
 }
 
 // NewManager creates a new manager for basic authentication.
-func NewManager(hashFile *htpasswd.HashFile, userRole *storage.Role) *Manager {
+func NewManager(hashFile *htpasswd.HashFile, roleMapper permissions.RoleMapper) *Manager {
 	return &Manager{
 		hashFilePtr: unsafe.Pointer(hashFile),
-		userRole:    userRole,
+		mapper:      roleMapper,
 	}
 }

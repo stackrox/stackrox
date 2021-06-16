@@ -64,7 +64,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetAuthProvider retrieves the authProvider based on the id passed
-func (s *serviceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
+func (s *serviceImpl) GetAuthProvider(_ context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Auth Provider id is required")
 	}
@@ -76,7 +76,7 @@ func (s *serviceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthPr
 }
 
 // GetLoginAuthProviders retrieves all authProviders that matches the request filters
-func (s *serviceImpl) GetLoginAuthProviders(ctx context.Context, empty *v1.Empty) (*v1.GetLoginAuthProvidersResponse, error) {
+func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1.GetLoginAuthProvidersResponse, error) {
 	authProviders := s.registry.GetProviders(nil, nil)
 	result := make([]*v1.GetLoginAuthProvidersResponse_LoginAuthProvider, 0, len(authProviders))
 	for _, provider := range authProviders {
@@ -102,7 +102,7 @@ func (s *serviceImpl) GetLoginAuthProviders(ctx context.Context, empty *v1.Empty
 }
 
 // GetAuthProviders retrieves all authProviders that matches the request filters
-func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error) {
+func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error) {
 	var name, typ *string
 	if request.GetName() != "" {
 		name = &request.Name

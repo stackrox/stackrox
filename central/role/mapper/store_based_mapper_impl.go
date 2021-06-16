@@ -25,11 +25,15 @@ type storeBasedMapperImpl struct {
 	users          userDataStore.DataStore
 }
 
-func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]*storage.Role, error) {
+func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]*permissions.ResolvedRole, error) {
 	// Record the user we are creating a role for.
 	rm.recordUser(ctx, user)
 	// Determine the role.
-	return rm.getRoles(ctx, user)
+	roles, err := rm.getRoles(ctx, user)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get roles for user descriptor with id: %s", user.UserID)
+	}
+	return rm.roles.ResolveRoles(ctx, roles)
 }
 
 func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *permissions.UserDescriptor) {

@@ -99,10 +99,14 @@ func (e *extractor) withPermissions(token *tokens.TokenInfo, authProvider authpr
 		username:     token.ExternalUser.Email,
 		friendlyName: token.Subject,
 		fullName:     token.ExternalUser.FullName,
-		perms: &storage.ResourceToAccess{
-			ResourceToAccess: pseudoRole.Clone().GetResourceToAccess(),
+		resolvedRoles: []*permissions.ResolvedRole{
+			{
+				Role: pseudoRole,
+				PermissionSet: &storage.PermissionSet{
+					ResourceToAccess: pseudoRole.GetResourceToAccess(),
+				},
+			},
 		},
-		roles:        []*storage.Role{pseudoRole},
 		expiry:       token.Expiry(),
 		authProvider: authProvider,
 		attributes:   attributes,
@@ -128,16 +132,19 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	}
 
 	attributes := map[string][]string{"role": permissions.RoleNames(roles), "name": {token.Name}}
+	resolveRoles, err := e.roleStore.ResolveRoles(ctx, roles)
+	if err != nil {
+		return nil, err
+	}
 	id := &roleBasedIdentity{
-		uid:          fmt.Sprintf("auth-token:%s", token.ID),
-		username:     email,
-		friendlyName: token.Subject,
-		fullName:     token.Name,
-		perms:        permissions.NewUnionPermissions(roles),
-		roles:        roles,
-		expiry:       token.Expiry(),
-		attributes:   attributes,
-		authProvider: authProvider,
+		uid:           fmt.Sprintf("auth-token:%s", token.ID),
+		username:      email,
+		friendlyName:  token.Subject,
+		fullName:      token.Name,
+		resolvedRoles: resolveRoles,
+		expiry:        token.Expiry(),
+		attributes:    attributes,
+		authProvider:  authProvider,
 	}
 	if id.friendlyName == "" {
 		id.friendlyName = fmt.Sprintf("anonymous bearer token with roles %s (expires %v)", strings.Join(roleNames, ","), token.Expiry())
@@ -160,31 +167,30 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		Attributes: token.Claims.ExternalUser.Attributes,
 	}
 
-	roles, err := roleMapper.FromUserDescriptor(ctx, ud)
+	resolvedRoles, err := roleMapper.FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
 	}
-	if len(roles) == 0 {
+	if len(resolvedRoles) == 0 {
 		return nil, fmt.Errorf("external user %s has no assigned role", token.ExternalUser.UserID)
 	}
 	if err := authProvider.MarkAsActive(); err != nil {
 		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())
 	}
-	id := createRoleBasedIdentity(roles, token, authProvider)
+	id := createRoleBasedIdentity(resolvedRoles, token, authProvider)
 	return id, nil
 }
 
-func createRoleBasedIdentity(roles []*storage.Role, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
+func createRoleBasedIdentity(roles []*permissions.ResolvedRole, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
 	id := &roleBasedIdentity{
-		uid:          fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
-		username:     token.ExternalUser.Email,
-		friendlyName: token.ExternalUser.FullName,
-		fullName:     token.ExternalUser.FullName,
-		perms:        permissions.NewUnionPermissions(roles),
-		roles:        roles,
-		expiry:       token.Expiry(),
-		attributes:   token.Claims.ExternalUser.Attributes,
-		authProvider: authProvider,
+		uid:           fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
+		username:      token.ExternalUser.Email,
+		friendlyName:  token.ExternalUser.FullName,
+		fullName:      token.ExternalUser.FullName,
+		resolvedRoles: roles,
+		expiry:        token.Expiry(),
+		attributes:    token.Claims.ExternalUser.Attributes,
+		authProvider:  authProvider,
 	}
 	if id.friendlyName == "" {
 		if token.ExternalUser.Email != "" {

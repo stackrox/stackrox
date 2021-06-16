@@ -19,6 +19,8 @@ const (
 	apiToken = "api-token"
 )
 
+var _ authproviders.Provider = (*sourceImpl)(nil)
+
 type sourceImpl struct {
 	revocationLayer tokens.RevocationLayer
 }

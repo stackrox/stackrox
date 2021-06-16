@@ -3,6 +3,7 @@ package services
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.RoleServiceGrpc
 import io.stackrox.proto.api.v1.RoleServiceOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
 
 class RoleService extends BaseService {
@@ -28,7 +29,14 @@ class RoleService extends BaseService {
 
     static createRole(Role role) {
         try {
-            getRoleService().createRole(role)
+            Role r = role
+            if (role.permissionSetId == "" &&
+                    FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
+                def permissionSet = createPermissionSet(
+                        "Test Automation Permission Set for ${role.name}", role.resourceToAccess)
+                r = Role.newBuilder(role).setPermissionSetId(permissionSet.id).build()
+            }
+            getRoleService().createRole(r)
         } catch (Exception e) {
             println "Failed to create role ${role.name}: ${e}"
         }
@@ -36,9 +44,27 @@ class RoleService extends BaseService {
 
     static deleteRole(String name) {
         try {
+            if (FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
+                def role = getRole(name)
+                deletePermissionSet(role.permissionSetId)
+            }
             getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
         } catch (Exception e) {
             println "Error deleting role ${name}: ${e}"
+        }
+    }
+
+    static createPermissionSet(String name, Map<String, RoleOuterClass.Access> resourceAccess) {
+        getRoleService().postPermissionSet(RoleOuterClass.PermissionSet.newBuilder()
+                .setName(name)
+                .putAllResourceToAccess(resourceAccess).build())
+    }
+
+    static deletePermissionSet(String id) {
+        try {
+            getRoleService().deletePermissionSet(Common.ResourceByID.newBuilder().setId(id).build())
+        } catch (Exception e) {
+            println "Error deleting permission set ${id}: ${e}"
         }
     }
 

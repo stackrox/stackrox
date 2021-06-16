@@ -10,6 +10,7 @@ import (
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/central/role/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -23,6 +24,7 @@ type dataStoreImpl struct {
 	roleStorage          roleStore.Store
 	permissionSetStorage rocksDBStore.PermissionSetStore
 	accessScopeStorage   rocksDBStore.SimpleAccessScopeStore
+	sacV2Enabled         bool
 
 	lock sync.Mutex
 }
@@ -296,6 +298,59 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	}
 
 	return nil
+}
+
+func (ds *dataStoreImpl) ResolveRoles(_ context.Context, roles []*storage.Role) ([]*permissions.ResolvedRole, error) {
+	resolvedRoles := make([]*permissions.ResolvedRole, 0, len(roles))
+	for _, role := range roles {
+		if ds.sacV2Enabled {
+			// find permission set
+			permissionSet, found, err := ds.permissionSetStorage.Get(role.GetPermissionSetId())
+			if err != nil {
+				return nil, err
+			} else if !found {
+				return nil, errors.Wrapf(errorhelpers.ErrNotFound, "permission set %q for role %s", role.GetPermissionSetId(), role.GetName())
+			}
+			// find access scope
+			accessScope, _, err := ds.accessScopeStorage.Get(role.GetAccessScopeId())
+			if err != nil {
+				return nil, err
+			}
+
+			resolvedRoles = append(resolvedRoles, &permissions.ResolvedRole{
+				Role:          role,
+				PermissionSet: permissionSet,
+				AccessScope:   accessScope,
+			})
+		} else {
+			resolvedRoles = append(resolvedRoles, &permissions.ResolvedRole{
+				Role: role,
+				PermissionSet: &storage.PermissionSet{
+					ResourceToAccess: nonNilResourceToAccess(role),
+				},
+			})
+		}
+	}
+	return resolvedRoles, nil
+}
+
+func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (*permissions.ResolvedRole, error) {
+	role, err := ds.GetRole(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	resolved, err := ds.ResolveRoles(ctx, []*storage.Role{role})
+	if err != nil {
+		return nil, err
+	}
+	return resolved[0], nil
+}
+
+func nonNilResourceToAccess(role *storage.Role) map[string]storage.Access {
+	if role.GetResourceToAccess() != nil {
+		return role.GetResourceToAccess()
+	}
+	return map[string]storage.Access{}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

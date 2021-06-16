@@ -60,13 +60,17 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.roleStorage = roleStoreMocks.NewMockStore(s.mockCtrl)
 
+	s.initDataStore(false)
+}
+
+func (s *roleDataStoreTestSuite) initDataStore(sacV2Enabled bool) {
 	s.rocksie = rocksdbtest.RocksDBForT(s.T())
 	permissionSetStorage, err := permissionSetStore.New(s.rocksie)
 	s.Require().NoError(err)
 	scopeStorage, err := simpleAccessScopeStore.New(s.rocksie)
 	s.Require().NoError(err)
 
-	s.dataStore = New(s.roleStorage, permissionSetStorage, scopeStorage)
+	s.dataStore = New(s.roleStorage, permissionSetStorage, scopeStorage, sacV2Enabled)
 
 	// Insert a permission set and an access scope into the test DB.
 	s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
@@ -435,4 +439,48 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, goodScope)
 	s.NoError(err, "adding a scope with ID and name that used to exist is not an error")
+}
+
+func (s *roleDataStoreTestSuite) TestResolveRoles() {
+	permissionSetID := utils.GeneratePermissionSetID()
+	permissionSet := getValidPermissionSet(permissionSetID, "meh")
+	resourceToAccess := map[string]storage.Access{
+		"Image": storage.Access_READ_WRITE_ACCESS,
+	}
+	legacyRole := &storage.Role{
+		Name:             "legacy",
+		ResourceToAccess: resourceToAccess,
+	}
+	regularRole := &storage.Role{
+		Name:            "regular",
+		PermissionSetId: permissionSetID,
+	}
+
+	s.roleStorage.EXPECT().AddRole(gomock.Any()).Times(2)
+	err := s.dataStore.AddRole(s.hasWriteCtx, regularRole)
+	s.NoError(err)
+	err = s.dataStore.AddRole(s.hasWriteCtx, legacyRole)
+	s.NoError(err)
+
+	// when SAC is enabled we work with permission sets
+	s.initDataStore(true)
+	// if there is no permission set with this id, return error
+	_, err = s.dataStore.ResolveRoles(s.hasNoneCtx, []*storage.Role{regularRole})
+	s.Error(err)
+
+	// if there is permission set with this id, return it in resolved role
+	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, permissionSet)
+	s.NoError(err)
+	resolvedRoles, err := s.dataStore.ResolveRoles(s.hasNoneCtx, []*storage.Role{regularRole})
+	s.NoError(err)
+	s.Len(resolvedRoles, 1)
+	s.Equal(permissionSet, resolvedRoles[0].PermissionSet)
+
+	// when SAC is disabled
+	s.initDataStore(false)
+	// create fake permission set for legacy role
+	resolvedRoles, err = s.dataStore.ResolveRoles(s.hasNoneCtx, []*storage.Role{legacyRole})
+	s.NoError(err)
+	s.Len(resolvedRoles, 1)
+	s.Equal(resourceToAccess, resolvedRoles[0].GetResourceToAccess())
 }

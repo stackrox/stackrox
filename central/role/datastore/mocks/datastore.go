@@ -8,6 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	permissions "github.com/stackrox/rox/pkg/auth/permissions"
 	reflect "reflect"
 )
 
@@ -250,4 +251,34 @@ func (m *MockDataStore) RemoveAccessScope(ctx context.Context, id string) error 
 func (mr *MockDataStoreMockRecorder) RemoveAccessScope(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAccessScope", reflect.TypeOf((*MockDataStore)(nil).RemoveAccessScope), ctx, id)
+}
+
+// ResolveRoles mocks base method
+func (m *MockDataStore) ResolveRoles(ctx context.Context, roles []*storage.Role) ([]*permissions.ResolvedRole, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveRoles", ctx, roles)
+	ret0, _ := ret[0].([]*permissions.ResolvedRole)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveRoles indicates an expected call of ResolveRoles
+func (mr *MockDataStoreMockRecorder) ResolveRoles(ctx, roles interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveRoles", reflect.TypeOf((*MockDataStore)(nil).ResolveRoles), ctx, roles)
+}
+
+// GetAndResolveRole mocks base method
+func (m *MockDataStore) GetAndResolveRole(ctx context.Context, name string) (*permissions.ResolvedRole, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAndResolveRole", ctx, name)
+	ret0, _ := ret[0].(*permissions.ResolvedRole)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAndResolveRole indicates an expected call of GetAndResolveRole
+func (mr *MockDataStoreMockRecorder) GetAndResolveRole(ctx, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAndResolveRole", reflect.TypeOf((*MockDataStore)(nil).GetAndResolveRole), ctx, name)
 }

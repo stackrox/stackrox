@@ -40,34 +40,34 @@ func NewRoleWithPermissions(name string, permissions ...*v1.Permission) *storage
 }
 
 // NewUnionPermissions returns maximum of the permissions of all input roles.
-func NewUnionPermissions(roles []*storage.Role) *storage.ResourceToAccess {
-	if len(roles) == 0 {
+func NewUnionPermissions(resolvedRoles []*ResolvedRole) *storage.ResourceToAccess {
+	if len(resolvedRoles) == 0 {
 		return nil
 	}
-	if len(roles) == 1 {
+	if len(resolvedRoles) == 1 {
 		return &storage.ResourceToAccess{
-			ResourceToAccess: roles[0].GetResourceToAccess(),
+			ResourceToAccess: resolvedRoles[0].GetResourceToAccess(),
 		}
 	}
 
 	// Combine permissions into a map by resource, using the maximum access level for any
 	// resource with more than one permission set.
-	resourceToAccess := make(map[string]storage.Access)
-	for _, role := range roles {
-		for resource, access := range role.GetResourceToAccess() {
-			if acc, exists := resourceToAccess[resource]; exists {
-				resourceToAccess[resource] = maxAccess(acc, access)
+	result := make(map[string]storage.Access)
+	for _, resolvedRole := range resolvedRoles {
+		for resource, access := range resolvedRole.GetResourceToAccess() {
+			if acc, exists := result[resource]; exists {
+				result[resource] = maxAccess(acc, access)
 			} else {
-				resourceToAccess[resource] = access
+				result[resource] = access
 			}
 		}
 	}
-	if len(resourceToAccess) == 0 {
-		resourceToAccess = nil
+	if len(result) == 0 {
+		result = nil
 	}
 
 	return &storage.ResourceToAccess{
-		ResourceToAccess: resourceToAccess,
+		ResourceToAccess: result,
 	}
 }
 
@@ -109,4 +109,13 @@ func GetRolesFromStore(ctx context.Context, roleStore RoleStore, roleNames []str
 		roles = append(roles, role)
 	}
 	return roles, missingIndices, nil
+}
+
+// ExtractRoles extracts *storage.Role instances from list of resolved roles.
+func ExtractRoles(resolvedRoles []*ResolvedRole) []*storage.Role {
+	result := make([]*storage.Role, 0, len(resolvedRoles))
+	for _, resolvedRole := range resolvedRoles {
+		result = append(result, resolvedRole.Role)
+	}
+	return result
 }

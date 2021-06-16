@@ -39,7 +39,7 @@ func CreateManager(store roleDatastore.DataStore) (*basicAuthn.Manager, error) {
 		return nil, errors.Wrap(err, "Could not look up admin role")
 	}
 
-	mgr := basicAuthn.NewManager(nil, adminRole)
+	mgr := basicAuthn.NewManager(nil, mapper.AlwaysAdminRoleMapper())
 
 	wh := &watchHandler{
 		manager: mgr,
