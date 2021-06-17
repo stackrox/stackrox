@@ -13,6 +13,8 @@ const upgradesUrl = '/v1/sensorupgrades';
 const autoUpgradeConfigUrl = `${upgradesUrl}/config`;
 const manualUpgradeUrl = `${upgradesUrl}/cluster`;
 
+export type ClusterLabels = Record<string, string>;
+
 export type Cluster = {
     id: string;
     name: string;

@@ -193,6 +193,15 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         });
     }
 
+    /*
+     * Adapt preceding code for labels whose value is not from an input element.
+     */
+    function handleChangeLabels(labels) {
+        setSelectedCluster((oldClusterSettings) => {
+            return { ...oldClusterSettings, labels };
+        });
+    }
+
     function onNext() {
         if (wizardStep === wizardSteps.FORM) {
             setMessageState(null);
@@ -326,6 +335,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             centralVersion={metadata.version}
                             selectedCluster={selectedCluster}
                             handleChange={onChange}
+                            handleChangeLabels={handleChangeLabels}
                             isLoading={loadingCounter > 0}
                         />
                     )}

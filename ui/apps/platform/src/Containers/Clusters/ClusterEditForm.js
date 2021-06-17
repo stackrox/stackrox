@@ -2,11 +2,27 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import Loader from 'Components/Loader';
+import { labelClassName } from 'constants/form.constants';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
+
 import ClusterSummary from './Components/ClusterSummary';
 import StaticConfigurationSection from './StaticConfigurationSection';
 import DynamicConfigurationSection from './DynamicConfigurationSection';
+import ClusterLabelsTable from './ClusterLabelsTable';
 
-function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleChange, isLoading }) {
+function ClusterEditForm({
+    centralEnv,
+    centralVersion,
+    selectedCluster,
+    handleChange,
+    handleChangeLabels,
+    isLoading,
+}) {
+    const hasScopedAccessControl = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_SCOPED_ACCESS_CONTROL
+    );
+
     if (isLoading) {
         return <Loader />;
     }
@@ -32,11 +48,25 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                     handleChange={handleChange}
                     selectedCluster={selectedCluster}
                 />
-                <DynamicConfigurationSection
-                    dynamicConfig={selectedCluster.dynamicConfig}
-                    helmConfig={selectedCluster.helmConfig}
-                    handleChange={handleChange}
-                />
+                <div>
+                    <DynamicConfigurationSection
+                        dynamicConfig={selectedCluster.dynamicConfig}
+                        helmConfig={selectedCluster.helmConfig}
+                        handleChange={handleChange}
+                    />
+                    {hasScopedAccessControl && (
+                        <div className="pt-4">
+                            <label htmlFor="labels" className={labelClassName}>
+                                Cluster labels
+                            </label>
+                            <ClusterLabelsTable
+                                labels={selectedCluster?.labels ?? {}}
+                                handleChangeLabels={handleChangeLabels}
+                                hasAction
+                            />
+                        </div>
+                    )}
+                </div>
             </form>
         </div>
     );
@@ -115,8 +145,10 @@ ClusterEditForm.propTypes = {
             lastContact: PropTypes.string, // ISO 8601
             healthInfoComplete: PropTypes.bool,
         }),
+        labels: PropTypes.shape({}),
     }).isRequired,
     handleChange: PropTypes.func.isRequired,
+    handleChangeLabels: PropTypes.func.isRequired,
     isLoading: PropTypes.bool.isRequired,
 };
 
