@@ -53,7 +53,7 @@ class SACTest extends BaseSpecification {
             "stackrox/monitoring -> INTERNET",
     ] as Set
 
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 450 : 60
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 600 : 60
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)

@@ -1676,6 +1676,7 @@ commands:
       - *restoreGradle
       - run:
           name: QA Automation Platform Part 1
+          no_output_timeout: 15m
           command: |
             export CLUSTER=OPENSHIFT
             export API_HOSTNAME=localhost
