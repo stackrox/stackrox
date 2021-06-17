@@ -7,8 +7,10 @@ import (
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/sac/authorizer"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	sacClient "github.com/stackrox/rox/pkg/sac/client"
@@ -49,7 +51,11 @@ func newEnricher() *Enricher {
 func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context, error) {
 	client := se.clientManager.GetClient()
 	if client == nil {
-		return ctx, nil
+		if !features.ScopedAccessControl.Enabled() {
+			return ctx, nil
+		}
+		client = authorizer.Singleton()
+		ctx = sac.SetContextSACV2Enabled(ctx)
 	}
 	ctx = sac.SetContextSACEnabled(ctx)
 
