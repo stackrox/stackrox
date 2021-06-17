@@ -51,7 +51,7 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	chain := requestinfo.ExtractCertInfoChains(verifiedChains)
 	if e.validator != nil {
 		if err := e.validator.ValidateClientCertificate(ctx, chain[0]); err != nil {
-			log.Errorf("init bundle cert is revoked: %q", ri.VerifiedChains[0][0].Subject.Organization)
+			log.Errorf("Validating client certificate from service cert token: %v", err)
 			return nil, err
 		}
 	}
