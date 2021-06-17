@@ -1,29 +1,57 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
-import { reduxForm, formValueSelector, change } from 'redux-form';
+import { createStructuredSelector } from 'reselect';
+import { reduxForm, formValueSelector, change, FieldArray } from 'redux-form';
 
 import { selectors } from 'reducers';
-import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
-import { getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
+import { lifecycleStageLabels, severityLabels } from 'messages/common';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import FormField from 'Components/FormField';
-import Field from 'Containers/Policies/Wizard/Form/Field';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
+import ReduxTextField from 'Components/forms/ReduxTextField';
+import ReduxSelectField from 'Components/forms/ReduxSelectField';
+import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
+import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
+import ReduxMultiSelectCreatableField from 'Components/forms/ReduxMultiSelectCreatableField';
+import RestrictToScope from './RestrictToScope';
+import ExcludedScope from './ExcludedScope';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
 function PolicyDetailsForm({
-    formFields,
     includesRuntimeLifecycleStage,
     includesAuditLogEventSource,
     hasExcludedImageNames,
     changeForm,
-    featureFlags,
+    notifiers,
+    images,
+    policyCategories,
 }) {
-    const auditLogEnabled = isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
-    );
+    const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
+    useEffect(() => {
+        if (auditLogEnabled) {
+            // clear Event Source if Runtime lifecycle stage is not included
+            if (!includesRuntimeLifecycleStage) {
+                changeForm('eventSource', 'NOT_APPLICABLE');
+            }
+            // clear Excluded Images if Audit Log Event Source is selected
+            if (
+                includesRuntimeLifecycleStage &&
+                includesAuditLogEventSource &&
+                hasExcludedImageNames
+            ) {
+                changeForm(clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES, []);
+            }
+        }
+    }, [
+        auditLogEnabled,
+        includesAuditLogEventSource,
+        includesRuntimeLifecycleStage,
+        hasExcludedImageNames,
+        changeForm,
+    ]);
+
     return (
         <form className="flex flex-col w-full overflow-auto pb-5">
             <div className="px-3 pt-5" data-testid="policyStatusField">
@@ -42,50 +70,101 @@ function PolicyDetailsForm({
                         Policy Summary
                     </div>
                     <div className="h-full p-3">
-                        {formFields.map((field) => {
-                            // TODO: refactor PolicyDetailsFormFields to be iterative to avoid injecting logic in loops
-                            const isEventSource = field.jsonpath === 'eventSource';
-                            const isExcludedImages =
-                                field.jsonpath ===
-                                clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES;
-                            if (auditLogEnabled) {
-                                // clear Event Source if Runtime lifecycle stage is not included
-                                if (!includesRuntimeLifecycleStage && isEventSource) {
-                                    changeForm('eventSource', undefined);
-                                }
-                                // clear Excluded Images if Audit Log Event Source is selected
-                                if (
-                                    includesRuntimeLifecycleStage &&
-                                    includesAuditLogEventSource &&
-                                    hasExcludedImageNames &&
-                                    isExcludedImages
-                                ) {
-                                    changeForm(
-                                        clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES,
-                                        []
-                                    );
-                                }
-                            }
-                            return (
-                                <FormField
-                                    key={field.jsonpath || field.name}
-                                    label={field.label}
-                                    name={field.jsonpath || field.name}
-                                    required={
-                                        field.required ||
-                                        (isEventSource && includesRuntimeLifecycleStage)
-                                    }
-                                >
-                                    <Field
-                                        field={field}
-                                        readOnly={
-                                            (isEventSource && !includesRuntimeLifecycleStage) ||
-                                            (isExcludedImages && includesAuditLogEventSource)
-                                        }
-                                    />
-                                </FormField>
-                            );
-                        })}
+                        <FormField label="Name" required>
+                            <ReduxTextField name="name" />
+                        </FormField>
+                        <FormField label="Severity" required>
+                            <ReduxSelectField
+                                name="severity"
+                                options={Object.keys(severityLabels).map((key) => ({
+                                    label: severityLabels[key],
+                                    value: key,
+                                }))}
+                                placeholder="Select a severity level"
+                            />
+                        </FormField>
+                        <FormField label="Lifecycle Stages" required>
+                            <ReduxMultiSelectField
+                                name="lifecycleStages"
+                                options={Object.keys(lifecycleStageLabels).map((key) => ({
+                                    label: lifecycleStageLabels[key],
+                                    value: key,
+                                }))}
+                            />
+                        </FormField>
+                        {auditLogEnabled && (
+                            <FormField
+                                label="Event Sources"
+                                required={includesRuntimeLifecycleStage}
+                            >
+                                <ReduxSelectField
+                                    name="eventSource"
+                                    options={[
+                                        {
+                                            label: 'Deployment',
+                                            value: 'DEPLOYMENT',
+                                        },
+                                        { label: 'Audit Log', value: 'AUDIT_LOG' },
+                                    ]}
+                                    disabled={!includesRuntimeLifecycleStage}
+                                />
+                            </FormField>
+                        )}
+                        <FormField label="Description">
+                            <ReduxTextAreaField
+                                name="description"
+                                placeholder="What does this policy do?"
+                            />
+                        </FormField>
+                        <FormField label="Rationale">
+                            <ReduxTextAreaField
+                                name="rationale"
+                                placeholder="Why does this policy exist?"
+                            />
+                        </FormField>
+                        <FormField label="Remediation">
+                            <ReduxTextAreaField
+                                name="remediation"
+                                placeholder="What can an operator do to resolve any violations?"
+                            />
+                        </FormField>
+                        <FormField label="Categories" required>
+                            <ReduxMultiSelectCreatableField
+                                name="categories"
+                                options={policyCategories.map((category) => ({
+                                    label: category,
+                                    value: category,
+                                }))}
+                            />
+                        </FormField>
+                        <FormField label="Notifications">
+                            <ReduxMultiSelectField
+                                name="notifiers"
+                                options={notifiers.map((notifier) => ({
+                                    label: notifier.name,
+                                    value: notifier.id,
+                                }))}
+                            />
+                        </FormField>
+                        <FormField label="Restrict to Scope">
+                            <FieldArray name="scope" component={RestrictToScope} />
+                        </FormField>
+                        <FormField label="Exclude by Scope">
+                            <FieldArray
+                                name={clientOnlyExclusionFieldNames.EXCLUDED_DEPLOYMENT_SCOPES}
+                                component={ExcludedScope}
+                            />
+                        </FormField>
+                        <FormField label="Excluded Images (Build Lifecycle only)">
+                            <ReduxMultiSelectCreatableField
+                                name={clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES}
+                                options={images.map((image) => ({
+                                    label: image.name,
+                                    value: image.name,
+                                }))}
+                                disabled={auditLogEnabled && includesAuditLogEventSource}
+                            />
+                        </FormField>
                     </div>
                 </div>
             </div>
@@ -94,22 +173,20 @@ function PolicyDetailsForm({
 }
 
 PolicyDetailsForm.propTypes = {
-    formFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     includesRuntimeLifecycleStage: PropTypes.bool.isRequired,
     includesAuditLogEventSource: PropTypes.bool.isRequired,
     hasExcludedImageNames: PropTypes.bool.isRequired,
     changeForm: PropTypes.func.isRequired,
-    featureFlags: PropTypes.arrayOf(PropTypes.shape),
+    policyCategories: PropTypes.arrayOf(PropTypes.string),
+    images: PropTypes.arrayOf(PropTypes.shape({})),
+    notifiers: PropTypes.arrayOf(PropTypes.shape({})),
 };
 
 PolicyDetailsForm.defaultProps = {
-    featureFlags: [],
+    policyCategories: [],
+    images: [],
+    notifiers: [],
 };
-
-const formFields = (state) =>
-    formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
-
-const getFormData = createSelector([formFields], (formData) => formData);
 
 const mapStateToProps = createStructuredSelector({
     includesRuntimeLifecycleStage: (state) => {
@@ -128,8 +205,9 @@ const mapStateToProps = createStructuredSelector({
         );
         return excludedImageNamesValue.length > 0;
     },
-    formData: getFormData,
-    featureFlags: selectors.getFeatureFlags,
+    notifiers: selectors.getNotifiers,
+    images: selectors.getImages,
+    policyCategories: selectors.getPolicyCategories,
 });
 
 const mapDispatchToProps = (dispatch) => ({

@@ -1,6 +1,6 @@
 import { keyBy } from 'lodash';
 
-import { policyDetails, policyConfiguration } from 'Containers/Policies/Wizard/Form/descriptors';
+import { policyConfiguration } from 'Containers/Policies/Wizard/Form/descriptors';
 import { removeEmptyPolicyFields } from 'utils/policyUtils';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
@@ -218,17 +218,6 @@ export function formatPolicyFields(policy) {
     serverPolicy = postFormatExclusionField(serverPolicy);
     serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
-}
-
-export function mapDescriptorToKey(descriptor) {
-    return descriptor.map((obj) => obj.jsonpath);
-}
-
-export function getPolicyFormDataKeys() {
-    const policyDetailsKeys = mapDescriptorToKey(policyDetails.descriptor);
-    const policyConfigurationKeys = mapDescriptorToKey(policyConfiguration.descriptor);
-    const policyStatusKey = 'disabled';
-    return [...policyDetailsKeys, ...policyConfigurationKeys, policyStatusKey];
 }
 
 export function getPolicyCriteriaFieldKeys(fields) {

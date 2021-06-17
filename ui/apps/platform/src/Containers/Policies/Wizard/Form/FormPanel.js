@@ -7,7 +7,7 @@ import FormButtons from 'Containers/Policies/Wizard/Form/FormButtons';
 import PolicyDetailsForm from 'Containers/Policies/Wizard/Form/PolicyDetailsForm';
 import FormMessages from './FormMessages';
 
-function FormPanel({ header, policyDetailsFormFields, onClose, initialValues }) {
+function FormPanel({ header, onClose, initialValues }) {
     return (
         <PanelNew test id="side-panel">
             <PanelHead>
@@ -19,10 +19,7 @@ function FormPanel({ header, policyDetailsFormFields, onClose, initialValues }) 
             </PanelHead>
             <PanelBody>
                 <FormMessages />
-                <PolicyDetailsForm
-                    initialValues={initialValues}
-                    formFields={policyDetailsFormFields}
-                />
+                <PolicyDetailsForm initialValues={initialValues} />
             </PanelBody>
         </PanelNew>
     );
@@ -30,7 +27,6 @@ function FormPanel({ header, policyDetailsFormFields, onClose, initialValues }) 
 
 FormPanel.propTypes = {
     header: PropTypes.string,
-    policyDetailsFormFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     onClose: PropTypes.func.isRequired,
     initialValues: PropTypes.shape({}).isRequired,
 };

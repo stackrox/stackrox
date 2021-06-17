@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
+import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { actions as formMessageActions } from 'reducers/formMessages';
@@ -13,8 +13,6 @@ import { actions as wizardActions } from 'reducers/policies/wizard';
 import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import WizardPanel from 'Containers/Policies/Wizard/WizardPanel';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
-import { getPolicyDetails } from 'Containers/Policies/Wizard/Form/descriptors';
-import { clientOnlyExclusionFieldNames } from 'Containers/Policies/Wizard/Form/whitelistFieldNames';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 
 // Wizard is the side panel that pops up when you click on a row in the table.
@@ -26,7 +24,6 @@ function Wizard({
     history,
     setWizardPolicy,
     selectPolicyId,
-    policyDetailsFormFields,
     setWizardStage,
 }) {
     const onClose = useCallback(() => {
@@ -48,11 +45,7 @@ function Wizard({
 
     return (
         <SidePanelAdjacentArea width="1/2">
-            <WizardPanel
-                initialValues={initialValues}
-                policyDetailsFormFields={policyDetailsFormFields}
-                onClose={onClose}
-            />
+            <WizardPanel initialValues={initialValues} onClose={onClose} />
         </SidePanelAdjacentArea>
     );
 }
@@ -67,7 +60,6 @@ Wizard.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
     setWizardPolicy: PropTypes.func.isRequired,
     selectPolicyId: PropTypes.func.isRequired,
-    policyDetailsFormFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     setWizardStage: PropTypes.func.isRequired,
 };
 
@@ -75,52 +67,9 @@ Wizard.defaultProps = {
     wizardPolicy: null,
 };
 
-const getPolicyDetailsFormFields = createSelector(
-    [
-        selectors.getNotifiers,
-        selectors.getImages,
-        selectors.getPolicyCategories,
-        selectors.getFeatureFlags,
-    ],
-    (notifiers, images, policyCategories, featureFlags) => {
-        const policyDetails = getPolicyDetails(featureFlags);
-        const { descriptor } = policyDetails;
-        const policyDetailsFormFields = descriptor.map((field) => {
-            const newField = { ...field };
-            let { options } = newField;
-            switch (field.jsonpath) {
-                case 'categories':
-                    options = policyCategories.map((category) => ({
-                        label: category,
-                        value: category,
-                    }));
-                    break;
-                case clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES:
-                    options = images.map((image) => ({
-                        label: image.name,
-                        value: image.name,
-                    }));
-                    break;
-                case 'notifiers':
-                    options = notifiers.map((notifier) => ({
-                        label: notifier.name,
-                        value: notifier.id,
-                    }));
-                    break;
-                default:
-                    break;
-            }
-            newField.options = options;
-            return newField;
-        });
-        return policyDetailsFormFields;
-    }
-);
-
 const mapStateToProps = createStructuredSelector({
     wizardPolicy: selectors.getWizardPolicy,
     wizardOpen: selectors.getWizardOpen,
-    policyDetailsFormFields: getPolicyDetailsFormFields,
 });
 
 const mapDispatchToProps = {

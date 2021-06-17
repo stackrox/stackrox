@@ -14,14 +14,7 @@ import FormPanel from 'Containers/Policies/Wizard/Form/FormPanel';
 import CriteriaFormPanel from 'Containers/Policies/Wizard/Form/BPL/CriteriaFormPanel';
 
 // Panel is the contents of the wizard.
-function Panel({
-    isFetchingPolicy,
-    wizardPolicy,
-    wizardStage,
-    initialValues,
-    policyDetailsFormFields,
-    onClose,
-}) {
+function Panel({ isFetchingPolicy, wizardPolicy, wizardStage, initialValues, onClose }) {
     if (isFetchingPolicy || wizardPolicy == null) {
         return <Loader />;
     }
@@ -29,14 +22,7 @@ function Panel({
 
     switch (wizardStage) {
         case wizardStages.edit:
-            return (
-                <FormPanel
-                    header={header}
-                    onClose={onClose}
-                    initialValues={initialValues}
-                    policyDetailsFormFields={policyDetailsFormFields}
-                />
-            );
+            return <FormPanel header={header} onClose={onClose} initialValues={initialValues} />;
         case wizardStages.editBPL:
         case wizardStages.prepreview:
             return <CriteriaFormPanel header={header} onClose={onClose} />;
@@ -57,7 +43,6 @@ Panel.propTypes = {
     }),
     wizardStage: PropTypes.string.isRequired,
     initialValues: PropTypes.shape({}),
-    policyDetailsFormFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     onClose: PropTypes.func.isRequired,
 };
 
