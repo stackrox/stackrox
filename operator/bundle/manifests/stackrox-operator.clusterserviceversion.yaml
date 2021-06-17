@@ -205,7 +205,7 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - apps
+          - ""
           resources:
           - secrets
           verbs:
