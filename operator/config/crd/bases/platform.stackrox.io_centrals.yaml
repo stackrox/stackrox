@@ -52,10 +52,6 @@ spec:
                           TODO: Add other useful fields. apiVersion, kind, uid?'
                         type: string
                     type: object
-                  crypto:
-                    description: CentralCryptoSpec defines custom crypto-related settings
-                      for central.
-                    type: object
                   customize:
                     description: Customizations to apply on this deployment.
                     properties:
@@ -475,15 +471,6 @@ spec:
                       - name
                       type: object
                     type: array
-                  caSecret:
-                    description: LocalObjectReference contains enough information
-                      to let you locate the referenced object inside the same namespace.
-                    properties:
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
-                    type: object
                 type: object
             type: object
           status:

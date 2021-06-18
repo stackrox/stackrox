@@ -68,7 +68,6 @@ type CentralComponentSpec struct {
 	common.DeploymentSpec `json:",inline"`
 	TelemetryPolicy       *TelemetryPolicy     `json:"telemetryPolicy,omitempty"`
 	Endpoint              *CentralEndpointSpec `json:"endpoint,omitempty"`
-	Crypto                *CentralCryptoSpec   `json:"crypto,omitempty"`
 
 	// Implementation note: this is distinct from the secret that contains the htpasswd-encoded password mounted in central.
 	// TODO(ROX-7242): expose the secret name unconditionally
@@ -98,26 +97,6 @@ type CentralEndpointSpec struct {
 	// TODO(ROX-7147): design this
 	// should this be an opaque YAML like in helm or structured data that would let us configure
 	// network policy as well? I.e. should this be merged with Exposure?
-}
-
-// CentralCryptoSpec defines custom crypto-related settings for central.
-type CentralCryptoSpec struct {
-	// TODO(ROX-7148): design this
-	// this should configure the following helm values:
-	// - central.jswSigner
-	// - central.serviceTLS (potentially; see DeploymentSpec.ServiceTLS)
-	// - central.defaultTLS
-	// - ca (potentially, see below)
-
-	// AFAICT the helm chart puts them all (including stuff from common.TLSConfig.CASecret) into a single
-	// secret resource for consumption by central. For the operator we could:
-	// - allow the to specify individual secret resources, consumed by
-	//   central directly (best UX, but would likely require app code changes), or
-	// - allow the to specify individual secret resources, consumed only by
-	//   the operator to assemble into a single secret in turn read by central
-	//   (no central changes but needs some code in operator), or
-	// - allow user to specify a single secret in an all-or-nothing manner,
-	//   which would be directly read by unmodified central (worst UX, but least dev effort)
 }
 
 // Persistence defines persistence settings for central.
@@ -176,6 +155,14 @@ type ScannerComponentSpec struct {
 	Logging          *ScannerLogging         `json:"logging,omitempty"`
 	Scanner          *common.DeploymentSpec  `json:"scanner,omitempty"`
 	ScannerDB        *common.DeploymentSpec  `json:"scannerDB,omitempty"`
+}
+
+// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
+func (s *ScannerComponentSpec) IsEnabled() bool {
+	if s == nil || s.ScannerComponent == nil {
+		return true // enabled by default
+	}
+	return *s.ScannerComponent == ScannerComponentEnabled
 }
 
 // ScannerComponentPolicy is a type for values of spec.scannerSpec.scannerComponent.
@@ -262,3 +249,8 @@ type CentralList struct {
 func init() {
 	SchemeBuilder.Register(&Central{}, &CentralList{})
 }
+
+var (
+	// CentralGVK is the GVK for the Central type.
+	CentralGVK = GroupVersion.WithKind("Central")
+)

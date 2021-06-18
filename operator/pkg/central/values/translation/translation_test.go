@@ -79,7 +79,6 @@ func TestTranslate(t *testing.T) {
 							ProxyConfigSecret:  &corev1.LocalObjectReference{Name: "proxy-config-secret"},
 						},
 						TLS: &common.TLSConfig{
-							CASecret: &corev1.LocalObjectReference{Name: "ca-secret"},
 							AdditionalCAs: []common.AdditionalCA{
 								{Name: "ca1-name", Content: "ca1-content"},
 								{Name: "ca2-name", Content: "ca2-content"},
@@ -132,9 +131,6 @@ func TestTranslate(t *testing.T) {
 							TelemetryPolicy: &telemetryPolicy,
 							Endpoint:        &v1alpha1.CentralEndpointSpec{
 								// TODO(ROX-7147): design this
-							},
-							Crypto: &v1alpha1.CentralCryptoSpec{
-								// TODO(ROX-7148): design this
 							},
 							AdminPasswordSecret: &corev1.LocalObjectReference{Name: "admin-password-secret"},
 							Persistence: &v1alpha1.Persistence{

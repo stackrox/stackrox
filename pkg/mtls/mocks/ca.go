@@ -77,6 +77,20 @@ func (mr *MockCAMockRecorder) Certificate() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Certificate", reflect.TypeOf((*MockCA)(nil).Certificate))
 }
 
+// CheckProperties mocks base method
+func (m *MockCA) CheckProperties() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckProperties")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckProperties indicates an expected call of CheckProperties
+func (mr *MockCAMockRecorder) CheckProperties() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckProperties", reflect.TypeOf((*MockCA)(nil).CheckProperties))
+}
+
 // IssueCertForSubject mocks base method
 func (m *MockCA) IssueCertForSubject(arg0 mtls.Subject) (*mtls.IssuedCert, error) {
 	m.ctrl.T.Helper()
@@ -118,20 +132,6 @@ func (m *MockCA) PrivateKey() crypto.PrivateKey {
 func (mr *MockCAMockRecorder) PrivateKey() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrivateKey", reflect.TypeOf((*MockCA)(nil).PrivateKey))
-}
-
-// Validate mocks base method
-func (m *MockCA) Validate() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Validate")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Validate indicates an expected call of Validate
-func (mr *MockCAMockRecorder) Validate() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockCA)(nil).Validate))
 }
 
 // ValidateAndExtractSubject mocks base method

@@ -27,7 +27,7 @@ func LoadCAFromFileMap(fileMap map[string][]byte) (mtls.CA, error) {
 	if len(caKeyPEM) == 0 {
 		return nil, errNoCAKey
 	}
-	return mtls.LoadCA(caCertPEM, caKeyPEM)
+	return mtls.LoadCAForSigning(caCertPEM, caKeyPEM)
 }
 
 // AddCAToFileMap adds the CA cert and key to the given file map
@@ -73,5 +73,5 @@ func GenerateCA() (mtls.CA, error) {
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "could not generate keypair")
 	}
-	return mtls.LoadCA(caCert, caKey)
+	return mtls.LoadCAForSigning(caCert, caKey)
 }

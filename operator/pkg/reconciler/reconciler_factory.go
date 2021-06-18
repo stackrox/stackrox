@@ -11,19 +11,22 @@ import (
 )
 
 // SetupReconcilerWithManager creates and registers a new helm reconciler to the given controller manager.
-func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix string, translator values.Translator) error {
+func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix string, translator values.Translator, extraOpts ...reconciler.Option) error {
 	chart, err := image.GetDefaultImage().LoadChart(chartPrefix, charts.RHACSMetaValues())
 	if err != nil {
 		return err
 	}
 
-	r, err := reconciler.New(
+	reconcilerOpts := []reconciler.Option{
 		reconciler.WithChart(*chart),
 		reconciler.WithGroupVersionKind(gvk),
 		reconciler.WithValueTranslator(translator),
 		//TODO(ROX-7362): re-evaluate enabling depended watches
 		reconciler.SkipDependentWatches(true),
-	)
+	}
+	reconcilerOpts = append(reconcilerOpts, extraOpts...)
+
+	r, err := reconciler.New(reconcilerOpts...)
 	if err != nil {
 		return errors.Wrapf(err, "unable to create %s reconciler", gvk)
 	}

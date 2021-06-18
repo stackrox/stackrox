@@ -86,7 +86,7 @@ func restoreCA(backupBundle string) (mtls.CA, error) {
 		return nil, err
 	}
 
-	return mtls.LoadCA(caCert, caKey)
+	return mtls.LoadCAForSigning(caCert, caKey)
 }
 
 func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {

@@ -34,6 +34,7 @@ require (
 	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/godbus/dbus/v5 v5.0.3
 	github.com/gofrs/uuid v4.0.0+incompatible
@@ -148,7 +149,7 @@ replace (
 	// Something pulls in an older version with uppercase OpenAPIv2 package version
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.3
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5
-	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20210608113616-7710c0ba33cf
+	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20210615101655-d81ccf4c2405
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9

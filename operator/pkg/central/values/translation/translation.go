@@ -118,7 +118,6 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	}
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
-	// TODO(ROX-7148): design CentralCryptoSpec, see central_types.go
 
 	if c.AdminPasswordSecret != nil {
 		cv.AddChild("adminPassword", translation.NewBuilderFromSecret(ctx, clientSet, namespace, c.AdminPasswordSecret, map[string]string{"value": "value"}, "spec.central.adminPasswordSecret"))
@@ -225,7 +224,6 @@ func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	return &sv
 }
 
-// TODO(ROX-7148): support setting ca.cert and ca.key
 func getTLSValues(tls central.CentralSpec) *translation.ValuesBuilder {
 	if tls.TLS != nil {
 		return translation.AddAdditionalCAs(tls.TLS.AdditionalCAs)

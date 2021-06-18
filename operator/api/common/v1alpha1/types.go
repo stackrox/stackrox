@@ -111,6 +111,5 @@ type AdditionalCA struct {
 
 // TLSConfig defines common TLS-related settings for all components.
 type TLSConfig struct {
-	CASecret      *corev1.LocalObjectReference `json:"caSecret,omitempty"` // empty means: please autogenerate
-	AdditionalCAs []AdditionalCA               `json:"additionalCAs,omitempty"`
+	AdditionalCAs []AdditionalCA `json:"additionalCAs,omitempty"`
 }
