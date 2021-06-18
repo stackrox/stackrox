@@ -3082,9 +3082,10 @@ jobs:
     executor: custom
     steps:
       - checkout
-      - check-label-exists-or-skip:
+      - check-master-or-tag-or-label:
           label: ci-openshift-4-tests
-          run-on-master: false
+          run-on-master: true
+          run-on-tags: true
 
       - setup_remote_docker
 
@@ -4642,7 +4643,7 @@ jobs:
           determine-whether-to-run:
             - check-master-or-tag-or-label:
                 label: ci-openshift-4-tests
-                run-on-master: false
+                run-on-master: true
                 run-on-tags: true
           use-websocket: true
           is-gke-cluster: false
