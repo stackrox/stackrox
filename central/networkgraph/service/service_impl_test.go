@@ -20,7 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
-	"github.com/stackrox/rox/pkg/networkgraph/test"
+	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -236,11 +236,11 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	es4ID, _ := externalsrcs.NewClusterScopedID("mycluster", "10.10.10.10/8")
 	es5ID, _ := externalsrcs.NewClusterScopedID("mycluster", "36.188.144.0/30")
 
-	es1a := test.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false)
-	es1b := test.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false)
-	es1c := test.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false)
-	es2 := test.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false)
-	es3 := test.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false)
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false)
+	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false)
+	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false)
+	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1a, es1b, es1c, es2, es3})
 	s.NoError(err)
@@ -483,9 +483,9 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 	es3ID, _ := externalsrcs.NewClusterScopedID("mycluster", "36.188.144.0/16")
 	es4ID, _ := externalsrcs.NewClusterScopedID("mycluster", "10.10.10.10/8")
 
-	es1 := test.GetExtSrcNetworkEntityInfo(es1ID.String(), "1", "35.187.144.0/20", false)
-	es2 := test.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false)
-	es3 := test.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false)
+	es1 := testutils.GetExtSrcNetworkEntityInfo(es1ID.String(), "1", "35.187.144.0/20", false)
+	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false)
+	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1, es2, es3})
 	s.NoError(err)

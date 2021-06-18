@@ -25,7 +25,7 @@ var (
 type networkTreeImpl struct {
 	root   *node
 	family pkgNet.Family
-	// nodes points to all the nodes in the tree to facilitate O(1) access time.
+	// valueNodes points to all the valueNodes in the tree to facilitate O(1) access time.
 	nodes map[string]*node
 
 	lock sync.RWMutex
@@ -37,28 +37,14 @@ type node struct {
 	children map[string]*node
 }
 
-// NewDefaultIPv4NetworkTree returns a new instance of NetworkTree for IPv4 networks.
-func NewDefaultIPv4NetworkTree() NetworkTree {
-	return newDefaultNetworkTree(pkgNet.IPv4)
+// NewDefaultNetworkTree returns a new instance of NetworkTree for networks.
+func NewDefaultNetworkTree(family pkgNet.Family) NetworkTree {
+	return newDefaultNetworkTree(family)
 }
 
-// NewDefaultIPv6NetworkTree returns a new instance of NetworkTree for IPv6 networks.
-func NewDefaultIPv6NetworkTree() NetworkTree {
-	return newDefaultNetworkTree(pkgNet.IPv6)
-}
-
-// NewIPv4NetworkTree returns a new instance of NetworkTree built with supplied IPv4 networks.
-func NewIPv4NetworkTree(networks []*storage.NetworkEntityInfo) (NetworkTree, error) {
-	t := newDefaultNetworkTree(pkgNet.IPv4)
-	if err := t.build(networks); err != nil {
-		return nil, err
-	}
-	return t, nil
-}
-
-// NewIPv6NetworkTree returns a new instance of NetworkTree built with supplied IPv6 networks.
-func NewIPv6NetworkTree(networks []*storage.NetworkEntityInfo) (NetworkTree, error) {
-	t := newDefaultNetworkTree(pkgNet.IPv6)
+// NewNetworkTree returns a new instance of NetworkTree built with supplied networks.
+func NewNetworkTree(family pkgNet.Family, networks []*storage.NetworkEntityInfo) (NetworkTree, error) {
+	t := newDefaultNetworkTree(family)
 	if err := t.build(networks); err != nil {
 		return nil, err
 	}
@@ -66,31 +52,13 @@ func NewIPv6NetworkTree(networks []*storage.NetworkEntityInfo) (NetworkTree, err
 }
 
 func newDefaultNetworkTree(family pkgNet.Family) *networkTreeImpl {
-	var ipNet *net.IPNet
-	entity := networkgraph.InternetEntity().ToProto()
-	if family == pkgNet.IPv4 {
-		_, ipNet, _ = net.ParseCIDR(ipv4InternetCIDR)
-		entity.Desc = &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: ipv4InternetCIDR,
-				},
-			},
-		}
-	} else if family == pkgNet.IPv6 {
-		_, ipNet, _ = net.ParseCIDR(ipv6InternetCIDR)
-		entity.Desc = &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: ipv6InternetCIDR,
-				},
-			},
-		}
-	} else {
+	entity := networkgraph.InternetProtoWithDesc(family)
+	if entity == nil {
 		utils.Should(errors.New("failed to create network tree. Invalid IP address family provided"))
 	}
+	_, ipNet, _ := net.ParseCIDR(entity.GetExternalSource().GetCidr())
 
-	// Root node is not marked as default as it not known external network, instead represents everything unknown.
+	// Root entity is not marked default as it not known external network, instead represents everything unknown.
 	root := &node{
 		ipNet:    ipNet,
 		entity:   entity,
@@ -301,7 +269,7 @@ func (t *networkTreeImpl) Get(key string) *storage.NetworkEntityInfo {
 	}
 
 	ret := node.entity.Clone()
-	cleanInternetEntity(ret)
+	rmDescIfInternet(ret)
 	return ret
 }
 
@@ -374,7 +342,7 @@ func (t *networkTreeImpl) getMatchingSupernetNoLock(key string, pred func(entity
 	// Supernet of INTERNET is INTERNET.
 	if t.root.entity.GetId() == key {
 		ret := t.root.entity.Clone()
-		cleanInternetEntity(ret)
+		rmDescIfInternet(ret)
 		return ret
 	}
 
@@ -388,7 +356,7 @@ func (t *networkTreeImpl) getMatchingSupernetNoLock(key string, pred func(entity
 	}
 
 	ret := supernet.entity.Clone()
-	cleanInternetEntity(ret)
+	rmDescIfInternet(ret)
 	return ret
 }
 
@@ -468,12 +436,12 @@ func (t *networkTreeImpl) getMatchingSupernetForIPNetNoLock(curr *node, queryIPN
 		}
 	}
 
-	cleanInternetEntity(supernetSoFar)
+	rmDescIfInternet(supernetSoFar)
 	return supernetSoFar
 }
 
 // Search return true if the network entity for the given key is found in the tree.
-func (t *networkTreeImpl) Search(key string) bool {
+func (t *networkTreeImpl) Exists(key string) bool {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -485,8 +453,8 @@ func ipNetEqual(a, b *net.IPNet) bool {
 	return a.IP.Equal(b.IP) && bytes.Equal(a.Mask, b.Mask)
 }
 
-func cleanInternetEntity(entity *storage.NetworkEntityInfo) {
-	// Remove the CIDR from internet entity.
+func rmDescIfInternet(entity *storage.NetworkEntityInfo) {
+	// Throughout the codebase, internet node is expected only with ID and Type.
 	if entity.GetId() == networkgraph.InternetExternalSourceID {
 		entity.Desc = nil
 	}

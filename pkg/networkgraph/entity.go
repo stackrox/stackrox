@@ -2,6 +2,7 @@ package networkgraph
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/net"
 )
 
 var (
@@ -17,6 +18,9 @@ var (
 			return InternetExternalSourceName
 		},
 	}
+
+	ipv4InternetCIDR = "0.0.0.0/0"
+	ipv6InternetCIDR = "::ffff:0:0/0"
 )
 
 // Entity represents a network entity in a form that is suitable for use as a map key.
@@ -54,5 +58,30 @@ func InternetEntity() Entity {
 	return Entity{
 		ID:   InternetExternalSourceID,
 		Type: storage.NetworkEntityInfo_INTERNET,
+	}
+}
+
+// InternetProtoWithDesc returns storage.NetworkEntityInfo proto object with Desc field filled in.
+func InternetProtoWithDesc(family net.Family) *storage.NetworkEntityInfo {
+	var cidr string
+	if family == net.IPv4 {
+		cidr = ipv4InternetCIDR
+	} else if family == net.IPv6 {
+		cidr = ipv6InternetCIDR
+	} else {
+		return nil
+	}
+
+	return &storage.NetworkEntityInfo{
+		Id:   InternetExternalSourceID,
+		Type: storage.NetworkEntityInfo_INTERNET,
+		Desc: &storage.NetworkEntityInfo_ExternalSource_{
+			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+				Name: "External Entities",
+				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+					Cidr: cidr,
+				},
+			},
+		},
 	}
 }

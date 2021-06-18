@@ -32,13 +32,13 @@ func NewNetworkTreeWrapper(entities []*storage.NetworkEntityInfo) (NetworkTree, 
 	}
 
 	trees := make(map[pkgNet.Family]NetworkTree)
-	tree, err := NewIPv4NetworkTree(entitiesByAddrFamily[pkgNet.IPv4])
+	tree, err := NewNetworkTree(pkgNet.IPv4, entitiesByAddrFamily[pkgNet.IPv4])
 	if err != nil {
 		return nil, err
 	}
 	trees[pkgNet.IPv4] = tree
 
-	tree, err = NewIPv6NetworkTree(entitiesByAddrFamily[pkgNet.IPv6])
+	tree, err = NewNetworkTree(pkgNet.IPv6, entitiesByAddrFamily[pkgNet.IPv6])
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +52,8 @@ func NewNetworkTreeWrapper(entities []*storage.NetworkEntityInfo) (NetworkTree, 
 func newDefaultNetworkTreeWrapper() *networkTreeWrapper {
 	return &networkTreeWrapper{
 		trees: map[pkgNet.Family]NetworkTree{
-			pkgNet.IPv4: NewDefaultIPv4NetworkTree(),
-			pkgNet.IPv6: NewDefaultIPv6NetworkTree(),
+			pkgNet.IPv4: NewDefaultNetworkTree(pkgNet.IPv4),
+			pkgNet.IPv6: NewDefaultNetworkTree(pkgNet.IPv6),
 		},
 	}
 }
@@ -95,7 +95,7 @@ func (t *networkTreeWrapper) Remove(key string) {
 	defer t.lock.Unlock()
 
 	for _, tree := range t.trees {
-		if tree.Search(key) {
+		if tree.Exists(key) {
 			tree.Remove(key)
 			break
 		}
@@ -108,7 +108,7 @@ func (t *networkTreeWrapper) GetSupernet(key string) *storage.NetworkEntityInfo 
 	defer t.lock.RUnlock()
 
 	for _, tree := range t.trees {
-		if tree.Search(key) {
+		if tree.Exists(key) {
 			return tree.GetSupernet(key)
 		}
 	}
@@ -121,7 +121,7 @@ func (t *networkTreeWrapper) GetMatchingSupernet(key string, pred func(entity *s
 	defer t.lock.RUnlock()
 
 	for _, tree := range t.trees {
-		if tree.Search(key) {
+		if tree.Exists(key) {
 			return tree.GetMatchingSupernet(key, pred)
 		}
 	}
@@ -163,7 +163,7 @@ func (t *networkTreeWrapper) GetSubnets(key string) []*storage.NetworkEntityInfo
 	if key == networkgraph.InternetExternalSourceID {
 		var ret []*storage.NetworkEntityInfo
 		for _, tree := range t.trees {
-			if tree.Search(key) {
+			if tree.Exists(key) {
 				ret = append(ret, tree.GetSubnets(key)...)
 			}
 		}
@@ -171,7 +171,7 @@ func (t *networkTreeWrapper) GetSubnets(key string) []*storage.NetworkEntityInfo
 	}
 
 	for _, tree := range t.trees {
-		if tree.Search(key) {
+		if tree.Exists(key) {
 			return tree.GetSubnets(key)
 		}
 	}
@@ -202,7 +202,7 @@ func (t *networkTreeWrapper) Get(key string) *storage.NetworkEntityInfo {
 
 func (t *networkTreeWrapper) getWithFamilyNoLock(key string) (*storage.NetworkEntityInfo, pkgNet.Family) {
 	for family, tree := range t.trees {
-		if tree.Search(key) {
+		if tree.Exists(key) {
 			return tree.Get(key), family
 		}
 	}
@@ -210,12 +210,12 @@ func (t *networkTreeWrapper) getWithFamilyNoLock(key string) (*storage.NetworkEn
 }
 
 // Search return true if the network entity for the given key is found in the network trees.
-func (t *networkTreeWrapper) Search(key string) bool {
+func (t *networkTreeWrapper) Exists(key string) bool {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
 	for _, tree := range t.trees {
-		if tree.Search(key) {
+		if tree.Exists(key) {
 			return true
 		}
 	}

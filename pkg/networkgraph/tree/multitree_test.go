@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/networkgraph/test"
+	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,12 +42,12 @@ func TestMultiTree(t *testing.T) {
 
 	*/
 
-	e1 := test.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
-	e2 := test.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
-	e3 := test.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
-	e4 := test.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", true)
-	e5 := test.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false)
-	e6 := test.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true)
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", true)
+	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false)
+	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true)
 
 	tree1, err := NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e2, e3, e5})
 	assert.NoError(t, err)

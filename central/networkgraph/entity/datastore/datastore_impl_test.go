@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
-	"github.com/stackrox/rox/pkg/networkgraph/test"
+	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -116,17 +116,17 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	}{
 		{
 			// Valid entity
-			entity: test.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, ""),
+			entity: testutils.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, ""),
 			pass:   true,
 		},
 		{
 			// Valid entity-no name
-			entity: test.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1),
+			entity: testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1),
 			pass:   true,
 		},
 		{
 			// Invalid external source-invalid network
-			entity: test.GetExtSrcNetworkEntity(entity3ID.String(), "cidr1", "300.0.2.0/24", false, cluster1),
+			entity: testutils.GetExtSrcNetworkEntity(entity3ID.String(), "cidr1", "300.0.2.0/24", false, cluster1),
 			pass:   false,
 		},
 		{
@@ -153,18 +153,18 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		},
 		{
 			// Valid entity
-			entity: test.GetExtSrcNetworkEntity(entity5ID.String(), "", "192.0.2.0/24", false, cluster2),
+			entity: testutils.GetExtSrcNetworkEntity(entity5ID.String(), "", "192.0.2.0/24", false, cluster2),
 			pass:   true,
 		},
 		{
 			// Invalid entity-update CIDR block
-			entity:  test.GetExtSrcNetworkEntity(entity5ID.String(), "", "192.0.2.0/29", false, cluster2),
+			entity:  testutils.GetExtSrcNetworkEntity(entity5ID.String(), "", "192.0.2.0/29", false, cluster2),
 			pass:    false,
 			skipGet: true,
 		},
 		{
 			// Valid entity
-			entity: test.GetExtSrcNetworkEntity(entity6ID.String(), "", "192.0.2.0/29", false, cluster2),
+			entity: testutils.GetExtSrcNetworkEntity(entity6ID.String(), "", "192.0.2.0/29", false, cluster2),
 			pass:   true,
 		},
 	}
@@ -276,11 +276,11 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	entity4ID, _ := externalsrcs.NewClusterScopedID(cluster2, "192.0.2.0/29")
 	defaultEntityID, _ := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/30")
 
-	entity1 := test.GetExtSrcNetworkEntity(entity1ID.String(), "", "192.0.2.0/24", false, cluster1)
-	entity2 := test.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/29", false, cluster1)
-	entity3 := test.GetExtSrcNetworkEntity(entity3ID.String(), "", "192.0.2.0/24", false, cluster2)
-	entity4 := test.GetExtSrcNetworkEntity(entity4ID.String(), "", "192.0.2.0/29", false, cluster2)
-	defaultEntity := test.GetExtSrcNetworkEntity(defaultEntityID.String(), "default", "192.0.2.0/30", true, "")
+	entity1 := testutils.GetExtSrcNetworkEntity(entity1ID.String(), "", "192.0.2.0/24", false, cluster1)
+	entity2 := testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/29", false, cluster1)
+	entity3 := testutils.GetExtSrcNetworkEntity(entity3ID.String(), "", "192.0.2.0/24", false, cluster2)
+	entity4 := testutils.GetExtSrcNetworkEntity(entity4ID.String(), "", "192.0.2.0/29", false, cluster2)
+	defaultEntity := testutils.GetExtSrcNetworkEntity(defaultEntityID.String(), "default", "192.0.2.0/30", true, "")
 
 	cluster1ReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -546,8 +546,8 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 	entity1ID, _ := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/24")
 	entity2ID, _ := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/30")
 
-	entity1 := test.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, "")
-	entity2 := test.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1)
+	entity1 := testutils.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, "")
+	entity2 := testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1)
 	entities := []*storage.NetworkEntity{entity1, entity2}
 
 	for _, entity := range entities {

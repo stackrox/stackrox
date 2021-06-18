@@ -80,7 +80,7 @@ func (a *aggregateToSupernetImpl) mapToSupernetIfNotfound(supernetCache map[stri
 			continue
 		}
 
-		if a.tree.Search(entity.GetId()) {
+		if a.tree.Exists(entity.GetId()) {
 			continue
 		}
 

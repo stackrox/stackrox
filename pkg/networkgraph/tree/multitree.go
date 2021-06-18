@@ -140,7 +140,7 @@ func (t *multiReadOnlyTreeWrapper) Get(key string) *storage.NetworkEntityInfo {
 	defer t.lock.RUnlock()
 
 	for _, tree := range t.trees {
-		if tree.Search(key) {
+		if tree.Exists(key) {
 			return tree.Get(key)
 		}
 	}
@@ -148,12 +148,12 @@ func (t *multiReadOnlyTreeWrapper) Get(key string) *storage.NetworkEntityInfo {
 }
 
 // Search return true if the network entity for the given key is found in the network trees.
-func (t *multiReadOnlyTreeWrapper) Search(key string) bool {
+func (t *multiReadOnlyTreeWrapper) Exists(key string) bool {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
 	for _, tree := range t.trees {
-		if tree.Search(key) {
+		if tree.Exists(key) {
 			return true
 		}
 	}
