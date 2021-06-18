@@ -30,16 +30,13 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
-#
-# For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# stackrox/stackrox-operator-bundle:$VERSION and stackrox/stackrox-operator-catalog:$VERSION.
 IMAGE_TAG_BASE ?= docker.io/stackrox/stackrox-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
-# INDEX_IMG defines the image:tag used for the index image, containing the single operator bundle image.
+# INDEX_IMG defines the image:tag used for the index aka catalog image, containing the single operator bundle image.
 INDEX_IMG ?= $(IMAGE_TAG_BASE)-index:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
@@ -53,6 +50,9 @@ GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
+
+# Lowercase Operating System name, needed for downloading GitHub releases.
+OS=$(shell uname | tr A-Z a-z)
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
@@ -169,48 +169,52 @@ KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
-# See https://sdk.operatorframework.io/docs/installation/#install-from-github-release
+# TODO(ROX-7417): Migrate from 1.5.2 to the newest version and have only one operator-sdk target in the file.
 OPERATOR_SDK_VERSION = 1.5.2
-
 OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
-operator-sdk: ## Download operator-sdk locally if necessary.
-	@[ -f $(OPERATOR_SDK) ] || { \
-	set -euo pipefail ;\
-	OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$(OPERATOR_SDK_VERSION) ;\
-	ARCH=$$(case $$(uname -m) in (x86_64) echo -n amd64 ;; (aarch64) echo -n arm64 ;; (*) echo -n $$(uname -m) ;; esac) ;\
-	OS=$$(uname | awk '{print tolower($$0)}') ;\
-	set -x ;\
-	curl --fail --location --output $(OPERATOR_SDK) $${OPERATOR_SDK_DL_URL}/operator-sdk_$${OS}_$${ARCH} ;\
-	chmod +x $(OPERATOR_SDK) ;\
-	}
+.PHONY: operator-sdk
+operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
+# See https://sdk.operatorframework.io/docs/installation/#install-from-github-release
+	@ARCH=$$(case $$(uname -m) in (x86_64) echo -n amd64 ;; (aarch64) echo -n arm64 ;; (*) echo -n $$(uname -m) ;; esac) ;\
+	OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$(OPERATOR_SDK_VERSION)/operator-sdk_$(OS)_$${ARCH} ;\
+	$(GET_GITHUB_RELEASE_FN); \
+	get_github_release $(OPERATOR_SDK) $${OPERATOR_SDK_URL}
 
-KUTTL = $(PROJECT_DIR)/bin/kubectl-kuttl
+.PHONY: operator-sdk-for-testing
+operator-sdk-for-testing: ## Download newer operator-sdk version necessary for testing bundle.
+	@OPERATOR_SDK_VERSION=1.9.0 ;\
+	OPERATOR_SDK=$(PROJECT_DIR)/bin/operator-sdk-$${OPERATOR_SDK_VERSION} ;\
+	ARCH=$$(case $$(uname -m) in (x86_64) echo -n amd64 ;; (aarch64) echo -n arm64 ;; (*) echo -n $$(uname -m) ;; esac) ;\
+	OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$${OPERATOR_SDK_VERSION}/operator-sdk_$(OS)_$${ARCH} ;\
+	$(GET_GITHUB_RELEASE_FN); \
+	get_github_release $${OPERATOR_SDK} $${OPERATOR_SDK_URL}
+
+KUTTL_VERSION = 0.10.0
+KUTTL = $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
 .PHONY: kuttl
-kuttl: ## Download kuttl locally if necessary
-	@[ -f $(KUTTL) ] || { \
-	set -euo pipefail ;\
-	KUTTL_VER=0.10.0 ;\
-	KUTTL_DL_URL=https://github.com/kudobuilder/kuttl/releases/download/v$${KUTTL_VER} ;\
-	ARCH=$$(case $$(uname -m) in (aarch64) echo -n armv6 ;; (*) echo -n $$(uname -m) ;; esac) ;\
-	OS=$$(uname | awk '{print tolower($$0)}') ;\
-	set -x ;\
-	curl --fail --location --output $(KUTTL) $${KUTTL_DL_URL}/kubectl-kuttl_$${KUTTL_VER}_$${OS}_$${ARCH} ;\
-	chmod +x $(KUTTL) ;\
-	}
+kuttl: ## Download kuttl.
+	@ARCH=$$(case $$(uname -m) in (aarch64) echo -n armv6 ;; (*) echo -n $$(uname -m) ;; esac) ;\
+	KUTTL_URL=https://github.com/kudobuilder/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(OS)_$${ARCH} ;\
+	$(GET_GITHUB_RELEASE_FN); \
+	get_github_release $(KUTTL) $${KUTTL_URL}
 
 OPM_VERSION = 1.17.3
 OPM = $(PROJECT_DIR)/bin/opm-$(OPM_VERSION)
-$(OPM): ## Download opm locally if necessary
-	@[ -f $(OPM) ] || { \
-	set -euo pipefail ; \
-	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-	curl --fail --location --output $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v$(OPM_VERSION)/$${OS}-$${ARCH}-opm ; \
-	chmod +x $(OPM) ; \
-	[[ $$(uname -s) != "Darwin" ]] || xattr -c $(OPM) ; \
-	}
-
 .PHONY: opm
-opm: $(OPM)
+opm: ## Download opm.
+	@OPM_URL=https://github.com/operator-framework/operator-registry/releases/download/v$(OPM_VERSION)/$(OS)-$$(go env GOARCH)-opm ;\
+	$(GET_GITHUB_RELEASE_FN); \
+	get_github_release $(OPM) $${OPM_URL}
+
+GET_GITHUB_RELEASE_FN = get_github_release() { \
+	[ -f $${1} ] || { \
+		set -euxo pipefail ;\
+		mkdir -p bin ;\
+		curl --fail --location --output $${1} $${2} ;\
+		chmod +x $${1} ;\
+		[[ "$$(uname -s)" != "Darwin" ]] || xattr -c $${1} ;\
+	} \
+}
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -234,9 +238,9 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):0.0.1
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
 # operator-sdk 1.5.x has a bug in that it doesn't sort some metadata labels, and thus produces non-deterministic output.
-	./bundle_build/processing/normalize-metadata.py 'LABEL operators.operatorframework.io.metrics.' <bundle.Dockerfile >bundle.Dockerfile.tmp
+	./bundle_helpers/normalize-metadata.py 'LABEL operators.operatorframework.io.metrics.' <bundle.Dockerfile >bundle.Dockerfile.tmp
 	mv bundle.Dockerfile.tmp bundle.Dockerfile
-	./bundle_build/processing/normalize-metadata.py '  operators.operatorframework.io.metrics.' <bundle/metadata/annotations.yaml >bundle/metadata/annotations.yaml.tmp
+	./bundle_helpers/normalize-metadata.py '  operators.operatorframework.io.metrics.' <bundle/metadata/annotations.yaml >bundle/metadata/annotations.yaml.tmp
 	mv bundle/metadata/annotations.yaml.tmp bundle/metadata/annotations.yaml
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
 # Post-processed files will be copied instead, as configured in bundle.Dockerfile.extra.
@@ -257,11 +261,11 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 	cp -a bundle build/
 # Run Python script to post-process necessary files in the build/bundle/. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
-	python3 -m venv bundle_build/.venv ;\
-	. bundle_build/.venv/bin/activate ;\
+	python3 -m venv bundle_helpers/.venv ;\
+	. bundle_helpers/.venv/bin/activate ;\
 	pip3 install --upgrade pip setuptools ;\
-	pip3 install -r bundle_build/requirements.txt ;\
-	./bundle_build/post_processing/patch-csv.py --use-version $(VERSION) < bundle/manifests/stackrox-operator.clusterserviceversion.yaml > build/bundle/manifests/stackrox-operator.clusterserviceversion.yaml
+	pip3 install -r bundle_helpers/requirements.txt ;\
+	./bundle_helpers/patch-csv.py --use-version $(VERSION) < bundle/manifests/stackrox-operator.clusterserviceversion.yaml > build/bundle/manifests/stackrox-operator.clusterserviceversion.yaml
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 
@@ -270,9 +274,13 @@ bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
 	docker build -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
-bundle-test: operator-sdk ## Run bundle tests.
+bundle-test: operator-sdk ## Run scorecard tests against bundle files.
 	$(OPERATOR_SDK) scorecard build/bundle/
 
+.PHONY: bundle-test-image
+bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in the registry.
+	$(OPERATOR_SDK) scorecard $(BUNDLE_IMG)
+
 .PHONY: index-build
-index-build: opm
+index-build: opm ## Build Index aka Catalog image with the bundle.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(BUNDLE_IMG) --tag $(INDEX_IMG) --build-tool docker

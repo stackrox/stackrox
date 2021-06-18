@@ -3182,13 +3182,17 @@ jobs:
           cluster-id: api-nongroovy-tests
       - remove-existing-stackrox-resources
 
+      # TODO(ROX-7403): break out operator tests in their own job.
       - run:
-          name: Run operator e2e tests
+          name: Run Operator e2e tests
           command: make -C operator test-e2e
       - store-test-results-and-artifacts:
           path: operator/build/kuttl-test-artifacts
-
       - remove-existing-stackrox-resources
+
+      - run:
+          name: Run Operator Bundle Scorecard tests
+          command: make -C operator bundle-test-image
 
       - run:
           name: Export Trusted CA file

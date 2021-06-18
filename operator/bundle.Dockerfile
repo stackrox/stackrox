@@ -20,7 +20,6 @@ LABEL operators.operatorframework.io.test.config.v1=tests/scorecard/
 # Note: vX means "X or later": https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory/managing-openshift-versions
 LABEL com.redhat.openshift.versions="v4.6"
 LABEL com.redhat.delivery.operator.bundle=true
-LABEL com.redhat.delivery.backport=false
 
 # Use post-processed files (instead of the original ones).
 COPY build/bundle/manifests /manifests/

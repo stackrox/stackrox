@@ -121,16 +121,83 @@ $ make bundle
 $ make docker-build docker-push
 # Build and push bundle image
 $ make bundle-build docker-push-bundle
-# Run scorecard tests for the bundle
-$ make bundle-test
 ```
 
-Build and push as one-liner
+Build and push as **one-liner**
 
 ```bash
 $ make bundle docker-build docker-push bundle-build docker-push-bundle
 ```
 
+Testing bundle with Scorecard
+
+```bash
+# Test locally-built bundle files
+$ make bundle-test
+# Test bundle image; the image must be pushed beforehand.
+$ make bundle-test-image
+```
+
 ### Launch the operator on the cluster with OLM and the bundle
 
-TODO
+```bash
+# 0. Get a proper operator-sdk for testing.
+$ make operator-sdk-for-testing
+
+# 1. Install OLM.
+$ bin/operator-sdk-1.9.0 olm install
+
+# 2. Create a namespace for testing bundle.
+$ kubectl create ns bundle-test
+
+# 2. Create image pull secrets.
+# If the inner magic does not work, just provide --docker-username and --docker-password with your DockerHub creds.
+$ kubectl -n bundle-test create secret docker-registry my-opm-image-pull-secrets \
+  --docker-server=https://index.docker.io/v1/ \
+  --docker-email=ignored@email.com \
+  $($(command -v docker-credential-osxkeychain || command -v docker-credential-secretservice) get <<<"docker.io" | jq -r '"--docker-username=\(.Username) --docker-password=\(.Secret)"')
+
+# 3. Configure default service account to use these pull secrets.
+$ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [{"name": "my-opm-image-pull-secrets"}]}'
+
+# 3. Build and push operator and bundle images.
+# Use one-liner above.
+
+# 4. Run bundle.
+$ bin/operator-sdk-1.9.0 run bundle \
+  docker.io/stackrox/stackrox-operator-bundle:v$(make --quiet tag) \
+  --pull-secret-name my-opm-image-pull-secrets \
+  --service-account default \
+  --namespace bundle-test
+
+# 5. Add image pull secrets to operator's ServiceAccount.
+# Run it while the previous command executes otherwise it will fail.
+# Note that serviceaccount might not exist for a few moments.
+# Rerun this command until it succeeds.
+# We hope that in OpenShift world things will be different and we will not have to do this.
+$ kubectl -n bundle-test patch serviceaccount stackrox-operator-controller-manager -p '{"imagePullSecrets": [{"name": "my-opm-image-pull-secrets"}]}'
+# You may need to bounce operator pods after this if they can't pull images for a while.
+$ kubectl -n bundle-test delete pod -l control-plane=controller-manager
+
+# 6. operator-sdk run bundle command should complete successfully.
+# If it does not, watch pod statuses and check pod logs.
+$ kubectl -n bundle-test get pods
+# ... and dive deep from there into the ones that are not healthy.
+```
+
+Once done, cleanup with
+
+```bash
+kubectl -n bundle-test delete clusterserviceversions.operators.coreos.com -l operators.coreos.com/stackrox-operator.bundle-test
+
+kubectl -n bundle-test delete subscriptions.operators.coreos.com -l operators.coreos.com/stackrox-operator.bundle-test
+
+kubectl -n bundle-test delete catalogsources.operators.coreos.com stackrox-operator-catalog
+```
+
+Also, you can blow everything away with
+
+```bash
+$ bin/operator-sdk-1.9.0 olm uninstall
+$ kubectl delete ns bundle-test
+```
