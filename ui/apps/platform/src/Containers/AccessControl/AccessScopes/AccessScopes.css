@@ -46,3 +46,36 @@
 #access-scope-form .pf-c-switch.acs-m-manual-inclusion {
     --pf-c-switch__input--checked__toggle--BackgroundColor: var(--pf-global--success-color--100);
 }
+
+/*
+ * Override annoying reset rule for dropdown toggle for table actions.
+ */
+table .pf-c-dropdown__toggle.pf-m-plain svg {
+    display: inline;
+}
+
+#access-scope-form .pf-c-button.pf-m-smallest {
+    --pf-c-button--PaddingTop: 0;
+    --pf-c-button--PaddingRight: 0;
+    --pf-c-button--PaddingBottom: 0;
+    --pf-c-button--PaddingLeft: 0;
+    --pf-c-button--FontSize: var(--pf-global--FontSize--sm);
+}
+
+#access-scope-form .pf-c-button.pf-m-smallest svg {
+    display: inline;
+}
+
+/*
+ * Dropdown has horizontal spacing compatible with Button.
+*/
+#access-scope-form .pf-c-dropdown {
+    --pf-c-dropdown__toggle--PaddingLeft: var(--pf-global--spacer--md);
+}
+
+/*
+ * Dropdown has (via className) font size compatible with Button which has isSmall prop.
+ */
+.pf-c-dropdown.pf-m-small {
+    --pf-c-dropdown__toggle--FontSize: var(--pf-c-button--m-small--FontSize);
+}

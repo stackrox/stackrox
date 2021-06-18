@@ -2,17 +2,25 @@
 import React, { ReactElement, useState } from 'react';
 import { Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
 
-import { LabelSelector } from 'services/RolesService';
+import { LabelSelector, LabelSelectorsKey } from 'services/RolesService';
+
+import LabelSelectors from './LabelSelectors';
 
 export type LabelInclusionProps = {
     clusterLabelSelectors: LabelSelector[];
     namespaceLabelSelectors: LabelSelector[];
     hasAction: boolean;
+    handleChangeLabelSelectors: (
+        labelSelectorsKey: LabelSelectorsKey,
+        labelSelectorsNext: LabelSelector[]
+    ) => void;
 };
 
 function LabelInclusion({
     clusterLabelSelectors,
     namespaceLabelSelectors,
+    hasAction,
+    handleChangeLabelSelectors,
 }: LabelInclusionProps): ReactElement {
     const [activeKeyTab, setActiveKeyTab] = useState('clusterLabelSelectors');
 
@@ -27,12 +35,12 @@ function LabelInclusion({
                 <Tab
                     eventKey="clusterLabelSelectors"
                     tabContentId="clusterLabelSelectors"
-                    title={<TabTitleText>Cluster label selectors</TabTitleText>}
+                    title={<TabTitleText>Cluster</TabTitleText>}
                 />
                 <Tab
                     eventKey="namespaceLabelSelectors"
                     tabContentId="namespaceLabelSelectors"
-                    title={<TabTitleText>Namespace label selectors</TabTitleText>}
+                    title={<TabTitleText>Namespace</TabTitleText>}
                 />
             </Tabs>
             <TabContent
@@ -40,14 +48,24 @@ function LabelInclusion({
                 id="clusterLabelSelectors"
                 hidden={activeKeyTab !== 'clusterLabelSelectors'}
             >
-                {JSON.stringify(clusterLabelSelectors, null, 2)}
+                <LabelSelectors
+                    labelSelectors={clusterLabelSelectors}
+                    labelSelectorsKey="clusterLabelSelectors"
+                    hasAction={hasAction}
+                    handleChangeLabelSelectors={handleChangeLabelSelectors}
+                />
             </TabContent>
             <TabContent
                 eventKey="namespaceLabelSelectors"
                 id="namespaceLabelSelectors"
                 hidden={activeKeyTab !== 'namespaceLabelSelectors'}
             >
-                {JSON.stringify(namespaceLabelSelectors, null, 2)}
+                <LabelSelectors
+                    labelSelectors={namespaceLabelSelectors}
+                    labelSelectorsKey="namespaceLabelSelectors"
+                    hasAction={hasAction}
+                    handleChangeLabelSelectors={handleChangeLabelSelectors}
+                />
             </TabContent>
         </>
     );

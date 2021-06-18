@@ -141,6 +141,8 @@ export type LabelSelector = {
     requirements: LabelSelectorRequirement[];
 };
 
+export type LabelSelectorsKey = 'clusterLabelSelectors' | 'namespaceLabelSelectors';
+
 export type SimpleAccessScopeRules = {
     includedClusters: string[];
     includedNamespaces: SimpleAccessScopeNamespace[];

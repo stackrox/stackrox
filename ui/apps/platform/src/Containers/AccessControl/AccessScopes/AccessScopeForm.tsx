@@ -21,6 +21,8 @@ import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 import {
     AccessScope,
     EffectiveAccessScopeCluster,
+    LabelSelector,
+    LabelSelectorsKey,
     computeEffectiveAccessScopeClusters,
 } from 'services/RolesService';
 
@@ -53,9 +55,9 @@ const labelIconLabelInclusion = (
     <Tooltip
         content={
             <div>
-                You can specify label selectors
+                If a label inclusion tab has multiple label selectors,
                 <br />
-                in addition to, or instead of, manual inclusion
+                then at least one of them must be satisfied
             </div>
         }
         isContentLeftAligned
@@ -85,6 +87,7 @@ function AccessScopeForm({
     handleSubmit,
 }: AccessScopeFormProps): ReactElement {
     const [counterComputing, setCounterComputing] = useState(0);
+    const [alertCompute, setAlertCompute] = useState<ReactElement | null>(null);
     const [clusters, setClusters] = useState<EffectiveAccessScopeCluster[]>([]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,9 +107,18 @@ function AccessScopeForm({
         computeEffectiveAccessScopeClusters(values.rules)
             .then((clustersComputed) => {
                 setClusters(clustersComputed);
+                setAlertCompute(null);
             })
-            .catch(() => {
-                // TODO display alert
+            .catch((error) => {
+                setAlertCompute(
+                    <Alert
+                        title="Compute effective access scope failed"
+                        variant={AlertVariant.danger}
+                        isInline
+                    >
+                        {error.message}
+                    </Alert>
+                );
             })
             .finally(() => {
                 setCounterComputing((counterPrev) => counterPrev - 1);
@@ -114,22 +126,15 @@ function AccessScopeForm({
     }, [values.rules]);
 
     function handleChangeIncludedClusters(clusterName: string, isChecked: boolean) {
-        const {
-            includedClusters,
-            includedNamespaces,
-            clusterLabelSelectors,
-            namespaceLabelSelectors,
-        } = values.rules;
-        return setFieldValue('rules', {
-            includedClusters: isChecked
+        const { includedClusters } = values.rules;
+        return setFieldValue(
+            'rules.includedClusters',
+            isChecked
                 ? [...includedClusters, clusterName]
                 : includedClusters.filter(
                       (includedClusterName) => includedClusterName !== clusterName
-                  ),
-            includedNamespaces,
-            clusterLabelSelectors,
-            namespaceLabelSelectors,
-        });
+                  )
+        );
     }
 
     function handleChangeIncludedNamespaces(
@@ -137,15 +142,10 @@ function AccessScopeForm({
         namespaceName: string,
         isChecked: boolean
     ) {
-        const {
-            includedClusters,
-            includedNamespaces,
-            clusterLabelSelectors,
-            namespaceLabelSelectors,
-        } = values.rules;
-        return setFieldValue('rules', {
-            includedClusters,
-            includedNamespaces: isChecked
+        const { includedNamespaces } = values.rules;
+        return setFieldValue(
+            'rules.includedNamespaces',
+            isChecked
                 ? [...includedNamespaces, { clusterName, namespaceName }]
                 : includedNamespaces.filter(
                       ({
@@ -154,10 +154,15 @@ function AccessScopeForm({
                       }) =>
                           includedClusterName !== clusterName ||
                           includedNamespaceName !== namespaceName
-                  ),
-            clusterLabelSelectors,
-            namespaceLabelSelectors,
-        });
+                  )
+        );
+    }
+
+    function handleChangeLabelSelectors(
+        labelSelectorsKey: LabelSelectorsKey,
+        labelSelectors: LabelSelector[]
+    ) {
+        return setFieldValue(`rules.${labelSelectorsKey}`, labelSelectors);
     }
 
     function onChange(_value, event) {
@@ -254,12 +259,14 @@ function AccessScopeForm({
                     isDisabled={isViewing}
                 />
             </FormGroup>
-            <Flex>
-                <FlexItem className="pf-u-flex-basis-0 pf-u-flex-grow-1">
+            {alertCompute}
+            <Flex spaceItems={{ default: 'spaceItemsLg' }}>
+                <FlexItem className="pf-u-flex-basis-0 pf-u-flex-grow-1 pf-u-flex-shrink-1">
                     <FormGroup
                         label="Effective access scope"
                         fieldId="effectiveAccessScope"
                         labelIcon={labelIconEffectiveAccessScope}
+                        className="pf-u-pb-lg"
                     >
                         <EffectiveAccessScopeTable
                             counterComputing={counterComputing}
@@ -272,16 +279,18 @@ function AccessScopeForm({
                         />
                     </FormGroup>
                 </FlexItem>
-                <FlexItem className="pf-u-flex-basis-0 pf-u-flex-grow-1">
+                <FlexItem style={{ width: '40%' }}>
                     <FormGroup
                         label="Label inclusion"
                         fieldId="labelInclusion"
                         labelIcon={labelIconLabelInclusion}
+                        className="pf-u-pb-lg"
                     >
                         <LabelInclusion
                             clusterLabelSelectors={values.rules.clusterLabelSelectors}
                             namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
                             hasAction={hasAction}
+                            handleChangeLabelSelectors={handleChangeLabelSelectors}
                         />
                     </FormGroup>
                 </FlexItem>
