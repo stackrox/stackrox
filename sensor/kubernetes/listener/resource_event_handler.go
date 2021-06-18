@@ -20,24 +20,13 @@ import (
 )
 
 func (k *listenerImpl) handleAllEvents() {
+	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncPeriod)
+	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
 
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory externalversions.SharedInformerFactory
-	var osConfigFactory configExtVersions.SharedInformerFactory
-
-	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncPeriod)
-	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
 	if k.client.OpenshiftApps() != nil {
 		osAppsFactory = externalversions.NewSharedInformerFactory(k.client.OpenshiftApps(), resyncingPeriod)
-	}
-	if k.client.OpenshiftConfig() != nil {
-		if ok, err := clusterOperatorCRDExists(k.client); err != nil {
-			log.Errorf("Error checking for cluster operator CRD: %v", err)
-		} else if !ok {
-			log.Warnf("Skipping cluster operator discovery....")
-		} else {
-			osConfigFactory = configExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), resyncingPeriod)
-		}
 	}
 
 	// We want creates to be treated as updates while existing objects are loaded.
@@ -80,6 +69,17 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(clusterRoleInformer, dispatchers.ForRBAC(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
 	handle(roleBindingInformer, dispatchers.ForRBAC(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
 	handle(clusterRoleBindingInformer, dispatchers.ForRBAC(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
+
+	var osConfigFactory configExtVersions.SharedInformerFactory
+	if k.client.OpenshiftConfig() != nil {
+		if ok, err := clusterOperatorCRDExists(k.client); err != nil {
+			log.Errorf("Error checking for cluster operator CRD: %v", err)
+		} else if !ok {
+			log.Warnf("Skipping cluster operator discovery....")
+		} else {
+			osConfigFactory = configExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), resyncingPeriod)
+		}
+	}
 	// For openshift clusters only
 	if osConfigFactory != nil {
 		handle(osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(),
@@ -112,6 +112,9 @@ func (k *listenerImpl) handleAllEvents() {
 
 	sif.Start(stopSignal.Done())
 	resyncingSif.Start(stopSignal.Done())
+	if osConfigFactory != nil {
+		osConfigFactory.Start(stopSignal.Done())
+	}
 	if dynamicFactory != nil {
 		dynamicFactory.Start(stopSignal.Done())
 	}
@@ -151,7 +154,6 @@ func (k *listenerImpl) handleAllEvents() {
 
 	sif.Start(stopSignal.Done())
 	resyncingSif.Start(stopSignal.Done())
-
 	if dynamicFactory != nil {
 		dynamicFactory.Start(stopSignal.Done())
 	}
@@ -179,9 +181,6 @@ func (k *listenerImpl) handleAllEvents() {
 	resyncingSif.Start(stopSignal.Done())
 	if osAppsFactory != nil {
 		osAppsFactory.Start(stopSignal.Done())
-	}
-	if osConfigFactory != nil {
-		osConfigFactory.Start(stopSignal.Done())
 	}
 
 	// WaitForCacheSync synchronization is broken for SharedIndexInformers due to internal addCh/pendingNotifications
