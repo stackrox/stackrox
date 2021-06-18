@@ -14,7 +14,7 @@ function editBaseConfig(type) {
     cy.get(selectors.pageHeader.editButton, { timeout: 10000 }).click();
 
     cy.get(selectors[type].config.toggle).should('exist');
-    cy.get(selectors[type].config.toggle).click();
+    cy.get(selectors[type].config.toggle).check({ force: true });
     cy.get(selectors[type].config.textInput, { timeout: 10000 }).type(text.banner);
 }
 
@@ -36,13 +36,13 @@ function saveConfig(type) {
 
 function disableConfig(type) {
     cy.get(selectors.pageHeader.editButton).click();
-    cy.get(selectors[type].config.toggle).click();
+    cy.get(selectors[type].config.toggle).uncheck({ force: true });
     cy.get(selectors.pageHeader.saveButton).click();
     cy.get(selectors[type].state).contains('Disabled');
 }
 
 function getNumericInputByLabel(labelName) {
-    return `label:contains('${labelName}') + .react-numeric-input input`;
+    return `.pf-c-form__group:contains("${labelName}") input`;
 }
 
 function getRandomNumber() {

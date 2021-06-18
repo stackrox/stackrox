@@ -19,13 +19,13 @@ const selectors = {
         widget: '[data-testid="header-config"]',
         state: '[data-testid="header-state"]',
         config: {
-            toggle: '[data-testid="header-config"] .form-switch',
+            toggle: '[data-testid="header-config"] .pf-c-switch input',
             textInput: '[data-testid="header-config"] textarea',
             colorPickerBtn: '[data-testid="header-config"] [data-testid="color-picker"]',
             colorInput: '[data-testid="header-config"] .chrome-picker input',
             size: {
-                input: '[data-testid="header-config"] .react-select__input input',
-                options: '[data-testid="header-config"] .react-select__option',
+                input: '[data-testid="header-config"] .pf-c-select button',
+                options: '[data-testid="header-config"] .pf-c-select__menu li',
             },
         },
         banner: '[data-testid="header-banner"]',
@@ -34,13 +34,13 @@ const selectors = {
         widget: '[data-testid="footer-config"]',
         state: '[data-testid="footer-state"]',
         config: {
-            toggle: '[data-testid="footer-config"] .form-switch',
+            toggle: '[data-testid="footer-config"] .pf-c-switch input',
             textInput: '[data-testid="footer-config"] textarea',
             colorPickerBtn: '[data-testid="footer-config"] [data-testid="color-picker"]',
             colorInput: '[data-testid="footer-config"] .chrome-picker input',
             size: {
-                input: '[data-testid="footer-config"] .react-select__input input',
-                options: '[data-testid="footer-config"] .react-select__option',
+                input: '[data-testid="footer-config"] .pf-c-select button',
+                options: '[data-testid="footer-config"] .pf-c-select__menu li',
             },
         },
         banner: '[data-testid="footer-banner"]',

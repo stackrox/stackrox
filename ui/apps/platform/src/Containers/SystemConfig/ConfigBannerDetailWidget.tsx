@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 
 import capitalize from 'lodash/capitalize';
 import ColorPicker from 'Components/ColorPicker';
-import { SystemConfig } from 'Containers/SystemConfig/SystemConfigTypes';
+import { PublicConfig } from 'Containers/SystemConfig/SystemConfigTypes';
 import {
     Card,
     CardActions,
@@ -22,14 +22,13 @@ type BannerType = 'header' | 'footer';
 
 export type ConfigBannerDetailWidgetProps = {
     type: BannerType;
-    config: SystemConfig;
+    publicConfig: PublicConfig;
 };
 
 const ConfigBannerDetailWidget = ({
     type,
-    config,
+    publicConfig,
 }: ConfigBannerDetailWidgetProps): ReactElement => {
-    const { publicConfig } = config;
     const { backgroundColor = null, color = null, enabled = false, size = 'None', text = 'None' } =
         publicConfig?.[type] || {};
 
@@ -47,7 +46,11 @@ const ConfigBannerDetailWidget = ({
             </CardHeader>
             <Divider component="div" />
             <CardBody>
-                <DescriptionList>
+                <DescriptionList
+                    columnModifier={{
+                        default: '2Col',
+                    }}
+                >
                     <DescriptionListGroup>
                         <DescriptionListTerm>Text (2000 character limit):</DescriptionListTerm>
                         <DescriptionListDescription>{text}</DescriptionListDescription>

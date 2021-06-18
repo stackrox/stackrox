@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { SystemConfig } from 'Containers/SystemConfig/SystemConfigTypes';
+import { PublicConfig } from 'Containers/SystemConfig/SystemConfigTypes';
 import {
     Card,
     CardActions,
@@ -17,11 +17,10 @@ import {
 } from '@patternfly/react-core';
 
 export type ConfigLoginDetailWidgetProps = {
-    config: SystemConfig;
+    publicConfig: PublicConfig;
 };
 
-const ConfigLoginDetailWidget = ({ config }: ConfigLoginDetailWidgetProps): ReactElement => {
-    const { publicConfig } = config;
+const ConfigLoginDetailWidget = ({ publicConfig }: ConfigLoginDetailWidgetProps): ReactElement => {
     const isEnabled = publicConfig?.loginNotice?.enabled || false;
     const loginNoticeText = publicConfig?.loginNotice?.text || 'None';
 

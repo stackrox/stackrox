@@ -1,12 +1,10 @@
 import React, { CSSProperties, ReactElement } from 'react';
 
-export type AppBannerSize = 'UNSET' | 'SMALL' | 'MEDIUM' | 'LARGE';
-
 export type AppBannerProps = {
     dataTestId: string;
     backgroundColor: string;
     color: string;
-    size: AppBannerSize;
+    size: 'UNSET' | 'SMALL' | 'MEDIUM' | 'LARGE';
     text: string;
 };
 

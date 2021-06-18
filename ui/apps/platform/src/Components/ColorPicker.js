@@ -7,12 +7,14 @@ import { Manager, Target, Popper } from 'react-popper';
 
 class ColorPickerComponent extends Component {
     static propTypes = {
+        id: PropTypes.string,
         color: PropTypes.string,
         onChange: PropTypes.func,
         disabled: PropTypes.bool,
     };
 
     static defaultProps = {
+        id: null,
         color: null,
         onChange: () => {},
         disabled: false,
@@ -26,7 +28,7 @@ class ColorPickerComponent extends Component {
     }
 
     handleOnChange = ({ hex }) => {
-        this.props.onChange(hex);
+        this.props.onChange(hex, this.props.id);
     };
 
     handleClickOutside = () => {
@@ -36,13 +38,6 @@ class ColorPickerComponent extends Component {
     onClickHandler = () => {
         const { isOpen } = this.state;
         this.setState({ isOpen: !isOpen });
-    };
-
-    renderColorPickerPopover = () => {
-        if (!this.state.isOpen) {
-            return null;
-        }
-        return <ChromePicker color={this.props.color} onChange={this.handleOnChange} />;
     };
 
     render() {
@@ -64,7 +59,9 @@ class ColorPickerComponent extends Component {
                     </button>
                 </Target>
                 <Popper className={`popper z-10 ${this.state.isOpen ? '' : 'hidden'}`}>
-                    {this.renderColorPickerPopover()}
+                    {this.state.isOpen && (
+                        <ChromePicker color={this.props.color} onChange={this.handleOnChange} />
+                    )}
                 </Popper>
             </Manager>
         );

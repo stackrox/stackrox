@@ -1,11 +1,11 @@
 import React, { ReactElement, ReactNode } from 'react';
-import AppBanner, { AppBannerSize } from 'Components/AppBanner';
+import AppBanner from 'Components/AppBanner';
 
 export type AppBannerOptions = {
     backgroundColor: string;
     color: string;
     enabled: boolean;
-    size: AppBannerSize;
+    size: 'UNSET' | 'SMALL' | 'MEDIUM' | 'LARGE';
     text: string;
 };
 

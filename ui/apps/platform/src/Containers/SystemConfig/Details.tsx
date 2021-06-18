@@ -16,19 +16,19 @@ function Details({ systemConfig, telemetryConfig }: DetailsProps): ReactElement 
     return (
         <Grid hasGutter>
             <GridItem span={12}>
-                <ConfigDataRetentionDetailWidget config={systemConfig} />
+                <ConfigDataRetentionDetailWidget privateConfig={systemConfig?.privateConfig} />
             </GridItem>
-            <GridItem span={6}>
-                <ConfigBannerDetailWidget type="header" config={systemConfig} />
+            <GridItem sm={12} md={6}>
+                <ConfigBannerDetailWidget type="header" publicConfig={systemConfig?.publicConfig} />
             </GridItem>
-            <GridItem span={6}>
-                <ConfigBannerDetailWidget type="footer" config={systemConfig} />
+            <GridItem sm={12} md={6}>
+                <ConfigBannerDetailWidget type="footer" publicConfig={systemConfig?.publicConfig} />
             </GridItem>
-            <GridItem span={6}>
-                <ConfigLoginDetailWidget config={systemConfig} />
+            <GridItem sm={12} md={6}>
+                <ConfigLoginDetailWidget publicConfig={systemConfig?.publicConfig} />
             </GridItem>
-            <GridItem span={6}>
-                <ConfigTelemetryDetailWidget config={telemetryConfig} editable={false} />
+            <GridItem sm={12} md={6}>
+                <ConfigTelemetryDetailWidget telemetryConfig={telemetryConfig} editable={false} />
             </GridItem>
         </Grid>
     );

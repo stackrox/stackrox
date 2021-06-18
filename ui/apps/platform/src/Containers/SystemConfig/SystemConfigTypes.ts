@@ -3,21 +3,35 @@ type Config = {
     color: string;
     enabled: boolean;
     size: string;
-    text: string;
+    text: 'UNSET' | 'SMALL' | 'MEDIUM' | 'LARGE';
 };
 
-export type SystemConfig = {
-    publicConfig: {
-        footer: Config;
-        header: Config;
-        loginNotice?: {
-            enabled: boolean;
-            text: string;
-        };
-    } | null;
+export type PrivateConfig = {
+    alertConfig: {
+        allRuntimeRetentionDurationDays: number;
+        attemptedDeployRetentionDurationDays: number;
+        attemptedRuntimeRetentionDurationDays: number;
+        deletedRuntimeRetentionDurationDays: number;
+        resolvedDeployRetentionDurationDays: number;
+    };
+    imageRetentionDurationDays: number;
+};
+
+export type PublicConfig = {
+    footer: Config;
+    header: Config;
+    loginNotice?: {
+        enabled: boolean;
+        text: string;
+    };
 };
 
 export type TelemetryConfig = {
     enabled: boolean;
     lastSetTime: string;
+};
+
+export type SystemConfig = {
+    privateConfig: PrivateConfig;
+    publicConfig: PublicConfig;
 };
