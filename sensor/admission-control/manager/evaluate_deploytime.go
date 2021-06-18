@@ -31,7 +31,7 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 	}
 
 	// Do not enforce on StackRox and system namespaces
-	if req.Namespace == namespaces.StackRox || kubernetes.SystemNamespaceSet.Contains(req.Namespace) {
+	if req.Namespace == namespaces.StackRox || req.Namespace == m.ownNamespace || kubernetes.SystemNamespaceSet.Contains(req.Namespace) {
 		log.Debugf("Action affects system namespace, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}

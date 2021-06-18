@@ -93,9 +93,11 @@ type manager struct {
 	sensorConnStatus concurrency.Flag
 
 	alertsC chan []*storage.Alert
+
+	ownNamespace string
 }
 
-func newManager(conn *grpc.ClientConn) *manager {
+func newManager(conn *grpc.ClientConn, namespace string) *manager {
 	cache, err := sizeboundedcache.New(200*size.MB, 2*size.MB, func(key interface{}, value interface{}) int64 {
 		return int64(len(key.(string)) + value.(imageCacheEntry).Size())
 	})
@@ -120,6 +122,8 @@ func newManager(conn *grpc.ClientConn) *manager {
 		resourceUpdatesC: make(chan *sensor.AdmCtrlUpdateResourceRequest),
 		initialSyncSig:   concurrency.NewSignal(),
 		depClient:        sensor.NewDeploymentServiceClient(conn),
+
+		ownNamespace: namespace,
 	}
 }
 

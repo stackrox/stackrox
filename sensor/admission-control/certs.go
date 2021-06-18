@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stackrox/rox/sensor/admission-control/fetchcerts"
 )
 
@@ -39,15 +40,29 @@ func configureCA() error {
 	return nil
 }
 
-func configureCerts() error {
+func isUsableServiceCert(certFilePath, namespace string) bool {
+	certFromFile, err := x509utils.LoadCertificatePEMFile(certFilePath)
+	if err != nil {
+		log.Errorf("Failed to load service certificate: %v", err)
+		return false
+	}
+	desiredDNS := mtls.AdmissionControlSubject.HostnameForNamespace(namespace) + ".svc"
+	if err := certFromFile.VerifyHostname(desiredDNS); err != nil {
+		log.Errorf("mTLS certificate with common name %s is not valid for DNS name %s: %v", certFromFile.Subject.CommonName, desiredDNS, err)
+		return false
+	}
+	return true
+}
+
+func configureCerts(namespace string) error {
 	if allExist, err := fileutils.AllExist(mtls.CertFilePath(), mtls.KeyFilePath()); err != nil {
 		log.Errorf("Could not stat certificate and key in default location: %v. Assuming they don't exist...", err)
-	} else if allExist {
-		// Found in default location
+	} else if allExist && isUsableServiceCert(mtls.CertFilePath(), namespace) {
+		// Found usable cert in default location
 		return nil
 	}
 
-	log.Info("No certificates found, attempting to fetch certificates from sensor ...")
+	log.Info("No usable certificates found, attempting to fetch certificates from sensor ...")
 	if err := fetchcerts.FetchAndSetupCertificates(context.Background()); err != nil {
 		return errors.Wrap(err, "failed to fetch certificates from sensor")
 	}

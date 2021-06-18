@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	v1 "k8s.io/api/core/v1"
@@ -41,9 +40,9 @@ type configMapPersister struct {
 }
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
-func NewConfigMapSettingsPersister(k8sClient kubernetes.Interface, settingsMgr admissioncontroller.SettingsManager) common.SensorComponent {
+func NewConfigMapSettingsPersister(k8sClient kubernetes.Interface, settingsMgr admissioncontroller.SettingsManager, namespace string) common.SensorComponent {
 	return &configMapPersister{
-		client:           k8sClient.CoreV1().ConfigMaps(namespaces.StackRox),
+		client:           k8sClient.CoreV1().ConfigMaps(namespace),
 		settingsStreamIt: settingsMgr.SettingsStream().Iterator(false),
 	}
 }
@@ -162,8 +161,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      admissioncontrol.ConfigMapName,
-			Namespace: namespaces.StackRox,
+			Name: admissioncontrol.ConfigMapName,
 			Annotations: map[string]string{
 				annotationInfoKey: annotationInfoText,
 			},

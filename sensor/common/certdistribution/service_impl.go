@@ -9,10 +9,14 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/services"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -131,24 +135,53 @@ func (s *service) loadCertsForService(serviceName string) (certPEM, keyPEM strin
 	return string(certBytes), string(keyBytes), nil
 }
 
-func (s *service) FetchCertificate(ctx context.Context, req *sensor.FetchCertificateRequest) (*sensor.FetchCertificateResponse, error) {
-	if err := s.rateLimiter.Wait(ctx); err != nil {
-		return nil, status.Error(codes.PermissionDenied, "rate limit exceeded for this API")
+func (s *service) verifyRequestViaIdentity(requestingServiceIdentity *storage.ServiceIdentity, serviceType storage.ServiceType) bool {
+	if requestingServiceIdentity.GetType() != serviceType {
+		return false
 	}
+	// The following call will return an error if the explicit ID `clusterid.Get()` (which is always a non-wildcard
+	// id) is incompatible with the ID from cert `requestingServiceIdentity.GetId()`. In effect, the IDs need
+	// to be equal, or the latter (but not the former) needs to be a wildcard ID.
+	if _, err := centralsensor.GetClusterID(clusterid.Get(), requestingServiceIdentity.GetId()); err != nil {
+		return false
+	}
+	return true
+}
 
-	token := req.GetServiceAccountToken()
+func (s *service) verifyRequestViaServiceAccountToken(ctx context.Context, serviceName, token string) error {
 	if token == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "no token specified")
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "no token specified")
 	}
 
+	// This API is rate limit such that an untrusted user cannot get us to DDoS the Kubernetes API server.
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return status.Error(codes.PermissionDenied, "rate limit exceeded for this API")
+	}
+
+	expectedSubject := fmt.Sprintf("system:serviceaccount:%s:%s", s.namespace, serviceName)
+	if err := s.verifyToken(ctx, token, expectedSubject); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *service) FetchCertificate(ctx context.Context, req *sensor.FetchCertificateRequest) (*sensor.FetchCertificateResponse, error) {
 	serviceName := services.ServiceTypeToSlugName(req.GetServiceType())
 	if serviceName == "" {
 		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid service type %s", req.GetServiceType())
 	}
 
-	expectedSubject := fmt.Sprintf("system:serviceaccount:%s:%s", s.namespace, serviceName)
-	if err := s.verifyToken(ctx, token, expectedSubject); err != nil {
-		return nil, err
+	var requestingServiceIdentity *storage.ServiceIdentity
+	if id := authn.IdentityFromContext(ctx); id != nil {
+		requestingServiceIdentity = id.Service()
+	}
+	// If the request is made with a valid service cert with a matching type, we do not need to go through the
+	// Kubernetes API server for verification. This is the case, for example, if the client has a valid cert,
+	// which is however not usable for the namespace it runs in.
+	if s.verifyRequestViaIdentity(requestingServiceIdentity, req.GetServiceType()) {
+		if err := s.verifyRequestViaServiceAccountToken(ctx, serviceName, req.GetServiceAccountToken()); err != nil {
+			return nil, err
+		}
 	}
 
 	certPEM, keyPEM, err := s.loadCertsForService(serviceName)

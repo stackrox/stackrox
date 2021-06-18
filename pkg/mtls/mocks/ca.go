@@ -92,18 +92,23 @@ func (mr *MockCAMockRecorder) CheckProperties() *gomock.Call {
 }
 
 // IssueCertForSubject mocks base method
-func (m *MockCA) IssueCertForSubject(arg0 mtls.Subject) (*mtls.IssuedCert, error) {
+func (m *MockCA) IssueCertForSubject(arg0 mtls.Subject, arg1 ...mtls.IssueCertOption) (*mtls.IssuedCert, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IssueCertForSubject", arg0)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IssueCertForSubject", varargs...)
 	ret0, _ := ret[0].(*mtls.IssuedCert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IssueCertForSubject indicates an expected call of IssueCertForSubject
-func (mr *MockCAMockRecorder) IssueCertForSubject(arg0 interface{}) *gomock.Call {
+func (mr *MockCAMockRecorder) IssueCertForSubject(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCertForSubject", reflect.TypeOf((*MockCA)(nil).IssueCertForSubject), arg0)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCertForSubject", reflect.TypeOf((*MockCA)(nil).IssueCertForSubject), varargs...)
 }
 
 // KeyPEM mocks base method

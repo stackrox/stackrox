@@ -71,7 +71,8 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 
 	conn, err := clientconn.GRPCConnection(ctx, mtls.SensorSubject, env.SensorEndpoint.Setting(), clientconn.Options{
 		TLS: clientconn.TLSConfigOptions{
-			RootCAs: caPool,
+			UseClientCert: clientconn.UseClientCertIfAvailable,
+			RootCAs:       caPool,
 		},
 	})
 	if err != nil {

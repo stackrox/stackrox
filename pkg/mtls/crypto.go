@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/x509utils"
 )
@@ -79,6 +80,9 @@ var (
 
 	// SensorSubject is the identity used in certificates for Sensor.
 	SensorSubject = Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
+
+	// AdmissionControlSubject is the identity used in certificates for Admission Control.
+	AdmissionControlSubject = Subject{ServiceType: storage.ServiceType_ADMISSION_CONTROL_SERVICE, Identifier: "Admission Control"}
 
 	// ScannerSubject is the identity used in certificates for Scanner.
 	ScannerSubject = Subject{ServiceType: storage.ServiceType_SCANNER_SERVICE, Identifier: "Scanner"}
@@ -201,7 +205,7 @@ func validateSubject(subj Subject) error {
 	return errorList.ToError()
 }
 
-func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer) (*IssuedCert, error) {
+func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCertOption) (*IssuedCert, error) {
 	if err := validateSubject(subj); err != nil {
 		// Purposefully didn't use returnErr because errorList.ToError() returned from validateSubject is already prefixed
 		return nil, err
@@ -221,8 +225,17 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer) (*IssuedCert, 
 		return nil, errors.Wrap(err, "request parsing")
 	}
 
+	var issueOpts issueOptions
+	issueOpts.apply(opts)
+
+	var hosts []string
+	hosts = append(hosts, subj.AllHostnames()...)
+	if ns := issueOpts.namespace; ns != "" && ns != namespaces.StackRox {
+		hosts = append(hosts, subj.AllHostnamesForNamespace(ns)...)
+	}
+
 	req := cfsigner.SignRequest{
-		Hosts:   subj.AllHostnames(),
+		Hosts:   hosts,
 		Request: string(csrBytes),
 		Subject: &cfsigner.Subject{
 			CN:           subj.CN(),
@@ -249,16 +262,15 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer) (*IssuedCert, 
 		X509Cert: x509Cert,
 		ID:       id,
 	}, nil
-
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
+func IssueNewCert(subj Subject, opts ...IssueCertOption) (cert *IssuedCert, err error) {
 	s, err := signer()
 	if err != nil {
 		return nil, errors.Wrap(err, "signer creation")
 	}
-	return issueNewCertFromSigner(subj, s)
+	return issueNewCertFromSigner(subj, s, opts)
 }
 
 // RandomSerial returns a new integer that can be used as a certificate serial number (i.e., it is positive and contains

@@ -26,6 +26,19 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
+// UseClientCertSetting controls whether a client certificate should be used for the connection.
+type UseClientCertSetting int
+
+const (
+	// DontUseClientCert will never attempt to use the client certificate for the connection.
+	DontUseClientCert UseClientCertSetting = iota
+	// UseClientCertIfAvailable will attempt to load the client certificate, but will not fail
+	// with an error if the client certificate is unusable.
+	UseClientCertIfAvailable
+	// MustUseClientCert will fail the connection with an error if the client cert cannot be loaded.
+	MustUseClientCert
+)
+
 var (
 	// NextProtos are the ALPN protos to use for gRPC connections.
 	NextProtos = []string{alpn.PureGRPCALPNString, "h2", "http/1.1"}
@@ -70,7 +83,7 @@ func (o *Options) ConfigureTokenAuth(token string) {
 
 // TLSConfigOptions are options that modify the behavior of `TLSConfig`.
 type TLSConfigOptions struct {
-	UseClientCert      bool
+	UseClientCert      UseClientCertSetting
 	ServerName         string
 	InsecureSkipVerify bool
 	CustomCertVerifier TLSCertVerifier
@@ -97,12 +110,16 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 		RootCAs:    opts.RootCAs,
 	}
 
-	if opts.UseClientCert {
+	if opts.UseClientCert != DontUseClientCert {
 		clientCert, err := mtls.LeafCertificateFromFile()
 		if err != nil {
-			return nil, errors.Wrap(err, "client credentials")
+			if opts.UseClientCert == MustUseClientCert {
+				return nil, errors.Wrap(err, "client credentials")
+			}
+			log.Warnf("Failed to load client certificate for TLS connection: %v", err)
+		} else {
+			conf.Certificates = []tls.Certificate{clientCert}
 		}
-		conf.Certificates = []tls.Certificate{clientCert}
 	}
 
 	customVerifier := opts.CustomCertVerifier
@@ -212,7 +229,7 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 
 	clientConnOpts := Options{
 		TLS: TLSConfigOptions{
-			UseClientCert: true,
+			UseClientCert: MustUseClientCert,
 			ServerName:    host,
 			RootCAs:       connOpts.rootCAs,
 		},

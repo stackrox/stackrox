@@ -31,6 +31,6 @@ type Manager interface {
 }
 
 // New creates a new admission control manager
-func New(conn *grpc.ClientConn) Manager {
-	return newManager(conn)
+func New(conn *grpc.ClientConn, namespace string) Manager {
+	return newManager(conn, namespace)
 }

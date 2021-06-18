@@ -29,7 +29,7 @@ type CA interface {
 	// CertPool returns a certificate pool containing the single CA certificate.
 	CertPool() *x509.CertPool
 	// IssueCertForSubject issues a new certificate for the given subject from this CA.
-	IssueCertForSubject(subj Subject) (*IssuedCert, error)
+	IssueCertForSubject(subj Subject, opts ...IssueCertOption) (*IssuedCert, error)
 	// ValidateAndExtractSubject validates that the given certificate is a service certificate issued by this CA,
 	// and extracts the subject information.
 	ValidateAndExtractSubject(cert *x509.Certificate) (Subject, error)
@@ -129,11 +129,11 @@ func (c *ca) CertPool() *x509.CertPool {
 	return pool
 }
 
-func (c *ca) IssueCertForSubject(subj Subject) (*IssuedCert, error) {
+func (c *ca) IssueCertForSubject(subj Subject, opts ...IssueCertOption) (*IssuedCert, error) {
 	if c.signer == nil {
 		return nil, errors.New("CA is not set up for signing")
 	}
-	return issueNewCertFromSigner(subj, c.signer)
+	return issueNewCertFromSigner(subj, c.signer, opts)
 }
 
 func (c *ca) ValidateAndExtractSubject(cert *x509.Certificate) (Subject, error) {

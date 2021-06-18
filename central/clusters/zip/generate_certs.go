@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -99,7 +100,7 @@ func GenerateCertsAndAddToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, id
 	}
 	certs.Files["secrets/"+mtls.CACertFileName] = ca
 
-	identities, err := clusters.IssueSecuredClusterCertificates(cluster, identityStore)
+	identities, err := clusters.IssueSecuredClusterCertificates(cluster, namespaces.StackRox, identityStore)
 	if err != nil {
 		return certs, err
 	}
