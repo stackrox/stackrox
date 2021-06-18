@@ -2,8 +2,8 @@ package processindicators
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -61,7 +61,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 		return s.process(indicator)
 	default:
-		return fmt.Errorf("action %q for process indicator is not supported", event.GetAction())
+		return errors.Errorf("action %q for process indicator is not supported", event.GetAction())
 	}
 }
 
