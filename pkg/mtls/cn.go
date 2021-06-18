@@ -76,17 +76,28 @@ func (s Subject) CN() string {
 }
 
 // Hostname returns the hostname that should represent this subject
-// as a Subject Alternative Name.
+// as a Subject Alternative Name in the default case (stackrox namespace).
 func (s Subject) Hostname() string {
-	return fmt.Sprintf("%s.stackrox", hostname(s.ServiceType))
+	return s.HostnameForNamespace("stackrox")
 }
 
-// AllHostnames returns all of the hostnames: e.g. central.stackrox.svc
+// HostnameForNamespace returns the hostname that should represent this subject
+// in an arbitrary namespace.
+func (s Subject) HostnameForNamespace(namespace string) string {
+	return fmt.Sprintf("%s.%s", hostname(s.ServiceType), namespace)
+}
+
+// AllHostnames returns all of the hostnames for the default case: e.g. central.stackrox.svc
 func (s Subject) AllHostnames() []string {
+	return s.AllHostnamesForNamespace("stackrox")
+}
+
+// AllHostnamesForNamespace returns all of the hostnames for a specific namespace: e.g. central.my-namespace.svc
+func (s Subject) AllHostnamesForNamespace(namespace string) []string {
 	// Admission Controllers require the .svc suffix
-	hostnames := []string{s.Hostname(), fmt.Sprintf("%s.svc", s.Hostname())}
+	hostnames := []string{s.HostnameForNamespace(namespace), fmt.Sprintf("%s.svc", s.HostnameForNamespace(namespace))}
 	if s.ServiceType == storage.ServiceType_SENSOR_SERVICE {
-		hostnames = append(hostnames, fmt.Sprintf("%s-webhook.stackrox.svc", hostname(s.ServiceType)))
+		hostnames = append(hostnames, fmt.Sprintf("%s-webhook.%s.svc", hostname(s.ServiceType), namespace))
 	}
 	return hostnames
 }

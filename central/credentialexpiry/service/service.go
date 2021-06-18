@@ -26,7 +26,7 @@ type Service interface {
 // New returns a new Service instance using the given DataStore.
 func New(imageIntegrations imageIntegrationStore.DataStore) Service {
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
-		UseClientCert: true,
+		UseClientCert: clientconn.MustUseClientCert,
 	})
 	if err != nil {
 		// This case is hit if the Central CA cert cannot be loaded. This case is hit during some upgrade-tests

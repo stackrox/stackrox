@@ -346,6 +346,7 @@ function launch_central {
 
 function launch_sensor {
     local k8s_dir="$1"
+    local common_dir="${k8s_dir}/../common"
 
     local extra_config=()
     local extra_json_config=''
@@ -394,6 +395,7 @@ function launch_sensor {
     fi
 
     if [[ "$SENSOR_HELM_DEPLOY" == "true" ]]; then
+      local sensor_namespace="${SENSOR_HELM_OVERRIDE_NAMESPACE:-stackrox}"
       mkdir "$k8s_dir/sensor-deploy"
       touch "$k8s_dir/sensor-deploy/init-bundle.yaml"
       chmod 0600 "$k8s_dir/sensor-deploy/init-bundle.yaml"
@@ -418,6 +420,9 @@ function launch_sensor {
       if [[ -f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml" ]]; then
         helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
       fi
+      if [[ "$sensor_namespace" != "stackrox" ]]; then
+        helm_args+=(--set "allowNonstandardNamespace=true")
+      fi
 
       if [[ "$SENSOR_HELM_MANAGED" == "true" ]]; then
         helm_args+=(--set "helmManaged=true")
@@ -430,7 +435,11 @@ function launch_sensor {
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
-      helm upgrade --install -n stackrox stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
+      if [[ "$sensor_namespace" != "stackrox" ]]; then
+        kubectl create namespace "$sensor_namespace" &>/dev/null || true
+        kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
+      fi
+      helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then

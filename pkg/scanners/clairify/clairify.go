@@ -167,7 +167,7 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 
 func getTLSConfig() (*tls.Config, error) {
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
-		UseClientCert: true,
+		UseClientCert: clientconn.MustUseClientCert,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize TLS config")

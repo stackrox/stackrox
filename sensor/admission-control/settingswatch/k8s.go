@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/namespaces"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -32,22 +31,24 @@ func tweakListOpts(listOpts *metav1.ListOptions) {
 }
 
 // WatchK8sForSettingsUpdatesAsync watches kubernetes
-func WatchK8sForSettingsUpdatesAsync(ctx concurrency.Waitable, settingsC chan<- *sensor.AdmissionControlSettings) error {
+func WatchK8sForSettingsUpdatesAsync(ctx concurrency.Waitable, settingsC chan<- *sensor.AdmissionControlSettings, namespace string) error {
 	w := &k8sSettingsWatch{
-		ctx:  ctx,
-		outC: settingsC,
+		ctx:       ctx,
+		outC:      settingsC,
+		namespace: namespace,
 	}
 	return w.start()
 }
 
 type k8sSettingsWatch struct {
-	ctx  concurrency.Waitable
-	outC chan<- *sensor.AdmissionControlSettings
+	ctx       concurrency.Waitable
+	outC      chan<- *sensor.AdmissionControlSettings
+	namespace string
 }
 
 func getConfigMapFromObj(obj interface{}) *v1.ConfigMap {
 	cm, _ := obj.(*v1.ConfigMap)
-	if cm == nil || cm.GetNamespace() != namespaces.StackRox || cm.GetName() != admissioncontrol.ConfigMapName {
+	if cm == nil || cm.GetName() != admissioncontrol.ConfigMapName {
 		return nil
 	}
 	return cm
@@ -154,7 +155,7 @@ func (w *k8sSettingsWatch) start() error {
 	}
 
 	sif := informers.NewSharedInformerFactoryWithOptions(k8sClient, 0,
-		informers.WithNamespace(namespaces.StackRox),
+		informers.WithNamespace(w.namespace),
 		informers.WithTweakListOptions(tweakListOpts))
 
 	sif.Core().V1().ConfigMaps().Informer().AddEventHandler(w)
