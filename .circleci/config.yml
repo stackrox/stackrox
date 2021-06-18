@@ -1198,6 +1198,7 @@ commands:
             helm uninstall central || true
             helm uninstall scanner || true
             helm uninstall sensor || true
+            kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait || true
 
   deploy-webhook-server:
     steps:

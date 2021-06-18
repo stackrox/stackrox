@@ -18,7 +18,7 @@ set -eu
 
 main() {
 	set +e
-    for ns in $(kubectl get ns | tail +2 | egrep '^qa' | awk '{print $1}'); do
+    for ns in $(kubectl get ns -o json | jq -r '.items[].metadata.name' | grep -E '^qa'); do
         echo "Collecting from namespace: ${ns}"
         ./scripts/ci/collect-service-logs.sh "${ns}" $@
     done
