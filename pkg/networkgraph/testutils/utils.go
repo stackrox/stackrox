@@ -1,8 +1,16 @@
 package testutils
 
 import (
+	"math/rand"
+	"net"
+	"strconv"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	pkgNet "github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // GetDeploymentNetworkEntity returns a deployment type network entity.
@@ -56,4 +64,61 @@ func GetNetworkFlow(src, dst *storage.NetworkEntityInfo, port int, protocol stor
 		},
 		LastSeenTimestamp: ts,
 	}
+}
+
+// GenRandomExtSrcNetworkEntityInfo generates numNetworks number of storage.NetworkEntityInfo objects with random CIDRs.
+func GenRandomExtSrcNetworkEntityInfo(family pkgNet.Family, numNetworks int) ([]*storage.NetworkEntityInfo, error) {
+	nets, err := genRandomNetworks(family, numNetworks)
+	if err != nil {
+		return nil, err
+	}
+
+	entities := make([]*storage.NetworkEntityInfo, 0, len(nets))
+	for k := range nets {
+		entities = append(entities, GetExtSrcNetworkEntityInfo(k, k, k, false))
+	}
+
+	return entities, nil
+}
+
+// GenRandomExtSrcNetworkEntity generates numNetworks number of storage.NetworkEntity objects with random CIDRs.
+func GenRandomExtSrcNetworkEntity(family pkgNet.Family, numNetworks int, clusterID string) ([]*storage.NetworkEntity, error) {
+	nets, err := genRandomNetworks(family, numNetworks)
+	if err != nil {
+		return nil, err
+	}
+
+	entities := make([]*storage.NetworkEntity, 0, len(nets))
+	for k := range nets {
+		id, err := externalsrcs.NewClusterScopedID(clusterID, k)
+		utils.Should(err)
+		entities = append(entities, GetExtSrcNetworkEntity(id.String(), k, k, false, clusterID))
+	}
+
+	return entities, nil
+}
+
+func genRandomNetworks(family pkgNet.Family, numNetworks int) (map[string]struct{}, error) {
+	nets := make(map[string]struct{})
+
+	var bits int
+	if family == pkgNet.IPv4 {
+		bits = 32
+	} else if family == pkgNet.IPv6 {
+		bits = 128
+	}
+
+	ip := make([]byte, bits/8)
+	for len(nets) < numNetworks {
+		if _, err := rand.Read(ip); err != nil {
+			return nil, err
+		}
+
+		n, err := networkgraph.ValidateCIDR(net.IP(ip).String() + "/" + strconv.Itoa(int(1+rand.Int31n(int32(bits)))))
+		if err != nil {
+			continue
+		}
+		nets[n.String()] = struct{}{}
+	}
+	return nets, nil
 }

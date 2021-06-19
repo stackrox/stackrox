@@ -5,18 +5,19 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	pkgNet "github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkLegacyNetworkTreeForIPv4(b *testing.B) {
-	entities, err := getNetworkEntities(32, 20000)
+	entities, err := testutils.GenRandomExtSrcNetworkEntityInfo(pkgNet.IPv4, 20000)
 	require.NoError(b, err)
 
 	runBenchmarkOnOpsOnLegacy(b, pkgNet.IPv4, entities, "IPv4LegacyNTree")
 }
 
 func BenchmarkLegacyNetworkTreeForIPv6(b *testing.B) {
-	entities, err := getNetworkEntities(128, 20000)
+	entities, err := testutils.GenRandomExtSrcNetworkEntityInfo(pkgNet.IPv6, 20000)
 	require.NoError(b, err)
 
 	runBenchmarkOnOpsOnLegacy(b, pkgNet.IPv6, entities, "IPv6LegacyNTree")
