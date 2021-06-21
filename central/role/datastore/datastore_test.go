@@ -4,18 +4,22 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	roleStoreMocks "github.com/stackrox/rox/central/role/datastore/internal/store/mocks"
+	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/central/role/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestRoleDataStore(t *testing.T) {
@@ -36,14 +40,14 @@ type roleDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	dataStore   DataStore
-	roleStorage *roleStoreMocks.MockStore
-	rocksie     *rocksdb.RocksDB
+	dataStore DataStore
+	boltDB    *bolt.DB
+	rocksie   *rocksdb.RocksDB
 
+	existingRole          *storage.Role
 	existingPermissionSet *storage.PermissionSet
 	existingScope         *storage.SimpleAccessScope
-
-	mockCtrl *gomock.Controller
+	envIsolator           *envisolator.EnvIsolator
 }
 
 func (s *roleDataStoreTestSuite) SetupTest() {
@@ -57,122 +61,104 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Role)))
 
-	s.mockCtrl = gomock.NewController(s.T())
-	s.roleStorage = roleStoreMocks.NewMockStore(s.mockCtrl)
+	var err error
+	s.boltDB, err = bolthelper.NewTemp(s.T().Name() + "-bolt.db")
+	s.Require().NoError(err)
 
 	s.initDataStore(false)
 }
 
 func (s *roleDataStoreTestSuite) initDataStore(sacV2Enabled bool) {
 	s.rocksie = rocksdbtest.RocksDBForT(s.T())
+	roleStorage := roleStore.New(s.boltDB)
 	permissionSetStorage, err := permissionSetStore.New(s.rocksie)
 	s.Require().NoError(err)
 	scopeStorage, err := simpleAccessScopeStore.New(s.rocksie)
 	s.Require().NoError(err)
 
-	s.dataStore = New(s.roleStorage, permissionSetStorage, scopeStorage, sacV2Enabled)
+	s.dataStore = New(roleStorage, permissionSetStorage, scopeStorage, sacV2Enabled)
 
-	// Insert a permission set and an access scope into the test DB.
+	// Insert a permission set, access scope, and role into the test DB.
 	s.existingPermissionSet = getValidPermissionSet("permissionset.existing", "existing permissionset")
 	s.Require().NoError(permissionSetStorage.Upsert(s.existingPermissionSet))
 	s.existingScope = getValidAccessScope("scope.existing", "existing scope")
 	s.Require().NoError(scopeStorage.Upsert(s.existingScope))
+	s.existingRole = getValidRole("role.existing", "existing role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
+
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *roleDataStoreTestSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(s.rocksie)
-	s.mockCtrl.Finish()
+	testutils.TearDownDB(s.boltDB)
+	s.envIsolator.RestoreAll()
 }
 
-func (s *roleDataStoreTestSuite) TestEnforcesGet() {
-	s.roleStorage.EXPECT().GetRole(gomock.Any()).Times(0)
+////////////////////////////////////////////////////////////////////////////////
+// Roles                                                                      //
+//                                                                            //
 
-	role, err := s.dataStore.GetRole(s.hasNoneCtx, "someID")
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(role, "expected return value to be nil")
+func getValidRole(id, name, permissionSetID, accessScopeID string) *storage.Role {
+	return &storage.Role{
+		Id:              utils.EnsureValidRoleID(id),
+		Name:            name,
+		PermissionSetId: permissionSetID,
+		AccessScopeId:   accessScopeID,
+	}
 }
 
-func (s *roleDataStoreTestSuite) TestAllowsGet() {
-	s.roleStorage.EXPECT().GetRole(gomock.Any()).Return(nil, nil)
-
-	_, err := s.dataStore.GetRole(s.hasReadCtx, "someID")
-	s.NoError(err, "expected no error trying to read with permissions")
-
-	s.roleStorage.EXPECT().GetRole(gomock.Any()).Return(nil, nil)
-
-	_, err = s.dataStore.GetRole(s.hasWriteCtx, "someID")
-	s.NoError(err, "expected no error trying to read with permissions")
+func getInvalidRole(id, name string) *storage.Role {
+	return &storage.Role{
+		Id:              utils.EnsureValidPermissionSetID(id),
+		Name:            name,
+		PermissionSetId: "some non-existent permission set",
+		AccessScopeId:   "some non-existent scope",
+	}
 }
 
-func (s *roleDataStoreTestSuite) TestEnforcesGetAll() {
-	s.roleStorage.EXPECT().GetAllRoles().Times(0)
+func (s *roleDataStoreTestSuite) TestRolePermissions() {
+	// goodRole and badRole should validate but do not actually exist in the database.
+	goodRole := getValidRole("role.valid", "new valid role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
+	badRole := getInvalidRole("role.invalid", "new invalid role")
+
+	role, err := s.dataStore.GetRole(s.hasNoneCtx, s.existingRole.GetName())
+	s.NoError(err, "no access for Get*() is not an error")
+	s.Nil(role)
+
+	role, err = s.dataStore.GetRole(s.hasNoneCtx, goodRole.GetName())
+	s.NoError(err, "no error even if the object does not exist")
+	s.Nil(role)
 
 	roles, err := s.dataStore.GetAllRoles(s.hasNoneCtx)
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(roles, "expected return value to be nil")
-}
+	s.NoError(err, "no access for GetAll*() is not an error")
+	s.Empty(roles)
 
-func (s *roleDataStoreTestSuite) TestAllowsGetAll() {
-	s.roleStorage.EXPECT().GetAllRoles().Return(nil, nil)
+	err = s.dataStore.AddRole(s.hasNoneCtx, goodRole)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Add*() yields a permission error")
 
-	_, err := s.dataStore.GetAllRoles(s.hasReadCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
+	err = s.dataStore.AddRole(s.hasReadCtx, goodRole)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Add*() yields a permission error")
 
-	s.roleStorage.EXPECT().GetAllRoles().Return(nil, nil)
+	err = s.dataStore.AddRole(s.hasReadCtx, badRole)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error for invalid Role")
 
-	_, err = s.dataStore.GetAllRoles(s.hasWriteCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
-}
+	err = s.dataStore.UpdateRole(s.hasNoneCtx, s.existingRole)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Update*() yields a permission error")
 
-func (s *roleDataStoreTestSuite) TestEnforcesAdd() {
-	s.roleStorage.EXPECT().AddRole(gomock.Any()).Times(0)
+	err = s.dataStore.UpdateRole(s.hasReadCtx, s.existingRole)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Update*() yields a permission error")
 
-	err := s.dataStore.AddRole(s.hasNoneCtx, &storage.Role{Name: "role"})
-	s.Error(err, "expected an error trying to write without permissions")
+	err = s.dataStore.UpdateRole(s.hasReadCtx, goodRole)
+	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
 
-	err = s.dataStore.AddRole(s.hasReadCtx, &storage.Role{Name: "role"})
-	s.Error(err, "expected an error trying to write without permissions")
-}
+	err = s.dataStore.RemoveRole(s.hasNoneCtx, s.existingRole.GetName())
+	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Remove*() yields a permission error")
 
-func (s *roleDataStoreTestSuite) TestAllowsAdd() {
-	s.roleStorage.EXPECT().AddRole(gomock.Any()).Return(nil)
+	err = s.dataStore.RemoveRole(s.hasReadCtx, s.existingRole.GetName())
+	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Remove*() yields a permission error")
 
-	err := s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{Name: "role"})
-	s.NoError(err, "expected no error trying to write with permissions")
-}
-
-func (s *roleDataStoreTestSuite) TestEnforcesUpdate() {
-	s.roleStorage.EXPECT().AddRole(gomock.Any()).Times(0)
-
-	err := s.dataStore.UpdateRole(s.hasNoneCtx, &storage.Role{Name: "role"})
-	s.Error(err, "expected an error trying to write without permissions")
-
-	err = s.dataStore.UpdateRole(s.hasReadCtx, &storage.Role{Name: "role"})
-	s.Error(err, "expected an error trying to write without permissions")
-}
-
-func (s *roleDataStoreTestSuite) TestAllowsUpdate() {
-	s.roleStorage.EXPECT().UpdateRole(gomock.Any()).Return(nil)
-
-	err := s.dataStore.UpdateRole(s.hasWriteCtx, &storage.Role{Name: "role"})
-	s.NoError(err, "expected no error trying to write with permissions")
-}
-
-func (s *roleDataStoreTestSuite) TestEnforcesRemove() {
-	s.roleStorage.EXPECT().RemoveRole(gomock.Any()).Times(0)
-
-	err := s.dataStore.RemoveRole(s.hasNoneCtx, "role")
-	s.Error(err, "expected an error trying to write without permissions")
-
-	err = s.dataStore.RemoveRole(s.hasReadCtx, "role")
-	s.Error(err, "expected an error trying to write without permissions")
-}
-
-func (s *roleDataStoreTestSuite) TestAllowsRemove() {
-	s.roleStorage.EXPECT().RemoveRole(gomock.Any()).Return(nil)
-
-	err := s.dataStore.RemoveRole(s.hasWriteCtx, "role")
-	s.NoError(err, "expected no error trying to write with permissions")
+	err = s.dataStore.RemoveRole(s.hasReadCtx, goodRole.GetName())
+	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -442,45 +428,73 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 }
 
 func (s *roleDataStoreTestSuite) TestResolveRoles() {
-	permissionSetID := utils.GeneratePermissionSetID()
-	permissionSet := getValidPermissionSet(permissionSetID, "meh")
 	resourceToAccess := map[string]storage.Access{
 		"Image": storage.Access_READ_WRITE_ACCESS,
 	}
 	legacyRole := &storage.Role{
+		Id:               utils.EnsureValidRoleID("legacy"),
 		Name:             "legacy",
 		ResourceToAccess: resourceToAccess,
 	}
 	regularRole := &storage.Role{
+		Id:              utils.EnsureValidRoleID("regular"),
 		Name:            "regular",
-		PermissionSetId: permissionSetID,
+		PermissionSetId: s.existingPermissionSet.GetId(),
 	}
-
-	s.roleStorage.EXPECT().AddRole(gomock.Any()).Times(2)
-	err := s.dataStore.AddRole(s.hasWriteCtx, regularRole)
-	s.NoError(err)
-	err = s.dataStore.AddRole(s.hasWriteCtx, legacyRole)
-	s.NoError(err)
 
 	// when SAC is enabled we work with permission sets
 	s.initDataStore(true)
-	// if there is no permission set with this id, return error
-	_, err = s.dataStore.ResolveRoles(s.hasNoneCtx, []*storage.Role{regularRole})
-	s.Error(err)
+	s.envIsolator.Setenv(features.ScopedAccessControl.EnvVar(), "true")
+	err := s.dataStore.AddRole(s.hasWriteCtx, regularRole)
+	s.NoError(err)
 
 	// if there is permission set with this id, return it in resolved role
-	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, permissionSet)
 	s.NoError(err)
 	resolvedRoles, err := s.dataStore.ResolveRoles(s.hasNoneCtx, []*storage.Role{regularRole})
 	s.NoError(err)
 	s.Len(resolvedRoles, 1)
-	s.Equal(permissionSet, resolvedRoles[0].PermissionSet)
+	s.Equal(s.existingPermissionSet, resolvedRoles[0].PermissionSet)
 
 	// when SAC is disabled
 	s.initDataStore(false)
+	s.envIsolator.Setenv(features.ScopedAccessControl.EnvVar(), "false")
+	err = s.dataStore.AddRole(s.hasWriteCtx, legacyRole)
+	s.NoError(err)
 	// create fake permission set for legacy role
 	resolvedRoles, err = s.dataStore.ResolveRoles(s.hasNoneCtx, []*storage.Role{legacyRole})
 	s.NoError(err)
 	s.Len(resolvedRoles, 1)
 	s.Equal(resourceToAccess, resolvedRoles[0].GetResourceToAccess())
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Combined                                                                   //
+//                                                                            //
+
+func (s *roleDataStoreTestSuite) TestForeignKeyConstraints() {
+	var err error
+	permissionSet := getValidPermissionSet("permissionset.new", "new valid permissionset")
+	scope := getValidAccessScope("scope.new", "new valid scope")
+	role := getValidRole("role.valid", "new valid role", permissionSet.GetId(), scope.GetId())
+
+	err = s.dataStore.AddRole(s.hasWriteCtx, role)
+	s.ErrorIs(err, errorhelpers.ErrNotFound, "Cannot create a Role without its PermissionSet and AccessScope existing")
+
+	s.NoError(s.dataStore.AddPermissionSet(s.hasWriteCtx, permissionSet))
+
+	err = s.dataStore.AddRole(s.hasWriteCtx, role)
+	s.ErrorIs(err, errorhelpers.ErrNotFound, "Cannot create a Role without its AccessScope existing")
+
+	s.NoError(s.dataStore.AddAccessScope(s.hasWriteCtx, scope))
+	s.NoError(s.dataStore.AddRole(s.hasWriteCtx, role))
+
+	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId())
+	s.ErrorIs(err, errorhelpers.ErrReferencedByAnotherObject, "cannot delete a PermissionSet referred to by a Role")
+
+	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId())
+	s.ErrorIs(err, errorhelpers.ErrReferencedByAnotherObject, "cannot delete an Access Scope referred to by a Role")
+
+	s.NoError(s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName()))
+	s.NoError(s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId()))
+	s.NoError(s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId()))
 }

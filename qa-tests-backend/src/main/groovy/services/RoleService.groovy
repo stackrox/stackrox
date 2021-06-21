@@ -34,7 +34,9 @@ class RoleService extends BaseService {
                     FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
                 def permissionSet = createPermissionSet(
                         "Test Automation Permission Set for ${role.name}", role.resourceToAccess)
-                r = Role.newBuilder(role).setPermissionSetId(permissionSet.id).build()
+                r = Role.newBuilder(role)
+                        .clearResourceToAccess()
+                        .setPermissionSetId(permissionSet.id).build()
             }
             getRoleService().createRole(r)
         } catch (Exception e) {
@@ -46,9 +48,11 @@ class RoleService extends BaseService {
         try {
             if (FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
                 def role = getRole(name)
+                getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
                 deletePermissionSet(role.permissionSetId)
+            } else {
+                getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
             }
-            getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
         } catch (Exception e) {
             println "Error deleting role ${name}: ${e}"
         }

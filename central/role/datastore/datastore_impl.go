@@ -30,56 +30,78 @@ type dataStoreImpl struct {
 }
 
 func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Role, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
-	} else if !ok {
-		return nil, nil
 	}
 
 	return ds.roleStorage.GetRole(name)
 }
 
 func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {
-	if ok, err := roleSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
-	} else if !ok {
-		return nil, nil
 	}
 
 	return ds.roleStorage.GetAllRoles()
 }
 
 func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error {
-	if ok, err := roleSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return errors.New("permission denied")
 	}
 	if isDefaultRole(role) {
 		return errors.Errorf("cannot modify default role %s", role.GetName())
+	}
+
+	// protect against TOCTOU race condition
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	// Verify storage constraints.
+	if role.GetPermissionSetId() != "" {
+		if err := ds.verifyPermissionSetIDExists(role.GetPermissionSetId()); err != nil {
+			return errors.Wrapf(errorhelpers.ErrNotFound, "referenced permission set %s does not exist", role.GetPermissionSetId())
+		}
+	}
+	if role.GetAccessScopeId() != "" {
+		if err := ds.verifyAccessScopeIDExists(role.GetAccessScopeId()); err != nil {
+			return errors.Wrapf(errorhelpers.ErrNotFound, "referenced access scope %s does not exist", role.GetAccessScopeId())
+		}
 	}
 
 	return ds.roleStorage.AddRole(role)
 }
 
 func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) error {
-	if ok, err := roleSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return errors.New("permission denied")
 	}
 	if isDefaultRole(role) {
 		return errors.Errorf("cannot modify default role %s", role.GetName())
+	}
+
+	// protect against TOCTOU race condition
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	// Verify storage constraints.
+	if role.GetPermissionSetId() != "" {
+		if err := ds.verifyPermissionSetIDExists(role.GetPermissionSetId()); err != nil {
+			return errors.Wrapf(errorhelpers.ErrNotFound, "referenced permission set %s does not exist", role.GetPermissionSetId())
+		}
+	}
+	if role.GetAccessScopeId() != "" {
+		if err := ds.verifyAccessScopeIDExists(role.GetAccessScopeId()); err != nil {
+			return errors.Wrapf(errorhelpers.ErrNotFound, "referenced access scope %s does not exist", role.GetAccessScopeId())
+		}
 	}
 
 	return ds.roleStorage.UpdateRole(role)
 }
 
 func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
-	if ok, err := roleSAC.WriteAllowed(ctx); err != nil {
+	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
-	} else if !ok {
-		return errors.New("permission denied")
 	}
 	if isDefaultRoleName(name) {
 		return errors.Errorf("cannot modify default role %s", name)
@@ -192,6 +214,17 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 		return errors.Errorf("cannot modify default role permission set %s", permissionSet.Name)
 	}
 
+	// Ensure this PermissionSet isn't in use by any Role.
+	roles, err := ds.roleStorage.GetAllRoles()
+	if err != nil {
+		return err
+	}
+	for _, role := range roles {
+		if role.GetPermissionSetId() == id {
+			return errors.Wrapf(errorhelpers.ErrReferencedByAnotherObject, "cannot delete permission set in use by role %s", role.GetName())
+		}
+	}
+
 	// Constraints ok, delete the object.
 	if err := ds.permissionSetStorage.Delete(id); err != nil {
 		return err
@@ -290,6 +323,17 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	// Verify storage constraints.
 	if err := ds.verifyAccessScopeIDExists(id); err != nil {
 		return err
+	}
+
+	// Ensure this AccessScope isn't in use by any Role.
+	roles, err := ds.roleStorage.GetAllRoles()
+	if err != nil {
+		return err
+	}
+	for _, role := range roles {
+		if role.GetAccessScopeId() == id {
+			return errors.Wrapf(errorhelpers.ErrReferencedByAnotherObject, "cannot delete access scope in use by role %s", role.GetName())
+		}
 	}
 
 	// Constraints ok, delete the object.
