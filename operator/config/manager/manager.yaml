@@ -27,6 +27,12 @@ spec:
       containers:
       - args:
         - --leader-elect
+        env:
+        - name: RELATED_IMAGE_MAIN
+        - name: RELATED_IMAGE_SCANNER
+        - name: RELATED_IMAGE_SCANNER_DB
+        - name: RELATED_IMAGE_COLLECTOR_SLIM
+        - name: RELATED_IMAGE_COLLECTOR_FULL
         image: controller:latest
         name: manager
         securityContext:

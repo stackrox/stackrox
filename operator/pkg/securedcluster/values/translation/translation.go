@@ -12,6 +12,7 @@ import (
 	securedcluster "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/helmutil"
 	"helm.sh/helm/v3/pkg/chartutil"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +54,17 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 		return nil, err
 	}
 
-	return t.translate(ctx, sc)
+	valsFromCR, err := t.translate(ctx, sc)
+	if err != nil {
+		return nil, err
+	}
+
+	imageOverrideVals, err := imageOverrides.ToValues()
+	if err != nil {
+		return nil, errors.Wrap(err, "computing image override values")
+	}
+
+	return helmutil.CoalesceTables(imageOverrideVals, valsFromCR), nil
 }
 
 // Translate translates a SecuredCluster CR into helm values.
@@ -73,7 +84,6 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 	v.AddAllFrom(translation.GetImagePullSecrets(sc.Spec.ImagePullSecrets))
 
 	// TODO(ROX-7178): support explicit env.openshift and env.istio setting
-	// TODO(ROX-7150): support setting/overriding images
 
 	customize := translation.NewValuesBuilder()
 

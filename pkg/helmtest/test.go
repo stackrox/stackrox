@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/pointers"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
@@ -13,16 +14,11 @@ import (
 // applySetOptions takes the values specified in the `set` stanza and merges them into the otherwise defined values.
 func (t *Test) applySetOptions() error {
 	for keyPathStr, val := range t.Set {
-		keyPath := strings.Split(keyPathStr, ".")
-		if len(keyPath) == 0 {
-			return errors.New("empty key in 'set'")
+		vals, err := helmutil.ValuesForKVPair(keyPathStr, val)
+		if err != nil {
+			return errors.Wrap(err, "in 'set'")
 		}
-
-		mapForSet := map[string]interface{}{keyPath[len(keyPath)-1]: val}
-		for i := len(keyPath) - 2; i >= 0; i-- {
-			mapForSet = map[string]interface{}{keyPath[i]: mapForSet}
-		}
-		t.Values = chartutil.CoalesceTables(mapForSet, t.Values)
+		t.Values = chartutil.CoalesceTables(vals, t.Values)
 	}
 	t.Set = nil // no longer used, but make sure this is idempotent.
 

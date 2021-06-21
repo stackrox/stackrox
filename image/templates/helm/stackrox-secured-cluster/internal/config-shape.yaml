@@ -35,6 +35,10 @@ image:
     fullRef: null # string
     pullPolicy: null # string
   collector:
+    slim:
+      fullRef: null # string
+    full:
+      fullRef: null # string
     registry: null # string
     name: null # string
     repository: null # string

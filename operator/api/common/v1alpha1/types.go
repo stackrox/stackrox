@@ -33,8 +33,6 @@ type DeploymentSpec struct {
 	Resources      *Resources        `json:"resources,omitempty"`
 	// Customizations to apply on this deployment.
 	Customize *CustomizeSpec `json:"customize,omitempty"`
-	// TODO(ROX-7150): We do not support setting image in the CRs because they are determined by
-	// the operator version whose lifecycle is orthogonal to that of the CR.
 }
 
 // ServiceTLSSpec is just a wrapper for ServiceTLS field to make documentation available in all spots where it is used.

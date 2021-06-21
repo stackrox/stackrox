@@ -53,8 +53,6 @@ type SecuredClusterSpec struct {
 	// Customizations to apply on all secured cluster components.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
-	// TODO(ROX-7150): We do not support setting image in the CRs because they are determined by
-	// the operator version whose lifecycle is orthogonal to that of the CR.
 }
 
 // SensorComponentSpec defines settings for sensor.

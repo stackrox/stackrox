@@ -21,6 +21,17 @@ image:
   collector:
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
 ---
+collector:
+  slimMode: {{ eq ._rox.image.collector.registry "[< .CollectorRegistry >]" }}
+---
+image:
+  collector:
+    {{- if and ._rox.collector.slimMode ._rox.image.collector.slim.fullRef }}
+    fullRef: {{ ._rox.image.collector.slim.fullRef }}
+    {{- else if and (not ._rox.collector.slimMode) ._rox.image.collector.full.fullRef }}
+    fullRef: {{ ._rox.image.collector.full.fullRef }}
+    {{- end }}
+---
 image:
   main:
     {{- if or ._rox.image.main.tag ._rox.image.main.fullRef }}
@@ -38,9 +49,6 @@ image:
     {{- else }}
     _abbrevImageRef: {{ ._rox.image.collector.repository }}
     {{- end }}
----
-collector:
-  slimMode: {{ eq ._rox.image.collector.registry "[< .CollectorRegistry >]" }}
 ---
 image:
   collector:
