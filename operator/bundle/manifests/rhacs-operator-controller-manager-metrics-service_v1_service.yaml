@@ -4,7 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     control-plane: controller-manager
-  name: stackrox-operator-controller-manager-metrics-service
+  name: rhacs-operator-controller-manager-metrics-service
 spec:
   ports:
   - name: https

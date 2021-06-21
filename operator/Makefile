@@ -265,7 +265,7 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 	. bundle_helpers/.venv/bin/activate ;\
 	pip3 install --upgrade pip setuptools ;\
 	pip3 install -r bundle_helpers/requirements.txt ;\
-	./bundle_helpers/patch-csv.py --use-version $(VERSION) < bundle/manifests/stackrox-operator.clusterserviceversion.yaml > build/bundle/manifests/stackrox-operator.clusterserviceversion.yaml
+	./bundle_helpers/patch-csv.py --use-version $(VERSION) < bundle/manifests/rhacs-operator.clusterserviceversion.yaml > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 

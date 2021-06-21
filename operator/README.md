@@ -175,7 +175,7 @@ $ bin/operator-sdk-1.9.0 run bundle \
 # Note that serviceaccount might not exist for a few moments.
 # Rerun this command until it succeeds.
 # We hope that in OpenShift world things will be different and we will not have to do this.
-$ kubectl -n bundle-test patch serviceaccount stackrox-operator-controller-manager -p '{"imagePullSecrets": [{"name": "my-opm-image-pull-secrets"}]}'
+$ kubectl -n bundle-test patch serviceaccount rhacs-operator-controller-manager -p '{"imagePullSecrets": [{"name": "my-opm-image-pull-secrets"}]}'
 # You may need to bounce operator pods after this if they can't pull images for a while.
 $ kubectl -n bundle-test delete pod -l control-plane=controller-manager
 
@@ -188,11 +188,11 @@ $ kubectl -n bundle-test get pods
 Once done, cleanup with
 
 ```bash
-kubectl -n bundle-test delete clusterserviceversions.operators.coreos.com -l operators.coreos.com/stackrox-operator.bundle-test
+kubectl -n bundle-test delete clusterserviceversions.operators.coreos.com -l operators.coreos.com/rhacs-operator.bundle-test
 
-kubectl -n bundle-test delete subscriptions.operators.coreos.com -l operators.coreos.com/stackrox-operator.bundle-test
+kubectl -n bundle-test delete subscriptions.operators.coreos.com -l operators.coreos.com/rhacs-operator.bundle-test
 
-kubectl -n bundle-test delete catalogsources.operators.coreos.com stackrox-operator-catalog
+kubectl -n bundle-test delete catalogsources.operators.coreos.com rhacs-operator-catalog
 ```
 
 Also, you can blow everything away with

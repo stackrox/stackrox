@@ -14,4 +14,4 @@ data:
       resourceName: bf7ea6a2.stackrox.io
 kind: ConfigMap
 metadata:
-  name: stackrox-operator-manager-config
+  name: rhacs-operator-manager-config
