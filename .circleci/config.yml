@@ -1654,8 +1654,6 @@ commands:
               cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             fi
 
-            ./scripts/ci/openshift-gcr-secrets.sh
-
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
       - *setupLicense
