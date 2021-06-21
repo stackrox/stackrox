@@ -1,0 +1,22 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+  namespace: stackrox
+status:
+  conditions:
+  - status: "True"
+    type: Deployed
+  - status: "True"
+    type: Initialized
+  - status: "False"
+    type: Irreconcilable
+  - status: "False"
+    type: ReleaseFailed
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+status:
+  availableReplicas: 1

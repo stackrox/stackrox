@@ -5,3 +5,28 @@ metadata:
   namespace: stackrox
 spec:
   clusterName: testing-cluster
+  admissionControl:
+    resources:
+      override:
+        requests:
+          memory: 100Mi
+          cpu: 100m
+  sensor:
+    resources:
+      override:
+        requests:
+          memory: 100Mi
+          cpu: 100m
+  collector:
+    collector:
+      resources:
+        override:
+          requests:
+            memory: 100Mi
+            cpu: 100m
+    compliance:
+      resources:
+        override:
+          requests:
+            memory: 100Mi
+            cpu: 100m

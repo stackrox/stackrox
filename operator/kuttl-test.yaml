@@ -3,12 +3,14 @@ kind: TestSuite
 testDirs:
 - ./tests/central
 - ./tests/securedcluster
+# central takes a while do become healthy
+timeout: 90
 reportFormat: xml
 artifactsDir: build/kuttl-test-artifacts
 commands:
 - command: ./bin/manager
   background: true
-# The following commands are only necessary because we only support a fixed namespace name, which in turn requires
+# The following stackrox_namespaces commands are only necessary because we only support a fixed namespace name, which in turn requires
 # kuttl --namespace flag, and this in turn requires namespace to be in place before we start testing.
 # If/when we support arbitrary namespaces, then we can drop --namespace and the following commands,
 # and kuttl will create and clean up ephemeral namespaces for us, with the additional ability to run tests in parallel.
@@ -18,4 +20,11 @@ commands:
 - command: kubectl delete -f tests/stackrox_namespaces.yaml
 # Namespace needs to exist to use kuttl with --namespace
 - command: kubectl apply -f tests/stackrox_namespaces.yaml
+# Set up operand image pull secrets for development.
+- script: |
+    set -e # shell in CI does not grok -o pipefail
+    secret=$(mktemp)
+    ../deploy/common/pull-secret.sh stackrox docker.io > $secret
+    kubectl -n stackrox create -f $secret
+    rm $secret
 parallel: 1  # because we share the namespace :-(

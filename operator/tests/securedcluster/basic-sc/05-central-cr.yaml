@@ -1,0 +1,29 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+  namespace: stackrox
+spec:
+  central:
+    resources:
+      override:
+        requests:
+          memory: 100Mi
+          cpu: 100m
+    adminPasswordSecret:
+      name: admin-pass
+  scanner:
+    scanner:
+      resources:
+        override:
+          requests:
+            memory: 100Mi
+            cpu: 100m
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admin-pass
+data:
+  # letmein
+  value: bGV0bWVpbg==

@@ -1,0 +1,7 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+# delete PVC to not impact other tests running subsequently in the same namespace
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: stackrox-db
