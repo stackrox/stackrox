@@ -222,9 +222,16 @@ export function computeEffectiveAccessScopeClusters(
     detail: EffectiveAccessScopeDetail = 'HIGH'
 ): Promise<EffectiveAccessScopeCluster[]> {
     return axios
-        .post<EffectiveAccessScope>(computeEffectiveAccessScopeUrl, {
-            detail,
-            simpleRules,
-        })
+        .post<EffectiveAccessScope>(
+            computeEffectiveAccessScopeUrl,
+            {
+                simpleRules,
+            },
+            {
+                params: {
+                    detail,
+                },
+            }
+        )
         .then((response) => response.data.clusters);
 }
