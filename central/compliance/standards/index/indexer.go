@@ -48,15 +48,17 @@ func New(i bleve.Index) Indexer {
 
 // IndexStandard takes in a standard and indexes the standard, the groups, and the controls
 func (i *indexer) IndexStandard(standard *v1.ComplianceStandard) error {
-	if err := i.indexer.Index(standard.GetMetadata().GetId(), &standardWrapper{ComplianceStandard: standard, Type: v1.SearchCategory_COMPLIANCE_STANDARD.String()}); err != nil {
+	batch := i.indexer.NewBatch()
+
+	if err := batch.Index(standard.GetMetadata().GetId(), &standardWrapper{ComplianceStandard: standard, Type: v1.SearchCategory_COMPLIANCE_STANDARD.String()}); err != nil {
 		return err
 	}
 	for _, c := range standard.GetControls() {
-		if err := i.indexer.Index(c.GetId(), &controlWrapper{ComplianceControl: c, Type: v1.SearchCategory_COMPLIANCE_CONTROL.String()}); err != nil {
+		if err := batch.Index(c.GetId(), &controlWrapper{ComplianceControl: c, Type: v1.SearchCategory_COMPLIANCE_CONTROL.String()}); err != nil {
 			return err
 		}
 	}
-	return nil
+	return i.indexer.Batch(batch)
 }
 
 // SearchStandards searches standards
