@@ -18,22 +18,13 @@ import Roles from './Roles/Roles';
 
 const paramId = ':entityId?';
 
-// TODO temporary pending reusable PageSection elements with .css files:
-const spacerPageSection = 'var(--pf-global--spacer--md)';
-const stylePageSection = {
-    '--pf-c-page__main-section--PaddingTop': spacerPageSection,
-    '--pf-c-page__main-section--PaddingRight': spacerPageSection,
-    '--pf-c-page__main-section--PaddingBottom': 0,
-    '--pf-c-page__main-section--PaddingLeft': spacerPageSection,
-};
-
 function AccessControl({ userRolePermissions }) {
     // TODO is read access required for all routes in improved Access Control?
     // TODO Is write access required anywhere in classic Access Control?
     const hasReadAccess = getHasReadPermission('AuthProvider', userRolePermissions);
 
     return (
-        <PageSection variant="light" isFilled style={stylePageSection}>
+        <PageSection variant="light" isFilled id="access-control">
             <Title headingLevel="h1" className="pf-u-pb-md">
                 Access Control
             </Title>

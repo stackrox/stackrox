@@ -129,6 +129,11 @@ export type SimpleAccessScopeNamespace = {
     namespaceName: string;
 };
 
+/*
+ * For more information about label selectors:
+ * https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+ */
+
 export type LabelSelectorOperator = 'UNKNOWN' | 'IN' | 'NOT_IN' | 'EXISTS' | 'NOT_EXISTS';
 
 export type LabelSelectorRequirement = {
@@ -149,6 +154,42 @@ export type SimpleAccessScopeRules = {
     clusterLabelSelectors: LabelSelector[];
     namespaceLabelSelectors: LabelSelector[];
 };
+
+export function getIsKeyExistsOperator(op: LabelSelectorOperator): boolean {
+    return op === 'EXISTS' || op === 'NOT_EXISTS';
+}
+
+export function getIsKeyInSetOperator(op: LabelSelectorOperator): boolean {
+    return op === 'IN' || op === 'NOT_IN';
+}
+
+/*
+ * A valid "key in set" requirement has at least one value.
+ */
+export function getIsValidRequirement({ op, values }: LabelSelectorRequirement): boolean {
+    return !getIsKeyInSetOperator(op) || values.length !== 0;
+}
+
+/*
+ * A valid label selector has at least one requirement.
+ */
+export function getIsValidRequirements(requirements: LabelSelectorRequirement[]): boolean {
+    return requirements.length !== 0 && requirements.every(getIsValidRequirement);
+}
+
+export function getIsValidLabelSelectors(labelSelectors: LabelSelector[]): boolean {
+    return labelSelectors.every(({ requirements }) => getIsValidRequirements(requirements));
+}
+
+export function getIsValidRules({
+    clusterLabelSelectors,
+    namespaceLabelSelectors,
+}: SimpleAccessScopeRules): boolean {
+    return (
+        getIsValidLabelSelectors(clusterLabelSelectors) &&
+        getIsValidLabelSelectors(namespaceLabelSelectors)
+    );
+}
 
 export type AccessScope = {
     id: string;

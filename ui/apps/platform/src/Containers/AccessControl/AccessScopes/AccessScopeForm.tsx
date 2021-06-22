@@ -10,6 +10,7 @@ import {
     Form,
     FormGroup,
     TextInput,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -24,20 +25,20 @@ import {
     LabelSelector,
     LabelSelectorsKey,
     computeEffectiveAccessScopeClusters,
+    getIsValidRules,
 } from 'services/RolesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
+import { LabelSelectorsEditingState } from './accessScopesUtils';
 import EffectiveAccessScopeTable from './EffectiveAccessScopeTable';
 import LabelInclusion from './LabelInclusion';
-
-// Form group label icon style rule in AccessScopes.css mimics info prop in table head cells.
 
 const labelIconEffectiveAccessScope = (
     <Tooltip
         content={
             <div>
-                Status of clusters and namespaces
+                The <strong>status</strong> of clusters and namespaces
                 <br />
                 from manual inclusion, or label inclusion, or both
             </div>
@@ -55,9 +56,9 @@ const labelIconLabelInclusion = (
     <Tooltip
         content={
             <div>
-                If a label inclusion tab has multiple label selectors,
+                A label inclusion tab has label <strong>selector</strong> cards
                 <br />
-                then at least one of them must be satisfied
+                At least one selector must be satisfied (s1 or s2 or s3)
             </div>
         }
         isContentLeftAligned
@@ -93,6 +94,15 @@ function AccessScopeForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
+    /*
+     * Disable Submit button while editing a label selector.
+     * Prevent simultaneous editing on both tabs.
+     */
+    const [
+        labelSelectorsEditingState,
+        setLabelSelectorsEditingState,
+    ] = useState<LabelSelectorsEditingState | null>(null);
+
     const { dirty, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: accessScope,
         onSubmit: () => {},
@@ -102,30 +112,42 @@ function AccessScopeForm({
         }),
     });
 
-    useEffect(() => {
-        setCounterComputing((counterPrev) => counterPrev + 1);
-        computeEffectiveAccessScopeClusters(values.rules)
-            .then((clustersComputed) => {
-                setClusters(clustersComputed);
-                setAlertCompute(null);
-            })
-            .catch((error) => {
-                setAlertCompute(
-                    <Alert
-                        title="Compute effective access scope failed"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
-                        {error.message}
-                    </Alert>
-                );
-            })
-            .finally(() => {
-                setCounterComputing((counterPrev) => counterPrev - 1);
-            });
-    }, [values.rules]);
+    /*
+     * A label selector or set requirement is temporarily invalid when it is added,
+     * before its first requirement or value has been added.
+     */
+    const isValidRules = getIsValidRules(values.rules);
 
-    function handleChangeIncludedClusters(clusterName: string, isChecked: boolean) {
+    useEffect(() => {
+        if (isValidRules) {
+            setCounterComputing((counterPrev) => counterPrev + 1);
+            computeEffectiveAccessScopeClusters(values.rules)
+                .then((clustersComputed) => {
+                    setClusters(clustersComputed);
+                    setAlertCompute(null);
+                })
+                .catch((error) => {
+                    setAlertCompute(
+                        <Alert
+                            title="Compute effective access scope failed"
+                            variant={AlertVariant.danger}
+                            isInline
+                        >
+                            {error.message}
+                        </Alert>
+                    );
+                })
+                .finally(() => {
+                    setCounterComputing((counterPrev) => counterPrev - 1);
+                });
+        }
+    }, [isValidRules, values.rules]);
+
+    function onChange(_value, event) {
+        handleChange(event);
+    }
+
+    function handleIncludedClustersChange(clusterName: string, isChecked: boolean) {
         const { includedClusters } = values.rules;
         return setFieldValue(
             'rules.includedClusters',
@@ -137,7 +159,7 @@ function AccessScopeForm({
         );
     }
 
-    function handleChangeIncludedNamespaces(
+    function handleIncludedNamespacesChange(
         clusterName: string,
         namespaceName: string,
         isChecked: boolean
@@ -158,15 +180,11 @@ function AccessScopeForm({
         );
     }
 
-    function handleChangeLabelSelectors(
+    function handleLabelSelectorsChange(
         labelSelectorsKey: LabelSelectorsKey,
         labelSelectors: LabelSelector[]
     ) {
         return setFieldValue(`rules.${labelSelectorsKey}`, labelSelectors);
-    }
-
-    function onChange(_value, event) {
-        handleChange(event);
     }
 
     function onClickSubmit() {
@@ -200,102 +218,127 @@ function AccessScopeForm({
     const isViewing = !hasAction;
 
     return (
-        <Form id="access-scope-form">
-            {isActionable && (
-                <Toolbar inset={{ default: 'insetNone' }}>
-                    <ToolbarContent>
-                        {action !== 'create' && (
-                            <ToolbarItem spacer={{ default: 'spacerLg' }}>
-                                <Button
-                                    variant="primary"
-                                    onClick={handleEdit}
-                                    isDisabled={action === 'update'}
-                                    isSmall
-                                >
-                                    Edit access scope
-                                </Button>
-                            </ToolbarItem>
-                        )}
-                        {hasAction && (
-                            <ToolbarGroup variant="button-group">
+        <div id="access-scope-form">
+            <Toolbar inset={{ default: 'insetNone' }}>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <Title headingLevel="h2">
+                            {action === 'create' ? 'Create access scope' : accessScope.name}
+                        </Title>
+                    </ToolbarItem>
+                    {isActionable && (
+                        <ToolbarGroup
+                            alignment={{ default: 'alignRight' }}
+                            spaceItems={{ default: 'spaceItemsLg' }}
+                        >
+                            {hasAction ? (
+                                <ToolbarGroup variant="button-group">
+                                    <ToolbarItem>
+                                        <Button
+                                            variant="primary"
+                                            onClick={onClickSubmit}
+                                            isDisabled={
+                                                !dirty ||
+                                                !isValid ||
+                                                !isValidRules ||
+                                                Boolean(labelSelectorsEditingState) ||
+                                                isSubmitting
+                                            }
+                                            isLoading={isSubmitting}
+                                            isSmall
+                                        >
+                                            Submit
+                                        </Button>
+                                    </ToolbarItem>
+                                    <ToolbarItem>
+                                        <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                            Cancel
+                                        </Button>
+                                    </ToolbarItem>
+                                </ToolbarGroup>
+                            ) : (
                                 <ToolbarItem>
                                     <Button
                                         variant="primary"
-                                        onClick={onClickSubmit}
-                                        isDisabled={!dirty || !isValid || isSubmitting}
-                                        isLoading={isSubmitting}
+                                        onClick={handleEdit}
+                                        isDisabled={action === 'update'}
                                         isSmall
                                     >
-                                        Submit
+                                        Edit access scope
                                     </Button>
                                 </ToolbarItem>
-                                <ToolbarItem>
-                                    <Button variant="tertiary" onClick={onClickCancel} isSmall>
-                                        Cancel
-                                    </Button>
-                                </ToolbarItem>
-                            </ToolbarGroup>
-                        )}
-                    </ToolbarContent>
-                </Toolbar>
-            )}
+                            )}
+                        </ToolbarGroup>
+                    )}
+                </ToolbarContent>
+            </Toolbar>
             {alertSubmit}
-            <FormGroup label="Name" fieldId="name" isRequired>
-                <TextInput
-                    type="text"
-                    id="name"
-                    value={values.name}
-                    onChange={onChange}
-                    isDisabled={isViewing}
-                    isRequired
-                />
-            </FormGroup>
-            <FormGroup label="Description" fieldId="description">
-                <TextInput
-                    type="text"
-                    id="description"
-                    value={values.description}
-                    onChange={onChange}
-                    isDisabled={isViewing}
-                />
-            </FormGroup>
+            <Form isHorizontal>
+                <FormGroup label="Name" fieldId="name" isRequired>
+                    <TextInput
+                        type="text"
+                        id="name"
+                        value={values.name}
+                        onChange={onChange}
+                        isDisabled={isViewing}
+                        isRequired
+                    />
+                </FormGroup>
+                <FormGroup label="Description" fieldId="description">
+                    <TextInput
+                        type="text"
+                        id="description"
+                        value={values.description}
+                        onChange={onChange}
+                        isDisabled={isViewing}
+                    />
+                </FormGroup>
+            </Form>
             {alertCompute}
-            <Flex spaceItems={{ default: 'spaceItemsLg' }}>
-                <FlexItem className="pf-u-flex-basis-0 pf-u-flex-grow-1 pf-u-flex-shrink-1">
-                    <FormGroup
-                        label="Effective access scope"
-                        fieldId="effectiveAccessScope"
-                        labelIcon={labelIconEffectiveAccessScope}
-                        className="pf-u-pb-lg"
-                    >
-                        <EffectiveAccessScopeTable
-                            counterComputing={counterComputing}
-                            clusters={clusters}
-                            includedClusters={values.rules.includedClusters}
-                            includedNamespaces={values.rules.includedNamespaces}
-                            handleChangeIncludedClusters={handleChangeIncludedClusters}
-                            handleChangeIncludedNamespaces={handleChangeIncludedNamespaces}
-                            hasAction={hasAction}
-                        />
-                    </FormGroup>
-                </FlexItem>
-                <FlexItem style={{ width: '40%' }}>
-                    <FormGroup
-                        label="Label inclusion"
-                        fieldId="labelInclusion"
-                        labelIcon={labelIconLabelInclusion}
-                        className="pf-u-pb-lg"
-                    >
-                        <LabelInclusion
-                            clusterLabelSelectors={values.rules.clusterLabelSelectors}
-                            namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
-                            hasAction={hasAction}
-                            handleChangeLabelSelectors={handleChangeLabelSelectors}
-                        />
-                    </FormGroup>
-                </FlexItem>
-            </Flex>
-        </Form>
+            <Form>
+                <Flex
+                    direction={{ default: 'column', xl: 'row' }}
+                    spaceItems={{ default: 'spaceItemsNone', xl: 'spaceItemsLg' }}
+                    className="pf-u-pt-lg"
+                >
+                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                        <FormGroup
+                            label="Effective access scope"
+                            fieldId="effectiveAccessScope"
+                            labelIcon={labelIconEffectiveAccessScope}
+                            className="pf-u-pb-lg"
+                        >
+                            <EffectiveAccessScopeTable
+                                counterComputing={counterComputing}
+                                clusters={clusters}
+                                includedClusters={values.rules.includedClusters}
+                                includedNamespaces={values.rules.includedNamespaces}
+                                handleIncludedClustersChange={handleIncludedClustersChange}
+                                handleIncludedNamespacesChange={handleIncludedNamespacesChange}
+                                hasAction={hasAction}
+                            />
+                        </FormGroup>
+                    </FlexItem>
+                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                        <FormGroup
+                            label="Label inclusion"
+                            fieldId="labelInclusion"
+                            labelIcon={labelIconLabelInclusion}
+                            className="pf-u-pb-lg"
+                        >
+                            <LabelInclusion
+                                clusterLabelSelectors={values.rules.clusterLabelSelectors}
+                                namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
+                                hasAction={hasAction}
+                                labelSelectorsEditingState={labelSelectorsEditingState}
+                                setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                                handleLabelSelectorsChange={handleLabelSelectorsChange}
+                            />
+                        </FormGroup>
+                    </FlexItem>
+                </Flex>
+            </Form>
+        </div>
     );
 }
 

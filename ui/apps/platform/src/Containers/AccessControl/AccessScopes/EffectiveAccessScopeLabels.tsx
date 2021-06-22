@@ -15,8 +15,7 @@ function EffectiveAccessScopeLabels({
         <ul>
             {entries.map(([key, value]) => (
                 <li key={key}>
-                    <span className="pf-u-font-weight-bold">{key}</span>
-                    <span>: {value}</span>
+                    {key}: {value}
                 </li>
             ))}
         </ul>

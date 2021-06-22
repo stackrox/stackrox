@@ -15,48 +15,31 @@ function AddRequirementDropdown({
 }: AddRequirementDropdownProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
-    // TODO Solve problem with text color and then move isDisabled from items to toggle.
     const dropdownItems = [
-        <DropdownItem
-            component="button"
-            isDisabled={isDisabled}
-            onClick={() => onAddRequirement('IN')}
-        >
-            key in set of values
+        <DropdownItem component="button" onClick={() => onAddRequirement('EXISTS')}>
+            key <strong>exists</strong>
         </DropdownItem>,
-        <DropdownItem
-            component="button"
-            isDisabled={isDisabled}
-            onClick={() => onAddRequirement('NOT_IN')}
-        >
-            key not in set of values
+        <DropdownItem component="button" onClick={() => onAddRequirement('NOT_EXISTS')}>
+            key <strong>not exists</strong>
         </DropdownItem>,
-        <DropdownItem
-            component="button"
-            isDisabled={isDisabled}
-            onClick={() => onAddRequirement('EXISTS')}
-        >
-            key exists
+        <DropdownItem component="button" onClick={() => onAddRequirement('IN')}>
+            key <strong>in</strong> set of values (also for key = value)
         </DropdownItem>,
-        <DropdownItem
-            component="button"
-            isDisabled={isDisabled}
-            onClick={() => onAddRequirement('NOT_EXISTS')}
-        >
-            key not exists
+        <DropdownItem component="button" onClick={() => onAddRequirement('NOT_IN')}>
+            key <strong>not in</strong> set of values (also for key != value)
         </DropdownItem>,
     ];
 
     return (
         <Dropdown
-            className="pf-m-small"
+            className="pf-m-smaller"
             dropdownItems={dropdownItems}
             isOpen={isOpen}
             onSelect={() => setIsOpen(false)}
             toggle={
                 <DropdownToggle
                     isPrimary
-                    isDisabled={false}
+                    isDisabled={isDisabled}
                     onToggle={(isOpenToggle) => setIsOpen(isOpenToggle)}
                 >
                     Add requirement

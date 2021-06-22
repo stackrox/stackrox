@@ -1,16 +1,19 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useState } from 'react';
-import { Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
+import { Badge, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
 
 import { LabelSelector, LabelSelectorsKey } from 'services/RolesService';
 
-import LabelSelectors from './LabelSelectors';
+import { LabelSelectorsEditingState } from './accessScopesUtils';
+import LabelSelectorCards from './LabelSelectorCards';
 
 export type LabelInclusionProps = {
     clusterLabelSelectors: LabelSelector[];
     namespaceLabelSelectors: LabelSelector[];
     hasAction: boolean;
-    handleChangeLabelSelectors: (
+    labelSelectorsEditingState: LabelSelectorsEditingState | null;
+    setLabelSelectorsEditingState: (nextState: LabelSelectorsEditingState | null) => void;
+    handleLabelSelectorsChange: (
         labelSelectorsKey: LabelSelectorsKey,
         labelSelectorsNext: LabelSelector[]
     ) => void;
@@ -20,7 +23,9 @@ function LabelInclusion({
     clusterLabelSelectors,
     namespaceLabelSelectors,
     hasAction,
-    handleChangeLabelSelectors,
+    labelSelectorsEditingState,
+    setLabelSelectorsEditingState,
+    handleLabelSelectorsChange,
 }: LabelInclusionProps): ReactElement {
     const [activeKeyTab, setActiveKeyTab] = useState('clusterLabelSelectors');
 
@@ -35,12 +40,26 @@ function LabelInclusion({
                 <Tab
                     eventKey="clusterLabelSelectors"
                     tabContentId="clusterLabelSelectors"
-                    title={<TabTitleText>Cluster</TabTitleText>}
+                    title={
+                        <TabTitleText>
+                            Cluster
+                            <Badge isRead className="pf-u-ml-sm">
+                                {clusterLabelSelectors.length}
+                            </Badge>
+                        </TabTitleText>
+                    }
                 />
                 <Tab
                     eventKey="namespaceLabelSelectors"
                     tabContentId="namespaceLabelSelectors"
-                    title={<TabTitleText>Namespace</TabTitleText>}
+                    title={
+                        <TabTitleText>
+                            Namespace
+                            <Badge isRead className="pf-u-ml-sm">
+                                {namespaceLabelSelectors.length}
+                            </Badge>
+                        </TabTitleText>
+                    }
                 />
             </Tabs>
             <TabContent
@@ -48,11 +67,13 @@ function LabelInclusion({
                 id="clusterLabelSelectors"
                 hidden={activeKeyTab !== 'clusterLabelSelectors'}
             >
-                <LabelSelectors
+                <LabelSelectorCards
                     labelSelectors={clusterLabelSelectors}
                     labelSelectorsKey="clusterLabelSelectors"
                     hasAction={hasAction}
-                    handleChangeLabelSelectors={handleChangeLabelSelectors}
+                    labelSelectorsEditingState={labelSelectorsEditingState}
+                    setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                    handleLabelSelectorsChange={handleLabelSelectorsChange}
                 />
             </TabContent>
             <TabContent
@@ -60,11 +81,13 @@ function LabelInclusion({
                 id="namespaceLabelSelectors"
                 hidden={activeKeyTab !== 'namespaceLabelSelectors'}
             >
-                <LabelSelectors
+                <LabelSelectorCards
                     labelSelectors={namespaceLabelSelectors}
                     labelSelectorsKey="namespaceLabelSelectors"
                     hasAction={hasAction}
-                    handleChangeLabelSelectors={handleChangeLabelSelectors}
+                    labelSelectorsEditingState={labelSelectorsEditingState}
+                    setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                    handleLabelSelectorsChange={handleLabelSelectorsChange}
                 />
             </TabContent>
         </>

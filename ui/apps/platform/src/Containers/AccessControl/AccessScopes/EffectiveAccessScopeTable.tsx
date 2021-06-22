@@ -13,9 +13,9 @@ const infoName = {
     ariaLabel: 'Name of cluster or namespace (indented in light gray row)',
     tooltip: (
         <div>
-            Name of cluster
+            Name of <strong>cluster</strong>
             <br />
-            or namespace (indented in light gray row)
+            or <strong>namespace</strong> (indented in light gray row)
         </div>
     ),
     tooltipProps: {
@@ -28,9 +28,9 @@ const infoLabels = {
         'Cluster labels specified in Platform Configuration; Namespace labels specified in Kubernetes',
     tooltip: (
         <div>
-            Cluster labels specified in Platform Configuration
+            <strong>Cluster</strong> labels specified in Platform Configuration
             <br />
-            Namespace labels specified in Kubernetes
+            <strong>Namespace</strong> labels specified in Kubernetes
         </div>
     ),
     tooltipProps: {
@@ -56,8 +56,8 @@ export type EffectiveAccessScopeTableProps = {
     clusters: EffectiveAccessScopeCluster[];
     includedClusters: string[];
     includedNamespaces: SimpleAccessScopeNamespace[];
-    handleChangeIncludedClusters: (clusterName: string, isChecked: boolean) => void;
-    handleChangeIncludedNamespaces: (
+    handleIncludedClustersChange: (clusterName: string, isChecked: boolean) => void;
+    handleIncludedNamespacesChange: (
         clusterName: string,
         namespaceName: string,
         isChecked: boolean
@@ -70,8 +70,8 @@ function EffectiveAccessScopeTable({
     clusters,
     includedClusters,
     includedNamespaces,
-    handleChangeIncludedClusters,
-    handleChangeIncludedNamespaces,
+    handleIncludedClustersChange,
+    handleIncludedNamespacesChange,
     hasAction,
 }: EffectiveAccessScopeTableProps): ReactElement {
     // The key is cluster id and value is boolean after click to expand/collapse namespaces.
@@ -132,7 +132,7 @@ function EffectiveAccessScopeTable({
                         isChecked={includedClusters.includes(clusterName)}
                         isDisabled={isDisabled}
                         onChange={(isChecked) =>
-                            handleChangeIncludedClusters(clusterName, isChecked)
+                            handleIncludedClustersChange(clusterName, isChecked)
                         }
                     />
                 </Td>
@@ -204,7 +204,7 @@ function EffectiveAccessScopeTable({
                             )}
                             isDisabled={isDisabled}
                             onChange={(isChecked) =>
-                                handleChangeIncludedNamespaces(
+                                handleIncludedNamespacesChange(
                                     clusterName,
                                     namespaceName,
                                     isChecked

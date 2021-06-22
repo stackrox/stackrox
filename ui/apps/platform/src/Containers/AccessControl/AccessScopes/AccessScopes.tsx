@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
@@ -5,20 +6,14 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertVariant,
+    Badge,
     Bullseye,
     Button,
-    Drawer,
-    DrawerActions,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerContentBody,
-    DrawerHead,
-    DrawerPanelBody,
-    DrawerPanelContent,
     Spinner,
     Title,
     Toolbar,
     ToolbarContent,
+    ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
 
@@ -111,10 +106,6 @@ function AccessScopes(): ReactElement {
             });
     }, []);
 
-    function onClickClose() {
-        history.push(getEntityPath(entityType, undefined, queryObject));
-    }
-
     function onClickCreate() {
         history.push(getEntityPath(entityType, undefined, { ...queryObject, action: 'create' }));
     }
@@ -164,33 +155,6 @@ function AccessScopes(): ReactElement {
     const hasAction = Boolean(action);
     const isExpanded = hasAction || Boolean(entityId);
 
-    const panelContent = (
-        <DrawerPanelContent minSize="90%">
-            <DrawerHead>
-                <Title headingLevel="h3">
-                    {action === 'create' ? 'Create access scope' : accessScope.name}
-                </Title>
-                {!hasAction && (
-                    <DrawerActions>
-                        <DrawerCloseButton onClick={onClickClose} />
-                    </DrawerActions>
-                )}
-            </DrawerHead>
-            <DrawerPanelBody>
-                <AccessScopeForm
-                    // key={entityId}
-                    isActionable={isActionable}
-                    action={action}
-                    accessScope={accessScope}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
-                />
-            </DrawerPanelBody>
-        </DrawerPanelContent>
-    );
-
-    // TODO Display backdrop which covers nav links and drawer body during action.
     return (
         <>
             <AccessControlNav entityType={entityType} />
@@ -200,33 +164,46 @@ function AccessScopes(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
+            ) : isExpanded ? (
+                <AccessScopeForm
+                    isActionable={isActionable}
+                    action={action}
+                    accessScope={accessScope}
+                    handleCancel={handleCancel}
+                    handleEdit={handleEdit}
+                    handleSubmit={handleSubmit}
+                />
             ) : (
-                <Drawer isExpanded={isExpanded}>
-                    <DrawerContent panelContent={panelContent}>
-                        <DrawerContentBody>
-                            <Toolbar inset={{ default: 'insetNone' }}>
-                                <ToolbarContent>
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="primary"
-                                            onClick={onClickCreate}
-                                            isDisabled={isExpanded || isFetching}
-                                            isSmall
-                                        >
-                                            Create access scope
-                                        </Button>
-                                    </ToolbarItem>
-                                </ToolbarContent>
-                            </Toolbar>
-                            <AccessScopesList
-                                entityId={entityId}
-                                accessScopes={accessScopes}
-                                roles={roles}
-                                handleDelete={handleDelete}
-                            />
-                        </DrawerContentBody>
-                    </DrawerContent>
-                </Drawer>
+                <>
+                    <Toolbar inset={{ default: 'insetNone' }}>
+                        <ToolbarContent>
+                            <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
+                                <ToolbarItem>
+                                    <Title headingLevel="h2">Access scopes</Title>
+                                </ToolbarItem>
+                                <ToolbarItem>
+                                    <Badge isRead>{accessScopes.length}</Badge>
+                                </ToolbarItem>
+                            </ToolbarGroup>
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickCreate}
+                                    isDisabled={isExpanded || isFetching}
+                                    isSmall
+                                >
+                                    Create access scope
+                                </Button>
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
+                    <AccessScopesList
+                        entityId={entityId}
+                        accessScopes={accessScopes}
+                        roles={roles}
+                        handleDelete={handleDelete}
+                    />
+                </>
             )}
         </>
     );

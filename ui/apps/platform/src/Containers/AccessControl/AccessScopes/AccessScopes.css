@@ -1,4 +1,13 @@
 /*
+ * Bottom border mitigates left padding and separates generic page head from specific page body.
+ */
+#access-control .pf-c-nav.pf-m-horizontal.pf-m-tertiary {
+    border-bottom-color: var(--pf-global--BorderColor--100);
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+}
+
+/*
  * Make form group labelIcon prop look similar to info prop in table head cell.
  * From PatternFly rule with selector: .pf-c-table__column-help-action .pf-c-button
  */
@@ -54,16 +63,50 @@ table .pf-c-dropdown__toggle.pf-m-plain svg {
     display: inline;
 }
 
+/*
+ * A smallest button has no padding, because only an icon.
+ */
 #access-scope-form .pf-c-button.pf-m-smallest {
     --pf-c-button--PaddingTop: 0;
     --pf-c-button--PaddingRight: 0;
     --pf-c-button--PaddingBottom: 0;
     --pf-c-button--PaddingLeft: 0;
-    --pf-c-button--FontSize: var(--pf-global--FontSize--sm);
+    --pf-c-button--FontSize: var(--pf-global--FontSize--sm); /* like form or table */
 }
 
 #access-scope-form .pf-c-button.pf-m-smallest svg {
     display: inline;
+}
+
+/*
+ * A button with small font size like `isSmall` and reduced padding:
+ * 4px instead of 6px vertical
+ * 8px instead of 16px horizontal
+ */
+#access-scope-form .pf-c-button.pf-m-smaller {
+    --pf-c-button--FontSize: var(--pf-global--FontSize--sm);
+    --pf-c-button--PaddingTop: var(--pf-global--spacer--xs);
+    --pf-c-button--PaddingRight: var(--pf-global--spacer--sm);
+    --pf-c-button--PaddingBottom: var(--pf-global--spacer--xs);
+    --pf-c-button--PaddingLeft: var(--pf-global--spacer--sm);
+}
+
+/*
+ * Dropdown has (via className) font size compatible with Button (see above).
+ */
+ #access-scope-form .pf-c-dropdown.pf-m-smaller {
+    --pf-c-dropdown__toggle--FontSize: var(--pf-global--FontSize--sm);
+    --pf-c-dropdown__toggle--PaddingTop: var(--pf-global--spacer--xs);
+    --pf-c-dropdown__toggle--PaddingRight: var(--pf-global--spacer--sm);
+    --pf-c-dropdown__toggle--PaddingBottom: var(--pf-global--spacer--xs);
+    --pf-c-dropdown__toggle--PaddingLeft: var(--pf-global--spacer--sm);
+    --pf-c-dropdown__toggle-icon--MarginLeft: var(--pf-global--spacer--sm);
+    --pf-c-dropdown__toggle-icon--MarginRight: 0;
+    --pf-c-dropdown__menu-item--FontSize: var(--pf-global--FontSize--sm);
+    --pf-c-dropdown__menu-item--PaddingTop: calc(var(--pf-global--spacer--sm) / 2);
+    --pf-c-dropdown__menu-item--PaddingRight: var(--pf-global--spacer--sm);
+    --pf-c-dropdown__menu-item--PaddingBottom: calc(var(--pf-global--spacer--sm) / 2);
+    --pf-c-dropdown__menu-item--PaddingLeft: var(--pf-global--spacer--sm);
 }
 
 /*
@@ -74,8 +117,26 @@ table .pf-c-dropdown__toggle.pf-m-plain svg {
 }
 
 /*
- * Dropdown has (via className) font size compatible with Button which has isSmall prop.
+ * Disabled primary Dropdown needs same colors as Button.
  */
-.pf-c-dropdown.pf-m-small {
-    --pf-c-dropdown__toggle--FontSize: var(--pf-c-button--m-small--FontSize);
+#access-scope-form .pf-c-dropdown__toggle.pf-m-primary[disabled] {
+    background-color: var(--pf-global--disabled-color--200);
+    color: var(--pf-global--disabled-color--100);
+}
+
+/*
+ * Form control has (via className) font size compatible with table.
+ */
+#access-scope-form .pf-c-form-control.pf-m-small {
+    --pf-c-form-control--FontSize: var(--pf-global--FontSize--sm);
+    --pf-c-form-control--PaddingTop: 2px;
+    --pf-c-form-control--PaddingBottom: 2px;
+}
+
+/*
+ * Align text in input with label key or value in other table cells.
+ */
+#access-scope-form td input.pf-c-form-control.pf-m-small {
+    position: relative;
+    left: -9px;
 }
