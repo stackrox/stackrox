@@ -4913,12 +4913,12 @@
   dependencies:
     "@babel/runtime" "^7.12.5"
 
-"@tippyjs/react@^4.2.0":
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/@tippyjs/react/-/react-4.2.0.tgz#a1cb369d0051099e8a7e4ceb59f809abd9955283"
-  integrity sha512-T6UcHtwtGkvgsBQ4bNp8BtXGxa2ujfOkWUogYkRtN4UVJ2QRgDdFoJeaPxdndnVYFEa2uTVxSFxs8QkSkZ2Gdw==
+"@tippyjs/react@^4.2.5":
+  version "4.2.5"
+  resolved "https://registry.yarnpkg.com/@tippyjs/react/-/react-4.2.5.tgz#9b5837db93a1cac953962404df906aef1a18e80d"
+  integrity sha512-YBLgy+1zznBNbx4JOoOdFXWMLXjBh9hLPwRtq3s8RRdrez2l3tPBRt2m2909wZd9S1KUeKjOOYYsnitccI9I3A==
   dependencies:
-    tippy.js "^6.2.0"
+    tippy.js "^6.3.1"
 
 "@types/anymatch@*":
   version "1.3.1"
@@ -21727,10 +21727,10 @@ tippy.js@5.1.2:
   dependencies:
     popper.js "^1.16.0"
 
-tippy.js@^6.2.0, tippy.js@^6.3.0:
-  version "6.3.0"
-  resolved "https://registry.yarnpkg.com/tippy.js/-/tippy.js-6.3.0.tgz#1cabf492b3afb1a82cf28e5a62859f6aeb253688"
-  integrity sha512-7YhkZS7HbvEGiahGGU4QHLEnzaEWEOh/s4W1YN/ktgqm9LJHV0Bw9GV+hwGbvIAAjqgSps/FWWZBzWEiV8ojmA==
+tippy.js@^6.3.0, tippy.js@^6.3.1:
+  version "6.3.1"
+  resolved "https://registry.yarnpkg.com/tippy.js/-/tippy.js-6.3.1.tgz#3788a007be7015eee0fd589a66b98fb3f8f10181"
+  integrity sha512-JnFncCq+rF1dTURupoJ4yPie5Cof978inW6/4S6kmWV7LL9YOSEVMifED3KdrVPEG+Z/TFH2CDNJcQEfaeuQww==
   dependencies:
     "@popperjs/core" "^2.8.3"
 
