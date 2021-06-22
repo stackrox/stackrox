@@ -96,9 +96,10 @@ message ComplianceRunResults {
     ComplianceDomain domain            = 1;
     ComplianceRunMetadata run_metadata = 2;
 
-    EntityResults cluster_results                 = 3;
-    map<string, EntityResults> node_results       = 4;
-    map<string, EntityResults> deployment_results = 5;
+    EntityResults cluster_results                     = 3;
+    map<string, EntityResults> node_results           = 4;
+    map<string, EntityResults> deployment_results     = 5;
+    map<string, EntityResults> machine_config_results = 6;
 }
 
 // Next available tag: 2

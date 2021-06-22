@@ -42,6 +42,8 @@ type ComplianceDataRepository interface {
 	CISDockerTriggered() bool
 	CISKubernetesTriggered() bool
 
+	ComplianceOperatorResults() map[string][]*storage.ComplianceOperatorCheckResult
+
 	// Per-host data
 	HostScraped(node *storage.Node) *compliance.ComplianceReturn
 	NodeResults() map[string]map[string]*compliance.ComplianceStandardResult

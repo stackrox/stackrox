@@ -1,9 +1,8 @@
-import { connect } from 'react-redux';
 import React from 'react';
 import PropTypes from 'prop-types';
+
 import { standardLabels } from 'messages/standards';
 import entityTypes from 'constants/entityTypes';
-
 import NIST from 'images/nist.svg';
 import PCI from 'images/pci.svg';
 import HIPAA from 'images/hipaa.svg';
@@ -20,7 +19,7 @@ const svgMapping = {
     [entityTypes.NIST_SP_800_53_Rev_4]: NIST,
 };
 
-const ControlDetails = ({ standardId, control, description, className }) => (
+const ControlDetails = ({ standardId, standardName, control, description, className }) => (
     <Widget
         header="Control details"
         bodyClassName="flex-col"
@@ -28,11 +27,15 @@ const ControlDetails = ({ standardId, control, description, className }) => (
         id="control-details"
     >
         <div className="flex bg-tertiary-200 m-1">
-            <img src={svgMapping[standardId]} alt={standardId} className="h-18" />
-            <div className="flex flex-col justify-center px-3">
+            {svgMapping[standardId] && (
+                <img src={svgMapping[standardId]} alt={standardId} className="h-18" />
+            )}
+            <div className="flex flex-col justify-center p-3">
                 <div className="pb-2">
                     <span className="font-700 pr-1">Standard:</span>
-                    <span data-testid="standard-name">{standardLabels[standardId]}</span>
+                    <span data-testid="standard-name">
+                        {standardLabels[standardId] || standardName}
+                    </span>
                 </div>
                 <div>
                     <span className="font-700 pr-1">Control:</span>
@@ -49,10 +52,12 @@ ControlDetails.propTypes = {
     control: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
     className: PropTypes.string,
+    standardName: PropTypes.string,
 };
 
 ControlDetails.defaultProps = {
     className: '',
+    standardName: '',
 };
 
-export default connect()(ControlDetails);
+export default ControlDetails;

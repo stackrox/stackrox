@@ -340,6 +340,20 @@ func (mr *MockComplianceDataRepositoryMockRecorder) CISKubernetesTriggered() *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CISKubernetesTriggered", reflect.TypeOf((*MockComplianceDataRepository)(nil).CISKubernetesTriggered))
 }
 
+// ComplianceOperatorResults mocks base method
+func (m *MockComplianceDataRepository) ComplianceOperatorResults() map[string][]*storage.ComplianceOperatorCheckResult {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ComplianceOperatorResults")
+	ret0, _ := ret[0].(map[string][]*storage.ComplianceOperatorCheckResult)
+	return ret0
+}
+
+// ComplianceOperatorResults indicates an expected call of ComplianceOperatorResults
+func (mr *MockComplianceDataRepositoryMockRecorder) ComplianceOperatorResults() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceOperatorResults", reflect.TypeOf((*MockComplianceDataRepository)(nil).ComplianceOperatorResults))
+}
+
 // HostScraped mocks base method
 func (m *MockComplianceDataRepository) HostScraped(node *storage.Node) *compliance.ComplianceReturn {
 	m.ctrl.T.Helper()

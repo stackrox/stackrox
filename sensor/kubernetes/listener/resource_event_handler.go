@@ -147,7 +147,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), k.eventsC, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	handle(resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), k.eventsC, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
-	if features.ComplianceOperatorCheckResults.Enabled() {
+	if features.ComplianceOperatorCheckResults.Enabled() && complianceProfileInformer != nil {
 		// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
 		handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.eventsC, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	}

@@ -21,6 +21,8 @@ var (
 //go:generate mockgen-wrapper
 type Indexer interface {
 	IndexStandard(standard *v1.ComplianceStandard) error
+	DeleteStandard(id string) error
+	DeleteControl(id string) error
 	SearchStandards(q *v1.Query) ([]search.Result, error)
 	SearchControls(q *v1.Query) ([]search.Result, error)
 }
@@ -59,6 +61,14 @@ func (i *indexer) IndexStandard(standard *v1.ComplianceStandard) error {
 		}
 	}
 	return i.indexer.Batch(batch)
+}
+
+func (i *indexer) DeleteStandard(id string) error {
+	return i.indexer.Delete(id)
+}
+
+func (i *indexer) DeleteControl(id string) error {
+	return i.indexer.Delete(id)
 }
 
 // SearchStandards searches standards

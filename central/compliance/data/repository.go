@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/compliance/data"
+	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,6 +46,8 @@ type repository struct {
 	cisDockerRunCheck     bool
 	cisKubernetesRunCheck bool
 	categoryToPolicies    map[string]set.StringSet // maps categories to policy set
+
+	complianceOperatorResults map[string][]*storage.ComplianceOperatorCheckResult
 
 	hostScrape map[string]*compliance.ComplianceReturn
 
@@ -133,6 +136,10 @@ func (r *repository) RegistryIntegrations() []framework.ImageMatcher {
 
 func (r *repository) ScannerIntegrations() []framework.ImageMatcher {
 	return r.scanners
+}
+
+func (r *repository) ComplianceOperatorResults() map[string][]*storage.ComplianceOperatorCheckResult {
+	return r.complianceOperatorResults
 }
 
 func newRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
@@ -285,6 +292,23 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	)
 	alertQuery.Pagination = infPagination
 	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery)
+	if err != nil {
+		return err
+	}
+
+	r.complianceOperatorResults = make(map[string][]*storage.ComplianceOperatorCheckResult)
+	err = f.complianceOperatorResultStore.Walk(ctx, func(c *storage.ComplianceOperatorCheckResult) error {
+		if c.GetClusterId() != clusterID {
+			return nil
+		}
+		rule := c.Annotations[v1alpha1.RuleIDAnnotationKey]
+		if rule == "" {
+			log.Errorf("Expected rule annotation for %+v", c)
+			return nil
+		}
+		r.complianceOperatorResults[rule] = append(r.complianceOperatorResults[rule], c)
+		return nil
+	})
 	if err != nil {
 		return err
 	}

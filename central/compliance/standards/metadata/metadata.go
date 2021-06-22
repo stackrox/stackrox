@@ -26,6 +26,7 @@ type Standard struct {
 	ID          string
 	Name        string
 	Description string
+	Dynamic     bool
 
 	Categories []Category
 }

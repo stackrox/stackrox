@@ -12,6 +12,8 @@ const (
 	NodeKind
 	// DeploymentKind indicates that a compliance check target is of type Deployment.
 	DeploymentKind
+	// MachineConfigKind indicates that a compliance check target is of type MachineConfig
+	MachineConfigKind
 )
 
 func (k TargetKind) String() string {
@@ -22,6 +24,8 @@ func (k TargetKind) String() string {
 		return "node"
 	case DeploymentKind:
 		return "deployment"
+	case MachineConfigKind:
+		return "machineconfig"
 	default:
 		return fmt.Sprintf("TargetKind(%d)", int(k))
 	}

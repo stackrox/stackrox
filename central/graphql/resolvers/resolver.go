@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
+	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
@@ -88,6 +89,7 @@ type Resolver struct {
 	WatchedImageDataStore       watchedImageDataStore.DataStore
 	orchestratorIstioCVEManager fetcher.OrchestratorIstioCVEManager
 	cveMatcher                  *cveMatcher.CVEMatcher
+	manager                     complianceOperatorManager.Manager
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -129,6 +131,7 @@ func New() *Resolver {
 		WatchedImageDataStore:       watchedImageDataStore.Singleton(),
 		orchestratorIstioCVEManager: fetcher.SingletonManager(),
 		cveMatcher:                  cveMatcher.Singleton(),
+		manager:                     complianceOperatorManager.Singleton(),
 	}
 	return resolver
 }

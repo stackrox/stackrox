@@ -147,6 +147,7 @@ func CSVHandler() http.HandlerFunc {
 			}
 			options.clusterIDs = clusterIDs
 		}
+
 		data, err := complianceDS.GetLatestRunResultsForClustersAndStandards(r.Context(), options.clusterIDs, options.standardIDs, complianceDSTypes.WithMessageStrings)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
@@ -183,13 +184,20 @@ func CSVHandler() http.HandlerFunc {
 			for nodeKey, nodeValue := range d.GetNodeResults() {
 				nodeRow := dataRow
 				node := d.GetDomain().GetNodes()[nodeKey]
-				nodeRow.objectType = "node"
+				nodeRow.objectType = "Node"
 				nodeRow.objectName = node.GetName()
 				output.addAll(nodeRow, controls, nodeValue.GetControlResults())
 			}
-			dataRow.objectType = "cluster"
+			dataRow.objectType = "Cluster"
 			dataRow.objectName = dataRow.clusterName
 			output.addAll(dataRow, controls, d.GetClusterResults().GetControlResults())
+
+			dataRow.objectType = "MachineConfig"
+			for mcKey, mcValue := range d.GetMachineConfigResults() {
+				mcRow := dataRow
+				mcRow.objectName = mcKey
+				output.addAll(mcRow, controls, mcValue.GetControlResults())
+			}
 		}
 		output.Write(w, "compliance_export")
 	}

@@ -10,6 +10,7 @@ export const LIST_STANDARD = gql`
                 keys {
                     ... on ComplianceStandardMetadata {
                         id
+                        name
                     }
                     ... on ComplianceControlGroup {
                         id

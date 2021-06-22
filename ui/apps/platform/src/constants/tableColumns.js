@@ -19,6 +19,14 @@ const columnsForStandard = (function getColumnsForStandards() {
     return ret;
 })();
 
+function getColumnForStandard(id) {
+    return {
+        accessor: id,
+        Header: standardBaseTypes[id] || id,
+        Cell: ({ original }) => getColumnValue(original, id),
+    };
+}
+
 const getClusterColumns = (standards) => [
     {
         accessor: 'id',
@@ -31,7 +39,7 @@ const getClusterColumns = (standards) => [
         Header: 'Cluster',
         Cell: ({ original }) => getNameCell(original.name),
     },
-    ...standards.map(({ id }) => columnsForStandard[id]),
+    ...standards.map(({ id }) => getColumnForStandard(id)),
     {
         accessor: 'overall.average',
         Header: 'Overall',

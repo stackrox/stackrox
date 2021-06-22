@@ -53,7 +53,7 @@ class VerticalClusterBar extends Component {
         return Object.keys(data)
             .sort()
             .map((key, i) => ({
-                title: standardBaseTypes[key],
+                title: standardBaseTypes[key] || key,
                 color: colorRange[i % colorRange.length],
             }));
     };

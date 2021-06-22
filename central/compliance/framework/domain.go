@@ -2,6 +2,8 @@ package framework
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -12,17 +14,19 @@ type ComplianceDomain interface {
 	Nodes() []ComplianceTarget
 	Deployments() []ComplianceTarget
 	Pods() []*storage.Pod
+	MachineConfigs() []ComplianceTarget
 }
 
 type complianceDomain struct {
-	domainID    string
-	cluster     clusterTarget
-	nodes       []nodeTarget
-	deployments []deploymentTarget
-	pods        []*storage.Pod
+	domainID       string
+	cluster        clusterTarget
+	nodes          []nodeTarget
+	deployments    []deploymentTarget
+	pods           []*storage.Pod
+	machineConfigs []machineConfigTarget
 }
 
-func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod) *complianceDomain {
+func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, results []*storage.ComplianceOperatorCheckResult) *complianceDomain {
 	clusterTarget := targetForCluster(cluster)
 	nodeTargets := make([]nodeTarget, len(nodes))
 	for i, node := range nodes {
@@ -32,12 +36,22 @@ func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deploy
 	for i, deployment := range deployments {
 		deploymentTargets[i] = targetForDeployment(deployment)
 	}
+	var machineConfigTargets []machineConfigTarget
+	machineConfigs := set.NewStringSet()
+	for _, r := range results {
+		conf, ok := r.Labels[v1alpha1.ComplianceScanLabel]
+		if ok && machineConfigs.Add(conf) {
+			machineConfigTargets = append(machineConfigTargets, targetForMachineConfig(conf))
+		}
+	}
+
 	return &complianceDomain{
-		domainID:    uuid.NewV4().String(),
-		cluster:     clusterTarget,
-		nodes:       nodeTargets,
-		deployments: deploymentTargets,
-		pods:        pods,
+		domainID:       uuid.NewV4().String(),
+		cluster:        clusterTarget,
+		nodes:          nodeTargets,
+		deployments:    deploymentTargets,
+		pods:           pods,
+		machineConfigs: machineConfigTargets,
 	}
 }
 
@@ -65,6 +79,14 @@ func (d *complianceDomain) Deployments() []ComplianceTarget {
 	return result
 }
 
+func (d *complianceDomain) MachineConfigs() []ComplianceTarget {
+	result := make([]ComplianceTarget, len(d.machineConfigs))
+	for i, mc := range d.machineConfigs {
+		result[i] = mc
+	}
+	return result
+}
+
 func (d *complianceDomain) Pods() []*storage.Pod {
 	result := make([]*storage.Pod, len(d.pods))
 	for i, pod := range d.pods {
@@ -74,6 +96,6 @@ func (d *complianceDomain) Pods() []*storage.Pod {
 }
 
 // NewComplianceDomain creates a new compliance domain from the given cluster, list of nodes and list of deployments.
-func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod) ComplianceDomain {
-	return newComplianceDomain(cluster, nodes, deployments, pods)
+func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, results []*storage.ComplianceOperatorCheckResult) ComplianceDomain {
+	return newComplianceDomain(cluster, nodes, deployments, pods, results)
 }

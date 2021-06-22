@@ -24,14 +24,6 @@ func forEachNode(ctx ComplianceContext, check CheckFunc) {
 	}
 }
 
-// ForEachNodeCheck takes a CheckFunc operating on the `Node` scope and converts it into a check function operating
-// on the `Cluster` scope.
-func ForEachNodeCheck(check CheckFunc) CheckFunc {
-	return func(ctx ComplianceContext) {
-		forEachNode(ctx, check)
-	}
-}
-
 // ForEachNode runs the given node-scoped check function for every node in the compliance domain.
 func ForEachNode(ctx ComplianceContext, checkFn func(ComplianceContext, *storage.Node)) {
 	forEachNode(ctx, func(ctx ComplianceContext) {
@@ -46,19 +38,25 @@ func forEachDeployment(ctx ComplianceContext, check CheckFunc) {
 	}
 }
 
-// ForEachDeploymentCheck takes a CheckFunc operating on the `Deployment` scope and converts it into a CheckFunc
-// operating on the `Cluster` scope.
-func ForEachDeploymentCheck(check CheckFunc) CheckFunc {
-	return func(ctx ComplianceContext) {
-		forEachDeployment(ctx, check)
-	}
-}
-
 // ForEachDeployment runs the given deployment-scoped check function for every deployment in the compliance domain.
 func ForEachDeployment(ctx ComplianceContext, checkFn func(ComplianceContext, *storage.Deployment)) {
 	forEachDeployment(ctx, func(ctx ComplianceContext) {
 		deployment := ctx.Target().Deployment()
 		checkFn(ctx, deployment)
+	})
+}
+
+func forEachMachineConfig(ctx ComplianceContext, check CheckFunc) {
+	for _, mc := range ctx.Domain().MachineConfigs() {
+		RunForTarget(ctx, mc, check)
+	}
+}
+
+// ForEachMachineConfig runs the given machineconfig-scoped check function for every machine config in the compliance domain.
+func ForEachMachineConfig(ctx ComplianceContext, checkFn func(ComplianceContext, string)) {
+	forEachMachineConfig(ctx, func(ctx ComplianceContext) {
+		mc := ctx.Target().MachineConfig()
+		checkFn(ctx, mc)
 	})
 }
 

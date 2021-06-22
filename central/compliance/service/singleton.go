@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -16,7 +17,7 @@ var (
 // Singleton returns the singleton instance of the compliance service.
 func Singleton() Service {
 	serviceInstanceInit.Do(func() {
-		serviceInstance = New(aggregation.Singleton(), complianceDS.Singleton(), standards.RegistrySingleton(), datastore.Singleton())
+		serviceInstance = New(aggregation.Singleton(), complianceDS.Singleton(), standards.RegistrySingleton(), datastore.Singleton(), manager.Singleton())
 	})
 	return serviceInstance
 }

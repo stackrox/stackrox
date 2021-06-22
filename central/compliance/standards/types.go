@@ -85,6 +85,7 @@ func (s *Standard) MetadataProto() *v1.ComplianceStandardMetadata {
 		Description:          s.Description,
 		NumImplementedChecks: int32(len(s.allChecks)),
 		Scopes:               s.protoScopes(),
+		Dynamic:              s.Dynamic,
 	}
 }
 
@@ -137,7 +138,7 @@ type Category struct {
 // QualifiedID returns the qualified ID of this category.
 func (c *Category) QualifiedID() string {
 	if c.qualifiedID == "" {
-		c.qualifiedID = buildQualifiedID(c.Standard.ID, c.ID)
+		c.qualifiedID = BuildQualifiedID(c.Standard.ID, c.ID)
 	}
 	return c.qualifiedID
 }
@@ -186,7 +187,7 @@ type Control struct {
 // QualifiedID returns the qualified ID of this control.
 func (c *Control) QualifiedID() string {
 	if c.qualifiedID == "" {
-		c.qualifiedID = buildQualifiedID(c.Standard.ID, c.ID)
+		c.qualifiedID = BuildQualifiedID(c.Standard.ID, c.ID)
 	}
 	return c.qualifiedID
 }

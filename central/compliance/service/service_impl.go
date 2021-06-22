@@ -10,6 +10,7 @@ import (
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -36,12 +37,13 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(aggregator aggregation.Aggregator, complianceDataStore complianceDS.DataStore, standardsRepo standards.Repository, clusterStore datastore.DataStore) Service {
+func New(aggregator aggregation.Aggregator, complianceDataStore complianceDS.DataStore, standardsRepo standards.Repository, clusterStore datastore.DataStore, manager manager.Manager) Service {
 	return &serviceImpl{
 		aggregator:          aggregator,
 		complianceDataStore: complianceDataStore,
 		standardsRepo:       standardsRepo,
 		clusters:            clusterStore,
+		manager:             manager,
 	}
 }
 
@@ -50,6 +52,7 @@ type serviceImpl struct {
 	complianceDataStore complianceDS.DataStore
 	standardsRepo       standards.Repository
 	clusters            datastore.DataStore
+	manager             manager.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -73,8 +76,16 @@ func (s *serviceImpl) GetStandards(context.Context, *v1.Empty) (*v1.GetComplianc
 	if err != nil {
 		return nil, err
 	}
+	// Filter standards by active
+	filteredStandards := standards[:0]
+	for _, standard := range standards {
+		if s.manager.IsStandardActive(standard.GetId()) {
+			filteredStandards = append(filteredStandards, standard)
+		}
+	}
+
 	return &v1.GetComplianceStandardsResponse{
-		Standards: standards,
+		Standards: filteredStandards,
 	}, nil
 }
 

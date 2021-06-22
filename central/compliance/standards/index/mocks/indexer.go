@@ -48,6 +48,34 @@ func (mr *MockIndexerMockRecorder) IndexStandard(standard interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexStandard", reflect.TypeOf((*MockIndexer)(nil).IndexStandard), standard)
 }
 
+// DeleteStandard mocks base method
+func (m *MockIndexer) DeleteStandard(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteStandard", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteStandard indicates an expected call of DeleteStandard
+func (mr *MockIndexerMockRecorder) DeleteStandard(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStandard", reflect.TypeOf((*MockIndexer)(nil).DeleteStandard), id)
+}
+
+// DeleteControl mocks base method
+func (m *MockIndexer) DeleteControl(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteControl", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteControl indicates an expected call of DeleteControl
+func (mr *MockIndexerMockRecorder) DeleteControl(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteControl", reflect.TypeOf((*MockIndexer)(nil).DeleteControl), id)
+}
+
 // SearchStandards mocks base method
 func (m *MockIndexer) SearchStandards(q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()

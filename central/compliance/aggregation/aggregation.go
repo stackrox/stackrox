@@ -442,6 +442,13 @@ func (a *aggregatorImpl) aggregateFromCluster(runResults *storage.ComplianceRunR
 		for control := range controlSet {
 			r := runResults.GetClusterResults().GetControlResults()[control]
 			if r == nil {
+				// Check to see if the control is a machine config control
+				for _, controlResults := range runResults.GetMachineConfigResults() {
+					if r := controlResults.GetControlResults()[control]; r != nil {
+						fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, "", "", r.GetOverallState())
+						processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
+					}
+				}
 				continue
 			}
 			fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, "", "", r.GetOverallState())
@@ -452,6 +459,13 @@ func (a *aggregatorImpl) aggregateFromCluster(runResults *storage.ComplianceRunR
 	for control, r := range runResults.GetClusterResults().GetControlResults() {
 		fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, "", "", r.GetOverallState())
 		processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
+	}
+
+	for _, controlResults := range runResults.GetMachineConfigResults() {
+		for control, r := range controlResults.GetControlResults() {
+			fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, "", "", r.GetOverallState())
+			processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
+		}
 	}
 }
 

@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 
-import { standardLabels } from 'messages/standards';
 import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
@@ -93,6 +92,7 @@ const ControlPage = ({
                             >
                                 <ControlDetails
                                     standardId={standardId}
+                                    standardName={standardName}
                                     control={name}
                                     description={description}
                                     className={`sx-2 ${pdfClassName}`}
@@ -152,8 +152,7 @@ const ControlPage = ({
                                     entityType={entityTypes.CONTROL}
                                     listEntityType={listEntityType1}
                                     entity={control}
-                                    headerText={`${standardLabels[standardId]} ${name}`}
-                                    entityName={`${standardLabels[standardId]} ${name}`}
+                                    entityName={`${standardName} ${name}`}
                                 />
                                 <ResourceTabs
                                     entityId={entityId}

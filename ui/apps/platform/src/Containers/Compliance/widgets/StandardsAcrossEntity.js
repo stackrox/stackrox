@@ -27,6 +27,9 @@ function setStandardsMapping(data, type) {
     data.results.forEach((result) => {
         const standardId = result.aggregationKeys[0].id;
         const { numPassing, numFailing } = result;
+        if (numPassing === 0 && numFailing === 0) {
+            return;
+        }
         if (!mapping[standardId]) {
             mapping[standardId] = {};
             mapping[standardId][type] = {
@@ -41,6 +44,7 @@ function setStandardsMapping(data, type) {
             };
         }
     });
+
     return mapping;
 }
 
@@ -69,12 +73,12 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
                 .query({
                     [searchParam]: {
                         groupBy: type,
-                        standard: standardLabels[standardId],
+                        standard: standardLabels[standardId] || standardId,
                     },
                 })
                 .url();
             const dataPoint = {
-                y: standardBaseTypes[standardId],
+                y: standardBaseTypes[standardId] || standardId,
                 x: percentagePassing,
                 hint: {
                     title: `${standard?.name} Standard - ${percentagePassing}% Passing`,
@@ -86,7 +90,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
             };
             return dataPoint;
         });
-
         return barData;
     }
 

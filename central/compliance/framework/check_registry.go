@@ -1,10 +1,6 @@
 package framework
 
 import (
-	"fmt"
-
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,9 +9,11 @@ type CheckRegistry interface {
 	Register(check Check) error
 	Lookup(id string) Check
 	GetAll() []Check
+	Delete(id string)
 }
 
 type checkRegistry struct {
+	lock   sync.RWMutex
 	checks map[string]Check
 }
 
@@ -40,17 +38,21 @@ func newCheckRegistry() *checkRegistry {
 }
 
 func (r *checkRegistry) Register(check Check) error {
-	if !premain.IsInPreMain() {
-		return errors.New("checks must be registered in init() functions or global variable initializations")
-	}
-	if _, ok := r.checks[check.ID()]; ok {
-		return fmt.Errorf("check with id %s already registered", check.ID())
-	}
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.checks[check.ID()] = check
 	return nil
 }
 
+func (r *checkRegistry) Delete(id string) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	delete(r.checks, id)
+}
+
 func (r *checkRegistry) Lookup(id string) Check {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	c := r.checks[id]
 	if c != nil {
 		return c
@@ -59,6 +61,8 @@ func (r *checkRegistry) Lookup(id string) Check {
 }
 
 func (r *checkRegistry) GetAll() []Check {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	result := make([]Check, 0, len(r.checks))
 	for _, check := range r.checks {
 		result = append(result, check)

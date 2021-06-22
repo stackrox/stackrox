@@ -32,6 +32,9 @@ function processData(match, location, data, entityType, searchParam) {
         }
         const standard = complianceStandards.find((c) => c.id === result.aggregationKeys[0].id);
         const { numPassing, numFailing } = result;
+        if (!standard || (numPassing === 0 && numFailing === 0)) {
+            return;
+        }
         const percentagePassing = Math.round((numPassing / (numPassing + numFailing)) * 100);
 
         const link = URLService.getURL(match, location)
@@ -39,7 +42,7 @@ function processData(match, location, data, entityType, searchParam) {
             .query({
                 [searchParam]: {
                     [`${capitalize(entityType)}`]: entity?.name,
-                    standard: standardLabels[standard.id],
+                    standard: standardLabels[standard.id] || standard.id,
                 },
             })
             .url();
@@ -52,7 +55,7 @@ function processData(match, location, data, entityType, searchParam) {
             x: entity?.name,
             y: percentagePassing,
             hint: {
-                title: standardLabels[standard.id],
+                title: standardLabels[standard.id] || standard.id,
                 body: `${numFailingControls} controls failing in this ${resourceLabels[entityType]}`,
             },
             link,

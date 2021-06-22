@@ -161,7 +161,7 @@ func runtimeTest(t *testing.T, c *testStruct, validationFunc func(*testing.T, fr
 	defer mockCtrl.Finish()
 
 	testPod := createTestPod(&c.container)
-	domain := framework.NewComplianceDomain(testCluster, testNodes, nil, testPod)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, nil, testPod, nil)
 	data := mocks.NewMockComplianceDataRepository(mockCtrl)
 
 	// Must set the containers to running

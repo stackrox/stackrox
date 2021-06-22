@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -19,15 +20,30 @@ type DataStore interface {
 	Walk(ctx context.Context, fn func(rule *storage.ComplianceOperatorRule) error) error
 	Upsert(ctx context.Context, rule *storage.ComplianceOperatorRule) error
 	Delete(ctx context.Context, id string) error
+	GetRulesByName(ctx context.Context, name string) ([]*storage.ComplianceOperatorRule, error)
 }
 
 // NewDatastore returns the datastore wrapper for compliance operator rules
-func NewDatastore(store store.Store) DataStore {
-	return &datastoreImpl{store: store}
+func NewDatastore(store store.Store) (DataStore, error) {
+	ds := &datastoreImpl{
+		store:       store,
+		rulesByName: make(map[string]map[string]*storage.ComplianceOperatorRule),
+	}
+	err := store.Walk(func(rule *storage.ComplianceOperatorRule) error {
+		ds.addToRulesByNameNoLock(rule)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ds, nil
 }
 
 type datastoreImpl struct {
 	store store.Store
+
+	rulesByName map[string]map[string]*storage.ComplianceOperatorRule
+	ruleLock    sync.RWMutex
 }
 
 func (d *datastoreImpl) Walk(ctx context.Context, fn func(rule *storage.ComplianceOperatorRule) error) error {
@@ -39,13 +55,29 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(rule *storage.Complian
 	return d.store.Walk(fn)
 }
 
+func (d *datastoreImpl) addToRulesByNameNoLock(rule *storage.ComplianceOperatorRule) {
+	m := d.rulesByName[rule.GetName()]
+	if m == nil {
+		m = make(map[string]*storage.ComplianceOperatorRule)
+		d.rulesByName[rule.GetName()] = m
+	}
+	m[rule.GetId()] = rule
+}
+
 func (d *datastoreImpl) Upsert(ctx context.Context, rule *storage.ComplianceOperatorRule) error {
 	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("write access denied for compliance operator rules")
 	}
-	return d.store.Upsert(rule)
+	d.ruleLock.Lock()
+	defer d.ruleLock.Unlock()
+
+	if err := d.store.Upsert(rule); err != nil {
+		return err
+	}
+	d.addToRulesByNameNoLock(rule)
+	return nil
 }
 
 func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
@@ -54,5 +86,33 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	} else if !ok {
 		return errors.New("write access denied for compliance operator rules")
 	}
-	return d.store.Delete(id)
+
+	d.ruleLock.Lock()
+	defer d.ruleLock.Unlock()
+
+	rule, exists, err := d.store.Get(id)
+	if err != nil || !exists {
+		return err
+	}
+
+	if err := d.store.Delete(rule.GetId()); err != nil {
+		return err
+	}
+	delete(d.rulesByName[rule.GetName()], rule.GetId())
+	return nil
+}
+
+func (d *datastoreImpl) GetRulesByName(ctx context.Context, name string) ([]*storage.ComplianceOperatorRule, error) {
+	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, errors.New("read access denied for compliance operator rules")
+	}
+	d.ruleLock.RLock()
+	defer d.ruleLock.RUnlock()
+	rules := make([]*storage.ComplianceOperatorRule, 0, len(d.rulesByName[name]))
+	for _, rule := range d.rulesByName[name] {
+		rules = append(rules, rule.Clone())
+	}
+	return rules, nil
 }

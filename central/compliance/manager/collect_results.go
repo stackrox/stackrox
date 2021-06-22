@@ -185,15 +185,21 @@ func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults 
 		deploymentResults[deployment.ID()] = collectEntityResults(deployment, checks, allResults, nil)
 	}
 
+	machineConfigResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
+	for _, mc := range r.domain.MachineConfigs() {
+		machineConfigResults[mc.ID()] = collectEntityResults(mc, checks, allResults, nil)
+	}
+
 	runMetadataProto := r.metadataProto(true)
 	// need to mark this explicitly
 	runMetadataProto.Success = true
 
 	return &storage.ComplianceRunResults{
-		RunMetadata:       runMetadataProto,
-		ClusterResults:    clusterResults,
-		NodeResults:       nodeResults,
-		DeploymentResults: deploymentResults,
+		RunMetadata:          runMetadataProto,
+		ClusterResults:       clusterResults,
+		NodeResults:          nodeResults,
+		DeploymentResults:    deploymentResults,
+		MachineConfigResults: machineConfigResults,
 	}
 }
 

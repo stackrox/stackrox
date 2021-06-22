@@ -3,6 +3,7 @@ package complianceoperatorprofiles
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/complianceoperator/profiles/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -16,18 +17,20 @@ import (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(datastore.Singleton())
+	return NewPipeline(datastore.Singleton(), manager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(datastore datastore.DataStore) pipeline.Fragment {
+func NewPipeline(datastore datastore.DataStore, manager manager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		datastore: datastore,
+		manager:   manager,
 	}
 }
 
 type pipelineImpl struct {
 	datastore datastore.DataStore
+	manager   manager.Manager
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
@@ -61,9 +64,15 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.datastore.Delete(ctx, profile.GetId())
+		if err := s.datastore.Delete(ctx, profile.GetId()); err != nil {
+			return err
+		}
+		return s.manager.DeleteProfile(profile)
 	default:
-		return s.datastore.Upsert(ctx, profile)
+		if err := s.datastore.Upsert(ctx, profile); err != nil {
+			return err
+		}
+		return s.manager.AddProfile(profile)
 	}
 }
 

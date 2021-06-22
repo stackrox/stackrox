@@ -24,7 +24,7 @@ func BenchmarkFold(b *testing.B) {
 			Name: "test",
 		},
 	}
-	domain := framework.NewComplianceDomain(nil, nodes, nil, nil)
+	domain := framework.NewComplianceDomain(nil, nodes, nil, nil, nil)
 
 	nodeResults := map[string]map[string]*compliance.ComplianceStandardResult{
 		"test": data,

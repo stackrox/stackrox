@@ -1,5 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
+import { useRouteMatch, useLocation, useHistory } from 'react-router-dom';
+
 import Widget from 'Components/Widget';
 import VerticalBarChart from 'Components/visuals/VerticalBarChart';
 import ArcSingle from 'Components/visuals/ArcSingle';
@@ -7,8 +9,6 @@ import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import URLService from 'utils/URLService';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import queryService from 'utils/queryService';
@@ -16,15 +16,18 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
 import searchContext from 'Containers/searchContext';
 
-const EntityCompliance = ({ match, location, entityType, entityName, clusterName, history }) => {
+const EntityCompliance = ({ entityType, entityName, clusterName }) => {
     const entityTypeLabel = resourceLabels[entityType];
     const searchParam = useContext(searchContext);
+    const match = useRouteMatch();
+    const location = useLocation();
+    const history = useHistory();
 
     function getBarData(results) {
         return results
             .filter((item) => item.numPassing + item.numFailing)
             .map((item) => ({
-                x: standardBaseTypes[item.aggregationKeys[0].id],
+                x: standardBaseTypes[item.aggregationKeys[0].id] || item.aggregationKeys[0].id,
                 y: (item.numPassing / (item.numPassing + item.numFailing)) * 100,
                 standard: item.aggregationKeys[0].id,
             }));
@@ -47,7 +50,7 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
                 [searchParam]: {
                     [entityType]: entityName,
                     [entityTypes.CLUSTER]: clusterName,
-                    standard: standardLabels[datum.standard],
+                    standard: standardLabels[datum.standard] || datum.x,
                 },
             })
             .url();
@@ -106,12 +109,9 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
     );
 };
 EntityCompliance.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     entityName: PropTypes.string,
     clusterName: PropTypes.string,
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
 EntityCompliance.defaultProps = {
@@ -119,4 +119,4 @@ EntityCompliance.defaultProps = {
     clusterName: null,
 };
 
-export default withRouter(EntityCompliance);
+export default EntityCompliance;

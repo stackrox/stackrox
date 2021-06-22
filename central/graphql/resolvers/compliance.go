@@ -91,6 +91,9 @@ func (resolver *Resolver) ComplianceStandards(ctx context.Context, query RawQuer
 		if !ok || err != nil {
 			continue
 		}
+		if !resolver.manager.IsStandardActive(standard.GetMetadata().GetId()) {
+			continue
+		}
 		standards = append(standards, standard.GetMetadata())
 	}
 	return resolver.wrapComplianceStandardMetadatas(standards, nil)

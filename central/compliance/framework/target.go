@@ -21,6 +21,7 @@ type ComplianceTarget interface {
 	Cluster() *storage.Cluster
 	Node() *storage.Node
 	Deployment() *storage.Deployment
+	MachineConfig() string
 }
 
 // TargetRef is an identifier for a compliance target that can be used as a map key and compared for equality.
@@ -67,6 +68,10 @@ func (t baseTarget) Deployment() *storage.Deployment {
 	panic(fmt.Errorf("requested deployment target, but target kind of active scope is %v", t.kind))
 }
 
+func (t baseTarget) MachineConfig() string {
+	panic(fmt.Errorf("requested machine config target, but target kind of active scope is %v", t.kind))
+}
+
 func (t baseTarget) Kind() framework.TargetKind {
 	return t.kind
 }
@@ -107,6 +112,18 @@ func (t deploymentTarget) Deployment() *storage.Deployment {
 	return t.deployment
 }
 
+type machineConfigTarget struct {
+	baseTarget
+	name string
+}
+
+func (t machineConfigTarget) ID() string {
+	return t.name
+}
+func (t machineConfigTarget) MachineConfig() string {
+	return t.name
+}
+
 func targetForCluster(cluster *storage.Cluster) clusterTarget {
 	return clusterTarget{
 		baseTarget: baseTarget{
@@ -131,5 +148,14 @@ func targetForDeployment(deployment *storage.Deployment) deploymentTarget {
 			kind: framework.DeploymentKind,
 		},
 		deployment: deployment,
+	}
+}
+
+func targetForMachineConfig(name string) machineConfigTarget {
+	return machineConfigTarget{
+		baseTarget: baseTarget{
+			kind: framework.MachineConfigKind,
+		},
+		name: name,
 	}
 }

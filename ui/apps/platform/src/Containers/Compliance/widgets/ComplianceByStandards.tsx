@@ -25,6 +25,7 @@ function ComplianceByStandards({ entityType }: ComplianceByStandardsProps): Reac
         <>
             {standards.map(({ name: standardName, id: standardId }) => (
                 <ComplianceByStandard
+                    key={standardId}
                     standardName={standardName}
                     standardId={standardId}
                     className="pdf-page"

@@ -32,6 +32,7 @@ type pipelineImpl struct {
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	existingIDs := set.NewStringSet()
+
 	err := s.datastore.Walk(ctx, func(rule *storage.ComplianceOperatorRule) error {
 		if rule.GetClusterId() == clusterID {
 			existingIDs.Add(rule.GetId())
@@ -56,14 +57,14 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorRule)
 
 	event := msg.GetEvent()
-	scanSetting := event.GetComplianceOperatorRule()
-	scanSetting.ClusterId = clusterID
+	rule := event.GetComplianceOperatorRule()
+	rule.ClusterId = clusterID
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.datastore.Delete(ctx, scanSetting.GetId())
+		return s.datastore.Delete(ctx, rule.GetId())
 	default:
-		return s.datastore.Upsert(ctx, scanSetting)
+		return s.datastore.Upsert(ctx, rule)
 	}
 }
 

@@ -286,10 +286,10 @@ func (c *crudImpl) Walk(fn func(msg proto.Message) error) error {
 	return BucketForEach(c.db, defaultIteratorOptions, c.prefix, false, func(k, v []byte) error {
 		msg, err := c.deserializeFunc(v)
 		if err != nil {
-			return errors.Wrap(err, "deserializing object")
+			return err
 		}
 		if err := fn(msg); err != nil {
-			return errors.Wrap(err, "applying closure")
+			return err
 		}
 		return nil
 	})

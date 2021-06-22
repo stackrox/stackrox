@@ -12,6 +12,8 @@ import (
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
+	complianceOperatorCheckDS "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
+	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -45,8 +47,9 @@ var (
 )
 
 type manager struct {
-	scheduleStore     ScheduleStore
-	standardsRegistry *standards.Registry
+	scheduleStore             ScheduleStore
+	standardsRegistry         *standards.Registry
+	complianceOperatorManager complianceOperatorManager.Manager
 
 	mutex         sync.RWMutex
 	runsByID      map[string]*runInstance
@@ -63,13 +66,17 @@ type manager struct {
 	dataRepoFactory data.RepositoryFactory
 	scrapeFactory   factory.ScrapeFactory
 
+	complianceOperatorResults complianceOperatorCheckDS.DataStore
+
 	resultsStore complianceDS.DataStore
 }
 
-func newManager(standardsRegistry *standards.Registry, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.GlobalDataStore, deploymentStore datastore.DataStore, podStore podDatastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceDS.DataStore) (*manager, error) {
+func newManager(standardsRegistry *standards.Registry, complianceOperatorManager complianceOperatorManager.Manager, complianceOperatorResults complianceOperatorCheckDS.DataStore, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.GlobalDataStore, deploymentStore datastore.DataStore, podStore podDatastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceDS.DataStore) (*manager, error) {
 	mgr := &manager{
-		scheduleStore:     scheduleStore,
-		standardsRegistry: standardsRegistry,
+		scheduleStore:             scheduleStore,
+		standardsRegistry:         standardsRegistry,
+		complianceOperatorManager: complianceOperatorManager,
+		complianceOperatorResults: complianceOperatorResults,
 
 		runsByID:      make(map[string]*runInstance),
 		schedulesByID: make(map[string]*scheduleInstance),
@@ -159,7 +166,17 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "could not get pods for cluster %s", clusterID)
 	}
 
-	return framework.NewComplianceDomain(cluster, nodes, deployments, pods), nil
+	var results []*storage.ComplianceOperatorCheckResult
+	err = m.complianceOperatorResults.Walk(ctx, func(r *storage.ComplianceOperatorCheckResult) error {
+		if r.GetClusterId() == clusterID {
+			results = append(results, r)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not get compliance operator results for cluster %s", clusterID)
+	}
+	return framework.NewComplianceDomain(cluster, nodes, deployments, pods, results), nil
 }
 
 func (m *manager) createRun(domain framework.ComplianceDomain, standard *standards.Standard, schedule *scheduleInstance) *runInstance {
@@ -660,6 +677,9 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 
 		var scrapeBasedPromise, scrapeLessPromise dataPromise
 		for _, standard := range standardImpls {
+			if !m.complianceOperatorManager.IsStandardActiveForCluster(standard.ID, clusterID) {
+				continue
+			}
 			run := m.createRun(domain, standard, schedule)
 			var dataPromise dataPromise
 			if standard.HasAnyDataDependency(scrapeDataDeps...) {

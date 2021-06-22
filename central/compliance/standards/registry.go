@@ -10,10 +10,12 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Registry stores compliance standards by their ID.
 type Registry struct {
+	lock           sync.RWMutex
 	standardsByID  map[string]*Standard
 	categoriesByID map[string]*Category
 	controlsByID   map[string]*Control
@@ -31,25 +33,81 @@ func NewRegistry(indexer index.Indexer, checkRegistry framework.CheckRegistry, s
 		indexer:        indexer,
 		checkRegistry:  checkRegistry,
 	}
-	if err := r.registerStandards(standardMDs...); err != nil {
+	if err := r.RegisterStandards(standardMDs...); err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-// registerStandards registers all of the standards in the standard registry
-func (r *Registry) registerStandards(standardMDs ...metadata.Standard) error {
+// RegisterCheck adds a check to the registry
+func (r *Registry) RegisterCheck(check framework.Check) error {
+	return r.checkRegistry.Register(check)
+}
+
+// RegisterStandards registers all of the standards in the standard registry
+func (r *Registry) RegisterStandards(standardMDs ...metadata.Standard) error {
 	for _, standardMD := range standardMDs {
-		if err := r.registerStandard(standardMD); err != nil {
+		if err := r.RegisterStandard(standardMD, false); err != nil {
 			return errors.Wrapf(err, "registering standard %q", standardMD.ID)
 		}
 	}
-
 	return nil
 }
 
-func (r *Registry) registerStandard(standardMD metadata.Standard) error {
-	if _, existing := r.standardsByID[standardMD.ID]; existing {
+// DeleteStandard removes a standard from the registry
+func (r *Registry) DeleteStandard(id string) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	standard := r.standardsByID[id]
+	if standard == nil {
+		return nil
+	}
+	delete(r.standardsByID, id)
+	if r.indexer != nil {
+		if err := r.indexer.DeleteStandard(id); err != nil {
+			return err
+		}
+	}
+	for id := range r.controlsByID {
+		if ChildOfStandard(id, standard.ID) {
+			delete(r.controlsByID, id)
+			if r.indexer != nil {
+				if err := r.indexer.DeleteControl(id); err != nil {
+					return err
+				}
+			}
+			r.checkRegistry.Delete(id)
+		}
+	}
+	for id := range r.categoriesByID {
+		if ChildOfStandard(id, standard.ID) {
+			delete(r.categoriesByID, id)
+		}
+	}
+	return nil
+}
+
+// DeleteControl removes a control from the registry
+func (r *Registry) DeleteControl(id string) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	r.checkRegistry.Delete(id)
+	delete(r.controlsByID, id)
+	if r.indexer == nil {
+		return nil
+	}
+	if err := r.indexer.DeleteControl(id); err != nil {
+		return err
+	}
+	return nil
+}
+
+// RegisterStandard registers an individual standard
+func (r *Registry) RegisterStandard(standardMD metadata.Standard, overwrite bool) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	if _, existing := r.standardsByID[standardMD.ID]; existing && !overwrite {
 		return fmt.Errorf("compliance standard with ID %q already registered", standardMD.ID)
 	}
 
@@ -71,11 +129,15 @@ func (r *Registry) registerStandard(standardMD metadata.Standard) error {
 
 // LookupStandard returns the standard object with the given ID.
 func (r *Registry) LookupStandard(id string) *Standard {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.standardsByID[id]
 }
 
 // AllStandards returns all registered standards.
 func (r *Registry) AllStandards() []*Standard {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	result := make([]*Standard, 0, len(r.standardsByID))
 	for _, standard := range r.standardsByID {
 		result = append(result, standard)
@@ -85,6 +147,8 @@ func (r *Registry) AllStandards() []*Standard {
 
 // Standards returns the metadata protos for all registered compliance standards.
 func (r *Registry) Standards() ([]*v1.ComplianceStandardMetadata, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	result := make([]*v1.ComplianceStandardMetadata, 0, len(r.standardsByID))
 	for _, standard := range r.standardsByID {
 		result = append(result, standard.MetadataProto())
@@ -94,6 +158,8 @@ func (r *Registry) Standards() ([]*v1.ComplianceStandardMetadata, error) {
 
 // Standard returns the full proto definition of the compliance standard with the given ID.
 func (r *Registry) Standard(id string) (*v1.ComplianceStandard, bool, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	standard := r.standardsByID[id]
 	if standard == nil {
 		return nil, false, nil
@@ -103,6 +169,8 @@ func (r *Registry) Standard(id string) (*v1.ComplianceStandard, bool, error) {
 
 // StandardMetadata returns the metadata proto for the compliance standard with the given ID.
 func (r *Registry) StandardMetadata(id string) (*v1.ComplianceStandardMetadata, bool, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	standard := r.standardsByID[id]
 	if standard == nil {
 		return nil, false, nil
@@ -112,6 +180,8 @@ func (r *Registry) StandardMetadata(id string) (*v1.ComplianceStandardMetadata, 
 
 // Controls returns the list of controls for the given compliance standard.
 func (r *Registry) Controls(standardID string) ([]*v1.ComplianceControl, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	standard, exists, err := r.Standard(standardID)
 	if err != nil {
 		return nil, err
@@ -129,6 +199,8 @@ func (r *Registry) Controls(standardID string) ([]*v1.ComplianceControl, error) 
 
 // Groups returns the list of groups for the given compliance standard
 func (r *Registry) Groups(standardID string) ([]*v1.ComplianceControlGroup, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	standard, exists, err := r.Standard(standardID)
 	if err != nil {
 		return nil, err
@@ -145,6 +217,8 @@ func (r *Registry) Groups(standardID string) ([]*v1.ComplianceControlGroup, erro
 
 // GetCategoryByControl returns the category that corresponds to the passed control ID
 func (r *Registry) GetCategoryByControl(controlID string) *Category {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	ctrl := r.controlsByID[controlID]
 	if ctrl == nil {
 		return nil
@@ -154,16 +228,22 @@ func (r *Registry) GetCategoryByControl(controlID string) *Category {
 
 // Control returns the control for the ID, if it matches.
 func (r *Registry) Control(controlID string) *v1.ComplianceControl {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.controlsByID[controlID].ToProto()
 }
 
 // Group returns the proto object for a single group
 func (r *Registry) Group(groupID string) *v1.ComplianceControlGroup {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.categoriesByID[groupID].ToProto()
 }
 
 // GetCISDockerStandardID returns the Docker CIS standard ID.
 func (r *Registry) GetCISDockerStandardID() (string, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	for _, standard := range r.standardsByID {
 		if strings.Contains(standard.Name, "CIS Docker") {
 			return standard.ID, nil
@@ -174,6 +254,8 @@ func (r *Registry) GetCISDockerStandardID() (string, error) {
 
 // GetCISKubernetesStandardID returns the kubernetes CIS standard ID.
 func (r *Registry) GetCISKubernetesStandardID() (string, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	for _, standard := range r.standardsByID {
 		if strings.Contains(standard.Name, "CIS Kubernetes") {
 			return standard.ID, nil
@@ -184,10 +266,14 @@ func (r *Registry) GetCISKubernetesStandardID() (string, error) {
 
 // SearchStandards searches across standards
 func (r *Registry) SearchStandards(q *v1.Query) ([]search.Result, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.indexer.SearchStandards(q)
 }
 
 // SearchControls searches across controls
 func (r *Registry) SearchControls(q *v1.Query) ([]search.Result, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
 	return r.indexer.SearchControls(q)
 }

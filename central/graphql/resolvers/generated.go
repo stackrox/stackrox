@@ -423,6 +423,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ComplianceStandardMetadata", []string{
 		"description: String!",
+		"dynamic: Boolean!",
 		"id: ID!",
 		"name: String!",
 		"numImplementedChecks: Int!",
@@ -4502,6 +4503,11 @@ func (resolver *Resolver) wrapComplianceStandardMetadatas(values []*v1.Complianc
 
 func (resolver *complianceStandardMetadataResolver) Description(ctx context.Context) string {
 	value := resolver.data.GetDescription()
+	return value
+}
+
+func (resolver *complianceStandardMetadataResolver) Dynamic(ctx context.Context) bool {
+	value := resolver.data.GetDynamic()
 	return value
 }
 

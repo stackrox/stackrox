@@ -7,6 +7,7 @@ import (
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
+	complianceOperatorDataStore "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	imageStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -29,41 +30,43 @@ type RepositoryFactory interface {
 }
 
 type factory struct {
-	alertStore            alertStore.DataStore
-	networkPoliciesStore  npDS.DataStore
-	networkGraphEvaluator graph.Evaluator
-	policyStore           policiesStore.DataStore
-	imageStore            imageStore.DataStore
-	imageIntegrationStore imageIntegrationStore.DataStore
-	imageIntegrationsSet  integration.Set
-	processIndicatorStore processIndicatorStore.DataStore
-	networkFlowDataStore  nfDS.ClusterDataStore
-	netTreeMgr            networktree.Manager
-	notifierDataStore     notifierDataStore.DataStore
-	complianceStore       complianceDS.DataStore
-	standardsRepo         standards.Repository
-	roleDataStore         k8sRoleDataStore.DataStore
-	bindingDataStore      k8sBindingDataStore.DataStore
+	alertStore                    alertStore.DataStore
+	networkPoliciesStore          npDS.DataStore
+	networkGraphEvaluator         graph.Evaluator
+	policyStore                   policiesStore.DataStore
+	imageStore                    imageStore.DataStore
+	imageIntegrationStore         imageIntegrationStore.DataStore
+	imageIntegrationsSet          integration.Set
+	processIndicatorStore         processIndicatorStore.DataStore
+	networkFlowDataStore          nfDS.ClusterDataStore
+	netTreeMgr                    networktree.Manager
+	notifierDataStore             notifierDataStore.DataStore
+	complianceStore               complianceDS.DataStore
+	standardsRepo                 standards.Repository
+	roleDataStore                 k8sRoleDataStore.DataStore
+	bindingDataStore              k8sBindingDataStore.DataStore
+	complianceOperatorResultStore complianceOperatorDataStore.DataStore
 }
 
 // NewDefaultFactory creates a new RepositoryFactory using the default instances for accessing data.
 func NewDefaultFactory() RepositoryFactory {
 	return &factory{
-		alertStore:            alertStore.Singleton(),
-		networkPoliciesStore:  npDS.Singleton(),
-		networkGraphEvaluator: graph.Singleton(),
-		policyStore:           policiesStore.Singleton(),
-		imageStore:            imageStore.Singleton(),
-		imageIntegrationStore: imageIntegrationStore.Singleton(),
-		imageIntegrationsSet:  imageintegration.Set(),
-		processIndicatorStore: processIndicatorStore.Singleton(),
-		networkFlowDataStore:  nfDS.Singleton(),
-		netTreeMgr:            networktree.Singleton(),
-		notifierDataStore:     notifierDataStore.Singleton(),
-		complianceStore:       complianceDS.Singleton(),
-		standardsRepo:         standards.RegistrySingleton(),
-		roleDataStore:         k8sRoleDataStore.Singleton(),
-		bindingDataStore:      k8sBindingDataStore.Singleton(),
+		alertStore:                    alertStore.Singleton(),
+		networkPoliciesStore:          npDS.Singleton(),
+		networkGraphEvaluator:         graph.Singleton(),
+		policyStore:                   policiesStore.Singleton(),
+		imageStore:                    imageStore.Singleton(),
+		imageIntegrationStore:         imageIntegrationStore.Singleton(),
+		imageIntegrationsSet:          imageintegration.Set(),
+		processIndicatorStore:         processIndicatorStore.Singleton(),
+		networkFlowDataStore:          nfDS.Singleton(),
+		netTreeMgr:                    networktree.Singleton(),
+		notifierDataStore:             notifierDataStore.Singleton(),
+		complianceStore:               complianceDS.Singleton(),
+		standardsRepo:                 standards.RegistrySingleton(),
+		roleDataStore:                 k8sRoleDataStore.Singleton(),
+		bindingDataStore:              k8sBindingDataStore.Singleton(),
+		complianceOperatorResultStore: complianceOperatorDataStore.Singleton(),
 	}
 }
 

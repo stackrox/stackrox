@@ -143,7 +143,7 @@ function formatStandardData(data) {
         } = keys[groupKey];
         // the check below is to address ROX-1420
         if (__typename !== '') {
-            let groupName = name || standardLabels[standard];
+            let groupName = name || standardLabels[standard] || standard;
             if (__typename === 'Node') {
                 groupName = `${clusterName}/${name}`;
             } else if (__typename === 'Namespace') {
@@ -273,7 +273,6 @@ const ListTable = ({
     } else {
         tableColumns = getColumnsByEntity(entityType, standardsData.results);
     }
-
     let tableData;
 
     return (
