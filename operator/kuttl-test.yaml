@@ -4,7 +4,7 @@ testDirs:
 - ./tests/central
 - ./tests/securedcluster
 # central takes a while do become healthy
-timeout: 90
+timeout: 150
 reportFormat: xml
 artifactsDir: build/kuttl-test-artifacts
 commands:

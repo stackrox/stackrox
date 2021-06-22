@@ -7,3 +7,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-db

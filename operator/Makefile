@@ -189,12 +189,14 @@ operator-sdk-for-testing: ## Download newer operator-sdk version necessary for t
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $${OPERATOR_SDK} $${OPERATOR_SDK_URL}
 
-KUTTL_VERSION = 0.10.0
-KUTTL = $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
+# TODO(porridge): change back to kudobuilder release once https://github.com/kudobuilder/kuttl/issues/298 is fixed
+KUTTL_VERSION = 0.10.0-gke-events2
+KUTTL_UPSTREAM = porridge
+KUTTL ?= $(PROJECT_DIR)/bin/kubectl-kuttl-$(KUTTL_VERSION)
 .PHONY: kuttl
 kuttl: ## Download kuttl.
 	@ARCH=$$(case $$(uname -m) in (aarch64) echo -n armv6 ;; (*) echo -n $$(uname -m) ;; esac) ;\
-	KUTTL_URL=https://github.com/kudobuilder/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(OS)_$${ARCH} ;\
+	KUTTL_URL=https://github.com/$(KUTTL_UPSTREAM)/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(OS)_$${ARCH} ;\
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(KUTTL) $${KUTTL_URL}
 
