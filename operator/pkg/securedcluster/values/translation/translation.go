@@ -170,7 +170,6 @@ func (t Translator) getSensorValues(sensor *securedcluster.SensorComponentSpec) 
 
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
 	sv.SetStringMap("nodeSelector", sensor.NodeSelector)
-	sv.SetString("endpoint", sensor.Endpoint)
 
 	return &sv
 }

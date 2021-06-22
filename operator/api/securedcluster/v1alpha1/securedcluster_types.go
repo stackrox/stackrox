@@ -61,10 +61,6 @@ type SensorComponentSpec struct {
 
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Address of the Sensor endpoint including port number. No trailing slash.
-	// Rarely needs to be changed.
-	Endpoint *string `json:"endpoint,omitempty"`
-
 	// Customizations to apply on sensor component.
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }

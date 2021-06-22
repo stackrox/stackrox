@@ -322,11 +322,6 @@ func (in *SensorComponentSpec) DeepCopyInto(out *SensorComponentSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.Endpoint != nil {
-		in, out := &in.Endpoint, &out.Endpoint
-		*out = new(string)
-		**out = **in
-	}
 	if in.Customize != nil {
 		in, out := &in.Customize, &out.Customize
 		*out = new(commonv1alpha1.CustomizeSpec)

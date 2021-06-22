@@ -294,9 +294,6 @@ spec:
                         description: Custom labels to set on Pods.
                         type: object
                     type: object
-                  endpoint:
-                    description: Address of the Sensor endpoint including port number. No trailing slash. Rarely needs to be changed.
-                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
