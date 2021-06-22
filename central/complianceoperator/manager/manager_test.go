@@ -6,6 +6,8 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
+	checkResultsDatastore "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
+	checkResultsStore "github.com/stackrox/rox/central/complianceoperator/checkresults/store"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/profiles/datastore"
 	profileStore "github.com/stackrox/rox/central/complianceoperator/profiles/store"
 	rulesDatastore "github.com/stackrox/rox/central/complianceoperator/rules/datastore"
@@ -36,7 +38,10 @@ func newManager(t *testing.T) *managerImpl {
 	rulesDS, err := rulesDatastore.NewDatastore(rules)
 	require.NoError(t, err)
 
-	mgr, err := NewManager(registry, profileDatastore.NewDatastore(prof), scanSettingBindingDatastore.NewDatastore(ssb), rulesDS)
+	checks, err := checkResultsStore.New(db)
+	require.NoError(t, err)
+
+	mgr, err := NewManager(registry, profileDatastore.NewDatastore(prof), scanSettingBindingDatastore.NewDatastore(ssb), rulesDS, checkResultsDatastore.NewDatastore(checks))
 	require.NoError(t, err)
 
 	return mgr.(*managerImpl)

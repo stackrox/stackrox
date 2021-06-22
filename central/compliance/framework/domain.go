@@ -2,8 +2,6 @@ package framework
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -26,7 +24,7 @@ type complianceDomain struct {
 	machineConfigs []machineConfigTarget
 }
 
-func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, results []*storage.ComplianceOperatorCheckResult) *complianceDomain {
+func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, machineConfigs []string) *complianceDomain {
 	clusterTarget := targetForCluster(cluster)
 	nodeTargets := make([]nodeTarget, len(nodes))
 	for i, node := range nodes {
@@ -37,12 +35,8 @@ func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deploy
 		deploymentTargets[i] = targetForDeployment(deployment)
 	}
 	var machineConfigTargets []machineConfigTarget
-	machineConfigs := set.NewStringSet()
-	for _, r := range results {
-		conf, ok := r.Labels[v1alpha1.ComplianceScanLabel]
-		if ok && machineConfigs.Add(conf) {
-			machineConfigTargets = append(machineConfigTargets, targetForMachineConfig(conf))
-		}
+	for _, m := range machineConfigs {
+		machineConfigTargets = append(machineConfigTargets, targetForMachineConfig(m))
 	}
 
 	return &complianceDomain{
@@ -96,6 +90,6 @@ func (d *complianceDomain) Pods() []*storage.Pod {
 }
 
 // NewComplianceDomain creates a new compliance domain from the given cluster, list of nodes and list of deployments.
-func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, results []*storage.ComplianceOperatorCheckResult) ComplianceDomain {
-	return newComplianceDomain(cluster, nodes, deployments, pods, results)
+func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, machineConfigs []string) ComplianceDomain {
+	return newComplianceDomain(cluster, nodes, deployments, pods, machineConfigs)
 }

@@ -47,16 +47,12 @@ var (
 		},
 	}
 
-	testResults = []*storage.ComplianceOperatorCheckResult{
-		{
-			Id: uuid.NewV4().String(),
-		},
-		{
-			Id: uuid.NewV4().String(),
-		},
+	testMachineConfigs = []string{
+		"config1",
+		"config2",
 	}
 
-	testDomain = newComplianceDomain(testCluster, testNodes, testDeployments, testPods, testResults)
+	testDomain = newComplianceDomain(testCluster, testNodes, testDeployments, testPods, testMachineConfigs)
 )
 
 func TestEmptyRun(t *testing.T) {

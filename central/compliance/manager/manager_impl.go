@@ -166,17 +166,11 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "could not get pods for cluster %s", clusterID)
 	}
 
-	var results []*storage.ComplianceOperatorCheckResult
-	err = m.complianceOperatorResults.Walk(ctx, func(r *storage.ComplianceOperatorCheckResult) error {
-		if r.GetClusterId() == clusterID {
-			results = append(results, r)
-		}
-		return nil
-	})
+	machineConfigs, err := m.complianceOperatorManager.GetMachineConfigs(clusterID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not get compliance operator results for cluster %s", clusterID)
+		return nil, errors.Wrapf(err, "getting machine configs for cluster %s", clusterID)
 	}
-	return framework.NewComplianceDomain(cluster, nodes, deployments, pods, results), nil
+	return framework.NewComplianceDomain(cluster, nodes, deployments, pods, machineConfigs), nil
 }
 
 func (m *manager) createRun(domain framework.ComplianceDomain, standard *standards.Standard, schedule *scheduleInstance) *runInstance {
