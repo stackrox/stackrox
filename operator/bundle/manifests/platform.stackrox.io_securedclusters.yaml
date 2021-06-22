@@ -36,30 +36,10 @@ spec:
                   customize:
                     description: Customize specifies additional attributes for all containers.
                     properties:
-                      annotations:
-                        additionalProperties:
-                          type: string
-                        description: Custom annotations to set on all objects apart from Pods.
-                        type: object
                       envVars:
                         additionalProperties:
                           type: string
-                        description: Custom environment variables to set on pods' containers.
-                        type: object
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: Custom labels to set on all objects apart from Pods.
-                        type: object
-                      podAnnotations:
-                        additionalProperties:
-                          type: string
-                        description: Custom annotations to set on Pods.
-                        type: object
-                      podLabels:
-                        additionalProperties:
-                          type: string
-                        description: Custom labels to set on Pods.
+                        description: EnvVars set custom environment variables on pods' containers.
                         type: object
                     type: object
                   listenOnCreates:
@@ -119,7 +99,7 @@ spec:
                           envVars:
                             additionalProperties:
                               type: string
-                            description: EnvVars specify environment variables available for the container. When applied to admission controller, EnvVars can specify feature flags.
+                            description: EnvVars set custom environment variables on pods' containers.
                             type: object
                         type: object
                       imageFlavor:
@@ -161,7 +141,7 @@ spec:
                           envVars:
                             additionalProperties:
                               type: string
-                            description: EnvVars specify environment variables available for the container. When applied to admission controller, EnvVars can specify feature flags.
+                            description: EnvVars set custom environment variables on pods' containers.
                             type: object
                         type: object
                       resources:
@@ -189,35 +169,6 @@ spec:
                                 description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                 type: object
                             type: object
-                        type: object
-                    type: object
-                  customize:
-                    description: Customizations to apply on the collector DaemonSet.
-                    properties:
-                      annotations:
-                        additionalProperties:
-                          type: string
-                        description: Custom annotations to set on all objects apart from Pods.
-                        type: object
-                      envVars:
-                        additionalProperties:
-                          type: string
-                        description: Custom environment variables to set on pods' containers.
-                        type: object
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: Custom labels to set on all objects apart from Pods.
-                        type: object
-                      podAnnotations:
-                        additionalProperties:
-                          type: string
-                        description: Custom annotations to set on Pods.
-                        type: object
-                      podLabels:
-                        additionalProperties:
-                          type: string
-                        description: Custom labels to set on Pods.
                         type: object
                     type: object
                   taintToleration:
@@ -268,30 +219,10 @@ spec:
                   customize:
                     description: Customize specifies additional attributes for all containers.
                     properties:
-                      annotations:
-                        additionalProperties:
-                          type: string
-                        description: Custom annotations to set on all objects apart from Pods.
-                        type: object
                       envVars:
                         additionalProperties:
                           type: string
-                        description: Custom environment variables to set on pods' containers.
-                        type: object
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: Custom labels to set on all objects apart from Pods.
-                        type: object
-                      podAnnotations:
-                        additionalProperties:
-                          type: string
-                        description: Custom annotations to set on Pods.
-                        type: object
-                      podLabels:
-                        additionalProperties:
-                          type: string
-                        description: Custom labels to set on Pods.
+                        description: EnvVars set custom environment variables on pods' containers.
                         type: object
                     type: object
                   nodeSelector:

@@ -60,9 +60,6 @@ type SensorComponentSpec struct {
 	ContainerSpec `json:",inline"`
 
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// Customizations to apply on sensor component.
-	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
 // TLSConfig defines TLS-related settings
@@ -86,9 +83,6 @@ type AdmissionControlComponentSpec struct {
 	// `AdmissionReview` requests for update Kubernetes events like exec and portforward.
 	// Defaults to `false` on OpenShift, to `true` otherwise.
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
-
-	// Customizations to apply on admission control component.
-	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
 // CollectorComponentSpec declares configuration settings for the collector component.
@@ -98,8 +92,6 @@ type CollectorComponentSpec struct {
 
 	Collector  *CollectorContainerSpec `json:"collector,omitempty"`
 	Compliance *ContainerSpec          `json:"compliance,omitempty"`
-	// Customizations to apply on the collector DaemonSet.
-	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
 // CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
@@ -139,8 +131,7 @@ type ContainerSpec struct {
 
 // ContainerCustomizeSpec contains customizations to apply on a container.
 type ContainerCustomizeSpec struct {
-	// EnvVars specify environment variables available for the container.
-	// When applied to admission controller, EnvVars can specify feature flags.
+	// EnvVars set custom environment variables on pods' containers.
 	EnvVars map[string]string `json:"envVars,omitempty"`
 }
 

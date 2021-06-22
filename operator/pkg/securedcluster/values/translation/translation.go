@@ -89,17 +89,14 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 
 	if sc.Spec.Sensor != nil {
 		v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor))
-		customize.AddChild("sensor", translation.GetCustomize(sc.Spec.Sensor.Customize))
 	}
 
 	if sc.Spec.AdmissionControl != nil {
 		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
-		customize.AddChild("admission-control", translation.GetCustomize(sc.Spec.AdmissionControl.Customize))
 	}
 
 	if sc.Spec.Collector != nil {
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.Collector))
-		customize.AddChild("collector", translation.GetCustomize(sc.Spec.Collector.Customize))
 	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
@@ -276,10 +273,18 @@ func (t Translator) getHelmDevelopmentDefaults(sc securedcluster.SecuredCluster)
 
 func getMetaValues(sc securedcluster.SecuredCluster) *translation.ValuesBuilder {
 	meta := translation.NewValuesBuilder()
+	fp, err := createConfigFingerprint(sc)
+	if err != nil {
+		return meta.SetError(err)
+	}
+	meta.SetStringValue("configFingerprintOverride", fp)
+	return &meta
+}
+
+func createConfigFingerprint(sc securedcluster.SecuredCluster) (string, error) {
 	specAsYaml, err := yaml.Marshal(sc.Spec)
 	if err != nil {
-		return meta.SetError(errors.Wrap(err, "marshaling SecuredCluster spec"))
+		return "", errors.Wrap(err, "marshaling SecuredCluster spec")
 	}
-	meta.SetStringValue("configFingerprintOverride", fmt.Sprintf("%x", sha256.Sum256(specAsYaml)))
-	return &meta
+	return fmt.Sprintf("%x", sha256.Sum256(specAsYaml)), nil
 }

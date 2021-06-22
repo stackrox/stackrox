@@ -76,6 +76,28 @@ func TestTranslateComplete(t *testing.T) {
 								{Name: "ca2-name", Content: "ca2-content"},
 							},
 						},
+						Customize: &common.CustomizeSpec{
+							Labels: map[string]string{
+								"customize-label1": "customize-label1-value",
+								"customize-label2": "customize-label2-value",
+							},
+							Annotations: map[string]string{
+								"customize-annotation1": "customize-annotation1-value",
+								"customize-annotation2": "customize-annotation2-value",
+							},
+							PodLabels: map[string]string{
+								"customize-pod-label1": "customize-pod-label1-value",
+								"customize-pod-label2": "customize-pod-label2-value",
+							},
+							PodAnnotations: map[string]string{
+								"customize-pod-annotation1": "customize-pod-annotation1-value",
+								"customize-pod-annotation2": "customize-pod-annotation2-value",
+							},
+							EnvVars: map[string]string{
+								"customize-env-var1": "customize-env-var1-value",
+								"customize-env-var2": "customize-env-var2-value",
+							},
+						},
 					},
 				},
 			},
@@ -94,8 +116,27 @@ func TestTranslateComplete(t *testing.T) {
 				},
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"meta": map[string]string{
-					"configFingerprintOverride": "af9f1f5fcf5213073d913f3b5b92883a082543083852db9f07f2889b6effe637",
+				"customize": map[string]interface{}{
+					"annotations": map[string]string{
+						"customize-annotation1": "customize-annotation1-value",
+						"customize-annotation2": "customize-annotation2-value",
+					},
+					"labels": map[string]string{
+						"customize-label1": "customize-label1-value",
+						"customize-label2": "customize-label2-value",
+					},
+					"envVars": map[string]string{
+						"customize-env-var1": "customize-env-var1-value",
+						"customize-env-var2": "customize-env-var2-value",
+					},
+					"podAnnotations": map[string]string{
+						"customize-pod-annotation1": "customize-pod-annotation1-value",
+						"customize-pod-annotation2": "customize-pod-annotation2-value",
+					},
+					"podLabels": map[string]string{
+						"customize-pod-label1": "customize-pod-label1-value",
+						"customize-pod-label2": "customize-pod-label2-value",
+					},
 				},
 			},
 		},
@@ -112,6 +153,14 @@ func TestTranslateComplete(t *testing.T) {
 			translator := Translator{clientSet: tt.args.clientSet}
 			got, err := translator.Translate(context.Background(), u)
 			require.NoError(t, err)
+
+			// Remove config fingerprint as it changes as the test case changes
+			_, err = got.PathValue("meta.configFingerprintOverride")
+			require.NoError(t, err)
+			delete(got["meta"].(map[string]interface{}), "configFingerprintOverride")
+			if len(got["meta"].(map[string]interface{})) == 0 {
+				delete(got, "meta")
+			}
 
 			assert.Equal(t, wantAsValues, got)
 		})
