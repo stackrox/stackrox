@@ -153,11 +153,6 @@ func (in *ContainerSpec) DeepCopyInto(out *ContainerSpec) {
 		*out = new(commonv1alpha1.Resources)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.ImagePullPolicy != nil {
-		in, out := &in.ImagePullPolicy, &out.ImagePullPolicy
-		*out = new(v1.PullPolicy)
-		**out = **in
-	}
 	if in.Customize != nil {
 		in, out := &in.Customize, &out.Customize
 		*out = new(ContainerCustomizeSpec)

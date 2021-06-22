@@ -75,10 +75,6 @@ spec:
                         description: Custom labels to set on Pods.
                         type: object
                     type: object
-                  imagePullPolicy:
-                    description: ImagePullPolicy specifies how to pull container images
-                      from a registry.
-                    type: string
                   listenOnCreates:
                     description: ListenOnCreates controls whether Kubernetes is configured
                       to contact Secured Cluster Services with `AdmissionReview` requests
@@ -168,10 +164,6 @@ spec:
                         description: CollectorImageFlavor is a type for values of
                           spec.collector.collector.imageFlavor
                         type: string
-                      imagePullPolicy:
-                        description: ImagePullPolicy specifies how to pull container
-                          images from a registry.
-                        type: string
                       resources:
                         description: Resources define the resource requests and limits
                           for deployed containers.
@@ -223,10 +215,6 @@ spec:
                               EnvVars can specify feature flags.
                             type: object
                         type: object
-                      imagePullPolicy:
-                        description: ImagePullPolicy specifies how to pull container
-                          images from a registry.
-                        type: string
                       resources:
                         description: Resources define the resource requests and limits
                           for deployed containers.
@@ -378,10 +366,6 @@ spec:
                   endpoint:
                     description: Address of the Sensor endpoint including port number.
                       No trailing slash. Rarely needs to be changed.
-                    type: string
-                  imagePullPolicy:
-                    description: ImagePullPolicy specifies how to pull container images
-                      from a registry.
                     type: string
                   nodeSelector:
                     additionalProperties:

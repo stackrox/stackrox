@@ -137,8 +137,6 @@ type CollectorContainerSpec struct {
 // ContainerSpec defines settings common to secured cluster components.
 type ContainerSpec struct {
 	Resources *common.Resources `json:"resources,omitempty"`
-	// ImagePullPolicy specifies how to pull container images from a registry.
-	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// Customize specifies additional attributes for all containers.
 	Customize *ContainerCustomizeSpec `json:"customize,omitempty"`
 }

@@ -168,7 +168,6 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc securedcluster
 func (t Translator) getSensorValues(sensor *securedcluster.SensorComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
-	sv.SetPullPolicy("imagePullPolicy", sensor.ImagePullPolicy)
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
 	sv.SetStringMap("nodeSelector", sensor.NodeSelector)
 	sv.SetString("endpoint", sensor.Endpoint)
@@ -179,7 +178,6 @@ func (t Translator) getSensorValues(sensor *securedcluster.SensorComponentSpec) 
 func (t Translator) getAdmissionControlValues(admissionControl *securedcluster.AdmissionControlComponentSpec) *translation.ValuesBuilder {
 	acv := translation.NewValuesBuilder()
 
-	acv.SetPullPolicy("imagePullPolicy", admissionControl.ImagePullPolicy)
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
 	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
 	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
@@ -238,7 +236,6 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *securedc
 		}
 	}
 
-	cv.SetPullPolicy("imagePullPolicy", collectorContainerSpec.ImagePullPolicy)
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(collectorContainerSpec.Resources))
 
 	// TODO(ROX-7176): make "customize" work for collector container
@@ -251,7 +248,6 @@ func (t Translator) getComplianceContainerValues(compliance *securedcluster.Cont
 	}
 
 	cv := translation.NewValuesBuilder()
-	cv.SetPullPolicy("complianceImagePullPolicy", compliance.ImagePullPolicy)
 	cv.AddChild("complianceResources", translation.GetResources(compliance.Resources))
 
 	// TODO(ROX-7176): make "customize" work for compliance container
