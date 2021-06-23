@@ -10,42 +10,61 @@ Central Services and Secured Cluster Services operator.
 
 All following commands should be ran from this directory (`operator/`).
 
-1. Build and run operator locally. Note that this starts the operator without deploying it as a container in the cluster.
+1. Build and run operator locally. Note that this starts the operator without deploying it as a container in the cluster.  
+See [Advanced usage](#advanced-usage) for different ways of running operator.
 
 ```bash
-$ make install run
+make install run
 ```
 
-2. Create Custom Resource using the provided sample.
+2. Create `stackrox` image pull secret in `stackrox` namespace.  
+Helm charts use it by default to configure pods. If it does not exist, you'll need to specify `ImagePullSecrets` in custom resources.
 
 ```bash
-$ kubectl apply -f config/samples/platform_v1alpha1_*.yaml
+make stackrox-image-pull-secret
 ```
 
-3. Check status of the custom resource.
+3. Create Central Custom Resource using ~~the provided sample~~ test sample.    
 
 ```bash
-$ kubectl get -n stackrox centrals.platform.stackrox.io
-$ kubectl get -n stackrox centrals.platform.stackrox.io stackrox-central-services --output=json
+kubectl -n stackrox delete persistentvolumeclaims stackrox-db
+
+# TODO: switch back to user-facing samples in `config/samples/platform_v1alpha1_*.yaml`.
+kubectl apply -n stackrox -f tests/securedcluster/basic-sc/05-central-cr.yaml
 ```
 
-or
+4. Once Central services come online, create Secured Cluster using test sample.
 
 ```bash
-$ kubectl get -n stackrox securedclusters.platform.stackrox.io
-$ kubectl get -n stackrox securedclusters.platform.stackrox.io stackrox-secured-cluster-services --output=json
+# Get init-bundle secrets document from Central and save as secrets in the cluster
+kubectl -n stackrox exec deploy/central -- \
+  roxctl central init-bundles generate my-test-bundle --insecure-skip-tls-verify --password letmein --output-secrets - \
+  | kubectl -n stackrox apply -f -
+
+# Create Secured Cluster CR
+kubectl apply -n stackrox -f tests/securedcluster/basic-sc/10-secured-cluster-cr.yaml
 ```
 
-4. Delete the custom resource.
+4. Check status of the custom resource.
 
 ```bash
-$ kubectl delete centrals.platform.stackrox.io stackrox-central-services
+# For Central
+kubectl get -n stackrox centrals.platform.stackrox.io
+kubectl get -n stackrox centrals.platform.stackrox.io stackrox-central-services --output=json
+
+# For Secured Cluster
+kubectl get -n stackrox securedclusters.platform.stackrox.io
+kubectl get -n stackrox securedclusters.platform.stackrox.io stackrox-secured-cluster-services --output=json
 ```
 
-or
+5. Delete the custom resource.
 
 ```bash
-$ kubectl delete securedclusters.platform.stackrox.io stackrox-secured-cluster-services
+# Central
+kubectl delete centrals.platform.stackrox.io stackrox-central-services
+
+# Secured Cluster
+kubectl delete securedclusters.platform.stackrox.io stackrox-secured-cluster-services
 ```
 
 ## Automated testing
@@ -92,11 +111,11 @@ The recommended approach is the following.
    You don't need to do anything when using KIND.  
    For minikube it could be done like this
    ```bash
-   $ docker save stackrox.io/stackrox-operator:$(make tag) | ssh -o StrictHostKeyChecking=no -i $(minikube ssh-key) docker@$(minikube ip) docker load
+   $ docker save stackrox/stackrox-operator:$(make tag) | ssh -o StrictHostKeyChecking=no -i $(minikube ssh-key) docker@$(minikube ip) docker load
    ```
 3. Install CRDs and deploy operator resources
    ```bash
-   $ make install deploy
+   $ make deploy
    ```
 4. Validate that the operator's pod has started successfully
    ```bash
@@ -104,7 +123,7 @@ The recommended approach is the following.
    ```
    Check logs
    ```bash
-   $ kubectl -n stackrox-operator-system logs deploy/stackrox-operator-controller-manager manager -f
+   $ kubectl -n stackrox-operator-system logs deploy/rhacs-operator-controller-manager manager -f
    ```
 5. Create CRs and have fun testing.
 6. When done

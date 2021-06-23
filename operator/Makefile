@@ -108,6 +108,12 @@ test-e2e: build install kuttl  ## Run e2e tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	$(KUTTL) test --namespace stackrox
 
+stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on DockerHub. Used by Helm chart.
+# Create stackrox namespace if not exists.
+	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "stackrox" } }' | kubectl apply -f -
+# Create stackrox image pull secret in stackrox namespace.
+	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox docker.io | kubectl -n stackrox apply -f -
+
 ##@ Build
 
 build: generate fmt vet ## Build manager binary.

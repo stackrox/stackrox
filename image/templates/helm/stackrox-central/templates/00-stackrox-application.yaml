@@ -82,6 +82,8 @@ spec:
     - group: ''
       kind: PersistentVolumeClaim
     - group: ''
+      kind: PersistentVolume
+    - group: ''
       kind: Service
     - group: ''
       kind: ServiceAccount

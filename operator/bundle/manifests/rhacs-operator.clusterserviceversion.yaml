@@ -205,14 +205,11 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - ""
+          - '*'
           resources:
-          - secrets
+          - '*'
           verbs:
-          - create
-          - get
-          - list
-          - watch
+          - '*'
         - apiGroups:
           - platform.stackrox.io
           resources:
