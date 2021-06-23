@@ -30,7 +30,7 @@ import {
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
-import { LabelSelectorsEditingState } from './accessScopesUtils';
+import { LabelSelectorsEditingState } from './accessScopes.utils';
 import EffectiveAccessScopeTable from './EffectiveAccessScopeTable';
 import LabelInclusion from './LabelInclusion';
 
@@ -218,7 +218,7 @@ function AccessScopeForm({
     const isViewing = !hasAction;
 
     return (
-        <div id="access-scope-form">
+        <Form id="access-scope-form">
             <Toolbar inset={{ default: 'insetNone' }}>
                 <ToolbarContent>
                     <ToolbarItem>
@@ -273,72 +273,68 @@ function AccessScopeForm({
                 </ToolbarContent>
             </Toolbar>
             {alertSubmit}
-            <Form isHorizontal>
-                <FormGroup label="Name" fieldId="name" isRequired>
-                    <TextInput
-                        type="text"
-                        id="name"
-                        value={values.name}
-                        onChange={onChange}
-                        isDisabled={isViewing}
-                        isRequired
-                    />
-                </FormGroup>
-                <FormGroup label="Description" fieldId="description">
-                    <TextInput
-                        type="text"
-                        id="description"
-                        value={values.description}
-                        onChange={onChange}
-                        isDisabled={isViewing}
-                    />
-                </FormGroup>
-            </Form>
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
+                <TextInput
+                    type="text"
+                    id="name"
+                    value={values.name}
+                    onChange={onChange}
+                    isDisabled={isViewing}
+                    isRequired
+                />
+            </FormGroup>
+            <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
+                <TextInput
+                    type="text"
+                    id="description"
+                    value={values.description}
+                    onChange={onChange}
+                    isDisabled={isViewing}
+                />
+            </FormGroup>
             {alertCompute}
-            <Form>
-                <Flex
-                    direction={{ default: 'column', xl: 'row' }}
-                    spaceItems={{ default: 'spaceItemsNone', xl: 'spaceItemsLg' }}
-                    className="pf-u-pt-lg"
-                >
-                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
-                        <FormGroup
-                            label="Effective access scope"
-                            fieldId="effectiveAccessScope"
-                            labelIcon={labelIconEffectiveAccessScope}
-                            className="pf-u-pb-lg"
-                        >
-                            <EffectiveAccessScopeTable
-                                counterComputing={counterComputing}
-                                clusters={clusters}
-                                includedClusters={values.rules.includedClusters}
-                                includedNamespaces={values.rules.includedNamespaces}
-                                handleIncludedClustersChange={handleIncludedClustersChange}
-                                handleIncludedNamespacesChange={handleIncludedNamespacesChange}
-                                hasAction={hasAction}
-                            />
-                        </FormGroup>
-                    </FlexItem>
-                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
-                        <FormGroup
-                            label="Label inclusion"
-                            fieldId="labelInclusion"
-                            labelIcon={labelIconLabelInclusion}
-                            className="pf-u-pb-lg"
-                        >
-                            <LabelInclusion
-                                clusterLabelSelectors={values.rules.clusterLabelSelectors}
-                                namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
-                                hasAction={hasAction}
-                                labelSelectorsEditingState={labelSelectorsEditingState}
-                                setLabelSelectorsEditingState={setLabelSelectorsEditingState}
-                                handleLabelSelectorsChange={handleLabelSelectorsChange}
-                            />
-                        </FormGroup>
-                    </FlexItem>
-                </Flex>
-            </Form>
-        </div>
+            <Flex
+                direction={{ default: 'column', xl: 'row' }}
+                spaceItems={{ default: 'spaceItemsNone', xl: 'spaceItemsLg' }}
+                className="pf-u-pt-lg"
+            >
+                <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                    <FormGroup
+                        label="Effective access scope"
+                        fieldId="effectiveAccessScope"
+                        labelIcon={labelIconEffectiveAccessScope}
+                        className="pf-u-pb-lg"
+                    >
+                        <EffectiveAccessScopeTable
+                            counterComputing={counterComputing}
+                            clusters={clusters}
+                            includedClusters={values.rules.includedClusters}
+                            includedNamespaces={values.rules.includedNamespaces}
+                            handleIncludedClustersChange={handleIncludedClustersChange}
+                            handleIncludedNamespacesChange={handleIncludedNamespacesChange}
+                            hasAction={hasAction}
+                        />
+                    </FormGroup>
+                </FlexItem>
+                <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                    <FormGroup
+                        label="Label inclusion"
+                        fieldId="labelInclusion"
+                        labelIcon={labelIconLabelInclusion}
+                        className="pf-u-pb-lg"
+                    >
+                        <LabelInclusion
+                            clusterLabelSelectors={values.rules.clusterLabelSelectors}
+                            namespaceLabelSelectors={values.rules.namespaceLabelSelectors}
+                            hasAction={hasAction}
+                            labelSelectorsEditingState={labelSelectorsEditingState}
+                            setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                            handleLabelSelectorsChange={handleLabelSelectorsChange}
+                        />
+                    </FormGroup>
+                </FlexItem>
+            </Flex>
+        </Form>
     );
 }
 

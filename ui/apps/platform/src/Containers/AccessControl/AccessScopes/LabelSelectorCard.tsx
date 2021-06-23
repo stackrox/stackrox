@@ -28,7 +28,7 @@ import {
     getIsKeyInSetOperator,
 } from 'services/RolesService';
 
-import { Activity, getRequirementActivity } from './accessScopesUtils';
+import { Activity, getRequirementActivity } from './accessScopes.utils';
 import AddRequirementDropdown from './AddRequirementDropdown';
 import { RequirementRow, RequirementRowAddKey } from './RequirementRow';
 
@@ -261,11 +261,11 @@ function LabelSelectorCard({
                         )}
                     </Tbody>
                 </TableComposable>
-                {isLabelSelectorActive && requirements.length === 1 && (
+                {/* isLabelSelectorActive && requirements.length === 1 && (
                     <div className="pf-u-font-size-sm pf-u-info-color-100 pf-u-pt-sm">
                         If you need to replace the last requirement, first add its replacement
                     </div>
-                )}
+                ) */}
                 {hasAction && (
                     <Toolbar className="pf-u-pb-0" inset={{ default: 'insetNone' }}>
                         {isLabelSelectorActive ? (

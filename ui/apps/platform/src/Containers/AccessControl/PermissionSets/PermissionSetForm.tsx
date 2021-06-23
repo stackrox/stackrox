@@ -9,6 +9,7 @@ import {
     FormGroup,
     SelectOption,
     TextInput,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -27,18 +28,18 @@ export type PermissionSetFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     permissionSet: PermissionSet;
-    onClickCancel: () => void;
-    onClickEdit: () => void;
-    submitValues: (values: PermissionSet) => Promise<null>; // because the form has only catch and finally
+    handleCancel: () => void;
+    handleEdit: () => void;
+    handleSubmit: (values: PermissionSet) => Promise<null>; // because the form has only catch and finally
 };
 
 function PermissionSetForm({
     isActionable,
     action,
     permissionSet,
-    onClickCancel,
-    onClickEdit,
-    submitValues,
+    handleCancel,
+    handleEdit,
+    handleSubmit,
 }: PermissionSetFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
@@ -71,7 +72,7 @@ function PermissionSetForm({
         // For example, to make a change, submit, and then make the opposite change.
         setIsSubmitting(true);
         setAlertSubmit(null);
-        submitValues(values)
+        handleSubmit(values)
             .catch((error) => {
                 setAlertSubmit(
                     <Alert
@@ -93,47 +94,56 @@ function PermissionSetForm({
 
     // TODO Miminum access level: does not need full width.
     return (
-        <Form>
-            {isActionable && (
-                <Toolbar inset={{ default: 'insetNone' }}>
-                    <ToolbarContent>
-                        {action !== 'create' && (
-                            <ToolbarItem spacer={{ default: 'spacerLg' }}>
-                                <Button
-                                    variant="primary"
-                                    onClick={onClickEdit}
-                                    isDisabled={action === 'update'}
-                                    isSmall
-                                >
-                                    Edit permission set
-                                </Button>
-                            </ToolbarItem>
-                        )}
-                        {hasAction && (
-                            <ToolbarGroup variant="button-group">
+        <Form id="permission-set-form">
+            <Toolbar inset={{ default: 'insetNone' }}>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <Title headingLevel="h2">
+                            {action === 'create' ? 'Create permission set' : permissionSet.name}
+                        </Title>
+                    </ToolbarItem>
+                    {isActionable && (
+                        <ToolbarGroup
+                            alignment={{ default: 'alignRight' }}
+                            spaceItems={{ default: 'spaceItemsLg' }}
+                        >
+                            {hasAction ? (
+                                <ToolbarGroup variant="button-group">
+                                    <ToolbarItem>
+                                        <Button
+                                            variant="primary"
+                                            onClick={onClickSubmit}
+                                            isDisabled={!dirty || !isValid || isSubmitting}
+                                            isLoading={isSubmitting}
+                                            isSmall
+                                        >
+                                            Submit
+                                        </Button>
+                                    </ToolbarItem>
+                                    <ToolbarItem>
+                                        <Button variant="tertiary" onClick={handleCancel} isSmall>
+                                            Cancel
+                                        </Button>
+                                    </ToolbarItem>
+                                </ToolbarGroup>
+                            ) : (
                                 <ToolbarItem>
                                     <Button
                                         variant="primary"
-                                        onClick={onClickSubmit}
-                                        isDisabled={!dirty || !isValid || isSubmitting}
-                                        isLoading={isSubmitting}
+                                        onClick={handleEdit}
+                                        isDisabled={action === 'update'}
                                         isSmall
                                     >
-                                        Submit
+                                        Edit permission set
                                     </Button>
                                 </ToolbarItem>
-                                <ToolbarItem>
-                                    <Button variant="tertiary" onClick={onClickCancel} isSmall>
-                                        Cancel
-                                    </Button>
-                                </ToolbarItem>
-                            </ToolbarGroup>
-                        )}
-                    </ToolbarContent>
-                </Toolbar>
-            )}
+                            )}
+                        </ToolbarGroup>
+                    )}
+                </ToolbarContent>
+            </Toolbar>
             {alertSubmit}
-            <FormGroup label="Name" fieldId="name" isRequired>
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="name"
@@ -143,7 +153,7 @@ function PermissionSetForm({
                     isRequired
                 />
             </FormGroup>
-            <FormGroup label="Description" fieldId="description">
+            <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="description"
@@ -152,7 +162,12 @@ function PermissionSetForm({
                     isDisabled={isViewing}
                 />
             </FormGroup>
-            <FormGroup label="Minimum access level" fieldId="minimumAccessLevel" isRequired>
+            <FormGroup
+                label="Minimum access level"
+                fieldId="minimumAccessLevel"
+                isRequired
+                className="pf-m-horizontal"
+            >
                 <SelectSingle
                     id="minimumAccessLevel"
                     value={values.minimumAccessLevel}

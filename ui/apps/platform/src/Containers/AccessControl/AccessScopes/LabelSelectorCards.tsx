@@ -5,7 +5,7 @@ import { Button, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-
 
 import { LabelSelector, LabelSelectorRequirement, LabelSelectorsKey } from 'services/RolesService';
 
-import { LabelSelectorsEditingState, getLabelSelectorActivity } from './accessScopesUtils';
+import { LabelSelectorsEditingState, getLabelSelectorActivity } from './accessScopes.utils';
 import LabelSelectorCard from './LabelSelectorCard';
 
 export type LabelSelectorCardsProps = {

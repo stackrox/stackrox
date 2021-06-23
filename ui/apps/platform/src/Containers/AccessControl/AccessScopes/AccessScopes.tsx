@@ -107,7 +107,7 @@ function AccessScopes(): ReactElement {
     }, []);
 
     function onClickCreate() {
-        history.push(getEntityPath(entityType, undefined, { ...queryObject, action: 'create' }));
+        history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
     function handleDelete(idDelete: string) {
@@ -118,12 +118,12 @@ function AccessScopes(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: 'update' }));
+        history.push(getEntityPath(entityType, entityId, { action: 'update' }));
     }
 
     function handleCancel() {
-        // The entityId is undefined for create and defined for update.
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
+        // Go back from action=create to list or go back from action=update to entity.
+        history.goBack();
     }
 
     function handleSubmit(values: AccessScope): Promise<null> {
@@ -132,8 +132,8 @@ function AccessScopes(): ReactElement {
                   // Append the created entity.
                   setAccessScopes([...accessScopes, entityCreated]);
 
-                  // Clear the action and also any filtering (in case the created entity does not match).
-                  history.push(getEntityPath(entityType, entityCreated.id));
+                  // Replace path which had action=create with plain entity path.
+                  history.replace(getEntityPath(entityType, entityCreated.id));
 
                   return null; // because the form has only catch and finally
               })
@@ -143,8 +143,8 @@ function AccessScopes(): ReactElement {
                       accessScopes.map((entity) => (entity.id === values.id ? values : entity))
                   );
 
-                  // Clear the action and also any filtering (in case the updated entity does not match).
-                  history.push(getEntityPath(entityType, entityId));
+                  // Replace path which had action=update with plain entity path.
+                  history.replace(getEntityPath(entityType, entityId));
 
                   return null; // because the form has only catch and finally
               });

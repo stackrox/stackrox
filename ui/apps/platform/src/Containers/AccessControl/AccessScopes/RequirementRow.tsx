@@ -19,7 +19,7 @@ import {
 } from 'services/RolesService';
 import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels'; // getIsValidLabelValue
 
-import { Activity } from './accessScopesUtils';
+import { Activity } from './accessScopes.utils';
 
 function getOpText(op: LabelSelectorOperator): string {
     switch (op) {
@@ -284,11 +284,11 @@ export function RequirementRow({
                     ))}
                 {isRequirementActive && (
                     <>
-                        {values.length === 1 && (
+                        {/* values.length === 1 && (
                             <div className="pf-u-font-size-sm pf-u-info-color-100">
                                 If you need to replace the last value, first add its replacement
                             </div>
-                        )}
+                        ) */}
                         <div className="pf-u-display-flex pf-u-align-items-center">
                             <span className="pf-u-flex-basis-0 pf-u-flex-grow-1 pf-u-flex-shrink-1">
                                 <TextInput

@@ -14,9 +14,14 @@ const excludedColor = 'var(--pf-global--danger-color--100)';
 const includedColor = 'var(--pf-global--success-color--100)';
 const unknownColor = 'var(--pf-global--warning-color--100)';
 
+/*
+ * Tooltip has key prop to replace the previous tooltip if status changes.
+ */
+
 const excludedIcon = <TimesIcon color={excludedColor} />;
 const excludedCluster = (
     <Tooltip
+        key="excludedCluster"
         content={
             <div>
                 Not included: cluster
@@ -29,11 +34,16 @@ const excludedCluster = (
         {excludedIcon}
     </Tooltip>
 );
-const excludedNamespace = <Tooltip content="Not included: namespace">{excludedIcon}</Tooltip>;
+const excludedNamespace = (
+    <Tooltip key="excludedNamespace" content="Not included: namespace">
+        {excludedIcon}
+    </Tooltip>
+);
 
 const includedIcon = <CheckIcon color={includedColor} />;
 const includedCluster = (
     <Tooltip
+        key="includedCluster"
         content={
             <div>
                 Included: cluster
@@ -49,10 +59,15 @@ const includedCluster = (
         </span>
     </Tooltip>
 );
-const includedNamespace = <Tooltip content="Included: namespace">{includedIcon}</Tooltip>;
+const includedNamespace = (
+    <Tooltip key="includeNamespace" content="Included: namespace">
+        {includedIcon}
+    </Tooltip>
+);
 
 const partialCluster = (
     <Tooltip
+        key="partialCluster"
         content={
             <div>
                 Conditionally included: cluster
@@ -70,7 +85,7 @@ const partialCluster = (
 );
 
 const unknownState = (
-    <Tooltip content="Unknown">
+    <Tooltip key="unknownState" content="Unknown">
         <ExclamationTriangleIcon color={unknownColor} />
     </Tooltip>
 );

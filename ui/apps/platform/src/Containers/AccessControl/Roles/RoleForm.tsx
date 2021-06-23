@@ -8,6 +8,7 @@ import {
     Form,
     FormGroup,
     TextInput,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -27,9 +28,9 @@ export type RoleFormProps = {
     role: Role;
     permissionSets: PermissionSet[];
     accessScopes: AccessScope[];
-    onClickCancel: () => void;
-    onClickEdit: () => void;
-    submitValues: (values: Role) => Promise<null>; // because the form has only catch and finally
+    handleCancel: () => void;
+    handleEdit: () => void;
+    handleSubmit: (values: Role) => Promise<null>; // because the form has only catch and finally
 };
 
 function RoleForm({
@@ -38,9 +39,9 @@ function RoleForm({
     role,
     permissionSets,
     accessScopes,
-    onClickCancel,
-    onClickEdit,
-    submitValues,
+    handleCancel,
+    handleEdit,
+    handleSubmit,
 }: RoleFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
@@ -65,7 +66,7 @@ function RoleForm({
         // For example, to make a change, submit, and then make the opposite change.
         setIsSubmitting(true);
         setAlertSubmit(null);
-        submitValues(values)
+        handleSubmit(values)
             .catch((error) => {
                 setAlertSubmit(
                     <Alert title="Failed to submit role" variant={AlertVariant.danger} isInline>
@@ -82,47 +83,56 @@ function RoleForm({
     const isViewing = !hasAction;
 
     return (
-        <Form>
-            {isActionable && (
-                <Toolbar inset={{ default: 'insetNone' }}>
-                    <ToolbarContent>
-                        {action !== 'create' && (
-                            <ToolbarItem spacer={{ default: 'spacerLg' }}>
-                                <Button
-                                    variant="primary"
-                                    onClick={onClickEdit}
-                                    isDisabled={action === 'update'}
-                                    isSmall
-                                >
-                                    Edit role
-                                </Button>
-                            </ToolbarItem>
-                        )}
-                        {hasAction && (
-                            <ToolbarGroup variant="button-group">
+        <Form id="role-form">
+            <Toolbar inset={{ default: 'insetNone' }}>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <Title headingLevel="h2">
+                            {action === 'create' ? 'Create role' : role.name}
+                        </Title>
+                    </ToolbarItem>
+                    {isActionable && (
+                        <ToolbarGroup
+                            alignment={{ default: 'alignRight' }}
+                            spaceItems={{ default: 'spaceItemsLg' }}
+                        >
+                            {hasAction ? (
+                                <ToolbarGroup variant="button-group">
+                                    <ToolbarItem>
+                                        <Button
+                                            variant="primary"
+                                            onClick={onClickSubmit}
+                                            isDisabled={!dirty || !isValid || isSubmitting}
+                                            isLoading={isSubmitting}
+                                            isSmall
+                                        >
+                                            Submit
+                                        </Button>
+                                    </ToolbarItem>
+                                    <ToolbarItem>
+                                        <Button variant="tertiary" onClick={handleCancel} isSmall>
+                                            Cancel
+                                        </Button>
+                                    </ToolbarItem>
+                                </ToolbarGroup>
+                            ) : (
                                 <ToolbarItem>
                                     <Button
                                         variant="primary"
-                                        onClick={onClickSubmit}
-                                        isDisabled={!dirty || !isValid || isSubmitting}
-                                        isLoading={isSubmitting}
+                                        onClick={handleEdit}
+                                        isDisabled={action === 'update'}
                                         isSmall
                                     >
-                                        Submit
+                                        Edit role
                                     </Button>
                                 </ToolbarItem>
-                                <ToolbarItem>
-                                    <Button variant="tertiary" onClick={onClickCancel} isSmall>
-                                        Cancel
-                                    </Button>
-                                </ToolbarItem>
-                            </ToolbarGroup>
-                        )}
-                    </ToolbarContent>
-                </Toolbar>
-            )}
+                            )}
+                        </ToolbarGroup>
+                    )}
+                </ToolbarContent>
+            </Toolbar>
             {alertSubmit}
-            <FormGroup label="Name" fieldId="name" isRequired>
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="name"
@@ -132,7 +142,7 @@ function RoleForm({
                     isRequired
                 />
             </FormGroup>
-            <FormGroup label="Description" fieldId="description">
+            <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="description"
@@ -150,14 +160,16 @@ function RoleForm({
                     isDisabled={isViewing}
                 />
             </FormGroup>
-            <FormGroup label="Access scope" fieldId="accessScopeId" isRequired>
-                <AccessScopesTable
-                    fieldId="accessScopeId"
-                    accessScopeId={values.accessScopeId}
-                    accessScopes={accessScopes}
-                    handleChange={handleChange}
-                    isDisabled={isViewing}
-                />
+            <FormGroup label="Access scope" fieldId="accessScopeId">
+                {accessScopes.length !== 0 && (
+                    <AccessScopesTable
+                        fieldId="accessScopeId"
+                        accessScopeId={values.accessScopeId}
+                        accessScopes={accessScopes}
+                        handleChange={handleChange}
+                        isDisabled={isViewing}
+                    />
+                )}
             </FormGroup>
         </Form>
     );

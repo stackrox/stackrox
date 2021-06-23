@@ -4,7 +4,7 @@ import { Badge, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-co
 
 import { LabelSelector, LabelSelectorsKey } from 'services/RolesService';
 
-import { LabelSelectorsEditingState } from './accessScopesUtils';
+import { LabelSelectorsEditingState } from './accessScopes.utils';
 import LabelSelectorCards from './LabelSelectorCards';
 
 export type LabelInclusionProps = {

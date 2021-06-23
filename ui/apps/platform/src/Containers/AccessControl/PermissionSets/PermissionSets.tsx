@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
@@ -5,29 +6,24 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertVariant,
+    Badge,
     Bullseye,
     Button,
-    Drawer,
-    DrawerActions,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerContentBody,
-    DrawerHead,
-    DrawerPanelBody,
-    DrawerPanelContent,
     Spinner,
     Title,
     Toolbar,
     ToolbarContent,
+    ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import { defaultRoles } from 'constants/accessControl';
 import {
     AccessLevel,
     PermissionSet,
     Role,
     createPermissionSet,
-    // deletePermissionSet,
+    deletePermissionSet,
     fetchPermissionSets,
     fetchResourcesAsArray,
     fetchRolesAsArray,
@@ -135,31 +131,34 @@ function PermissionSets(): ReactElement {
             });
     }, []);
 
-    function onClickClose() {
-        history.push(getEntityPath(entityType, undefined, queryObject));
-    }
-
     function onClickCreate() {
-        history.push(getEntityPath(entityType, undefined, { ...queryObject, action: 'create' }));
+        history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
-    function onClickEdit() {
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: 'update' }));
+    function handleDelete(idDelete: string) {
+        return deletePermissionSet(idDelete).then(() => {
+            // Remove the deleted entity.
+            setPermissionSets(permissionSets.filter(({ id }) => id !== idDelete));
+        }); // TODO catch error display alert
     }
 
-    function onClickCancel() {
-        // The entityId is undefined for create and defined for update.
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
+    function handleEdit() {
+        history.push(getEntityPath(entityType, entityId, { action: 'update' }));
     }
 
-    function submitValues(values: PermissionSet): Promise<null> {
+    function handleCancel() {
+        // Go back from action=create to list or go back from action=update to entity.
+        history.goBack();
+    }
+
+    function handleSubmit(values: PermissionSet): Promise<null> {
         return action === 'create'
             ? createPermissionSet(values).then((entityCreated) => {
                   // Append the created entity.
                   setPermissionSets([...permissionSets, entityCreated]);
 
-                  // Clear the action and also any filtering (in case the created entity does not match).
-                  history.push(getEntityPath(entityType, entityCreated.id));
+                  // Replace path which had action=create with plain entity path.
+                  history.replace(getEntityPath(entityType, entityCreated.id));
 
                   return null; // because the form has only catch and finally
               })
@@ -169,8 +168,8 @@ function PermissionSets(): ReactElement {
                       permissionSets.map((entity) => (entity.id === values.id ? values : entity))
                   );
 
-                  // Clear the action and also any filtering (in case the updated entity does not match).
-                  history.push(getEntityPath(entityType, entityId));
+                  // Replace path which had action=update with plain entity path.
+                  history.replace(getEntityPath(entityType, entityId));
 
                   return null; // because the form has only catch and finally
               });
@@ -178,36 +177,10 @@ function PermissionSets(): ReactElement {
 
     const permissionSet =
         permissionSets.find(({ id }) => id === entityId) || getNewPermissionSet(resources);
-    const isActionable = true; // TODO does it depend on user role?
+    const isActionable = !defaultRoles[permissionSet.name];
     const hasAction = Boolean(action);
     const isExpanded = hasAction || Boolean(entityId);
 
-    const panelContent = (
-        <DrawerPanelContent minSize="90%">
-            <DrawerHead>
-                <Title headingLevel="h3">
-                    {action === 'create' ? 'Create permission set' : permissionSet.name}
-                </Title>
-                {!hasAction && (
-                    <DrawerActions>
-                        <DrawerCloseButton onClick={onClickClose} />
-                    </DrawerActions>
-                )}
-            </DrawerHead>
-            <DrawerPanelBody>
-                <PermissionSetForm
-                    isActionable={isActionable}
-                    action={action}
-                    permissionSet={permissionSet}
-                    onClickCancel={onClickCancel}
-                    onClickEdit={onClickEdit}
-                    submitValues={submitValues}
-                />
-            </DrawerPanelBody>
-        </DrawerPanelContent>
-    );
-
-    // TODO Display backdrop which covers nav links and drawer body during action.
     return (
         <>
             <AccessControlNav entityType={entityType} />
@@ -218,34 +191,46 @@ function PermissionSets(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
+            ) : isExpanded ? (
+                <PermissionSetForm
+                    isActionable={isActionable}
+                    action={action}
+                    permissionSet={permissionSet}
+                    handleCancel={handleCancel}
+                    handleEdit={handleEdit}
+                    handleSubmit={handleSubmit}
+                />
             ) : (
-                <Drawer isExpanded={isExpanded}>
-                    <DrawerContent panelContent={panelContent}>
-                        <DrawerContentBody>
-                            <Toolbar inset={{ default: 'insetNone' }}>
-                                <ToolbarContent>
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="primary"
-                                            onClick={onClickCreate}
-                                            isDisabled={
-                                                isExpanded || isFetching || resources.length === 0
-                                            }
-                                            isSmall
-                                        >
-                                            Create permission set
-                                        </Button>
-                                    </ToolbarItem>
-                                </ToolbarContent>
-                            </Toolbar>
-                            <PermissionSetsList
-                                entityId={entityId}
-                                permissionSets={permissionSets}
-                                roles={roles}
-                            />
-                        </DrawerContentBody>
-                    </DrawerContent>
-                </Drawer>
+                <>
+                    <Toolbar inset={{ default: 'insetNone' }}>
+                        <ToolbarContent>
+                            <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
+                                <ToolbarItem>
+                                    <Title headingLevel="h2">Permission sets</Title>
+                                </ToolbarItem>
+                                <ToolbarItem>
+                                    <Badge isRead>{permissionSets.length}</Badge>
+                                </ToolbarItem>
+                            </ToolbarGroup>
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickCreate}
+                                    isDisabled={isExpanded || isFetching || resources.length === 0}
+                                    isSmall
+                                >
+                                    Create permission set
+                                </Button>
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
+                    <PermissionSetsList
+                        entityId={entityId}
+                        permissionSets={permissionSets}
+                        roles={roles}
+                        handleDelete={handleDelete}
+                    />
+                </>
             )}
         </>
     );

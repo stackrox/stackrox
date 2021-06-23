@@ -1,6 +1,7 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
+import { defaultRoles } from 'constants/accessControl';
 import { AccessScope, PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
@@ -18,6 +19,7 @@ export type RolesListProps = {
     roles: Role[];
     permissionSets: PermissionSet[];
     accessScopes: AccessScope[];
+    handleDelete: (id: string) => Promise<void>;
 };
 
 function RolesList({
@@ -25,7 +27,17 @@ function RolesList({
     roles,
     permissionSets,
     accessScopes,
+    handleDelete,
 }: RolesListProps): ReactElement {
+    const [nameDeleting, setNameDeleting] = useState('');
+
+    function onClickDelete(name: string) {
+        setNameDeleting(name);
+        handleDelete(name).finally(() => {
+            setNameDeleting('');
+        });
+    }
+
     function getPermissionSetName(permissionSetId: string): string {
         return permissionSets.find(({ id }) => id === permissionSetId)?.name ?? '';
     }
@@ -42,6 +54,7 @@ function RolesList({
                     <Th>Description</Th>
                     <Th>Permission set</Th>
                     <Th>Access scope</Th>
+                    <Th aria-label="Row actions" />
                 </Tr>
             </Thead>
             <Tbody>
@@ -72,6 +85,21 @@ function RolesList({
                                 entityName={getAccessScopeName(accessScopeId)}
                             />
                         </Td>
+                        {defaultRoles[name] ? (
+                            <Td />
+                        ) : (
+                            <Td
+                                actions={{
+                                    disable: Boolean(entityName) || nameDeleting === name,
+                                    items: [
+                                        {
+                                            title: 'Delete role',
+                                            onClick: () => onClickDelete(name),
+                                        },
+                                    ],
+                                }}
+                            />
+                        )}
                     </Tr>
                 ))}
             </Tbody>

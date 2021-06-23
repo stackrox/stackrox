@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
@@ -5,20 +6,14 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertVariant,
+    Badge,
     Bullseye,
     Button,
-    Drawer,
-    DrawerActions,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerContentBody,
-    DrawerHead,
-    DrawerPanelBody,
-    DrawerPanelContent,
     Spinner,
     Title,
     Toolbar,
     ToolbarContent,
+    ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
 
@@ -28,7 +23,7 @@ import {
     PermissionSet,
     Role,
     createRole,
-    // deleteRole,
+    deleteRole,
     fetchAccessScopes,
     fetchPermissionSets,
     fetchRolesAsArray,
@@ -126,31 +121,34 @@ function Roles(): ReactElement {
             });
     }, []);
 
-    function onClickClose() {
-        history.push(getEntityPath(entityType, undefined, queryObject));
-    }
-
     function onClickCreate() {
-        history.push(getEntityPath(entityType, undefined, { ...queryObject, action: 'create' }));
+        history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
-    function onClickEdit() {
-        history.push(getEntityPath(entityType, entityName, { ...queryObject, action: 'update' }));
+    function handleDelete(nameDelete: string) {
+        return deleteRole(nameDelete).then(() => {
+            // Remove the deleted entity.
+            setRoles(roles.filter(({ name }) => name !== nameDelete));
+        }); // TODO catch error display alert
     }
 
-    function onClickCancel() {
-        // The entityName is undefined for create and defined for update.
-        history.push(getEntityPath(entityType, entityName, { ...queryObject, action: undefined }));
+    function handleEdit() {
+        history.push(getEntityPath(entityType, entityName, { action: 'update' }));
     }
 
-    function submitValues(values: Role): Promise<null> {
+    function handleCancel() {
+        // Go back from action=create to list or go back from action=update to entity.
+        history.goBack();
+    }
+
+    function handleSubmit(values: Role): Promise<null> {
         return action === 'create'
             ? createRole(values).then(() => {
                   // Append the values, because backend does not assign an id to the role.
                   setRoles([...roles, values]);
 
-                  // Clear the action and also any filtering (in case the created entity does not match).
-                  history.push(getEntityPath(entityType, values.name));
+                  // Replace path which had action=create with plain entity path.
+                  history.replace(getEntityPath(entityType, values.name));
 
                   return null; // because the form has only catch and finally
               })
@@ -158,8 +156,8 @@ function Roles(): ReactElement {
                   // Replace the updated entity.
                   setRoles(roles.map((entity) => (entity.name === values.name ? values : entity)));
 
-                  // Clear the action and also any filtering (in case the updated entity does not match).
-                  history.push(getEntityPath(entityType, entityName));
+                  // Replace path which had action=update with plain entity path.
+                  history.replace(getEntityPath(entityType, entityName));
 
                   return null; // because the form has only catch and finally
               });
@@ -170,32 +168,6 @@ function Roles(): ReactElement {
     const hasAction = Boolean(action);
     const isExpanded = hasAction || Boolean(entityName);
 
-    const panelContent = (
-        <DrawerPanelContent minSize="90%">
-            <DrawerHead>
-                <Title headingLevel="h3">{action === 'create' ? 'Create role' : role.name}</Title>
-                {!hasAction && (
-                    <DrawerActions>
-                        <DrawerCloseButton onClick={onClickClose} />
-                    </DrawerActions>
-                )}
-            </DrawerHead>
-            <DrawerPanelBody>
-                <RoleForm
-                    isActionable={isActionable}
-                    action={action}
-                    role={role}
-                    permissionSets={permissionSets}
-                    accessScopes={accessScopes}
-                    onClickCancel={onClickCancel}
-                    onClickEdit={onClickEdit}
-                    submitValues={submitValues}
-                />
-            </DrawerPanelBody>
-        </DrawerPanelContent>
-    );
-
-    // TODO Display backdrop which covers nav links and drawer body during action.
     return (
         <>
             <AccessControlNav entityType={entityType} />
@@ -206,33 +178,49 @@ function Roles(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
+            ) : isExpanded ? (
+                <RoleForm
+                    isActionable={isActionable}
+                    action={action}
+                    role={role}
+                    permissionSets={permissionSets}
+                    accessScopes={accessScopes}
+                    handleCancel={handleCancel}
+                    handleEdit={handleEdit}
+                    handleSubmit={handleSubmit}
+                />
             ) : (
-                <Drawer isExpanded={isExpanded} style={{ height: 'auto' }}>
-                    <DrawerContent panelContent={panelContent}>
-                        <DrawerContentBody>
-                            <Toolbar inset={{ default: 'insetNone' }}>
-                                <ToolbarContent>
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="primary"
-                                            onClick={onClickCreate}
-                                            isDisabled={isExpanded || isFetching}
-                                            isSmall
-                                        >
-                                            Create role
-                                        </Button>
-                                    </ToolbarItem>
-                                </ToolbarContent>
-                            </Toolbar>
-                            <RolesList
-                                entityName={entityName}
-                                roles={roles}
-                                permissionSets={permissionSets}
-                                accessScopes={accessScopes}
-                            />
-                        </DrawerContentBody>
-                    </DrawerContent>
-                </Drawer>
+                <>
+                    <Toolbar inset={{ default: 'insetNone' }}>
+                        <ToolbarContent>
+                            <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
+                                <ToolbarItem>
+                                    <Title headingLevel="h2">Roles</Title>
+                                </ToolbarItem>
+                                <ToolbarItem>
+                                    <Badge isRead>{roles.length}</Badge>
+                                </ToolbarItem>
+                            </ToolbarGroup>
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickCreate}
+                                    isDisabled={isExpanded || isFetching}
+                                    isSmall
+                                >
+                                    Create role
+                                </Button>
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
+                    <RolesList
+                        entityName={entityName}
+                        roles={roles}
+                        permissionSets={permissionSets}
+                        accessScopes={accessScopes}
+                        handleDelete={handleDelete}
+                    />
+                </>
             )}
         </>
     );
