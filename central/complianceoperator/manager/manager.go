@@ -2,10 +2,10 @@ package manager
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
@@ -16,10 +16,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -36,6 +36,9 @@ type Manager interface {
 	AddProfile(profile *storage.ComplianceOperatorProfile) error
 	DeleteProfile(profile *storage.ComplianceOperatorProfile) error
 
+	AddRule(rule *storage.ComplianceOperatorRule) error
+	DeleteRule(rule *storage.ComplianceOperatorRule) error
+
 	IsStandardActive(standardID string) bool
 	IsStandardActiveForCluster(standardID, clusterID string) bool
 
@@ -44,7 +47,7 @@ type Manager interface {
 
 type managerImpl struct {
 	registry     *standards.Registry
-	registryLock *concurrency.KeyedMutex
+	registryLock sync.RWMutex
 
 	profiles            profileDatastore.DataStore
 	scanSettingBindings scanSettingBindingDatastore.DataStore
@@ -55,8 +58,7 @@ type managerImpl struct {
 // NewManager returns a new manager of compliance operator resources
 func NewManager(registry *standards.Registry, profiles profileDatastore.DataStore, scanSettingBindings scanSettingBindingDatastore.DataStore, rules rulesDatastore.DataStore, results checkResultsDatastore.DataStore) (Manager, error) {
 	mgr := &managerImpl{
-		registry:     registry,
-		registryLock: concurrency.NewKeyedMutex(16),
+		registry: registry,
 
 		profiles:            profiles,
 		scanSettingBindings: scanSettingBindings,
@@ -83,6 +85,15 @@ func productTypeToTarget(s string) pkgFramework.TargetKind {
 	}
 }
 
+func createControlFromRule(profileBundlePrefix string, rule *storage.ComplianceOperatorRule) metadata.Control {
+	normalizedRuleName := strings.TrimPrefix(rule.GetName(), profileBundlePrefix)
+	return metadata.Control{
+		ID:          normalizedRuleName,
+		Name:        normalizedRuleName,
+		Description: rule.GetTitle(),
+	}
+}
+
 func (m *managerImpl) createControls(profileBundlePrefix string, rules []string) ([]metadata.Control, error) {
 	controls := make([]metadata.Control, 0, len(rules))
 	for _, rule := range rules {
@@ -91,24 +102,44 @@ func (m *managerImpl) createControls(profileBundlePrefix string, rules []string)
 			return nil, err
 		}
 		if fullRule == nil {
-			log.Errorf("Unknown rule %s should not be referenced by a profile", rule)
 			continue
 		}
-
-		normalizedRuleName := strings.TrimPrefix(rule, profileBundlePrefix)
-		controls = append(controls, metadata.Control{
-			ID:          normalizedRuleName,
-			Name:        normalizedRuleName,
-			Description: fullRule.GetTitle(),
-		})
+		controls = append(controls, createControlFromRule(profileBundlePrefix, fullRule))
 	}
 	return controls, nil
 }
 
-func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) error {
-	m.registryLock.Lock(profile.GetName())
-	defer m.registryLock.Unlock(profile.GetName())
+func (m *managerImpl) registerCheckFromRule(standardID, profileBundlePrefix string, productType pkgFramework.TargetKind, rule *storage.ComplianceOperatorRule) error {
+	normalizedRuleName := strings.TrimPrefix(rule.GetName(), profileBundlePrefix)
+	checkMetadata := framework.CheckMetadata{
+		ID:                 standards.BuildQualifiedID(standardID, normalizedRuleName),
+		Scope:              productType,
+		InterpretationText: rule.GetDescription(),
+	}
 
+	checkFunc := platformCheckFunc(normalizedRuleName)
+	if productType == pkgFramework.MachineConfigKind {
+		checkFunc = machineConfigCheckFunc(normalizedRuleName)
+	}
+
+	if err := m.registry.RegisterCheck(framework.NewCheckFromFunc(checkMetadata, checkFunc)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) error {
+	if err := m.profiles.Upsert(allAccessCtx, profile); err != nil {
+		return err
+	}
+
+	m.registryLock.Lock()
+	defer m.registryLock.Unlock()
+
+	return m.addProfileNoLock(profile)
+}
+
+func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfile) error {
 	existingProfiles := []*storage.ComplianceOperatorProfile{
 		profile,
 	}
@@ -181,23 +212,11 @@ func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) err
 			return err
 		}
 		if fullRule == nil {
-			log.Errorf("Profile should not reference unknown rule: %v", rule)
 			continue
 		}
-		normalizedRuleName := strings.TrimPrefix(rule, profileBundlePrefix)
-		checkMetadata := framework.CheckMetadata{
-			ID:                 standards.BuildQualifiedID(standard.ID, normalizedRuleName),
-			Scope:              profileProductType,
-			InterpretationText: fullRule.GetDescription(),
-		}
 
-		checkFunc := platformCheckFunc(normalizedRuleName)
-		if profileProductType == pkgFramework.MachineConfigKind {
-			checkFunc = machineConfigCheckFunc(normalizedRuleName)
-		}
-
-		if err := m.registry.RegisterCheck(framework.NewCheckFromFunc(checkMetadata, checkFunc)); err != nil {
-			log.Errorf("error registering check %+v: %v", checkMetadata, err)
+		if err := m.registerCheckFromRule(standard.ID, profileBundlePrefix, profileProductType, fullRule); err != nil {
+			return errors.Wrapf(err, "registering check %s", fullRule.GetName())
 		}
 	}
 
@@ -209,10 +228,14 @@ func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) err
 }
 
 func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorProfile) error {
+	if err := m.profiles.Delete(allAccessCtx, deletedProfile.GetId()); err != nil {
+		return err
+	}
+
 	// Deleting a profile is fairly involved because it involves making sure that the profile name is not referenced
 	// anywhere else as standards are indexed by name-based IDs
-	m.registryLock.Lock(deletedProfile.GetName())
-	defer m.registryLock.Unlock(deletedProfile.GetName())
+	m.registryLock.Lock()
+	defer m.registryLock.Unlock()
 
 	var found bool
 	rulesFound := set.NewStringSet()
@@ -341,4 +364,60 @@ func (m *managerImpl) GetMachineConfigs(clusterID string) ([]string, error) {
 		return nil, err
 	}
 	return machineConfigs.AsSlice(), nil
+}
+
+func (m *managerImpl) findProfilesWithRuleNoLock(ruleName string) ([]*storage.ComplianceOperatorProfile, error) {
+	var profiles []*storage.ComplianceOperatorProfile
+	err := m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
+		for _, rule := range profile.GetRules() {
+			if rule.GetName() == ruleName {
+				profiles = append(profiles, profile)
+				break
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return profiles, nil
+}
+
+func (m *managerImpl) reindexProfilesWithRuleNoLock(rule *storage.ComplianceOperatorRule) error {
+	profiles, err := m.findProfilesWithRuleNoLock(rule.GetName())
+	if err != nil {
+		return err
+	}
+
+	alreadyUpdated := set.NewStringSet()
+	for _, profile := range profiles {
+		if alreadyUpdated.Add(profile.GetName()) {
+			if err := m.addProfileNoLock(profile); err != nil {
+				log.Errorf("error updating profile %s: %v", profile.GetName(), err)
+			}
+		}
+	}
+	return nil
+}
+
+func (m *managerImpl) AddRule(rule *storage.ComplianceOperatorRule) error {
+	if err := m.rules.Upsert(allAccessCtx, rule); err != nil {
+		return err
+	}
+
+	m.registryLock.Lock()
+	defer m.registryLock.Unlock()
+
+	return m.reindexProfilesWithRuleNoLock(rule)
+}
+
+func (m *managerImpl) DeleteRule(rule *storage.ComplianceOperatorRule) error {
+	if err := m.rules.Delete(allAccessCtx, rule.GetId()); err != nil {
+		return err
+	}
+
+	m.registryLock.Lock()
+	defer m.registryLock.Unlock()
+
+	return m.reindexProfilesWithRuleNoLock(rule)
 }

@@ -64,14 +64,8 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		if err := s.datastore.Delete(ctx, profile.GetId()); err != nil {
-			return err
-		}
 		return s.manager.DeleteProfile(profile)
 	default:
-		if err := s.datastore.Upsert(ctx, profile); err != nil {
-			return err
-		}
 		return s.manager.AddProfile(profile)
 	}
 }
