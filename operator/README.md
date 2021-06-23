@@ -142,10 +142,10 @@ $ make docker-build docker-push
 $ make bundle-build docker-push-bundle
 ```
 
-Build and push as **one-liner**
+Build and push everything as **one-liner**
 
 ```bash
-$ make bundle docker-build docker-push bundle-build docker-push-bundle
+$ make everything
 ```
 
 Testing bundle with Scorecard

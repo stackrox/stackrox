@@ -36,7 +36,7 @@ IMAGE_TAG_BASE ?= docker.io/stackrox/stackrox-operator
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
-# INDEX_IMG defines the image:tag used for the index aka catalog image, containing the single operator bundle image.
+# INDEX_IMG defines the image:tag used for the index (a.k.a. catalog) image, containing the single operator bundle image.
 INDEX_IMG ?= $(IMAGE_TAG_BASE)-index:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
@@ -54,11 +54,16 @@ endif
 # Lowercase Operating System name, needed for downloading GitHub releases.
 OS=$(shell uname | tr A-Z a-z)
 
+PROJECT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash
 .SHELLFLAGS = -o pipefail -euc
+
+# This Makefile is not created for and likely would not benefit from concurrent jobs execution.
+.NOTPARALLEL:
 
 all: build
 
@@ -81,91 +86,19 @@ help: ## Display this help.
 tag: ## Print the correct operator version (== image tag).
 	@echo $(VERSION)
 
-##@ Development
+# `everything` and `all` are separate targets.
+# `everything` pushes images. `all` is the default target that's executed when you simply run `make` without arguments.
+# If `all` would push images, parameter-less `make` execution would have side-effect of pushing images to registry
+# which might not be what the user intended to do (even though it could be safe in many cases).
+# `everything` is a target that needs to be explicitly called for this reason.
+.PHONY: everything
+everything: build bundle ## Build everything (local binary, operator image, bundle image, index image) and push all images.
+	$(MAKE) docker-build bundle-build
+	$(MAKE)	docker-push docker-push-bundle
+	$(MAKE) index-build
+	$(MAKE) docker-push-index
 
-parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
-	$(MAKE) -C .. proto-generated-srcs
-
-manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
-generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-
-fmt: ## Run go fmt against code.
-	go fmt ./...
-
-vet: ## Run go vet against code.
-	go vet ./...
-
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate fmt vet ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
-
-test-e2e: build install kuttl  ## Run e2e tests.
-	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	$(KUTTL) test --namespace stackrox
-
-stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on DockerHub. Used by Helm chart.
-# Create stackrox namespace if not exists.
-	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "stackrox" } }' | kubectl apply -f -
-# Create stackrox image pull secret in stackrox namespace.
-	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox docker.io | kubectl -n stackrox apply -f -
-
-##@ Build
-
-build: generate fmt vet ## Build manager binary.
-	../scripts/go-build-file.sh ./main.go bin/manager
-
-run: manifests generate fmt vet ## Run a controller from your host.
-	../scripts/go-run.sh ./main.go
-
-docker-build: test ## Build docker image with the manager.
-	@( \
-		`# status.sh file is used by scripts/go-build.sh which we try to run in the docker container.` \
-		`# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple.` \
-		`# Here we grab the output and create a new build/status.sh from it. That file will be copied into the` \
-		`# container and used there without having to bring all dependencies.` \
-		set -euxo pipefail ;\
-		smuggled_status_sh="$(PROJECT_DIR)/build/status.sh" ;\
-		mkdir -p "$(PROJECT_DIR)/build" ;\
-		cd "$(PROJECT_DIR)/.." ;\
-		echo "#!/bin/sh" > "$${smuggled_status_sh}" ;\
-		./status.sh | awk '{print "echo \"" $$0 "\""}' >> "$${smuggled_status_sh}" ;\
-		chmod +x "$${smuggled_status_sh}" ;\
-		`# Verify that the resulting status.sh is actually runnable` \
-		"$${smuggled_status_sh}" ;\
-	)
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build -t ${IMG} --ssh default=${SSH_AUTH_SOCK} -f Dockerfile ..
-
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
-
-.PHONY: docker-push-bundle
-docker-push-bundle: ## Push docker image with the bundle.
-	docker push ${BUNDLE_IMG}
-
-.PHONY: docker-push-index
-docker-push-index: ## Push docker image with the index.
-	docker push ${INDEX_IMG}
-
-##@ Deployment
-
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
-
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
-
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
-
-undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+##@ Dependencies download
 
 CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
@@ -225,7 +158,6 @@ GET_GITHUB_RELEASE_FN = get_github_release() { \
 }
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-get-tool
 @[ -f $(1) ] || { \
 set -e ;\
@@ -237,6 +169,82 @@ GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
+
+##@ Development
+
+parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
+	$(MAKE) -C .. proto-generated-srcs
+
+manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+fmt: ## Run go fmt against code.
+	go fmt ./...
+
+vet: ## Run go vet against code.
+	go vet ./...
+
+ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
+test: manifests generate fmt vet ## Run tests.
+	mkdir -p ${ENVTEST_ASSETS_DIR}
+	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
+	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+
+test-e2e: build install kuttl  ## Run e2e tests.
+	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
+	$(KUTTL) test --namespace stackrox
+
+stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on DockerHub. Used by Helm chart.
+# Create stackrox namespace if not exists.
+	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "stackrox" } }' | kubectl apply -f -
+# Create stackrox image pull secret in stackrox namespace.
+	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox docker.io | kubectl -n stackrox apply -f -
+
+run: manifests generate fmt vet ## Run operator from your host without deploying it to a cluster.
+	../scripts/go-run.sh ./main.go
+
+##@ Build
+
+build: generate fmt vet ## Build operator local binary.
+	../scripts/go-build-file.sh ./main.go bin/manager
+
+docker-build: test ## Build docker image with the operator.
+	@( \
+		`# status.sh file is used by scripts/go-build.sh which we try to run in the docker container.` \
+		`# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple.` \
+		`# Here we grab the output and create a new build/status.sh from it. That file will be copied into the` \
+		`# container and used there without having to bring all dependencies.` \
+		set -euxo pipefail ;\
+		smuggled_status_sh="$(PROJECT_DIR)/build/status.sh" ;\
+		mkdir -p "$(PROJECT_DIR)/build" ;\
+		cd "$(PROJECT_DIR)/.." ;\
+		echo "#!/bin/sh" > "$${smuggled_status_sh}" ;\
+		./status.sh | awk '{print "echo \"" $$0 "\""}' >> "$${smuggled_status_sh}" ;\
+		chmod +x "$${smuggled_status_sh}" ;\
+		`# Verify that the resulting status.sh is actually runnable` \
+		"$${smuggled_status_sh}" ;\
+	)
+	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build -t ${IMG} --ssh default=${SSH_AUTH_SOCK} -f Dockerfile ..
+
+##@ Deployment
+
+install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+
+uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+
+deploy: manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+undeploy: kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
+
+##@ Bundle and Index build
 
 .PHONY: bundle
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
@@ -282,13 +290,27 @@ bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
 	docker build -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
-bundle-test: operator-sdk ## Run scorecard tests against bundle files.
+bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
 	$(OPERATOR_SDK) scorecard build/bundle/
 
 .PHONY: bundle-test-image
-bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in the registry.
+bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in the registry. Bundle image must be pushed beforehand.
 	$(OPERATOR_SDK) scorecard $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: opm ## Build Index aka Catalog image with the bundle.
+index-build: opm ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(BUNDLE_IMG) --tag $(INDEX_IMG) --build-tool docker
+
+##@ Push images
+
+.PHONY: docker-push
+docker-push: ## Push docker image with the operator.
+	docker push ${IMG}
+
+.PHONY: docker-push-bundle
+docker-push-bundle: ## Push docker image with the bundle.
+	docker push ${BUNDLE_IMG}
+
+.PHONY: docker-push-index
+docker-push-index: ## Push docker image with the index.
+	docker push ${INDEX_IMG}
