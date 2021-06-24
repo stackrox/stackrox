@@ -118,7 +118,7 @@ func TestEnricherFlow(t *testing.T) {
 			},
 			inMetadataCache: false,
 			inScanCache:     false,
-			image:           &storage.Image{Id: "id"},
+			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: true,
@@ -156,7 +156,7 @@ func TestEnricherFlow(t *testing.T) {
 			},
 			inMetadataCache: true,
 			inScanCache:     true,
-			image:           &storage.Image{Id: "id"},
+			image:           &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: true,
@@ -237,7 +237,10 @@ func TestEnricherFlow(t *testing.T) {
 			inMetadataCache: false,
 			inScanCache:     false,
 			image: &storage.Image{
-				Id:       "id",
+				Id: "id",
+				Name: &storage.ImageName{
+					Registry: "reg",
+				},
 				Metadata: &storage.ImageMetadata{},
 				Scan:     &storage.ImageScan{},
 			},
@@ -361,7 +364,7 @@ func TestCVESuppression(t *testing.T) {
 		metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
-	img := &storage.Image{Id: "id"}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
@@ -391,10 +394,10 @@ func TestZeroIntegrations(t *testing.T) {
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
 
-	img := &storage.Image{Id: "id"}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment errors: [error getting metadata for image:  error: no image registries are integrated: please add an image integration for , error scanning image:  error: no image scanners are integrated]"
+	expectedErrMsg := "image enrichment errors: [error getting metadata for image:  error: no image registries are integrated: please add an image integration for reg, error scanning image:  error: no image scanners are integrated]"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.False(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)
@@ -421,11 +424,44 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
 
-	img := &storage.Image{Id: "id"}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{Internal: true}, img)
 	assert.NoError(t, err)
 	assert.False(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)
+}
+
+func TestRegistryMissingFromImage(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
+
+	fsr := &fakeRegistryScanner{}
+	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false)
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr}).AnyTimes()
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
+	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+		expiringcache.NewExpiringCache(1*time.Minute),
+		expiringcache.NewExpiringCache(1*time.Minute),
+		mockReporter)
+
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "testimage"}}
+	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
+	assert.Error(t, err)
+	expectedErrMsg := "image enrichment error: error getting metadata for image: testimage error: no registry is indicated for image"
+	assert.Equal(t, expectedErrMsg, err.Error())
+	assert.True(t, results.ImageUpdated)
+	assert.Equal(t, ScanSucceeded, results.ScanResult)
 }
 
 func TestZeroRegistryIntegrations(t *testing.T) {
@@ -453,10 +489,10 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
 
-	img := &storage.Image{Id: "id"}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no image registries are integrated: please add an image integration for "
+	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no image registries are integrated: please add an image integration for reg"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.True(t, results.ImageUpdated)
 	assert.Equal(t, ScanSucceeded, results.ScanResult)
@@ -488,10 +524,10 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
 
-	img := &storage.Image{Id: "id"}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no matching image registries found: please add an image integration for "
+	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no matching image registries found: please add an image integration for reg"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.False(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)
@@ -521,7 +557,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 		expiringcache.NewExpiringCache(1*time.Minute),
 		mockReporter)
 
-	img := &storage.Image{Id: "id"}
+	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error scanning image:  error: no image scanners are integrated"

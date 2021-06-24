@@ -102,6 +102,11 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error getting metadata for image: %s", image.GetName().GetFullName()))
 
+	if image.GetName().GetRegistry() == "" {
+		errorList.AddError(errors.New("no registry is indicated for image"))
+		return false, errorList.ToError()
+	}
+
 	registries := e.integrations.RegistrySet()
 	if !ctx.Internal && registries.IsEmpty() {
 		errorList.AddError(errors.Errorf("no image registries are integrated: please add an image integration for %s", image.GetName().GetRegistry()))
