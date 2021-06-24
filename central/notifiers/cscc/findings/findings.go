@@ -12,6 +12,9 @@ import (
 type State string
 
 // These State values are defined in the Google Cloud SCC API.
+//
+// Note: For ATTEMPTED alerts, the INACTIVE state seems to be a better fit to convey that StackRox stopped (resolved)
+// an impending threat/violation by blocking the action.
 const (
 	StateActive   State = "ACTIVE"
 	StateInactive State = "INACTIVE"

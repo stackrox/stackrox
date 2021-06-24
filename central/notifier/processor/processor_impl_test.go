@@ -60,8 +60,8 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	loop := &loopImpl{ns: ns}
 
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
-	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(3)
-	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(3)
+	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
+	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
 
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
@@ -82,8 +82,17 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	}
 	mockResolvableNotifier.EXPECT().AckAlert(context.Background(), snoozedAlert).Return(nil)
 
+	attemptedAlert := &storage.Alert{
+		Id:     "a3",
+		State:  storage.ViolationState_ATTEMPTED,
+		Policy: policy,
+	}
+	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(nil)
+	mockResolvableNotifier.EXPECT().AlertNotify(ctx, attemptedAlert).Return(nil)
+
 	processor.processAlertSync(ctx, activeAlert)
 	processor.processAlertSync(ctx, snoozedAlert)
+	processor.processAlertSync(ctx, attemptedAlert)
 
 	// Retry previous failures. (None)
 	loop.retryFailures(ctx)
@@ -112,8 +121,8 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	loop := &loopImpl{ns: ns}
 
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
-	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(3)
-	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(3)
+	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
+	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
 
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
@@ -137,8 +146,19 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	mockResolvableNotifier.EXPECT().AckAlert(context.Background(), snoozedAlert).Return(errors.New("broke"))
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
 
+	attemptedAlert := &storage.Alert{
+		Id:     "a3",
+		State:  storage.ViolationState_ATTEMPTED,
+		Policy: policy,
+	}
+	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(errors.New("broke"))
+	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
+	mockResolvableNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(errors.New("broke"))
+	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
+
 	processor.processAlertSync(ctx, activeAlert)
 	processor.processAlertSync(ctx, snoozedAlert)
+	processor.processAlertSync(ctx, attemptedAlert)
 
 	// Retry previous failures. (All of the calls)
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(nil)
@@ -146,6 +166,9 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 
 	mockResolvableNotifier.EXPECT().AckAlert(context.Background(), snoozedAlert).Return(errors.New("broke"))
 	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
+
+	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(nil)
+	mockResolvableNotifier.EXPECT().AlertNotify(ctx, attemptedAlert).Return(nil)
 
 	loop.retryFailures(ctx)
 

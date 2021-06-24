@@ -11,7 +11,7 @@ import (
 //////////////////
 
 func tryToAlert(ctx context.Context, notifier notifiers.Notifier, alert *storage.Alert) error {
-	if alert.GetState() == storage.ViolationState_ACTIVE {
+	if alert.GetState() == storage.ViolationState_ACTIVE || alert.GetState() == storage.ViolationState_ATTEMPTED {
 		alertNotifier, ok := notifier.(notifiers.AlertNotifier)
 		if !ok {
 			return nil

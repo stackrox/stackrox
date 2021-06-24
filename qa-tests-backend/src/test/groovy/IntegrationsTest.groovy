@@ -3,6 +3,7 @@ import groups.Notifiers
 import groups.BAT
 import groups.Integration
 import io.grpc.StatusRuntimeException
+import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -312,6 +313,108 @@ class IntegrationsTest extends BaseSpecification {
         }
         for (Notifier notifier : notifierTypes) {
             notifier.validateViolationResolution()
+            notifier.cleanup()
+            notifier.deleteNotifier()
+        }
+
+        where:
+        "data inputs are:"
+
+        type        | notifierTypes       |
+                deployment
+
+        "EMAIL"     | [new EmailNotifier()]       |
+                new Deployment()
+                        .setName("policy-violation-email-notification")
+                        .addLabel("app", "policy-violation-email-notification")
+                        .setImage("nginx:latest")
+
+        "PAGERDUTY" | [new PagerDutyNotifier()]   |
+                new Deployment()
+                        .setName("policy-violation-pagerduty-notification")
+                        .addLabel("app", "policy-violation-pagerduty-notification")
+                        .setImage("nginx:latest")
+
+        "GENERIC"   | [new GenericNotifier()]     |
+                new Deployment()
+                        .setName("policy-violation-generic-notification")
+                        .addLabel("app", "policy-violation-generic-notification")
+                        .setImage("nginx:latest")
+    }
+
+    @Unroll
+    @Category([BAT, Notifiers])
+    def "Verify Attempted Policy Violation Notifications: #type"() {
+        when:
+        "Create notifications(s)"
+        for (Notifier notifier : notifierTypes) {
+            notifier.createNotifier()
+        }
+
+        and:
+        "Create policy scoped to test deployment with notification enabled"
+        PolicyOuterClass.Policy.Builder policy =
+                PolicyOuterClass.Policy.newBuilder(Services.getPolicyByName("Latest tag"))
+        policy.setId("")
+                .setName("Policy Notifier Test Policy")
+                .addScope(ScopeOuterClass.Scope.newBuilder()
+                        .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                                .setKey("app")
+                                .setValue(deployment.name)
+                        )
+                )
+                .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+        for (Notifier notifier : notifierTypes) {
+            policy.addNotifiers(notifier.getId())
+        }
+        String policyId = CreatePolicyService.createNewPolicy(policy.build())
+        assert policyId
+
+        and:
+        "Set admission controller settings to enforce on creates"
+        ClusterOuterClass.AdmissionControllerConfig ac = ClusterOuterClass.AdmissionControllerConfig.newBuilder()
+                .setEnabled(true)
+                .setTimeoutSeconds(3)
+                .build()
+
+        assert ClusterService.updateAdmissionController(ac)
+        // Sleep to allow settings update to propagate
+        sleep(5000)
+
+        and:
+        "Trigger create deployment to generate attempted policy violation notification"
+        def created = orchestrator.createDeploymentNoWait(deployment)
+
+        then:
+        "Verify deployment create failed"
+        assert !created
+
+        and:
+        "Verify attempted alert is generated"
+        withRetry(3, 3) {
+            def listAlerts = Services.getViolationsWithTimeout(deployment.getName(), "Policy Notifier Test Policy", 60)
+            assert listAlerts && listAlerts.get(0).getPolicy().getName() == "Policy Notifier Test Policy"
+            // Since the deployment is not created, get the ID from alert.
+            def depID = listAlerts.get(0).deployment.id
+            assert depID
+            deployment.deploymentUid = depID
+        }
+
+        and:
+        "Validate Notification details"
+        for (Notifier notifier : notifierTypes) {
+            notifier.validateViolationNotification(policy.build(), deployment, strictIntegrationTesting)
+        }
+
+        cleanup:
+        "delete deployment, policy, and notifiers"
+        if (created) {
+            orchestrator.deleteDeployment(deployment)
+        }
+        if (policyId != null) {
+            CreatePolicyService.deletePolicy(policyId)
+        }
+        for (Notifier notifier : notifierTypes) {
             notifier.cleanup()
             notifier.deleteNotifier()
         }

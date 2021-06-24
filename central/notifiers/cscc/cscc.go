@@ -102,6 +102,12 @@ func transformEnforcement(a storage.EnforcementAction) string {
 		return "Scaled to zero replicas"
 	case storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT:
 		return "Unsatisfiable node constraint added to prevent deployment"
+	case storage.EnforcementAction_FAIL_DEPLOYMENT_CREATE_ENFORCEMENT:
+		return "Blocked deployment create"
+	case storage.EnforcementAction_FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT:
+		return "Blocked deployment update"
+	case storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT:
+		return "Blocked kubernetes operation"
 	default:
 		return a.String()
 	}
@@ -176,7 +182,6 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 			Zone:    providerMetadata.GetZone(),
 			Name:    providerMetadata.GetGoogle().GetClusterName(),
 		}.ResourceName(),
-		State:     findings.StateActive,
 		Category:  category,
 		URL:       alertLink,
 		Timestamp: protoconv.ConvertTimestampToTimeOrNow(alert.GetTime()).Format(time.RFC3339Nano),
@@ -190,6 +195,12 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 			EnforcementActions: alertEnforcement(alert),
 			Summary:            summary,
 		}.Map(),
+	}
+
+	if alert.GetState() == storage.ViolationState_ATTEMPTED {
+		finding.State = findings.StateInactive
+	} else {
+		finding.State = findings.StateActive
 	}
 
 	return retry.WithRetry(
