@@ -7,6 +7,8 @@ import {
     Button,
     Form,
     FormGroup,
+    Grid,
+    GridItem,
     SelectOption,
     TextInput,
     Toolbar,
@@ -19,6 +21,7 @@ import { availableAuthProviders } from 'constants/accessControl';
 import { AuthProvider } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 
+import { getInitialAuthProviderValues } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
 
 import SelectSingle from '../SelectSingle'; // TODO import from where?
@@ -45,12 +48,21 @@ function AuthProviderForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
+    const initialValues = getInitialAuthProviderValues(authProvider);
+
     const { dirty, handleChange, isValid, setFieldValue, values } = useFormik({
-        initialValues: authProvider,
+        initialValues,
         onSubmit: () => {},
         validationSchema: yup.object({
             name: yup.string().required(),
             type: yup.string().required(),
+            config: yup.object().when('type', {
+                is: 'auth0',
+                then: yup.object({
+                    issuer: yup.string().required(),
+                    client_id: yup.string().required(),
+                }),
+            }),
         }),
     });
 
@@ -125,30 +137,60 @@ function AuthProviderForm({
                 </Toolbar>
             )}
             {alertSubmit}
-            <FormGroup label="Name" fieldId="name" isRequired>
-                <TextInput
-                    type="text"
-                    id="name"
-                    value={values.name}
-                    onChange={onChange}
-                    isDisabled={isViewing}
-                    isRequired
-                />
-            </FormGroup>
-            <FormGroup label="Auth provider" fieldId="type" isRequired>
-                <SelectSingle
-                    id="type"
-                    value={values.type}
-                    setFieldValue={setFieldValue}
-                    isDisabled={isViewing}
-                >
-                    {availableAuthProviders.map(({ value, label }) => (
-                        <SelectOption key={value} value={value}>
-                            {label}
-                        </SelectOption>
-                    ))}
-                </SelectSingle>
-            </FormGroup>
+            <Grid hasGutter>
+                <GridItem span={12} lg={6}>
+                    <FormGroup label="Name" fieldId="name" isRequired>
+                        <TextInput
+                            type="text"
+                            id="name"
+                            value={values.name}
+                            onChange={onChange}
+                            isDisabled={isViewing}
+                            isRequired
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem span={12} lg={6}>
+                    <FormGroup label="Auth provider type" fieldId="type" isRequired>
+                        <SelectSingle
+                            id="type"
+                            value={values.type}
+                            setFieldValue={setFieldValue}
+                            isDisabled={isViewing}
+                        >
+                            {availableAuthProviders.map(({ value, label }) => (
+                                <SelectOption key={value} value={value}>
+                                    {label}
+                                </SelectOption>
+                            ))}
+                        </SelectSingle>
+                    </FormGroup>
+                </GridItem>
+                <GridItem span={12} lg={6}>
+                    <FormGroup label="Auth0 tenant" fieldId="name" isRequired>
+                        <TextInput
+                            type="text"
+                            id="config.issuer"
+                            value={values.config.issuer || ''}
+                            onChange={onChange}
+                            isDisabled={isViewing}
+                            isRequired
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem span={12} lg={6}>
+                    <FormGroup label="Client ID" fieldId="name" isRequired>
+                        <TextInput
+                            type="text"
+                            id="config.client_id"
+                            value={values.config.client_id || ''}
+                            onChange={onChange}
+                            isDisabled={isViewing}
+                            isRequired
+                        />
+                    </FormGroup>
+                </GridItem>
+            </Grid>
             <FormGroup label="Minimum access role" fieldId="minimumAccessRole" isRequired>
                 <SelectSingle
                     id="minimumAccessRole"
