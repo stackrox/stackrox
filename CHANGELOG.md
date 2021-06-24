@@ -6,6 +6,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+## [62.0]
+
 - Scanner now supports alpine:edge.
 
 ## [61.0]
