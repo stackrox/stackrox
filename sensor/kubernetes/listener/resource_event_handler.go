@@ -4,6 +4,7 @@ import (
 	"github.com/openshift/client-go/apps/informers/externalversions"
 	configExtVersions "github.com/openshift/client-go/config/informers/externalversions"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -96,10 +97,10 @@ func (k *listenerImpl) handleAllEvents() {
 		} else {
 			log.Infof("initializing compliance operator informers")
 			dynamicFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), resyncPeriod)
-			complianceResultInformer = dynamicFactory.ForResource(complianceGVR).Informer()
-			complianceProfileInformer = dynamicFactory.ForResource(profileGVR).Informer()
-			complianceScanSettingBindingsInformer = dynamicFactory.ForResource(scanSettingBindingGVR).Informer()
-			complianceRuleInformer = dynamicFactory.ForResource(ruleGVR).Informer()
+			complianceResultInformer = dynamicFactory.ForResource(complianceoperator.CheckResultGVR).Informer()
+			complianceProfileInformer = dynamicFactory.ForResource(complianceoperator.ProfileGVR).Informer()
+			complianceScanSettingBindingsInformer = dynamicFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
+			complianceRuleInformer = dynamicFactory.ForResource(complianceoperator.RuleGVR).Informer()
 		}
 	}
 	if complianceResultInformer != nil {
