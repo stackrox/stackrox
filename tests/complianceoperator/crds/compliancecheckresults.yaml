@@ -1,0 +1,146 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"annotations":{},"name":"compliancecheckresults.compliance.openshift.io"},"spec":{"group":"compliance.openshift.io","names":{"kind":"ComplianceCheckResult","listKind":"ComplianceCheckResultList","plural":"compliancecheckresults","shortNames":["ccr","checkresults","checkresult"],"singular":"compliancecheckresult"},"scope":"Namespaced","versions":[{"additionalPrinterColumns":[{"jsonPath":".status","name":"Status","type":"string"},{"jsonPath":".severity","name":"Severity","type":"string"}],"name":"v1alpha1","schema":{"openAPIV3Schema":{"description":"ComplianceCheckResult represent a result of a single compliance \"test\"","properties":{"apiVersion":{"description":"APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources","type":"string"},"description":{"description":"A human-readable check description, what and why it does","type":"string"},"id":{"description":"A unique identifier of a check","type":"string"},"instructions":{"description":"How to evaluate if the rule status manually. If no automatic test is present, the rule status will be MANUAL and the administrator should follow these instructions.","type":"string"},"kind":{"description":"Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds","type":"string"},"metadata":{"type":"object"},"severity":{"description":"The severity of a check status","type":"string"},"status":{"description":"The result of a check","type":"string"},"warnings":{"description":"Any warnings that the user should be aware about.","items":{"type":"string"},"nullable":true,"type":"array"}},"required":["id","severity","status"],"type":"object"}},"served":true,"storage":true,"subresources":{}}]}}
+  creationTimestamp: "2021-05-20T18:20:07Z"
+  generation: 1
+  managedFields:
+  - apiVersion: apiextensions.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+      f:spec:
+        f:conversion:
+          .: {}
+          f:strategy: {}
+        f:group: {}
+        f:names:
+          f:kind: {}
+          f:listKind: {}
+          f:plural: {}
+          f:shortNames: {}
+          f:singular: {}
+        f:scope: {}
+        f:versions: {}
+      f:status:
+        f:storedVersions: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2021-05-20T18:20:07Z"
+  - apiVersion: apiextensions.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:acceptedNames:
+          f:kind: {}
+          f:listKind: {}
+          f:plural: {}
+          f:shortNames: {}
+          f:singular: {}
+        f:conditions: {}
+    manager: kube-apiserver
+    operation: Update
+    time: "2021-05-20T18:20:08Z"
+  name: compliancecheckresults.compliance.openshift.io
+  resourceVersion: "1232641"
+  selfLink: /apis/apiextensions.k8s.io/v1/customresourcedefinitions/compliancecheckresults.compliance.openshift.io
+  uid: 55aa873e-64c5-4cb3-b0f1-ebcd6bf96001
+spec:
+  conversion:
+    strategy: None
+  group: compliance.openshift.io
+  names:
+    kind: ComplianceCheckResult
+    listKind: ComplianceCheckResultList
+    plural: compliancecheckresults
+    shortNames:
+    - ccr
+    - checkresults
+    - checkresult
+    singular: compliancecheckresult
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status
+      name: Status
+      type: string
+    - jsonPath: .severity
+      name: Severity
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ComplianceCheckResult represent a result of a single compliance
+          "test"
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          description:
+            description: A human-readable check description, what and why it does
+            type: string
+          id:
+            description: A unique identifier of a check
+            type: string
+          instructions:
+            description: How to evaluate if the rule status manually. If no automatic
+              test is present, the rule status will be MANUAL and the administrator
+              should follow these instructions.
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          severity:
+            description: The severity of a check status
+            type: string
+          status:
+            description: The result of a check
+            type: string
+          warnings:
+            description: Any warnings that the user should be aware about.
+            items:
+              type: string
+            nullable: true
+            type: array
+        required:
+        - id
+        - severity
+        - status
+        type: object
+    served: true
+    storage: true
+    subresources: {}
+status:
+  acceptedNames:
+    kind: ComplianceCheckResult
+    listKind: ComplianceCheckResultList
+    plural: compliancecheckresults
+    shortNames:
+    - ccr
+    - checkresults
+    - checkresult
+    singular: compliancecheckresult
+  conditions:
+  - lastTransitionTime: "2021-05-20T18:20:07Z"
+    message: no conflicts found
+    reason: NoConflicts
+    status: "True"
+    type: NamesAccepted
+  - lastTransitionTime: "2021-05-20T18:20:08Z"
+    message: the initial names have been accepted
+    reason: InitialNamesAccepted
+    status: "True"
+    type: Established
+  storedVersions:
+  - v1alpha1

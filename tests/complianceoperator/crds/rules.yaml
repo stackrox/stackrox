@@ -1,0 +1,143 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"annotations":{},"name":"rules.compliance.openshift.io"},"spec":{"group":"compliance.openshift.io","names":{"kind":"Rule","listKind":"RuleList","plural":"rules","singular":"rule"},"scope":"Namespaced","versions":[{"name":"v1alpha1","schema":{"openAPIV3Schema":{"description":"Rule is the Schema for the rules API","properties":{"apiVersion":{"description":"APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources","type":"string"},"availableFixes":{"description":"The Available fixes","items":{"description":"FixDefinition Specifies a fix or remediation that applies to a rule","properties":{"disruption":{"description":"An estimate of the potential disruption or operational degradation that this fix will impose in the target system","type":"string"},"fixObject":{"description":"an object that should bring the rule into compliance","type":"object","x-kubernetes-embedded-resource":true,"x-kubernetes-preserve-unknown-fields":true},"platform":{"description":"The platform that the fix applies to","type":"string"}},"type":"object"},"nullable":true,"type":"array","x-kubernetes-list-type":"atomic"},"description":{"description":"The description of the Rule","type":"string"},"id":{"description":"The XCCDF ID","type":"string"},"kind":{"description":"Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds","type":"string"},"metadata":{"type":"object"},"rationale":{"description":"The rationale of the Rule","type":"string"},"severity":{"description":"The severity level","type":"string"},"title":{"description":"The title of the Rule","type":"string"},"warning":{"description":"A discretionary warning about the of the Rule","type":"string"}},"required":["id","title"],"type":"object"}},"served":true,"storage":true}]}}
+  creationTimestamp: "2021-05-20T18:20:12Z"
+  generation: 1
+  managedFields:
+  - apiVersion: apiextensions.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:acceptedNames:
+          f:kind: {}
+          f:listKind: {}
+          f:plural: {}
+          f:singular: {}
+        f:conditions: {}
+    manager: kube-apiserver
+    operation: Update
+    time: "2021-05-20T18:20:12Z"
+  - apiVersion: apiextensions.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+      f:spec:
+        f:conversion:
+          .: {}
+          f:strategy: {}
+        f:group: {}
+        f:names:
+          f:kind: {}
+          f:listKind: {}
+          f:plural: {}
+          f:singular: {}
+        f:scope: {}
+        f:versions: {}
+      f:status:
+        f:storedVersions: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2021-05-20T18:20:12Z"
+  name: rules.compliance.openshift.io
+  resourceVersion: "1232671"
+  selfLink: /apis/apiextensions.k8s.io/v1/customresourcedefinitions/rules.compliance.openshift.io
+  uid: a0a76192-a8b4-4883-a936-a677c43e52f2
+spec:
+  conversion:
+    strategy: None
+  group: compliance.openshift.io
+  names:
+    kind: Rule
+    listKind: RuleList
+    plural: rules
+    singular: rule
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Rule is the Schema for the rules API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          availableFixes:
+            description: The Available fixes
+            items:
+              description: FixDefinition Specifies a fix or remediation that applies
+                to a rule
+              properties:
+                disruption:
+                  description: An estimate of the potential disruption or operational
+                    degradation that this fix will impose in the target system
+                  type: string
+                fixObject:
+                  description: an object that should bring the rule into compliance
+                  type: object
+                  x-kubernetes-embedded-resource: true
+                  x-kubernetes-preserve-unknown-fields: true
+                platform:
+                  description: The platform that the fix applies to
+                  type: string
+              type: object
+            nullable: true
+            type: array
+            x-kubernetes-list-type: atomic
+          description:
+            description: The description of the Rule
+            type: string
+          id:
+            description: The XCCDF ID
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          rationale:
+            description: The rationale of the Rule
+            type: string
+          severity:
+            description: The severity level
+            type: string
+          title:
+            description: The title of the Rule
+            type: string
+          warning:
+            description: A discretionary warning about the of the Rule
+            type: string
+        required:
+        - id
+        - title
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: Rule
+    listKind: RuleList
+    plural: rules
+    singular: rule
+  conditions:
+  - lastTransitionTime: "2021-05-20T18:20:12Z"
+    message: no conflicts found
+    reason: NoConflicts
+    status: "True"
+    type: NamesAccepted
+  - lastTransitionTime: "2021-05-20T18:20:12Z"
+    message: the initial names have been accepted
+    reason: InitialNamesAccepted
+    status: "True"
+    type: Established
+  storedVersions:
+  - v1alpha1

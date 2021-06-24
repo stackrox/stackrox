@@ -30,6 +30,10 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_Binding": 0,
         "*central.SensorEvent_Deployment": 1,
         "*central.SensorEvent_Node": 0,
+        "*central.SensorEvent_ComplianceOperatorProfile": 0,
+        "*central.SensorEvent_ComplianceOperatorResult": 0,
+        "*central.SensorEvent_ComplianceOperatorRule": 0,
+        "*central.SensorEvent_ComplianceOperatorScanSettingBinding": 0,
     ]
 
     // DEFAULT_MAX_ALLOWED_DELETIONS is the default max number of deletions allowed for a resource.

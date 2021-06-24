@@ -66,7 +66,7 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 		results:             results,
 	}
 	err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-		return mgr.AddProfile(profile)
+		return mgr.addProfileNoLock(profile)
 	})
 	if err != nil {
 		return nil, err

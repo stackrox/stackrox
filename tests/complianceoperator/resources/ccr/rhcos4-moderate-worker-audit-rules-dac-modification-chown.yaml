@@ -1,0 +1,37 @@
+apiVersion: compliance.openshift.io/v1alpha1
+description: |-
+  Record Events that Modify the System's Discretionary Access Controls - chown
+  The changing of file permissions could indicate that a user is attempting to
+  gain access to information that would otherwise be disallowed. Auditing DAC modifications
+  can facilitate the identification of patterns of abuse among both authorized and
+  unauthorized users.
+id: xccdf_org.ssgproject.content_rule_audit_rules_dac_modification_chown
+instructions: |-
+  To determine if the system is configured to audit calls to the
+  chown system call, run the following command:
+  preserve$ sudo grep "chown" /etc/audit/audit.*
+  If the system is configured to audit this activity, it will return a line.
+kind: ComplianceCheckResult
+metadata:
+  annotations:
+    compliance.openshift.io/rule: audit-rules-dac-modification-chown
+  creationTimestamp: "2021-06-22T18:22:03Z"
+  generation: 1
+  labels:
+    compliance.openshift.io/automated-remediation: ""
+    compliance.openshift.io/check-severity: medium
+    compliance.openshift.io/check-status: FAIL
+    compliance.openshift.io/scan-name: rhcos4-moderate-worker
+    compliance.openshift.io/suite: rhcos4-moderate
+  name: rhcos4-moderate-worker-audit-rules-dac-modification-chown
+  namespace: openshift-compliance
+  resourceVersion: "42977"
+  selfLink: /apis/compliance.openshift.io/v1alpha1/namespaces/openshift-compliance/compliancecheckresults/rhcos4-moderate-worker-audit-rules-dac-modification-chown
+  uid: 80a799e3-f11f-4fe4-b089-a319ccac015b
+severity: medium
+status: INFO
+warnings:
+- Note that these rules can be configured in a number of ways while still achieving
+  the desired effect. Here the system calls have been placed independent of other
+  system calls. Grouping these system calls with others as identifying earlier in
+  this guide is more efficient.

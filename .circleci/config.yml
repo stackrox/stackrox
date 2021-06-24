@@ -3204,6 +3204,11 @@ jobs:
 
       - *setupDefaultTLSCerts
 
+      - run:
+          name: Create Compliance Operator YAMLs
+          command: |
+             ./tests/complianceoperator/create.sh
+
       - deploy-stackrox:
           require-cluster-admin: true
           validate-autoupgrade-label: true
