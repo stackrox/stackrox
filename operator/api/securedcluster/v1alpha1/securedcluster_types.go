@@ -49,7 +49,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	AdmissionControl *AdmissionControlComponentSpec `json:"admissionControl,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	Collector *CollectorComponentSpec `json:"collector,omitempty"`
+	PerNode *PerNodeSpec `json:"perNode,omitempty"`
 	// Customizations to apply on all secured cluster components.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
@@ -85,8 +85,8 @@ type AdmissionControlComponentSpec struct {
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 }
 
-// CollectorComponentSpec declares configuration settings for the collector component.
-type CollectorComponentSpec struct {
+// PerNodeSpec declares configuration settings for components which are deployed to all nodes.
+type PerNodeSpec struct {
 	Collection      *CollectionMethod      `json:"collection,omitempty"`
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 
@@ -106,6 +106,11 @@ const (
 	CollectionNone CollectionMethod = "NoCollection"
 )
 
+// Pointer returns the given CollectionMethod as a pointer, needed in k8s resource structs.
+func (c CollectionMethod) Pointer() *CollectionMethod {
+	return &c
+}
+
 // TaintTolerationPolicy is a type for values of spec.collector.taintToleration
 type TaintTolerationPolicy string
 
@@ -116,13 +121,18 @@ const (
 	TaintAvoid TaintTolerationPolicy = "AvoidTaints"
 )
 
+// Pointer returns the given TaintTolerationPolicy as a pointer, needed in k8s resource structs.
+func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
+	return &t
+}
+
 // CollectorContainerSpec defines settings for the collector container.
 type CollectorContainerSpec struct {
 	ContainerSpec `json:",inline"`
 	ImageFlavor   *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 }
 
-// ContainerSpec defines settings common to secured cluster components.
+// ContainerSpec defines container settings.
 type ContainerSpec struct {
 	Resources *common.Resources `json:"resources,omitempty"`
 	// Customize specifies additional attributes for all containers.
@@ -144,6 +154,11 @@ const (
 	// ImageFlavorSlim means to use slim collector images.
 	ImageFlavorSlim CollectorImageFlavor = "Slim"
 )
+
+// Pointer returns the given CollectorImageFlavor as a pointer, needed in k8s resource structs.
+func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
+	return &c
+}
 
 // -------------------------------------------------------------
 // Status

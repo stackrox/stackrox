@@ -95,8 +95,8 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
 	}
 
-	if sc.Spec.Collector != nil {
-		v.AddChild("collector", t.getCollectorValues(sc.Spec.Collector))
+	if sc.Spec.PerNode != nil {
+		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
@@ -182,11 +182,11 @@ func (t Translator) getAdmissionControlValues(admissionControl *securedcluster.A
 	return &acv
 }
 
-func (t Translator) getCollectorValues(collector *securedcluster.CollectorComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getCollectorValues(perNode *securedcluster.PerNodeSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
-	if collector.Collection != nil {
-		switch *collector.Collection {
+	if perNode.Collection != nil {
+		switch *perNode.Collection {
 		case securedcluster.CollectionEBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
 		case securedcluster.CollectionKernelModule:
@@ -194,23 +194,23 @@ func (t Translator) getCollectorValues(collector *securedcluster.CollectorCompon
 		case securedcluster.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		default:
-			return cv.SetError(fmt.Errorf("invalid spec.collector.collection %q", *collector.Collection))
+			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *perNode.Collection))
 		}
 	}
 
-	if collector.TaintToleration != nil {
-		switch *collector.TaintToleration {
+	if perNode.TaintToleration != nil {
+		switch *perNode.TaintToleration {
 		case securedcluster.TaintTolerate:
 			cv.SetBoolValue("disableTaintTolerations", false)
 		case securedcluster.TaintAvoid:
 			cv.SetBoolValue("disableTaintTolerations", true)
 		default:
-			return cv.SetError(fmt.Errorf("invalid spec.collector.taintToleration %q", *collector.TaintToleration))
+			return cv.SetError(fmt.Errorf("invalid spec.perNode.taintToleration %q", *perNode.TaintToleration))
 		}
 	}
 
-	cv.AddAllFrom(t.getCollectorContainerValues(collector.Collector))
-	cv.AddAllFrom(t.getComplianceContainerValues(collector.Compliance))
+	cv.AddAllFrom(t.getCollectorContainerValues(perNode.Collector))
+	cv.AddAllFrom(t.getComplianceContainerValues(perNode.Compliance))
 
 	return &cv
 }

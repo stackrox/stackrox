@@ -85,13 +85,13 @@ spec:
       - description: ClusterName should specify the name assigned to your secured cluster.
         displayName: Cluster Name
         path: clusterName
-      - displayName: Collector
-        path: collector
       - description: Customizations to apply on all secured cluster components.
         displayName: Customize
         path: customize
       - displayName: Image Pull Secrets
         path: imagePullSecrets
+      - displayName: Per Node
+        path: perNode
       - displayName: Sensor
         path: sensor
       - displayName: TLS

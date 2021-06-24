@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -74,6 +75,27 @@ func TestTranslateComplete(t *testing.T) {
 							AdditionalCAs: []common.AdditionalCA{
 								{Name: "ca1-name", Content: "ca1-content"},
 								{Name: "ca2-name", Content: "ca2-content"},
+							},
+						},
+						PerNode: &v1alpha1.PerNodeSpec{
+							Collector: &v1alpha1.CollectorContainerSpec{
+								ImageFlavor: v1alpha1.ImageFlavorRegular.Pointer(),
+							},
+							Collection:      v1alpha1.CollectionEBPF.Pointer(),
+							TaintToleration: v1alpha1.TaintTolerate.Pointer(),
+							Compliance: &v1alpha1.ContainerSpec{
+								Resources: &common.Resources{
+									Override: &v1.ResourceRequirements{
+										Limits: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("1500m"),
+											v1.ResourceMemory: resource.MustParse("1Gi"),
+										},
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("1500m"),
+											v1.ResourceMemory: resource.MustParse("1Gi"),
+										},
+									},
+								},
 							},
 						},
 						Customize: &common.CustomizeSpec{
@@ -136,6 +158,20 @@ func TestTranslateComplete(t *testing.T) {
 					"podLabels": map[string]string{
 						"customize-pod-label1": "customize-pod-label1-value",
 						"customize-pod-label2": "customize-pod-label2-value",
+					},
+				},
+				"collector": map[string]interface{}{
+					"collectionMethod":        "EBPF",
+					"disableTaintTolerations": false,
+					"slimMode":                false,
+					"complianceResources": map[string]interface{}{
+						"limits": map[string]interface{}{
+							"cpu":    "1500m",
+							"memory": "1Gi",
+						}, "requests": map[string]interface{}{
+							"cpu":    "1500m",
+							"memory": "1Gi",
+						},
 					},
 				},
 			},

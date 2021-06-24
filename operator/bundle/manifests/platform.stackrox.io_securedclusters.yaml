@@ -84,8 +84,46 @@ spec:
               clusterName:
                 description: ClusterName should specify the name assigned to your secured cluster.
                 type: string
-              collector:
-                description: CollectorComponentSpec declares configuration settings for the collector component.
+              customize:
+                description: Customizations to apply on all secured cluster components.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Custom annotations to set on all objects apart from Pods.
+                    type: object
+                  envVars:
+                    additionalProperties:
+                      type: string
+                    description: Custom environment variables to set on pods' containers.
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Custom labels to set on all objects apart from Pods.
+                    type: object
+                  podAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Custom annotations to set on Pods.
+                    type: object
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Custom labels to set on Pods.
+                    type: object
+                type: object
+              imagePullSecrets:
+                items:
+                  description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                  type: object
+                type: array
+              perNode:
+                description: PerNodeSpec declares configuration settings for components which are deployed to all nodes.
                 properties:
                   collection:
                     description: CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
@@ -133,7 +171,7 @@ spec:
                         type: object
                     type: object
                   compliance:
-                    description: ContainerSpec defines settings common to secured cluster components.
+                    description: ContainerSpec defines container settings.
                     properties:
                       customize:
                         description: Customize specifies additional attributes for all containers.
@@ -175,44 +213,6 @@ spec:
                     description: TaintTolerationPolicy is a type for values of spec.collector.taintToleration
                     type: string
                 type: object
-              customize:
-                description: Customizations to apply on all secured cluster components.
-                properties:
-                  annotations:
-                    additionalProperties:
-                      type: string
-                    description: Custom annotations to set on all objects apart from Pods.
-                    type: object
-                  envVars:
-                    additionalProperties:
-                      type: string
-                    description: Custom environment variables to set on pods' containers.
-                    type: object
-                  labels:
-                    additionalProperties:
-                      type: string
-                    description: Custom labels to set on all objects apart from Pods.
-                    type: object
-                  podAnnotations:
-                    additionalProperties:
-                      type: string
-                    description: Custom annotations to set on Pods.
-                    type: object
-                  podLabels:
-                    additionalProperties:
-                      type: string
-                    description: Custom labels to set on Pods.
-                    type: object
-                type: object
-              imagePullSecrets:
-                items:
-                  description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
-                  properties:
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                  type: object
-                type: array
               sensor:
                 description: SensorComponentSpec defines settings for sensor.
                 properties:
