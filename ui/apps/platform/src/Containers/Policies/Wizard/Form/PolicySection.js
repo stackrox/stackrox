@@ -8,7 +8,6 @@ import Button from 'Components/Button';
 import SectionHeaderInput from 'Components/SectionHeaderInput';
 import AndOrOperator from 'Components/AndOrOperator';
 import PolicyFieldCard from './PolicyFieldCard';
-import { policyConfiguration } from './descriptors';
 import { removeFieldArrayHandler } from './utils';
 import PolicySectionDropTarget from './PolicySectionDropTarget';
 
@@ -18,7 +17,14 @@ function addPolicyFieldCardHandler(fields) {
     };
 }
 
-function PolicySection({ fields, sectionName, removeSectionHandler, readOnly, isLast }) {
+function PolicySection({
+    fields,
+    sectionName,
+    removeSectionHandler,
+    readOnly,
+    isLast,
+    descriptor,
+}) {
     return (
         <>
             <div
@@ -41,7 +47,7 @@ function PolicySection({ fields, sectionName, removeSectionHandler, readOnly, is
                         const field = fields.get(i);
                         let { fieldKey } = field;
                         if (!fieldKey) {
-                            fieldKey = policyConfiguration.descriptor.find(
+                            fieldKey = descriptor.find(
                                 (fieldObj) =>
                                     fieldObj.name === field.fieldName ||
                                     fieldObj.label === field.fieldName
@@ -65,6 +71,7 @@ function PolicySection({ fields, sectionName, removeSectionHandler, readOnly, is
                         <PolicySectionDropTarget
                             allFields={fields.getAll()}
                             addPolicyFieldCardHandler={addPolicyFieldCardHandler(fields)}
+                            descriptor={descriptor}
                         />
                     )}
                 </div>
@@ -80,6 +87,7 @@ PolicySection.propTypes = {
     removeSectionHandler: PropTypes.func.isRequired,
     readOnly: PropTypes.bool,
     isLast: PropTypes.bool,
+    descriptor: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 PolicySection.defaultProps = {

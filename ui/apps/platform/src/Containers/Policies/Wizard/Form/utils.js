@@ -1,6 +1,5 @@
 import { keyBy } from 'lodash';
 
-import { policyConfiguration } from 'Containers/Policies/Wizard/Form/descriptors';
 import { removeEmptyPolicyFields } from 'utils/policyUtils';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
@@ -220,10 +219,10 @@ export function formatPolicyFields(policy) {
     return serverPolicy;
 }
 
-export function getPolicyCriteriaFieldKeys(fields) {
+export function getPolicyCriteriaFieldKeys(fields, descriptor) {
     const fieldNameMap = keyBy(fields, (field) => field.field_name);
     const availableFieldKeys = [];
-    policyConfiguration.descriptor.forEach((field) => {
+    descriptor.forEach((field) => {
         if (!fieldNameMap[field.name]) {
             availableFieldKeys.push(field.name);
         }

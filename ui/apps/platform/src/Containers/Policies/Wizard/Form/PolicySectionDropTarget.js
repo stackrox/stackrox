@@ -19,8 +19,8 @@ const getEmptyPolicyFieldCard = (fieldKey) => {
     };
 };
 
-function PolicySectionDropTarget({ allFields, addPolicyFieldCardHandler }) {
-    const acceptedFields = getPolicyCriteriaFieldKeys(allFields);
+function PolicySectionDropTarget({ allFields, addPolicyFieldCardHandler, descriptor }) {
+    const acceptedFields = getPolicyCriteriaFieldKeys(allFields, descriptor);
 
     const [{ isOver, canDrop }, drop] = useDrop({
         accept: acceptedFields,
@@ -59,6 +59,7 @@ function PolicySectionDropTarget({ allFields, addPolicyFieldCardHandler }) {
 PolicySectionDropTarget.propTypes = {
     allFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     addPolicyFieldCardHandler: PropTypes.func.isRequired,
+    descriptor: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 export default PolicySectionDropTarget;

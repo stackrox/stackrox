@@ -7,8 +7,6 @@ import {
     seccompProfileTypeLabels,
     severityRatings,
 } from 'messages/common';
-import { resourceTypes } from 'constants/entityTypes';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 const equalityOptions = [
     { label: 'Is greater than', value: '>' },
@@ -43,9 +41,7 @@ const cpuResource = (label) => ({
             subpath: 'value',
         },
     ],
-    required: false,
     canBooleanLogic: true,
-    entityType: resourceTypes.DEPLOYMENT,
 });
 
 const capabilities = [
@@ -89,6 +85,17 @@ const capabilities = [
     'WAKE_ALARM',
 ].map((cap) => ({ label: cap, value: cap }));
 
+const APIVerbs = [
+    'CREATE',
+    'DELETE',
+    'GET',
+    'LIST',
+    'PATCH',
+    'PROXY',
+    'UPDATE',
+    'WATCH',
+].map((verb) => ({ label: verb, value: verb }));
+
 const memoryResource = (label) => ({
     label,
     name: label,
@@ -107,14 +114,41 @@ const memoryResource = (label) => ({
             subpath: 'value',
         },
     ],
-    required: false,
     canBooleanLogic: true,
-    entityType: resourceTypes.DEPLOYMENT,
 });
 
-// A form descriptor for every option on the policy criteria form page.
+// A form descriptor for every option (key) on the policy criteria form page.
+/* 
+    e.g. 
+    {
+        label: 'Image Tag',
+        name: 'Image Tag',
+        negatedName: `Image tag doesn't match`,
+        category: policyCriteriaCategories.IMAGE_REGISTRY,
+        type: 'text',
+        placeholder: 'latest',
+        canBooleanLogic: true,
+    },
 
-const policyConfigurationDescriptor = [
+    label: for legacy policy alert labels 
+    name: the string used to display UI and send to backend
+    negatedName: string used to display UI when negated 
+        (if this does not exist, the UI assumes that the field cannot be negated)
+    longName: string displayed in the UI in the Policy Field Card (not in draggable key)
+    category: the category grouping for the policy criteria (collapsible group in keys)
+    type: the type of form field to render when dragged to the Policy Field Card
+    subComponents: subfields the field renders when dragged to Policy Field Card if 'group' type
+    radioButtons: button options if 'radio' type
+    options: options if 'select' or 'multiselect' or 'multiselect-creatable' type
+    placeholder: string to display as placeholder if applicable
+    canBooleanLogic: indicates whether the field supports the AND/OR boolean operator
+        (UI assumes false by default)
+    defaultValue: the default value to set, if provided
+    disabled: disables the field entirely
+    reverse: will reverse boolean value on store 
+ */
+
+export const policyConfigurationDescriptor = [
     {
         label: 'Image Registry',
         name: 'Image Registry',
@@ -123,9 +157,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'text',
         placeholder: 'docker.io',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image Remote',
@@ -135,9 +167,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'text',
         placeholder: 'library/nginx',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image Tag',
@@ -146,9 +176,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'text',
         placeholder: 'latest',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Days since image was created',
@@ -157,9 +185,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'number',
         placeholder: '1',
-        required: false,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Days since image was last scanned',
@@ -168,9 +194,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'number',
         placeholder: '1',
-        required: false,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image User',
@@ -179,9 +203,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'text',
         placeholder: '0',
-        required: false,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Dockerfile Line',
@@ -218,9 +240,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image is NOT Scanned',
@@ -238,11 +258,9 @@ const policyConfigurationDescriptor = [
                 value: true,
             },
         ],
-        required: false,
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'CVSS',
@@ -265,9 +283,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Severity',
@@ -275,7 +291,7 @@ const policyConfigurationDescriptor = [
         longName: 'Vulnerability Severity Rating',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'group',
-        jsonpaths: [
+        subComponents: [
             {
                 type: 'select',
                 options: equalityOptions,
@@ -290,10 +306,8 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         default: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Fixed By',
@@ -303,9 +317,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'text',
         placeholder: '.*',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.NODE,
     },
     {
         label: 'CVE',
@@ -315,9 +327,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'text',
         placeholder: 'CVE-2017-11882',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.NODE,
     },
     {
         label: 'Image Component',
@@ -338,9 +348,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image OS',
@@ -350,9 +358,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'text',
         placeholder: 'ubuntu:19.04',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Environment Variable',
@@ -383,9 +389,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'source',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Disallowed Annotation',
@@ -406,9 +410,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Required Label',
@@ -430,9 +432,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Required Annotation',
@@ -454,9 +454,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Volume Name',
@@ -465,9 +463,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
         placeholder: 'docker-socket',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Volume Source',
@@ -476,9 +472,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
         placeholder: '/var/run/docker.sock',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Volume Destination',
@@ -487,9 +481,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
         placeholder: '/var/run/docker.sock',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Volume Type',
@@ -498,9 +490,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
         placeholder: 'bind, secret',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Writable Mounted Volume',
@@ -518,11 +508,9 @@ const policyConfigurationDescriptor = [
                 value: false,
             },
         ],
-        required: false,
         defaultValue: false,
         reverse: true,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Mount Propagation',
@@ -534,9 +522,7 @@ const policyConfigurationDescriptor = [
             label: mountPropagationLabels[key],
             value: key,
         })),
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Protocol',
@@ -545,9 +531,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.NETWORKING,
         type: 'text',
         placeholder: 'tcp',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Exposed Node Port',
@@ -556,9 +540,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.NETWORKING,
         type: 'number',
         placeholder: '22',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Port',
@@ -567,9 +549,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.NETWORKING,
         type: 'number',
         placeholder: '22',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     cpuResource('Container CPU Request'),
     cpuResource('Container CPU Limit'),
@@ -591,11 +571,9 @@ const policyConfigurationDescriptor = [
                 value: false,
             },
         ],
-        required: false,
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Read-Only Root Filesystem',
@@ -613,11 +591,9 @@ const policyConfigurationDescriptor = [
                 value: false,
             },
         ],
-        required: false,
         defaultValue: false,
         disabled: true,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Seccomp Profile Type',
@@ -629,9 +605,7 @@ const policyConfigurationDescriptor = [
             text: seccompProfileTypeLabels[key],
             value: key,
         })),
-        required: false,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Share Host Network Namespace',
@@ -649,11 +623,9 @@ const policyConfigurationDescriptor = [
                 value: false,
             },
         ],
-        required: false,
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Share Host PID Namespace',
@@ -671,11 +643,9 @@ const policyConfigurationDescriptor = [
                 value: false,
             },
         ],
-        required: false,
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Share Host IPC Namespace',
@@ -693,11 +663,9 @@ const policyConfigurationDescriptor = [
                 value: false,
             },
         ],
-        required: false,
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Drop Capabilities',
@@ -705,9 +673,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'select',
         options: [...capabilities],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Add Capabilities',
@@ -715,9 +681,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'select',
         options: [...capabilities],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process Name',
@@ -726,9 +690,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: 'apt-get',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process Ancestor',
@@ -737,9 +699,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: 'java',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process Args',
@@ -748,9 +708,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: 'install nmap',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process UID',
@@ -759,9 +717,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: '0',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Port Exposure',
@@ -775,9 +731,7 @@ const policyConfigurationDescriptor = [
                 label: portExposureLabels[key],
                 value: key,
             })),
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Writable Host Mount',
@@ -795,12 +749,10 @@ const policyConfigurationDescriptor = [
                 value: false,
             },
         ],
-        required: false,
         defaultValue: false,
         reverse: true,
         disabled: true,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process Baselining Enabled',
@@ -812,11 +764,9 @@ const policyConfigurationDescriptor = [
             { text: 'Unexpected Process', value: true },
             { text: 'Expected Process', value: false },
         ],
-        required: false,
         defaultValue: false,
         reverse: false,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Service Account',
@@ -825,9 +775,7 @@ const policyConfigurationDescriptor = [
         negatedName: `Service Account Name doesn't match`,
         category: policyCriteriaCategories.KUBERNETES_ACCESS,
         type: 'text',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Minimum RBAC Permissions',
@@ -840,9 +788,7 @@ const policyConfigurationDescriptor = [
             label: rbacPermissionLabels[key],
             value: key,
         })),
-        required: false,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Required Image Label',
@@ -863,9 +809,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Disallowed Image Label',
@@ -886,9 +830,7 @@ const policyConfigurationDescriptor = [
                 subpath: 'value',
             },
         ],
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Namespace',
@@ -898,9 +840,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'text',
         placeholder: 'default',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Container Name',
@@ -910,9 +850,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'text',
         placeholder: 'default',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'AppArmor Profile',
@@ -922,9 +860,7 @@ const policyConfigurationDescriptor = [
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'text',
         placeholder: 'default',
-        required: false,
         canBooleanLogic: true,
-        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Kubernetes Action',
@@ -943,13 +879,94 @@ const policyConfigurationDescriptor = [
                 value: 'PODS_PORTFORWARD',
             },
         ],
-        required: false,
         canBooleanLogic: false,
-        entityType: resourceTypes.CLUSTER,
     },
 ];
 
-const networkDetectionDescriptor = [
+export const auditLogDescriptor = [
+    {
+        label: 'Kubernetes Resource',
+        name: 'Kubernetes Resource',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'select',
+        options: [
+            {
+                label: 'Config Map',
+                value: 'CONFIG_MAP',
+            },
+            {
+                label: 'Secrets',
+                value: 'SECRETS',
+            },
+        ],
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Kubernetes API Verb',
+        name: 'Kubernetes API Verb',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'select',
+        options: APIVerbs,
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Kubernetes Resource Name',
+        name: 'Kubernetes Resource Name',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'text',
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Kubernetes User Agent',
+        name: 'Kubernetes User Agent',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'text',
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Kubernetes User Name',
+        name: 'Kubernetes User Name',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'text',
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Kubernetes User Groups',
+        name: 'Kubernetes User Groups',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'text',
+        canBooleanLogic: false,
+    },
+    {
+        label: 'User Agent',
+        name: 'User Agent',
+        negatedName: "User Agent doesn't match",
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'text',
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Source IP Address',
+        name: 'Source IP Address',
+        negatedName: "Source IP Address doesn't match",
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'text',
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Is Impersonated User',
+        name: 'Is Impersonated User',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'radioGroup',
+        radioButtons: [
+            { text: 'True', value: true },
+            { text: 'False', value: false },
+        ],
+        canBooleanLogic: false,
+    },
+];
+
+export const networkDetectionDescriptor = [
     {
         label: 'Network Baselining Enabled',
         name: 'Unexpected Network Flow Detected',
@@ -960,27 +977,8 @@ const networkDetectionDescriptor = [
             { text: 'Unexpected Network Flow', value: true },
             { text: 'Expected Network Flow', value: false },
         ],
-        required: false,
         defaultValue: false,
         reverse: false,
         canBooleanLogic: false,
-        entityType: resourceTypes.DEPLOYMENT,
     },
 ];
-
-export const policyConfiguration = {
-    header: 'Policy Criteria',
-    descriptor: policyConfigurationDescriptor,
-    dataTestId: 'policyConfigurationFields',
-};
-
-let isFirstLoad = true;
-
-export const getPolicyConfiguration = (featureFlags) => {
-    const newPolicyConfiguration = { ...policyConfiguration };
-    if (featureFlags[knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_VIOLATION] && isFirstLoad) {
-        newPolicyConfiguration.descriptor.push(...networkDetectionDescriptor);
-    }
-    isFirstLoad = false;
-    return newPolicyConfiguration;
-};

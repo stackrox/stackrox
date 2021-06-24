@@ -17,7 +17,7 @@ function FieldValue({
     return (
         <>
             <div className="flex" data-testid="policy-field-value">
-                <Field key={name} field={fieldKey} name={name} readOnly={readOnly} BPLenabled />
+                <Field key={name} field={fieldKey} name={name} readOnly={readOnly} />
                 {/* only show remove button if there is more than one value */}
                 {!readOnly && length > 1 && (
                     <FormFieldRemoveButton

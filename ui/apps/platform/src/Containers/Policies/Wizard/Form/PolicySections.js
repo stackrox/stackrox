@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { PlusCircle } from 'react-feather';
 import { FieldArray } from 'redux-form';
 
 import reduxFormPropTypes from 'constants/reduxFormPropTypes';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
+import { policyCriteriaCategories } from 'messages/common';
 import { addFieldArrayHandler, removeFieldArrayHandler } from './utils';
 import PolicySection from './PolicySection';
 
@@ -21,8 +24,40 @@ function getNewPolicySection(length) {
     };
 }
 
-function PolicySections({ fields, readOnly, className, hasHeader }) {
+function PolicySections({
+    fields,
+    readOnly,
+    className,
+    hasHeader,
+    descriptor,
+    hasAuditLogEventSource,
+}) {
     const newPolicySection = getNewPolicySection(fields.length);
+    const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
+
+    useEffect(() => {
+        // clear policy sections if user toggles between event source options
+        if (auditLogEnabled && fields.length > 0) {
+            const field = fields.get(0);
+            if (field.policyGroups.length > 0) {
+                const fieldCard = field.policyGroups[0];
+                let { fieldKey } = fieldCard;
+                if (!fieldKey) {
+                    fieldKey = descriptor.find((fieldObj) => fieldObj.name === fieldCard.fieldName);
+                }
+                const hasNonAuditLogFields =
+                    hasAuditLogEventSource &&
+                    (fieldKey.category !== policyCriteriaCategories.KUBERNETES_EVENTS ||
+                        fieldKey.label === 'Kubernetes Action');
+                const hasAuditLogFields =
+                    !hasAuditLogEventSource &&
+                    fieldKey.category === policyCriteriaCategories.KUBERNETES_EVENTS;
+                if (hasNonAuditLogFields || hasAuditLogFields) {
+                    fields.removeAll();
+                }
+            }
+        }
+    }, [fields, auditLogEnabled, hasAuditLogEventSource, descriptor]);
     return (
         <div className={`p-3 ${className} overflow-y-scroll`}>
             {hasHeader && <h2 className="text-2xl pb-2">Policy Criteria</h2>}
@@ -43,6 +78,7 @@ function PolicySections({ fields, readOnly, className, hasHeader }) {
                         removeSectionHandler={removeFieldArrayHandler(fields, i)}
                         readOnly={readOnly}
                         isLast={i === fields.length - 1}
+                        descriptor={descriptor}
                     />
                 );
             })}
@@ -68,6 +104,7 @@ PolicySections.propTypes = {
     className: PropTypes.string,
     readOnly: PropTypes.bool,
     hasHeader: PropTypes.bool,
+    descriptor: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 PolicySections.defaultProps = { className: 'w-2/3', readOnly: false, hasHeader: true };
 

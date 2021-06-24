@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { FieldArray } from 'redux-form';
 
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
@@ -11,18 +10,13 @@ import ReduxMultiSelectCreatableField from 'Components/forms/ReduxMultiSelectCre
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import ReduxRadioButtonGroupField from 'Components/forms/ReduxRadioButtonGroupField';
-import RestrictToScope from './RestrictToScope';
-import ExcludedScope from './ExcludedScope';
 
 export default function Field({ field, name, readOnly }) {
     if (field === undefined) {
         return null;
     }
     // this is to accomodate for recursive Fields (when type is 'group')
-    const pathName = field.subpath ? name : `${name}.value`;
-
-    // we use jsonpath for non-policy configuration fields
-    const path = name ? pathName : field.jsonpath;
+    const path = field.subpath ? name : `${name}.value`;
 
     switch (field.type) {
         case 'text':
@@ -112,20 +106,16 @@ export default function Field({ field, name, readOnly }) {
             );
         case 'group':
             return field.subComponents.map((subField) => {
-                const subFieldName = name ? `${name}.${subField.subpath}` : subField.jsonpath;
+                const subFieldName = `${name}.${subField.subpath}`;
                 return (
                     <Field
-                        key={subField.jsonpath}
+                        key={subFieldName}
                         name={subFieldName}
                         field={subField}
                         readOnly={readOnly}
                     />
                 );
             });
-        case 'scope':
-            return <FieldArray key={path} name={path} component={RestrictToScope} />;
-        case 'whitelistScope':
-            return <FieldArray key={path} name={path} component={ExcludedScope} />;
         default:
             throw new Error(`Unknown field type: ${field.type}`);
     }
