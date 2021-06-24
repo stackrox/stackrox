@@ -2,8 +2,15 @@ import { selectors, url } from '../constants/AccessPage';
 import * as api from '../constants/apiEndpoints';
 
 import withAuth from '../helpers/basicAuth';
+import checkFeatureFlag from '../helpers/features';
 
 describe('Access Control Page', () => {
+    before(function beforeHook() {
+        if (checkFeatureFlag('ROX_SCOPED_ACCESS_CONTROL_V2', true)) {
+            this.skip();
+        }
+    });
+
     withAuth();
 
     describe('Auth Provider Rules', () => {
