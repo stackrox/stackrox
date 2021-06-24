@@ -11,15 +11,15 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// multiReadOnlyTreeWrapper is a wrapper around networkTreeImpl structure that allows dealing with network entities IPv4 as well as IPv6 address family.
-type multiReadOnlyTreeWrapper struct {
+// multiReadOnlyNTree is a wrapper around networkTreeWrapper that handles multiples trees.
+type multiReadOnlyNTree struct {
 	trees []ReadOnlyNetworkTree
 
 	lock sync.RWMutex
 }
 
-// NewMultiTreeWrapper returns a new instance of multiReadOnlyTreeWrapper for the supplied list of network trees.
-func NewMultiTreeWrapper(trees ...ReadOnlyNetworkTree) ReadOnlyNetworkTree {
+// NewMultiNetworkTree returns a new instance of multiReadOnlyNTree for the supplied list of network trees.
+func NewMultiNetworkTree(trees ...ReadOnlyNetworkTree) ReadOnlyNetworkTree {
 	filtered := make([]ReadOnlyNetworkTree, 0, len(trees))
 	for _, t := range trees {
 		if t != nil {
@@ -32,13 +32,13 @@ func NewMultiTreeWrapper(trees ...ReadOnlyNetworkTree) ReadOnlyNetworkTree {
 		filtered = append(filtered, NewDefaultNetworkTreeWrapper())
 	}
 
-	return &multiReadOnlyTreeWrapper{
+	return &multiReadOnlyNTree{
 		trees: filtered,
 	}
 }
 
 // Cardinality returns the number of networks in all the tree.
-func (t *multiReadOnlyTreeWrapper) Cardinality() int {
+func (t *multiReadOnlyNTree) Cardinality() int {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -51,7 +51,7 @@ func (t *multiReadOnlyTreeWrapper) Cardinality() int {
 }
 
 // GetSupernet returns the smallest supernet that fully contains the network for given key, if present.
-func (t *multiReadOnlyTreeWrapper) GetSupernet(key string) *storage.NetworkEntityInfo {
+func (t *multiReadOnlyNTree) GetSupernet(key string) *storage.NetworkEntityInfo {
 	if match := t.GetMatchingSupernet(key, func(entity *storage.NetworkEntityInfo) bool { return true }); match != nil {
 		return match
 	}
@@ -60,7 +60,7 @@ func (t *multiReadOnlyTreeWrapper) GetSupernet(key string) *storage.NetworkEntit
 }
 
 // GetMatchingSupernet returns the smallest supernet that fully contains the network for given key and satisfies the predicate.
-func (t *multiReadOnlyTreeWrapper) GetMatchingSupernet(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+func (t *multiReadOnlyNTree) GetMatchingSupernet(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	if entity := t.Get(key); entity != nil {
 		return t.GetMatchingSupernetForCIDR(entity.GetExternalSource().GetCidr(), pred)
 	}
@@ -69,7 +69,7 @@ func (t *multiReadOnlyTreeWrapper) GetMatchingSupernet(key string, pred func(ent
 }
 
 // GetSupernetForCIDR returns the smallest supernet that fully contains the network for the given CIDR.
-func (t *multiReadOnlyTreeWrapper) GetSupernetForCIDR(cidr string) *storage.NetworkEntityInfo {
+func (t *multiReadOnlyNTree) GetSupernetForCIDR(cidr string) *storage.NetworkEntityInfo {
 	if match := t.GetMatchingSupernetForCIDR(cidr, func(entity *storage.NetworkEntityInfo) bool { return true }); match != nil {
 		return match
 	}
@@ -77,7 +77,7 @@ func (t *multiReadOnlyTreeWrapper) GetSupernetForCIDR(cidr string) *storage.Netw
 }
 
 // GetMatchingSupernetForCIDR returns the smallest supernet that fully contains the supplied network and satisfies the predicate.
-func (t *multiReadOnlyTreeWrapper) GetMatchingSupernetForCIDR(cidr string, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+func (t *multiReadOnlyNTree) GetMatchingSupernetForCIDR(cidr string, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	ipNet := pkgNet.IPNetworkFromCIDR(cidr)
 	if !ipNet.IsValid() {
 		return nil
@@ -97,7 +97,7 @@ func (t *multiReadOnlyTreeWrapper) GetMatchingSupernetForCIDR(cidr string, super
 }
 
 // GetSubnets returns the largest disjoint subnets contained by the network for given key, if present.
-func (t *multiReadOnlyTreeWrapper) GetSubnets(key string) []*storage.NetworkEntityInfo {
+func (t *multiReadOnlyNTree) GetSubnets(key string) []*storage.NetworkEntityInfo {
 	entity := t.Get(key)
 	if entity == nil {
 		return nil
@@ -121,7 +121,7 @@ func (t *multiReadOnlyTreeWrapper) GetSubnets(key string) []*storage.NetworkEnti
 }
 
 // GetSubnetsForCIDR returns the largest disjoint subnets contained by the given network, if any.
-func (t *multiReadOnlyTreeWrapper) GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo {
+func (t *multiReadOnlyNTree) GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -135,20 +135,20 @@ func (t *multiReadOnlyTreeWrapper) GetSubnetsForCIDR(cidr string) []*storage.Net
 }
 
 // Get returns the network entity for given key, if present, otherwise nil.
-func (t *multiReadOnlyTreeWrapper) Get(key string) *storage.NetworkEntityInfo {
+func (t *multiReadOnlyNTree) Get(key string) *storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
 	for _, tree := range t.trees {
-		if tree.Exists(key) {
-			return tree.Get(key)
+		if val := tree.Get(key); val != nil {
+			return val
 		}
 	}
 	return nil
 }
 
 // Search return true if the network entity for the given key is found in the network trees.
-func (t *multiReadOnlyTreeWrapper) Exists(key string) bool {
+func (t *multiReadOnlyNTree) Exists(key string) bool {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 

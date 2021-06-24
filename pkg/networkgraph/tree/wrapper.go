@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// networkTreeWrapper is a wrapper around networkTreeImpl structure that allows dealing with network entities IPv4 as well as IPv6 address family.
+// networkTreeWrapper is a wrapper around networkTreeImpl structure that handles both IPv4 and IPv6 networks.
 type networkTreeWrapper struct {
 	trees map[pkgNet.Family]NetworkTree
 
@@ -32,13 +32,13 @@ func NewNetworkTreeWrapper(entities []*storage.NetworkEntityInfo) (NetworkTree, 
 	}
 
 	trees := make(map[pkgNet.Family]NetworkTree)
-	tree, err := NewNetworkTree(pkgNet.IPv4, entitiesByAddrFamily[pkgNet.IPv4])
+	tree, err := NewNRadixTree(pkgNet.IPv4, entitiesByAddrFamily[pkgNet.IPv4])
 	if err != nil {
 		return nil, err
 	}
 	trees[pkgNet.IPv4] = tree
 
-	tree, err = NewNetworkTree(pkgNet.IPv6, entitiesByAddrFamily[pkgNet.IPv6])
+	tree, err = NewNRadixTree(pkgNet.IPv6, entitiesByAddrFamily[pkgNet.IPv6])
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +52,8 @@ func NewNetworkTreeWrapper(entities []*storage.NetworkEntityInfo) (NetworkTree, 
 func newDefaultNetworkTreeWrapper() *networkTreeWrapper {
 	return &networkTreeWrapper{
 		trees: map[pkgNet.Family]NetworkTree{
-			pkgNet.IPv4: NewDefaultNetworkTree(pkgNet.IPv4),
-			pkgNet.IPv6: NewDefaultNetworkTree(pkgNet.IPv6),
+			pkgNet.IPv4: NewDefaultNRadixTree(pkgNet.IPv4),
+			pkgNet.IPv6: NewDefaultNRadixTree(pkgNet.IPv6),
 		},
 	}
 }
@@ -71,8 +71,7 @@ func (t *networkTreeWrapper) Cardinality() int {
 	return ret
 }
 
-// Insert add the supplied network entity. If a entity with the same key is already present in a tree,
-// the CIDR of stored entity is updated and the tree is rearranged to maintain the supernet-subnet relationship.
+// Insert add the supplied network entity. Values for existing conflicting keys are overwritten.
 func (t *networkTreeWrapper) Insert(entity *storage.NetworkEntityInfo) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -82,7 +81,7 @@ func (t *networkTreeWrapper) Insert(entity *storage.NetworkEntityInfo) error {
 		return errors.Errorf("received invalid CIDR %s to insert", entity.GetExternalSource().GetCidr())
 	}
 
-	if storedEntity, family := t.getWithFamilyNoLock(entity.GetId()); storedEntity != nil && family != ipNet.Family() {
+	if storedEntity, family := t.getWithFamilyNoLock(entity.GetId()); storedEntity != nil {
 		t.trees[family].Remove(entity.GetId())
 	}
 
@@ -163,8 +162,8 @@ func (t *networkTreeWrapper) GetSubnets(key string) []*storage.NetworkEntityInfo
 	if key == networkgraph.InternetExternalSourceID {
 		var ret []*storage.NetworkEntityInfo
 		for _, tree := range t.trees {
-			if tree.Exists(key) {
-				ret = append(ret, tree.GetSubnets(key)...)
+			if nets := tree.GetSubnets(key); len(nets) != 0 {
+				ret = append(ret, nets...)
 			}
 		}
 		return ret
@@ -202,8 +201,8 @@ func (t *networkTreeWrapper) Get(key string) *storage.NetworkEntityInfo {
 
 func (t *networkTreeWrapper) getWithFamilyNoLock(key string) (*storage.NetworkEntityInfo, pkgNet.Family) {
 	for family, tree := range t.trees {
-		if tree.Exists(key) {
-			return tree.Get(key), family
+		if val := tree.Get(key); val != nil {
+			return val, family
 		}
 	}
 	return nil, pkgNet.InvalidFamily

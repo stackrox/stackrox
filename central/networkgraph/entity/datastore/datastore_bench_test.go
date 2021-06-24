@@ -33,20 +33,25 @@ func BenchmarkNetEntityCreates(b *testing.B) {
 	require.NoError(b, err)
 
 	b.Run("createNetworkEntities", func(b *testing.B) {
-		// Need to recreate the DB to avoid failure to key conflicts from the rerun.
+		// Need to recreate the DB to avoid failure due to key conflicts from the reruns.
 		db, err := rocksdb.NewTemp(b.Name())
 		require.NoError(b, err)
 		defer rocksdbtest.TearDownRocksDB(db)
 
 		store, err := store.New(db)
 		require.NoError(b, err)
-		ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), connection.ManagerSingleton())
+
+		treeMgr := networktree.Singleton()
+		defer treeMgr.DeleteNetworkTree(ctx, "c1")
+
+		ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), treeMgr, connection.ManagerSingleton())
 
 		for _, e := range entities {
 			require.NoError(b, ds.CreateExternalNetworkEntity(ctx, e, true))
 		}
 	})
 }
+
 func BenchmarkNetEntityUpdates(b *testing.B) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

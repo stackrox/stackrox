@@ -964,7 +964,7 @@ func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree
 		return s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID), nil
 	}
 
-	return tree.NewMultiTreeWrapper(
+	return tree.NewMultiNetworkTree(
 		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
 		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
 	), nil

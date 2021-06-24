@@ -154,7 +154,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}
 
-	networkTree := tree.NewMultiTreeWrapper(
+	networkTree := tree.NewMultiNetworkTree(
 		g.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
 		g.networkTreeMgr.GetDefaultNetworkTree(ctx),
 	)

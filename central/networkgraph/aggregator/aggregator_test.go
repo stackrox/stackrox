@@ -106,7 +106,7 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 
 	expected := []*storage.NetworkFlow{f2, f3x, f4, f5, f6, f7, f8, f9x, f10x}
 
-	aggr, err := NewSubnetToSupernetConnAggregator(tree.NewMultiTreeWrapper(tree1, tree2))
+	aggr, err := NewSubnetToSupernetConnAggregator(tree.NewMultiNetworkTree(tree1, tree2))
 	assert.NoError(t, err)
 	actual := aggr.Aggregate(flows)
 	assert.ElementsMatch(t, expected, actual)

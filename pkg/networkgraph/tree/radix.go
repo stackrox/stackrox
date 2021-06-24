@@ -425,11 +425,9 @@ func (t *nRadixTree) Remove(key string) {
 		return
 	}
 
+	node.value = nil
 	if node.left == nil && node.right == nil {
 		node = nil
-	} else if node.value != nil { // Just trim the value if not a leaf node.
-		node.value = nil
 	}
-
 	delete(t.valueNodes, key)
 }

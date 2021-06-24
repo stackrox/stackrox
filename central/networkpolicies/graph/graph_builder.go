@@ -68,7 +68,7 @@ func (b *graphBuilder) init(queryDeploymentIDs set.StringSet, deployments []*sto
 	}
 
 	if networkTree == nil {
-		networkTree = tree.NewMultiTreeWrapper(tree.NewDefaultNetworkTreeWrapper())
+		networkTree = tree.NewMultiNetworkTree(tree.NewDefaultNetworkTreeWrapper())
 	}
 
 	b.networkTree = networkTree

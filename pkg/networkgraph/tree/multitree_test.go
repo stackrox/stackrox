@@ -54,7 +54,7 @@ func TestMultiTree(t *testing.T) {
 	tree2, err := NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e4, e6})
 	assert.NoError(t, err)
 
-	multiTree := NewMultiTreeWrapper(tree1, tree2)
+	multiTree := NewMultiNetworkTree(tree1, tree2)
 
 	assert.Equal(t, e1, multiTree.Get("1"))
 

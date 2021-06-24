@@ -381,7 +381,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		return err
 	}
 
-	networkTree := tree.NewMultiTreeWrapper(
+	networkTree := tree.NewMultiNetworkTree(
 		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
 		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
 	)
