@@ -104,6 +104,9 @@ func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.
 
 // manageFlows should be called via `go manageFlows` as it will run forever
 func (w *WorkloadManager) manageFlows(ctx context.Context, workload networkWorkload) {
+	if workload.FlowInterval == 0 {
+		return
+	}
 	// Pick a valid pod
 	ticker := time.NewTicker(workload.FlowInterval)
 	defer ticker.Stop()

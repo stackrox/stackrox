@@ -439,6 +439,9 @@ func getShortContainerID(id string) string {
 }
 
 func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podWorkload podWorkload, pod *corev1.Pod) {
+	if podWorkload.ProcessWorkload.ProcessInterval == 0 {
+		return
+	}
 	ticker := time.NewTicker(podWorkload.ProcessWorkload.ProcessInterval)
 	defer ticker.Stop()
 
