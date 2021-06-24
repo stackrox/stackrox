@@ -22,6 +22,10 @@ function ClusterEditForm({
     const hasScopedAccessControl = useFeatureFlagEnabled(
         knownBackendFlags.ROX_SCOPED_ACCESS_CONTROL
     );
+    // guard against missing health status in unconnected and new clusters
+    const healthStatus = selectedCluster.healthStatus || {
+        overallHealthStatus: 'UNINITIALIZED',
+    };
 
     if (isLoading) {
         return <Loader />;
@@ -32,7 +36,7 @@ function ClusterEditForm({
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
             {selectedCluster.id && (
                 <ClusterSummary
-                    healthStatus={selectedCluster.healthStatus}
+                    healthStatus={healthStatus}
                     status={selectedCluster.status}
                     centralVersion={centralVersion}
                     currentDatetime={new Date()}

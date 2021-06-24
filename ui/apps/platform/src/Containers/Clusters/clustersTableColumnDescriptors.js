@@ -57,7 +57,12 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
         },
         {
             Header: 'Cluster Status',
-            Cell: ({ original }) => <ClusterStatus healthStatus={original.healthStatus} isList />,
+            Cell: ({ original }) => {
+                const safeHealthStatus = original.healthStatus || {
+                    overallHealthStatus: 'UNINITIALIZED',
+                };
+                return <ClusterStatus healthStatus={safeHealthStatus} isList />;
+            },
             headerClassName: `w-1/4 ${defaultHeaderClassName}`,
             className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`,
         },
