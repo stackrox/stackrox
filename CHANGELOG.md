@@ -8,7 +8,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [62.0]
 
-- Scanner now supports alpine:edge.
+- Scanner now supports alpine:edge and alpine:3.14.
+- Scan results for alpine 3.2 - 3.7 were marked as stale before.
+  It has since become clear that there are still updates to the secdb for these versions,
+  so they are no longer marked stale.
 
 ## [61.0]
 
