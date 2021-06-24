@@ -242,3 +242,12 @@ func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *Sto
 
 	return results, sources, domainMap, nil
 }
+
+func (ds *datastoreImpl) ClearAggregationResults(ctx context.Context) error {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("write permission needed to clear aggregation results")
+	}
+	return ds.storage.ClearAggregationResults()
+}

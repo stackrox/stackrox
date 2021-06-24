@@ -3,6 +3,8 @@ package manager
 import (
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/compliance/datastore/mocks"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
@@ -41,7 +43,10 @@ func newManager(t *testing.T) *managerImpl {
 	checks, err := checkResultsStore.New(db)
 	require.NoError(t, err)
 
-	mgr, err := NewManager(registry, profileDatastore.NewDatastore(prof), scanSettingBindingDatastore.NewDatastore(ssb), rulesDS, checkResultsDatastore.NewDatastore(checks))
+	ctrl := gomock.NewController(t)
+	compliance := mocks.NewMockDataStore(ctrl)
+
+	mgr, err := NewManager(registry, profileDatastore.NewDatastore(prof), scanSettingBindingDatastore.NewDatastore(ssb), rulesDS, checkResultsDatastore.NewDatastore(checks), compliance)
 	require.NoError(t, err)
 
 	return mgr.(*managerImpl)
@@ -140,6 +145,8 @@ func TestAddProfile(t *testing.T) {
 
 func TestDeleteProfile(t *testing.T) {
 	mgr := newManager(t)
+
+	mgr.compliance.(*mocks.MockDataStore).EXPECT().ClearAggregationResults(allAccessCtx).AnyTimes()
 
 	rule1 := &storage.ComplianceOperatorRule{
 		Id:        uuid.NewV4().String(),

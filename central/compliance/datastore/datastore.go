@@ -27,6 +27,7 @@ type DataStore interface {
 	StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error
 
 	PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
+	ClearAggregationResults(ctx context.Context) error
 }
 
 // StoredAggregationArgs encapsulates the arguments to the PerformStoredAggregation method

@@ -38,6 +38,20 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// ClearAggregationResults mocks base method
+func (m *MockDataStore) ClearAggregationResults(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearAggregationResults", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearAggregationResults indicates an expected call of ClearAggregationResults
+func (mr *MockDataStoreMockRecorder) ClearAggregationResults(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAggregationResults", reflect.TypeOf((*MockDataStore)(nil).ClearAggregationResults), arg0)
+}
+
 // GetLatestRunMetadataBatch mocks base method
 func (m *MockDataStore) GetLatestRunMetadataBatch(arg0 context.Context, arg1 string, arg2 []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error) {
 	m.ctrl.T.Helper()

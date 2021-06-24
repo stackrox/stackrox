@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/set"
@@ -26,6 +27,12 @@ func qualifiedNamespaceID(clusterID, namespace string) string {
 
 type mockStandardsRepo struct {
 	standards.Repository
+}
+
+func (mockStandardsRepo) Control(controlID string) *v1.ComplianceControl {
+	return &v1.ComplianceControl{
+		Id: controlID,
+	}
 }
 
 func (mockStandardsRepo) GetCategoryByControl(controlID string) *standards.Category {

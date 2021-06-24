@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
@@ -49,6 +50,7 @@ type managerImpl struct {
 	registry     *standards.Registry
 	registryLock sync.RWMutex
 
+	compliance          complianceDatastore.DataStore
 	profiles            profileDatastore.DataStore
 	scanSettingBindings scanSettingBindingDatastore.DataStore
 	rules               rulesDatastore.DataStore
@@ -56,10 +58,11 @@ type managerImpl struct {
 }
 
 // NewManager returns a new manager of compliance operator resources
-func NewManager(registry *standards.Registry, profiles profileDatastore.DataStore, scanSettingBindings scanSettingBindingDatastore.DataStore, rules rulesDatastore.DataStore, results checkResultsDatastore.DataStore) (Manager, error) {
+func NewManager(registry *standards.Registry, profiles profileDatastore.DataStore, scanSettingBindings scanSettingBindingDatastore.DataStore, rules rulesDatastore.DataStore, results checkResultsDatastore.DataStore, compliance complianceDatastore.DataStore) (Manager, error) {
 	mgr := &managerImpl{
 		registry: registry,
 
+		compliance:          compliance,
 		profiles:            profiles,
 		scanSettingBindings: scanSettingBindings,
 		rules:               rules,
@@ -229,6 +232,12 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 
 func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorProfile) error {
 	if err := m.profiles.Delete(allAccessCtx, deletedProfile.GetId()); err != nil {
+		return err
+	}
+
+	// ClearAggregationResults when removing a profile as we need to remove cached references
+	// to standards that will not be filtered out on the next aggregation call
+	if err := m.compliance.ClearAggregationResults(allAccessCtx); err != nil {
 		return err
 	}
 
