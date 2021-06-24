@@ -1,3 +1,13 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+- type: pod
+  selector: app=sensor
+  tail: -1
+- type: pod
+  selector: app=admission-control
+  tail: -1
+---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: SecuredCluster
 metadata:
@@ -19,3 +29,10 @@ metadata:
   name: sensor
 status:
   availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
+status:
+  availableReplicas: 3
