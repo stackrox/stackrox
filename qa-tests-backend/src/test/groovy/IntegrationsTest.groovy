@@ -256,7 +256,7 @@ class IntegrationsTest extends BaseSpecification {
         type                    | notifierTypes
         "SLACK"                 | [new SlackNotifier()]
         "EMAIL"                 | [new EmailNotifier()]
-        "JIRA"                  | [new JiraNotifier()]
+        //        "JIRA"                  | [new JiraNotifier()] TODO(ROX-7460)
         "TEAMS"                 | [new TeamsNotifier()]
         "GENERIC"               | [new GenericNotifier()]
 
