@@ -372,6 +372,8 @@ class IntegrationsTest extends BaseSpecification {
 
         and:
         "Set admission controller settings to enforce on creates"
+        def oldAdmCtrlConfig = ClusterService.getCluster().getDynamicConfig().getAdmissionControllerConfig()
+
         ClusterOuterClass.AdmissionControllerConfig ac = ClusterOuterClass.AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)
                 .setTimeoutSeconds(3)
@@ -418,6 +420,7 @@ class IntegrationsTest extends BaseSpecification {
             notifier.cleanup()
             notifier.deleteNotifier()
         }
+        ClusterService.updateAdmissionController(oldAdmCtrlConfig)
 
         where:
         "data inputs are:"
