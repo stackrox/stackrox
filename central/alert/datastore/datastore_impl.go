@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
@@ -212,6 +213,7 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 		return errors.New("permission denied")
 	}
 	alert.State = storage.ViolationState_RESOLVED
+	alert.ResolvedAt = types.TimestampNow()
 	return ds.updateAlertNoLock(alert)
 }
 

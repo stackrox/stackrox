@@ -12,6 +12,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Scan results for alpine 3.2 - 3.7 were marked as stale before.
   It has since become clear that there are still updates to the secdb for these versions,
   so they are no longer marked stale.
+- The `ROX_ALERT_RENOTIF_DEBOUNCE_DURATION` can be set to a duration (see https://golang.org/pkg/time/#ParseDuration
+  for supported syntax), and if set, then duplicate notifications for deploy-time alerts for the same deployment-policy
+  pair will not be sent if the previous alert was resolved more recently than the debounce duration.
+- Scanner now supports alpine:edge.
 
 ## [61.0]
 

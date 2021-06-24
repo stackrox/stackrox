@@ -2,6 +2,7 @@ package alertmanager
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgAlert "github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -90,9 +92,46 @@ func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*
 	return errList.ToError()
 }
 
+func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert *storage.Alert) bool {
+	if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
+		return false
+	}
+	dur := env.AlertRenotifDebounceDuration.DurationSetting()
+	if dur == 0 {
+		return false
+	}
+
+	maxAllowedResolvedAtTime, err := ptypes.TimestampProto(time.Now().Add(-dur))
+	if err != nil {
+		log.Errorf("Failed to convert time: %v", err)
+		return false
+	}
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).
+		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
+		AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
+		ProtoQuery()
+	resolvedAlerts, err := d.alerts.SearchRawAlerts(ctx, q)
+	if err != nil {
+		log.Errorf("Error fetching formerly resolved alerts for alert %s: %v", alert.GetId(), err)
+		return false
+	}
+	for _, resolvedAlert := range resolvedAlerts {
+		resolvedAt := resolvedAlert.GetResolvedAt()
+		// This alert was resolved very recently, so debounce the notification.
+		if resolvedAt != nil && resolvedAt.Compare(maxAllowedResolvedAtTime) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // NotifyAndUpdateBatch runs the notifier on the input alerts then stores them.
 func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	for _, existingAlert := range alertsToMark {
+		if d.shouldDebounceNotification(ctx, existingAlert) {
+			continue
+		}
 		d.notifier.ProcessAlert(ctx, existingAlert)
 	}
 	return d.updateBatch(ctx, alertsToMark)

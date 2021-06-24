@@ -2,9 +2,11 @@ package alertmanager
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
@@ -12,6 +14,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -141,6 +145,39 @@ func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 		}
 		return true
 	}
+}
+
+func (suite *AlertManagerTestSuite) TestNotifyAndUpdateBatch() {
+	alerts := []*storage.Alert{fixtures.GetAlert(), fixtures.GetAlert()}
+	alerts[0].GetPolicy().Id = "Pol1"
+	alerts[0].GetDeployment().Id = "Dep1"
+	alerts[1].GetPolicy().Id = "Pol2"
+	alerts[1].GetDeployment().Id = "Dep2"
+
+	envIsolator := envisolator.NewEnvIsolator(suite.T())
+	defer envIsolator.RestoreAll()
+	envIsolator.Setenv(env.AlertRenotifDebounceDuration.EnvVar(), "5m")
+
+	resolvedAlerts := []*storage.Alert{alerts[0].Clone(), alerts[1].Clone()}
+	resolvedAlerts[0].ResolvedAt = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-10 * time.Minute))
+	resolvedAlerts[1].ResolvedAt = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-2 * time.Minute))
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
+		testutils.PredMatcher("query for dep 1", func(q *v1.Query) bool {
+			return strings.Contains(proto.MarshalTextString(q), "Dep1")
+		})).Return([]*storage.Alert{resolvedAlerts[0]}, nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
+		testutils.PredMatcher("query for dep 2", func(q *v1.Query) bool {
+			return strings.Contains(proto.MarshalTextString(q), "Dep2")
+		})).Return([]*storage.Alert{resolvedAlerts[1]}, nil)
+
+	// Only the first alert will get notified
+	suite.notifierMock.EXPECT().ProcessAlert(suite.ctx, alerts[0])
+	// All alerts will still get inserted
+	for _, alert := range alerts {
+		suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, alert)
+	}
+	suite.NoError(suite.alertManager.(*alertManagerImpl).notifyAndUpdateBatch(suite.ctx, alerts))
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {

@@ -119,11 +119,17 @@ message Alert {
     ProcessViolation          process_violation = 13;
 
     Enforcement               enforcement       = 6;
+
     google.protobuf.Timestamp time              = 7 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
     google.protobuf.Timestamp first_occurred    = 10 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+
+    // The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
+    google.protobuf.Timestamp resolved_at       = 17 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+
     ViolationState            state             = 11;
     google.protobuf.Timestamp snooze_till       = 12;
     repeated string           tags              = 14;
+
 }
 
 message ListAlert {

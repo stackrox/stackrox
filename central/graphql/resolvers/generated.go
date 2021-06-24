@@ -47,6 +47,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lifecycleStage: LifecycleStage!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
+		"resolvedAt: Time",
 		"resource: Alert_Resource",
 		"snoozeTill: Time",
 		"state: ViolationState!",
@@ -1605,6 +1606,12 @@ func (resolver *alertResolver) ProcessViolation(ctx context.Context) (*alert_Pro
 	resolver.ensureData(ctx)
 	value := resolver.data.GetProcessViolation()
 	return resolver.root.wrapAlert_ProcessViolation(value, true, nil)
+}
+
+func (resolver *alertResolver) ResolvedAt(ctx context.Context) (*graphql.Time, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetResolvedAt()
+	return timestamp(value)
 }
 
 func (resolver *alertResolver) Resource(ctx context.Context) (*alert_ResourceResolver, error) {
