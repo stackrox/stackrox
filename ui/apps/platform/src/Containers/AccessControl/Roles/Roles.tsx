@@ -213,13 +213,15 @@ function Roles(): ReactElement {
                             </ToolbarItem>
                         </ToolbarContent>
                     </Toolbar>
-                    <RolesList
-                        entityName={entityName}
-                        roles={roles}
-                        permissionSets={permissionSets}
-                        accessScopes={accessScopes}
-                        handleDelete={handleDelete}
-                    />
+                    {roles.length !== 0 && (
+                        <RolesList
+                            entityName={entityName}
+                            roles={roles}
+                            permissionSets={permissionSets}
+                            accessScopes={accessScopes}
+                            handleDelete={handleDelete}
+                        />
+                    )}
                 </>
             )}
         </>

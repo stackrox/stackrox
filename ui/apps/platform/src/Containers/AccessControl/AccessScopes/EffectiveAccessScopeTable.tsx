@@ -251,7 +251,7 @@ function EffectiveAccessScopeTable({
                         modifier="fitContent"
                         className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
                     >
-                        Status
+                        State
                     </Th>
                     <Th modifier="fitContent">Manual inclusion</Th>
                     <Th info={infoLabels}>Labels</Th>

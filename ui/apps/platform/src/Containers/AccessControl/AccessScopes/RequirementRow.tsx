@@ -137,9 +137,9 @@ export function RequirementRowAddKey({
                     </span>
                     {isKeyInSet && (
                         <span className="pf-u-flex-shrink-0">
-                            <Tooltip content="Requirement key OK">
+                            <Tooltip content="Requirement key OK (press tab or enter)">
                                 <Button
-                                    aria-label="Requirement key OK"
+                                    aria-label="Requirement key OK (press tab or enter)"
                                     variant="plain"
                                     className="pf-m-smallest pf-u-ml-sm"
                                     isDisabled={isDisabledOK}
@@ -303,9 +303,9 @@ export function RequirementRow({
                             </span>
                             <span className="pf-u-flex-shrink-0 pf-u-pl-sm">
                                 {isRequirementActive && (
-                                    <Tooltip content="Add value">
+                                    <Tooltip content="Add value (press Enter)">
                                         <Button
-                                            aria-label="Add value"
+                                            aria-label="Add value (press Enter)"
                                             variant="plain"
                                             className="pf-m-smallest pf-u-mr-sm"
                                             isDisabled={isDisabledAddValue}

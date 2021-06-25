@@ -46,7 +46,7 @@ function RoleForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
-    const { dirty, handleChange, isValid, values } = useFormik({
+    const { dirty, handleChange, isValid, resetForm, values } = useFormik({
         initialValues: role,
         onSubmit: () => {},
         validationSchema: yup.object({
@@ -79,6 +79,11 @@ function RoleForm({
             });
     }
 
+    function onClickCancel() {
+        resetForm();
+        handleCancel(); // close form if action=create but not if action=update
+    }
+
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
 
@@ -91,42 +96,18 @@ function RoleForm({
                             {action === 'create' ? 'Create role' : role.name}
                         </Title>
                     </ToolbarItem>
-                    {isActionable && (
-                        <ToolbarGroup
-                            alignment={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsLg' }}
-                        >
-                            {hasAction ? (
-                                <ToolbarGroup variant="button-group">
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="primary"
-                                            onClick={onClickSubmit}
-                                            isDisabled={!dirty || !isValid || isSubmitting}
-                                            isLoading={isSubmitting}
-                                            isSmall
-                                        >
-                                            Submit
-                                        </Button>
-                                    </ToolbarItem>
-                                    <ToolbarItem>
-                                        <Button variant="tertiary" onClick={handleCancel} isSmall>
-                                            Cancel
-                                        </Button>
-                                    </ToolbarItem>
-                                </ToolbarGroup>
-                            ) : (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="primary"
-                                        onClick={handleEdit}
-                                        isDisabled={action === 'update'}
-                                        isSmall
-                                    >
-                                        Edit role
-                                    </Button>
-                                </ToolbarItem>
-                            )}
+                    {isActionable && action !== 'create' && (
+                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem>
+                                <Button
+                                    variant="primary"
+                                    onClick={handleEdit}
+                                    isDisabled={action === 'update'}
+                                    isSmall
+                                >
+                                    Edit role
+                                </Button>
+                            </ToolbarItem>
                         </ToolbarGroup>
                     )}
                 </ToolbarContent>
@@ -171,6 +152,30 @@ function RoleForm({
                     />
                 )}
             </FormGroup>
+            {hasAction && (
+                <Toolbar inset={{ default: 'insetNone' }}>
+                    <ToolbarContent>
+                        <ToolbarGroup variant="button-group">
+                            <ToolbarItem>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickSubmit}
+                                    isDisabled={!dirty || !isValid || isSubmitting}
+                                    isLoading={isSubmitting}
+                                    isSmall
+                                >
+                                    Save
+                                </Button>
+                            </ToolbarItem>
+                            <ToolbarItem>
+                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                    Cancel
+                                </Button>
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
         </Form>
     );
 }

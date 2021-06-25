@@ -224,12 +224,14 @@ function PermissionSets(): ReactElement {
                             </ToolbarItem>
                         </ToolbarContent>
                     </Toolbar>
-                    <PermissionSetsList
-                        entityId={entityId}
-                        permissionSets={permissionSets}
-                        roles={roles}
-                        handleDelete={handleDelete}
-                    />
+                    {permissionSets.length !== 0 && (
+                        <PermissionSetsList
+                            entityId={entityId}
+                            permissionSets={permissionSets}
+                            roles={roles}
+                            handleDelete={handleDelete}
+                        />
+                    )}
                 </>
             )}
         </>

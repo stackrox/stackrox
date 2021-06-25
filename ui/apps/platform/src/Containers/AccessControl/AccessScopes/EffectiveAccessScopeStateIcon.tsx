@@ -1,11 +1,11 @@
 import React, { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 import {
-    ExclamationTriangleIcon,
+    BanIcon,
     CheckIcon,
+    ExclamationTriangleIcon,
     LongArrowAltDownIcon,
     LongArrowAltUpIcon,
-    TimesIcon,
 } from '@patternfly/react-icons';
 
 import { EffectiveAccessScopeState } from 'services/RolesService';
@@ -18,7 +18,7 @@ const unknownColor = 'var(--pf-global--warning-color--100)';
  * Tooltip has key prop to replace the previous tooltip if status changes.
  */
 
-const excludedIcon = <TimesIcon color={excludedColor} />;
+const excludedIcon = <BanIcon color={excludedColor} />;
 const excludedCluster = (
     <Tooltip
         key="excludedCluster"
@@ -70,7 +70,7 @@ const partialCluster = (
         key="partialCluster"
         content={
             <div>
-                Conditionally included: cluster
+                Hierarchically included: cluster
                 <br />
                 because at least one of its namespaces
             </div>

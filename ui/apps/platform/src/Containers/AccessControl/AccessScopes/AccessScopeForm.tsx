@@ -38,9 +38,15 @@ const labelIconEffectiveAccessScope = (
     <Tooltip
         content={
             <div>
-                The <strong>status</strong> of clusters and namespaces
+                Computed <strong>state</strong> of clusters and namespaces
                 <br />
-                from manual inclusion, or label inclusion, or both
+                from <strong>manual</strong> inclusion, <strong>label</strong> inclusion,
+                <br />
+                or <strong>hierarchical</strong> inclusion:
+                <br />
+                included cluster: therefore all of its namespaces
+                <br />
+                included namespace: therefore its cluster
             </div>
         }
         isContentLeftAligned
@@ -226,48 +232,18 @@ function AccessScopeForm({
                             {action === 'create' ? 'Create access scope' : accessScope.name}
                         </Title>
                     </ToolbarItem>
-                    {isActionable && (
-                        <ToolbarGroup
-                            alignment={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsLg' }}
-                        >
-                            {hasAction ? (
-                                <ToolbarGroup variant="button-group">
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="primary"
-                                            onClick={onClickSubmit}
-                                            isDisabled={
-                                                !dirty ||
-                                                !isValid ||
-                                                !isValidRules ||
-                                                Boolean(labelSelectorsEditingState) ||
-                                                isSubmitting
-                                            }
-                                            isLoading={isSubmitting}
-                                            isSmall
-                                        >
-                                            Submit
-                                        </Button>
-                                    </ToolbarItem>
-                                    <ToolbarItem>
-                                        <Button variant="tertiary" onClick={onClickCancel} isSmall>
-                                            Cancel
-                                        </Button>
-                                    </ToolbarItem>
-                                </ToolbarGroup>
-                            ) : (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="primary"
-                                        onClick={handleEdit}
-                                        isDisabled={action === 'update'}
-                                        isSmall
-                                    >
-                                        Edit access scope
-                                    </Button>
-                                </ToolbarItem>
-                            )}
+                    {isActionable && action !== 'create' && (
+                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem>
+                                <Button
+                                    variant="primary"
+                                    onClick={handleEdit}
+                                    isDisabled={action === 'update'}
+                                    isSmall
+                                >
+                                    Edit access scope
+                                </Button>
+                            </ToolbarItem>
                         </ToolbarGroup>
                     )}
                 </ToolbarContent>
@@ -334,6 +310,36 @@ function AccessScopeForm({
                     </FormGroup>
                 </FlexItem>
             </Flex>
+            {hasAction && (
+                <Toolbar inset={{ default: 'insetNone' }}>
+                    <ToolbarContent>
+                        <ToolbarGroup variant="button-group">
+                            <ToolbarItem>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickSubmit}
+                                    isDisabled={
+                                        !dirty ||
+                                        !isValid ||
+                                        !isValidRules ||
+                                        Boolean(labelSelectorsEditingState) ||
+                                        isSubmitting
+                                    }
+                                    isLoading={isSubmitting}
+                                    isSmall
+                                >
+                                    Save
+                                </Button>
+                            </ToolbarItem>
+                            <ToolbarItem>
+                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                    Cancel
+                                </Button>
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
         </Form>
     );
 }

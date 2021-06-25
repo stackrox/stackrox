@@ -79,11 +79,15 @@ function RolesList({
                             />
                         </Td>
                         <Td dataLabel="Access scope">
-                            <AccessControlEntityLink
-                                entityType="ACCESS_SCOPE"
-                                entityId={accessScopeId}
-                                entityName={getAccessScopeName(accessScopeId)}
-                            />
+                            {accessScopeId ? (
+                                <AccessControlEntityLink
+                                    entityType="ACCESS_SCOPE"
+                                    entityId={accessScopeId}
+                                    entityName={getAccessScopeName(accessScopeId)}
+                                />
+                            ) : (
+                                'Unlimited access'
+                            )}
                         </Td>
                         {defaultRoles[name] ? (
                             <Td />

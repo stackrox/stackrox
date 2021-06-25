@@ -44,7 +44,7 @@ function PermissionSetForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
-    const { dirty, handleChange, isValid, setFieldValue, values } = useFormik({
+    const { dirty, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: permissionSet,
         onSubmit: () => {},
         validationSchema: yup.object({
@@ -89,6 +89,11 @@ function PermissionSetForm({
             });
     }
 
+    function onClickCancel() {
+        resetForm();
+        handleCancel(); // close form if action=create but not if action=update
+    }
+
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
 
@@ -102,42 +107,18 @@ function PermissionSetForm({
                             {action === 'create' ? 'Create permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
-                    {isActionable && (
-                        <ToolbarGroup
-                            alignment={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsLg' }}
-                        >
-                            {hasAction ? (
-                                <ToolbarGroup variant="button-group">
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="primary"
-                                            onClick={onClickSubmit}
-                                            isDisabled={!dirty || !isValid || isSubmitting}
-                                            isLoading={isSubmitting}
-                                            isSmall
-                                        >
-                                            Submit
-                                        </Button>
-                                    </ToolbarItem>
-                                    <ToolbarItem>
-                                        <Button variant="tertiary" onClick={handleCancel} isSmall>
-                                            Cancel
-                                        </Button>
-                                    </ToolbarItem>
-                                </ToolbarGroup>
-                            ) : (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="primary"
-                                        onClick={handleEdit}
-                                        isDisabled={action === 'update'}
-                                        isSmall
-                                    >
-                                        Edit permission set
-                                    </Button>
-                                </ToolbarItem>
-                            )}
+                    {isActionable && action !== 'create' && (
+                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem>
+                                <Button
+                                    variant="primary"
+                                    onClick={handleEdit}
+                                    isDisabled={action === 'update'}
+                                    isSmall
+                                >
+                                    Edit permission set
+                                </Button>
+                            </ToolbarItem>
                         </ToolbarGroup>
                     )}
                 </ToolbarContent>
@@ -186,6 +167,30 @@ function PermissionSetForm({
                 setResourceValue={setResourceValue}
                 isDisabled={isViewing}
             />
+            {hasAction && (
+                <Toolbar inset={{ default: 'insetNone' }}>
+                    <ToolbarContent>
+                        <ToolbarGroup variant="button-group">
+                            <ToolbarItem>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickSubmit}
+                                    isDisabled={!dirty || !isValid || isSubmitting}
+                                    isLoading={isSubmitting}
+                                    isSmall
+                                >
+                                    Save
+                                </Button>
+                            </ToolbarItem>
+                            <ToolbarItem>
+                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                    Cancel
+                                </Button>
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+            )}
         </Form>
     );
 }

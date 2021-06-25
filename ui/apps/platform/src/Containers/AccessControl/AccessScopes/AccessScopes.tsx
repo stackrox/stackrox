@@ -197,12 +197,14 @@ function AccessScopes(): ReactElement {
                             </ToolbarItem>
                         </ToolbarContent>
                     </Toolbar>
-                    <AccessScopesList
-                        entityId={entityId}
-                        accessScopes={accessScopes}
-                        roles={roles}
-                        handleDelete={handleDelete}
-                    />
+                    {accessScopes.length !== 0 && (
+                        <AccessScopesList
+                            entityId={entityId}
+                            accessScopes={accessScopes}
+                            roles={roles}
+                            handleDelete={handleDelete}
+                        />
+                    )}
                 </>
             )}
         </>
