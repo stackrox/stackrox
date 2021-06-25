@@ -36,13 +36,34 @@ function compare_fixable_vulns {
     FAIL_SCRIPT=true
   else
     # get any fixable vulns for the scanned image
-    CURRENT_FIXABLE=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
+    CURRENT_FIXABLE=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
 
-    # if fixabnle vulns found, print them out and set script to return error status
+    # fail the check if fixable vulns are found that are not allowed
     if [[ -n "$CURRENT_FIXABLE" ]]; then
       FAIL_SCRIPT=true
       echo "${image_name}:${image_tag} has fixable vulns!:"
-      echo "$CURRENT_FIXABLE"
+          IFS='
+'
+      for vuln in $CURRENT_FIXABLE; do
+        is_allowed=false
+        for allowed in $ALLOWED_VULNS; do
+          allowed_vuln=$(echo "$allowed" | jq -r '.vuln')
+          allowed_image=$(echo "$allowed" | jq -r '.image')
+          allowed_tag=$(echo "$allowed" | jq -r '.tag')
+          if [[ "${vuln}" == ${allowed_vuln} ]] &&
+             [[ "${image_name}" =~ ${allowed_image} ]] &&
+             [[ "${image_tag}" =~ ${allowed_tag} ]]
+          then
+            echo "  Allowing ${vuln} because it matches ${allowed}."
+            is_allowed=true
+            break
+          fi
+        done
+        if ! ${is_allowed}; then
+          FAIL_SCRIPT=true
+          echo "  ${vuln} is fixable and not in allowed_vulns.json"
+        fi
+      done
     else
       echo "${image_name}:${image_tag} has no fixable vulns"
     fi
@@ -56,6 +77,8 @@ RELEASE_TAG=$(git describe --tags)
 COLLECTOR_TAG=$(cat "$DIR/../../COLLECTOR_VERSION")
 SCANNER_TAG=$(cat "$DIR/../../SCANNER_VERSION")
 DOCS_PRERELEASE_TAG=$(cat "$DIR/../../DOCS_VERSION")
+
+ALLOWED_VULNS=$(jq -c '.[]' "$DIR/allowed_vulns.json")
 
 # check main images
 compare_fixable_vulns "main" "$RELEASE_TAG"
