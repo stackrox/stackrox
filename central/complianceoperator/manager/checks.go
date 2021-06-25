@@ -8,24 +8,28 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 )
 
+func formatEvidence(status string, result *storage.ComplianceOperatorCheckResult) string {
+	return fmt.Sprintf("%s for %s. Please see the Compliance Operator's full report in ARF format for more detailed evidence.", status, result.GetCheckName())
+}
+
 func statusToEvidence(result *storage.ComplianceOperatorCheckResult) (framework.Status, string) {
 	switch result.GetStatus() {
 	case storage.ComplianceOperatorCheckResult_PASS:
-		return framework.PassStatus, fmt.Sprintf("Pass for %s", result.CheckName)
+		return framework.PassStatus, formatEvidence("Pass", result)
 	case storage.ComplianceOperatorCheckResult_FAIL:
-		return framework.FailStatus, fmt.Sprintf("Fail for %s", result.CheckName)
+		return framework.FailStatus, formatEvidence("Fail", result)
 	case storage.ComplianceOperatorCheckResult_ERROR:
-		return framework.FailStatus, fmt.Sprintf("Error for %s", result.CheckName)
+		return framework.FailStatus, formatEvidence("Error", result)
 	case storage.ComplianceOperatorCheckResult_INFO:
-		return framework.SkipStatus, fmt.Sprintf("Skip for %s", result.CheckName)
+		return framework.SkipStatus, formatEvidence("Skip", result)
 	case storage.ComplianceOperatorCheckResult_MANUAL:
-		return framework.SkipStatus, fmt.Sprintf("Manual for %s", result.CheckName)
+		return framework.SkipStatus, formatEvidence("Manual", result)
 	case storage.ComplianceOperatorCheckResult_NOT_APPLICABLE:
-		return framework.SkipStatus, fmt.Sprintf("Not Applicable for %s", result.CheckName)
+		return framework.SkipStatus, formatEvidence("Not Applicable", result)
 	case storage.ComplianceOperatorCheckResult_INCONSISTENT:
-		return framework.FailStatus, fmt.Sprintf("Inconsistent for %s", result.CheckName)
+		return framework.FailStatus, formatEvidence("Inconsistent", result)
 	default:
-		return framework.FailStatus, fmt.Sprintf("Unknown status for %s", result.CheckName)
+		return framework.FailStatus, formatEvidence("Unknown status", result)
 	}
 }
 
