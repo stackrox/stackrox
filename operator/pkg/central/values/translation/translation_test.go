@@ -96,12 +96,12 @@ func TestTranslate(t *testing.T) {
 								Resources: &common.Resources{
 									Override: &corev1.ResourceRequirements{
 										Limits: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.Quantity{Format: "10"},
-											corev1.ResourceMemory: resource.Quantity{Format: "20"},
+											corev1.ResourceCPU:    resource.MustParse("10"),
+											corev1.ResourceMemory: resource.MustParse("20"),
 										},
 										Requests: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.Quantity{Format: "30"},
-											corev1.ResourceMemory: resource.Quantity{Format: "40"},
+											corev1.ResourceCPU:    resource.MustParse("30"),
+											corev1.ResourceMemory: resource.MustParse("40"),
 										},
 									},
 								},
@@ -175,12 +175,12 @@ func TestTranslate(t *testing.T) {
 								Resources: &common.Resources{
 									Override: &corev1.ResourceRequirements{
 										Limits: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.Quantity{Format: "50"},
-											corev1.ResourceMemory: resource.Quantity{Format: "60"},
+											corev1.ResourceCPU:    resource.MustParse("50"),
+											corev1.ResourceMemory: resource.MustParse("60"),
 										},
 										Requests: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.Quantity{Format: "70"},
-											corev1.ResourceMemory: resource.Quantity{Format: "80"},
+											corev1.ResourceCPU:    resource.MustParse("70"),
+											corev1.ResourceMemory: resource.MustParse("80"),
 										},
 									},
 								},
@@ -218,12 +218,12 @@ func TestTranslate(t *testing.T) {
 								Resources: &common.Resources{
 									Override: &corev1.ResourceRequirements{
 										Limits: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.Quantity{Format: "90"},
-											corev1.ResourceMemory: resource.Quantity{Format: "100"},
+											corev1.ResourceCPU:    resource.MustParse("90"),
+											corev1.ResourceMemory: resource.MustParse("100"),
 										},
 										Requests: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.Quantity{Format: "110"},
-											corev1.ResourceMemory: resource.Quantity{Format: "120"},
+											corev1.ResourceCPU:    resource.MustParse("110"),
+											corev1.ResourceMemory: resource.MustParse("120"),
 										},
 									},
 								},
@@ -332,13 +332,13 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"resources": map[string]interface{}{
-						"limits": corev1.ResourceList{
-							"cpu":    resource.Quantity{Format: "10"},
-							"memory": resource.Quantity{Format: "20"},
+						"limits": map[string]interface{}{
+							"cpu":    "10",
+							"memory": "20",
 						},
-						"requests": corev1.ResourceList{
-							"cpu":    resource.Quantity{Format: "30"},
-							"memory": resource.Quantity{Format: "40"},
+						"requests": map[string]interface{}{
+							"cpu":    "30",
+							"memory": "40",
 						},
 					},
 					"serviceTLS": map[string]interface{}{
@@ -462,23 +462,23 @@ func TestTranslate(t *testing.T) {
 						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
 					},
 					"resources": map[string]interface{}{
-						"limits": corev1.ResourceList{
-							"cpu":    resource.Quantity{Format: "50"},
-							"memory": resource.Quantity{Format: "60"},
+						"limits": map[string]interface{}{
+							"cpu":    "50",
+							"memory": "60",
 						},
-						"requests": corev1.ResourceList{
-							"cpu":    resource.Quantity{Format: "70"},
-							"memory": resource.Quantity{Format: "80"},
+						"requests": map[string]interface{}{
+							"cpu":    "70",
+							"memory": "80",
 						},
 					},
 					"dbResources": map[string]interface{}{
-						"limits": corev1.ResourceList{
-							"cpu":    resource.Quantity{Format: "90"},
-							"memory": resource.Quantity{Format: "100"},
+						"limits": map[string]interface{}{
+							"cpu":    "90",
+							"memory": "100",
 						},
-						"requests": corev1.ResourceList{
-							"cpu":    resource.Quantity{Format: "110"},
-							"memory": resource.Quantity{Format: "120"},
+						"requests": map[string]interface{}{
+							"cpu":    "110",
+							"memory": "120",
 						},
 					},
 					"serviceTLS": map[string]interface{}{

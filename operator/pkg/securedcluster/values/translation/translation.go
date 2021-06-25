@@ -135,9 +135,7 @@ func (t Translator) getTLSValues(ctx context.Context, sc securedcluster.SecuredC
 	}
 	v.SetStringMap("ca", map[string]string{"cert": string(centralCA)})
 
-	if sc.Spec.TLS != nil {
-		v.AddAllFrom(translation.AddAdditionalCAs(sc.Spec.TLS.AdditionalCAs))
-	}
+	v.AddAllFrom(translation.GetTLSValues(sc.Spec.TLS))
 
 	return &v
 }

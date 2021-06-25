@@ -257,7 +257,7 @@ spec:
                     type: object
                 type: object
               tls:
-                description: TLSConfig defines TLS-related settings
+                description: TLSConfig defines common TLS-related settings for all components.
                 properties:
                   additionalCAs:
                     items:

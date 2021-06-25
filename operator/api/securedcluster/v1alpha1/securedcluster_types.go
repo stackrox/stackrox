@@ -41,7 +41,7 @@ type SecuredClusterSpec struct {
 	CentralEndpoint *string `json:"centralEndpoint,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	TLS *TLSConfig `json:"tls,omitempty"`
+	TLS *common.TLSConfig `json:"tls,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
@@ -60,11 +60,6 @@ type SensorComponentSpec struct {
 	ContainerSpec `json:",inline"`
 
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-}
-
-// TLSConfig defines TLS-related settings
-type TLSConfig struct {
-	AdditionalCAs []common.AdditionalCA `json:"additionalCAs,omitempty"`
 }
 
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.

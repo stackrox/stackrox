@@ -59,7 +59,7 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
 	v.AddAllFrom(getEnv(ctx, clientSet, c.Namespace, c.Spec.Egress))
-	v.AddAllFrom(getTLSValues(c.Spec))
+	v.AddAllFrom(translation.GetTLSValues(c.Spec.TLS))
 
 	customize := translation.NewValuesBuilder()
 	customize.AddAllFrom(translation.GetCustomize(c.Spec.Customize))
@@ -227,11 +227,4 @@ func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	}
 
 	return &sv
-}
-
-func getTLSValues(tls central.CentralSpec) *translation.ValuesBuilder {
-	if tls.TLS != nil {
-		return translation.AddAdditionalCAs(tls.TLS.AdditionalCAs)
-	}
-	return nil
 }

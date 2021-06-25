@@ -71,7 +71,7 @@ func TestTranslateComplete(t *testing.T) {
 							{Name: "image-pull-secrets-secret1"},
 							{Name: "image-pull-secrets-secret2"},
 						},
-						TLS: &v1alpha1.TLSConfig{
+						TLS: &common.TLSConfig{
 							AdditionalCAs: []common.AdditionalCA{
 								{Name: "ca1-name", Content: "ca1-content"},
 								{Name: "ca2-name", Content: "ca2-content"},
