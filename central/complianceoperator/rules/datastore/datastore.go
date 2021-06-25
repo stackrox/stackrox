@@ -126,6 +126,6 @@ func (d *datastoreImpl) ExistsByName(ctx context.Context, name string) (bool, er
 	}
 	d.ruleLock.RLock()
 	defer d.ruleLock.RUnlock()
-	_, ok := d.rulesByName[name]
-	return ok, nil
+	val, ok := d.rulesByName[name]
+	return ok && len(val) != 0, nil
 }
