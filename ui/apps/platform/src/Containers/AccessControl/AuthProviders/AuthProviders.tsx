@@ -5,16 +5,9 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertVariant,
+    Badge,
     Bullseye,
     Button,
-    Drawer,
-    DrawerActions,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerContentBody,
-    DrawerHead,
-    DrawerPanelBody,
-    DrawerPanelContent,
     Spinner,
     Title,
     Toolbar,
@@ -104,10 +97,6 @@ function AuthProviders(): ReactElement {
             });
     }, []);
 
-    function onClickClose() {
-        history.push(getEntityPath(entityType, undefined, queryObject));
-    }
-
     function onClickCreate() {
         history.push(getEntityPath(entityType, undefined, { ...queryObject, action: 'create' }));
     }
@@ -129,8 +118,8 @@ function AuthProviders(): ReactElement {
                   // Append the created entity.
                   setAuthProviders([...authProviders, entityCreated]);
 
-                  // Clear the action and also any filtering (in case the created entity does not match).
-                  history.push(getEntityPath(entityType, entityCreated.id));
+                  // Replace path which had action=create with plain entity path.
+                  history.replace(getEntityPath(entityType, entityCreated.id));
 
                   return entityCreated;
               })
@@ -142,8 +131,8 @@ function AuthProviders(): ReactElement {
                       )
                   );
 
-                  // Clear the action and also any filtering (in case the updated entity does not match).
-                  history.push(getEntityPath(entityType, entityId));
+                  // Replace path which had action=update with plain entity path.
+                  history.replace(getEntityPath(entityType, entityId));
 
                   return entityUpdated;
               });
@@ -154,19 +143,18 @@ function AuthProviders(): ReactElement {
     const hasAction = Boolean(action);
     const isExpanded = hasAction || Boolean(entityId);
 
-    const panelContent = (
-        <DrawerPanelContent minSize="90%">
-            <DrawerHead>
-                <Title headingLevel="h3">
-                    {action === 'create' ? 'Create auth provider' : authProvider.name}
-                </Title>
-                {!hasAction && (
-                    <DrawerActions>
-                        <DrawerCloseButton onClick={onClickClose} />
-                    </DrawerActions>
-                )}
-            </DrawerHead>
-            <DrawerPanelBody>
+    // TODO Display backdrop which covers nav links and drawer body during action.
+    return (
+        <>
+            <AccessControlNav entityType={entityType} />
+            {alertAuthProviders}
+            {alertRoles}
+            {isFetching && (
+                <Bullseye>
+                    <Spinner />
+                </Bullseye>
+            )}
+            {!isFetching && isExpanded && (
                 <AuthProviderForm
                     isActionable={isActionable}
                     action={action}
@@ -176,42 +164,31 @@ function AuthProviders(): ReactElement {
                     onClickEdit={onClickEdit}
                     submitValues={submitValues}
                 />
-            </DrawerPanelBody>
-        </DrawerPanelContent>
-    );
-
-    // TODO Display backdrop which covers nav links and drawer body during action.
-    return (
-        <>
-            <AccessControlNav entityType={entityType} />
-            {alertAuthProviders}
-            {alertRoles}
-            {isFetching ? (
-                <Bullseye>
-                    <Spinner />
-                </Bullseye>
-            ) : (
-                <Drawer isExpanded={isExpanded}>
-                    <DrawerContent panelContent={panelContent}>
-                        <DrawerContentBody>
-                            <Toolbar inset={{ default: 'insetNone' }}>
-                                <ToolbarContent>
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="primary"
-                                            onClick={onClickCreate}
-                                            isDisabled={isExpanded || isFetching}
-                                            isSmall
-                                        >
-                                            Create auth provider
-                                        </Button>
-                                    </ToolbarItem>
-                                </ToolbarContent>
-                            </Toolbar>
-                            <AuthProvidersList entityId={entityId} authProviders={authProviders} />
-                        </DrawerContentBody>
-                    </DrawerContent>
-                </Drawer>
+            )}
+            {!isFetching && !isExpanded && (
+                <>
+                    <Toolbar inset={{ default: 'insetNone' }}>
+                        <ToolbarContent>
+                            <ToolbarItem>
+                                <Title headingLevel="h2">Auth Providers</Title>
+                            </ToolbarItem>
+                            <ToolbarItem>
+                                <Badge isRead>{authProviders.length}</Badge>
+                            </ToolbarItem>
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <Button
+                                    variant="primary"
+                                    onClick={onClickCreate}
+                                    isDisabled={isExpanded || isFetching}
+                                    isSmall
+                                >
+                                    Create auth provider
+                                </Button>
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
+                    <AuthProvidersList entityId={entityId} authProviders={authProviders} />
+                </>
             )}
         </>
     );

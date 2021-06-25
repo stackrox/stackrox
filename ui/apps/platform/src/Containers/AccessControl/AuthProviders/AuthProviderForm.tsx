@@ -11,6 +11,7 @@ import {
     GridItem,
     SelectOption,
     TextInput,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -21,6 +22,7 @@ import { availableAuthProviders } from 'constants/accessControl';
 import { AuthProvider } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 
+import ConfigurationFormFields from './ConfigurationFormFields';
 import { getInitialAuthProviderValues } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
 
@@ -98,44 +100,53 @@ function AuthProviderForm({
     // TODO Minimum access role: replace select with radio button table as in Role form?
     return (
         <Form>
-            {isActionable && (
-                <Toolbar inset={{ default: 'insetNone' }}>
-                    <ToolbarContent>
-                        {action !== 'create' && (
-                            <ToolbarItem spacer={{ default: 'spacerLg' }}>
-                                <Button
-                                    variant="primary"
-                                    onClick={onClickEdit}
-                                    isDisabled={action === 'update'}
-                                    isSmall
-                                >
-                                    Edit auth provider
-                                </Button>
-                            </ToolbarItem>
-                        )}
-                        {hasAction && (
-                            <ToolbarGroup variant="button-group">
+            <Toolbar inset={{ default: 'insetNone' }}>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <Title headingLevel="h2">
+                            {action === 'create' ? 'Create auth provider' : authProvider.name}
+                        </Title>
+                    </ToolbarItem>
+                    {isActionable && (
+                        <ToolbarGroup
+                            alignment={{ default: 'alignRight' }}
+                            spaceItems={{ default: 'spaceItemsLg' }}
+                        >
+                            {hasAction ? (
+                                <ToolbarGroup variant="button-group">
+                                    <ToolbarItem>
+                                        <Button
+                                            variant="primary"
+                                            onClick={onClickSubmit}
+                                            isDisabled={!dirty || !isValid || isSubmitting}
+                                            isLoading={isSubmitting}
+                                            isSmall
+                                        >
+                                            Save
+                                        </Button>
+                                    </ToolbarItem>
+                                    <ToolbarItem>
+                                        <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                            Cancel
+                                        </Button>
+                                    </ToolbarItem>
+                                </ToolbarGroup>
+                            ) : (
                                 <ToolbarItem>
                                     <Button
                                         variant="primary"
-                                        onClick={onClickSubmit}
-                                        isDisabled={!dirty || !isValid || isSubmitting}
-                                        isLoading={isSubmitting}
+                                        onClick={onClickEdit}
+                                        isDisabled={action === 'update'}
                                         isSmall
                                     >
-                                        Submit
+                                        Edit auth provider
                                     </Button>
                                 </ToolbarItem>
-                                <ToolbarItem>
-                                    <Button variant="tertiary" onClick={onClickCancel} isSmall>
-                                        Cancel
-                                    </Button>
-                                </ToolbarItem>
-                            </ToolbarGroup>
-                        )}
-                    </ToolbarContent>
-                </Toolbar>
-            )}
+                            )}
+                        </ToolbarGroup>
+                    )}
+                </ToolbarContent>
+            </Toolbar>
             {alertSubmit}
             <Grid hasGutter>
                 <GridItem span={12} lg={6}>
@@ -166,30 +177,11 @@ function AuthProviderForm({
                         </SelectSingle>
                     </FormGroup>
                 </GridItem>
-                <GridItem span={12} lg={6}>
-                    <FormGroup label="Auth0 tenant" fieldId="name" isRequired>
-                        <TextInput
-                            type="text"
-                            id="config.issuer"
-                            value={values.config.issuer || ''}
-                            onChange={onChange}
-                            isDisabled={isViewing}
-                            isRequired
-                        />
-                    </FormGroup>
-                </GridItem>
-                <GridItem span={12} lg={6}>
-                    <FormGroup label="Client ID" fieldId="name" isRequired>
-                        <TextInput
-                            type="text"
-                            id="config.client_id"
-                            value={values.config.client_id || ''}
-                            onChange={onChange}
-                            isDisabled={isViewing}
-                            isRequired
-                        />
-                    </FormGroup>
-                </GridItem>
+                <ConfigurationFormFields
+                    isViewing={isViewing}
+                    onChange={onChange}
+                    config={values.config}
+                />
             </Grid>
             <FormGroup label="Minimum access role" fieldId="minimumAccessRole" isRequired>
                 <SelectSingle

@@ -78,14 +78,18 @@ export function fetchLoginAuthProviders(): Promise<{ response: AuthProviderLogin
  * Create entity and return object with id assigned by backend.
  */
 export function createAuthProvider(authProvider: AuthProvider): Promise<AuthProvider> {
-    return axios.post(authProvidersUrl, authProvider);
+    return axios.post(authProvidersUrl, authProvider).then((response) => {
+        return response.data as AuthProvider;
+    });
 }
 
 /*
  * Update entity and return object.
  */
 export function updateAuthProvider(authProvider: AuthProvider): Promise<AuthProvider> {
-    return axios.post(authProvidersUrl, authProvider);
+    return axios.put(`${authProvidersUrl}/${authProvider.id}`, authProvider).then((response) => {
+        return response.data as AuthProvider;
+    });
 }
 
 /**
