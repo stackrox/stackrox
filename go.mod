@@ -13,7 +13,7 @@ require (
 	github.com/RoaringBitmap/roaring v0.6.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.10.0
-	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
+	github.com/antihax/optional v1.0.0
 	github.com/aws/aws-sdk-go v1.38.29
 	github.com/blevesearch/bleve v0.8.0
 	github.com/cenkalti/backoff/v3 v3.2.2
@@ -50,7 +50,7 @@ require (
 	github.com/graph-gophers/graphql-go v0.0.0-20190513003547-158e7b876106
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.12.1
+	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hako/durafmt v0.0.0-20180520121703-7b7ae1e72ead
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.3.0
