@@ -63,7 +63,7 @@ func machineConfigCheckFunc(rule string) func(ctx framework.ComplianceContext) {
 					return
 				}
 			}
-			framework.RecordEvidence(ctx, framework.FailStatus, fmt.Sprintf("No result found for machine config: %q", machine))
+			framework.RecordEvidence(ctx, framework.InternalSkipStatus, fmt.Sprintf("No result found for machine config: %q", machine))
 		})
 	}
 }

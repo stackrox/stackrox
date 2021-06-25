@@ -60,6 +60,9 @@ func getResultValueProto(entityResults framework.Results, remoteResults *storage
 
 	if entityResults != nil {
 		for _, evidence := range entityResults.Evidence() {
+			if evidence.Status == framework.InternalSkipStatus {
+				return nil
+			}
 			evidenceList = append(evidenceList, getEvidenceProto(evidence))
 		}
 	}
@@ -115,7 +118,9 @@ func collectEntityResults(entity framework.ComplianceTarget, checks []framework.
 
 		remoteResults := allRemoteResults[check.ID()]
 
-		controlResults[check.ID()] = getResultValueProto(results, remoteResults, errs)
+		if result := getResultValueProto(results, remoteResults, errs); result != nil {
+			controlResults[check.ID()] = result
+		}
 	}
 
 	return &storage.ComplianceRunResults_EntityResults{
@@ -187,7 +192,9 @@ func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults 
 
 	machineConfigResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
 	for _, mc := range r.domain.MachineConfigs() {
-		machineConfigResults[mc.ID()] = collectEntityResults(mc, checks, allResults, nil)
+		if results := collectEntityResults(mc, checks, allResults, nil); len(results.GetControlResults()) != 0 {
+			machineConfigResults[mc.ID()] = results
+		}
 	}
 
 	runMetadataProto := r.metadataProto(true)
