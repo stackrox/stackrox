@@ -22,6 +22,7 @@ type CompiledPolicy interface {
 	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (booleanpolicy.Violations, error)
+	MatchAgainstAuditLogEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent) (booleanpolicy.Violations, error)
 	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
 
 	Predicate
@@ -32,8 +33,23 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	compiled := &compiledPolicy{
 		policy: policy,
 	}
+	if features.K8sAuditLogDetection.Enabled() {
+		if policies.AppliesAtRunTime(policy) {
+			filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+				return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.AuditLogEventsFields)
+			})
+			if len(filtered.GetPolicySections()) > 0 {
+				compiled.hasAuditEventsSection = true
+				auditLogEventMatcher, err := booleanpolicy.BuildAuditLogEventMatcher(filtered)
+				if err != nil {
+					return nil, errors.Wrapf(err, "building audit log event matcher for policy %q", policy.GetName())
+				}
+				compiled.auditLogEventMatcher = auditLogEventMatcher
+			}
+		}
+	}
 
-	if policies.AppliesAtRunTime(policy) {
+	if !compiled.hasAuditEventsSection && policies.AppliesAtRunTime(policy) {
 		// TODO: Change inverse filter to filter by process fields once section validation is added to prohibit deploy time only fields.
 		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
 			return !booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields) &&
@@ -84,7 +100,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		}
 	}
 
-	if policies.AppliesAtDeployTime(policy) {
+	if !compiled.hasAuditEventsSection && policies.AppliesAtDeployTime(policy) {
 		deploymentMatcher, err := booleanpolicy.BuildDeploymentMatcher(policy)
 		if err != nil {
 			return nil, errors.Wrapf(err, "building deployment matcher for policy %q", policy.GetName())
@@ -92,7 +108,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		compiled.deploymentMatcher = deploymentMatcher
 	}
 
-	if policies.AppliesAtBuildTime(policy) {
+	if !compiled.hasAuditEventsSection && policies.AppliesAtBuildTime(policy) {
 		imageMatcher, err := booleanpolicy.BuildImageMatcher(policy)
 		if err != nil {
 			return nil, errors.Wrapf(err, "building image matcher for policy %q", policy.GetName())
@@ -100,7 +116,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		compiled.imageMatcher = imageMatcher
 	}
 
-	if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil &&
+	if compiled.auditLogEventMatcher == nil && compiled.deploymentMatcher == nil && compiled.imageMatcher == nil &&
 		compiled.deploymentWithProcessMatcher == nil && compiled.kubeEventsMatcher == nil &&
 		compiled.deploymentWithNetworkFlowMatcher == nil {
 		return nil, errors.Errorf("no known lifecycle stage in policy %q", policy.GetName())
@@ -126,6 +142,9 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 
 	if policies.AppliesAtDeployTime(policy) || policies.AppliesAtRunTime(policy) {
 		compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
+		if features.K8sAuditLogDetection.Enabled() && policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
+		}
 	}
 	if policies.AppliesAtBuildTime(policy) {
 		compiled.predicates = append(compiled.predicates, &imagePredicate{
@@ -161,10 +180,25 @@ type compiledPolicy struct {
 	deploymentWithNetworkFlowMatcher booleanpolicy.DeploymentWithNetworkFlowMatcher
 	deploymentMatcher                booleanpolicy.DeploymentMatcher
 	imageMatcher                     booleanpolicy.ImageMatcher
+	auditLogEventMatcher             booleanpolicy.AuditLogEventMatcher
 
 	hasProcessSection     bool
 	hasKubeEventsSection  bool
 	hasNetworkFlowSection bool
+	hasAuditEventsSection bool
+}
+
+func (cp *compiledPolicy) MatchAgainstAuditLogEvent(
+	cache *booleanpolicy.CacheReceptacle,
+	kubeEvent *storage.KubernetesEvent,
+) (booleanpolicy.Violations, error) {
+	if !cp.hasAuditEventsSection {
+		return booleanpolicy.Violations{}, nil
+	}
+	if cp.auditLogEventMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against audit log event", cp.Policy().GetName())
+	}
+	return cp.auditLogEventMatcher.MatchAuditLogEvent(cache, kubeEvent)
 }
 
 func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
@@ -274,15 +308,21 @@ func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) b
 		return false
 	}
 	deploymentExclusion := cw.exclusion.GetDeployment()
-	if deploymentExclusion == nil {
-		return false
-	}
 
 	if !cw.cs.MatchesDeployment(deployment) {
 		return false
 	}
-
 	if deploymentExclusion.GetName() != "" && deploymentExclusion.GetName() != deployment.GetName() {
+		return false
+	}
+	return true
+}
+
+func (cw *compiledExclusion) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {
+	if exclusionIsExpired(cw.exclusion) {
+		return false
+	}
+	if !cw.cs.MatchesAuditEvent(auditEvent) {
 		return false
 	}
 	return true
@@ -314,4 +354,19 @@ func (cp *imagePredicate) AppliesTo(input interface{}) bool {
 		return false
 	}
 	return !matchesImageExclusion(image.GetName().GetFullName(), cp.policy)
+}
+
+// Predicate for audit events.
+type auditEventPredicate struct {
+	exclusions []*compiledExclusion
+	scopes     []*scopecomp.CompiledScope
+}
+
+func (cp *auditEventPredicate) AppliesTo(input interface{}) bool {
+	auditEvent, isAuditEvent := input.(*storage.KubernetesEvent)
+	if !isAuditEvent {
+		return false
+	}
+
+	return auditEventMatchesScopes(auditEvent, cp.scopes) && !auditEventMatchesExclusions(auditEvent, cp.exclusions)
 }

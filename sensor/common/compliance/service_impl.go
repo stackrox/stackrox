@@ -18,9 +18,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-// BenchmarkResultsService is the struct that manages the benchmark results API
+// ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
-	output       chan *compliance.ComplianceReturn
+	output      chan *compliance.ComplianceReturn
+	auditEvents chan *sensor.AuditEvents
+
 	orchestrator orchestrator.Orchestrator
 
 	connectionManager *connectionManager
@@ -153,7 +155,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			log.Infof("Received compliance return from %q", msg.GetNode())
 			s.output <- t.Return
 		case *sensor.MsgFromCompliance_AuditEvents:
-			// TODO: Send to policy detection
+			s.auditEvents <- t.AuditEvents
 		}
 	}
 }
@@ -175,4 +177,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) Output() chan *compliance.ComplianceReturn {
 	return s.output
+}
+
+func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
+	return s.auditEvents
 }

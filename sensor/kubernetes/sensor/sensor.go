@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
@@ -96,7 +97,9 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
-	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache)
+
+	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
+	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput)
 
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector))
 
@@ -106,7 +109,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	o := orchestrator.New(client.Kubernetes())
-	complianceService := compliance.NewService(o)
+	complianceService := compliance.NewService(o, auditLogEventsInput)
 	imageService := image.NewService(imageCache)
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 

@@ -1,6 +1,7 @@
 package unified
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
@@ -61,6 +62,15 @@ func (d *detectorImpl) DetectNetworkFlowForDeployment(
 	alerts, err := d.runtimeDetector.DetectForDeploymentAndNetworkFlow(deployment, images, flow)
 	if err != nil {
 		log.Errorf("Error running runtime policies for network flow %v: %v", flow, err)
+	}
+	return alerts
+}
+
+func (d *detectorImpl) DetectAuditLogEvents(auditEvents *sensor.AuditEvents) []*storage.Alert {
+	alerts, err := d.runtimeDetector.DetectForAuditEvents(auditEvents.GetEvents())
+	if err != nil {
+		log.Errorf("Error evaluating runtime policies for audit events: %q", err)
+		return nil
 	}
 	return alerts
 }

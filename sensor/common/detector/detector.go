@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -47,11 +48,12 @@ type Detector interface {
 
 // New returns a new detector
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
-	deploymentStore store.DeploymentStore, cache expiringcache.Cache) Detector {
+	deploymentStore store.DeploymentStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents) Detector {
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
 		output:                    make(chan *central.MsgFromSensor),
+		auditEventsChan:           auditLogEvents,
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
@@ -66,6 +68,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
 
 		detectorStopper:   concurrency.NewStopper(),
+		auditStopper:      concurrency.NewStopper(),
 		serializerStopper: concurrency.NewStopper(),
 		alertStopSig:      concurrency.NewSignal(),
 	}
@@ -75,6 +78,7 @@ type detectorImpl struct {
 	unifiedDetector unified.Detector
 
 	output                    chan *central.MsgFromSensor
+	auditEventsChan           chan *sensor.AuditEvents
 	deploymentAlertOutputChan chan outputResult
 
 	deploymentProcessingMap  map[string]int64
@@ -95,12 +99,14 @@ type detectorImpl struct {
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 
 	detectorStopper   concurrency.Stopper
+	auditStopper      concurrency.Stopper
 	serializerStopper concurrency.Stopper
 	alertStopSig      concurrency.Signal
 }
 
 func (d *detectorImpl) Start() error {
 	go d.runDetector()
+	go d.runAuditLogEventDetector()
 	go d.serializeDeployTimeOutput()
 	return nil
 }
@@ -116,7 +122,6 @@ type outputResult struct {
 // from an older version of a deployment
 func (d *detectorImpl) serializeDeployTimeOutput() {
 	defer d.serializerStopper.Stopped()
-
 	for {
 		select {
 		case <-d.serializerStopper.StopDone():
@@ -172,6 +177,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 
 func (d *detectorImpl) Stop(err error) {
 	d.detectorStopper.Stop()
+	d.auditStopper.Stop()
 	d.serializerStopper.Stop()
 
 	// We don't need to wait for these to be stopped as they are simple select statements
@@ -180,6 +186,7 @@ func (d *detectorImpl) Stop(err error) {
 	d.enricher.stop()
 
 	d.detectorStopper.WaitForStopped()
+	d.auditStopper.WaitForStopped()
 	d.serializerStopper.WaitForStopped()
 }
 
@@ -268,6 +275,8 @@ func (d *detectorImpl) runDetector() {
 			})
 
 			select {
+			case <-d.detectorStopper.StopDone():
+				return
 			case <-d.serializerStopper.StopDone():
 				return
 			case d.deploymentAlertOutputChan <- outputResult{
@@ -277,6 +286,42 @@ func (d *detectorImpl) runDetector() {
 				},
 				timestamp: scanOutput.deployment.GetStateTimestamp(),
 				action:    scanOutput.action,
+			}:
+			}
+		}
+	}
+}
+
+func (d *detectorImpl) runAuditLogEventDetector() {
+	defer d.auditStopper.Stopped()
+	for {
+		select {
+		case <-d.auditStopper.StopDone():
+			return
+		case auditEvents := <-d.auditEventsChan:
+			alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
+			sort.Slice(alerts, func(i, j int) bool {
+				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
+			})
+			select {
+			case <-d.auditStopper.StopDone():
+				return
+			case <-d.serializerStopper.StopDone():
+				return
+			case d.output <- &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id:     "",
+						Action: central.ResourceAction_CREATE_RESOURCE,
+						Resource: &central.SensorEvent_AlertResults{
+							AlertResults: &central.AlertResults{
+								DeploymentId: "",
+								Alerts:       alerts,
+								Stage:        storage.LifecycleStage_RUNTIME,
+							},
+						},
+					},
+				},
 			}:
 			}
 		}

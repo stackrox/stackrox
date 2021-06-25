@@ -161,9 +161,9 @@ func Render(
 	}
 
 	isProcessViolation := indicator != nil && checkForProcessViolation(result)
-	isKubeEventViolation := kubeEvent != nil && checkForKubeEventViolation(result)
+	isKubeOrAuditEventViolation := kubeEvent != nil && checkForKubeEventViolation(result)
 	isNetworkFlowViolation := networkFlow != nil && checkForNetworkFlowViolation(result)
-	if len(messages) == 0 && !isProcessViolation && !isKubeEventViolation && !isNetworkFlowViolation {
+	if len(messages) == 0 && !isProcessViolation && !isKubeOrAuditEventViolation && !isNetworkFlowViolation {
 		errorList.AddError(errors.New("missing messages"))
 	}
 
@@ -175,5 +175,5 @@ func Render(
 	}) {
 		alertViolations = append(alertViolations, &storage.Alert_Violation{Message: message})
 	}
-	return alertViolations, isProcessViolation, isKubeEventViolation, isNetworkFlowViolation, errorList.ToError()
+	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, errorList.ToError()
 }

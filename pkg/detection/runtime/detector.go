@@ -22,6 +22,7 @@ type Detector interface {
 	DetectForDeploymentAndProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) ([]*storage.Alert, error)
 	DetectForDeploymentAndKubeEvent(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
 	DetectForDeploymentAndNetworkFlow(deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
+	DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.
@@ -38,6 +39,18 @@ type detectorImpl struct {
 // UpsertPolicy adds or updates a policy in the set.
 func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
+}
+
+func (d *detectorImpl) DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error) {
+	alerts := make([]*storage.Alert, 0)
+	for _, auditEvent := range auditEvents {
+		alert, err := d.detectForAuditEvent(auditEvent)
+		if err != nil {
+			return nil, errors.Wrap(err, "detection on audit events failed")
+		}
+		alerts = append(alerts, alert...)
+	}
+	return alerts, nil
 }
 
 func (d *detectorImpl) DetectForDeploymentAndProcess(
@@ -124,6 +137,40 @@ func (d *detectorImpl) detectForDeployment(
 			}
 
 			if alert := constructNetworkFlowAlert(compiled.Policy(), deployment, flow, violation); alert != nil {
+				alerts = append(alerts, alert)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return alerts, nil
+}
+
+// detectForAuditEvent runs detection on an audit log event, returning any generated alerts.
+func (d *detectorImpl) detectForAuditEvent(auditEvent *storage.KubernetesEvent) ([]*storage.Alert, error) {
+	var alerts []*storage.Alert
+	var cacheReceptable booleanpolicy.CacheReceptacle
+
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
+		if compiled.Policy().GetDisabled() {
+			return nil
+		}
+
+		if auditEvent != nil {
+			// Check predicate on audit event.
+			if !compiled.AppliesTo(auditEvent) {
+				return nil
+			}
+
+			violation, err := compiled.MatchAgainstAuditLogEvent(&cacheReceptable, auditEvent)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; audit log event %s",
+					compiled.Policy().GetName(), kubernetes.EventAsString(auditEvent))
+			}
+			if alert := constructKubeEventAlert(compiled.Policy(), auditEvent, nil, violation); alert != nil {
 				alerts = append(alerts, alert)
 			}
 		}

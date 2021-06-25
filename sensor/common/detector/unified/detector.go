@@ -1,6 +1,7 @@
 package unified
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
@@ -20,6 +21,7 @@ type Detector interface {
 	DetectProcess(deployment *storage.Deployment, images []*storage.Image, processIndicator *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert
 	DetectKubeEventForDeployment(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) []*storage.Alert
 	DetectNetworkFlowForDeployment(deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) []*storage.Alert
+	DetectAuditLogEvents(auditEvent *sensor.AuditEvents) []*storage.Alert
 }
 
 // NewDetector returns a new detector.

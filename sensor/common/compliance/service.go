@@ -19,14 +19,16 @@ type Service interface {
 
 	RunScrape(msg *sensor.MsgToCompliance) int
 	Output() chan *compliance.ComplianceReturn
+	AuditEvents() chan *sensor.AuditEvents
 }
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
 // to the input channel.
-func NewService(orchestrator orchestrator.Orchestrator) Service {
+func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents) Service {
 	return &serviceImpl{
 		output:            make(chan *compliance.ComplianceReturn),
 		connectionManager: newConnectionManager(),
 		orchestrator:      orchestrator,
+		auditEvents:       auditEventsInput,
 	}
 }

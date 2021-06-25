@@ -8,7 +8,12 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type processMatcherImpl struct {
@@ -70,6 +75,20 @@ func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *sto
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructKubeResourceWithEvent(kubeResource, event)
+	}, nil, event, nil)
+	if err != nil || violations == nil {
+		return Violations{}, err
+	}
+	return *violations, nil
+}
+
+type auditLogEventMatcherImpl struct {
+	matcherImpl
+}
+
+func (m *auditLogEventMatcherImpl) MatchAuditLogEvent(cache *CacheReceptacle, event *storage.KubernetesEvent) (Violations, error) {
+	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructKubeEvent(event), nil
 	}, nil, event, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
@@ -213,7 +232,7 @@ func (m *matcherImpl) getViolations(
 	}
 	v := &Violations{}
 	var atLeastOneMatched bool
-	var processIndicatorMatched, kubeEventMatched, networkFlowMatched bool
+	var processIndicatorMatched, kubeOrAuditEventMatched, networkFlowMatched bool
 	for _, eval := range m.evaluators {
 		result, err := matchWithEvaluator(eval, obj)
 		if err != nil {
@@ -223,7 +242,7 @@ func (m *matcherImpl) getViolations(
 			continue
 		}
 
-		alertViolations, isProcessViolation, isKubeEventViolation, isNetworkFlowViolation, err :=
+		alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, err :=
 			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow)
 		if err != nil {
 			return nil, err
@@ -233,22 +252,22 @@ func (m *matcherImpl) getViolations(
 		}
 		if isProcessViolation {
 			processIndicatorMatched = true
-		} else if isKubeEventViolation {
-			kubeEventMatched = true
+		} else if isKubeOrAuditEventViolation {
+			kubeOrAuditEventMatched = true
 		} else if isNetworkFlowViolation {
 			networkFlowMatched = true
 		}
 
 		v.AlertViolations = append(v.AlertViolations, alertViolations...)
 	}
-	if !atLeastOneMatched && !processIndicatorMatched && !kubeEventMatched && !networkFlowMatched {
+	if !atLeastOneMatched && !processIndicatorMatched && !kubeOrAuditEventMatched && !networkFlowMatched {
 		return nil, nil
 	}
 
 	if processIndicatorMatched {
 		v.ProcessViolation = &storage.Alert_ProcessViolation{Processes: []*storage.ProcessIndicator{indicator}}
 		printer.UpdateProcessAlertViolationMessage(v.ProcessViolation)
-	} else if kubeEventMatched {
+	} else if kubeOrAuditEventMatched {
 		v.AlertViolations = append(v.AlertViolations, printer.GenerateKubeEventViolationMsg(kubeEvent))
 	} else if networkFlowMatched {
 		networkFlowViolationMsg, err := printer.GenerateNetworkFlowViolation(networkFlow)

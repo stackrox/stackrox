@@ -63,6 +63,11 @@ type KubeEventMatcher interface {
 	MatchKubeEvent(cache *CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (Violations, error)
 }
 
+// An AuditLogEventMatcher matches audit log event against a policy.
+type AuditLogEventMatcher interface {
+	MatchAuditLogEvent(cache *CacheReceptacle, kubeEvent *storage.KubernetesEvent) (Violations, error)
+}
+
 // A DeploymentWithNetworkFlowMatcher matches deployments, and a network flow against a policy.
 type DeploymentWithNetworkFlowMatcher interface {
 	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
@@ -113,6 +118,23 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 			evaluators: sectionsAndEvals,
 		},
 		kubeEventOnlyEvaluators: kubeEventOnlyEvaluators,
+	}, nil
+}
+
+// BuildAuditLogEventMatcher builds a AuditLogEventMatcher.
+func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (AuditLogEventMatcher, error) {
+	if !features.K8sAuditLogDetection.Enabled() {
+		return nil, errors.Errorf("please enable %q feature", features.K8sAuditLogDetection.EnvVar())
+	}
+
+	sectionsAndEvals, err := getSectionsAndEvals(&kubeEventFactory, p, storage.LifecycleStage_RUNTIME, options...)
+	if err != nil {
+		return nil, err
+	}
+	return &auditLogEventMatcherImpl{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+		},
 	}, nil
 }
 

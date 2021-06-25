@@ -80,3 +80,15 @@ func (c *CompiledScope) MatchesCluster(cluster string) bool {
 	}
 	return c.ClusterID == "" || c.ClusterID == cluster
 }
+
+// MatchesAuditEvent evaluates a compiled scope against a kubernetes event
+func (c *CompiledScope) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {
+	if c == nil {
+		return true
+	}
+	// TODO: Match on cluster name once we have it in sensor
+	if !c.Namespace.MatchWholeString(auditEvent.GetObject().GetNamespace()) {
+		return false
+	}
+	return true
+}

@@ -21,6 +21,16 @@ var (
 		fieldnames.KubeAPIVerb,
 	)
 
+	AuditLogEventsFields = set.NewFrozenStringSet(
+		fieldnames.KubeAPIVerb,
+		fieldnames.KubeResource,
+		fieldnames.KubeResourceName,
+		fieldnames.KubeUserName,
+		fieldnames.KubeUserGroups,
+		fieldnames.SourceIPAddress,
+		fieldnames.UserAgent,
+	)
+
 	NetworkFlowFields = set.NewFrozenStringSet(
 		fieldnames.UnexpectedNetworkFlowDetected,
 	)
