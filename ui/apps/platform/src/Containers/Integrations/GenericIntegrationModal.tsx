@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 
 import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import { ClusterInitBundle } from 'services/ClustersService';
+import { Integration } from 'Containers/Integrations/integrationUtils';
 import APITokensModal from './APITokens/APITokensModal';
 import ClusterInitBundlesModal from './ClusterInitBundles/ClusterInitBundlesModal';
 
@@ -10,47 +11,53 @@ type ApiTokenType = {
     role: string;
 };
 
-type GenericIntegrationModalType = {
-    apiTokens: ApiTokenType[];
-    clusterInitBundles: ClusterInitBundle[];
-    fetchEntitiesAndCloseModal: () => void;
-    findIntegrations: (source, type) => ApiTokenType[] | ClusterInitBundle[];
-    selectedTile: {
-        type: string;
-        source: string;
-        label: string;
-    };
+type GenericIntegrationModalProps = {
+    integrations: (Integration | ApiTokenType | ClusterInitBundle)[];
+    source: string;
+    type: string;
+    label: string;
+    onRequestClose: () => void;
+    selectedIntegration: Integration | Record<string, unknown> | null;
 };
 
 const GenericIntegrationModal = ({
-    apiTokens,
-    clusterInitBundles,
-    fetchEntitiesAndCloseModal,
-    findIntegrations,
-    selectedTile,
-}: GenericIntegrationModalType): ReactElement => {
-    const { source: selectedSource, type: selectedType, label: selectedLabel } = selectedTile;
-    if (selectedSource === 'authProviders' && selectedType === 'apitoken') {
-        return <APITokensModal tokens={apiTokens} onRequestClose={fetchEntitiesAndCloseModal} />;
-    }
-
-    if (selectedSource === 'authProviders' && selectedType === 'clusterInitBundle') {
+    integrations,
+    source,
+    type,
+    label,
+    onRequestClose,
+    selectedIntegration,
+}: GenericIntegrationModalProps): ReactElement => {
+    if (source === 'authProviders' && type === 'apitoken') {
+        const tokens = integrations as ApiTokenType[];
         return (
-            <ClusterInitBundlesModal
-                clusterInitBundles={clusterInitBundles}
-                onRequestClose={fetchEntitiesAndCloseModal}
+            <APITokensModal
+                tokens={tokens}
+                onRequestClose={onRequestClose}
+                selectedIntegration={selectedIntegration}
             />
         );
     }
 
-    const integrations = findIntegrations(selectedSource, selectedType);
+    if (source === 'authProviders' && type === 'clusterInitBundle') {
+        const clusterInitBundles = integrations as ClusterInitBundle[];
+        return (
+            <ClusterInitBundlesModal
+                clusterInitBundles={clusterInitBundles}
+                onRequestClose={onRequestClose}
+                selectedIntegration={selectedIntegration}
+            />
+        );
+    }
+
     return (
         <IntegrationModal
             integrations={integrations}
-            source={selectedSource}
-            type={selectedType}
-            label={selectedLabel}
-            onRequestClose={fetchEntitiesAndCloseModal}
+            source={source}
+            type={type}
+            label={label}
+            onRequestClose={onRequestClose}
+            selectedIntegration={selectedIntegration}
         />
     );
 };

@@ -7,17 +7,10 @@ import { createStructuredSelector } from 'reselect';
 import { actions } from 'reducers/apitokens';
 import { selectors } from 'reducers';
 
-import CheckboxTable from 'Components/CheckboxTable';
-import { rtTrActionsClassName } from 'Components/Table';
-import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import Modal from 'Components/Modal';
-import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
-import NoResultsMessage from 'Components/NoResultsMessage';
-import RowActionButton from 'Components/RowActionButton';
-import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 
 import APITokenForm from './APITokenForm';
 import APITokenDetails from './APITokenDetails';
@@ -31,7 +24,6 @@ class APITokensModal extends Component {
                 roles: PropTypes.arrayOf(PropTypes.string).isRequired,
             })
         ).isRequired,
-        tokenGenerationWizardOpen: PropTypes.bool.isRequired,
         onRequestClose: PropTypes.func.isRequired,
         startTokenGenerationWizard: PropTypes.func.isRequired,
         closeTokenGenerationWizard: PropTypes.func.isRequired,
@@ -42,11 +34,15 @@ class APITokensModal extends Component {
             name: PropTypes.string.isRequired,
             roles: PropTypes.arrayOf(PropTypes.string).isRequired,
         }),
+        selectedIntegration: PropTypes.shape({
+            id: PropTypes.string,
+        }),
     };
 
     static defaultProps = {
         currentGeneratedToken: '',
         currentGeneratedTokenMetadata: null,
+        selectedIntegration: null,
     };
 
     constructor(props) {
@@ -57,6 +53,13 @@ class APITokensModal extends Component {
             showConfirmationDialog: false,
             selection: [],
         };
+    }
+
+    componentDidMount() {
+        this.props.startTokenGenerationWizard();
+        if (this.props.selectedIntegration) {
+            this.setState({ selectedTokenId: this.props.selectedIntegration.id });
+        }
     }
 
     onRowClick = (row) => {
@@ -99,8 +102,6 @@ class APITokensModal extends Component {
         this.props.closeTokenGenerationWizard();
     };
 
-    clearSelection = () => this.setState({ selection: [] });
-
     showConfirmationDialog = () => {
         this.setState({ showConfirmationDialog: true });
     };
@@ -109,131 +110,11 @@ class APITokensModal extends Component {
         this.setState({ showConfirmationDialog: false });
     };
 
-    showModalView = () => {
-        if (!this.props.tokens || !this.props.tokens.length) {
-            return <NoResultsMessage message="No API Tokens Generated" />;
-        }
-
-        const columns = [
-            { accessor: 'name', Header: 'Name' },
-            { id: 'roles', accessor: (row) => row.roles.join(', '), Header: 'Roles' },
-            {
-                Header: '',
-                accessor: '',
-                headerClassName: 'hidden',
-                className: rtTrActionsClassName,
-                Cell: ({ original }) => this.renderRowActionButtons(original),
-            },
-        ];
-
-        return (
-            <CheckboxTable
-                ref={(table) => {
-                    this.apiTokenModalTable = table;
-                }}
-                rows={this.props.tokens}
-                columns={columns}
-                onRowClick={this.onRowClick}
-                toggleRow={this.toggleRow}
-                toggleSelectAll={this.toggleSelectAll}
-                selection={this.state.selection}
-                selectedRowId={this.state.selectedTokenId}
-                noDataText="No API Tokens Generated"
-                minRows={20}
-            />
-        );
-    };
-
-    toggleRow = (id) => {
-        const selection = toggleRow(id, this.state.selection);
-        this.updateSelection(selection);
-    };
-
-    toggleSelectAll = () => {
-        const rowsLength = this.props.tokens.length;
-        const tableRef = this.apiTokenModalTable.reactTable;
-        const selection = toggleSelectAll(rowsLength, this.state.selection, tableRef);
-        this.updateSelection(selection);
-    };
-
     showTokenGenerationDetails = () =>
         this.props.currentGeneratedToken && this.props.currentGeneratedTokenMetadata;
 
-    updateSelection = (selection) => this.setState({ selection });
-
-    renderRowActionButtons = (token) => (
-        <div className="border-2 border-r-2 border-base-400 bg-base-100">
-            <RowActionButton
-                text="Revoke token"
-                icon={<Icon.Trash2 className="my-1 h-4 w-4" />}
-                onClick={this.onRevokeHandler(token)}
-            />
-        </div>
-    );
-
-    renderPanelButtons = () => {
-        const selectionCount = this.state.selection.length;
-        return (
-            <>
-                {selectionCount !== 0 && (
-                    <PanelButton
-                        icon={<Icon.Slash className="h-4 w-4 ml-1" />}
-                        className="btn btn-alert mr-3"
-                        onClick={this.showConfirmationDialog}
-                        disabled={this.state.selectedTokenId !== null}
-                        tooltip={`Revoke (${selectionCount})`}
-                    >
-                        {`Revoke (${selectionCount})`}
-                    </PanelButton>
-                )}
-                {selectionCount === 0 && (
-                    <PanelButton
-                        icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                        className="btn btn-base mr-3"
-                        onClick={this.openForm}
-                        disabled={
-                            this.props.tokenGenerationWizardOpen ||
-                            this.state.selectedTokenId !== null
-                        }
-                        tooltip="Generate Token"
-                    >
-                        Generate Token
-                    </PanelButton>
-                )}
-            </>
-        );
-    };
-
-    renderHeader = () => (
-        <header className="flex items-center w-full p-4 bg-primary-500 text-base-100 uppercase">
-            <span className="flex flex-1">Configure API Tokens</span>
-            <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.closeModal} />
-        </header>
-    );
-
-    renderTable = () => {
-        const selectionCount = this.state.selection.length;
-        const tokenCount = this.props.tokens.length;
-        const headerText =
-            selectionCount !== 0
-                ? `${selectionCount} API Token${selectionCount === 1 ? '' : 's'} Selected`
-                : `${tokenCount} API Token${tokenCount === 1 ? '' : 's'}`;
-        return (
-            <PanelNew testid="panel">
-                <PanelHead>
-                    <PanelTitle isUpperCase testid="panel-header" text={headerText} />
-                    <PanelHeadEnd>{this.renderPanelButtons()}</PanelHeadEnd>
-                </PanelHead>
-                <PanelBody>{this.showModalView()}</PanelBody>
-            </PanelNew>
-        );
-    };
-
     renderForm = () => {
-        if (!this.props.tokenGenerationWizardOpen) {
-            return null;
-        }
-        if (this.showTokenGenerationDetails()) {
+        if (this.showTokenGenerationDetails() || this.state.selectedTokenId) {
             return null;
         }
 
@@ -249,23 +130,15 @@ class APITokensModal extends Component {
         );
 
         return (
-            <SidePanelAdjacentArea width="1/2">
-                <PanelNew testid="panel">
-                    <PanelHead>
-                        <PanelTitle isUpperCase testid="panel-header" text="Generate API Token" />
-                        <PanelHeadEnd>
-                            {buttons}
-                            <CloseButton
-                                onClose={this.closeForm}
-                                className="border-base-400 border-l"
-                            />
-                        </PanelHeadEnd>
-                    </PanelHead>
-                    <PanelBody>
-                        <APITokenForm />
-                    </PanelBody>
-                </PanelNew>
-            </SidePanelAdjacentArea>
+            <PanelNew testid="panel">
+                <PanelHead>
+                    <PanelTitle isUpperCase testid="panel-header" text="Generate API Token" />
+                    <PanelHeadEnd>{buttons}</PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>
+                    <APITokenForm />
+                </PanelBody>
+            </PanelNew>
         );
     };
 
@@ -273,25 +146,17 @@ class APITokensModal extends Component {
         if (this.showTokenGenerationDetails()) {
             const { currentGeneratedToken, currentGeneratedTokenMetadata } = this.props;
             return (
-                <SidePanelAdjacentArea width="1/2">
-                    <PanelNew testid="panel">
-                        <PanelHead>
-                            <PanelTitle isUpperCase testid="panel-header" text="Generated Token" />
-                            <PanelHeadEnd>
-                                <CloseButton
-                                    onClose={this.closeForm}
-                                    className="border-base-400 border-l"
-                                />
-                            </PanelHeadEnd>
-                        </PanelHead>
-                        <PanelBody>
-                            <APITokenDetails
-                                token={currentGeneratedToken}
-                                metadata={currentGeneratedTokenMetadata}
-                            />
-                        </PanelBody>
-                    </PanelNew>
-                </SidePanelAdjacentArea>
+                <PanelNew testid="panel">
+                    <PanelHead>
+                        <PanelTitle isUpperCase testid="panel-header" text="Generated Token" />
+                    </PanelHead>
+                    <PanelBody>
+                        <APITokenDetails
+                            token={currentGeneratedToken}
+                            metadata={currentGeneratedTokenMetadata}
+                        />
+                    </PanelBody>
+                </PanelNew>
             );
         }
         if (this.state.selectedTokenId) {
@@ -300,26 +165,14 @@ class APITokensModal extends Component {
             );
             if (selectedTokenMetadata) {
                 return (
-                    <SidePanelAdjacentArea width="1/2">
-                        <PanelNew testid="panel">
-                            <PanelHead>
-                                <PanelTitle
-                                    isUpperCase
-                                    testid="panel-header"
-                                    text="Token Details"
-                                />
-                                <PanelHeadEnd>
-                                    <CloseButton
-                                        onClose={this.unSelectRow}
-                                        className="border-base-400 border-l"
-                                    />
-                                </PanelHeadEnd>
-                            </PanelHead>
-                            <PanelBody>
-                                <APITokenDetails metadata={selectedTokenMetadata} />
-                            </PanelBody>
-                        </PanelNew>
-                    </SidePanelAdjacentArea>
+                    <PanelNew testid="panel">
+                        <PanelHead>
+                            <PanelTitle isUpperCase testid="panel-header" text="Token Details" />
+                        </PanelHead>
+                        <PanelBody>
+                            <APITokenDetails metadata={selectedTokenMetadata} />
+                        </PanelBody>
+                    </PanelNew>
                 );
             }
         }
@@ -329,14 +182,12 @@ class APITokensModal extends Component {
     render() {
         const { selection, showConfirmationDialog } = this.state;
         return (
-            <Modal
-                isOpen
-                onRequestClose={this.props.onRequestClose}
-                className="w-full lg:w-5/6 h-full"
-            >
-                {this.renderHeader()}
-                <div className="flex flex-1 relative w-full bg-base-100">
-                    {this.renderTable()}
+            <Modal isOpen onRequestClose={this.props.onRequestClose} className="max-w-184">
+                <header className="flex items-center p-4 bg-primary-500 text-base-100 uppercase">
+                    <span className="flex flex-1">Configure API Tokens</span>
+                    <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.closeModal} />
+                </header>
+                <div className="flex flex-1 relative bg-base-100">
                     {this.renderForm()}
                     {this.renderDetails()}
                 </div>

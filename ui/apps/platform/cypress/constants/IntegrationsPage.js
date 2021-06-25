@@ -54,6 +54,7 @@ export const selectors = {
         generate: 'button:contains("Generate"):not([disabled])',
         revoke: 'button:contains("Revoke")',
         closePanel: 'button[data-testid="cancel"]',
+        newIntegration: 'button:contains("New integration")',
     },
     apiTokenForm: {
         nameInput: 'form[data-testid="api-token-form"] input[name="name"]',

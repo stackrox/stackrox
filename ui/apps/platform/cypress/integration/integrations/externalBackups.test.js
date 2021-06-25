@@ -1,6 +1,7 @@
 import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import { editIntegration } from './integrationUtils';
 
 describe('External Backups Test', () => {
     withAuth();
@@ -21,7 +22,7 @@ describe('External Backups Test', () => {
 
     it('should show a hint about stored credentials for Amazon S3', () => {
         cy.get(selectors.amazonS3Tile).click();
-        cy.get(`${selectors.table.rows}:contains('Amazon S3 Test')`).click();
+        editIntegration('Amazon S3 Test');
         cy.get('div:contains("Access Key ID"):last [data-testid="help-icon"]').trigger(
             'mouseenter'
         );
@@ -38,7 +39,7 @@ describe('External Backups Test', () => {
 
     it('should show a hint about stored credentials for Google Cloud Storage', () => {
         cy.get(selectors.googleCloudStorageTile).click();
-        cy.get(`${selectors.table.rows}:contains('Google Cloud Storage Test')`).click();
+        editIntegration('Google Cloud Storage Test');
         cy.get('div:contains("Service Account JSON"):last [data-testid="help-icon"]').trigger(
             'mouseenter'
         );

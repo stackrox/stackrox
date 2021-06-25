@@ -7,12 +7,12 @@ import LoadingSection from 'Components/LoadingSection';
 import MainPage from 'Containers/MainPage';
 import LoginPage from 'Containers/Login/LoginPage';
 import TestLoginResultsPage from 'Containers/Login/TestLoginResultsPage';
-import PageTitle from 'Containers/PageTitle';
+import AppPageTitle from 'Containers/AppPageTitle';
 
 const AppPage = () => {
     return (
         <>
-            <PageTitle />
+            <AppPageTitle />
             <Switch>
                 <ProtectedRoute path={mainPath} component={MainPage} />
                 <Route path={loginPath} component={LoginPage} />

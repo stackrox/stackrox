@@ -9,10 +9,8 @@ import * as Icon from 'react-feather';
 import set from 'lodash/set';
 
 import { HelpIcon } from '@stackrox/ui-components';
-import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
-import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import ReduxRadioButtonGroupField from 'Components/forms/ReduxRadioButtonGroupField';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
@@ -32,7 +30,6 @@ class Form extends Component {
             id: PropTypes.string,
             name: PropTypes.string,
         }),
-        isNewIntegration: PropTypes.bool.isRequired,
         source: PropTypes.oneOf([
             'imageIntegrations',
             'notifiers',
@@ -46,7 +43,6 @@ class Form extends Component {
         formData: PropTypes.shape({
             name: PropTypes.string,
         }).isRequired,
-        onClose: PropTypes.func.isRequired,
         testIntegration: PropTypes.func.isRequired,
         saveIntegration: PropTypes.func.isRequired,
         triggerBackup: PropTypes.func.isRequired,
@@ -63,7 +59,8 @@ class Form extends Component {
     };
 
     onTest = () => {
-        const { source, type, isNewIntegration } = this.props;
+        const { source, type } = this.props;
+        const isNewIntegration = !this.isEditMode();
         const data = this.addDefaultFormValues();
         const options = setFormSubmissionOptions(source, type, data, { isNewIntegration });
         this.props.testIntegration(source, data, options);
@@ -74,7 +71,8 @@ class Form extends Component {
     };
 
     onSubmit = () => {
-        const { source, type, isNewIntegration } = this.props;
+        const { source, type } = this.props;
+        const isNewIntegration = !this.isEditMode();
         const data = this.addDefaultFormValues();
         const options = setFormSubmissionOptions(source, type, data, { isNewIntegration });
         const displayName = type === 'awsSecurityHub' ? 'AWS Security Hub' : '';
@@ -273,11 +271,12 @@ class Form extends Component {
 
     render() {
         const header = this.isEditMode() ? this.props.formData.name : 'New Integration';
+        const isNewIntegration = !this.isEditMode();
 
         const isValid = checkFormValidity(
             this.props.formFields,
             this.props.formData,
-            this.props.isNewIntegration
+            isNewIntegration
         );
 
         const buttons = (
@@ -317,21 +316,13 @@ class Form extends Component {
         );
 
         return (
-            <SidePanelAdjacentArea width="1/2">
-                <PanelNew testid="panel">
-                    <PanelHead>
-                        <PanelTitle isUpperCase testid="panel-header" text={header} />
-                        <PanelHeadEnd>
-                            {buttons}
-                            <CloseButton
-                                onClose={this.props.onClose}
-                                className="border-base-400 border-l"
-                            />
-                        </PanelHeadEnd>
-                    </PanelHead>
-                    <PanelBody>{this.renderForm()}</PanelBody>
-                </PanelNew>
-            </SidePanelAdjacentArea>
+            <PanelNew testid="panel">
+                <PanelHead>
+                    <PanelTitle isUpperCase testid="panel-header" text={header} />
+                    <PanelHeadEnd>{buttons}</PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>{this.renderForm()}</PanelBody>
+            </PanelNew>
         );
     }
 }

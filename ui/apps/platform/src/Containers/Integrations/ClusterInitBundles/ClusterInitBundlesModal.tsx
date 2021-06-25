@@ -1,28 +1,17 @@
-import React, { useState, useRef, MouseEvent, ReactElement } from 'react';
+import React, { useState, ReactElement, useEffect } from 'react';
 import { connect } from 'react-redux';
 import * as Icon from 'react-feather';
 import { createStructuredSelector } from 'reselect';
-import pluralize from 'pluralize';
-import { ClipLoader } from 'react-spinners';
 
 import { actions } from 'reducers/clusterInitBundles';
-import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 
-import CheckboxTable from 'Components/CheckboxTable';
-import { rtTrActionsClassName } from 'Components/Table';
-import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import Modal from 'Components/Modal';
-import CloseButton from 'Components/CloseButton';
-import CustomDialogue from 'Components/CustomDialogue';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
-import NoResultsMessage from 'Components/NoResultsMessage';
-import RowActionButton from 'Components/RowActionButton';
-import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
-import { ClusterInitBundle, fetchCAConfig } from 'services/ClustersService';
+import { ClusterInitBundle } from 'services/ClustersService';
 
-import FileSaver from 'file-saver';
+import { Integration } from 'Containers/Integrations/integrationUtils';
 import ClusterInitBundleForm from './ClusterInitBundleForm';
 import ClusterInitBundleDetails from './ClusterInitBundleDetails';
 
@@ -34,223 +23,40 @@ export type ClusterInitBundlesModalProps = {
     startClusterInitBundleGenerationWizard: () => void;
     closeClusterInitBundleGenerationWizard: () => void;
     generateClusterInitBundle: () => void;
-    revokeClusterInitBundles: (string) => void;
-    addToast: (message: string) => void;
-    removeToast: () => void;
     currentGeneratedClusterInitBundle?: ClusterInitBundle | null;
     currentGeneratedHelmValuesBundle?: ClusterInitBundle | null;
     currentGeneratedKubectlBundle?: ClusterInitBundle | null;
+    selectedIntegration: Integration | Record<string, unknown> | null;
 };
 
 function ClusterInitBundlesModal({
     authProviders = [],
     clusterInitBundles,
-    clusterInitBundleGenerationWizardOpen,
     onRequestClose,
-    startClusterInitBundleGenerationWizard,
     closeClusterInitBundleGenerationWizard,
     generateClusterInitBundle,
-    revokeClusterInitBundles,
-    addToast,
-    removeToast,
     currentGeneratedClusterInitBundle = null,
     currentGeneratedHelmValuesBundle = null,
     currentGeneratedKubectlBundle = null,
+    selectedIntegration = null,
 }: ClusterInitBundlesModalProps): ReactElement {
     const [selectedBundleId, setSelectedBundleId] = useState<string | null>(null);
-    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
-    const [selection, setSelection] = useState<string[]>([]);
-    const clusterInitBundleModalTable = useRef<CheckboxTable | null>(null);
-    const [downloadingCAConfig, setDownloadingCAConfig] = useState<boolean>(false);
 
-    function onRowClick(row) {
-        setSelectedBundleId(row.id);
-    }
+    useEffect(() => {
+        let id: string | null = null;
+        if (selectedIntegration) {
+            id = selectedIntegration?.id as string;
+        }
+        setSelectedBundleId(id);
+    }, [selectedIntegration]);
 
     function onSubmit() {
         generateClusterInitBundle();
     }
 
-    function onFetchCAConfig() {
-        setDownloadingCAConfig(true);
-        fetchCAConfig()
-            .then((response) => {
-                if (!response.helmValuesBundle) {
-                    throw Error('server returned no data');
-                }
-                const bytes = atob(response.helmValuesBundle);
-                const file = new Blob([bytes], {
-                    type: 'application/x-yaml',
-                });
-                FileSaver.saveAs(file, 'ca-config.yaml');
-            })
-            .catch((err: { message: string }) => {
-                addToast(`Problem downloading the CA config. Please try again. (${err.message})`);
-                setTimeout(removeToast, 5000);
-            })
-            .finally(() => {
-                setDownloadingCAConfig(false);
-            });
-    }
-
-    function revokeBundles({ id }) {
-        if (id) {
-            revokeClusterInitBundles([id]);
-        } else {
-            revokeClusterInitBundles(selection);
-            hideConfirmationDialog();
-            clearSelection();
-        }
-    }
-
-    function onRevokeHandler(clusterInitBundle) {
-        return (e: MouseEvent<HTMLButtonElement>) => {
-            e.stopPropagation();
-            const newSelection = [clusterInitBundle.id];
-            updateSelection(newSelection);
-            setShowConfirmationDialog(true);
-        };
-    }
-
-    function unSelectRow() {
-        setSelectedBundleId(null);
-    }
-
     function closeModal() {
         closeClusterInitBundleGenerationWizard();
         onRequestClose();
-    }
-
-    function openForm() {
-        startClusterInitBundleGenerationWizard();
-    }
-
-    function closeForm() {
-        closeClusterInitBundleGenerationWizard();
-    }
-
-    function clearSelection() {
-        setSelection([]);
-    }
-
-    function handleShowConfirmationDialog() {
-        setShowConfirmationDialog(true);
-    }
-
-    function hideConfirmationDialog() {
-        setSelection([]);
-        setShowConfirmationDialog(false);
-    }
-
-    function showModalView() {
-        if (!clusterInitBundles || !clusterInitBundles.length) {
-            return <NoResultsMessage message="No Cluster Init Bundles Generated" />;
-        }
-
-        const columns = [
-            { accessor: 'name', Header: 'Name' },
-            {
-                Header: '',
-                accessor: '',
-                headerClassName: 'hidden',
-                className: rtTrActionsClassName,
-                Cell: ({ original }) => renderRowActionButtons(original),
-            },
-        ];
-
-        return (
-            <CheckboxTable
-                ref={(table) => {
-                    clusterInitBundleModalTable.current = table;
-                }}
-                rows={clusterInitBundles}
-                columns={columns}
-                onRowClick={onRowClick}
-                toggleRow={handleToggleRow}
-                toggleSelectAll={handleToggleSelectAll}
-                selection={selection}
-                selectedRowId={selectedBundleId}
-                noDataText="No Cluster Init Bundles Generated"
-                minRows={20}
-            />
-        );
-    }
-
-    function handleToggleRow(id) {
-        const newSelection = toggleRow(id, selection);
-        updateSelection(newSelection);
-    }
-
-    function handleToggleSelectAll() {
-        const rowsLength = clusterInitBundles.length;
-        const tableRef = clusterInitBundleModalTable;
-        const newSelection = toggleSelectAll(rowsLength, selection, tableRef?.current?.reactTable);
-        updateSelection(newSelection);
-    }
-
-    function updateSelection(newSelection) {
-        setSelection(newSelection);
-    }
-
-    function renderRowActionButtons(clusterInitBundle) {
-        return (
-            <div className="border-2 border-r-2 border-base-400 bg-base-100">
-                <RowActionButton
-                    text="Revoke Cluster Init Bundle"
-                    icon={<Icon.Trash2 className="my-1 h-4 w-4" />}
-                    onClick={onRevokeHandler(clusterInitBundle)}
-                />
-            </div>
-        );
-    }
-
-    function renderPanelButtons() {
-        const selectionCount = selection.length;
-        return (
-            <>
-                {selectionCount !== 0 && (
-                    <PanelButton
-                        icon={<Icon.Slash className="h-4 w-4 ml-1" />}
-                        className="btn btn-alert mr-3"
-                        onClick={handleShowConfirmationDialog}
-                        disabled={selectedBundleId !== null}
-                        tooltip={`Revoke (${selectionCount})`}
-                    >
-                        {`Revoke (${selectionCount})`}
-                    </PanelButton>
-                )}
-                {selectionCount === 0 && (
-                    <>
-                        <PanelButton
-                            icon={
-                                downloadingCAConfig ? (
-                                    <ClipLoader loading size={14} />
-                                ) : (
-                                    <Icon.Save className="h-4 w-4" />
-                                )
-                            }
-                            className="btn-icon btn-tertiary mr-2"
-                            onClick={onFetchCAConfig}
-                            disabled={downloadingCAConfig}
-                            tooltip="Download CA Config (use with pre-created secrets)"
-                        >
-                            Get CA config
-                        </PanelButton>
-                        <PanelButton
-                            icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                            className="btn btn-base mr-3"
-                            onClick={openForm}
-                            disabled={
-                                clusterInitBundleGenerationWizardOpen || selectedBundleId !== null
-                            }
-                            tooltip="Generate Cluster Init Bundle"
-                        >
-                            Generate Bundle
-                        </PanelButton>
-                    </>
-                )}
-            </>
-        );
     }
 
     function renderHeader() {
@@ -262,32 +68,8 @@ function ClusterInitBundlesModal({
         );
     }
 
-    function renderTable() {
-        const selectionCount = selection.length;
-        const clusterInitBundleCount = clusterInitBundles.length;
-        const headerText =
-            selectionCount !== 0
-                ? `${selectionCount} cluster init ${pluralize('bundle', selectionCount)} Selected`
-                : `${clusterInitBundleCount} cluster init ${pluralize(
-                      'bundle',
-                      clusterInitBundleCount
-                  )}`;
-        return (
-            <PanelNew testid="panel">
-                <PanelHead>
-                    <PanelTitle isUpperCase testid="panel-header" text={headerText} />
-                    <PanelHeadEnd>{renderPanelButtons()}</PanelHeadEnd>
-                </PanelHead>
-                <PanelBody>{showModalView()}</PanelBody>
-            </PanelNew>
-        );
-    }
-
     function renderForm() {
-        if (!clusterInitBundleGenerationWizardOpen) {
-            return null;
-        }
-        if (currentGeneratedClusterInitBundle) {
+        if (selectedBundleId) {
             return null;
         }
 
@@ -303,55 +85,35 @@ function ClusterInitBundlesModal({
         );
 
         return (
-            <SidePanelAdjacentArea width="1/2">
-                <PanelNew testid="panel">
-                    <PanelHead>
-                        <PanelTitle
-                            isUpperCase
-                            testid="panel-header"
-                            text="Generate Cluster Init Bundle"
-                        />
-                        <PanelHeadEnd>
-                            {buttons}
-                            <CloseButton onClose={closeForm} className="border-base-400 border-l" />
-                        </PanelHeadEnd>
-                    </PanelHead>
-                    <PanelBody>
-                        <ClusterInitBundleForm />
-                    </PanelBody>
-                </PanelNew>
-            </SidePanelAdjacentArea>
+            <PanelNew testid="panel">
+                <PanelHead>
+                    <PanelTitle
+                        isUpperCase
+                        testid="panel-header"
+                        text="Generate Cluster Init Bundle"
+                    />
+                    <PanelHeadEnd>{buttons}</PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>
+                    <ClusterInitBundleForm />
+                </PanelBody>
+            </PanelNew>
         );
     }
 
     function renderDetails() {
         if (currentGeneratedClusterInitBundle) {
             return (
-                <SidePanelAdjacentArea width="1/2">
-                    <PanelNew testid="panel">
-                        <PanelHead>
-                            <PanelTitle
-                                isUpperCase
-                                testid="panel-header"
-                                text="Generated Cluster Init Bundle"
-                            />
-                            <PanelHeadEnd>
-                                <CloseButton
-                                    onClose={closeForm}
-                                    className="border-base-400 border-l"
-                                />
-                            </PanelHeadEnd>
-                        </PanelHead>
-                        <PanelBody>
-                            <ClusterInitBundleDetails
-                                authProviders={authProviders}
-                                clusterInitBundle={currentGeneratedClusterInitBundle}
-                                helmValuesBundle={currentGeneratedHelmValuesBundle}
-                                kubectlBundle={currentGeneratedKubectlBundle}
-                            />
-                        </PanelBody>
-                    </PanelNew>
-                </SidePanelAdjacentArea>
+                <PanelNew testid="panel">
+                    <PanelBody>
+                        <ClusterInitBundleDetails
+                            authProviders={authProviders}
+                            clusterInitBundle={currentGeneratedClusterInitBundle}
+                            helmValuesBundle={currentGeneratedHelmValuesBundle}
+                            kubectlBundle={currentGeneratedKubectlBundle}
+                        />
+                    </PanelBody>
+                </PanelNew>
             );
         }
         if (selectedBundleId) {
@@ -360,31 +122,16 @@ function ClusterInitBundlesModal({
             );
             if (selectedBundleMetadata) {
                 return (
-                    <SidePanelAdjacentArea width="1/2">
-                        <PanelNew testid="panel">
-                            <PanelHead>
-                                <PanelTitle
-                                    isUpperCase
-                                    testid="panel-header"
-                                    text="Cluster Init Bundle Details"
-                                />
-                                <PanelHeadEnd>
-                                    <CloseButton
-                                        onClose={unSelectRow}
-                                        className="border-base-400 border-l"
-                                    />
-                                </PanelHeadEnd>
-                            </PanelHead>
-                            <PanelBody>
-                                <ClusterInitBundleDetails
-                                    authProviders={authProviders}
-                                    clusterInitBundle={selectedBundleMetadata}
-                                    helmValuesBundle={currentGeneratedHelmValuesBundle}
-                                    kubectlBundle={currentGeneratedKubectlBundle}
-                                />
-                            </PanelBody>
-                        </PanelNew>
-                    </SidePanelAdjacentArea>
+                    <PanelNew testid="panel">
+                        <PanelBody>
+                            <ClusterInitBundleDetails
+                                authProviders={authProviders}
+                                clusterInitBundle={selectedBundleMetadata}
+                                helmValuesBundle={currentGeneratedHelmValuesBundle}
+                                kubectlBundle={currentGeneratedKubectlBundle}
+                            />
+                        </PanelBody>
+                    </PanelNew>
                 );
             }
         }
@@ -392,33 +139,12 @@ function ClusterInitBundlesModal({
     }
 
     return (
-        <Modal isOpen onRequestClose={onRequestClose} className="w-full lg:w-5/6 h-full">
+        <Modal isOpen onRequestClose={onRequestClose} className="">
             {renderHeader()}
             <div className="flex flex-1 relative w-full bg-base-100">
-                {renderTable()}
                 {renderForm()}
                 {renderDetails()}
             </div>
-            {showConfirmationDialog && (
-                <CustomDialogue
-                    className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2"
-                    title={`Confirm revoking ${pluralize('bundle', selection.length)}?`}
-                    onConfirm={revokeBundles}
-                    confirmText="Revoke"
-                    onCancel={hideConfirmationDialog}
-                    confirmStyle="alert"
-                >
-                    <div className="overflow-auto p-4">
-                        <p className="mb-2">{`Are you sure you want to revoke ${
-                            selection.length
-                        } cluster init ${pluralize('bundle', selection.length)}?`}</p>
-                        <p>
-                            <strong>Note:</strong> Revoking a cluster init bundle will cause the
-                            StackRox services installed with it in clusters to lose connectivity.
-                        </p>
-                    </div>
-                </CustomDialogue>
-            )}
         </Modal>
     );
 }
@@ -435,9 +161,6 @@ const mapDispatchToProps = {
     startClusterInitBundleGenerationWizard: actions.startClusterInitBundleGenerationWizard,
     closeClusterInitBundleGenerationWizard: actions.closeClusterInitBundleGenerationWizard,
     generateClusterInitBundle: actions.generateClusterInitBundle.request as () => void,
-    revokeClusterInitBundles: actions.revokeClusterInitBundles,
-    addToast: notificationActions.addNotification,
-    removeToast: notificationActions.removeOldestNotification,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(ClusterInitBundlesModal);

@@ -18,6 +18,7 @@ export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const integrationsPath = `${mainPath}/integrations`;
+export const integrationsListPath = `${integrationsPath}/:source/:type`;
 export const policiesBasePath = `${mainPath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;

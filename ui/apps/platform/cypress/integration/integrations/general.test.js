@@ -25,13 +25,6 @@ describe('Integrations page', () => {
         });
     });
 
-    it('should allow integration with Slack', () => {
-        cy.get('div.ReactModalPortal').should('not.exist');
-
-        cy.get(selectors.slackTile).click();
-        cy.get('div.ReactModalPortal');
-    });
-
     it.skip('should test, create, update, and delete an integration with Slack', () => {
         cy.get(selectors.slackTile).click();
         cy.get(selectors.buttons.delete).should('not.exist');
@@ -126,16 +119,14 @@ describe('API Token Creation Flow', () => {
         cy.get(selectors.navLink).click({ force: true });
     });
 
-    it('should pop up API Token Modal', () => {
-        cy.get('div.ReactModalPortal').should('not.exist');
-
+    it('should show table for API Tokens', () => {
         cy.get(selectors.apiTokenTile).click();
-        cy.get('div.ReactModalPortal');
+        cy.get('.pf-c-breadcrumb').contains('apitoken');
     });
 
     it('should be able to generate an API token', () => {
         cy.get(selectors.apiTokenTile).click();
-        cy.get(selectors.buttons.generate).click();
+        cy.get(selectors.buttons.newIntegration).click();
         cy.get(selectors.apiTokenForm.nameInput).type(randomTokenName);
         cy.get(`${selectors.apiTokenForm.roleSelect} .react-select__dropdown-indicator`).click();
         cy.get('.react-select__menu-list > div:contains("Admin")').click();
@@ -147,16 +138,16 @@ describe('API Token Creation Flow', () => {
 
     it('should show the generated API token in the table, and be clickable', () => {
         cy.get(selectors.apiTokenTile).click();
-        cy.get(`.rt-tr:contains("${randomTokenName}")`).click();
+        cy.get(`td:contains("${randomTokenName}") button`).click();
         cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
         cy.get(selectors.apiTokenDetailsDiv).contains('Roles:Admin');
     });
 
     it('should be able to revoke the API token', () => {
         cy.get(selectors.apiTokenTile).click();
-        cy.get(`.rt-tr:contains("${randomTokenName}") input`).check();
-        cy.get(selectors.buttons.revoke).click({ force: true });
+        cy.get(`tr:contains("${randomTokenName}") input`).check();
+        cy.get(selectors.buttons.delete).click({ force: true });
         cy.get(selectors.buttons.confirm).click();
-        cy.get(`.rt-td:contains("${randomTokenName}")`).should('not.exist');
+        cy.get(`td:contains("${randomTokenName}")`).should('not.exist');
     });
 });

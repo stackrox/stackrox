@@ -1,6 +1,7 @@
 import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import { editIntegration } from './integrationUtils';
 
 describe('Notifiers Test', () => {
     withAuth();
@@ -19,7 +20,7 @@ describe('Notifiers Test', () => {
 
     it('should show a hint about stored credentials for Google Cloud SCC', () => {
         cy.get(selectors.googleCloudSCCTile).click();
-        cy.get(`${selectors.table.rows}:contains('Google Cloud SCC Test')`).click();
+        editIntegration('Google Cloud SCC Test');
         cy.get('div:contains("Service Account Key"):last [data-testid="help-icon"]').trigger(
             'mouseenter'
         );
@@ -30,7 +31,7 @@ describe('Notifiers Test', () => {
 
     it('should show a hint about stored credentials for Jira', () => {
         cy.get(selectors.jiraTile).click();
-        cy.get(`${selectors.table.rows}:contains('Jira Test')`).click();
+        editIntegration('Jira Test');
         cy.get('div:contains("Password or API Token"):last [data-testid="help-icon"]').trigger(
             'mouseenter'
         );
@@ -41,7 +42,7 @@ describe('Notifiers Test', () => {
 
     it('should show a hint about stored credentials for Email', () => {
         cy.get(selectors.emailTile).click();
-        cy.get(`${selectors.table.rows}:contains('Email Test')`).click();
+        editIntegration('Email Test');
         cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
@@ -50,7 +51,7 @@ describe('Notifiers Test', () => {
 
     it('should show a hint about stored credentials for Splunk', () => {
         cy.get(selectors.splunkTile).click();
-        cy.get(`${selectors.table.rows}:contains('Splunk Test')`).click();
+        editIntegration('Splunk Test');
         cy.get('div:contains("HTTP Event Collector Token"):last [data-testid="help-icon"]').trigger(
             'mouseenter'
         );
@@ -61,7 +62,7 @@ describe('Notifiers Test', () => {
 
     it('should show a hint about stored credentials for PagerDuty', () => {
         cy.get(selectors.pagerDutyTile).click();
-        cy.get(`${selectors.table.rows}:contains('PagerDuty Test')`).click();
+        editIntegration('PagerDuty Test');
         cy.get('div:contains("PagerDuty Integration Key"):last [data-testid="help-icon"]').trigger(
             'mouseenter'
         );
@@ -72,7 +73,7 @@ describe('Notifiers Test', () => {
 
     it('should show a hint about stored credentials for Generic Webhook', () => {
         cy.get(selectors.genericWebhookTile).click();
-        cy.get(`${selectors.table.rows}:contains('Generic Webhook Test')`).click();
+        editIntegration('Generic Webhook Test');
         cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
@@ -82,18 +83,13 @@ describe('Notifiers Test', () => {
     describe('AWS Security Hub notifier', () => {
         it('should show the AWS Security Hub notifier', () => {
             cy.get(selectors.awsSecurityHubTile).click();
-            cy.get(
-                `${selectors.modalHeader}:contains('Configure AWS Security Hub notifier integrations')`
-            );
-            cy.get(`${selectors.resultsSection}:contains('No AWS Security Hub integrations')`);
+            cy.get('.pf-c-breadcrumb').contains('awsSecurityHub');
         });
 
         it('should disable the save button if all the required fields are not filled out', () => {
             cy.get(selectors.awsSecurityHubTile).click();
 
-            cy.get(`${selectors.resultsSection}:contains('No AWS Security Hub integrations')`);
-
-            cy.get(selectors.buttons.new).click();
+            cy.get(selectors.buttons.newIntegration).click();
             cy.get(selectors.buttons.create).should('be.disabled'); // starts out disabled
 
             cy.get(selectors.awsSecurityHubForm.nameInput).type('Test AWS Sec Hub integration');
@@ -106,16 +102,12 @@ describe('Notifiers Test', () => {
             // not filling out the last field, Secret Acccess Key
 
             cy.get(selectors.buttons.create).should('be.disabled'); // still disabled
-
-            cy.get(selectors.buttons.closePanel).click();
         });
 
-        it('should allow you to configure a new AWS Security Hub integration when none exists', () => {
+        it('should allow you to configure a new AWS Security Hub integration', () => {
             cy.get(selectors.awsSecurityHubTile).click();
 
-            cy.get(`${selectors.resultsSection}:contains('No AWS Security Hub integrations')`);
-
-            cy.get(selectors.buttons.new).click();
+            cy.get(selectors.buttons.newIntegration).click();
 
             cy.get(selectors.awsSecurityHubForm.nameInput).type('Test AWS Sec Hub integration');
             cy.get(selectors.awsSecurityHubForm.awsAccountNumber).type('939357552774');
@@ -137,8 +129,7 @@ describe('Notifiers Test', () => {
     describe('Syslog notifier', () => {
         it('should show the Syslog notifier', () => {
             cy.get(selectors.syslogTile).click();
-            cy.get(`${selectors.modalHeader}:contains('Configure Syslog notifier integrations')`);
-            cy.get(`${selectors.resultsSection}:contains('No Syslog integrations')`);
+            cy.get('.pf-c-breadcrumb').contains('syslog');
         });
 
         it('should disable the save button if all the required fields are not filled out', () => {
@@ -154,8 +145,6 @@ describe('Notifiers Test', () => {
             // not filling out the last required field, Receiver Port
 
             cy.get(selectors.buttons.create).should('be.disabled'); // still disabled
-
-            cy.get(selectors.buttons.closePanel).click();
         });
 
         it('should allow you to configure a new Syslog integration when none exists', () => {

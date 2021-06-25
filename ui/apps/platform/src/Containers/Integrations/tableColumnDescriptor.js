@@ -24,6 +24,11 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             { accessor: 'config.audience', Header: 'Audience' },
         ],
+        clusterInitBundle: [{ accessor: 'name', Header: 'Name' }],
+        apitoken: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'role', Header: 'Role' },
+        ],
     },
     notifiers: {
         awsSecurityHub: [

@@ -1,6 +1,7 @@
 import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import { editIntegration } from './integrationUtils';
 
 describe('Auth Plugins Test', () => {
     withAuth();
@@ -19,7 +20,7 @@ describe('Auth Plugins Test', () => {
 
     it('should show a hint about stored credentials for Scoped Access Plugin', () => {
         cy.get(selectors.scopedAccessPluginTile).click();
-        cy.get(`${selectors.table.rows}:contains('Scoped Access Plugin Test')`).click();
+        editIntegration('Scoped Access Plugin Test');
         cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
