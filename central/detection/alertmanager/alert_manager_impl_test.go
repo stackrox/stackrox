@@ -2,6 +2,7 @@ package alertmanager
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -10,11 +11,15 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	"github.com/stackrox/rox/central/detection"
+	runtimeDetectorMocks "github.com/stackrox/rox/central/detection/runtime/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
+	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
@@ -81,6 +86,22 @@ func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert
 	}
 }
 
+func getFakeResourceRuntimeAlert(resourceType storage.Alert_Resource_ResourceType, resourceName, clusterID, namespaceID, namespace string) *storage.Alert {
+	return &storage.Alert{
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity: &storage.Alert_Resource_{
+			Resource: &storage.Alert_Resource{
+				ResourceType: resourceType,
+				Name:         resourceName,
+				ClusterId:    clusterID,
+				ClusterName:  "prod cluster",
+				Namespace:    namespace,
+				NamespaceId:  namespaceID,
+			},
+		},
+	}
+}
+
 func appendViolations(alert *storage.Alert, violations ...*storage.Alert_Violation) *storage.Alert {
 	alert.Violations = append(alert.Violations, violations...)
 	return alert
@@ -93,8 +114,10 @@ func TestAlertManager(t *testing.T) {
 type AlertManagerTestSuite struct {
 	suite.Suite
 
-	alertsMock   *alertMocks.MockDataStore
-	notifierMock *notifierMocks.MockProcessor
+	alertsMock          *alertMocks.MockDataStore
+	notifierMock        *notifierMocks.MockProcessor
+	runtimeDetectorMock *runtimeDetectorMocks.MockDetector
+	policySet           detection.PolicySet
 
 	alertManager AlertManager
 
@@ -109,8 +132,10 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.alertsMock = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
+	suite.runtimeDetectorMock = runtimeDetectorMocks.NewMockDetector(suite.mockCtrl)
+	suite.policySet = detection.NewPolicySet(policyMocks.NewMockDataStore(suite.mockCtrl))
 
-	suite.alertManager = New(suite.notifierMock, suite.alertsMock, nil)
+	suite.alertManager = New(suite.notifierMock, suite.alertsMock, suite.runtimeDetectorMock)
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 }
 
@@ -196,6 +221,16 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 	suite.NoError(err, "update should succeed")
 }
 
+func (suite *AlertManagerTestSuite) TestGetAlertsByClusterAndNotResourceType() {
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
+		testutils.PredMatcher("query for violation state, cluster id and resource type", queryHasFields(search.ViolationState, search.ClusterID, search.ResourceType)),
+	).Return(([]*storage.Alert)(nil), nil)
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithClusterID("cid"), WithoutResourceType(storage.ListAlert_DEPLOYMENT))
+	suite.False(modified.Cardinality() > 0)
+	suite.NoError(err, "update should succeed")
+}
+
 func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 	alerts := getAlerts()
 
@@ -238,6 +273,167 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts)
 	suite.True(modified.Cardinality() > 0)
+	suite.NoError(err, "update should succeed")
+}
+
+func (suite *AlertManagerTestSuite) TestNewResourceAlertIsAdded() {
+	// Required because the test policies are covered under this feature
+	suite.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		suite.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+
+	alerts := getResourceAlerts()
+	newAlert := fixtures.GetResourceAlert()
+
+	// Only the new alert will be updated.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, newAlert).Return(nil)
+
+	// We should get a notification for the new alert.
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+
+	// Add all the policies from the old alerts so that they aren't marked as stale
+	for _, a := range alerts {
+		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+	}
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
+	suite.NoError(err, "update should succeed")
+}
+
+func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
+	// Required because the test policies are covered under this feature
+	suite.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		suite.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+
+	alerts := getResourceAlerts()
+	newAlert := alerts[0].Clone()
+	newAlert.Violations[0].Message = "new-violation"
+	newAlert.Tags = []string{"x", "y", "z"}
+
+	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
+	expectedMergedAlert.Tags = []string{"a", "b"}
+
+	// Only the merged alert will be updated.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+
+	// Updated alerts don't notify
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+
+	// Add all the policies from the old alerts so that they aren't marked as stale
+	for _, a := range alerts {
+		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+	}
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
+	suite.NoError(err, "update should succeed")
+}
+
+func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfMoreThanMax() {
+	// Required because the test policies are covered under this feature
+	suite.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		suite.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+
+	alerts := getResourceAlerts()
+	newAlert := alerts[0].Clone()
+	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
+	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
+	}
+
+	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
+	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
+	expectedMergedAlert.Tags = []string{"a", "b"}
+
+	// Only the merged alert will be updated.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+
+	// Updated alerts don't notify
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+
+	// Add all the policies from the old alerts so that they aren't marked as stale
+	for _, a := range alerts {
+		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+	}
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
+	suite.NoError(err, "update should succeed")
+}
+
+func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolations() {
+	// Required because the test policies are covered under this feature
+	suite.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		suite.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+
+	alerts := getResourceAlerts()
+	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
+	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
+	}
+	newAlert := alerts[0].Clone()
+	newAlert.Violations[0].Message = "new-violation"
+
+	expectedMergedAlert := newAlert.Clone()
+
+	// Only the merged alert will be updated.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, expectedMergedAlert).Return(nil)
+
+	// Updated alerts don't notify
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+
+	// Add all the policies from the old alerts so that they aren't marked as stale
+	for _, a := range alerts {
+		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+	}
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
+	suite.NoError(err, "update should succeed")
+}
+
+func (suite *AlertManagerTestSuite) TestOldResourceAlertAreMarkedAsStaleWhenPolicyIsRemoved() {
+	alerts := getResourceAlerts()
+	newAlert := fixtures.GetResourceAlert()
+
+	// Only the new alert will be updated.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, newAlert).Return(nil)
+
+	// We should get a notifications for new alert
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
+
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any()).Return(alerts, nil)
+
+	// Don't add any policies to simulate policies being deleted
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	// Verify that the other alerts get marked as stale and that the notifier sends a notification for them
+	for _, a := range alerts {
+		suite.alertsMock.EXPECT().MarkAlertStale(suite.ctx, a.GetId()).Return(nil)
+		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), a).Return()
+	}
+
+	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
+	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
 	suite.NoError(err, "update should succeed")
 }
 
@@ -295,6 +491,23 @@ func TestMergeRunTimeAlerts(t *testing.T) {
 		expectedNew    *storage.Alert
 		expectedOutput bool
 	}{
+		{
+			desc: "dfdf",
+			old: appendViolations(
+				getFakeResourceRuntimeAlert(storage.Alert_Resource_SECRETS, "rn", "cid", "nid", "nn"),
+				firstKubeEventViolation,
+			),
+			new: appendViolations(
+				getFakeResourceRuntimeAlert(storage.Alert_Resource_SECRETS, "rn", "cid", "nid", "nn"),
+				secondKubeEventViolation,
+			),
+			expectedNew: appendViolations(
+				getFakeResourceRuntimeAlert(storage.Alert_Resource_SECRETS, "rn", "cid", "nid", "nn"),
+				secondKubeEventViolation,
+				firstKubeEventViolation,
+			),
+			expectedOutput: true,
+		},
 		{
 			desc:           "No process; no event",
 			old:            getFakeRuntimeAlert(),
@@ -382,6 +595,133 @@ func TestMergeRunTimeAlerts(t *testing.T) {
 			if c.expectedNew != nil {
 				assert.Equal(t, c.expectedNew, c.new)
 			}
+		})
+	}
+}
+
+func TestFindAlert(t *testing.T) {
+	resourceAlerts := []*storage.Alert{getResourceAlerts()[0], fixtures.GetResourceAlert()}
+
+	snoozedAlert := getAlerts()[0].Clone()
+	snoozedAlert.State = storage.ViolationState_SNOOZED
+	snoozedResourceAlert := getResourceAlerts()[0].Clone()
+	snoozedResourceAlert.State = storage.ViolationState_SNOOZED
+
+	resourceAlertWithAltPolicy := getResourceAlerts()[0].Clone()
+	resourceAlertWithAltPolicy.Policy = getPolicies()[0].Clone()
+
+	resourceAlertWithAltPolicyAndResource := getResourceAlerts()[1].Clone()
+	resourceAlertWithAltPolicyAndResource.Policy = getPolicies()[0].Clone()
+
+	for _, c := range []struct {
+		desc     string
+		toFind   *storage.Alert
+		alerts   []*storage.Alert
+		expected *storage.Alert
+	}{
+		// ------ Deployment alerts
+		{
+			desc:     "Same policy, same deploy, Same state, Alert found",
+			toFind:   getAlerts()[0],
+			alerts:   getAlerts(),
+			expected: getAlerts()[0],
+		},
+		{
+			desc:     "Same policy, same deploy, Diff state, No alert found",
+			toFind:   snoozedAlert,
+			alerts:   getAlerts(),
+			expected: nil,
+		},
+		{
+			desc:     "Diff policy, Diff deploy, Same state, No alert found",
+			toFind:   fixtures.GetAlert(),
+			alerts:   getAlerts(),
+			expected: nil,
+		},
+		// ------ Resource alerts
+		{
+			desc:     "Same policy, Same resource, Same state, Alert found",
+			toFind:   getResourceAlerts()[0],
+			alerts:   resourceAlerts,
+			expected: getResourceAlerts()[0],
+		},
+		{
+			desc:     "Same policy, Same resource, Diff state, No alert found",
+			toFind:   snoozedResourceAlert,
+			alerts:   resourceAlerts,
+			expected: nil,
+		},
+		{
+			desc:     "Diff policy, Same resource, Same state, No alert found",
+			toFind:   resourceAlertWithAltPolicy,
+			alerts:   resourceAlerts,
+			expected: nil,
+		},
+		{
+			desc:     "Diff policy, Diff resource, Same state, No alert found",
+			toFind:   resourceAlertWithAltPolicyAndResource,
+			alerts:   resourceAlerts,
+			expected: nil,
+		},
+		{
+			desc:     "Same policy, Diff resource (resource type), Same state, No alert found",
+			toFind:   getResourceAlerts()[1],
+			alerts:   resourceAlerts,
+			expected: nil,
+		},
+		{
+			desc:     "Same policy, Diff resource (resource name), Same state, No alert found",
+			toFind:   getResourceAlerts()[2],
+			alerts:   resourceAlerts,
+			expected: nil,
+		},
+		{
+			desc:     "Same policy, Diff resource (cluster), Same state, No alert found",
+			toFind:   getResourceAlerts()[3],
+			alerts:   resourceAlerts,
+			expected: nil,
+		},
+		{
+			desc:     "Same policy, Diff resource (namespace), Same state, No alert found",
+			toFind:   getResourceAlerts()[4],
+			alerts:   resourceAlerts,
+			expected: nil,
+		},
+		// ------ Mixed case
+		{
+			desc:     "Deployment alert in a list of mixed alerts, Alert found",
+			toFind:   getAlerts()[0],
+			alerts:   append(getAlerts(), getResourceAlerts()...),
+			expected: getAlerts()[0],
+		},
+		{
+			desc:     "Resource alert in a list of mixed alerts, Alert found",
+			toFind:   getResourceAlerts()[0],
+			alerts:   append(getAlerts(), getResourceAlerts()...),
+			expected: getResourceAlerts()[0],
+		},
+		{
+			desc:     "Deployment alert in a list of resource alerts, No alert found",
+			toFind:   getAlerts()[0],
+			alerts:   getResourceAlerts(),
+			expected: nil,
+		},
+		{
+			desc:     "Resource alert in a list of deployment alerts, No alert found",
+			toFind:   getResourceAlerts()[0],
+			alerts:   getAlerts(),
+			expected: nil,
+		},
+		{
+			desc:     "Resource alert in a list of mixed alerts that share same policy, No alert found",
+			toFind:   resourceAlertWithAltPolicy,
+			alerts:   append(getAlerts(), resourceAlertWithAltPolicy),
+			expected: resourceAlertWithAltPolicy,
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			found := findAlert(c.toFind, c.alerts)
+			assert.Equal(t, c.expected, found)
 		})
 	}
 }
@@ -494,6 +834,104 @@ func getPolicies() []*storage.Policy {
 					Tag: "latest3",
 				},
 			},
+		},
+	}
+}
+
+// Each alert is for a different resource where each resource after the 0th one is different in one property:
+// type, name, cluster & namespace in that order. Everything else is the same
+func getResourceAlerts() []*storage.Alert {
+	return []*storage.Alert{
+		{
+			Id:             "alert1",
+			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
+			Entity:         &storage.Alert_Resource_{Resource: getResources()[0]},
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Time:           &ptypes.Timestamp{Seconds: 100},
+			Tags:           []string{"a", "b"},
+			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-1", Type: storage.Alert_Violation_K8S_EVENT}},
+		},
+		{
+			Id:             "alert2",
+			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
+			Entity:         &storage.Alert_Resource_{Resource: getResources()[1]},
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Time:           &ptypes.Timestamp{Seconds: 200},
+			Tags:           []string{"a", "b"},
+			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-2", Type: storage.Alert_Violation_K8S_EVENT}},
+		},
+		{
+			Id:             "alert3",
+			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
+			Entity:         &storage.Alert_Resource_{Resource: getResources()[2]},
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Time:           &ptypes.Timestamp{Seconds: 300},
+			Tags:           []string{"a", "b"},
+			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-3", Type: storage.Alert_Violation_K8S_EVENT}},
+		},
+		{
+			Id:             "alert4",
+			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
+			Entity:         &storage.Alert_Resource_{Resource: getResources()[3]},
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Time:           &ptypes.Timestamp{Seconds: 400},
+			Tags:           []string{"a", "b"},
+			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-4", Type: storage.Alert_Violation_K8S_EVENT}},
+		},
+		{
+			Id:             "alert5",
+			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
+			Entity:         &storage.Alert_Resource_{Resource: getResources()[4]},
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Time:           &ptypes.Timestamp{Seconds: 500},
+			Tags:           []string{"a", "b"},
+			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-5", Type: storage.Alert_Violation_K8S_EVENT}},
+		},
+	}
+}
+
+// Each resource after the 0th one is different in one property: type, name, cluster & namespace in that order
+func getResources() []*storage.Alert_Resource {
+	return []*storage.Alert_Resource{
+		{
+			ResourceType: storage.Alert_Resource_SECRETS,
+			Name:         "rez-name",
+			ClusterId:    "cluster-id",
+			ClusterName:  "prod cluster",
+			Namespace:    "stackrox",
+			NamespaceId:  "namespace-id",
+		},
+		{
+			ResourceType: storage.Alert_Resource_CONFIGMAPS,
+			Name:         "rez-name",
+			ClusterId:    "cluster-id",
+			ClusterName:  "prod cluster",
+			Namespace:    "stackrox",
+			NamespaceId:  "namespace-id",
+		},
+		{
+			ResourceType: storage.Alert_Resource_SECRETS,
+			Name:         "rez-name-alt",
+			ClusterId:    "cluster-id",
+			ClusterName:  "prod cluster",
+			Namespace:    "stackrox",
+			NamespaceId:  "namespace-id",
+		},
+		{
+			ResourceType: storage.Alert_Resource_SECRETS,
+			Name:         "rez-name",
+			ClusterId:    "cluster-id-alt",
+			ClusterName:  "prod cluster-alt",
+			Namespace:    "stackrox",
+			NamespaceId:  "namespace-id",
+		},
+		{
+			ResourceType: storage.Alert_Resource_SECRETS,
+			Name:         "rez-name",
+			ClusterId:    "cluster-id",
+			ClusterName:  "prod cluster",
+			Namespace:    "stackrox-alt",
+			NamespaceId:  "namespace-id-alt",
 		},
 	}
 }

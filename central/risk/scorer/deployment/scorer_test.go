@@ -45,7 +45,7 @@ func TestScore(t *testing.T) {
 	scorer := NewDeploymentScorer(&getters.MockAlertsGetter{
 		Alerts: []*storage.ListAlert{
 			{
-				Deployment: &storage.ListAlertDeployment{},
+				Entity: &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{}},
 				Policy: &storage.ListAlertPolicy{
 					Name:     "Test",
 					Severity: storage.Severity_CRITICAL_SEVERITY,

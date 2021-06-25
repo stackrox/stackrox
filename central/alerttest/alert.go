@@ -23,8 +23,13 @@ func NewFakeListAlert() *storage.ListAlert {
 		Policy: &storage.ListAlertPolicy{
 			Id: FakePolicyID,
 		},
-		Deployment: &storage.ListAlertDeployment{
+		CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 			ClusterName: FakeClusterName,
+		},
+		Entity: &storage.ListAlert_Deployment{
+			Deployment: &storage.ListAlertDeployment{
+				ClusterName: FakeClusterName,
+			},
 		},
 	}
 }

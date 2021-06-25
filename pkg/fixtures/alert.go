@@ -61,10 +61,11 @@ func GetAlert() *storage.Alert {
 // GetResourceAlert returns a Mock Alert with a resource entity
 func GetResourceAlert() *storage.Alert {
 	return &storage.Alert{
-		Id: "Alert1",
+		Id: "some-resource-alert-on-secret",
 		Violations: []*storage.Alert_Violation{
 			{
 				Message: "Access to secret \"my-secret\" in \"cluster-id / stackrox\"",
+				Type:    storage.Alert_Violation_K8S_EVENT,
 				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
@@ -93,6 +94,7 @@ func GetResourceAlert() *storage.Alert {
 				NamespaceId:  "aaaa-bbbb-cccc-dddd",
 			},
 		},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
 	}
 }
 

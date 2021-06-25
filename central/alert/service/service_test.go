@@ -580,7 +580,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "test",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "test",
 			},
 			Time: &types.Timestamp{Seconds: 300},
@@ -592,7 +597,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Name:       "policy2",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "test",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "test",
 			},
 			Time: &types.Timestamp{Seconds: 200},
@@ -604,7 +614,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "prod",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "prod",
 			},
 			Time: &types.Timestamp{Seconds: 130},
@@ -616,7 +631,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Name:       "policy3",
 				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "prod",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "prod",
 			},
 			Time: &types.Timestamp{Seconds: 120},
@@ -628,7 +648,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "prod",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "prod",
 			},
 			Time: &types.Timestamp{Seconds: 120},
@@ -640,7 +665,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "test",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "test",
 			},
 			Time: &types.Timestamp{Seconds: 110},
@@ -715,7 +745,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "test",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "test",
 			},
 			Time: &types.Timestamp{Seconds: 300},
@@ -727,7 +762,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 				Name:       "policy2",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "test",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "test",
 			},
 			Time: &types.Timestamp{Seconds: 200},
@@ -739,7 +779,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "prod",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "prod",
 			},
 			Time: &types.Timestamp{Seconds: 130},
@@ -751,7 +796,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 				Name:       "policy3",
 				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "prod",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "prod",
 			},
 			Time: &types.Timestamp{Seconds: 120},
@@ -763,7 +813,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "prod",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "prod",
 			},
 			Time: &types.Timestamp{Seconds: 120},
@@ -775,7 +830,12 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Deployment: &storage.ListAlertDeployment{
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					ClusterName: "test",
+				},
+			},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
 				ClusterName: "test",
 			},
 			Time: &types.Timestamp{Seconds: 110},
@@ -822,34 +882,38 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 			Time: &types.Timestamp{
 				Seconds: 1,
 			},
-			State:      storage.ViolationState_RESOLVED,
-			Deployment: &storage.ListAlertDeployment{ClusterName: "dev"},
-			Policy:     &storage.ListAlertPolicy{Severity: storage.Severity_CRITICAL_SEVERITY},
+			State:            storage.ViolationState_RESOLVED,
+			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "dev"}},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "dev"},
+			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_CRITICAL_SEVERITY},
 		},
 		{
 			Id: "id2",
 			Time: &types.Timestamp{
 				Seconds: 6,
 			},
-			Deployment: &storage.ListAlertDeployment{ClusterName: "dev"},
-			Policy:     &storage.ListAlertPolicy{Severity: storage.Severity_HIGH_SEVERITY},
+			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "dev"}},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "dev"},
+			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_HIGH_SEVERITY},
 		},
 		{
 			Id: "id3",
 			Time: &types.Timestamp{
 				Seconds: 1,
 			},
-			State:      storage.ViolationState_RESOLVED,
-			Deployment: &storage.ListAlertDeployment{ClusterName: "prod"},
-			Policy:     &storage.ListAlertPolicy{Severity: storage.Severity_LOW_SEVERITY},
+			State:            storage.ViolationState_RESOLVED,
+			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "prod"}},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "prod"},
+			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_LOW_SEVERITY},
 		},
 		{
 			Id: "id4",
 			Time: &types.Timestamp{
 				Seconds: 6,
 			},
-			Deployment: &storage.ListAlertDeployment{ClusterName: "prod"},
-			Policy:     &storage.ListAlertPolicy{Severity: storage.Severity_MEDIUM_SEVERITY},
+			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "prod"}},
+			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "prod"},
+			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_MEDIUM_SEVERITY},
 		},
 	}
 

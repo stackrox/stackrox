@@ -37,7 +37,9 @@ func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 	s := set.NewStringSet()
 	for _, slice := range alertSlices {
 		for _, alert := range slice {
-			s.Add(alert.GetDeployment().GetId())
+			if dep := alert.GetDeployment(); dep != nil {
+				s.Add(dep.GetId())
+			}
 		}
 	}
 	return s
@@ -50,6 +52,7 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 		return nil, err
 	}
 
+	// If any of the alerts are for a deployment, detect if the deployment itself is modified
 	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts, staleAlerts)
 
 	// Mark any old alerts no longer generated as stale, and insert new alerts.
@@ -238,7 +241,7 @@ func mergeAlertsByLatestFirst(old, new *storage.Alert, alertType storage.Alert_V
 	return true
 }
 
-// MergeAlerts merges two alerts.
+// mergeAlerts merges two alerts. The caller to this ensures that both alerts match (i.e. they are either for the same policy & deployment OR same policy & resource.)
 func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	if old.GetLifecycleStage() == storage.LifecycleStage_RUNTIME && newAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
 		// This ensures that we don't keep updating an old runtime alert, so that we have idempotent checks.
@@ -317,17 +320,19 @@ func (d *alertManagerImpl) mergeManyAlerts(
 
 		if previousAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
 			previousAlert.GetState() == storage.ViolationState_ATTEMPTED {
-			depID := previousAlert.GetDeployment().GetId()
 			// If we are in the context of a deployment removal, then mark the deployment as inactive without going to the
 			// store -- this is because the alert processing related to the deployment removal (ie, this code) runs
 			// _before_ the deployment is actually deleted, which means we will incorrectly mark the deployment as active
 			// if we check the store.
 			// If we're not in the context of a deployment removal, then just check whether the deployment is inactive
 			// in the store and use that.
-			if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
-				if deployment := previousAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
-					deployment.Inactive = true
-					updatedAlerts = append(updatedAlerts, previousAlert)
+			if deployment := previousAlert.GetDeployment(); deployment != nil {
+				depID := deployment.GetId()
+				if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
+					if deployment := previousAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
+						deployment.Inactive = true
+						updatedAlerts = append(updatedAlerts, previousAlert)
+					}
 				}
 			}
 		}
@@ -381,15 +386,29 @@ func (d *alertManagerImpl) shouldMarkAlertStale(oldAlert *storage.Alert, incomin
 
 func findAlert(toFind *storage.Alert, alerts []*storage.Alert) *storage.Alert {
 	for _, alert := range alerts {
-		if alertsAreForSamePolicyAndDeployment(alert, toFind) {
+		if alertsAreForSamePolicyAndEntity(alert, toFind) {
 			return alert
 		}
 	}
 	return nil
 }
 
-func alertsAreForSamePolicyAndDeployment(a1, a2 *storage.Alert) bool {
-	return a1.GetPolicy().GetId() == a2.GetPolicy().GetId() &&
-		a1.GetDeployment().GetId() == a2.GetDeployment().GetId() &&
-		a1.GetState() == a2.GetState()
+func alertsAreForSamePolicyAndEntity(a1, a2 *storage.Alert) bool {
+	if a1.GetPolicy().GetId() != a2.GetPolicy().GetId() || a1.GetState() != a2.GetState() {
+		return false
+	}
+
+	if a1.GetDeployment() != nil && a2.GetDeployment() != nil {
+		return a1.GetDeployment().GetId() == a2.GetDeployment().GetId()
+	} else if a1.GetResource() != nil && a2.GetResource() != nil {
+		return alertsAreForSameResource(a1.GetResource(), a2.GetResource())
+	}
+	return false
+}
+
+func alertsAreForSameResource(a1, a2 *storage.Alert_Resource) bool {
+	return a1.GetResourceType() == a2.GetResourceType() &&
+		a1.GetName() == a2.GetName() &&
+		a1.GetClusterId() == a2.GetClusterId() &&
+		a1.GetNamespace() == a2.GetNamespace()
 }

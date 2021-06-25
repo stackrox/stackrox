@@ -133,15 +133,48 @@ message Alert {
 }
 
 message ListAlert {
+    // Fields common to all entities that an alert might belong to.
+    message CommonEntityInfo {
+        string       cluster_name   = 1 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+        string       namespace      = 2 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+        string       cluster_id     = 3 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
+        string       namespace_id   = 4 [(gogoproto.moretags) = "search:\"Namespace ID\""];
+        ResourceType resource_type  = 5 [(gogoproto.moretags) = "search:\"Resource Type,store\""];
+    }
+
+    // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type
+    // This must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)
+    enum ResourceType {
+        DEPLOYMENT  = 0;
+        SECRETS     = 1;
+        CONFIGMAPS  = 2;
+    }
+
+    message ResourceEntity {
+        string name = 1 [(gogoproto.moretags) = "search:\"Resource\""];
+    }
+
     string                    id                 = 1;
     LifecycleStage            lifecycle_stage    = 2 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
     google.protobuf.Timestamp time               = 3 [(gogoproto.moretags) = "search:\"Violation Time\""];
     ListAlertPolicy           policy             = 4;
-    ListAlertDeployment       deployment         = 5;
     ViolationState            state              = 6 [(gogoproto.moretags) = "search:\"Violation State,store\""];
     int32                     enforcement_count  = 7;
     repeated string           tags               = 8 [(gogoproto.moretags) = "search:\"Tag,store\""];
     storage.EnforcementAction enforcement_action = 9;
+    CommonEntityInfo          common_entity_info = 10;
+
+    // Tags 5, 11-15 reserved for this oneof. Next available tag: 12
+    oneof Entity {
+        // Represents an alert on a deployment
+        // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
+        ListAlertDeployment  deployment         = 5;
+        // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
+        // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
+        ResourceEntity       resource           = 11;
+    }
+
+    // Next available tag: 16
 }
 
 message ListAlertPolicy {
@@ -156,11 +189,15 @@ message ListAlertDeployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
     reserved 3; // was: google.protobuf.Timestamp updated_at
-    string cluster_name                        = 4 [(gogoproto.moretags) = "search:\"Cluster,store\""];
-    string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string cluster_id                          = 6 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
+    // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
+    string cluster_name                        = 4 [deprecated = true]; // This field has moved to CommonEntityInfo
+    // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
+    string namespace                           = 5 [deprecated = true]; // This field has moved to CommonEntityInfo
+    // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
+    string cluster_id                          = 6 [deprecated = true]; // This field has moved to CommonEntityInfo
     bool inactive                              = 7 [(gogoproto.moretags) = "search:\"Inactive Deployment\""];
-    string namespace_id                        = 8 [(gogoproto.moretags) = "search:\"Namespace ID\""];
+    // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
+    string namespace_id                        = 8 [deprecated = true]; // This field has moved to CommonEntityInfo
 }
 
 enum ViolationState {

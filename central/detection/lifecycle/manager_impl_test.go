@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
+	alertManagerMocks "github.com/stackrox/rox/central/detection/alertmanager/mocks"
 	processBaselineDataStoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,9 +28,10 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
-	baselines   *processBaselineDataStoreMocks.MockDataStore
-	reprocessor *reprocessorMocks.MockLoop
-	manager     *managerImpl
+	baselines    *processBaselineDataStoreMocks.MockDataStore
+	reprocessor  *reprocessorMocks.MockLoop
+	alertManager *alertManagerMocks.MockAlertManager
+	manager      *managerImpl
 
 	mockCtrl *gomock.Controller
 }
@@ -39,7 +41,12 @@ func (suite *ManagerTestSuite) SetupTest() {
 
 	suite.baselines = processBaselineDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.reprocessor = reprocessorMocks.NewMockLoop(suite.mockCtrl)
-	suite.manager = &managerImpl{baselines: suite.baselines, reprocessor: suite.reprocessor}
+	suite.alertManager = alertManagerMocks.NewMockAlertManager(suite.mockCtrl)
+	suite.manager = &managerImpl{
+		baselines:    suite.baselines,
+		reprocessor:  suite.reprocessor,
+		alertManager: suite.alertManager,
+	}
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
@@ -128,6 +135,35 @@ func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
 	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
+	suite.NoError(err)
+}
+
+func (suite *ManagerTestSuite) TestHandleDeploymentAlerts() {
+	alerts := []*storage.Alert{fixtures.GetAlert()}
+	depID := alerts[0].GetDeployment().Id
+
+	// unfortunately because the filters are in a different package and have unexported functions it cannot be tested here. Alert Manager tests should cover it
+	suite.alertManager.EXPECT().
+		AlertAndNotify(gomock.Any(), alerts, gomock.Any(), gomock.Any()).
+		Return(set.NewStringSet(), nil)
+
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(depID)
+
+	err := suite.manager.HandleDeploymentAlerts(depID, alerts, storage.LifecycleStage_RUNTIME)
+	suite.NoError(err)
+}
+
+func (suite *ManagerTestSuite) TestHandleResourceAlerts() {
+	alerts := []*storage.Alert{fixtures.GetResourceAlert()}
+
+	// unfortunately because the filters are in a different package and have unexported functions it cannot be tested here. Alert Manager tests should cover it
+	suite.alertManager.EXPECT().
+		AlertAndNotify(gomock.Any(), alerts, gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(set.NewStringSet(), nil)
+
+	// reprocessor.ReprocessRiskForDeployments should _not_ be called for resource alerts
+
+	err := suite.manager.HandleResourceAlerts(alerts[0].GetResource().ClusterId, alerts, storage.LifecycleStage_RUNTIME)
 	suite.NoError(err)
 }
 

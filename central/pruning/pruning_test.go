@@ -597,8 +597,8 @@ func timestampNowMinus(t time.Duration) *protoTypes.Timestamp {
 func newListAlertWithDeployment(id string, age time.Duration, deploymentID string, stage storage.LifecycleStage, state storage.ViolationState) *storage.ListAlert {
 	return &storage.ListAlert{
 		Id: id,
-		Deployment: &storage.ListAlertDeployment{
-			Id: deploymentID,
+		Entity: &storage.ListAlert_Deployment{
+			Deployment: &storage.ListAlertDeployment{Id: deploymentID},
 		},
 		State:          state,
 		LifecycleStage: stage,

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -77,8 +78,22 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			deployment.ClusterId = clusterID
 			deployment.ClusterName = clusterName
 		}
+		if resource := a.GetResource(); resource != nil {
+			resource.ClusterId = clusterID
+			resource.ClusterName = clusterName
+		}
 	}
-	if err := s.lifecycleManager.HandleAlerts(alertResults.GetDeploymentId(), alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
+
+	// Technically there's nothing stopping both types of alerts in a single message, but it's not being done right now
+	if features.K8sAuditLogDetection.Enabled() && alertResults.GetDeploymentId() == "" {
+		if err := s.lifecycleManager.HandleResourceAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
+			return errors.Wrap(err, "error handling resource alerts")
+		}
+		return nil
+	}
+
+	// Treat all other alerts, even if they don't have a listed deployment as a "non-resource" alert for backwards compatibility
+	if err := s.lifecycleManager.HandleDeploymentAlerts(alertResults.GetDeploymentId(), alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
 		return errors.Wrap(err, "error handling alerts")
 	}
 

@@ -268,7 +268,8 @@ func (m *managerImpl) filterOutDisabledPolicies(alerts *[]*storage.Alert) {
 	*alerts = filteredAlerts
 }
 
-func (m *managerImpl) HandleAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+//HandleDeploymentAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified deployment
+func (m *managerImpl) HandleDeploymentAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	defer m.reprocessor.ReprocessRiskForDeployments(deploymentID)
 
 	m.filterOutDisabledPolicies(&alerts)
@@ -277,6 +278,24 @@ func (m *managerImpl) HandleAlerts(deploymentID string, alerts []*storage.Alert,
 	}
 	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
 		alertmanager.WithLifecycleStage(stage), alertmanager.WithDeploymentID(deploymentID, false)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//HandleResourceAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified resource
+func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+	m.filterOutDisabledPolicies(&alerts)
+	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
+		return nil
+	}
+	// These alerts are all for a single cluster but may belong to any number of namespaces or resource types (except deployment)
+	// Ideally search filters should be for lifecycle stage && (namespace1 || namespace2...) && resource_type!=DEPLOYMENT
+	// But with these filters they are all ANDs
+	// Therefore for now, we will have to pull all non-deployment alerts for this lifecycle stage within specified cluster.
+	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
+		alertmanager.WithLifecycleStage(stage), alertmanager.WithClusterID(clusterID), alertmanager.WithoutResourceType(storage.ListAlert_DEPLOYMENT)); err != nil {
 		return err
 	}
 

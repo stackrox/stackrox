@@ -228,6 +228,10 @@ var (
 
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
+
+	// Resource alerts search fields
+	ResourceName = newFieldLabel("Resource")
+	ResourceType = newFieldLabel("Resource Type")
 )
 
 func newFieldLabel(s string) FieldLabel {

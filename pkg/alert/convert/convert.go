@@ -21,22 +21,58 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 			Description: alert.GetPolicy().GetDescription(),
 			Categories:  alert.GetPolicy().GetCategories(),
 		},
-		Deployment: &storage.ListAlertDeployment{
-			Id:          alert.GetDeployment().GetId(),
-			Name:        alert.GetDeployment().GetName(),
-			ClusterName: alert.GetDeployment().GetClusterName(),
-			ClusterId:   alert.GetDeployment().GetClusterId(),
-			Namespace:   alert.GetDeployment().GetNamespace(),
-			NamespaceId: alert.GetDeployment().GetNamespaceId(),
-			Inactive:    alert.GetDeployment().GetInactive(),
-		},
 		Tags:              alert.GetTags(),
 		EnforcementAction: alert.GetEnforcement().GetAction(),
 	}
 	if alert.GetState() == storage.ViolationState_ACTIVE {
 		listAlert.EnforcementCount = enforcementCount(alert)
 	}
+
+	if alert.GetDeployment() != nil {
+		populateListAlertEntityInfoForDeployment(listAlert, alert.GetDeployment())
+	} else if alert.GetResource() != nil {
+		populateListAlertEntityInfoForResource(listAlert, alert.GetResource())
+	}
+
 	return listAlert
+}
+
+func populateListAlertEntityInfoForResource(listAlert *storage.ListAlert, resource *storage.Alert_Resource) {
+	listAlert.Entity = &storage.ListAlert_Resource{
+		Resource: &storage.ListAlert_ResourceEntity{
+			Name: resource.GetName(),
+		},
+	}
+	resStr := resource.GetResourceType().String()
+	resEnt := storage.ListAlert_ResourceType(storage.Alert_Resource_ResourceType_value[resStr])
+	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+		ClusterName:  resource.GetClusterName(),
+		ClusterId:    resource.GetClusterId(),
+		Namespace:    resource.GetNamespace(),
+		NamespaceId:  resource.GetNamespaceId(),
+		ResourceType: resEnt,
+	}
+}
+
+func populateListAlertEntityInfoForDeployment(listAlert *storage.ListAlert, deployment *storage.Alert_Deployment) {
+	listAlert.Entity = &storage.ListAlert_Deployment{
+		Deployment: &storage.ListAlertDeployment{
+			Id:          deployment.GetId(),
+			Name:        deployment.GetName(),
+			ClusterName: deployment.GetClusterName(),
+			ClusterId:   deployment.GetClusterId(),
+			Namespace:   deployment.GetNamespace(),
+			NamespaceId: deployment.GetNamespaceId(),
+			Inactive:    deployment.GetInactive(),
+		},
+	}
+	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+		ClusterName:  deployment.GetClusterName(),
+		ClusterId:    deployment.GetClusterId(),
+		Namespace:    deployment.GetNamespace(),
+		NamespaceId:  deployment.GetNamespaceId(),
+		ResourceType: storage.ListAlert_DEPLOYMENT,
+	}
 }
 
 func enforcementCount(alert *storage.Alert) int32 {

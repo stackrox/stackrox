@@ -722,6 +722,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"url: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LifecycleStage(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ListAlert_ResourceType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
 		"licenseStatus: Metadata_LicenseStatus!",
@@ -6870,6 +6871,24 @@ func toLifecycleStages(values *[]string) []storage.LifecycleStage {
 	output := make([]storage.LifecycleStage, len(*values))
 	for i, v := range *values {
 		output[i] = toLifecycleStage(&v)
+	}
+	return output
+}
+
+func toListAlert_ResourceType(value *string) storage.ListAlert_ResourceType {
+	if value != nil {
+		return storage.ListAlert_ResourceType(storage.ListAlert_ResourceType_value[*value])
+	}
+	return storage.ListAlert_ResourceType(0)
+}
+
+func toListAlert_ResourceTypes(values *[]string) []storage.ListAlert_ResourceType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ListAlert_ResourceType, len(*values))
+	for i, v := range *values {
+		output[i] = toListAlert_ResourceType(&v)
 	}
 	return output
 }
