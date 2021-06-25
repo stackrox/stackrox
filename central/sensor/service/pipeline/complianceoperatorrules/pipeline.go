@@ -3,6 +3,7 @@ package complianceoperatorrules
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/complianceoperator/rules/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -62,6 +64,10 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	event := msg.GetEvent()
 	rule := event.GetComplianceOperatorRule()
 	rule.ClusterId = clusterID
+
+	if val := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; val == "" {
+		return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
+	}
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:

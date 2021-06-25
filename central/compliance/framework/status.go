@@ -12,4 +12,6 @@ const (
 	SkipStatus
 	// NoteStatus indicates the a compliance check gathered data, but could not make a pass/fail determination
 	NoteStatus
+	// InternalSkipStatus means that the absence of a value is okay and this will not be stored during result collection
+	InternalSkipStatus
 )

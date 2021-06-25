@@ -2,8 +2,6 @@ package manager
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -88,16 +86,25 @@ func productTypeToTarget(s string) pkgFramework.TargetKind {
 	}
 }
 
-func createControlFromRule(profileBundlePrefix string, rule *storage.ComplianceOperatorRule) metadata.Control {
-	normalizedRuleName := strings.TrimPrefix(rule.GetName(), profileBundlePrefix)
+func getRuleName(rule *storage.ComplianceOperatorRule) string {
+	if ruleName, ok := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; ok {
+		return ruleName
+	}
+	// This field is checked within the pipeline so it should never be empty
+	log.Errorf("UNEXPECTED: Unknown base rule for %s", rule)
+	return "<unknown>"
+}
+
+func createControlFromRule(rule *storage.ComplianceOperatorRule) metadata.Control {
+	ruleName := getRuleName(rule)
 	return metadata.Control{
-		ID:          normalizedRuleName,
-		Name:        normalizedRuleName,
+		ID:          ruleName,
+		Name:        ruleName,
 		Description: rule.GetTitle(),
 	}
 }
 
-func (m *managerImpl) createControls(profileBundlePrefix string, rules []string) ([]metadata.Control, error) {
+func (m *managerImpl) createControls(rules []string) ([]metadata.Control, error) {
 	controls := make([]metadata.Control, 0, len(rules))
 	for _, rule := range rules {
 		fullRule, err := m.getRule(rule)
@@ -107,22 +114,22 @@ func (m *managerImpl) createControls(profileBundlePrefix string, rules []string)
 		if fullRule == nil {
 			continue
 		}
-		controls = append(controls, createControlFromRule(profileBundlePrefix, fullRule))
+		controls = append(controls, createControlFromRule(fullRule))
 	}
 	return controls, nil
 }
 
-func (m *managerImpl) registerCheckFromRule(standardID, profileBundlePrefix string, productType pkgFramework.TargetKind, rule *storage.ComplianceOperatorRule) error {
-	normalizedRuleName := strings.TrimPrefix(rule.GetName(), profileBundlePrefix)
+func (m *managerImpl) registerCheckFromRule(standardID string, productType pkgFramework.TargetKind, rule *storage.ComplianceOperatorRule) error {
+	ruleName := getRuleName(rule)
 	checkMetadata := framework.CheckMetadata{
-		ID:                 standards.BuildQualifiedID(standardID, normalizedRuleName),
+		ID:                 standards.BuildQualifiedID(standardID, ruleName),
 		Scope:              productType,
 		InterpretationText: rule.GetDescription(),
 	}
 
-	checkFunc := platformCheckFunc(normalizedRuleName)
+	checkFunc := platformCheckFunc(ruleName)
 	if productType == pkgFramework.MachineConfigKind {
-		checkFunc = machineConfigCheckFunc(normalizedRuleName)
+		checkFunc = machineConfigCheckFunc(ruleName)
 	}
 
 	if err := m.registry.RegisterCheck(framework.NewCheckFromFunc(checkMetadata, checkFunc)); err != nil {
@@ -167,8 +174,6 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 		Description: "All checks for the profile defined by the Compliance Operator",
 	}
 
-	profileBundlePrefix := fmt.Sprintf("%s-", profile.Labels[v1alpha1.ProfileBundleOwnerLabel])
-
 	rules := set.NewStringSet()
 	for _, profile := range existingProfiles {
 		for _, r := range profile.GetRules() {
@@ -180,7 +185,7 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 	})
 
 	var err error
-	category.Controls, err = m.createControls(profileBundlePrefix, ruleSlice)
+	category.Controls, err = m.createControls(ruleSlice)
 	if err != nil {
 		return err
 	}
@@ -218,7 +223,7 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 			continue
 		}
 
-		if err := m.registerCheckFromRule(standard.ID, profileBundlePrefix, profileProductType, fullRule); err != nil {
+		if err := m.registerCheckFromRule(standard.ID, profileProductType, fullRule); err != nil {
 			return errors.Wrapf(err, "registering check %s", fullRule.GetName())
 		}
 	}
@@ -267,7 +272,14 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 	}
 	for _, rule := range deletedProfile.GetRules() {
 		if !rulesFound.Contains(rule.GetName()) {
-			if err := m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), rule.GetName())); err != nil {
+			rule, err := m.getRule(rule.GetName())
+			if err != nil {
+				return err
+			}
+			if rule == nil {
+				continue
+			}
+			if err := m.registry.DeleteControl(standards.BuildQualifiedID(deletedProfile.GetName(), getRuleName(rule))); err != nil {
 				return err
 			}
 		}
@@ -347,10 +359,16 @@ func (m *managerImpl) getRule(name string) (*storage.ComplianceOperatorRule, err
 }
 
 func (m *managerImpl) GetMachineConfigs(clusterID string) ([]string, error) {
-	profileSet := set.NewStringSet()
+	machineConfigRuleSet := set.NewStringSet()
 	err := m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
 		if profile.GetClusterId() == clusterID && profile.Annotations[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
-			profileSet.Add(profile.GetName())
+			for _, profileRule := range profile.GetRules() {
+				if rule, err := m.getRule(profileRule.GetName()); err != nil {
+					return err
+				} else if rule != nil {
+					machineConfigRuleSet.Add(getRuleName(rule))
+				}
+			}
 		}
 		return nil
 	})
@@ -362,7 +380,7 @@ func (m *managerImpl) GetMachineConfigs(clusterID string) ([]string, error) {
 		if result.GetClusterId() != clusterID {
 			return nil
 		}
-		if profileSet.Contains(result.Labels[v1alpha1.SuiteLabel]) {
+		if machineConfigRuleSet.Contains(result.Annotations[v1alpha1.RuleIDAnnotationKey]) {
 			if label, ok := result.Labels[v1alpha1.ComplianceScanLabel]; ok {
 				machineConfigs.Add(label)
 			}

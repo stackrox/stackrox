@@ -17,6 +17,7 @@ import (
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
 	scanSettingBindingStore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -55,15 +56,23 @@ func newManager(t *testing.T) *managerImpl {
 func TestAddProfile(t *testing.T) {
 	mgr := newManager(t)
 
+	rule1Name := "rule1"
 	rule1 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule1",
+		Id:   uuid.NewV4().String(),
+		Name: "rule1-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule1Name,
+		},
 		ClusterId: "cluster1",
 		Title:     "title1",
 	}
+	rule2Name := "rule2"
 	rule2 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule2",
+		Id:   uuid.NewV4().String(),
+		Name: "rule2-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule2Name,
+		},
 		ClusterId: "cluster1",
 		Title:     "title2",
 	}
@@ -87,12 +96,12 @@ func TestAddProfile(t *testing.T) {
 
 	// Base case, no existing profiles
 	assert.NoError(t, mgr.AddProfile(initialProfile))
-	control1 := mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1"))
-	assert.Equal(t, rule1.GetName(), control1.GetName())
+	control1 := mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name))
+	assert.Equal(t, rule1Name, control1.GetName())
 	assert.Equal(t, rule1.GetTitle(), control1.GetDescription())
 
-	control2 := mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2"))
-	assert.Equal(t, rule2.GetName(), control2.GetName())
+	control2 := mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name))
+	assert.Equal(t, rule2Name, control2.GetName())
 	assert.Equal(t, rule2.GetTitle(), control2.GetDescription())
 
 	// Update same profile and verify existing controls
@@ -100,8 +109,8 @@ func TestAddProfile(t *testing.T) {
 	assert.NoError(t, mgr.AddRule(rule2))
 	assert.NoError(t, mgr.AddProfile(initialProfile))
 
-	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2"))
-	assert.Equal(t, rule2.GetName(), control2.GetName())
+	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name))
+	assert.Equal(t, rule2Name, control2.GetName())
 	assert.Equal(t, rule2.GetTitle(), control2.GetDescription())
 
 	// Remove rule two from profile 1 and verify that the control is also removed
@@ -111,11 +120,15 @@ func TestAddProfile(t *testing.T) {
 		},
 	}
 	assert.NoError(t, mgr.AddProfile(initialProfile))
-	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2")))
+	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name)))
 
+	rule3Name := "rule3"
 	rule3 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule3",
+		Id:   uuid.NewV4().String(),
+		Name: "rule3-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule3Name,
+		},
 		ClusterId: "cluster2",
 		Title:     "title3",
 	}
@@ -138,8 +151,8 @@ func TestAddProfile(t *testing.T) {
 	assert.NoError(t, mgr.AddRule(rule3))
 	assert.NoError(t, mgr.AddProfile(duplicateNamedProfile))
 
-	control3 := mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule3"))
-	assert.Equal(t, rule3.GetName(), control3.GetName())
+	control3 := mgr.registry.Control(standards.BuildQualifiedID("profile1", rule3Name))
+	assert.Equal(t, rule3Name, control3.GetName())
 	assert.Equal(t, rule3.GetTitle(), control3.GetDescription())
 }
 
@@ -148,15 +161,23 @@ func TestDeleteProfile(t *testing.T) {
 
 	mgr.compliance.(*mocks.MockDataStore).EXPECT().ClearAggregationResults(allAccessCtx).AnyTimes()
 
+	rule1Name := "rule1"
 	rule1 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule1",
+		Id:   uuid.NewV4().String(),
+		Name: "rule1-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule1Name,
+		},
 		ClusterId: "cluster1",
 		Title:     "title1",
 	}
+	rule2Name := "rule2"
 	rule2 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule2",
+		Id:   uuid.NewV4().String(),
+		Name: "rule2-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule2Name,
+		},
 		ClusterId: "cluster1",
 		Title:     "title2",
 	}
@@ -180,26 +201,26 @@ func TestDeleteProfile(t *testing.T) {
 
 	// Base case, add and delete without any other profiles
 	assert.NoError(t, mgr.AddProfile(initialProfile))
-	control1 := mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1"))
+	control1 := mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name))
 	assert.NotNil(t, control1)
 
-	control2 := mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2"))
+	control2 := mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name))
 	assert.NotNil(t, control2)
 
 	// Delete profile and verify controls are removed
 	assert.NoError(t, mgr.DeleteProfile(initialProfile))
-	control1 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1"))
+	control1 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name))
 	assert.Nil(t, control1)
 
-	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2"))
+	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name))
 	assert.Nil(t, control2)
 
 	// Add profile back and then add profile with same name
 	assert.NoError(t, mgr.AddProfile(initialProfile))
-	control1 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1"))
+	control1 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name))
 	assert.NotNil(t, control1)
 
-	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2"))
+	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name))
 	assert.NotNil(t, control2)
 
 	updatedProfile := initialProfile.Clone()
@@ -208,16 +229,20 @@ func TestDeleteProfile(t *testing.T) {
 	assert.NoError(t, mgr.AddProfile(updatedProfile))
 
 	assert.NoError(t, mgr.DeleteProfile(updatedProfile))
-	control1 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1"))
+	control1 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name))
 	assert.NotNil(t, control1)
 
-	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2"))
+	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name))
 	assert.NotNil(t, control2)
 
 	// Add rule3 and check its existence, then delete the updated profile and ensure rule3 is removed
+	rule3Name := "rule3"
 	rule3 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule3",
+		Id:   uuid.NewV4().String(),
+		Name: "rule3-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule3Name,
+		},
 		ClusterId: "cluster2",
 		Title:     "title3",
 	}
@@ -225,18 +250,18 @@ func TestDeleteProfile(t *testing.T) {
 	updatedProfile.Rules = append(updatedProfile.Rules, &storage.ComplianceOperatorProfile_Rule{Name: rule3.GetName()})
 	assert.NoError(t, mgr.AddProfile(updatedProfile))
 
-	control3 := mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule3"))
+	control3 := mgr.registry.Control(standards.BuildQualifiedID("profile1", rule3Name))
 	assert.NotNil(t, control3)
 	assert.NoError(t, mgr.DeleteProfile(updatedProfile))
 
 	// Control 1 and 2 should still exist, but control 3 should not after the updated profile is removed as it is the only one referencing it
-	control1 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1"))
+	control1 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name))
 	assert.NotNil(t, control1)
 
-	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2"))
+	control2 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name))
 	assert.NotNil(t, control2)
 
-	control3 = mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule3"))
+	control3 = mgr.registry.Control(standards.BuildQualifiedID("profile1", rule3Name))
 	assert.Nil(t, control3)
 }
 
@@ -284,23 +309,31 @@ func TestIsStandardActiveFunctions(t *testing.T) {
 func TestAddRule(t *testing.T) {
 	mgr := newManager(t)
 
+	rule1Name := "rule1"
 	rule1 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule1",
+		Id:   uuid.NewV4().String(),
+		Name: "rule1-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule1Name,
+		},
 		ClusterId: "cluster1",
 		Title:     "title1",
 	}
 
+	rule2Name := "rule2"
 	rule2 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule2",
+		Id:   uuid.NewV4().String(),
+		Name: "rule2-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule2Name,
+		},
 		ClusterId: "cluster1",
 		Title:     "title2",
 	}
 	// Add a rule when there are no profiles, shouldn't do anything
 	assert.NoError(t, mgr.AddRule(rule1))
 	assert.NoError(t, mgr.AddRule(rule1))
-	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1")))
+	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name)))
 
 	initialProfile := &storage.ComplianceOperatorProfile{
 		Id:        uuid.NewV4().String(),
@@ -317,29 +350,37 @@ func TestAddRule(t *testing.T) {
 	}
 	// Insert profile where rule1 exists and rule2 does not
 	assert.NoError(t, mgr.AddProfile(initialProfile))
-	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1")))
-	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2")))
+	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name)))
+	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name)))
 
 	assert.NoError(t, mgr.AddRule(rule2))
 	assert.NoError(t, mgr.AddRule(rule2))
 
-	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1")))
-	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2")))
+	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name)))
+	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name)))
 }
 
 func TestDeleteRule(t *testing.T) {
 	mgr := newManager(t)
 
+	rule1Name := "rule1"
 	rule1 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule1",
+		Id:   uuid.NewV4().String(),
+		Name: "rule1-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule1Name,
+		},
 		ClusterId: "cluster1",
 		Title:     "title1",
 	}
 
+	rule2Name := "rule2"
 	rule2 := &storage.ComplianceOperatorRule{
-		Id:        uuid.NewV4().String(),
-		Name:      "rule2",
+		Id:   uuid.NewV4().String(),
+		Name: "rule2-ext",
+		Annotations: map[string]string{
+			v1alpha1.RuleIDAnnotationKey: rule2Name,
+		},
 		ClusterId: "cluster1",
 		Title:     "title2",
 	}
@@ -361,14 +402,14 @@ func TestDeleteRule(t *testing.T) {
 	}
 	// Insert profile where rule1 exists and rule2 does not
 	assert.NoError(t, mgr.AddProfile(initialProfile))
-	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1")))
-	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2")))
+	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name)))
+	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name)))
 
 	assert.NoError(t, mgr.DeleteRule(rule1))
 
-	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule1")))
-	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2")))
+	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule1Name)))
+	assert.NotNil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name)))
 
 	assert.NoError(t, mgr.DeleteRule(rule2))
-	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", "rule2")))
+	assert.Nil(t, mgr.registry.Control(standards.BuildQualifiedID("profile1", rule2Name)))
 }
