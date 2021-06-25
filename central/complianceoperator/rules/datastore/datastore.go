@@ -21,6 +21,7 @@ type DataStore interface {
 	Upsert(ctx context.Context, rule *storage.ComplianceOperatorRule) error
 	Delete(ctx context.Context, id string) error
 	GetRulesByName(ctx context.Context, name string) ([]*storage.ComplianceOperatorRule, error)
+	ExistsByName(ctx context.Context, name string) (bool, error)
 }
 
 // NewDatastore returns the datastore wrapper for compliance operator rules
@@ -115,4 +116,16 @@ func (d *datastoreImpl) GetRulesByName(ctx context.Context, name string) ([]*sto
 		rules = append(rules, rule.Clone())
 	}
 	return rules, nil
+}
+
+func (d *datastoreImpl) ExistsByName(ctx context.Context, name string) (bool, error) {
+	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+		return false, err
+	} else if !ok {
+		return false, errors.New("read access denied for compliance operator rules")
+	}
+	d.ruleLock.RLock()
+	defer d.ruleLock.RUnlock()
+	_, ok := d.rulesByName[name]
+	return ok, nil
 }

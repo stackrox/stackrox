@@ -410,8 +410,17 @@ func (m *managerImpl) reindexProfilesWithRuleNoLock(rule *storage.ComplianceOper
 }
 
 func (m *managerImpl) AddRule(rule *storage.ComplianceOperatorRule) error {
+	exists, err := m.rules.ExistsByName(allAccessCtx, rule.GetName())
+	if err != nil {
+		return err
+	}
+
 	if err := m.rules.Upsert(allAccessCtx, rule); err != nil {
 		return err
+	}
+	// No need to reindex if the rule already exists
+	if exists {
+		return nil
 	}
 
 	m.registryLock.Lock()
