@@ -37,6 +37,7 @@ import services.NodeService
 import services.ImageService
 import services.ProcessService
 import spock.lang.Shared
+import spock.lang.Unroll
 import util.Timer
 import v1.ComplianceServiceOuterClass.ComplianceControl
 import v1.ComplianceServiceOuterClass.ComplianceStandard
@@ -442,6 +443,11 @@ class ComplianceTest extends BaseSpecification {
                         value = result.nodeResultsMap.get(
                                 result.domain.nodesMap.find { it.value.name == row.objectName }?.key
                         )?.controlResultsMap?.find {
+                            it.key == control.id
+                        }?.value
+                        break
+                    case "machineconfig":
+                        value = result.machineConfigResultsMap.get(row.objectName).controlResultsMap?.find {
                             it.key == control.id
                         }?.value
                         break
@@ -1029,6 +1035,65 @@ class ComplianceTest extends BaseSpecification {
             }
         }
         assert missingControls*.id.size() == 0
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify Compliance Operator aggregation results on OpenShift for machine configs #standard"() {
+        given:
+        "get compliance aggregation results"
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
+        println "Getting compliance results for ${standard}"
+        ComplianceRunResults run = BASE_RESULTS.get(standard)
+
+        expect:
+        "compare"
+
+        // We shouldn't have more than two machine config maps as we only have the roles master/worker
+        def machineConfigsWithResults = 0
+        def numErrors = 0
+        for (def entry in run.machineConfigResultsMap) {
+            println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
+            if (entry.value.controlResultsMap.size()  > 0) {
+                machineConfigsWithResults++
+            }
+            for (def ctrlResults : entry.value.controlResultsMap.values()) {
+                if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
+                    numErrors++
+                }
+            }
+        }
+        assert numErrors == 0
+        assert machineConfigsWithResults == 2
+
+        where:
+        "Data inputs are: "
+        standard          | _
+        "rhcos4-moderate" | _
+        "ocp4-cis-node"   | _
+    }
+
+    @Category(BAT)
+    def "Verify Compliance Operator aggregation results on OpenShift for cluster results"() {
+        given:
+        "get compliance aggregation results"
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
+        println "Getting compliance results for ocp4-cis"
+        ComplianceRunResults run = BASE_RESULTS.get("ocp4-cis")
+
+        expect:
+        "compare"
+
+        def numErrors = 0
+        assert run.clusterResults.controlResultsMap.size() > 0
+        for (def ctrlResults : run.clusterResults.controlResultsMap.values()) {
+            if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
+                numErrors++
+            }
+        }
+        assert numErrors == 0
     }
 
     @Category([BAT])

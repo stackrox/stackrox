@@ -3118,6 +3118,12 @@ jobs:
             sudo chown "$USER" $PWD/openshift-4/data/auth/kubeconfig
             oc get nodes
 
+      - run:
+          name: Deployment Compliance Operator
+          command: |
+            export KUBECONFIG=$PWD/openshift-4/data/auth/kubeconfig
+            ./scripts/ci/complianceoperator/create.sh
+
       - store_artifacts:
           path: openshift-4
           destination: openshift-4
