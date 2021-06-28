@@ -43,7 +43,6 @@ func TestTranslate(t *testing.T) {
 	scannerReplicas := int32(7)
 	scannerMinReplicas := int32(6)
 	scannerMaxReplicas := int32(8)
-	scannerLoggingLevel := "DEBUG"
 
 	tests := map[string]struct {
 		args args
@@ -160,7 +159,6 @@ func TestTranslate(t *testing.T) {
 								MinReplicas: &scannerMinReplicas,
 								MaxReplicas: &scannerMaxReplicas,
 							},
-							Logging: &v1alpha1.ScannerLogging{Level: &scannerLoggingLevel},
 							Scanner: &common.DeploymentSpec{
 								ServiceTLSSpec: common.ServiceTLSSpec{
 									ServiceTLS: &corev1.LocalObjectReference{Name: "scanner-tls-spec-secret"},
@@ -444,7 +442,6 @@ func TestTranslate(t *testing.T) {
 				"scanner": map[string]interface{}{
 					"disable":  false,
 					"replicas": int32(7),
-					"logLevel": "DEBUG",
 					"autoscaling": map[string]interface{}{
 						"disable":     false,
 						"minReplicas": int32(6),
