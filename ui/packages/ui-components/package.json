@@ -53,9 +53,9 @@
     "devDependencies": {
         "@babel/core": "7.12.3",
         "@stackrox/tailwind-config": "^0.2.0",
-        "@storybook/addon-essentials": "^6.1.21",
-        "@storybook/addon-links": "^6.1.21",
-        "@storybook/react": "^6.1.21",
+        "@storybook/addon-essentials": "^6.3.0",
+        "@storybook/addon-links": "^6.3.0",
+        "@storybook/react": "^6.3.0",
         "@testing-library/jest-dom": "^5.13.0",
         "@testing-library/react": "^11.2.7",
         "@testing-library/user-event": "^13.1.9",

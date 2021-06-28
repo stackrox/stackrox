@@ -21,8 +21,12 @@ export const globalTypes = {
 };
 
 const withThemeProvider = (StoryComp: Story, context: StoryContext): ReactElement => {
+    const theme = context.globals.theme as string;
+    const bgClass = theme === 'theme-dark' ? 'bg-base-0' : 'bg-base-100';
     return (
-        <div className={`${context.globals.theme as string} text-base`}>
+        <div
+            className={`flex font-600 font-sans h-full overflow-hidden text-base text-base-600 ${theme} ${bgClass}`}
+        >
             {/* eslint-disable-next-line react/jsx-props-no-spreading */}
             <StoryComp {...context} />
         </div>
