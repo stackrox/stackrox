@@ -1,7 +1,7 @@
 import React from 'react';
 
-import renderKeyValues from './GenericNotifier/GenericNotifier';
-import renderPriorityMapping from './Jira/Jira';
+import renderKeyValues from '../GenericNotifier/GenericNotifier';
+import renderPriorityMapping from '../Jira/Jira';
 
 const skipTestIntegration = {
     label: 'Create integration without testing',

@@ -1,4 +1,4 @@
-import integrationsList from 'Containers/Integrations/integrationsList';
+import integrationsList from './integrationsList';
 
 export type IntegrationSource =
     | 'authProviders'

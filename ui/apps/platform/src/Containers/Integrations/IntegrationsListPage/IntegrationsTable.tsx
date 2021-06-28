@@ -4,12 +4,8 @@ import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-tab
 import { useParams } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
-import {
-    Integration,
-    getIsAPIToken,
-    getIsClusterInitBundle,
-} from 'Containers/Integrations/integrationUtils';
-import tableColumnDescriptor from '../tableColumnDescriptor';
+import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
+import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
 import useTableSelection from './useTableSelection';
 

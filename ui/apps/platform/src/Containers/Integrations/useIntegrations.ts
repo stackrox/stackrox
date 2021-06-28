@@ -3,11 +3,7 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
-import {
-    Integration,
-    IntegrationSource,
-    IntegrationType,
-} from 'Containers/Integrations/integrationUtils';
+import { Integration, IntegrationSource, IntegrationType } from './utils/integrationUtils';
 
 const selectIntegrations = createStructuredSelector({
     authPlugins: selectors.getAuthPlugins,

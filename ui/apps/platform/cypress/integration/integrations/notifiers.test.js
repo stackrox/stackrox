@@ -83,7 +83,7 @@ describe('Notifiers Test', () => {
     describe('AWS Security Hub notifier', () => {
         it('should show the AWS Security Hub notifier', () => {
             cy.get(selectors.awsSecurityHubTile).click();
-            cy.get('.pf-c-breadcrumb').contains('awsSecurityHub');
+            cy.get('.pf-c-breadcrumb').contains('AWS Security Hub');
         });
 
         it('should disable the save button if all the required fields are not filled out', () => {
@@ -129,7 +129,7 @@ describe('Notifiers Test', () => {
     describe('Syslog notifier', () => {
         it('should show the Syslog notifier', () => {
             cy.get(selectors.syslogTile).click();
-            cy.get('.pf-c-breadcrumb').contains('syslog');
+            cy.get('.pf-c-breadcrumb').contains('Syslog');
         });
 
         it('should disable the save button if all the required fields are not filled out', () => {

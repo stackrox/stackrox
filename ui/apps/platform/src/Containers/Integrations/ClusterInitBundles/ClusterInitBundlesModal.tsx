@@ -5,13 +5,12 @@ import { createStructuredSelector } from 'reselect';
 
 import { actions } from 'reducers/clusterInitBundles';
 import { selectors } from 'reducers';
+import { ClusterInitBundle } from 'services/ClustersService';
+import { Integration } from 'Containers/Integrations/utils/integrationUtils';
 
 import Modal from 'Components/Modal';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
-import { ClusterInitBundle } from 'services/ClustersService';
-
-import { Integration } from 'Containers/Integrations/integrationUtils';
 import ClusterInitBundleForm from './ClusterInitBundleForm';
 import ClusterInitBundleDetails from './ClusterInitBundleDetails';
 

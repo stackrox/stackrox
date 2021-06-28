@@ -7,8 +7,15 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { reduxForm, formValueSelector, FieldArray } from 'redux-form';
 import * as Icon from 'react-feather';
 import set from 'lodash/set';
-
 import { HelpIcon } from '@stackrox/ui-components';
+
+import formDescriptors from 'Containers/Integrations/utils/formDescriptors';
+import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
+import {
+    setFormSubmissionOptions,
+    checkFormValidity,
+} from 'Containers/Integrations/utils/integrationFormUtils';
+
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import ReduxRadioButtonGroupField from 'Components/forms/ReduxRadioButtonGroupField';
@@ -19,9 +26,6 @@ import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
-import formDescriptors from 'Containers/Integrations/formDescriptors';
-import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
-import { setFormSubmissionOptions, checkFormValidity } from './integrationFormUtils';
 import Schedule from './Schedule';
 
 class Form extends Component {

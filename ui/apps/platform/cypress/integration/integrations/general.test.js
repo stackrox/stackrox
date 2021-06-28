@@ -121,7 +121,7 @@ describe('API Token Creation Flow', () => {
 
     it('should show table for API Tokens', () => {
         cy.get(selectors.apiTokenTile).click();
-        cy.get('.pf-c-breadcrumb').contains('apitoken');
+        cy.get('.pf-c-breadcrumb').contains('API Token');
     });
 
     it('should be able to generate an API token', () => {

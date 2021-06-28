@@ -3,7 +3,7 @@ import get from 'lodash/get';
 import set from 'lodash/set';
 import cloneDeep from 'lodash/cloneDeep';
 
-import formDescriptors from 'Containers/Integrations/formDescriptors';
+import formDescriptors from './formDescriptors';
 
 /**
  * Returns a field from the form descriptor for a particular integration that could

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { defaultColumnClassName } from 'Components/Table';
 
-import { times, daysOfWeek } from './Schedule';
+import { times, daysOfWeek } from '../Form/Schedule';
 
 const classNameWordBreak = `${defaultColumnClassName} word-break`;
 

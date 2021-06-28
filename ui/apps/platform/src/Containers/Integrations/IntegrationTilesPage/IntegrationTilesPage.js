@@ -6,17 +6,18 @@ import { PageSection, Title } from '@patternfly/react-core';
 import { useParams, useHistory } from 'react-router-dom';
 
 import { integrationsPath } from 'routePaths';
-import integrationsList from 'Containers/Integrations/integrationsList';
-import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import { actions as authActions } from 'reducers/auth';
 import { actions as apiTokenActions } from 'reducers/apitokens';
 import { actions as clusterInitBundleActions } from 'reducers/clusterInitBundles';
 import { actions as integrationActions } from 'reducers/integrations';
 import { selectors } from 'reducers';
 import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
+import integrationsList from '../utils/integrationsList';
+
+import IntegrationTile from './IntegrationTile';
 import IntegrationsSection from './IntegrationsSection';
-import GenericIntegrationModal from './GenericIntegrationModal';
-import IntegrationsNotFoundPage from './IntegrationsNotFoundPage';
+import IntegrationsNotFoundPage from '../IntegrationsNotFoundPage';
+import GenericIntegrationModal from '../GenericIntegrationModal';
 
 const IntegrationTilesPage = ({
     apiTokens,

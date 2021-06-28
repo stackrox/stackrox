@@ -2,7 +2,7 @@ import React, { useState, useEffect, ReactElement } from 'react';
 
 import { fetchImageIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchIntegration } from 'services/IntegrationsService';
-import integrationsList from 'Containers/Integrations/integrationsList';
+import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
 

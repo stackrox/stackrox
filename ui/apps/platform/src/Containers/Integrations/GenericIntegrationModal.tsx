@@ -1,8 +1,9 @@
 import React, { ReactElement } from 'react';
 
-import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import { ClusterInitBundle } from 'services/ClustersService';
-import { Integration } from 'Containers/Integrations/integrationUtils';
+import { Integration } from './utils/integrationUtils';
+
+import IntegrationModal from './IntegrationModal';
 import APITokensModal from './APITokens/APITokensModal';
 import ClusterInitBundlesModal from './ClusterInitBundles/ClusterInitBundlesModal';
 

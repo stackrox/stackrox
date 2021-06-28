@@ -12,7 +12,7 @@ import {
     getIsAPIToken,
     getIsClusterInitBundle,
     getIntegrationLabel,
-} from 'Containers/Integrations/integrationUtils';
+} from 'Containers/Integrations/utils/integrationUtils';
 
 import PageTitle from 'Components/PageTitle';
 import IntegrationsTable from './IntegrationsTable';
@@ -84,7 +84,7 @@ function IntegrationsListPage({
                 <div className="pf-u-mb-sm">
                     <Breadcrumb>
                         <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
-                        <BreadcrumbItem isActive>{selectedType}</BreadcrumbItem>
+                        <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>
                     </Breadcrumb>
                 </div>
                 <Title headingLevel="h1">Integrations</Title>
