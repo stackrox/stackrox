@@ -128,10 +128,7 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
-							TelemetryPolicy: &telemetryPolicy,
-							Endpoint:        &v1alpha1.CentralEndpointSpec{
-								// TODO(ROX-7147): design this
-							},
+							TelemetryPolicy:     &telemetryPolicy,
 							AdminPasswordSecret: &corev1.LocalObjectReference{Name: "admin-password-secret"},
 							Persistence: &v1alpha1.Persistence{
 								HostPath: &hostPath,

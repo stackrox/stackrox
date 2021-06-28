@@ -69,9 +69,6 @@ spec:
                         description: Custom labels to set on Pods.
                         type: object
                     type: object
-                  endpoint:
-                    description: CentralEndpointSpec defines the endpoint config for central.
-                    type: object
                   exposure:
                     description: Exposure defines how central is exposed.
                     properties:

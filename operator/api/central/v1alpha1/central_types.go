@@ -66,8 +66,7 @@ const (
 // CentralComponentSpec defines settings for the "central" component.
 type CentralComponentSpec struct {
 	common.DeploymentSpec `json:",inline"`
-	TelemetryPolicy       *TelemetryPolicy     `json:"telemetryPolicy,omitempty"`
-	Endpoint              *CentralEndpointSpec `json:"endpoint,omitempty"`
+	TelemetryPolicy       *TelemetryPolicy `json:"telemetryPolicy,omitempty"`
 
 	// Implementation note: this is distinct from the secret that contains the htpasswd-encoded password mounted in central.
 	// TODO(ROX-7242): expose the secret name unconditionally
@@ -80,6 +79,7 @@ type CentralComponentSpec struct {
 	Exposure            *Exposure                    `json:"exposure,omitempty"`
 	// TODO(ROX-7123): determine whether we want to make `extraMounts` available in the operator
 	// TODO(ROX-7112): should we expose central.config? It's exposed in helm charts but not documented in help.stackrox.com.
+	// TODO(ROX-7147): design central endpoint
 }
 
 // TelemetryPolicy is a type for values of spec.centralSpec.telemetryPolicy.
@@ -91,13 +91,6 @@ const (
 	// TelemetryDisabled means that telemetry should be disabled.
 	TelemetryDisabled TelemetryPolicy = "Disabled"
 )
-
-// CentralEndpointSpec defines the endpoint config for central.
-type CentralEndpointSpec struct {
-	// TODO(ROX-7147): design this
-	// should this be an opaque YAML like in helm or structured data that would let us configure
-	// network policy as well? I.e. should this be merged with Exposure?
-}
 
 // Persistence defines persistence settings for central.
 type Persistence struct {
