@@ -210,10 +210,6 @@ func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 		sv.AddChild("autoscaling", &autoscaling)
 	}
 
-	if s.Logging != nil {
-		sv.SetString("logLevel", s.Logging.Level)
-	}
-
 	if s.Scanner != nil {
 		sv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, s.Scanner.ServiceTLS, "spec.scanner.scanner.serviceTLS"))
 		sv.SetStringMap("nodeSelector", s.Scanner.NodeSelector)

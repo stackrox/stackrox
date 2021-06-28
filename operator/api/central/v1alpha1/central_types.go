@@ -145,7 +145,6 @@ type ScannerComponentSpec struct {
 	// Defaults to Enabled
 	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
 	Replicas         *ScannerReplicas        `json:"replicas,omitempty"`
-	Logging          *ScannerLogging         `json:"logging,omitempty"`
 	Scanner          *common.DeploymentSpec  `json:"scanner,omitempty"`
 	ScannerDB        *common.DeploymentSpec  `json:"scannerDB,omitempty"`
 }
@@ -188,13 +187,6 @@ const (
 	// ScannerAutoScalingDisabled means that scanner autoscaling should be disabled.
 	ScannerAutoScalingDisabled AutoScalingPolicy = "Disabled"
 )
-
-// ScannerLogging defines logging settings for scanner.
-type ScannerLogging struct {
-	// Defaults to INFO.
-	// TODO(ROX-7124): either document allowed values or drop the field
-	Level *string `json:"level,omitempty"`
-}
 
 // -------------------------------------------------------------
 // Status

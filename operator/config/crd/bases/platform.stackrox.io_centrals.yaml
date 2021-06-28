@@ -248,14 +248,6 @@ spec:
                 description: ScannerComponentSpec defines settings for the "scanner"
                   component.
                 properties:
-                  logging:
-                    description: ScannerLogging defines logging settings for scanner.
-                    properties:
-                      level:
-                        description: 'Defaults to INFO. TODO(ROX-7124): either document
-                          allowed values or drop the field'
-                        type: string
-                    type: object
                   replicas:
                     description: ScannerReplicas defines replication settings of scanner.
                     properties:
