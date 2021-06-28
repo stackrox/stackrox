@@ -27,8 +27,8 @@ class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
     static final private String NONE = "None"
     static final private String SECRETNAME = "sac-secret"
-    static final private String ALLACCESSTOKEN = "allAccessToken"
-    static final private String NOACCESSTOKEN = "noAccess"
+    static final protected String ALLACCESSTOKEN = "allAccessToken"
+    static final protected String NOACCESSTOKEN = "noAccess"
     static final private Deployment DEPLOYMENT_QA1 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA1)
             .setImage("nginx:1.7.9")
@@ -90,7 +90,7 @@ class SACTest extends BaseSpecification {
         return NamespaceService.getNamespaces().size()
     }
 
-    static useToken(String tokenName) {
+    def useToken(String tokenName) {
         GenerateTokenResponse token = ApiTokenService.generateToken(tokenName, NONE)
         BaseService.useApiToken(token.token)
     }
@@ -111,6 +111,8 @@ class SACTest extends BaseSpecification {
     def deleteSecret(String namespace) {
         orchestrator.deleteSecret(SECRETNAME, namespace)
     }
+
+    Boolean summaryTestShouldSeeNoClustersAndNodes() { true }
 
     @Unroll
     def "Verify that only namespace #sacResource is visible when using SAC"() {
@@ -162,8 +164,10 @@ class SACTest extends BaseSpecification {
         "Verify correct counts are returned by GetSummaryCounts"
         assert result.getNumDeployments() == 1
         assert result.getNumSecrets() == orchestrator.getSecretCount(DEPLOYMENT_QA1.namespace)
-        assert result.getNumNodes() == 0
-        assert result.getNumClusters() == 0
+        if (summaryTestShouldSeeNoClustersAndNodes()) {
+            assert result.getNumNodes() == 0
+            assert result.getNumClusters() == 0
+        }
         assert result.getNumImages() == 1
         cleanup:
         "Cleanup"
@@ -248,8 +252,8 @@ class SACTest extends BaseSpecification {
 
         where:
         "Data inputs are: "
-        tokenName                | category      | numResults
-        NOACCESSTOKEN            | "Cluster"     | 0
+        tokenName                | category     | numResults
+        NOACCESSTOKEN            | "Cluster"    | 0
         "searchDeploymentsToken" | "Deployment" | 1
         "searchImagesToken"      | "Image"      | 1
     }
@@ -353,7 +357,7 @@ class SACTest extends BaseSpecification {
         "Cleanup"
         BaseService.useBasicAuth()
         where:
-        "Data iputs are: "
+        "Data inputs are: "
         tokenName                | numReturned | resultCountFunc          | service
         NOACCESSTOKEN            | 0           | this.&getDeploymentCount | "Deployment"
         "searchDeploymentsToken" | 1           | this.&getDeploymentCount | "Deployment"

@@ -27,21 +27,18 @@ class RoleService extends BaseService {
         }
     }
 
-    static createRole(Role role) {
-        try {
-            Role r = role
-            if (role.permissionSetId == "" &&
-                    FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
-                def permissionSet = createPermissionSet(
-                        "Test Automation Permission Set for ${role.name}", role.resourceToAccess)
-                r = Role.newBuilder(role)
-                        .clearResourceToAccess()
-                        .setPermissionSetId(permissionSet.id).build()
-            }
-            getRoleService().createRole(r)
-        } catch (Exception e) {
-            println "Failed to create role ${role.name}: ${e}"
+    static Role createRole(Role role) {
+        Role r = role
+        if (role.permissionSetId == "" &&
+                FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
+            def permissionSet = createPermissionSet(
+                    "Test Automation Permission Set for ${role.name}", role.resourceToAccess)
+            r = Role.newBuilder(role)
+                    .clearResourceToAccess()
+                    .setPermissionSetId(permissionSet.id).build()
         }
+        getRoleService().createRole(r)
+        r
     }
 
     static deleteRole(String name) {
@@ -70,6 +67,14 @@ class RoleService extends BaseService {
         } catch (Exception e) {
             println "Error deleting permission set ${id}: ${e}"
         }
+    }
+
+    static RoleOuterClass.SimpleAccessScope createAccessScope(RoleOuterClass.SimpleAccessScope accessScope) {
+        return getRoleService().postSimpleAccessScope(accessScope)
+    }
+
+    static deleteAccessScope(String id) {
+        getRoleService().deleteSimpleAccessScope(Common.ResourceByID.newBuilder().setId(id).build())
     }
 
     static myPermissions() {
