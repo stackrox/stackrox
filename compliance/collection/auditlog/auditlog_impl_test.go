@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,9 +21,7 @@ type mockSender struct {
 }
 
 func (c *mockSender) Send(ctx context.Context, event *auditEvent) error {
-	go func() {
-		c.sentC <- event
-	}()
+	c.sentC <- event
 	return nil
 }
 
@@ -87,7 +86,6 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsErrorIfReaderIsAlre
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
-	s.T().Skip("Skipping until ROX-7291/ROX-7354 is fixed")
 	tempDir, err := ioutil.TempDir("", "")
 	s.NoError(err)
 	defer func() {
@@ -97,14 +95,9 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 
 	sender, reader := s.getMocks(logPath)
 
-	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	s.NoError(err)
-	defer s.cleanupFile(f, logPath)
-
-	line, expectedEvent := s.fakeAuditLogLine("get", "secrets", "fake-token", "stackrox")
-	_, err = f.Write([]byte(line))
-	s.NoError(err)
-	s.NoError(f.Sync())
+	eventTime := time.Now()
+	line, expectedEvent := s.fakeAuditLogLineAtTime("get", "secrets", "fake-token", "stackrox", eventTime.Format(time.RFC3339Nano))
+	s.writeToNewFile(logPath, line)
 
 	started, err := reader.StartReader(context.Background())
 	s.True(started)
@@ -115,12 +108,29 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 	s.Equal(expectedEvent, *event)
 
 	// Write a few more log lines and check that they are read and parsed
+	expectedEvents := make([]auditEvent, 0, 3)
+	lines := make([]string, 0, 3)
 	for i := 0; i < 3; i++ {
-		line, expectedEvent = s.fakeAuditLogLine("get", "configmaps", fmt.Sprintf("fake-map%d", i), "stackrox")
-		_, err = f.Write([]byte(line))
-		s.NoError(err)
-		s.NoError(f.Sync())
+		eventTime = eventTime.Add(60 * time.Second)
+		line, expectedEvent = s.fakeAuditLogLineAtTime("get", "configmaps", fmt.Sprintf("fake-map%d", i), "stackrox", eventTime.Format(time.RFC3339Nano))
+		expectedEvents = append(expectedEvents, expectedEvent)
+		lines = append(lines, line)
+	}
 
+	// Write to the file in parallel to simulate the log file getting written to in parallel
+	go func() {
+		for _, line := range lines {
+			s.appendToFile(logPath, line)
+		}
+		// Write an extra line because the tailer and this test very rarely get stuck if the log just stops. This is an extremely
+		// unlikely scenario is real life since the audit log is constantly being written to
+		line, _ := s.fakeAuditLogLineAtTime("get", "configmaps", "extra-map", "stackrox", eventTime.Format(time.RFC3339Nano))
+		s.appendToFile(logPath, line)
+	}()
+
+	time.Sleep(1 * time.Second)
+
+	for _, expectedEvent := range expectedEvents {
 		event = s.getSentEvent(sender.sentC)
 		s.Equal(expectedEvent, *event)
 	}
@@ -201,7 +211,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBePar
 
 func (s *ComplianceAuditLogReaderTestSuite) getMocks(logPath string) (*mockSender, *auditLogReaderImpl) {
 	sender := &mockSender{
-		sentC: make(chan *auditEvent, 5),
+		sentC: make(chan *auditEvent, 10), // large enough to be able to buffer everything in the tests
 	}
 
 	reader := &auditLogReaderImpl{
@@ -212,6 +222,23 @@ func (s *ComplianceAuditLogReaderTestSuite) getMocks(logPath string) (*mockSende
 	return sender, reader
 }
 
+func (s *ComplianceAuditLogReaderTestSuite) writeToNewFile(logPath string, lines ...string) {
+	err := ioutil.WriteFile(logPath, []byte(strings.Join(lines, "\n")), 0600)
+	s.NoError(err)
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) appendToFile(logPath string, lines ...string) {
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY, 0600)
+	s.NoError(err)
+
+	defer func() {
+		s.NoError(f.Close())
+	}()
+
+	_, err = f.WriteString(strings.Join(lines, "\n"))
+	s.NoError(err)
+}
+
 func (s *ComplianceAuditLogReaderTestSuite) cleanupFile(f *os.File, path string) {
 	_ = f.Close()
 	err := os.Remove(path)
@@ -219,6 +246,9 @@ func (s *ComplianceAuditLogReaderTestSuite) cleanupFile(f *os.File, path string)
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLine(verb, resourceType, resourceName, namespace string) (string, auditEvent) {
+	return s.fakeAuditLogLineAtTime(verb, resourceType, resourceName, namespace, "2021-05-06T00:19:49.915375Z")
+}
+func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLineAtTime(verb, resourceType, resourceName, namespace, time string) (string, auditEvent) {
 	uri := fmt.Sprintf("/api/v1/namespaces/stackrox/%s/%s", resourceType, resourceName)
 	event := auditEvent{
 		Annotations: map[string]string{
@@ -235,7 +265,7 @@ func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLine(verb, resourceType,
 			Namespace:  namespace,
 			Resource:   resourceType,
 		},
-		RequestReceivedTimestamp: "2021-05-06T00:19:49.906385Z",
+		RequestReceivedTimestamp: time,
 		RequestURI:               uri,
 		ResponseStatus: responseStatusRef{
 			Metadata: nil,
@@ -245,7 +275,7 @@ func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLine(verb, resourceType,
 		},
 		SourceIPs:      []string{"10.0.119.155"},
 		Stage:          "ResponseComplete",
-		StageTimestamp: "2021-05-06T00:19:49.915375Z",
+		StageTimestamp: time,
 		User: userRef{
 			Username: "cluster-admin",
 			UID:      "56d060c4-363a-4d1f-bffc-b146078ccb8e",
