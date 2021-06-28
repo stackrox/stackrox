@@ -164,30 +164,26 @@ func roleHasPermissions(r *permissions.ResolvedRole, cache *authorizerDataCache,
 }
 
 func permissionsSetAllows(rolePermissionSet *storage.PermissionSet, scope payload.AccessScope) bool {
-	queriedAccesScope := storage.Access_NO_ACCESS
+	queriedAccessScope := storage.Access_NO_ACCESS
 	switch scope.Verb {
 	case view:
-		queriedAccesScope = storage.Access_READ_ACCESS
+		queriedAccessScope = storage.Access_READ_ACCESS
 	case "", edit:
-		queriedAccesScope = storage.Access_READ_WRITE_ACCESS
+		queriedAccessScope = storage.Access_READ_WRITE_ACCESS
 	}
 
-	permissionMap := permissions.PermissionMap{}
+	if scope.Noun != "" {
+		return rolePermissionSet.ResourceToAccess[scope.Noun] >= queriedAccessScope
+	}
+
 	// If there is no noun let's assume query applies for all resources
-	if scope.Noun == "" {
-		for _, rwa := range resources.ListAll() {
-			permissionMap[rwa] = queriedAccesScope
+	for _, rwa := range resources.ListAll() {
+		if rolePermissionSet.ResourceToAccess[string(rwa)] < queriedAccessScope {
+			return false
 		}
-	} else {
-		permissionMap[permissions.Resource(scope.Noun)] = queriedAccesScope
 	}
 
-	rolePermissionMap := permissions.PermissionMap{}
-	for resourceName, access := range rolePermissionSet.ResourceToAccess {
-		rolePermissionMap.Add(permissions.Resource(resourceName), access)
-	}
-	//TODO(ROX-7389): We can answer below question without constructing maps
-	return permissionMap.IsLessOrEqual(rolePermissionMap)
+	return true
 }
 
 func effectiveAccessScopeAllows(effectiveAccessScope *sac.EffectiveAccessScopeTree, scope payload.AccessScope) bool {
