@@ -220,3 +220,54 @@ Also, you can blow everything away with
 $ bin/operator-sdk-1.9.0 olm uninstall
 $ kubectl delete ns bundle-test
 ```
+
+### Launch the Operator with OLM and Index
+
+```bash
+kubectl create ns index-test
+
+../deploy/common/pull-secret.sh my-opm-image-pull-secrets docker.io | kubectl -n index-test apply -f -
+
+echo "apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: rhacs-operator-test-index
+  namespace: index-test
+spec:
+  sourceType: grpc
+  secrets:
+  - my-opm-image-pull-secrets
+  image: docker.io/stackrox/stackrox-operator-index:v$(make --quiet tag)
+  displayName: RHACS Operator Test index" | kubectl -n index-test apply -f -
+
+echo 'apiVersion: operators.coreos.com/v1alpha2
+kind: OperatorGroup
+metadata:
+  name: all-namespaces-operator-group
+  namespace: index-test' | kubectl -n index-test apply -f -
+
+echo 'apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhacs-operator-test-subscription
+  namespace: index-test
+spec:
+  channel: preview
+  name: rhacs-operator
+  source: rhacs-operator-test-index
+  sourceNamespace: index-test
+  installPlanApproval: Automatic' | kubectl -n index-test apply -f -
+
+kubectl -n index-test patch clusterserviceversions.operators.coreos.com rhacs-operator.v$(make --quiet tag) --type json -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "my-opm-image-pull-secrets"}] } ]'
+
+kubectl -n index-test delete deployments.apps rhacs-operator-controller-manager
+
+# undeploy
+
+kubectl -n index-test delete clusterserviceversions.operators.coreos.com -l operators.coreos.com/rhacs-operator.index-test
+
+kubectl -n index-test delete subscriptions.operators.coreos.com rhacs-operator-test-subscription
+
+kubectl -n index-test delete catalogsources.operators.coreos.com rhacs-operator-test-index
+
+```
