@@ -92,16 +92,14 @@ func TestTranslate(t *testing.T) {
 									"central-node-selector-label1": "central-node-selector-value1",
 									"central-node-selector-label2": "central-node-selector-value2",
 								},
-								Resources: &common.Resources{
-									Override: &corev1.ResourceRequirements{
-										Limits: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.MustParse("10"),
-											corev1.ResourceMemory: resource.MustParse("20"),
-										},
-										Requests: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.MustParse("30"),
-											corev1.ResourceMemory: resource.MustParse("40"),
-										},
+								Resources: &corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("10"),
+										corev1.ResourceMemory: resource.MustParse("20"),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("30"),
+										corev1.ResourceMemory: resource.MustParse("40"),
 									},
 								},
 							},
@@ -145,16 +143,14 @@ func TestTranslate(t *testing.T) {
 									"scanner-node-selector-label1": "scanner-node-selector-value1",
 									"scanner-node-selector-label2": "scanner-node-selector-value2",
 								},
-								Resources: &common.Resources{
-									Override: &corev1.ResourceRequirements{
-										Limits: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.MustParse("50"),
-											corev1.ResourceMemory: resource.MustParse("60"),
-										},
-										Requests: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.MustParse("70"),
-											corev1.ResourceMemory: resource.MustParse("80"),
-										},
+								Resources: &corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("50"),
+										corev1.ResourceMemory: resource.MustParse("60"),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("70"),
+										corev1.ResourceMemory: resource.MustParse("80"),
 									},
 								},
 							},
@@ -166,16 +162,14 @@ func TestTranslate(t *testing.T) {
 									"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 									"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
 								},
-								Resources: &common.Resources{
-									Override: &corev1.ResourceRequirements{
-										Limits: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.MustParse("90"),
-											corev1.ResourceMemory: resource.MustParse("100"),
-										},
-										Requests: corev1.ResourceList{
-											corev1.ResourceCPU:    resource.MustParse("110"),
-											corev1.ResourceMemory: resource.MustParse("120"),
-										},
+								Resources: &corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("90"),
+										corev1.ResourceMemory: resource.MustParse("100"),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("110"),
+										corev1.ResourceMemory: resource.MustParse("120"),
 									},
 								},
 							},

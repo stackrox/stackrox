@@ -7,13 +7,12 @@ spec:
   # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
   central:
     resources:
-      override:
-        requests:
-          memory: 1Gi
-          cpu: 1
-        limits:
-          memory: 4Gi
-          cpu: 1
+      requests:
+        memory: 1Gi
+        cpu: 1
+      limits:
+        memory: 4Gi
+        cpu: 1
     adminPasswordSecret:
       name: admin-pass
   scanner:
@@ -22,13 +21,12 @@ spec:
       replicas: 1
     scanner:
       resources:
-        override:
-          requests:
-            memory: 500Mi
-            cpu: 500m
-          limits:
-            memory: 2500Mi
-            cpu: 2000m
+        requests:
+          memory: 500Mi
+          cpu: 500m
+        limits:
+          memory: 2500Mi
+          cpu: 2000m
 ---
 apiVersion: v1
 kind: Secret
