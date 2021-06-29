@@ -18,10 +18,6 @@ type CustomizeSpec struct {
 	Labels map[string]string `json:"labels,omitempty"`
 	// Custom annotations to set on all objects apart from Pods.
 	Annotations map[string]string `json:"annotations,omitempty"`
-	// Custom labels to set on Pods.
-	PodLabels map[string]string `json:"podLabels,omitempty"`
-	// Custom annotations to set on Pods.
-	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 	// Custom environment variables to set on pods' containers.
 	EnvVars map[string]string `json:"envVars,omitempty"`
 }
@@ -31,8 +27,6 @@ type DeploymentSpec struct {
 	ServiceTLSSpec `json:",inline"`
 	NodeSelector   map[string]string `json:"nodeSelector,omitempty"`
 	Resources      *Resources        `json:"resources,omitempty"`
-	// Customizations to apply on this deployment.
-	Customize *CustomizeSpec `json:"customize,omitempty"`
 }
 
 // ServiceTLSSpec is just a wrapper for ServiceTLS field to make documentation available in all spots where it is used.

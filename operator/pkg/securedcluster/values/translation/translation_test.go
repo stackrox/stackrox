@@ -107,14 +107,6 @@ func TestTranslateComplete(t *testing.T) {
 								"customize-annotation1": "customize-annotation1-value",
 								"customize-annotation2": "customize-annotation2-value",
 							},
-							PodLabels: map[string]string{
-								"customize-pod-label1": "customize-pod-label1-value",
-								"customize-pod-label2": "customize-pod-label2-value",
-							},
-							PodAnnotations: map[string]string{
-								"customize-pod-annotation1": "customize-pod-annotation1-value",
-								"customize-pod-annotation2": "customize-pod-annotation2-value",
-							},
 							EnvVars: map[string]string{
 								"customize-env-var1": "customize-env-var1-value",
 								"customize-env-var2": "customize-env-var2-value",
@@ -150,14 +142,6 @@ func TestTranslateComplete(t *testing.T) {
 					"envVars": map[string]string{
 						"customize-env-var1": "customize-env-var1-value",
 						"customize-env-var2": "customize-env-var2-value",
-					},
-					"podAnnotations": map[string]string{
-						"customize-pod-annotation1": "customize-pod-annotation1-value",
-						"customize-pod-annotation2": "customize-pod-annotation2-value",
-					},
-					"podLabels": map[string]string{
-						"customize-pod-label1": "customize-pod-label1-value",
-						"customize-pod-label2": "customize-pod-label2-value",
 					},
 				},
 				"collector": map[string]interface{}{

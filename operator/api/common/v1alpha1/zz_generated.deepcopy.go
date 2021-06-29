@@ -56,20 +56,6 @@ func (in *CustomizeSpec) DeepCopyInto(out *CustomizeSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.PodLabels != nil {
-		in, out := &in.PodLabels, &out.PodLabels
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
-	if in.PodAnnotations != nil {
-		in, out := &in.PodAnnotations, &out.PodAnnotations
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
 	if in.EnvVars != nil {
 		in, out := &in.EnvVars, &out.EnvVars
 		*out = make(map[string]string, len(*in))
@@ -103,11 +89,6 @@ func (in *DeploymentSpec) DeepCopyInto(out *DeploymentSpec) {
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = new(Resources)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Customize != nil {
-		in, out := &in.Customize, &out.Customize
-		*out = new(CustomizeSpec)
 		(*in).DeepCopyInto(*out)
 	}
 }
