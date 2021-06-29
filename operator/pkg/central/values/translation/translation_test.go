@@ -129,7 +129,7 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 						},
-						Scanner: &v1alpha1.ScannerComponentSpec{
+						Analyzer: &v1alpha1.AnalyzerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
 							Replicas: &v1alpha1.ScannerReplicas{
 								AutoScaling: &scannerAutoScalingPolicy,

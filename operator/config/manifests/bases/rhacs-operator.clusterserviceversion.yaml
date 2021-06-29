@@ -31,6 +31,8 @@ spec:
         name: scanner-db
         version: v1
       specDescriptors:
+      - displayName: Analyzer
+        path: analyzer
       - displayName: Central
         path: central
       - description: Customizations to apply on all central components.
@@ -40,8 +42,6 @@ spec:
         path: egress
       - displayName: Image Pull Secrets
         path: imagePullSecrets
-      - displayName: Scanner
-        path: scanner
       - displayName: TLS
         path: tls
       statusDescriptors:

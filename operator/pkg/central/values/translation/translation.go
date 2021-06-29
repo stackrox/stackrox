@@ -66,8 +66,8 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 		v.AddChild("central", getCentralComponentValues(ctx, clientSet, c.Namespace, c.Spec.Central))
 	}
 
-	if c.Spec.Scanner != nil {
-		v.AddChild("scanner", getScannerComponentValues(ctx, clientSet, c.Namespace, c.Spec.Scanner))
+	if c.Spec.Analyzer != nil {
+		v.AddChild("scanner", getScannerComponentValues(ctx, clientSet, c.Namespace, c.Spec.Analyzer))
 	}
 
 	v.AddChild("customize", &customize)
@@ -169,7 +169,7 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	return &cv
 }
 
-func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, s *central.ScannerComponentSpec) *translation.ValuesBuilder {
+func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, s *central.AnalyzerComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	if s.ScannerComponent != nil {
