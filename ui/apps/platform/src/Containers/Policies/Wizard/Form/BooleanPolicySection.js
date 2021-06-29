@@ -17,21 +17,21 @@ import {
 } from './descriptors';
 
 function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource }) {
-    const [descriptor, setDescriptor] = useState(policyConfigurationDescriptor);
+    const [descriptor, setDescriptor] = useState([]);
     const networkDetectionBaselineViolationEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_VIOLATION
     );
     const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
 
     useEffect(() => {
-        if (networkDetectionBaselineViolationEnabled) {
-            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
-        }
         if (auditLogEnabled && hasAuditLogEventSource) {
             setDescriptor(auditLogDescriptor);
+        } else if (networkDetectionBaselineViolationEnabled) {
+            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
+        } else {
+            setDescriptor(policyConfigurationDescriptor);
         }
     }, [auditLogEnabled, hasAuditLogEventSource, networkDetectionBaselineViolationEnabled]);
-
     if (readOnly) {
         return (
             <div className="w-full flex">
@@ -75,7 +75,7 @@ BooleanPolicySection.defaultProps = {
 const mapStateToProps = createStructuredSelector({
     hasAuditLogEventSource: (state) => {
         const eventSourceValue = formValueSelector('policyCreationForm')(state, 'eventSource');
-        return eventSourceValue === 'AUDIT_LOG';
+        return eventSourceValue === 'AUDIT_LOG_EVENT';
     },
 });
 

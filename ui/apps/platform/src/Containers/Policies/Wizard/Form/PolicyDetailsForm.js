@@ -102,9 +102,9 @@ function PolicyDetailsForm({
                                     options={[
                                         {
                                             label: 'Deployment',
-                                            value: 'DEPLOYMENT',
+                                            value: 'DEPLOYMENT_EVENT',
                                         },
-                                        { label: 'Audit Log', value: 'AUDIT_LOG' },
+                                        { label: 'Audit Log', value: 'AUDIT_LOG_EVENT' },
                                     ]}
                                     disabled={!includesRuntimeLifecycleStage}
                                 />
@@ -196,7 +196,7 @@ const mapStateToProps = createStructuredSelector({
     },
     includesAuditLogEventSource: (state) => {
         const eventSourceValue = formValueSelector('policyCreationForm')(state, 'eventSource');
-        return eventSourceValue === 'AUDIT_LOG';
+        return eventSourceValue === 'AUDIT_LOG_EVENT';
     },
     hasExcludedImageNames: (state) => {
         const excludedImageNamesValue = formValueSelector('policyCreationForm')(

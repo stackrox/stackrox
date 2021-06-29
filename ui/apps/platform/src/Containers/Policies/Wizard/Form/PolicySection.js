@@ -67,7 +67,7 @@ function PolicySection({
                             />
                         );
                     })}
-                    {!readOnly && (
+                    {!readOnly && !!descriptor.length && (
                         <PolicySectionDropTarget
                             allFields={fields.getAll()}
                             addPolicyFieldCardHandler={addPolicyFieldCardHandler(fields)}

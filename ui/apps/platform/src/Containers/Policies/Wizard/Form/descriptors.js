@@ -891,8 +891,8 @@ export const auditLogDescriptor = [
         type: 'select',
         options: [
             {
-                label: 'Config Map',
-                value: 'CONFIG_MAP',
+                label: 'Config Maps',
+                value: 'CONFIGMAPS',
             },
             {
                 label: 'Secrets',

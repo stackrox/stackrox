@@ -112,7 +112,7 @@ SingleScope.propTypes = {
 const mapStateToProps = createStructuredSelector({
     includesAuditLogEventSource: (state) => {
         const eventSourceValue = formValueSelector('policyCreationForm')(state, 'eventSource');
-        return eventSourceValue === 'AUDIT_LOG';
+        return eventSourceValue === 'AUDIT_LOG_EVENT';
     },
 });
 

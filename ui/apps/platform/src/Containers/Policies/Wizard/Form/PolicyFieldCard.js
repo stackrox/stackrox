@@ -28,7 +28,7 @@ function PolicyFieldCard({
     isLast,
 }) {
     const borderColorClass = isNegated ? 'border-accent-400' : 'border-base-400';
-    const headerText = isNegated ? fieldKey.negatedName : fieldKey.longName || fieldKey.name;
+    const headerText = isNegated ? fieldKey.negatedName : fieldKey?.longName || fieldKey?.name;
     const lastFieldIndex = fields.length - 1;
     return (
         <>
@@ -42,7 +42,7 @@ function PolicyFieldCard({
                     </div>
                     {!readOnly && (
                         <>
-                            {fieldKey.negatedName && (
+                            {fieldKey?.negatedName && (
                                 <div
                                     className={`flex items-center p-2 border-l-2 ${borderColorClass}`}
                                     data-testid="not-toggle"
@@ -82,7 +82,7 @@ function PolicyFieldCard({
                         />
                     ))}
                     {/* this is because there can't be multiple boolean values */}
-                    {!readOnly && fieldKey.type !== 'radioGroup' && (
+                    {!readOnly && fieldKey?.type !== 'radioGroup' && (
                         <div className="flex flex-col pt-2">
                             <div className="flex justify-center">
                                 <Button
@@ -104,6 +104,7 @@ PolicyFieldCard.propTypes = {
     isNegated: PropTypes.bool.isRequired,
     removeFieldHandler: PropTypes.func.isRequired,
     booleanOperatorName: PropTypes.string.isRequired,
+    fieldKey: PropTypes.shape({}).isRequired,
     toggleFieldName: PropTypes.string.isRequired,
     readOnly: PropTypes.bool,
     isLast: PropTypes.bool,

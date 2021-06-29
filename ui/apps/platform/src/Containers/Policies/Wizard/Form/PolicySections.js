@@ -37,27 +37,29 @@ function PolicySections({
 
     useEffect(() => {
         // clear policy sections if user toggles between event source options
-        if (auditLogEnabled && fields.length > 0) {
+        if (auditLogEnabled && fields.length > 0 && !readOnly) {
             const field = fields.get(0);
-            if (field.policyGroups.length > 0) {
+            if (field?.policyGroups.length > 0) {
                 const fieldCard = field.policyGroups[0];
                 let { fieldKey } = fieldCard;
                 if (!fieldKey) {
                     fieldKey = descriptor.find((fieldObj) => fieldObj.name === fieldCard.fieldName);
                 }
-                const hasNonAuditLogFields =
-                    hasAuditLogEventSource &&
-                    (fieldKey.category !== policyCriteriaCategories.KUBERNETES_EVENTS ||
-                        fieldKey.label === 'Kubernetes Action');
-                const hasAuditLogFields =
-                    !hasAuditLogEventSource &&
-                    fieldKey.category === policyCriteriaCategories.KUBERNETES_EVENTS;
-                if (hasNonAuditLogFields || hasAuditLogFields) {
-                    fields.removeAll();
+                if (fieldKey) {
+                    const hasNonAuditLogFields =
+                        hasAuditLogEventSource &&
+                        (fieldKey.category !== policyCriteriaCategories.KUBERNETES_EVENTS ||
+                            fieldKey.label === 'Kubernetes Action');
+                    const hasAuditLogFields =
+                        !hasAuditLogEventSource &&
+                        fieldKey.category === policyCriteriaCategories.KUBERNETES_EVENTS;
+                    if (hasNonAuditLogFields || hasAuditLogFields) {
+                        fields.removeAll();
+                    }
                 }
             }
         }
-    }, [fields, auditLogEnabled, hasAuditLogEventSource, descriptor]);
+    }, [fields, auditLogEnabled, hasAuditLogEventSource, descriptor, readOnly]);
     return (
         <div className={`p-3 ${className} overflow-y-scroll`}>
             {hasHeader && <h2 className="text-2xl pb-2">Policy Criteria</h2>}

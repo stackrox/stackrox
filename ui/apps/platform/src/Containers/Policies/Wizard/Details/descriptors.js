@@ -23,6 +23,19 @@ const fieldsMap = {
         label: 'Lifecycle Stage',
         formatValue: (values) => values.map((v) => lifecycleStageLabels[v]).join(', '),
     },
+    eventSource: {
+        label: 'Event Source',
+        formatValue: (value) => {
+            switch (value) {
+                case 'AUDIT_LOG_EVENT':
+                    return 'Audit Log';
+                case 'DEPLOYMENT_EVENT':
+                    return 'Deployment';
+                default:
+                    return 'N/A';
+            }
+        },
+    },
     severity: {
         label: 'Severity',
         formatValue: (value) => {
