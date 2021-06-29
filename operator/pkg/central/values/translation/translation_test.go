@@ -100,6 +100,9 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
+							DefaultTLSSecret: &common.LocalSecretReference{
+								Name: "my-default-tls-secret",
+							},
 							TelemetryPolicy:     &telemetryPolicy,
 							AdminPasswordSecret: &corev1.LocalObjectReference{Name: "admin-password-secret"},
 							Persistence: &v1alpha1.Persistence{
@@ -209,6 +212,9 @@ func TestTranslate(t *testing.T) {
 				"central": map[string]interface{}{
 					"adminPassword": map[string]interface{}{
 						"value": "admin-password-plaintext",
+					},
+					"defaultTLS": map[string]interface{}{
+						"reference": "my-default-tls-secret",
 					},
 					"disableTelemetry": false,
 					"exposure": map[string]interface{}{

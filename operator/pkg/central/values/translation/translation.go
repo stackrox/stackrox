@@ -99,6 +99,11 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
+
+	if c.DefaultTLSSecret != nil {
+		cv.SetMap("defaultTLS", map[string]interface{}{"reference": c.DefaultTLSSecret.Name})
+	}
+
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 
 	if c.TelemetryPolicy != nil {

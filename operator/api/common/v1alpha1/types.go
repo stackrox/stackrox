@@ -89,3 +89,10 @@ type AdditionalCA struct {
 type TLSConfig struct {
 	AdditionalCAs []AdditionalCA `json:"additionalCAs,omitempty"`
 }
+
+// LocalSecretReference is a reference to a secret within the same namespace.
+type LocalSecretReference struct {
+	// The name of the referenced secret.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
+	Name string `json:"name"`
+}

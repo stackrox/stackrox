@@ -71,6 +71,10 @@ type CentralComponentSpec struct {
 	// Implementation note: this is distinct from the secret that contains the htpasswd-encoded password mounted in central.
 	// TODO(ROX-7242): expose the secret name unconditionally
 
+	// A Kubernetes secret that contains a TLS certificate and key for HTTPS serving of the web UI.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="User-facing TLS secret"
+	DefaultTLSSecret *common.LocalSecretReference `json:"defaultTLSSecret,omitempty"`
+
 	// Reference to a user-created Secret with admin password stored in data item "value".
 	// If omitted, the operator will instead auto-generate a password, create such secret and
 	// expose the name of that secret (if it is different from the name "central-admin-password") in status.central.generatedAdminPasswordSecret
