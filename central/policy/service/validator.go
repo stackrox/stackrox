@@ -316,7 +316,12 @@ func (s *policyValidator) compilesForDeployTime(policy *storage.Policy, options 
 }
 
 func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
-	_, err := booleanpolicy.BuildDeploymentMatcher(policy, options...)
+	var err error
+	if s.isAuditEventPolicy(policy) {
+		_, err = booleanpolicy.BuildAuditLogEventMatcher(policy, booleanpolicy.ValidateSourceIsAuditLogEvents())
+	} else {
+		_, err = booleanpolicy.BuildDeploymentMatcher(policy, options...)
+	}
 	if err != nil {
 		return errors.Wrap(err, "policy configuration is invalid for runtime")
 	}
