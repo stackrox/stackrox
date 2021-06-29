@@ -85,9 +85,6 @@ func TestTranslate(t *testing.T) {
 						},
 						Central: &v1alpha1.CentralComponentSpec{
 							DeploymentSpec: common.DeploymentSpec{
-								ServiceTLSSpec: common.ServiceTLSSpec{
-									ServiceTLS: &corev1.LocalObjectReference{Name: "central-tls-spec-secret"},
-								},
 								NodeSelector: map[string]string{
 									"central-node-selector-label1": "central-node-selector-value1",
 									"central-node-selector-label2": "central-node-selector-value2",
@@ -136,9 +133,6 @@ func TestTranslate(t *testing.T) {
 								MaxReplicas: &scannerMaxReplicas,
 							},
 							Scanner: &common.DeploymentSpec{
-								ServiceTLSSpec: common.ServiceTLSSpec{
-									ServiceTLS: &corev1.LocalObjectReference{Name: "scanner-tls-spec-secret"},
-								},
 								NodeSelector: map[string]string{
 									"scanner-node-selector-label1": "scanner-node-selector-value1",
 									"scanner-node-selector-label2": "scanner-node-selector-value2",
@@ -155,9 +149,6 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 							ScannerDB: &common.DeploymentSpec{
-								ServiceTLSSpec: common.ServiceTLSSpec{
-									ServiceTLS: &corev1.LocalObjectReference{Name: "scanner-db-tls-spec-secret"},
-								},
 								NodeSelector: map[string]string{
 									"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 									"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
@@ -256,10 +247,6 @@ func TestTranslate(t *testing.T) {
 							"memory": "40",
 						},
 					},
-					"serviceTLS": map[string]interface{}{
-						"cert": "central-tls-spec-secret-cert-content",
-						"key":  "central-tls-spec-secret-key-content",
-					},
 				},
 				"env": map[string]interface{}{
 					"offlineMode": true,
@@ -320,14 +307,6 @@ func TestTranslate(t *testing.T) {
 							"cpu":    "110",
 							"memory": "120",
 						},
-					},
-					"serviceTLS": map[string]interface{}{
-						"cert": "scanner-tls-spec-secret-cert-content",
-						"key":  "scanner-tls-spec-secret-key-content",
-					},
-					"dbServiceTLS": map[string]interface{}{
-						"cert": "scanner-db-tls-spec-secret-cert-content",
-						"key":  "scanner-db-tls-spec-secret-key-content",
 					},
 				},
 			},

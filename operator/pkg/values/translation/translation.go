@@ -45,22 +45,6 @@ func GetCustomize(customizeSpec *common.CustomizeSpec) *ValuesBuilder {
 	return &res
 }
 
-// GetServiceTLS reads given secret and returns "serviceTLS" chart values.
-func GetServiceTLS(ctx context.Context, clientSet kubernetes.Interface, namespace string, serviceTLS *corev1.LocalObjectReference, crPath string) *ValuesBuilder {
-	return GetServiceTLSWithKey(ctx, clientSet, namespace, serviceTLS, crPath, "serviceTLS")
-}
-
-// GetServiceTLSWithKey reads given secret and returns chart values with given key.
-func GetServiceTLSWithKey(ctx context.Context, clientSet kubernetes.Interface, namespace string, serviceTLS *corev1.LocalObjectReference, crPath string, key string) *ValuesBuilder {
-	if serviceTLS == nil {
-		return nil
-	}
-
-	res := NewValuesBuilder()
-	res.AddChild(key, NewBuilderFromSecret(ctx, clientSet, namespace, serviceTLS, map[string]string{"key": "key", "cert": "cert"}, crPath))
-	return &res
-}
-
 // GetImagePullSecrets converts corev1.LocalObjectReference to a *ValuesBuilder with an "imagePullSecrets" field.
 func GetImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) *ValuesBuilder {
 	res := NewValuesBuilder()

@@ -24,16 +24,8 @@ type CustomizeSpec struct {
 
 // DeploymentSpec defines settings that affect a deployment.
 type DeploymentSpec struct {
-	ServiceTLSSpec `json:",inline"`
-	NodeSelector   map[string]string            `json:"nodeSelector,omitempty"`
-	Resources      *corev1.ResourceRequirements `json:"resources,omitempty"`
-}
-
-// ServiceTLSSpec is just a wrapper for ServiceTLS field to make documentation available in all spots where it is used.
-type ServiceTLSSpec struct {
-	// ServiceTLS is a secret certificate and keypair used to secure internal service to service communications.
-	// By default, this certificate is automatically generated.
-	ServiceTLS *corev1.LocalObjectReference `json:"serviceTLS,omitempty"`
+	NodeSelector map[string]string            `json:"nodeSelector,omitempty"`
+	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // StackRoxCondition defines a condition for a StackRox custom resource.
