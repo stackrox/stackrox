@@ -42,8 +42,6 @@ func GetCustomize(customizeSpec *common.CustomizeSpec) *ValuesBuilder {
 	res := NewValuesBuilder()
 	res.SetStringMap("labels", customizeSpec.Labels)
 	res.SetStringMap("annotations", customizeSpec.Annotations)
-	res.SetStringMap("podLabels", customizeSpec.PodLabels)
-	res.SetStringMap("podAnnotations", customizeSpec.PodAnnotations)
 	res.SetStringMap("envVars", customizeSpec.EnvVars)
 	return &res
 }

@@ -66,17 +66,10 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 
 	if c.Spec.Central != nil {
 		v.AddChild("central", getCentralComponentValues(ctx, clientSet, c.Namespace, c.Spec.Central))
-		customize.AddChild("central", translation.GetCustomize(c.Spec.Central.Customize))
 	}
 
 	if c.Spec.Scanner != nil {
 		v.AddChild("scanner", getScannerComponentValues(ctx, clientSet, c.Namespace, c.Spec.Scanner))
-		if c.Spec.Scanner.Scanner != nil {
-			customize.AddChild("scanner", translation.GetCustomize(c.Spec.Scanner.Scanner.Customize))
-		}
-		if c.Spec.Scanner.ScannerDB != nil {
-			customize.AddChild("scanner-db", translation.GetCustomize(c.Spec.Scanner.ScannerDB.Customize))
-		}
 	}
 
 	v.AddChild("customize", &customize)

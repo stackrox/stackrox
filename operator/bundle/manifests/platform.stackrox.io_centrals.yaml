@@ -40,35 +40,6 @@ spec:
                         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
                         type: string
                     type: object
-                  customize:
-                    description: Customizations to apply on this deployment.
-                    properties:
-                      annotations:
-                        additionalProperties:
-                          type: string
-                        description: Custom annotations to set on all objects apart from Pods.
-                        type: object
-                      envVars:
-                        additionalProperties:
-                          type: string
-                        description: Custom environment variables to set on pods' containers.
-                        type: object
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: Custom labels to set on all objects apart from Pods.
-                        type: object
-                      podAnnotations:
-                        additionalProperties:
-                          type: string
-                        description: Custom annotations to set on Pods.
-                        type: object
-                      podLabels:
-                        additionalProperties:
-                          type: string
-                        description: Custom labels to set on Pods.
-                        type: object
-                    type: object
                   exposure:
                     description: Exposure defines how central is exposed.
                     properties:
@@ -173,16 +144,6 @@ spec:
                       type: string
                     description: Custom labels to set on all objects apart from Pods.
                     type: object
-                  podAnnotations:
-                    additionalProperties:
-                      type: string
-                    description: Custom annotations to set on Pods.
-                    type: object
-                  podLabels:
-                    additionalProperties:
-                      type: string
-                    description: Custom labels to set on Pods.
-                    type: object
                 type: object
               egress:
                 description: Egress defines settings related to outgoing network traffic.
@@ -232,35 +193,6 @@ spec:
                   scanner:
                     description: DeploymentSpec defines settings that affect a deployment.
                     properties:
-                      customize:
-                        description: Customizations to apply on this deployment.
-                        properties:
-                          annotations:
-                            additionalProperties:
-                              type: string
-                            description: Custom annotations to set on all objects apart from Pods.
-                            type: object
-                          envVars:
-                            additionalProperties:
-                              type: string
-                            description: Custom environment variables to set on pods' containers.
-                            type: object
-                          labels:
-                            additionalProperties:
-                              type: string
-                            description: Custom labels to set on all objects apart from Pods.
-                            type: object
-                          podAnnotations:
-                            additionalProperties:
-                              type: string
-                            description: Custom annotations to set on Pods.
-                            type: object
-                          podLabels:
-                            additionalProperties:
-                              type: string
-                            description: Custom labels to set on Pods.
-                            type: object
-                        type: object
                       nodeSelector:
                         additionalProperties:
                           type: string
@@ -305,35 +237,6 @@ spec:
                   scannerDB:
                     description: DeploymentSpec defines settings that affect a deployment.
                     properties:
-                      customize:
-                        description: Customizations to apply on this deployment.
-                        properties:
-                          annotations:
-                            additionalProperties:
-                              type: string
-                            description: Custom annotations to set on all objects apart from Pods.
-                            type: object
-                          envVars:
-                            additionalProperties:
-                              type: string
-                            description: Custom environment variables to set on pods' containers.
-                            type: object
-                          labels:
-                            additionalProperties:
-                              type: string
-                            description: Custom labels to set on all objects apart from Pods.
-                            type: object
-                          podAnnotations:
-                            additionalProperties:
-                              type: string
-                            description: Custom annotations to set on Pods.
-                            type: object
-                          podLabels:
-                            additionalProperties:
-                              type: string
-                            description: Custom labels to set on Pods.
-                            type: object
-                        type: object
                       nodeSelector:
                         additionalProperties:
                           type: string

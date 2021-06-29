@@ -133,16 +133,6 @@ spec:
                       type: string
                     description: Custom labels to set on all objects apart from Pods.
                     type: object
-                  podAnnotations:
-                    additionalProperties:
-                      type: string
-                    description: Custom annotations to set on Pods.
-                    type: object
-                  podLabels:
-                    additionalProperties:
-                      type: string
-                    description: Custom labels to set on Pods.
-                    type: object
                 type: object
               imagePullSecrets:
                 items:

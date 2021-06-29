@@ -104,28 +104,6 @@ func TestTranslate(t *testing.T) {
 										},
 									},
 								},
-								Customize: &common.CustomizeSpec{
-									Labels: map[string]string{
-										"central-customize-label1": "central-customize-label1-value",
-										"central-customize-label2": "central-customize-label2-value",
-									},
-									Annotations: map[string]string{
-										"central-customize-annotation1": "central-customize-annotation1-value",
-										"central-customize-annotation2": "central-customize-annotation2-value",
-									},
-									PodLabels: map[string]string{
-										"central-customize-pod-label1": "central-customize-pod-label1-value",
-										"central-customize-pod-label2": "central-customize-pod-label2-value",
-									},
-									PodAnnotations: map[string]string{
-										"central-customize-pod-annotation1": "central-customize-pod-annotation1-value",
-										"central-customize-pod-annotation2": "central-customize-pod-annotation2-value",
-									},
-									EnvVars: map[string]string{
-										"central-customize-env-var1": "central-customize-env-var1-value",
-										"central-customize-env-var2": "central-customize-env-var2-value",
-									},
-								},
 							},
 							TelemetryPolicy:     &telemetryPolicy,
 							AdminPasswordSecret: &corev1.LocalObjectReference{Name: "admin-password-secret"},
@@ -179,28 +157,6 @@ func TestTranslate(t *testing.T) {
 										},
 									},
 								},
-								Customize: &common.CustomizeSpec{
-									Labels: map[string]string{
-										"scanner-customize-label1": "scanner-customize-label1-value",
-										"scanner-customize-label2": "scanner-customize-label2-value",
-									},
-									Annotations: map[string]string{
-										"scanner-customize-annotation1": "scanner-customize-annotation1-value",
-										"scanner-customize-annotation2": "scanner-customize-annotation2-value",
-									},
-									PodLabels: map[string]string{
-										"scanner-customize-pod-label1": "scanner-customize-pod-label1-value",
-										"scanner-customize-pod-label2": "scanner-customize-pod-label2-value",
-									},
-									PodAnnotations: map[string]string{
-										"scanner-customize-pod-annotation1": "scanner-customize-pod-annotation1-value",
-										"scanner-customize-pod-annotation2": "scanner-customize-pod-annotation2-value",
-									},
-									EnvVars: map[string]string{
-										"scanner-customize-env-var1": "scanner-customize-env-var1-value",
-										"scanner-customize-env-var2": "scanner-customize-env-var2-value",
-									},
-								},
 							},
 							ScannerDB: &common.DeploymentSpec{
 								ServiceTLSSpec: common.ServiceTLSSpec{
@@ -222,28 +178,6 @@ func TestTranslate(t *testing.T) {
 										},
 									},
 								},
-								Customize: &common.CustomizeSpec{
-									Labels: map[string]string{
-										"scanner-db-customize-label1": "scanner-db-customize-label1-value",
-										"scanner-db-customize-label2": "scanner-db-customize-label2-value",
-									},
-									Annotations: map[string]string{
-										"scanner-db-customize-annotation1": "scanner-db-customize-annotation1-value",
-										"scanner-db-customize-annotation2": "scanner-db-customize-annotation2-value",
-									},
-									PodLabels: map[string]string{
-										"scanner-db-customize-pod-label1": "scanner-db-customize-pod-label1-value",
-										"scanner-db-customize-pod-label2": "scanner-db-customize-pod-label2-value",
-									},
-									PodAnnotations: map[string]string{
-										"scanner-db-customize-pod-annotation1": "scanner-db-customize-pod-annotation1-value",
-										"scanner-db-customize-pod-annotation2": "scanner-db-customize-pod-annotation2-value",
-									},
-									EnvVars: map[string]string{
-										"scanner-db-customize-env-var1": "scanner-db-customize-env-var1-value",
-										"scanner-db-customize-env-var2": "scanner-db-customize-env-var2-value",
-									},
-								},
 							},
 						},
 						Customize: &common.CustomizeSpec{
@@ -254,14 +188,6 @@ func TestTranslate(t *testing.T) {
 							Annotations: map[string]string{
 								"customize-annotation1": "customize-annotation1-value",
 								"customize-annotation2": "customize-annotation2-value",
-							},
-							PodLabels: map[string]string{
-								"customize-pod-label1": "customize-pod-label1-value",
-								"customize-pod-label2": "customize-pod-label2-value",
-							},
-							PodAnnotations: map[string]string{
-								"customize-pod-annotation1": "customize-pod-annotation1-value",
-								"customize-pod-annotation2": "customize-pod-annotation2-value",
 							},
 							EnvVars: map[string]string{
 								"customize-env-var1": "customize-env-var1-value",
@@ -363,80 +289,6 @@ func TestTranslate(t *testing.T) {
 					"envVars": map[string]string{
 						"customize-env-var1": "customize-env-var1-value",
 						"customize-env-var2": "customize-env-var2-value",
-					},
-					"podAnnotations": map[string]string{
-						"customize-pod-annotation1": "customize-pod-annotation1-value",
-						"customize-pod-annotation2": "customize-pod-annotation2-value",
-					},
-					"podLabels": map[string]string{
-						"customize-pod-label1": "customize-pod-label1-value",
-						"customize-pod-label2": "customize-pod-label2-value",
-					},
-					"central": map[string]interface{}{
-						"annotations": map[string]string{
-							"central-customize-annotation1": "central-customize-annotation1-value",
-							"central-customize-annotation2": "central-customize-annotation2-value",
-						},
-						"labels": map[string]string{
-							"central-customize-label1": "central-customize-label1-value",
-							"central-customize-label2": "central-customize-label2-value",
-						},
-						"envVars": map[string]string{
-							"central-customize-env-var1": "central-customize-env-var1-value",
-							"central-customize-env-var2": "central-customize-env-var2-value",
-						},
-						"podAnnotations": map[string]string{
-							"central-customize-pod-annotation1": "central-customize-pod-annotation1-value",
-							"central-customize-pod-annotation2": "central-customize-pod-annotation2-value",
-						},
-						"podLabels": map[string]string{
-							"central-customize-pod-label1": "central-customize-pod-label1-value",
-							"central-customize-pod-label2": "central-customize-pod-label2-value",
-						},
-					},
-					"scanner": map[string]interface{}{
-						"annotations": map[string]string{
-							"scanner-customize-annotation1": "scanner-customize-annotation1-value",
-							"scanner-customize-annotation2": "scanner-customize-annotation2-value",
-						},
-						"labels": map[string]string{
-							"scanner-customize-label1": "scanner-customize-label1-value",
-							"scanner-customize-label2": "scanner-customize-label2-value",
-						},
-						"envVars": map[string]string{
-							"scanner-customize-env-var1": "scanner-customize-env-var1-value",
-							"scanner-customize-env-var2": "scanner-customize-env-var2-value",
-						},
-						"podAnnotations": map[string]string{
-							"scanner-customize-pod-annotation1": "scanner-customize-pod-annotation1-value",
-							"scanner-customize-pod-annotation2": "scanner-customize-pod-annotation2-value",
-						},
-						"podLabels": map[string]string{
-							"scanner-customize-pod-label1": "scanner-customize-pod-label1-value",
-							"scanner-customize-pod-label2": "scanner-customize-pod-label2-value",
-						},
-					},
-					"scanner-db": map[string]interface{}{
-						"annotations": map[string]string{
-							"scanner-db-customize-annotation1": "scanner-db-customize-annotation1-value",
-							"scanner-db-customize-annotation2": "scanner-db-customize-annotation2-value",
-						},
-						"labels": map[string]string{
-							"scanner-db-customize-label1": "scanner-db-customize-label1-value",
-							"scanner-db-customize-label2": "scanner-db-customize-label2-value",
-						},
-						"envVars": map[string]string{
-							"scanner-db-customize-env-var1": "scanner-db-customize-env-var1-value",
-							"scanner-db-customize-env-var2": "scanner-db-customize-env-var2-value",
-						},
-						"podAnnotations": map[string]string{
-							"scanner-db-customize-pod-annotation1": "scanner-db-customize-pod-annotation1-value",
-							"scanner-db-customize-pod-annotation2": "scanner-db-customize-pod-annotation2-value",
-						},
-						"podLabels": map[string]string{
-							"scanner-db-customize-pod-label1": "scanner-db-customize-pod-label1-value",
-							"scanner-db-customize-pod-label2": "scanner-db-customize-pod-label2-value",
-						},
 					},
 				},
 				"scanner": map[string]interface{}{
