@@ -16,6 +16,7 @@ const (
 	componentAndVersionAugmentKey = "ComponentAndVersion"
 	baselineResultAugmentKey      = "BaselineResult"
 	envVarAugmentKey              = "EnvironmentVariable"
+	impersonatedEventResultKey    = "ImpersonatedEventResult"
 )
 
 // This block enumerates metadata about the augmented objects we use in policies.
@@ -34,7 +35,8 @@ var (
 	ProcessMeta = pathutil.NewAugmentedObjMeta((*storage.ProcessIndicator)(nil)).
 			AddPlainObjectAt([]string{baselineResultAugmentKey}, (*baselineResult)(nil))
 
-	KubeEventMeta = pathutil.NewAugmentedObjMeta((*storage.KubernetesEvent)(nil))
+	KubeEventMeta = pathutil.NewAugmentedObjMeta((*storage.KubernetesEvent)(nil)).
+			AddPlainObjectAt([]string{impersonatedEventResultKey}, (*impersonatedEventResult)(nil))
 
 	NetworkFlowMeta = pathutil.NewAugmentedObjMeta((*NetworkFlowDetails)(nil))
 )

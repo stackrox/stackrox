@@ -41,8 +41,8 @@ func policyGroupToFieldQueries(group *storage.PolicyGroup) ([]*query.FieldQuery,
 		return nil, errors.New("no values")
 	}
 
-	f, ok := fieldsToQB[group.GetFieldName()]
-	if !ok {
+	f, err := fieldMetadataSingleton().findField(group.GetFieldName())
+	if err != nil {
 		return nil, errors.Errorf("no QB known for group %q", group.GetFieldName())
 	}
 	metadata := f(nil)
@@ -80,8 +80,7 @@ func constructRemainingContextQueries(stage storage.LifecycleStage, section *sto
 	}
 	contextFieldSet := set.NewStringSet()
 	for _, group := range section.GetPolicyGroups() {
-		field := group.GetFieldName()
-		if f, ok := fieldsToQB[field]; ok {
+		if f, err := fieldMetadataSingleton().findField(group.GetFieldName()); err == nil {
 			metadata := f(nil)
 			if contextFieldsToAdd, ok := metadata.contextFields[stage]; ok {
 				for _, contextField := range contextFieldsToAdd.AsSlice() {

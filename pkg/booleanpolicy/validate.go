@@ -68,7 +68,7 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 
 	seenFields := set.NewStringSet()
 	for _, g := range s.GetPolicyGroups() {
-		m, err := findFieldMetadata(g.GetFieldName(), configuration)
+		m, err := fieldMetadataSingleton().findFieldMetadata(g.GetFieldName(), configuration)
 		switch err {
 		case nil:
 			// All good, proceed

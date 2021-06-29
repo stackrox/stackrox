@@ -26,6 +26,7 @@ type RuntimeDetectorTestSuite struct {
 
 func (s *RuntimeDetectorTestSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
 }
 
 func (s *RuntimeDetectorTestSuite) TearDownTest() {
@@ -33,7 +34,6 @@ func (s *RuntimeDetectorTestSuite) TearDownTest() {
 }
 
 func (s *RuntimeDetectorTestSuite) TestCreateSecrets() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
 	if !features.K8sAuditLogDetection.Enabled() {
 		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
 	}
@@ -45,7 +45,7 @@ func (s *RuntimeDetectorTestSuite) TestCreateSecrets() {
 
 	d := NewDetector(policySet)
 
-	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_LIST, "cluster-id", "namespace", "secret-name")
+	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_LIST, "cluster-id", "namespace", "secret-name", false)
 	alerts, err := d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
 
 	s.NoError(err)
@@ -56,11 +56,9 @@ func (s *RuntimeDetectorTestSuite) TestCreateSecrets() {
 }
 
 func (s *RuntimeDetectorTestSuite) TestCreateConfigMap() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
 	if !features.K8sAuditLogDetection.Enabled() {
 		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
 	}
-
 	policySet := detection.NewPolicySet()
 
 	err := policySet.UpsertPolicy(s.getCreateConfigmapPolicy())
@@ -68,7 +66,7 @@ func (s *RuntimeDetectorTestSuite) TestCreateConfigMap() {
 
 	d := NewDetector(policySet)
 
-	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_CREATE, "cluster-id", "namespace", "secret-name")
+	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_CREATE, "cluster-id", "namespace", "secret-name", true)
 	alerts, err := d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
 
 	s.NoError(err)
@@ -78,8 +76,8 @@ func (s *RuntimeDetectorTestSuite) TestCreateConfigMap() {
 	s.NotNil(j)
 }
 
-func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent_Object_Resource, verb storage.KubernetesEvent_APIVerb, clusterID, namespace, name string) *storage.KubernetesEvent {
-	return &storage.KubernetesEvent{
+func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent_Object_Resource, verb storage.KubernetesEvent_APIVerb, clusterID, namespace, name string, isImpersonated bool) *storage.KubernetesEvent {
+	event := &storage.KubernetesEvent{
 		Id: uuid.NewV4().String(),
 		Object: &storage.KubernetesEvent_Object{
 			Name:      name,
@@ -100,6 +98,13 @@ func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent
 			Reason:     "cause",
 		},
 	}
+	if isImpersonated {
+		event.ImpersonatedUser = &storage.KubernetesEvent_User{
+			Username: "impersonatedUser",
+			Groups:   []string{"groupC"},
+		}
+	}
+	return event
 }
 
 func (s *RuntimeDetectorTestSuite) getListSecretPolicy() *storage.Policy {
@@ -123,11 +128,10 @@ func (s *RuntimeDetectorTestSuite) getListSecretPolicy() *storage.Policy {
 						Negate:    false,
 						Values:    []*storage.PolicyValue{{Value: "LIST"}},
 					},
-					/*{
-						FieldName:            "Is Impersonated User",
-						Negate:               false,
-						Values:               []*storage.PolicyValue{{Value: "false"}},
-					},*/
+					{
+						FieldName: "Is Impersonated User",
+						Values:    []*storage.PolicyValue{{Value: "false"}},
+					},
 				},
 			},
 		},
@@ -157,11 +161,10 @@ func (s *RuntimeDetectorTestSuite) getCreateConfigmapPolicy() *storage.Policy {
 						Negate:    false,
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
 					},
-					/*{
-						FieldName:            "Is Impersonated User",
-						Negate:               false,
-						Values:               []*storage.PolicyValue{{Value: "false"}},
-					},*/
+					{
+						FieldName: "Is Impersonated User",
+						Values:    []*storage.PolicyValue{{Value: "true"}},
+					},
 				},
 			},
 		},

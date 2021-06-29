@@ -93,6 +93,20 @@ func ConstructKubeEvent(event *storage.KubernetesEvent) *pathutil.AugmentedObj {
 	return pathutil.NewAugmentedObj(event)
 }
 
+// ConstructAuditEvent constructs an augmented kubernetes event.
+func ConstructAuditEvent(event *storage.KubernetesEvent, isImpersonated bool) (*pathutil.AugmentedObj, error) {
+	augmentedProcess := pathutil.NewAugmentedObj(event)
+
+	err := augmentedProcess.AddPlainObjAt(
+		&impersonatedEventResult{IsImpersonatedUser: isImpersonated},
+		pathutil.FieldStep(impersonatedEventResultKey),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "adding is impersonated user result to audit event")
+	}
+	return augmentedProcess, nil
+}
+
 // ConstructNetworkFlow constructs an augmented network flow.
 func ConstructNetworkFlow(flow *NetworkFlowDetails) (*pathutil.AugmentedObj, error) {
 	augmentedFlow := pathutil.NewAugmentedObj(flow)

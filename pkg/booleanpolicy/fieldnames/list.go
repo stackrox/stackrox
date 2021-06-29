@@ -35,6 +35,7 @@ var (
 	ImageScanAge                  = newFieldName("Image Scan Age")
 	ImageTag                      = newFieldName("Image Tag")
 	ImageUser                     = newFieldName("Image User")
+	IsImpersonatedUser            = newFieldName("Is Impersonated User")
 	MinimumRBACPermissions        = newFieldName("Minimum RBAC Permissions")
 	MountPropagation              = newFieldName("Mount Propagation")
 	Namespace                     = newFieldName("Namespace")

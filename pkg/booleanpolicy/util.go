@@ -22,6 +22,7 @@ var (
 	)
 
 	AuditLogEventsFields = set.NewFrozenStringSet(
+		fieldnames.IsImpersonatedUser,
 		fieldnames.KubeAPIVerb,
 		fieldnames.KubeResource,
 		fieldnames.KubeResourceName,

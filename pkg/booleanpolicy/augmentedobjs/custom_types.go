@@ -21,6 +21,7 @@ const (
 	KubernetesUserGroupsCustomTag      = "Kubernetes User Groups"
 	KubernetesSourceIPAddressCustomTag = "Source IP Address"
 	KubernetesUserAgentCustomTag       = "User Agent"
+	KubernetesIsImpersonatedCustomTag  = "Is Impersonated User"
 )
 
 type dockerfileLine struct {
@@ -33,6 +34,10 @@ type componentAndVersion struct {
 
 type baselineResult struct {
 	NotInBaseline bool `search:"Not In Baseline"`
+}
+
+type impersonatedEventResult struct {
+	IsImpersonatedUser bool `search:"Is Impersonated User"`
 }
 
 // NetworkFlowDetails captures information about a particular network flow.

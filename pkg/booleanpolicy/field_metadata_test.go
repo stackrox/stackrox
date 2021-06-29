@@ -29,5 +29,5 @@ func (s *FieldMetadataValidationSuite) ValidateAllFieldMetadata() {
 	if !features.K8sAuditLogDetection.Enabled() {
 		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
 	}
-	assert.Equal(s.T(), fieldnames.Count(), len(fieldsToQB))
+	assert.Equal(s.T(), fieldnames.Count(), len(fieldMetadataSingleton().fieldsToQB))
 }
