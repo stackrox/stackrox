@@ -813,48 +813,11 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 
 func TestEffectiveAccessScopeAllowEverything(t *testing.T) {
 	expected := &EffectiveAccessScopeTree{
-		Included,
-		map[string]*ClustersScopeSubTree{
-			"Earth": {
-				State: Included,
-				Namespaces: namespacesTree(
-					included(skunkWorks),
-					included(fraunhofer),
-					included(cern),
-					included(jpl),
-				),
-			},
-			"Arrakis": {
-				State: Included,
-				Namespaces: namespacesTree(
-					included(atreides),
-					included(harkonnen),
-					included(spacingGuild),
-					included(bene),
-					included(fremen),
-				),
-			},
-			"Not Found": {
-				State:      Included,
-				Namespaces: namespacesTree(included(errored)),
-			},
-		},
+		State:    Included,
+		Clusters: make(map[string]*ClustersScopeSubTree),
 	}
-
-	var clonedClusters []*storage.Cluster
-	for _, c := range clusters {
-		clonedClusters = append(clonedClusters, c.Clone())
-	}
-
-	var clonedNamespaces []*storage.NamespaceMetadata
-	for _, ns := range namespaces {
-		clonedNamespaces = append(clonedNamespaces, ns.Clone())
-	}
-
-	result := EffectiveAccessScopeAllowEverything(clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
+	result := EffectiveAccessScopeAllowEverything()
 	assert.Exactly(t, expected, result)
-	assert.Exactly(t, clusters, clonedClusters, "clusters have been modified")
-	assert.Exactly(t, namespaces, clonedNamespaces, "namespaces have been modified")
 }
 
 // TestNewUnvalidatedRequirement covers both use cases we currently have:

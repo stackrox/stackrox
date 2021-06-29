@@ -18,8 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const detailLevel = v1.ComputeEffectiveAccessScopeRequest_MINIMAL
-
 var (
 	initClientOnce sync.Once
 
@@ -139,10 +137,9 @@ func (c *authorizerDataCache) getEffectiveAccessScope(accessScope *storage.Simpl
 
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*sac.EffectiveAccessScopeTree, error) {
 	if accessScope == nil {
-		//TODO(ROX-7388) EffectiveAccessScopeAllowEverything does not need clusters and namespaces in minimal detail level
-		return sac.EffectiveAccessScopeAllowEverything(c.clusters, c.namespaces, detailLevel), nil
+		return sac.EffectiveAccessScopeAllowEverything(), nil
 	}
-	eas, err := sac.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, detailLevel)
+	eas, err := sac.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not compute effective access scope for access scope with id %q", accessScope.GetId())
 	}

@@ -59,13 +59,6 @@ func newEffectiveAccessScopeTree(state ScopeState) *EffectiveAccessScopeTree {
 	}
 }
 
-func newClusterScopeSubTree(state ScopeState) *ClustersScopeSubTree {
-	return &ClustersScopeSubTree{
-		State:      state,
-		Namespaces: make(map[string]*NamespacesScopeSubTree),
-	}
-}
-
 func newClusterScopeSubTreeWithExtras(state ScopeState, extras EffectiveAccessScopeTreeExtras) *ClustersScopeSubTree {
 	return &ClustersScopeSubTree{
 		State:      state,
@@ -88,29 +81,10 @@ const (
 	scopeSeparator     = "::"
 )
 
-// EffectiveAccessScopeAllowEverything returns EffectiveAccessScopeTree built
-// from all provided clusters and namespaces.
-func EffectiveAccessScopeAllowEverything(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) *EffectiveAccessScopeTree {
-	root := newEffectiveAccessScopeTree(Included)
-	for _, cluster := range clusters {
-		root.Clusters[cluster.GetName()] = newClusterScopeSubTree(Included)
-	}
-	for _, namespace := range namespaces {
-		clusterName := namespace.GetClusterName()
-		namespaceFQSN := getNamespaceFQSN(clusterName, namespace.GetName())
-
-		// If parent cluster is unknown, log the warning.
-		parentCluster := root.Clusters[clusterName]
-		if parentCluster == nil {
-			log.Warnf("namespace %q belongs to unknown cluster %q", namespaceFQSN, clusterName)
-			parentCluster = newClusterScopeSubTree(Included)
-			root.Clusters[clusterName] = parentCluster
-		}
-
-		parentCluster.Namespaces[namespace.GetName()] = newNamespacesScopeSubTree(Included, extrasForNamespace(namespace, detail))
-	}
-
-	return root
+// EffectiveAccessScopeAllowEverything returns EffectiveAccessScopeTree
+// allowing everything implicitly via marking the root Included.
+func EffectiveAccessScopeAllowEverything() *EffectiveAccessScopeTree {
+	return newEffectiveAccessScopeTree(Included)
 }
 
 // ComputeEffectiveAccessScope applies a simple access scope to provided
