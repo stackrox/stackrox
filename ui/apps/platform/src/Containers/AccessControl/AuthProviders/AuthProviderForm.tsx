@@ -38,6 +38,11 @@ export type AuthProviderFormProps = {
     submitValues: (values: AuthProvider) => Promise<AuthProvider>;
 };
 
+function getNewAuthProviderTitle(type) {
+    const selectedType = availableAuthProviders.find(({ value }) => value === type);
+
+    return `Add new ${selectedType?.label as string} auth provider`;
+}
 function AuthProviderForm({
     isActionable,
     action,
@@ -96,6 +101,8 @@ function AuthProviderForm({
 
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
+    const formTitle =
+        action === 'create' ? getNewAuthProviderTitle(authProvider.type) : authProvider.name;
 
     // TODO Minimum access role: replace select with radio button table as in Role form?
     return (
@@ -103,9 +110,7 @@ function AuthProviderForm({
             <Toolbar inset={{ default: 'insetNone' }}>
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">
-                            {action === 'create' ? 'Create auth provider' : authProvider.name}
-                        </Title>
+                        <Title headingLevel="h2">{formTitle}</Title>
                     </ToolbarItem>
                     {isActionable && (
                         <ToolbarGroup
@@ -161,13 +166,14 @@ function AuthProviderForm({
                         />
                     </FormGroup>
                 </GridItem>
+                {/* TODO: decide if we even need this, given that it is never editable? */}
                 <GridItem span={12} lg={6}>
                     <FormGroup label="Auth provider type" fieldId="type" isRequired>
                         <SelectSingle
                             id="type"
                             value={values.type}
                             setFieldValue={setFieldValue}
-                            isDisabled={isViewing}
+                            isDisabled
                         >
                             {availableAuthProviders.map(({ value, label }) => (
                                 <SelectOption key={value} value={value}>

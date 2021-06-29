@@ -7,14 +7,19 @@ import {
     AlertVariant,
     Badge,
     Bullseye,
-    Button,
+    Dropdown,
+    DropdownItem,
+    DropdownPosition,
+    DropdownToggle,
     Spinner,
     Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { CaretDownIcon } from '@patternfly/react-icons';
 
+import { availableAuthProviders } from 'constants/accessControl';
 import { filterAuthProviders } from 'reducers/auth';
 import {
     AuthProvider,
@@ -36,18 +41,23 @@ const entityType = 'AUTH_PROVIDER';
 const authProviderNew = {
     id: '',
     name: '',
-    type: 'auth0',
+    type: '',
     config: {},
 } as AuthProvider; // TODO what are the minimum properties for create request?
+
+function getNewAuthProviderObj(type) {
+    return { ...authProviderNew, type };
+}
 
 function AuthProviders(): ReactElement {
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
-    const { action } = queryObject;
+    const { action, type } = queryObject;
     const { entityId } = useParams();
 
     const [isFetching, setIsFetching] = useState(false);
+    const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
     const [authProviders, setAuthProviders] = useState<AuthProvider[]>([]);
     const [alertAuthProviders, setAlertAuthProviders] = useState<ReactElement | null>(null);
     const [roles, setRoles] = useState<Role[]>([]);
@@ -97,8 +107,18 @@ function AuthProviders(): ReactElement {
             });
     }, []);
 
-    function onClickCreate() {
-        history.push(getEntityPath(entityType, undefined, { ...queryObject, action: 'create' }));
+    function onToggleCreateMenu(isOpen) {
+        setIsCreateMenuOpen(isOpen);
+    }
+
+    function onClickCreate(event) {
+        history.push(
+            getEntityPath(entityType, undefined, {
+                ...queryObject,
+                action: 'create',
+                type: event?.target?.value,
+            })
+        );
     }
 
     function onClickEdit() {
@@ -138,10 +158,17 @@ function AuthProviders(): ReactElement {
               });
     }
 
-    const authProvider = authProviders.find(({ id }) => id === entityId) || authProviderNew;
+    const authProvider =
+        authProviders.find(({ id }) => id === entityId) || getNewAuthProviderObj(type);
     const isActionable = true; // TODO does it depend on user role?
     const hasAction = Boolean(action);
     const isExpanded = hasAction || Boolean(entityId);
+
+    const dropdownItems = availableAuthProviders.map(({ value, label }) => (
+        <DropdownItem key={value} value={value} component="button">
+            {label}
+        </DropdownItem>
+    ));
 
     // TODO Display backdrop which covers nav links and drawer body during action.
     return (
@@ -176,14 +203,22 @@ function AuthProviders(): ReactElement {
                                 <Badge isRead>{authProviders.length}</Badge>
                             </ToolbarItem>
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                <Button
-                                    variant="primary"
-                                    onClick={onClickCreate}
-                                    isDisabled={isExpanded || isFetching}
-                                    isSmall
-                                >
-                                    Create auth provider
-                                </Button>
+                                <Dropdown
+                                    onSelect={onClickCreate}
+                                    position={DropdownPosition.right}
+                                    toggle={
+                                        <DropdownToggle
+                                            onToggle={onToggleCreateMenu}
+                                            toggleIndicator={CaretDownIcon}
+                                            isPrimary
+                                            isDisabled={isExpanded || isFetching}
+                                        >
+                                            Add auth provider
+                                        </DropdownToggle>
+                                    }
+                                    isOpen={isCreateMenuOpen}
+                                    dropdownItems={dropdownItems}
+                                />
                             </ToolbarItem>
                         </ToolbarContent>
                     </Toolbar>

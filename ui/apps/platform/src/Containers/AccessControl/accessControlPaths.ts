@@ -12,6 +12,7 @@ export type AccessControlQueryAction = 'create' | 'update';
 export type AccessControlQueryObject = {
     action?: AccessControlQueryAction;
     s?: Partial<Record<AccessControlEntityType, string>>;
+    type?: 'auth0' | 'odic' | 'saml' | 'userpki' | 'iap';
 };
 
 export type AccessControlContainerProps = {
