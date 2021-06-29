@@ -12,9 +12,8 @@ import (
 )
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
-func RegisterNewReconciler(mgr ctrl.Manager) error {
-	// TODO(ROX-7415): Use a single client.
+func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error {
 	return reconciler.SetupReconcilerWithManager(
-		mgr, centralV1Alpha1.CentralGVK, image.CentralServicesChartPrefix, translation.Translator{Config: mgr.GetConfig()},
-		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(kubernetes.NewForConfigOrDie(mgr.GetConfig()))))
+		mgr, centralV1Alpha1.CentralGVK, image.CentralServicesChartPrefix, translation.Translator{Client: client},
+		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client)))
 }

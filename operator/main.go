@@ -26,6 +26,7 @@ import (
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -87,12 +88,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := centralReconciler.RegisterNewReconciler(mgr); err != nil {
+	// TODO(ROX-7251): make sure that the client we create here is kosher
+	k8sClient := kubernetes.NewForConfigOrDie(mgr.GetConfig())
+
+	if err := centralReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
 		setupLog.Error(err, "unable to setup central reconciler")
 		os.Exit(1)
 	}
 
-	if err := securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
+	if err := securedClusterReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
 		setupLog.Error(err, "unable to setup secured cluster reconciler")
 		os.Exit(1)
 	}
