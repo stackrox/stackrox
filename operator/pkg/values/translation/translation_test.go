@@ -63,7 +63,7 @@ func TestGetCustomize(t *testing.T) {
 
 func TestGetResources(t *testing.T) {
 	tests := map[string]struct {
-		resources  *common.Resources
+		resources  *corev1.ResourceRequirements
 		wantValues chartutil.Values
 	}{
 		"nil": {
@@ -71,19 +71,17 @@ func TestGetResources(t *testing.T) {
 			wantValues: chartutil.Values{},
 		},
 		"nil-override": {
-			resources:  &common.Resources{},
+			resources:  &corev1.ResourceRequirements{},
 			wantValues: chartutil.Values{},
 		},
 		"data-full": {
-			resources: &common.Resources{
-				Override: &corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:              resource.MustParse("1"),
-						corev1.ResourceEphemeralStorage: resource.MustParse("3"),
-					},
-					Requests: corev1.ResourceList{
-						corev1.ResourceMemory: resource.MustParse("2"),
-					},
+			resources: &corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:              resource.MustParse("1"),
+					corev1.ResourceEphemeralStorage: resource.MustParse("3"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("2"),
 				},
 			},
 			wantValues: chartutil.Values{
@@ -97,11 +95,9 @@ func TestGetResources(t *testing.T) {
 			},
 		},
 		"data-no-limits": {
-			resources: &common.Resources{
-				Override: &corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceMemory: resource.MustParse("5"),
-					},
+			resources: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("5"),
 				},
 			},
 			wantValues: chartutil.Values{

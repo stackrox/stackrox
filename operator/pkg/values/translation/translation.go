@@ -17,18 +17,17 @@ const (
 )
 
 // GetResources converts common.Resources to chart values builder.
-func GetResources(resources *common.Resources) *ValuesBuilder {
-	if resources == nil || resources.Override == nil {
+func GetResources(resources *corev1.ResourceRequirements) *ValuesBuilder {
+	if resources == nil {
 		return nil
 	}
-	// TODO(ROX-7146): take care of sizing guidelines
 	res := NewValuesBuilder()
 
-	if len(resources.Override.Requests) > 0 {
-		res.SetResourceList("requests", resources.Override.Requests.DeepCopy())
+	if len(resources.Requests) > 0 {
+		res.SetResourceList("requests", resources.Requests.DeepCopy())
 	}
-	if len(resources.Override.Limits) > 0 {
-		res.SetResourceList("limits", resources.Override.Limits.DeepCopy())
+	if len(resources.Limits) > 0 {
+		res.SetResourceList("limits", resources.Limits.DeepCopy())
 	}
 	return &res
 }

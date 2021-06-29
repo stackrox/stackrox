@@ -84,16 +84,14 @@ func TestTranslateComplete(t *testing.T) {
 							Collection:      v1alpha1.CollectionEBPF.Pointer(),
 							TaintToleration: v1alpha1.TaintTolerate.Pointer(),
 							Compliance: &v1alpha1.ContainerSpec{
-								Resources: &common.Resources{
-									Override: &v1.ResourceRequirements{
-										Limits: v1.ResourceList{
-											v1.ResourceCPU:    resource.MustParse("1500m"),
-											v1.ResourceMemory: resource.MustParse("1Gi"),
-										},
-										Requests: v1.ResourceList{
-											v1.ResourceCPU:    resource.MustParse("1500m"),
-											v1.ResourceMemory: resource.MustParse("1Gi"),
-										},
+								Resources: &v1.ResourceRequirements{
+									Limits: v1.ResourceList{
+										v1.ResourceCPU:    resource.MustParse("1500m"),
+										v1.ResourceMemory: resource.MustParse("1Gi"),
+									},
+									Requests: v1.ResourceList{
+										v1.ResourceCPU:    resource.MustParse("1500m"),
+										v1.ResourceMemory: resource.MustParse("1Gi"),
 									},
 								},
 							},

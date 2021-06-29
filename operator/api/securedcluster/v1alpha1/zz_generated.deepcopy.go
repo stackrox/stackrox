@@ -105,7 +105,7 @@ func (in *ContainerSpec) DeepCopyInto(out *ContainerSpec) {
 	*out = *in
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(commonv1alpha1.Resources)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Customize != nil {

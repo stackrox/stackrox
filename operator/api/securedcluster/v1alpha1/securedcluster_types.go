@@ -129,7 +129,7 @@ type CollectorContainerSpec struct {
 
 // ContainerSpec defines container settings.
 type ContainerSpec struct {
-	Resources *common.Resources `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Customize specifies additional attributes for all containers.
 	Customize *ContainerCustomizeSpec `json:"customize,omitempty"`
 }
