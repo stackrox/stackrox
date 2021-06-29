@@ -140,16 +140,16 @@ func TestCreateCentralTLS(t *testing.T) {
 					Namespace: "testns",
 				},
 				Spec: centralv1Alpha1.CentralSpec{
-					Scanner: &centralv1Alpha1.ScannerComponentSpec{
+					Analyzer: &centralv1Alpha1.AnalyzerComponentSpec{
 						ScannerComponent: new(centralv1Alpha1.ScannerComponentPolicy),
 					},
 				},
 			}
 
 			if c.ScannerEnabled {
-				*central.Spec.Scanner.ScannerComponent = centralv1Alpha1.ScannerComponentEnabled
+				*central.Spec.Analyzer.ScannerComponent = centralv1Alpha1.ScannerComponentEnabled
 			} else {
-				*central.Spec.Scanner.ScannerComponent = centralv1Alpha1.ScannerComponentDisabled
+				*central.Spec.Analyzer.ScannerComponent = centralv1Alpha1.ScannerComponentDisabled
 			}
 
 			u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(central)
