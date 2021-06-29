@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -26,7 +25,7 @@ var (
 
 // Translator translates and enriches helm values
 type Translator struct {
-	Config *rest.Config
+	Client kubernetes.Interface
 }
 
 // Translate translates and enriches helm values
@@ -40,8 +39,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 		return nil, err
 	}
 
-	// TODO(ROX-7251): make sure that the client we create here is kosher
-	valsFromCR, err := translate(ctx, kubernetes.NewForConfigOrDie(t.Config), c)
+	valsFromCR, err := translate(ctx, t.Client, c)
 	if err != nil {
 		return nil, err
 	}

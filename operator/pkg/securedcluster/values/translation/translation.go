@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/yaml"
 )
 
@@ -32,9 +31,8 @@ const (
 )
 
 // NewTranslator creates a translator
-func NewTranslator(config *rest.Config) Translator {
-	// TODO(ROX-7251): make sure that the client we create here is kosher
-	return Translator{clientSet: kubernetes.NewForConfigOrDie(config)}
+func NewTranslator(client kubernetes.Interface) Translator {
+	return Translator{clientSet: client}
 }
 
 // Translator translates and enriches helm values
