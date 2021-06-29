@@ -81,13 +81,6 @@ spec:
                             description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
-                      serviceTLS:
-                        description: ServiceTLS is a secret certificate and keypair used to secure internal service to service communications. By default, this certificate is automatically generated.
-                        properties:
-                          name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
-                            type: string
-                        type: object
                     type: object
                   scannerComponent:
                     description: Defaults to Enabled
@@ -120,13 +113,6 @@ spec:
                               x-kubernetes-int-or-string: true
                             description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
-                        type: object
-                      serviceTLS:
-                        description: ServiceTLS is a secret certificate and keypair used to secure internal service to service communications. By default, this certificate is automatically generated.
-                        properties:
-                          name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
-                            type: string
                         type: object
                     type: object
                 type: object
@@ -210,13 +196,6 @@ spec:
                           x-kubernetes-int-or-string: true
                         description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
-                    type: object
-                  serviceTLS:
-                    description: ServiceTLS is a secret certificate and keypair used to secure internal service to service communications. By default, this certificate is automatically generated.
-                    properties:
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
                     type: object
                   telemetryPolicy:
                     description: TelemetryPolicy is a type for values of spec.centralSpec.telemetryPolicy.

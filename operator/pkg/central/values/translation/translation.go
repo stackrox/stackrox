@@ -99,7 +99,6 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
-	cv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, c.ServiceTLS, "spec.central.serviceTLS"))
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 
 	if c.TelemetryPolicy != nil {
@@ -202,13 +201,11 @@ func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	}
 
 	if s.Scanner != nil {
-		sv.AddAllFrom(translation.GetServiceTLS(ctx, clientSet, namespace, s.Scanner.ServiceTLS, "spec.scanner.scanner.serviceTLS"))
 		sv.SetStringMap("nodeSelector", s.Scanner.NodeSelector)
 		sv.AddChild(translation.ResourcesKey, translation.GetResources(s.Scanner.Resources))
 	}
 
 	if s.ScannerDB != nil {
-		sv.AddAllFrom(translation.GetServiceTLSWithKey(ctx, clientSet, namespace, s.ScannerDB.ServiceTLS, "spec.scanner.scannerDB.serviceTLS", "dbServiceTLS"))
 		sv.SetStringMap("dbNodeSelector", s.ScannerDB.NodeSelector)
 		sv.AddChild("dbResources", translation.GetResources(s.ScannerDB.Resources))
 	}

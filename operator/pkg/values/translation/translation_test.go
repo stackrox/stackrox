@@ -1,7 +1,6 @@
 package translation
 
 import (
-	"context"
 	"testing"
 
 	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
@@ -10,9 +9,6 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestGetCustomize(t *testing.T) {
@@ -114,89 +110,6 @@ func TestGetResources(t *testing.T) {
 			values, err := GetResources(tt.resources).Build()
 			assert.NoError(t, err)
 			assert.Equal(t, wantNormalized, values)
-		})
-	}
-}
-
-func TestGetServiceTLS(t *testing.T) {
-	type args struct {
-		clientSet  kubernetes.Interface
-		serviceTLS *corev1.LocalObjectReference
-	}
-	tests := map[string]struct {
-		args       args
-		wantErr    string
-		wantValues chartutil.Values
-	}{
-		"nil": {
-			args: args{
-				clientSet:  nil,
-				serviceTLS: nil,
-			},
-			wantValues: chartutil.Values{},
-		},
-		"success": {
-			args: args{
-				clientSet: fake.NewSimpleClientset(&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{Name: "secret-name", Namespace: "nsname"},
-					Data: map[string][]byte{
-						"key":  []byte("mock-key"),
-						"cert": []byte("mock-cert"),
-					},
-				}),
-				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
-			},
-			wantValues: chartutil.Values{
-				"serviceTLS": map[string]interface{}{
-					"cert": "mock-cert",
-					"key":  "mock-key",
-				},
-			},
-		},
-		"get-fail": {
-			args: args{
-				clientSet:  fake.NewSimpleClientset(),
-				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
-			},
-			wantErr: "failed to retrieve.* secret.* secrets \"secret-name\" not found",
-		},
-		"key-fail": {
-			args: args{
-				clientSet: fake.NewSimpleClientset(&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{Name: "secret-name", Namespace: "nsname"},
-					Data: map[string][]byte{
-						"not-cert": []byte("something else"),
-					},
-				}),
-				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
-			},
-			wantErr: "secret \"secret-name\" in namespace \"nsname\".* does not contain member \"key\"",
-		},
-		"data-fail": {
-			args: args{
-				clientSet: fake.NewSimpleClientset(&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{Name: "secret-name", Namespace: "nsname"},
-					Data: map[string][]byte{
-						"key":      []byte("mock-key"),
-						"not-cert": []byte("something else"),
-					},
-				}),
-				serviceTLS: &corev1.LocalObjectReference{Name: "secret-name"},
-			},
-			wantErr: "secret \"secret-name\" in namespace \"nsname\".* does not contain member \"cert\"",
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			wantNormalized, err := ToHelmValues(tt.wantValues)
-			require.NoError(t, err, "error in test specification: cannot normalize want values")
-			values, err := GetServiceTLS(context.Background(), tt.args.clientSet, "nsname", tt.args.serviceTLS, "spec.fake.path").Build()
-			if tt.wantErr != "" {
-				assert.Regexp(t, tt.wantErr, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, wantNormalized, values)
-			}
 		})
 	}
 }
