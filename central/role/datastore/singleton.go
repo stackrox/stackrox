@@ -82,16 +82,20 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet) {
 		role := permissions.NewRoleWithAccess(roleName, attributes.resourceWithAccess...)
 		role.Id = roleUtils.EnsureValidRoleID(attributes.idSuffix)
 
-		permissionSet := &storage.PermissionSet{
-			Id:               roleUtils.EnsureValidPermissionSetID(attributes.idSuffix),
-			Name:             role.Name,
-			Description:      role.Description,
-			ResourceToAccess: role.ResourceToAccess,
+		if features.ScopedAccessControl.Enabled() {
+			permissionSet := &storage.PermissionSet{
+				Id:               roleUtils.EnsureValidPermissionSetID(attributes.idSuffix),
+				Name:             role.Name,
+				Description:      role.Description,
+				ResourceToAccess: role.ResourceToAccess,
+			}
+			role.ResourceToAccess = nil
+			role.PermissionSetId = permissionSet.Id
+			permissionSets = append(permissionSets, permissionSet)
 		}
-		role.PermissionSetId = permissionSet.Id
 
 		roles = append(roles, role)
-		permissionSets = append(permissionSets, permissionSet)
+
 	}
 	return roles, permissionSets
 }

@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	rolePkg "github.com/stackrox/rox/central/role"
 	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
@@ -52,21 +53,16 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 	if isDefaultRole(role) {
 		return errors.Errorf("cannot modify default role %s", role.GetName())
 	}
+	if err := ds.validateRole(role); err != nil {
+		return err
+	}
 
 	// protect against TOCTOU race condition
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	// Verify storage constraints.
-	if role.GetPermissionSetId() != "" {
-		if err := ds.verifyPermissionSetIDExists(role.GetPermissionSetId()); err != nil {
-			return errors.Wrapf(errorhelpers.ErrNotFound, "referenced permission set %s does not exist", role.GetPermissionSetId())
-		}
-	}
-	if role.GetAccessScopeId() != "" {
-		if err := ds.verifyAccessScopeIDExists(role.GetAccessScopeId()); err != nil {
-			return errors.Wrapf(errorhelpers.ErrNotFound, "referenced access scope %s does not exist", role.GetAccessScopeId())
-		}
+	if err := ds.verifyRoleReferencesExist(role); err != nil {
+		return err
 	}
 
 	return ds.roleStorage.AddRole(role)
@@ -79,21 +75,16 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	if isDefaultRole(role) {
 		return errors.Errorf("cannot modify default role %s", role.GetName())
 	}
+	if err := ds.validateRole(role); err != nil {
+		return err
+	}
 
 	// protect against TOCTOU race condition
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	// Verify storage constraints.
-	if role.GetPermissionSetId() != "" {
-		if err := ds.verifyPermissionSetIDExists(role.GetPermissionSetId()); err != nil {
-			return errors.Wrapf(errorhelpers.ErrNotFound, "referenced permission set %s does not exist", role.GetPermissionSetId())
-		}
-	}
-	if role.GetAccessScopeId() != "" {
-		if err := ds.verifyAccessScopeIDExists(role.GetAccessScopeId()); err != nil {
-			return errors.Wrapf(errorhelpers.ErrNotFound, "referenced access scope %s does not exist", role.GetAccessScopeId())
-		}
+	if err := ds.verifyRoleReferencesExist(role); err != nil {
+		return err
 	}
 
 	return ds.roleStorage.UpdateRole(role)
@@ -353,7 +344,7 @@ func (ds *dataStoreImpl) ResolveRoles(_ context.Context, roles []*storage.Role) 
 			if err != nil {
 				return nil, err
 			} else if !found {
-				return nil, errors.Wrapf(errorhelpers.ErrNotFound, "permission set %q for role %s", role.GetPermissionSetId(), role.GetName())
+				return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "permission set %q for role %s", role.GetPermissionSetId(), role.GetName())
 			}
 			// find access scope
 			accessScope, _, err := ds.accessScopeStorage.Get(role.GetAccessScopeId())
@@ -402,6 +393,21 @@ func nonNilResourceToAccess(role *storage.Role) map[string]storage.Access {
 //                                                                            //
 // Uniqueness of the 'name' field is expected to be verified by the           //
 // underlying store, see its `--uniq-key-func` flag                           //
+
+func (ds *dataStoreImpl) verifyRoleReferencesExist(role *storage.Role) error {
+	// Verify storage constraints.
+	if role.GetPermissionSetId() != "" {
+		if err := ds.verifyPermissionSetIDExists(role.GetPermissionSetId()); err != nil {
+			return errors.Wrapf(errorhelpers.ErrInvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
+		}
+	}
+	if role.GetAccessScopeId() != "" {
+		if err := ds.verifyAccessScopeIDExists(role.GetAccessScopeId()); err != nil {
+			return errors.Wrapf(errorhelpers.ErrInvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
+		}
+	}
+	return nil
+}
 
 // Returns errorhelpers.ErrNotFound if there is no permission set with the supplied ID.
 func (ds *dataStoreImpl) verifyPermissionSetIDExists(id string) error {
@@ -453,6 +459,44 @@ func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(id string) error {
 		return errors.Wrapf(errorhelpers.ErrAlreadyExists, "id = %q", id)
 	}
 	return nil
+}
+
+// ValidateRole checks whether the supplied protobuf message is a valid role.
+func (ds *dataStoreImpl) validateRole(role *storage.Role) error {
+	var multiErr error
+
+	if role.GetName() == "" {
+		err := errors.New("role name field must be set")
+		multiErr = multierror.Append(multiErr, err)
+	}
+
+	if ds.sacV2Enabled {
+		if len(role.GetResourceToAccess()) != 0 {
+			err := errors.Errorf("role name=%s: must not have resourceToAccess, use a permission set instead", role.GetName())
+			multiErr = multierror.Append(multiErr, err)
+		}
+		return multiErr
+	}
+
+	if role.GetPermissionSetId() != "" {
+		err := errors.Errorf(
+			"role name=%s: permission sets are not supported without the scoped access control feature", role.GetName())
+		multiErr = multierror.Append(multiErr, err)
+	}
+	if role.GetAccessScopeId() != "" {
+		err := errors.Errorf(
+			"role name=%s: access scopes are not supported without the scoped access control feature", role.GetName())
+		multiErr = multierror.Append(multiErr, err)
+	}
+
+	for resource := range role.GetResourceToAccess() {
+		if _, ok := resources.MetadataForResource(permissions.Resource(resource)); !ok {
+			multiErr = multierror.Append(multiErr, errors.Errorf(
+				"role name=%s: resource %q does not exist", role.GetName(), resource))
+		}
+	}
+
+	return multiErr
 }
 
 // Helper functions to check if a given role/name corresponds to a pre-loaded role.

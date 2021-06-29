@@ -39,9 +39,11 @@ class AuthServiceTest extends BaseSpecification {
             }
             def adminRole = rolesList.find { it.name == "Admin" }
             assert adminRole
-            assert adminRole.resourceToAccessCount > 0
-            adminRole.resourceToAccessMap.each {
-                assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
+            if (!FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
+                assert adminRole.resourceToAccessCount > 0
+                adminRole.resourceToAccessMap.each {
+                    assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
+                }
             }
         }
 
