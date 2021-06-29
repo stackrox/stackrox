@@ -97,6 +97,11 @@ func (in *CentralComponentSpec) DeepCopyInto(out *CentralComponentSpec) {
 		*out = new(TelemetryPolicy)
 		**out = **in
 	}
+	if in.DefaultTLSSecret != nil {
+		in, out := &in.DefaultTLSSecret, &out.DefaultTLSSecret
+		*out = new(commonv1alpha1.LocalSecretReference)
+		**out = **in
+	}
 	if in.AdminPasswordSecret != nil {
 		in, out := &in.AdminPasswordSecret, &out.AdminPasswordSecret
 		*out = new(v1.LocalObjectReference)

@@ -153,7 +153,7 @@ spec:
           secretName: central-tls
       - name: central-default-tls-cert-volume
         secret:
-          secretName: central-default-tls-cert
+          secretName: {{ default "central-default-tls-cert" ._rox.central.defaultTLS.reference }}
           optional: true
       - name: central-htpasswd-volume
         secret:

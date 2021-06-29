@@ -34,6 +34,7 @@ central:
   defaultTLS:
     cert: null # string
     key: null # string
+    reference: null # string
   image:
     registry: null # string
     name: null # string

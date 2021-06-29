@@ -50,37 +50,39 @@ func (v *ValuesBuilder) SetError(err error) *ValuesBuilder {
 
 // AddAllFrom merges key-values from other ValuesBuilder into the given one. It also merges errors, if any.
 // AddAllFrom records errors when attempting to overwrite existing keys.
-func (v *ValuesBuilder) AddAllFrom(other *ValuesBuilder) {
+func (v *ValuesBuilder) AddAllFrom(other *ValuesBuilder) *ValuesBuilder {
 	if other == nil {
-		return
+		return v
 	}
 	if other.errors != nil && other.errors.Len() > 0 {
 		v.SetError(other.errors)
-		return
+		return v
 	}
 	for key, val := range other.data {
 		if v.validateKey(key) == nil {
 			v.getData()[key] = val
 		}
 	}
+	return v
 }
 
 // AddChild adds values from child ValuesBuilder, if present, to the given one under the specified key. It also merges errors, if any.
 // AddChild records an error on attempt to overwrite existing key.
 // Important: don't expect child changes made after AddChild call to be reflected on the parent. I.e. AddChild should be
 // the last thing that happens in the lifetime of the child ValuesBuilder.
-func (v *ValuesBuilder) AddChild(key string, child *ValuesBuilder) {
+func (v *ValuesBuilder) AddChild(key string, child *ValuesBuilder) *ValuesBuilder {
 	if child == nil {
-		return
+		return v
 	}
 	if child.errors != nil && child.errors.Len() > 0 {
 		v.SetError(child.errors)
-		return
+		return v
 	}
 	if len(child.data) == 0 || v.validateKey(key) != nil {
-		return
+		return v
 	}
 	v.getData()[key] = child.getData()
+	return v
 }
 
 // validateKey remembers and returns an error if the key is empty string or the key already exists in contained data.

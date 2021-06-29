@@ -126,6 +126,15 @@ spec:
                         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
                         type: string
                     type: object
+                  defaultTLSSecret:
+                    description: A Kubernetes secret that contains a TLS certificate and key for HTTPS serving of the web UI.
+                    properties:
+                      name:
+                        description: The name of the referenced secret.
+                        type: string
+                    required:
+                    - name
+                    type: object
                   exposure:
                     description: Exposure defines how central is exposed.
                     properties:

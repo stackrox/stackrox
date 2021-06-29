@@ -59,6 +59,14 @@ spec:
         path: analyzer
       - displayName: Central
         path: central
+      - description: A Kubernetes secret that contains a TLS certificate and key for HTTPS serving of the web UI.
+        displayName: User-facing TLS secret
+        path: central.defaultTLSSecret
+      - description: The name of the referenced secret.
+        displayName: Name
+        path: central.defaultTLSSecret.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
       - description: Customizations to apply on all central components.
         displayName: Customize
         path: customize
