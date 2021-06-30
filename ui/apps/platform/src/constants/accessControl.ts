@@ -37,6 +37,26 @@ export const availableAuthProviders = [
     },
 ];
 
+export const oidcCallbackModes = [
+    {
+        label: 'Auto-select (recommended)',
+        value: 'auto',
+    },
+    {
+        label: 'HTTP POST',
+        value: 'post',
+    },
+    {
+        label: 'Fragment',
+        value: 'fragment',
+    },
+    {
+        label: 'Query',
+        value: 'query',
+    },
+];
+
+// DEPRECATED, replaced by map for SAC above
 export const oidcCallbackValues = {
     auto: 'Auto-select (recommended)',
     post: 'HTTP POST',

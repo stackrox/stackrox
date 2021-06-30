@@ -16,6 +16,8 @@ import AuthProviders from './AuthProviders/AuthProviders';
 import PermissionSets from './PermissionSets/PermissionSets';
 import Roles from './Roles/Roles';
 
+import './AccessControl.css';
+
 const paramId = ':entityId?';
 
 function AccessControl({ userRolePermissions }) {

@@ -37,16 +37,23 @@ export class AuthHttpError extends Error {
     isInvalidAuth = (): boolean => this.code === 401;
 }
 
+export type AuthProviderType = 'auth0' | 'oidc' | 'saml' | 'userpki' | 'iap';
+
+export type AuthProviderConfig = Record<
+    string,
+    string | number | undefined | boolean | Record<string, boolean>
+>;
+
 export type AuthProvider = {
     id: string;
     name: string;
-    type: string;
-    uiEndpoint: string;
-    enabled: boolean;
+    type: AuthProviderType;
+    uiEndpoint?: string;
+    enabled?: boolean;
     config: Record<string, string>;
-    loginUrl: string;
-    extraUiEndpoints: string[];
-    active: boolean;
+    loginUrl?: string;
+    extraUiEndpoints?: string[];
+    active?: boolean;
 };
 
 /**

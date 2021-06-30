@@ -1,9 +1,9 @@
 /* eslint-disable import/prefer-default-export */
-import { AuthProvider } from 'services/AuthService';
+import { AuthProvider, AuthProviderConfig } from 'services/AuthService';
 
-export interface DisplayedAuthProvider extends AuthProvider {
+export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
-}
+};
 
 function transformInitialValues(initialValues: DisplayedAuthProvider): DisplayedAuthProvider {
     // TODO-ivan: eventually logic for different auth provider type should live
@@ -38,7 +38,7 @@ function transformInitialValues(initialValues: DisplayedAuthProvider): Displayed
     if (initialValues.type === 'saml') {
         const alteredConfig = { ...initialValues.config };
         // unless static config values are present, assume dynamic configuration is selected
-        alteredConfig.type = alteredConfig.idp_issuer ? 'static' : 'dynamic';
+        alteredConfig.configurationType = alteredConfig.idp_issuer ? 'static' : 'dynamic';
         return {
             ...initialValues,
             config: alteredConfig,
@@ -70,4 +70,54 @@ export function getInitialAuthProviderValues(authProvider: AuthProvider): Displa
     };
 
     return modifiedInitialValues;
+}
+
+export function transformValuesBeforeSaving(
+    values: Record<string, string | string[] | boolean | AuthProviderConfig | undefined>
+): Record<string, string | string[] | boolean | AuthProviderConfig | undefined> {
+    if (values.type === 'oidc') {
+        const alteredConfig = { ...(values.config as AuthProviderConfig) };
+
+        // if client secret is stored on the backend and user didn't enter any value,
+        // it means that user wants to preserve the stored secret, delete then
+        const preserveStoredClientSecret =
+            typeof alteredConfig.clientOnly === 'object' &&
+            'clientSecretStored' in alteredConfig.clientOnly &&
+            typeof alteredConfig.clientOnly.clientSecretStored === 'boolean' &&
+            alteredConfig.clientOnly?.clientSecretStored &&
+            !alteredConfig.client_secret;
+        if (alteredConfig.do_not_use_client_secret || preserveStoredClientSecret) {
+            delete alteredConfig.client_secret;
+        }
+
+        // backend expects only string values for the config
+        alteredConfig.do_not_use_client_secret = alteredConfig.do_not_use_client_secret
+            ? 'true'
+            : 'false';
+
+        // finally delete client only values
+        delete alteredConfig.clientOnly;
+
+        return {
+            ...values,
+            config: alteredConfig,
+        };
+    }
+    if (values.type === 'saml') {
+        const alteredConfig = { ...(values.config as AuthProviderConfig) };
+        if (alteredConfig.configurationType === 'dynamic') {
+            ['idp_issuer', 'idp_sso_url', 'idp_nameid_format', 'idp_cert_pem'].forEach(
+                (p) => delete alteredConfig[p]
+            );
+        } else if (alteredConfig.configurationType === 'static') {
+            delete alteredConfig.idp_metadata_url;
+        }
+        delete alteredConfig.configurationType; // that was UI only field
+
+        return {
+            ...values,
+            config: alteredConfig,
+        };
+    }
+    return values;
 }

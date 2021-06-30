@@ -42,7 +42,7 @@ const entityType = 'AUTH_PROVIDER';
 const authProviderNew = {
     id: '',
     name: '',
-    type: '',
+    type: 'oidc',
     config: {},
 } as AuthProvider; // TODO what are the minimum properties for create request?
 
@@ -206,6 +206,7 @@ function AuthProviders(): ReactElement {
                             </ToolbarItem>
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
                                 <Dropdown
+                                    className="pf-m-small"
                                     onSelect={onClickCreate}
                                     position={DropdownPosition.right}
                                     toggle={

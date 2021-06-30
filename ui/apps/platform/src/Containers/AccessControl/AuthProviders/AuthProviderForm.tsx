@@ -23,7 +23,7 @@ import { AuthProvider } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 
 import ConfigurationFormFields from './ConfigurationFormFields';
-import { getInitialAuthProviderValues } from './authProviders.utils';
+import { getInitialAuthProviderValues, transformValuesBeforeSaving } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
 
 import SelectSingle from '../SelectSingle'; // TODO import from where?
@@ -63,13 +63,38 @@ function AuthProviderForm({
         validationSchema: yup.object({
             name: yup.string().required(),
             type: yup.string().required(),
-            config: yup.object().when('type', {
-                is: 'auth0',
-                then: yup.object({
-                    issuer: yup.string().required(),
-                    client_id: yup.string().required(),
+            config: yup
+                .object()
+                .when('type', {
+                    is: 'auth0',
+                    then: yup.object({
+                        issuer: yup.string().required(),
+                        client_id: yup.string().required(),
+                    }),
+                })
+                .when('type', {
+                    is: 'oidc',
+                    then: yup.object({
+                        client_id: yup.string().required(),
+                        issuer: yup.string().required(),
+                        mode: yup.string().required(),
+                        client_secret: yup.string().when('mode', {
+                            is: (value) => value === 'auto' || value === 'post',
+                            then: yup.string().required(),
+                        }),
+                    }),
+                })
+                .when('type', {
+                    is: 'saml',
+                    then: yup.object({
+                        configurationType: yup.string().required(),
+                        sp_issuer: yup.string().required(),
+                        idp_metadata_url: yup.string().when('mode', {
+                            is: (value) => value === 'auto' || value === 'post',
+                            then: yup.string().required(),
+                        }),
+                    }),
                 }),
-            }),
         }),
     });
 
@@ -82,7 +107,10 @@ function AuthProviderForm({
         // For example, to make a change, submit, and then make the opposite change.
         setIsSubmitting(true);
         setAlertSubmit(null);
-        submitValues(values)
+
+        const transformedValues = transformValuesBeforeSaving(values);
+
+        submitValues(transformedValues as AuthProvider)
             .catch((error) => {
                 setAlertSubmit(
                     <Alert
@@ -184,9 +212,11 @@ function AuthProviderForm({
                     </FormGroup>
                 </GridItem>
                 <ConfigurationFormFields
+                    config={values.config}
                     isViewing={isViewing}
                     onChange={onChange}
-                    config={values.config}
+                    setFieldValue={setFieldValue}
+                    type={values.type}
                 />
             </Grid>
             <FormGroup label="Minimum access role" fieldId="minimumAccessRole" isRequired>
