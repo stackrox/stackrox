@@ -27,6 +27,10 @@ spec:
         limits:
           memory: 2500Mi
           cpu: 2000m
+  tls:
+    additionalCAs:
+    - name: foo.pem
+      content: some cert content
 ---
 apiVersion: v1
 kind: Secret

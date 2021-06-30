@@ -10,8 +10,10 @@ metadata:
     {{- include "srox.labels" (list . "secret" "additional-ca") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "secret" "additional-ca") | nindent 4 }}
+    [<- if not .Operator >]
     "helm.sh/hook": "pre-install,pre-upgrade"
     "helm.sh/resource-policy": keep
+    [<- end >]
 type: Opaque
 stringData:
   {{- range $name, $cert := ._rox._additionalCAs }}

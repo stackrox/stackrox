@@ -33,6 +33,7 @@ func DefaultMetaValues() MetaValues {
 		"ImagePullSecrets": ImagePullSecrets{
 			AllowNone: false,
 		},
+		"Operator": false,
 	}
 
 	featureFlagVals := make(map[string]interface{})
@@ -57,6 +58,7 @@ func RHACSMetaValues() MetaValues {
 		"ImagePullSecrets": ImagePullSecrets{
 			AllowNone: true,
 		},
+		"Operator": false,
 	}
 
 	if !buildinfo.ReleaseBuild {
