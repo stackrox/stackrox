@@ -32,6 +32,7 @@ import { Role, fetchRolesAsArray } from 'services/RolesService';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import AccessControlNav from '../AccessControlNav';
+import AccessControlPageTitle from '../AccessControlPageTitle';
 
 import AuthProviderForm from './AuthProviderForm';
 import AuthProvidersList from './AuthProvidersList';
@@ -173,6 +174,7 @@ function AuthProviders(): ReactElement {
     // TODO Display backdrop which covers nav links and drawer body during action.
     return (
         <>
+            <AccessControlPageTitle entityType={entityType} isEntity={isExpanded} />
             <AccessControlNav entityType={entityType} />
             {alertAuthProviders}
             {alertRoles}
@@ -211,7 +213,7 @@ function AuthProviders(): ReactElement {
                                             onToggle={onToggleCreateMenu}
                                             toggleIndicator={CaretDownIcon}
                                             isPrimary
-                                            isDisabled={isExpanded || isFetching}
+                                            isDisabled={isFetching}
                                         >
                                             Add auth provider
                                         </DropdownToggle>

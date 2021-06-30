@@ -31,6 +31,7 @@ import {
 } from 'services/RolesService';
 
 import AccessControlNav from '../AccessControlNav';
+import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import RoleForm from './RoleForm';
@@ -166,10 +167,11 @@ function Roles(): ReactElement {
     const role = roles.find(({ name }) => name === entityName) || roleNew;
     const isActionable = !defaultRoles[role.name];
     const hasAction = Boolean(action);
-    const isExpanded = hasAction || Boolean(entityName);
+    const isEntity = hasAction || Boolean(entityName);
 
     return (
         <>
+            <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
             <AccessControlNav entityType={entityType} />
             {alertRoles}
             {alertPermissionSets}
@@ -178,7 +180,7 @@ function Roles(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
-            ) : isExpanded ? (
+            ) : isEntity ? (
                 <RoleForm
                     isActionable={isActionable}
                     action={action}
@@ -205,7 +207,7 @@ function Roles(): ReactElement {
                                 <Button
                                     variant="primary"
                                     onClick={onClickCreate}
-                                    isDisabled={isExpanded || isFetching}
+                                    isDisabled={isFetching}
                                     isSmall
                                 >
                                     Create role

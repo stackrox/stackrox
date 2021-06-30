@@ -30,6 +30,7 @@ import {
 } from 'services/RolesService';
 
 import AccessControlNav from '../AccessControlNav';
+import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import PermissionSetForm from './PermissionSetForm';
@@ -172,10 +173,11 @@ function PermissionSets(): ReactElement {
         permissionSets.find(({ id }) => id === entityId) || getNewPermissionSet(resources);
     const isActionable = !defaultRoles[permissionSet.name];
     const hasAction = Boolean(action);
-    const isExpanded = hasAction || Boolean(entityId);
+    const isEntity = hasAction || Boolean(entityId);
 
     return (
         <>
+            <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
             <AccessControlNav entityType={entityType} />
             {alertPermissionSets}
             {alertResources}
@@ -184,7 +186,7 @@ function PermissionSets(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
-            ) : isExpanded ? (
+            ) : isEntity ? (
                 <PermissionSetForm
                     isActionable={isActionable}
                     action={action}
@@ -209,7 +211,7 @@ function PermissionSets(): ReactElement {
                                 <Button
                                     variant="primary"
                                     onClick={onClickCreate}
-                                    isDisabled={isExpanded || isFetching || resources.length === 0}
+                                    isDisabled={isFetching || resources.length === 0}
                                     isSmall
                                 >
                                     Create permission set

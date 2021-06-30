@@ -28,6 +28,7 @@ import {
 } from 'services/RolesService';
 
 import AccessControlNav from '../AccessControlNav';
+import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import AccessScopeForm from './AccessScopeForm';
@@ -153,10 +154,11 @@ function AccessScopes(): ReactElement {
     const accessScope = accessScopes.find(({ id }) => id === entityId) || accessScopeNew;
     const isActionable = true; // TODO does it depend on user role?
     const hasAction = Boolean(action);
-    const isExpanded = hasAction || Boolean(entityId);
+    const isEntity = hasAction || Boolean(entityId);
 
     return (
         <>
+            <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
             <AccessControlNav entityType={entityType} />
             {alertAccessScopes}
             {alertRoles}
@@ -164,7 +166,7 @@ function AccessScopes(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
-            ) : isExpanded ? (
+            ) : isEntity ? (
                 <AccessScopeForm
                     isActionable={isActionable}
                     action={action}
@@ -189,7 +191,7 @@ function AccessScopes(): ReactElement {
                                 <Button
                                     variant="primary"
                                     onClick={onClickCreate}
-                                    isDisabled={isExpanded || isFetching}
+                                    isDisabled={isFetching}
                                     isSmall
                                 >
                                     Create access scope
