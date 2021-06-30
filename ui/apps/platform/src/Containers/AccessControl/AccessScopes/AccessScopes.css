@@ -24,7 +24,7 @@
  * Override annoying reset rule for info icon.
  * However, table column help action svg does have display: block!
  */
- #access-scope-form .pf-c-form__group-label .pf-c-button svg {
+#access-scope-form .pf-c-form__group-label .pf-c-button svg {
     display: inline;
 }
 
@@ -32,7 +32,7 @@
  * Align table head row with tabs because they are side by side.
  */
 #access-scope-form .pf-c-table {
-    --pf-c-table--m-compact-th--PaddingTop: var(--pf-global--spacer--sm)
+    --pf-c-table--m-compact-th--PaddingTop: var(--pf-global--spacer--sm);
 }
 
 /*
@@ -79,37 +79,6 @@ table .pf-c-dropdown__toggle.pf-m-plain svg {
 }
 
 /*
- * A button with small font size like `isSmall` and reduced padding:
- * 4px instead of 6px vertical
- * 8px instead of 16px horizontal
- */
-#access-scope-form .pf-c-button.pf-m-smaller {
-    --pf-c-button--FontSize: var(--pf-global--FontSize--sm);
-    --pf-c-button--PaddingTop: var(--pf-global--spacer--xs);
-    --pf-c-button--PaddingRight: var(--pf-global--spacer--sm);
-    --pf-c-button--PaddingBottom: var(--pf-global--spacer--xs);
-    --pf-c-button--PaddingLeft: var(--pf-global--spacer--sm);
-}
-
-/*
- * Dropdown has (via className) font size compatible with Button (see above).
- */
- #access-scope-form .pf-c-dropdown.pf-m-smaller {
-    --pf-c-dropdown__toggle--FontSize: var(--pf-global--FontSize--sm);
-    --pf-c-dropdown__toggle--PaddingTop: var(--pf-global--spacer--xs);
-    --pf-c-dropdown__toggle--PaddingRight: var(--pf-global--spacer--sm);
-    --pf-c-dropdown__toggle--PaddingBottom: var(--pf-global--spacer--xs);
-    --pf-c-dropdown__toggle--PaddingLeft: var(--pf-global--spacer--sm);
-    --pf-c-dropdown__toggle-icon--MarginLeft: var(--pf-global--spacer--sm);
-    --pf-c-dropdown__toggle-icon--MarginRight: 0;
-    --pf-c-dropdown__menu-item--FontSize: var(--pf-global--FontSize--sm);
-    --pf-c-dropdown__menu-item--PaddingTop: calc(var(--pf-global--spacer--sm) / 2);
-    --pf-c-dropdown__menu-item--PaddingRight: var(--pf-global--spacer--sm);
-    --pf-c-dropdown__menu-item--PaddingBottom: calc(var(--pf-global--spacer--sm) / 2);
-    --pf-c-dropdown__menu-item--PaddingLeft: var(--pf-global--spacer--sm);
-}
-
-/*
  * Dropdown has horizontal spacing compatible with Button.
 */
 #access-scope-form .pf-c-dropdown {
@@ -148,7 +117,10 @@ table .pf-c-dropdown__toggle.pf-m-plain svg {
     .pf-c-form__group.pf-m-horizontal {
         display: grid;
         grid-column-gap: var(--pf-c-form--m-horizontal__group-label--md--GridColumnGap);
-        grid-template-columns: minmax(var(--pf-c-form--m-horizontal__group-label--md--GridColumnWidth), max-content) var(--pf-c-form--m-horizontal__group-control--md--GridColumnWidth);
+        grid-template-columns: minmax(
+                var(--pf-c-form--m-horizontal__group-label--md--GridColumnWidth),
+                max-content
+            ) var(--pf-c-form--m-horizontal__group-control--md--GridColumnWidth);
     }
 
     .pf-c-form__group.pf-m-horizontal .pf-c-form__group-label {

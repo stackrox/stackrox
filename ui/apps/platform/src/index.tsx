@@ -26,9 +26,11 @@ import '@patternfly/react-styles/css/utilities/Flex/flex.css';
 import '@patternfly/react-styles/css/utilities/Sizing/sizing.css';
 import '@patternfly/react-styles/css/utilities/Spacing/spacing.css';
 import '@patternfly/react-styles/css/utilities/Text/text.css';
+
+// Advanced Cluster Security extensions to PatternFly styles
+import 'css/acs.css';
 // We need the following file, to smooth out rough edges, as we migrate to PatternFly
-// eslint-disable-next-line no-unused-vars
-import 'trumps.css';
+import 'css/trumps.css';
 
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
