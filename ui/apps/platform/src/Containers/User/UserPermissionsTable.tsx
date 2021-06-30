@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { AccessLevel } from 'services/RolesService';
+import { PermissionsMap } from 'services/RolesService';
 
 import {
     ReadAccessIcon,
@@ -9,7 +9,7 @@ import {
 } from 'Containers/AccessControl/PermissionSets/AccessIcons';
 
 export type UserPermissionsTableProps = {
-    permissions: Record<string, AccessLevel>;
+    permissions: PermissionsMap;
 };
 
 function UserPermissionsTable({ permissions }: UserPermissionsTableProps): ReactElement {
@@ -23,16 +23,16 @@ function UserPermissionsTable({ permissions }: UserPermissionsTableProps): React
                 </Tr>
             </Thead>
             <Tbody>
-                {Object.entries(permissions).map(([resource, accessType]) => (
+                {Object.entries(permissions).map(([resource, accessLevel]) => (
                     <Tr key={resource}>
                         <Td key="resourceName" dataLabel="Resource">
                             {resource}
                         </Td>
                         <Td key="read" dataLabel="Read" data-testid="read">
-                            <ReadAccessIcon accessType={accessType} />
+                            <ReadAccessIcon accessLevel={accessLevel} />
                         </Td>
                         <Td key="write" dataLabel="Write" data-testid="write">
-                            <WriteAccessIcon accessType={accessType} />
+                            <WriteAccessIcon accessLevel={accessLevel} />
                         </Td>
                     </Tr>
                 ))}

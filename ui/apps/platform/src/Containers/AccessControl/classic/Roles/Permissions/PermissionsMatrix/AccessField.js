@@ -22,11 +22,11 @@ const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
             </td>
             <td className="p-2 text-center border-b border-base-300">
                 {accessType.read && (accessType.read.join(', ') || 'None')}
-                {!accessType.read && <ReadAccessIcon accessType={accessType} />}
+                {!accessType.read && <ReadAccessIcon accessLevel={accessType} />}
             </td>
             <td className="p-2 text-center border-b border-base-300">
                 {accessType.write && (accessType.write.join(', ') || 'None')}
-                {!accessType.write && <WriteAccessIcon accessType={accessType} />}
+                {!accessType.write && <WriteAccessIcon accessLevel={accessType} />}
             </td>
             {isEditing && (
                 <td className="p-2 border-b border-base-300">

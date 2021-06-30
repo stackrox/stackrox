@@ -1,51 +1,69 @@
 import React, { ReactElement } from 'react';
-import { SelectOption } from '@patternfly/react-core';
+import { Badge, SelectOption } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { accessControl as accessTypeLabels } from 'messages/common';
-import { AccessLevel } from 'services/RolesService';
+import { PermissionsMap } from 'services/RolesService';
 
 import SelectSingle from '../SelectSingle'; // TODO import from where?
 import { ReadAccessIcon, WriteAccessIcon } from './AccessIcons';
+import { getReadAccessCount, getWriteAccessCount } from './permissionSets.utils';
 
-export type ResourcesTableProps = {
-    resourceToAccess: Record<string, AccessLevel>;
+export type PermissionsTableProps = {
+    resourceToAccess: PermissionsMap;
     setResourceValue: (resource: string, value: string) => void;
     isDisabled: boolean;
 };
 
-function ResourcesTable({
+function PermissionsTable({
     resourceToAccess,
     setResourceValue,
     isDisabled,
-}: ResourcesTableProps): ReactElement {
+}: PermissionsTableProps): ReactElement {
+    const resourceToAccessEntries = Object.entries(resourceToAccess);
+
     // TODO Access level does not need excess width.
     return (
-        <TableComposable aria-label="Resources" variant="compact">
+        <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
-                    <Th key="resourceName">Resource</Th>
-                    <Th key="read">Read</Th>
-                    <Th key="write">Write</Th>
+                    <Th key="resourceName">
+                        Resource
+                        <Badge isRead className="pf-u-ml-sm">
+                            {resourceToAccessEntries.length}
+                        </Badge>
+                    </Th>
+                    <Th key="read">
+                        Read
+                        <Badge isRead className="pf-u-ml-sm">
+                            {getReadAccessCount(resourceToAccess)}
+                        </Badge>
+                    </Th>
+                    <Th key="write">
+                        Write
+                        <Badge isRead className="pf-u-ml-sm">
+                            {getWriteAccessCount(resourceToAccess)}
+                        </Badge>
+                    </Th>
                     <Th key="accessLevel">Access level</Th>
                 </Tr>
             </Thead>
             <Tbody>
-                {Object.entries(resourceToAccess).map(([resource, accessType]) => (
+                {resourceToAccessEntries.map(([resource, accessLevel]) => (
                     <Tr key={resource}>
                         <Td key="resourceName" dataLabel="Resource">
                             {resource}
                         </Td>
                         <Td key="read" dataLabel="Read" data-testid="read">
-                            <ReadAccessIcon accessType={accessType} />
+                            <ReadAccessIcon accessLevel={accessLevel} />
                         </Td>
                         <Td key="write" dataLabel="Write" data-testid="write">
-                            <WriteAccessIcon accessType={accessType} />
+                            <WriteAccessIcon accessLevel={accessLevel} />
                         </Td>
                         <Td key="accessLevel" dataLabel="Access level">
                             <SelectSingle
                                 id={resource}
-                                value={accessType}
+                                value={accessLevel}
                                 setFieldValue={setResourceValue}
                                 isDisabled={isDisabled}
                             >
@@ -63,4 +81,4 @@ function ResourcesTable({
     );
 }
 
-export default ResourcesTable;
+export default PermissionsTable;

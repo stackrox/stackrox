@@ -19,7 +19,6 @@ import {
 
 import { defaultRoles } from 'constants/accessControl';
 import {
-    AccessLevel,
     PermissionSet,
     Role,
     createPermissionSet,
@@ -35,21 +34,7 @@ import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import PermissionSetForm from './PermissionSetForm';
 import PermissionSetsList from './PermissionSetsList';
-
-function getNewPermissionSet(resources: string[]): PermissionSet {
-    const resourceToAccess: Record<string, AccessLevel> = {};
-    resources.forEach((resource) => {
-        resourceToAccess[resource] = 'NO_ACCESS';
-    });
-
-    return {
-        id: '',
-        name: '',
-        description: '',
-        minimumAccessLevel: 'NO_ACCESS',
-        resourceToAccess,
-    };
-}
+import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.utils';
 
 const entityType = 'PERMISSION_SET';
 
@@ -60,17 +45,20 @@ function PermissionSets(): ReactElement {
     const { action } = queryObject;
     const { entityId } = useParams();
 
-    const [isFetching, setIsFetching] = useState(false);
+    const [isFetchingPrimary, setIsFetchingPrimary] = useState(false);
     const [permissionSets, setPermissionSets] = useState<PermissionSet[]>([]);
     const [alertPermissionSets, setAlertPermissionSets] = useState<ReactElement | null>(null);
+
+    const [isFetchingSecondary, setIsFetchingSecondary] = useState(false);
     const [resources, setResources] = useState<string[]>([]);
     const [alertResources, setAlertResources] = useState<ReactElement | null>(null);
+
     const [roles, setRoles] = useState<Role[]>([]);
     const [alertRoles, setAlertRoles] = useState<ReactElement | null>(null);
 
     useEffect(() => {
         // The primary request has fetching spinner and unclosable alert.
-        setIsFetching(true);
+        setIsFetchingPrimary(true);
         setAlertPermissionSets(null);
         fetchPermissionSets()
             .then((permissionSetsFetched) => {
@@ -88,10 +76,10 @@ function PermissionSets(): ReactElement {
                 );
             })
             .finally(() => {
-                setIsFetching(false);
+                setIsFetchingPrimary(false);
             });
 
-        // TODO Until secondary requests succeed, disable Create and Edit because selections might be incomplete?
+        setIsFetchingSecondary(true);
         setAlertResources(null);
         fetchResourcesAsArray()
             .then((resourcesFetched) => {
@@ -109,6 +97,9 @@ function PermissionSets(): ReactElement {
                         {error.message}
                     </Alert>
                 );
+            })
+            .finally(() => {
+                setIsFetchingSecondary(false);
             });
 
         setAlertRoles(null);
@@ -130,6 +121,8 @@ function PermissionSets(): ReactElement {
                 );
             });
     }, []);
+
+    const isFetching = isFetchingPrimary || isFetchingSecondary;
 
     function onClickCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
@@ -195,7 +188,7 @@ function PermissionSets(): ReactElement {
                 <PermissionSetForm
                     isActionable={isActionable}
                     action={action}
-                    permissionSet={permissionSet}
+                    permissionSet={getCompletePermissionSet(permissionSet, resources)}
                     handleCancel={handleCancel}
                     handleEdit={handleEdit}
                     handleSubmit={handleSubmit}

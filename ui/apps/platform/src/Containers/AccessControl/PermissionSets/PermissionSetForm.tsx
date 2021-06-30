@@ -4,10 +4,11 @@ import * as yup from 'yup';
 import {
     Alert,
     AlertVariant,
+    Badge,
     Button,
     Form,
     FormGroup,
-    SelectOption,
+    Label,
     TextInput,
     Title,
     Toolbar,
@@ -16,13 +17,12 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { accessControl as accessControlTypeLabels } from 'messages/common';
+import { defaultMinimalReadAccessResources } from 'constants/accessControl';
 import { PermissionSet } from 'services/RolesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
-import ResourcesTable from './ResourcesTable';
-import SelectSingle from '../SelectSingle'; // TODO import from where?
+import PermissionsTable from './PermissionsTable';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
@@ -50,8 +50,7 @@ function PermissionSetForm({
         validationSchema: yup.object({
             name: yup.string().required(),
             description: yup.string(),
-            // minimumAccessLevel
-            // permissions
+            // resourceToAccess is valid because selections of access level
         }),
     });
 
@@ -97,7 +96,6 @@ function PermissionSetForm({
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
 
-    // TODO Miminum access level: does not need full width.
     return (
         <Form id="permission-set-form">
             <Toolbar inset={{ default: 'insetNone' }}>
@@ -107,17 +105,21 @@ function PermissionSetForm({
                             {action === 'create' ? 'Create permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
-                    {isActionable && action !== 'create' && (
+                    {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>
-                                <Button
-                                    variant="primary"
-                                    onClick={handleEdit}
-                                    isDisabled={action === 'update'}
-                                    isSmall
-                                >
-                                    Edit permission set
-                                </Button>
+                                {isActionable ? (
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleEdit}
+                                        isDisabled={action === 'update'}
+                                        isSmall
+                                    >
+                                        Edit permission set
+                                    </Button>
+                                ) : (
+                                    <Label>Not editable</Label>
+                                )}
                             </ToolbarItem>
                         </ToolbarGroup>
                     )}
@@ -143,30 +145,32 @@ function PermissionSetForm({
                     isDisabled={isViewing}
                 />
             </FormGroup>
-            <FormGroup
-                label="Minimum access level"
-                fieldId="minimumAccessLevel"
-                isRequired
-                className="pf-m-horizontal"
-            >
-                <SelectSingle
-                    id="minimumAccessLevel"
-                    value={values.minimumAccessLevel}
-                    setFieldValue={setFieldValue}
+            {action === 'create' && (
+                <Alert title="Recommended minimum set of read permissions" variant="info" isInline>
+                    <p>
+                        Users might not be able to load certain pages if they do not have a minimum
+                        set of read permissions.
+                    </p>
+                    <br />
+                    <p>
+                        If this permission set is for <strong>users</strong>, select at least{' '}
+                        <strong>Read access</strong> for at least the following resources:
+                    </p>
+                    <p>
+                        <strong>{defaultMinimalReadAccessResources.join(', ')}</strong>
+                        <Badge isRead className="pf-u-ml-sm">
+                            {defaultMinimalReadAccessResources.length}
+                        </Badge>
+                    </p>
+                </Alert>
+            )}
+            <FormGroup label="Permissions" fieldId="permissions" isRequired>
+                <PermissionsTable
+                    resourceToAccess={values.resourceToAccess}
+                    setResourceValue={setResourceValue}
                     isDisabled={isViewing}
-                >
-                    {Object.entries(accessControlTypeLabels).map(([value, label]) => (
-                        <SelectOption key={value} value={value}>
-                            {label}
-                        </SelectOption>
-                    ))}
-                </SelectSingle>
+                />
             </FormGroup>
-            <ResourcesTable
-                resourceToAccess={values.resourceToAccess}
-                setResourceValue={setResourceValue}
-                isDisabled={isViewing}
-            />
             {hasAction && (
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>

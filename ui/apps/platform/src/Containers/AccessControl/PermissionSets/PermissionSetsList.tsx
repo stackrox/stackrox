@@ -1,7 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { accessControl as accessControlTypeLabels } from 'messages/common';
 import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
@@ -37,18 +36,17 @@ function PermissionSetsList({
     }
 
     return (
-        <TableComposable variant="compact">
+        <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th>Name</Th>
                     <Th>Description</Th>
-                    <Th>Minimum access level</Th>
                     <Th>Roles</Th>
                     <Th aria-label="Row actions" />
                 </Tr>
             </Thead>
             <Tbody>
-                {permissionSets.map(({ id, name, description, minimumAccessLevel }) => (
+                {permissionSets.map(({ id, name, description }) => (
                     <Tr key={id} style={id === entityId ? selectedRowStyle : unselectedRowStyle}>
                         <Td dataLabel="Name">
                             <AccessControlEntityLink
@@ -58,9 +56,6 @@ function PermissionSetsList({
                             />
                         </Td>
                         <Td dataLabel="Description">{description}</Td>
-                        <Td dataLabel="Minimum access level">
-                            {accessControlTypeLabels[minimumAccessLevel] ?? ''}
-                        </Td>
                         <Td dataLabel="Roles">
                             <RolesLink
                                 roles={roles.filter(
@@ -83,6 +78,7 @@ function PermissionSetsList({
                                         },
                                     ],
                                 }}
+                                className="pf-u-text-align-right"
                             />
                         )}
                     </Tr>

@@ -21,10 +21,15 @@ const rolesUrl = '/v1/roles';
 
 export type AccessLevel = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
 
+/*
+ * A permission associates a resource with its access level.
+ */
+export type PermissionsMap = Record<string, AccessLevel>;
+
 export type Role = {
     name: string;
     // globalAccess is deprecated
-    resourceToAccess: Record<string, AccessLevel>; // deprecated: use only for classic UI
+    resourceToAccess: PermissionsMap; // deprecated: use only for classic UI
     id: string;
     description: string;
     permissionSetId: string;
@@ -87,8 +92,7 @@ export type PermissionSet = {
     id: string;
     name: string;
     description: string;
-    minimumAccessLevel: AccessLevel;
-    resourceToAccess: Record<string, AccessLevel>;
+    resourceToAccess: PermissionsMap;
 };
 
 /*
