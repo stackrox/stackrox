@@ -3,6 +3,7 @@ package reconciler
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joelanford/helm-operator/pkg/reconciler"
 	"github.com/joelanford/helm-operator/pkg/values"
@@ -19,10 +20,15 @@ const (
 	// as a value that should be large enough in practice to allow meaningful manual investigations/recoveries, but
 	// small enough such that overall space consumption will not be a concern.
 	defaultMaxReleaseHistorySize = 10
+
+	// defaultMarkReleaseFailedAfter is the default time after which a release that is seemingly stuck in a
+	// pending/locked state is marked failed.
+	defaultMarkReleaseFailedAfter = 2 * time.Minute
 )
 
 var (
-	maxReleaseHistorySizeSetting = env.RegisterSetting("ROX_MAX_HELM_RELEASE_HISTORY")
+	maxReleaseHistorySizeSetting  = env.RegisterSetting("ROX_MAX_HELM_RELEASE_HISTORY")
+	markReleaseFailedAfterSetting = env.RegisterSetting("ROX_MARK_RELEASE_FAILED_AFTER")
 )
 
 // SetupReconcilerWithManager creates and registers a new helm reconciler to the given controller manager.
@@ -40,6 +46,14 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		}
 	}
 
+	markReleaseFailedAfter := defaultMarkReleaseFailedAfter
+	if markReleaseFailedAfterStr := strings.TrimSpace(markReleaseFailedAfterSetting.Setting()); markReleaseFailedAfterStr != "" {
+		markReleaseFailedAfter, err = time.ParseDuration(markReleaseFailedAfterStr)
+		if err != nil {
+			return errors.Wrapf(err, "invalid %s setting", markReleaseFailedAfterSetting.EnvVar())
+		}
+	}
+
 	reconcilerOpts := []reconciler.Option{
 		reconciler.WithChart(*chart),
 		reconciler.WithGroupVersionKind(gvk),
@@ -47,6 +61,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		//TODO(ROX-7362): re-evaluate enabling depended watches
 		reconciler.SkipDependentWatches(true),
 		reconciler.WithMaxReleaseHistory(maxReleaseHistorySize),
+		reconciler.WithMarkFailedAfter(markReleaseFailedAfter),
 	}
 	reconcilerOpts = append(reconcilerOpts, extraOpts...)
 
