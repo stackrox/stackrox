@@ -47,7 +47,7 @@ function RolesList({
     }
 
     return (
-        <TableComposable variant="compact">
+        <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th>Name</Th>
@@ -86,7 +86,7 @@ function RolesList({
                                     entityName={getAccessScopeName(accessScopeId)}
                                 />
                             ) : (
-                                'Unlimited access'
+                                'No access scope'
                             )}
                         </Td>
                         {defaultRoles[name] ? (
@@ -102,6 +102,7 @@ function RolesList({
                                         },
                                     ],
                                 }}
+                                className="pf-u-text-align-right"
                             />
                         )}
                     </Tr>

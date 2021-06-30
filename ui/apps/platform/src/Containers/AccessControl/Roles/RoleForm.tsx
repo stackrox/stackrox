@@ -7,6 +7,7 @@ import {
     Button,
     Form,
     FormGroup,
+    Label,
     TextInput,
     Title,
     Toolbar,
@@ -96,17 +97,21 @@ function RoleForm({
                             {action === 'create' ? 'Create role' : role.name}
                         </Title>
                     </ToolbarItem>
-                    {isActionable && action !== 'create' && (
+                    {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>
-                                <Button
-                                    variant="primary"
-                                    onClick={handleEdit}
-                                    isDisabled={action === 'update'}
-                                    isSmall
-                                >
-                                    Edit role
-                                </Button>
+                                {isActionable ? (
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleEdit}
+                                        isDisabled={action === 'update'}
+                                        isSmall
+                                    >
+                                        Edit role
+                                    </Button>
+                                ) : (
+                                    <Label>Not editable</Label>
+                                )}
                             </ToolbarItem>
                         </ToolbarGroup>
                     )}
@@ -142,15 +147,13 @@ function RoleForm({
                 />
             </FormGroup>
             <FormGroup label="Access scope" fieldId="accessScopeId">
-                {accessScopes.length !== 0 && (
-                    <AccessScopesTable
-                        fieldId="accessScopeId"
-                        accessScopeId={values.accessScopeId}
-                        accessScopes={accessScopes}
-                        handleChange={handleChange}
-                        isDisabled={isViewing}
-                    />
-                )}
+                <AccessScopesTable
+                    fieldId="accessScopeId"
+                    accessScopeId={values.accessScopeId}
+                    accessScopes={accessScopes}
+                    handleChange={handleChange}
+                    isDisabled={isViewing}
+                />
             </FormGroup>
             {hasAction && (
                 <Toolbar inset={{ default: 'insetNone' }}>

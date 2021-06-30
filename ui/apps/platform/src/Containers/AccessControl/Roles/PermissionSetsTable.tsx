@@ -19,7 +19,7 @@ function PermissionSetsTable({
     isDisabled,
 }: PermissionSetsTableProps): ReactElement {
     return (
-        <TableComposable aria-label="Permission sets" variant="compact">
+        <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th key="radio" />

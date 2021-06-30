@@ -19,7 +19,7 @@ function AccessScopesTable({
     isDisabled,
 }: AccessScopesTableProps): ReactElement {
     return (
-        <TableComposable aria-label="Access scopes" variant="compact">
+        <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th key="radio" />
@@ -28,6 +28,25 @@ function AccessScopesTable({
                 </Tr>
             </Thead>
             <Tbody>
+                <Tr className="pf-u-background-color-200">
+                    <Td key="radio" className="pf-c-table__check">
+                        <input
+                            type="radio"
+                            name={fieldId}
+                            value=""
+                            onChange={handleChange}
+                            aria-label="No access scope"
+                            checked={accessScopeId.length === 0}
+                            disabled={isDisabled}
+                        />
+                    </Td>
+                    <Td key="name" dataLabel="Name" modifier="nowrap">
+                        No access scope
+                    </Td>
+                    <Td key="description" dataLabel="Description">
+                        Role does not have an access scope
+                    </Td>
+                </Tr>
                 {accessScopes.map(({ id, name, description }) => (
                     <Tr key={id}>
                         <Td key="radio" className="pf-c-table__check">
