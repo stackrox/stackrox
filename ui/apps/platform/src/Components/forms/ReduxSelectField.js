@@ -11,6 +11,7 @@ const ReduxSelect = ({
     customComponents,
     styles,
     defaultValue,
+    filterOption,
 }) => (
     <Select
         key={name}
@@ -22,6 +23,7 @@ const ReduxSelect = ({
         components={customComponents}
         styles={styles}
         menuPlacement="auto"
+        filterOption={filterOption}
     />
 );
 
@@ -37,6 +39,7 @@ ReduxSelect.propTypes = {
     customComponents: PropTypes.shape({}),
     styles: PropTypes.shape({}),
     defaultValue: PropTypes.string,
+    filterOption: PropTypes.func,
 };
 
 ReduxSelect.defaultProps = {
@@ -44,6 +47,7 @@ ReduxSelect.defaultProps = {
     customComponents: {},
     styles: defaultSelectStyles,
     defaultValue: null,
+    filterOption: null,
 };
 
 const ReduxSelectField = ({
@@ -55,6 +59,7 @@ const ReduxSelectField = ({
     styles,
     value,
     onChange,
+    filterOption,
 }) => (
     <Field
         key={name}
@@ -67,6 +72,7 @@ const ReduxSelectField = ({
         styles={styles}
         defaultValue={value}
         onChange={onChange}
+        filterOption={filterOption}
         className="border bg-base-100 border-base-300 text-base-600 p-3 pr-8 rounded-r-sm cursor-pointer z-50 focus:border-base-300 w-full font-400"
     />
 );
@@ -80,6 +86,7 @@ ReduxSelectField.propTypes = {
     styles: PropTypes.shape({}),
     value: PropTypes.string,
     onChange: PropTypes.func,
+    filterOption: PropTypes.func,
 };
 
 ReduxSelectField.defaultProps = {
@@ -89,6 +96,7 @@ ReduxSelectField.defaultProps = {
     styles: defaultSelectStyles,
     value: null,
     onChange: null,
+    filterOption: null,
 };
 
 export default ReduxSelectField;

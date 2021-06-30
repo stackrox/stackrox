@@ -2,6 +2,8 @@ import React from 'react';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import {
     labelClassName,
     sublabelClassName,
@@ -11,11 +13,17 @@ import {
     justifyBetweenClassName,
     inputNumberClassName,
 } from 'constants/form.constants';
-
+import { clusterTypes } from './cluster.helpers';
 import HelmValueWarning from './Components/HelmValueWarning';
 
-const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig }) => {
+const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, clusterType }) => {
     const { registryOverride, admissionControllerConfig } = dynamicConfig;
+    const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
+    );
+
+    const isLoggingSupported =
+        clusterType === !clusterTypes.KUBERNETES && clusterType === !clusterTypes.OPENSHIFT_3;
     // @TODO, replace open prop with dynamic logic, based on clusterType
     return (
         <CollapsibleSection
@@ -160,6 +168,36 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig }
                         }
                     />
                 </div>
+                {isK8sAuditLoggingEnabled && (
+                    <div className={wrapperMarginClassName}>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label
+                                htmlFor="dynamicConfig.disableAuditLogs"
+                                className={labelClassName}
+                            >
+                                Enable Cluster Access Logging
+                            </label>
+                            <ToggleSwitch
+                                id="dynamicConfig.disableAuditLogs"
+                                name="dynamicConfig.disableAuditLogs"
+                                disabled={!isLoggingSupported}
+                                toggleHandler={handleChange}
+                                enabled={admissionControllerConfig.disableAuditLogs}
+                            />
+                        </div>
+                        {!isLoggingSupported && (
+                            <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
+                                This setting will not work for Kubernetes or OpenShift 3.x. To
+                                enable logging, you must upgrade your cluster to OpenShift 4 or
+                                higher.
+                            </div>
+                        )}
+                        <HelmValueWarning
+                            currentValue={dynamicConfig.disableAuditLogs}
+                            helmValue={helmConfig?.dynamicConfig?.disableAuditLogs}
+                        />
+                    </div>
+                )}
             </div>
         </CollapsibleSection>
     );

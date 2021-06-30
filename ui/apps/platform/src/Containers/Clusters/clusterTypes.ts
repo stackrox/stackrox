@@ -1,3 +1,5 @@
+import { ClusterLabels } from 'services/ClustersService';
+
 export type SensorHealthStatus = 'HEALTHY' | 'UNHEALTHY' | 'DEGRADED' | 'UNINITIALIZED';
 
 export type ClusterHealthItemStatus =
@@ -41,4 +43,60 @@ export type SensorUpgradeStatus = {
         };
         type: string;
     };
+};
+
+export type DynamicConfig = {
+    registryOverride: string;
+    admissionControllerConfig: {
+        disableBypass: boolean;
+        enabled: boolean;
+        enforceOnUpdates: boolean;
+        scanInline: boolean;
+        timeoutSeconds: number;
+    };
+};
+
+export type HelmConfig = {
+    dynamicConfig: DynamicConfig;
+};
+
+export type CentralEnv = {
+    kernelSupportAvailable?: boolean;
+    successfullyFetched?: boolean;
+};
+
+export type ClusterStatus = {
+    sensorVersion: string;
+    providerMetadata: {
+        region: string;
+    };
+    orchestratorMetadata: {
+        version: string;
+        buildDate: string;
+    };
+    upgradeStatus: SensorUpgradeStatus;
+    certExpiryStatus: {
+        sensorCertExpiry: string;
+    };
+};
+
+export type Cluster = {
+    id: string;
+    name: string;
+    type: string;
+    mainImage: string;
+    centralApiEndpoint: string;
+    collectionMethod: string;
+    collectorImage: string;
+    admissionController: boolean;
+    admissionControllerUpdates: boolean;
+    tolerationsConfig: {
+        disabled: boolean;
+    };
+    status: ClusterStatus;
+    dynamicConfig: DynamicConfig;
+    helmConfig?: HelmConfig;
+    slimCollector: boolean;
+    healthStatus: ClusterHealthStatus;
+    labels: ClusterLabels;
 };

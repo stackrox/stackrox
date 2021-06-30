@@ -19,6 +19,9 @@ import RestrictToScope from './RestrictToScope';
 import ExcludedScope from './ExcludedScope';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
+function filterEventSourceOptions(option) {
+    return option.value !== 'NOT_APPLICABLE';
+}
 function PolicyDetailsForm({
     includesRuntimeLifecycleStage,
     includesAuditLogEventSource,
@@ -101,12 +104,17 @@ function PolicyDetailsForm({
                                     name="eventSource"
                                     options={[
                                         {
+                                            label: 'Not applicable to selected lifecycle ',
+                                            value: 'NOT_APPLICABLE',
+                                        },
+                                        {
                                             label: 'Deployment',
                                             value: 'DEPLOYMENT_EVENT',
                                         },
                                         { label: 'Audit Log', value: 'AUDIT_LOG_EVENT' },
                                     ]}
                                     disabled={!includesRuntimeLifecycleStage}
+                                    filterOption={filterEventSourceOptions}
                                 />
                             </FormField>
                         )}
