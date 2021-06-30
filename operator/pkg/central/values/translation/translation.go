@@ -106,17 +106,6 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 
-	if c.TelemetryPolicy != nil {
-		switch *c.TelemetryPolicy {
-		case central.TelemetryEnabled:
-			cv.SetBoolValue("disableTelemetry", false)
-		case central.TelemetryDisabled:
-			cv.SetBoolValue("disableTelemetry", true)
-		default:
-			return cv.SetError(fmt.Errorf("invalid spec.central.telemetryPolicy %q", *c.TelemetryPolicy))
-		}
-	}
-
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
 	if c.AdminPasswordSecret != nil {

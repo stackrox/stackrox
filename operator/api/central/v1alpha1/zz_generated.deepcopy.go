@@ -57,11 +57,6 @@ func (in *Central) DeepCopyObject() runtime.Object {
 func (in *CentralComponentSpec) DeepCopyInto(out *CentralComponentSpec) {
 	*out = *in
 	in.DeploymentSpec.DeepCopyInto(&out.DeploymentSpec)
-	if in.TelemetryPolicy != nil {
-		in, out := &in.TelemetryPolicy, &out.TelemetryPolicy
-		*out = new(TelemetryPolicy)
-		**out = **in
-	}
 	if in.DefaultTLSSecret != nil {
 		in, out := &in.DefaultTLSSecret, &out.DefaultTLSSecret
 		*out = new(commonv1alpha1.LocalSecretReference)
