@@ -171,6 +171,7 @@ function AccessScopes(): ReactElement {
                     isActionable={isActionable}
                     action={action}
                     accessScope={accessScope}
+                    accessScopes={accessScopes}
                     handleCancel={handleCancel}
                     handleEdit={handleEdit}
                     handleSubmit={handleSubmit}

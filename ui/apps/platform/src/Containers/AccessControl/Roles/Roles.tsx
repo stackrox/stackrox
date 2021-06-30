@@ -185,6 +185,7 @@ function Roles(): ReactElement {
                     isActionable={isActionable}
                     action={action}
                     role={role}
+                    roles={roles}
                     permissionSets={permissionSets}
                     accessScopes={accessScopes}
                     handleCancel={handleCancel}

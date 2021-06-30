@@ -80,6 +80,7 @@ export type AccessScopeFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     accessScope: AccessScope;
+    accessScopes: AccessScope[];
     handleCancel: () => void;
     handleEdit: () => void;
     handleSubmit: (values: AccessScope) => Promise<null>; // because the form has only catch and finally
@@ -89,6 +90,7 @@ function AccessScopeForm({
     isActionable,
     action,
     accessScope,
+    accessScopes,
     handleCancel,
     handleEdit,
     handleSubmit,
@@ -109,11 +111,22 @@ function AccessScopeForm({
         setLabelSelectorsEditingState,
     ] = useState<LabelSelectorsEditingState | null>(null);
 
-    const { dirty, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
+    const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: accessScope,
         onSubmit: () => {},
         validationSchema: yup.object({
-            name: yup.string().required(),
+            name: yup
+                .string()
+                .required()
+                .test(
+                    'non-unique-name',
+                    'Another access scope already has this name',
+                    // Return true if current input name is initial name
+                    // or no other access scope already has this name.
+                    (nameInput) =>
+                        nameInput === accessScope.name ||
+                        accessScopes.every(({ name }) => nameInput !== name)
+                ),
             description: yup.string(),
         }),
     });
@@ -202,7 +215,7 @@ function AccessScopeForm({
             .catch((error) => {
                 setAlertSubmit(
                     <Alert
-                        title="Failed to submit access scope"
+                        title="Failed to save access scope"
                         variant={AlertVariant.danger}
                         isInline
                     >
@@ -222,6 +235,9 @@ function AccessScopeForm({
 
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
+
+    const nameErrorMessage = values.name.length !== 0 && errors.name ? errors.name : '';
+    const nameValidatedState = nameErrorMessage ? 'error' : 'default';
 
     return (
         <Form id="access-scope-form">
@@ -249,11 +265,19 @@ function AccessScopeForm({
                 </ToolbarContent>
             </Toolbar>
             {alertSubmit}
-            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
+            <FormGroup
+                label="Name"
+                fieldId="name"
+                isRequired
+                validated={nameValidatedState}
+                helperTextInvalid={nameErrorMessage}
+                className="pf-m-horizontal"
+            >
                 <TextInput
                     type="text"
                     id="name"
                     value={values.name}
+                    validated={nameValidatedState}
                     onChange={onChange}
                     isDisabled={isViewing}
                     isRequired

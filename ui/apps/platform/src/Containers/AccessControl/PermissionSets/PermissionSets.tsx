@@ -191,6 +191,7 @@ function PermissionSets(): ReactElement {
                     isActionable={isActionable}
                     action={action}
                     permissionSet={getCompletePermissionSet(permissionSet, resources)}
+                    permissionSets={permissionSets}
                     handleCancel={handleCancel}
                     handleEdit={handleEdit}
                     handleSubmit={handleSubmit}

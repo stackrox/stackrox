@@ -27,6 +27,7 @@ export type RoleFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     role: Role;
+    roles: Role[];
     permissionSets: PermissionSet[];
     accessScopes: AccessScope[];
     handleCancel: () => void;
@@ -38,6 +39,7 @@ function RoleForm({
     isActionable,
     action,
     role,
+    roles,
     permissionSets,
     accessScopes,
     handleCancel,
@@ -47,11 +49,21 @@ function RoleForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
-    const { dirty, handleChange, isValid, resetForm, values } = useFormik({
+    const { dirty, errors, handleChange, isValid, resetForm, values } = useFormik({
         initialValues: role,
         onSubmit: () => {},
         validationSchema: yup.object({
-            name: yup.string().required(),
+            name: yup
+                .string()
+                .required()
+                .test(
+                    'non-unique-name',
+                    'Another role already has this name',
+                    // Return true if current input name is initial name
+                    // or no other role already has this name.
+                    (nameInput) =>
+                        nameInput === role.name || roles.every(({ name }) => nameInput !== name)
+                ),
             description: yup.string(),
             permissionSetId: yup.string().required(),
             accessScopeId: yup.string(),
@@ -70,7 +82,7 @@ function RoleForm({
         handleSubmit(values)
             .catch((error) => {
                 setAlertSubmit(
-                    <Alert title="Failed to submit role" variant={AlertVariant.danger} isInline>
+                    <Alert title="Failed to save role" variant={AlertVariant.danger} isInline>
                         {error.message}
                     </Alert>
                 );
@@ -87,6 +99,9 @@ function RoleForm({
 
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
+
+    const nameErrorMessage = values.name.length !== 0 && errors.name ? errors.name : '';
+    const nameValidatedState = nameErrorMessage ? 'error' : 'default';
 
     return (
         <Form id="role-form">
@@ -118,11 +133,19 @@ function RoleForm({
                 </ToolbarContent>
             </Toolbar>
             {alertSubmit}
-            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
+            <FormGroup
+                label="Name"
+                fieldId="name"
+                isRequired
+                validated={nameValidatedState}
+                helperTextInvalid={nameErrorMessage}
+                className="pf-m-horizontal"
+            >
                 <TextInput
                     type="text"
                     id="name"
                     value={values.name}
+                    validated={nameValidatedState}
                     onChange={onChange}
                     isDisabled={isViewing}
                     isRequired

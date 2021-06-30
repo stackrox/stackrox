@@ -28,6 +28,7 @@ export type PermissionSetFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     permissionSet: PermissionSet;
+    permissionSets: PermissionSet[];
     handleCancel: () => void;
     handleEdit: () => void;
     handleSubmit: (values: PermissionSet) => Promise<null>; // because the form has only catch and finally
@@ -37,6 +38,7 @@ function PermissionSetForm({
     isActionable,
     action,
     permissionSet,
+    permissionSets,
     handleCancel,
     handleEdit,
     handleSubmit,
@@ -44,11 +46,22 @@ function PermissionSetForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
-    const { dirty, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
+    const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: permissionSet,
         onSubmit: () => {},
         validationSchema: yup.object({
-            name: yup.string().required(),
+            name: yup
+                .string()
+                .required()
+                .test(
+                    'non-unique-name',
+                    'Another permission set already has this name',
+                    // Return true if current input name is initial name
+                    // or no other permission set already has this name.
+                    (nameInput) =>
+                        nameInput === permissionSet.name ||
+                        permissionSets.every(({ name }) => nameInput !== name)
+                ),
             description: yup.string(),
             // resourceToAccess is valid because selections of access level
         }),
@@ -75,7 +88,7 @@ function PermissionSetForm({
             .catch((error) => {
                 setAlertSubmit(
                     <Alert
-                        title="Failed to submit permission set"
+                        title="Failed to save permission set"
                         variant={AlertVariant.danger}
                         isInline
                     >
@@ -95,6 +108,9 @@ function PermissionSetForm({
 
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
+
+    const nameErrorMessage = values.name.length !== 0 && errors.name ? errors.name : '';
+    const nameValidatedState = nameErrorMessage ? 'error' : 'default';
 
     return (
         <Form id="permission-set-form">
@@ -126,11 +142,19 @@ function PermissionSetForm({
                 </ToolbarContent>
             </Toolbar>
             {alertSubmit}
-            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
+            <FormGroup
+                label="Name"
+                fieldId="name"
+                isRequired
+                validated={nameValidatedState}
+                helperTextInvalid={nameErrorMessage}
+                className="pf-m-horizontal"
+            >
                 <TextInput
                     type="text"
                     id="name"
                     value={values.name}
+                    validated={nameValidatedState}
                     onChange={onChange}
                     isDisabled={isViewing}
                     isRequired
