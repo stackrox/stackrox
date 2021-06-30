@@ -38,7 +38,9 @@ func (c *koCache) LoadProbe(ctx context.Context, filePath string) (io.ReadCloser
 
 	entry := c.GetOrAddEntry(filePath)
 	if entry == nil {
-		return nil, 0, errors.New("kernel object cache is shutting down")
+		msg := "kernel object cache is shutting down"
+		log.Error(msg)
+		return nil, 0, errors.New(msg)
 	}
 	releaseRef := true
 	defer func() {
@@ -48,17 +50,20 @@ func (c *koCache) LoadProbe(ctx context.Context, filePath string) (io.ReadCloser
 	}()
 
 	if !concurrency.WaitInContext(entry.DoneSig(), ctx) {
+		log.Errorf("context error waiting for download of %s from upstream: %v", filePath, ctx.Err())
 		return nil, 0, errors.Wrap(ctx.Err(), "context error waiting for download from upstream")
 	}
 
 	data, size, err := entry.Contents()
 	if err != nil {
 		if err == errNotFound {
+			log.Errorf("probe %s does not exist in upstream %s", filePath, c.upstreamBaseURL)
 			err = nil
 		}
 		return nil, 0, err
 	}
 
+	log.Infof("loading probe %s from upstream %s", filePath, c.upstreamBaseURL)
 	// We need to make sure that `entry` does not get destroyed before reading from the reader is complete, so shift
 	// the responsibility to release the reference to the `Close()` method of the returned reader.
 	dataReader := io.NewSectionReader(data, 0, size)
@@ -79,11 +84,14 @@ func (c *koCache) checkProbeDownloadSite(ctx context.Context) error {
 	}
 	resp, err := c.upstreamClient.Do(req)
 	if err != nil {
+		log.Errorf("errors downloading probe from %s: %v", url, err)
 		return err
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("Failed to access resource %s: Unexpected HTTP response status: %s", url, resp.Status)
+		msg := fmt.Sprintf("Failed to access resource %s: Unexpected HTTP response status: %s", url, resp.Status)
+		log.Error(msg)
+		return errors.New(msg)
 	}
 
 	var meta resourceMeta

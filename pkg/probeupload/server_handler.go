@@ -14,6 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 // ProbeSource is an interface that abstracts the functionality of loading a kernel probe.
 type ProbeSource interface {
 	// LoadProbe tries to load a probe, with `fileName` in the format `<module version>/<gzipped probe file>`.
@@ -49,18 +53,24 @@ func NewProbeServerHandler(errorCallback func(error), sources ...ProbeSource) ht
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
-		http.Error(w, fmt.Sprintf("invalid method %s, only %s requests are supported", req.Method, http.MethodGet), http.StatusMethodNotAllowed)
+		msg := fmt.Sprintf("invalid method %s, only %s requests are supported", req.Method, http.MethodGet)
+		log.Error(msg)
+		http.Error(w, msg, http.StatusMethodNotAllowed)
 		return
 	}
 
 	if !strings.HasPrefix(req.URL.Path, "/") {
-		http.Error(w, fmt.Sprintf("invalid path %q", req.URL.Path), http.StatusBadRequest)
+		msg := fmt.Sprintf("invalid path %q", req.URL.Path)
+		log.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	probePath := req.URL.Path[1:]
+	log.Debugf("received request for probe at %s", probePath)
 
 	if !IsValidFilePath(probePath) {
+		log.Errorf("invalid probe path: %s", probePath)
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
@@ -78,6 +88,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if data != nil {
 				_ = data.Close()
 			}
+			log.Errorf("error loading probe %s from %s: %v", probePath, source, err)
 		} else if data != nil {
 			break
 		}
@@ -85,6 +96,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if data == nil {
 		if firstErr == nil {
+			log.Infof("kernel probe %s not found", probePath)
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
