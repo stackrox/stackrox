@@ -19,7 +19,7 @@ spec:
     replicas:
       autoScaling: Disabled
       replicas: 1
-    scanner:
+    analyzer:
       resources:
         requests:
           memory: 500Mi

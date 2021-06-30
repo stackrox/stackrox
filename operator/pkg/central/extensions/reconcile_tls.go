@@ -78,7 +78,7 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
-	scannerEnabled := r.centralObj.Spec.Analyzer.IsEnabled()
+	scannerEnabled := r.centralObj.Spec.Scanner.IsEnabled()
 	if err := r.reconcileSecret("scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData); err != nil {
 		return errors.Wrap(err, "reconciling scanner secret")
 	}

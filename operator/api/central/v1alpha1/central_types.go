@@ -38,7 +38,7 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Central *CentralComponentSpec `json:"central,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	Analyzer *AnalyzerComponentSpec `json:"analyzer,omitempty"`
+	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 	// Customizations to apply on all central components.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
@@ -144,17 +144,17 @@ type ExposureRoute struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
-// AnalyzerComponentSpec defines settings for the "scanner" component.
-type AnalyzerComponentSpec struct {
+// ScannerComponentSpec defines settings for the "scanner" component.
+type ScannerComponentSpec struct {
 	// Defaults to Enabled
 	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
 	Replicas         *ScannerReplicas        `json:"replicas,omitempty"`
-	Scanner          *common.DeploymentSpec  `json:"scanner,omitempty"`
+	Analyzer         *common.DeploymentSpec  `json:"analyzer,omitempty"`
 	ScannerDB        *common.DeploymentSpec  `json:"scannerDB,omitempty"`
 }
 
 // IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
-func (a *AnalyzerComponentSpec) IsEnabled() bool {
+func (a *ScannerComponentSpec) IsEnabled() bool {
 	if a == nil || a.ScannerComponent == nil {
 		return true // enabled by default
 	}

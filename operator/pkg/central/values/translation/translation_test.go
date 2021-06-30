@@ -127,7 +127,7 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 						},
-						Analyzer: &v1alpha1.AnalyzerComponentSpec{
+						Scanner: &v1alpha1.ScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
 							Replicas: &v1alpha1.ScannerReplicas{
 								AutoScaling: &scannerAutoScalingPolicy,
@@ -135,7 +135,7 @@ func TestTranslate(t *testing.T) {
 								MinReplicas: &scannerMinReplicas,
 								MaxReplicas: &scannerMaxReplicas,
 							},
-							Scanner: &common.DeploymentSpec{
+							Analyzer: &common.DeploymentSpec{
 								NodeSelector: map[string]string{
 									"scanner-node-selector-label1": "scanner-node-selector-value1",
 									"scanner-node-selector-label2": "scanner-node-selector-value2",
