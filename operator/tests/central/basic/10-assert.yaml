@@ -47,3 +47,10 @@ metadata:
   name: scanner-db
 status:
   availableReplicas: 1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: additional-ca
+data:
+  00-foo.pem.crt: c29tZSBjZXJ0IGNvbnRlbnQK
