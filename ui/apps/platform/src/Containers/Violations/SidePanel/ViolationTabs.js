@@ -9,17 +9,18 @@ import DeploymentDetails from '../../Risk/DeploymentDetails';
 import ViolationsDetails from './ViolationsDetails';
 import PolicyDetails from '../../Policies/Wizard/Details/PolicyDetails';
 
-const riskPanelTabs = [
-    { text: 'Violation' },
-    { text: 'Enforcement' },
-    { text: 'Deployment' },
-    { text: 'Policy' },
-];
-
 function ViolationTabs({ alert }) {
     const initialValuesForPolicy = preFormatPolicyFields(alert.policy);
+    const tabHeaders = [{ text: 'Violation' }];
+    if (alert.enforcement) {
+        tabHeaders.push({ text: 'Enforcement' });
+    }
+    if (alert.deployment) {
+        tabHeaders.push({ text: 'Deployment' });
+    }
+    tabHeaders.push({ text: 'Policy' });
     return (
-        <Tabs headers={riskPanelTabs}>
+        <Tabs headers={tabHeaders}>
             <Tab extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <ViolationsDetails
@@ -30,16 +31,20 @@ function ViolationTabs({ alert }) {
                     />
                 </div>
             </Tab>
-            <Tab extraClasses="bg-base-0">
-                <div className="flex flex-1 flex-col">
-                    <EnforcementDetails alert={alert} />
-                </div>
-            </Tab>
-            <Tab extraClasses="bg-base-0">
-                <div className="flex flex-1 flex-col">
-                    <DeploymentDetails deployment={alert.deployment} />
-                </div>
-            </Tab>
+            {alert.enforcement && (
+                <Tab extraClasses="bg-base-0">
+                    <div className="flex flex-1 flex-col">
+                        <EnforcementDetails alert={alert} />
+                    </div>
+                </Tab>
+            )}
+            {alert.deployment && (
+                <Tab extraClasses="bg-base-0">
+                    <div className="flex flex-1 flex-col">
+                        <DeploymentDetails deployment={alert.deployment} />
+                    </div>
+                </Tab>
+            )}
             <Tab extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <PolicyDetails policy={initialValuesForPolicy} />
@@ -56,6 +61,7 @@ ViolationTabs.propTypes = {
         violations: PropTypes.arrayOf(PropTypes.object),
         processViolation: PropTypes.shape({}),
         deployment: PropTypes.shape({}),
+        enforcement: PropTypes.shape({}),
         policy: PropTypes.shape({}),
     }).isRequired,
 };

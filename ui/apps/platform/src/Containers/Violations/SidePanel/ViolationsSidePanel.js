@@ -12,7 +12,7 @@ import ViolationNotFound from './ViolationNotFound';
 const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
     // Store the alert we have fetched and whether or not we are currently fetching an alert.
     const [selectedAlert, setSelectedAlert] = useState(null);
-    const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(true);
+    const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
     // Make updates to the fetching state, and selected alert.
     useEffect(() => {
@@ -47,11 +47,26 @@ const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
     } else {
         content = <ViolationTabs alert={selectedAlert} />;
     }
+    const { resource, deployment, commonEntityInfo } = selectedAlert || {};
+    const { name } = resource || deployment || {};
 
-    const header =
-        selectedAlert && selectedAlert.deployment
-            ? `${selectedAlert.deployment.name} (${selectedAlert.deployment.id})`
-            : 'Unknown violation';
+    const getResourceId = () => {
+        const { resourceType } = resource || commonEntityInfo || {};
+        if (!resourceType) {
+            return `(${selectedAlert.deployment.id})`;
+        }
+        switch (resourceType) {
+            case 'DEPLOYMENT':
+                return `(${selectedAlert.deployment.id})`;
+            case 'NAMESPACE':
+                return `(${selectedAlert.resource.namespaceId})`;
+            case 'CLUSTER':
+                return `(${selectedAlert.resource.clusterId})`;
+            default:
+                return '';
+        }
+    };
+    const header = name ? `${name} ${getResourceId()}` : 'Unknown violation';
 
     /*
      * For border color compatible with background color of SidePanelAdjacentArea:

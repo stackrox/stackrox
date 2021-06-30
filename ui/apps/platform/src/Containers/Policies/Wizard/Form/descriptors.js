@@ -912,13 +912,7 @@ export const auditLogDescriptor = [
     {
         label: 'Kubernetes Resource Name',
         name: 'Kubernetes Resource Name',
-        category: policyCriteriaCategories.KUBERNETES_EVENTS,
-        type: 'text',
-        canBooleanLogic: false,
-    },
-    {
-        label: 'Kubernetes User Agent',
-        name: 'Kubernetes User Agent',
+        negatedName: "Kubernetes Resource Name doesn't match",
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -926,6 +920,7 @@ export const auditLogDescriptor = [
     {
         label: 'Kubernetes User Name',
         name: 'Kubernetes User Name',
+        negatedName: "Kubernetes User Name doesn't match",
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,

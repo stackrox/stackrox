@@ -9,10 +9,7 @@
                 "name": "Misuse of iptables",
                 "severity": "HIGH_SEVERITY",
                 "description": "Detects misuse of iptables; iptables is a deprecated way of managing network state in containers",
-                "categories": [
-                    "Network Configuration Change",
-                    "Reconnaissance"
-                ],
+                "categories": ["Network Configuration Change", "Reconnaissance"],
                 "lifecycleStage": "RUNTIME"
             },
             "deployment": {
@@ -21,6 +18,13 @@
                 "updatedAt": "2018-09-27T19:35:08Z",
                 "clusterName": "aaa_remote",
                 "namespace": "kube-system"
+            },
+            "commonEntityInfo": {
+                "clusterName": "aaa_remote",
+                "namespace": "kube-system",
+                "clusterId": "99aa88df-b6df-444d-b077-4812cb501ccf",
+                "namespaceId": "c7ecf13c-55eb-49c2-986e-c6da52ac26b0",
+                "resourceType": "DEPLOYMENT"
             },
             "stale": false,
             "markedStale": null
@@ -34,9 +38,7 @@
                 "name": "Privileged Container",
                 "severity": "MEDIUM_SEVERITY",
                 "description": "Alert on deployments with containers running in privileged mode",
-                "categories": [
-                    "Privileges"
-                ],
+                "categories": ["Privileges"],
                 "lifecycleStage": "DEPLOY"
             },
             "deployment": {
@@ -45,6 +47,13 @@
                 "updatedAt": "2018-09-27T19:35:05Z",
                 "clusterName": "zzz_remote",
                 "namespace": "kube-system"
+            },
+            "commonEntityInfo": {
+                "clusterName": "zzz_remote",
+                "namespace": "kube-system",
+                "clusterId": "99aa88df-b6df-444d-b077-4812cb501ccf",
+                "namespaceId": "c7ecf13c-55eb-49c2-986e-c6da52ac26b0",
+                "resourceType": "DEPLOYMENT"
             },
             "stale": false,
             "markedStale": null

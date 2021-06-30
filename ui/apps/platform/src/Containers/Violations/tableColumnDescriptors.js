@@ -1,14 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
-import { sortDate, sortSeverity } from 'sorters/sorters';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import * as Icon from 'react-feather';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
+import { sortDate, sortSeverity } from 'sorters/sorters';
 import { severityLabels, lifecycleStageLabels } from 'messages/common';
-
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
@@ -20,65 +18,6 @@ import {
 } from 'constants/enforcementActions';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import ViolationActionButtons from './ViolationActionButtons';
-
-// Simple string value column.
-// ////////////////////////////
-function StringValueColumn({ value }) {
-    return <span>{value}</span>;
-}
-
-StringValueColumn.propTypes = {
-    value: PropTypes.string.isRequired,
-};
-
-// Display the deployment status and name.
-// ///////////////////////////////////////
-function DeploymentColumn({ original }) {
-    return (
-        <div className="flex items-center">
-            <span
-                className="pr-2"
-                title={`${original?.deployment?.inactive ? 'Inactive' : 'Active'} Deployment`}
-            >
-                {!original?.deployment?.inactive && (
-                    <Icon.Circle className="h-2 w-2 text-success-600" />
-                )}
-                {original?.deployment?.inactive && <Icon.Slash className="h-2 w-2 text-base-500" />}
-            </span>
-            <span>{original?.deployment?.name}</span>
-        </div>
-    );
-}
-
-DeploymentColumn.propTypes = {
-    original: PropTypes.shape({
-        deployment: PropTypes.shape({
-            inactive: PropTypes.bool.isRequired,
-            name: PropTypes.string.isRequired,
-        }).isRequired,
-    }).isRequired,
-};
-
-// Display the policy description and name.
-// ////////////////////////////////////////
-function PolicyColumn({ original }) {
-    return (
-        <Tooltip content={<TooltipOverlay>{original?.policy?.description}</TooltipOverlay>}>
-            <div className="inline-block hover:text-primary-700 underline">
-                {original?.policy?.name}
-            </div>
-        </Tooltip>
-    );
-}
-
-PolicyColumn.propTypes = {
-    original: PropTypes.shape({
-        policy: PropTypes.shape({
-            description: PropTypes.string.isRequired,
-            name: PropTypes.string.isRequired,
-        }).isRequired,
-    }).isRequired,
-};
 
 // Display the enforcement.
 // ////////////////////////
@@ -124,71 +63,37 @@ const getSeverityClassName = (severityValue) => {
     throw new Error(`Unknown severity: ${severityValue}`);
 };
 
-function SeverityColumn({ value }) {
-    const severity = severityLabels[value];
-    return <div className={getSeverityClassName(severity)}>{severity}</div>;
-}
-
-SeverityColumn.propTypes = {
-    value: PropTypes.string.isRequired,
-};
-
-// Display the categories.
-// ///////////////////////
-function CategoryColumn({ value }) {
-    return value.length > 1 ? (
-        <Tooltip content={<TooltipOverlay>{value.join(' | ')}</TooltipOverlay>}>
-            <div>Multiple</div>
-        </Tooltip>
-    ) : (
-        value[0]
-    );
-}
-
-CategoryColumn.propTypes = {
-    value: PropTypes.arrayOf(PropTypes.string).isRequired,
-};
-
-// Display the action buttons when hovered.
-// ////////////////////////////////////////
-function getActionButtonsColumn(setSelectedAlertId) {
-    // eslint-disable-next-line react/prop-types
-    return ({ original }) => {
-        return (
-            <ViolationActionButtons violation={original} setSelectedAlertId={setSelectedAlertId} />
-        );
-    };
-}
-
-// Combine all of the above into a column array.
-
 // Because of fixed checkbox width, total of column ratios must be less than 100%
 // 2 * 1/7 + 7 * 1/10 = 98.6%
 export default function getColumns(setSelectedAlertId) {
     return [
         {
-            Header: 'Deployment',
-            accessor: 'deployment.name',
-            searchField: 'Deployment',
-            headerClassName: `w-1/7 left-checkbox-offset ${defaultHeaderClassName}`,
-            className: `w-1/7 left-checkbox-offset ${defaultColumnClassName}`,
-            Cell: DeploymentColumn,
+            Header: 'Entity',
+            accessor: 'resource.name',
+            searchField: 'Entity',
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { commonEntityInfo, resource, deployment } = original;
+                const { name } = resource || deployment;
+                const { namespace, clusterName } = commonEntityInfo;
+                return (
+                    <div className="flex flex-col">
+                        <div className="flex items-center">{name}</div>
+                        <div className="text-base-500 text-sm">{`in "${namespace}/${clusterName}"`}</div>
+                    </div>
+                );
+            },
+            sortable: false,
         },
         {
-            Header: 'Cluster',
-            accessor: 'deployment.clusterName',
-            searchField: 'Cluster',
+            Header: 'Type',
+            accessor: 'commonEntityInfo.resourceType',
+            searchField: 'Entity Type',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: StringValueColumn,
-        },
-        {
-            Header: 'Namespace',
-            accessor: 'deployment.namespace',
-            searchField: 'Namespace',
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: StringValueColumn,
+            Cell: ({ value }) => <span className="capitalize">{value.toLowerCase()}</span>,
+            sortable: false,
         },
         {
             Header: 'Policy',
@@ -196,7 +101,19 @@ export default function getColumns(setSelectedAlertId) {
             searchField: 'Policy',
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${defaultColumnClassName}`,
-            Cell: PolicyColumn,
+            Cell: ({ original }) => (
+                <Tooltip
+                    content={
+                        <TooltipOverlay>
+                            {original?.policy?.description || 'No description available'}
+                        </TooltipOverlay>
+                    }
+                >
+                    <div className="inline-block hover:text-primary-700 underline">
+                        {original?.policy?.name}
+                    </div>
+                </Tooltip>
+            ),
         },
         {
             Header: 'Enforced',
@@ -212,7 +129,10 @@ export default function getColumns(setSelectedAlertId) {
             searchField: 'Severity',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: SeverityColumn,
+            Cell: ({ value }) => {
+                const severity = severityLabels[value];
+                return <div className={getSeverityClassName(severity)}>{severity}</div>;
+            },
             sortMethod: sortSeverity,
         },
         {
@@ -221,7 +141,15 @@ export default function getColumns(setSelectedAlertId) {
             searchField: 'Category',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: CategoryColumn,
+            Cell: ({ value }) => {
+                return value.length > 1 ? (
+                    <Tooltip content={<TooltipOverlay>{value.join(' | ')}</TooltipOverlay>}>
+                        <div>Multiple</div>
+                    </Tooltip>
+                ) : (
+                    value[0]
+                );
+            },
         },
         {
             Header: 'Lifecycle',
@@ -245,7 +173,12 @@ export default function getColumns(setSelectedAlertId) {
             accessor: '',
             headerClassName: 'hidden',
             className: rtTrActionsClassName,
-            Cell: getActionButtonsColumn(setSelectedAlertId),
+            Cell: ({ original }) => (
+                <ViolationActionButtons
+                    violation={original}
+                    setSelectedAlertId={setSelectedAlertId}
+                />
+            ),
         },
     ];
 }

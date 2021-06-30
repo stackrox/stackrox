@@ -91,8 +91,12 @@ describe('Violations page', () => {
             .should('have.text', 'ip-masq-agent (70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9)');
     });
 
-    it('should have cluster column in table', () => {
-        cy.get(ViolationsPageSelectors.clusterTableHeader).should('be.visible');
+    it('should have entity column in table', () => {
+        cy.get(ViolationsPageSelectors.entityTableHeader).should('be.visible');
+    });
+
+    it('should have type column in table', () => {
+        cy.get(ViolationsPageSelectors.typeTableHeader).should('be.visible');
     });
 
     it('should close the side panel on search filter', () => {
@@ -279,31 +283,31 @@ describe('Violations page', () => {
 
     it('should sort violations when clicking on a table header', () => {
         // first click will sort in direct order
-        cy.get(ViolationsPageSelectors.clusterTableHeader).click();
+        cy.get(ViolationsPageSelectors.policyTableHeader).click();
         cy.wait('@alerts')
             .its('url')
             .should(
                 'include',
-                'pagination.sortOption.field=Cluster&pagination.sortOption.reversed=false'
+                'pagination.sortOption.field=Policy&pagination.sortOption.reversed=false'
             );
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).should('contain', 'aaa_remote');
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).should('contain', 'ip-masq-agent');
 
         // second click will sort in reverse order
         cy.fixture('alerts/alerts.json').then((alertsData) => {
             const reverseSortedAlerts = {
                 alerts: alertsData.alerts.sort(
-                    (a, b) => -1 * a.deployment.clusterName.localeCompare(b.deployment.clusterName)
+                    (a, b) => -1 * a.policy.name.localeCompare(b.policy.name)
                 ),
             };
             cy.route('GET', api.alerts.alerts, reverseSortedAlerts).as('alerts');
         });
-        cy.get(ViolationsPageSelectors.clusterTableHeader).click();
+        cy.get(ViolationsPageSelectors.policyTableHeader).click();
         cy.wait('@alerts')
             .its('url')
             .should(
                 'include',
-                'pagination.sortOption.field=Cluster&pagination.sortOption.reversed=true'
+                'pagination.sortOption.field=Policy&pagination.sortOption.reversed=true'
             );
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).should('contain', 'zzz_remote');
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).should('contain', 'metadata-proxy-v0.1');
     });
 });
