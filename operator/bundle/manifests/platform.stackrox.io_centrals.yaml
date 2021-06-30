@@ -120,9 +120,6 @@ spec:
                         description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
-                  telemetryPolicy:
-                    description: TelemetryPolicy is a type for values of spec.centralSpec.telemetryPolicy.
-                    type: string
                 type: object
               customize:
                 description: Customizations to apply on all central components.

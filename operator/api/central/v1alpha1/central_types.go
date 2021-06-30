@@ -66,7 +66,6 @@ const (
 // CentralComponentSpec defines settings for the "central" component.
 type CentralComponentSpec struct {
 	common.DeploymentSpec `json:",inline"`
-	TelemetryPolicy       *TelemetryPolicy `json:"telemetryPolicy,omitempty"`
 
 	// Implementation note: this is distinct from the secret that contains the htpasswd-encoded password mounted in central.
 	// TODO(ROX-7242): expose the secret name unconditionally
@@ -85,16 +84,6 @@ type CentralComponentSpec struct {
 	// TODO(ROX-7112): should we expose central.config? It's exposed in helm charts but not documented in help.stackrox.com.
 	// TODO(ROX-7147): design central endpoint
 }
-
-// TelemetryPolicy is a type for values of spec.centralSpec.telemetryPolicy.
-type TelemetryPolicy string
-
-const (
-	// TelemetryEnabled means that telemetry should be enabled.
-	TelemetryEnabled TelemetryPolicy = "Enabled"
-	// TelemetryDisabled means that telemetry should be disabled.
-	TelemetryDisabled TelemetryPolicy = "Disabled"
-)
 
 // Persistence defines persistence settings for central.
 type Persistence struct {
