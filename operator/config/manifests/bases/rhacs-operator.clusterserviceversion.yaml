@@ -31,8 +31,6 @@ spec:
         name: scanner-db
         version: v1
       specDescriptors:
-      - displayName: Analyzer
-        path: analyzer
       - displayName: Central
         path: central
       - description: A Kubernetes secret that contains a TLS certificate and key for HTTPS serving of the web UI.
@@ -50,6 +48,8 @@ spec:
         path: egress
       - displayName: Image Pull Secrets
         path: imagePullSecrets
+      - displayName: Scanner
+        path: scanner
       - displayName: TLS
         path: tls
       statusDescriptors:

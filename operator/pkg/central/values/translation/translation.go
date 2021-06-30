@@ -66,8 +66,8 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 		v.AddChild("central", getCentralComponentValues(ctx, clientSet, c.Namespace, c.Spec.Central))
 	}
 
-	if c.Spec.Analyzer != nil {
-		v.AddChild("scanner", getScannerComponentValues(ctx, clientSet, c.Namespace, c.Spec.Analyzer))
+	if c.Spec.Scanner != nil {
+		v.AddChild("scanner", getScannerComponentValues(ctx, clientSet, c.Namespace, c.Spec.Scanner))
 	}
 
 	v.AddChild("customize", &customize)
@@ -173,7 +173,7 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	return &cv
 }
 
-func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, s *central.AnalyzerComponentSpec) *translation.ValuesBuilder {
+func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, s *central.ScannerComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	if s.ScannerComponent != nil {
@@ -205,9 +205,9 @@ func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 		sv.AddChild("autoscaling", &autoscaling)
 	}
 
-	if s.Scanner != nil {
-		sv.SetStringMap("nodeSelector", s.Scanner.NodeSelector)
-		sv.AddChild(translation.ResourcesKey, translation.GetResources(s.Scanner.Resources))
+	if s.Analyzer != nil {
+		sv.SetStringMap("nodeSelector", s.Analyzer.NodeSelector)
+		sv.AddChild(translation.ResourcesKey, translation.GetResources(s.Analyzer.Resources))
 	}
 
 	if s.ScannerDB != nil {
