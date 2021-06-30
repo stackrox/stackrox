@@ -153,6 +153,26 @@ func (mr *MockEntityDataStoreMockRecorder) UpdateExternalNetworkEntity(ctx, enti
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateExternalNetworkEntity", reflect.TypeOf((*MockEntityDataStore)(nil).UpdateExternalNetworkEntity), ctx, entity, skipPush)
 }
 
+// CreateExtNetworkEntitiesForCluster mocks base method
+func (m *MockEntityDataStore) CreateExtNetworkEntitiesForCluster(ctx context.Context, cluster string, entities ...*storage.NetworkEntity) ([]string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, cluster}
+	for _, a := range entities {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateExtNetworkEntitiesForCluster", varargs...)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateExtNetworkEntitiesForCluster indicates an expected call of CreateExtNetworkEntitiesForCluster
+func (mr *MockEntityDataStoreMockRecorder) CreateExtNetworkEntitiesForCluster(ctx, cluster interface{}, entities ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, cluster}, entities...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateExtNetworkEntitiesForCluster", reflect.TypeOf((*MockEntityDataStore)(nil).CreateExtNetworkEntitiesForCluster), varargs...)
+}
+
 // DeleteExternalNetworkEntity mocks base method
 func (m *MockEntityDataStore) DeleteExternalNetworkEntity(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()

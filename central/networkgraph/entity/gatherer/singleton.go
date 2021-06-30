@@ -2,7 +2,6 @@ package gatherer
 
 import (
 	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,8 +12,7 @@ var (
 )
 
 func initialize() {
-	gatherer = NewNetworkGraphDefaultExtSrcsGatherer(networkEntityDatastore.Singleton(),
-		connection.ManagerSingleton())
+	gatherer = NewNetworkGraphDefaultExtSrcsGatherer(networkEntityDatastore.Singleton())
 }
 
 // Singleton returns a singleton instance of NetworkGraphDefaultExtSrcsGatherer.

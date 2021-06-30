@@ -52,6 +52,35 @@ func BenchmarkNetEntityCreates(b *testing.B) {
 	})
 }
 
+func BenchmarkNetEntityCreateBatch(b *testing.B) {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph),
+		))
+
+	mockCtrl := gomock.NewController(b)
+	defer mockCtrl.Finish()
+
+	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, 10000, "c1")
+	require.NoError(b, err)
+
+	b.Run("createNetworkEntitiesBatch", func(b *testing.B) {
+
+		db, err := rocksdb.NewTemp(b.Name())
+		require.NoError(b, err)
+		defer rocksdbtest.TearDownRocksDB(db)
+
+		store, err := store.New(db)
+		require.NoError(b, err)
+
+		ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), connection.ManagerSingleton())
+
+		_, err = ds.CreateExtNetworkEntitiesForCluster(ctx, "c1", entities...)
+		require.NoError(b, err)
+	})
+}
+
 func BenchmarkNetEntityUpdates(b *testing.B) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

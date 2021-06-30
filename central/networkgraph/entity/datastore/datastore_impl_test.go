@@ -269,6 +269,62 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	suite.Len(entities, 0)
 }
 
+func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntitiesBatchOps() {
+	entity1ID, err := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/30")
+	suite.NoError(err)
+	entity2ID, err := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/24")
+	suite.NoError(err)
+	entity3ID, err := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/29")
+	suite.NoError(err)
+
+	entities := []*storage.NetworkEntity{
+		testutils.GetExtSrcNetworkEntity(entity1ID.String(), "", "192.0.2.0/30", false, cluster1),
+		testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/24", false, cluster1),
+		testutils.GetExtSrcNetworkEntity(entity3ID.String(), "", "192.0.2.0/29", false, cluster1),
+	}
+
+	// Batch Create
+	pushSig := concurrency.NewSignal()
+	suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster1).Return(trees[cluster1]).Times(3)
+	suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster1).DoAndReturn(
+		func(ctx context.Context, clusterID string) error {
+			suite.Equal(cluster1, clusterID)
+			pushSig.Signal()
+			return nil
+		})
+
+	_, err = suite.ds.CreateExtNetworkEntitiesForCluster(suite.globalWriteAccessCtx, cluster1, entities...)
+	suite.NoError(err)
+	suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
+
+	// Get
+	for _, entity := range entities {
+		actual, found, err := suite.ds.GetEntity(suite.globalReadAccessCtx, entity.GetInfo().GetId())
+		suite.NoError(err)
+		suite.True(found)
+		suite.Equal(entity, actual)
+	}
+
+	// Delete
+	pushSig = concurrency.NewSignal()
+	suite.treeMgr.EXPECT().DeleteNetworkTree(gomock.Any(), cluster1)
+	suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster1).DoAndReturn(
+		func(ctx context.Context, clusterID string) error {
+			suite.Equal(cluster1, clusterID)
+			pushSig.Signal()
+			return nil
+		})
+	err = suite.ds.DeleteExternalNetworkEntitiesForCluster(suite.globalWriteAccessCtx, cluster1)
+	suite.NoError(err)
+	suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
+
+	// GetAll
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
+	entities, err = suite.ds.GetAllEntities(suite.globalReadAccessCtx)
+	suite.NoError(err)
+	suite.Len(entities, 0)
+}
+
 func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	entity1ID, _ := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/24")
 	entity2ID, _ := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/29")

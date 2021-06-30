@@ -24,6 +24,8 @@ type EntityDataStore interface {
 	CreateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error
 	UpdateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error
 
+	CreateExtNetworkEntitiesForCluster(ctx context.Context, cluster string, entities ...*storage.NetworkEntity) ([]string, error)
+
 	DeleteExternalNetworkEntity(ctx context.Context, id string) error
 	DeleteExternalNetworkEntitiesForCluster(ctx context.Context, clusterID string) error
 

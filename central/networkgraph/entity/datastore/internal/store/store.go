@@ -13,6 +13,7 @@ type EntityStore interface {
 	Get(id string) (*storage.NetworkEntity, bool, error)
 
 	Upsert(entity *storage.NetworkEntity) error
+	UpsertMany(objs []*storage.NetworkEntity) error
 	Delete(id string) error
 	DeleteMany(ids []string) error
 

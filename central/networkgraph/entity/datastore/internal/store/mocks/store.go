@@ -93,6 +93,20 @@ func (mr *MockEntityStoreMockRecorder) Upsert(entity interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockEntityStore)(nil).Upsert), entity)
 }
 
+// UpsertMany mocks base method
+func (m *MockEntityStore) UpsertMany(objs []*storage.NetworkEntity) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", objs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertMany indicates an expected call of UpsertMany
+func (mr *MockEntityStoreMockRecorder) UpsertMany(objs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockEntityStore)(nil).UpsertMany), objs)
+}
+
 // Delete mocks base method
 func (m *MockEntityStore) Delete(id string) error {
 	m.ctrl.T.Helper()

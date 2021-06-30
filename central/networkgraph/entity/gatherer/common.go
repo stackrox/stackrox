@@ -1,17 +1,13 @@
 package gatherer
 
 import (
-	"context"
 	"io/ioutil"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -38,18 +34,16 @@ func loadStoredDefaultExtSrcsIDs(entityDS datastore.EntityDataStore) (set.String
 	return ret, nil
 }
 
-func updateInStorage(entityDS datastore.EntityDataStore, lastSeenIDs set.StringSet, entities ...*storage.NetworkEntity) error {
-	var errs errorhelpers.ErrorList
+func updateInStorage(entityDS datastore.EntityDataStore, lastSeenIDs set.StringSet, entities ...*storage.NetworkEntity) ([]string, error) {
+	var filtered []*storage.NetworkEntity
 	for _, entity := range entities {
-		if lastSeenIDs.Contains(entity.GetInfo().GetId()) {
-			continue
-		}
-
-		if err := entityDS.CreateExternalNetworkEntity(networkGraphWriteCtx, entity, true); err != nil {
-			errs.AddError(err)
+		// This is under the assumption that network from one provider does not move to another provider.
+		// Otherwise, deep equality is required.
+		if !lastSeenIDs.Contains(entity.GetInfo().GetId()) {
+			filtered = append(filtered, entity)
 		}
 	}
-	return errs.ToError()
+	return entityDS.CreateExtNetworkEntitiesForCluster(networkGraphWriteCtx, "", filtered...)
 }
 
 func removeOutdatedNetworks(entityDS datastore.EntityDataStore, ids ...string) error {
@@ -60,15 +54,4 @@ func removeOutdatedNetworks(entityDS datastore.EntityDataStore, ids ...string) e
 		}
 	}
 	return errs.ToError()
-}
-
-func doPushExternalNetworkEntitiesToAllSensor(connMgr connection.Manager) {
-	// If push request if for a global network entity, push to all known clusters once and return.
-	elevateCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph)))
-
-	if err := connMgr.PushExternalNetworkEntitiesToAllSensors(elevateCtx); err != nil {
-		log.Errorf("failed to sync external networks with some clusters: %v", err)
-	}
 }

@@ -10,14 +10,12 @@ import (
 
 	"github.com/pkg/errors"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore,
-	sensorConnMgr connection.Manager) error {
+func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore) error {
 	// Extract the bundle to temp dir.
 	checksumFile, dataFile, err := extractBundle(defaultexternalsrcs.BundledZip)
 	if err != nil {
@@ -59,11 +57,12 @@ func loadBundledExternalSrcs(networkEntityDS entityDataStore.EntityDataStore,
 		return err
 	}
 
-	if err := updateInStorage(networkEntityDS, lastSeenIDs, entities...); err != nil {
-		return errors.Wrap(err, "updating default external networks")
+	inserted, err := updateInStorage(networkEntityDS, lastSeenIDs, entities...)
+	if err != nil {
+		return errors.Wrapf(err, "updated %d/%d networks", len(inserted), len(entities))
 	}
 
-	go doPushExternalNetworkEntitiesToAllSensor(sensorConnMgr)
+	log.Infof("Found %d external networks in DB. Successfully stored %d/%d new external networks", len(lastSeenIDs), len(inserted), len(entities))
 
 	// Update checksum only if all the pulled data is successfully written.
 	if err := writeChecksumLocally(newChecksum); err != nil {

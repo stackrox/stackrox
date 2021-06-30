@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -35,21 +34,19 @@ var (
 
 type defaultExtSrcsGathererImpl struct {
 	networkEntityDS entityDataStore.EntityDataStore
-	sensorConnMgr   connection.Manager
 	stopSig         concurrency.Signal
 }
 
 // newDefaultExtNetworksGatherer returns an instance of NetworkGraphDefaultExtSrcsGatherer that reaches out internet to fetch the data.
-func newDefaultExtNetworksGatherer(networkEntityDS entityDataStore.EntityDataStore, sensorConnMgr connection.Manager) NetworkGraphDefaultExtSrcsGatherer {
+func newDefaultExtNetworksGatherer(networkEntityDS entityDataStore.EntityDataStore) NetworkGraphDefaultExtSrcsGatherer {
 	return &defaultExtSrcsGathererImpl{
 		networkEntityDS: networkEntityDS,
-		sensorConnMgr:   sensorConnMgr,
 	}
 }
 
 func (g *defaultExtSrcsGathererImpl) Start() {
 	go func() {
-		if err := loadBundledExternalSrcs(g.networkEntityDS, g.sensorConnMgr); err != nil {
+		if err := loadBundledExternalSrcs(g.networkEntityDS); err != nil {
 			log.Errorf("UNEXPECTED: Failed to load pre-bundled external networks data: %v", err)
 		}
 		go g.run()
@@ -125,11 +122,12 @@ func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 		return err
 	}
 
-	if err := updateInStorage(g.networkEntityDS, lastSeenIDs, entities...); err != nil {
-		return errors.Wrap(err, "updating default external networks")
+	inserted, err := updateInStorage(g.networkEntityDS, lastSeenIDs, entities...)
+	if err != nil {
+		return errors.Wrapf(err, "updated %d/%d networks", len(inserted), len(entities))
 	}
 
-	go doPushExternalNetworkEntitiesToAllSensor(g.sensorConnMgr)
+	log.Infof("Found %d external networks in DB. Successfully stored %d/%d new external networks", len(lastSeenIDs), len(inserted), len(entities))
 
 	// Update checksum only if all the pulled data is successfully written.
 	if err := writeChecksumLocally(remoteChecksum); err != nil {

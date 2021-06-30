@@ -192,7 +192,7 @@ func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(e
 }
 
 func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
-	if err := ds.validateExternalNetworkEntity(entity); err != nil {
+	if err := validateExternalNetworkEntity(entity); err != nil {
 		return err
 	}
 
@@ -205,13 +205,83 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
+	if err := ds.createNoLock(ctx, entity); err != nil {
+		return err
+	}
+
+	if !skipPush {
+		go ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
+	}
+
+	return nil
+}
+
+func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context, cluster string, entities ...*storage.NetworkEntity) ([]string, error) {
+	var errs errorhelpers.ErrorList
+
+	skipList := set.NewStringSet()
+	for _, e := range entities {
+		if err := validateExternalNetworkEntity(e); err != nil {
+			errs.AddError(err)
+			skipList.Add(e.GetInfo().GetId())
+		}
+	}
+
+	allowed := make(map[string]bool)
+	for _, e := range entities {
+		if skipList.Contains(e.GetInfo().GetId()) {
+			continue
+		}
+
+		clusterID := e.GetScope().GetClusterId()
+		ok, found := allowed[clusterID]
+		if !found {
+			var err error
+			ok, err = ds.writeAllowed(ctx, e.GetInfo().GetId())
+			if err != nil {
+				errs.AddError(err)
+				skipList.Add(e.GetInfo().GetId())
+				continue
+			}
+			allowed[clusterID] = ok
+		}
+
+		if !ok {
+			errs.AddError(errors.Errorf("permission denied to create entity %s (CIDR=%s)",
+				e.GetInfo().GetExternalSource().GetName(), e.GetInfo().GetExternalSource().GetCidr()))
+			skipList.Add(e.GetInfo().GetId())
+		}
+	}
+
+	ds.netEntityLock.Lock()
+	defer ds.netEntityLock.Unlock()
+
+	inserted := make([]string, 0, len(entities)-len(skipList))
+	for _, entity := range entities {
+		if skipList.Contains(entity.GetInfo().GetId()) {
+			continue
+		}
+
+		inserted = append(inserted, entity.GetInfo().GetId())
+		if err := ds.createNoLock(ctx, entity); err != nil {
+			errs.AddError(err)
+		}
+	}
+
+	go ds.doPushExternalNetworkEntitiesToSensor(cluster)
+
+	return inserted, errs.ToError()
+}
+
+func (ds *dataStoreImpl) createNoLock(ctx context.Context, entity *storage.NetworkEntity) error {
 	network, err := externalsrcs.NetworkFromID(entity.GetInfo().GetId())
 	if err != nil {
 		return err
 	}
 
 	if stored, found, err := ds.storage.Get(entity.GetInfo().GetId()); err != nil {
-		return err
+		return errors.Wrapf(err, "could not determine if network entity %s already exists in DB. SKIPPING",
+			entity.GetInfo().GetExternalSource().GetName())
 	} else if found {
 		return errors.Wrapf(errorhelpers.ErrAlreadyExists,
 			"network %s of entity %s (CIDR=%s) conflicts with network of stored entity %s (CIDR=%s)",
@@ -224,15 +294,11 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 		return errors.Wrapf(err, "upserting network entity %s into storage", entity.GetInfo().GetId())
 	}
 
-	if !skipPush {
-		go ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
-	}
-
 	return ds.getNetworkTree(ctx, entity.GetScope().GetClusterId(), true).Insert(entity.GetInfo())
 }
 
 func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
-	if err := ds.validateExternalNetworkEntity(entity); err != nil {
+	if err := validateExternalNetworkEntity(entity); err != nil {
 		return err
 	}
 
@@ -340,30 +406,6 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	return nil
 }
 
-func (ds *dataStoreImpl) validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
-	if _, err := parseAndValidateID(entity.GetInfo().GetId()); err != nil {
-		return err
-	}
-
-	if entity.GetInfo().GetType() != storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "only external network graph sources can be created")
-	}
-
-	if entity.GetInfo().GetExternalSource() == nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity must be specified")
-	}
-
-	if _, err := networkgraph.ValidateCIDR(entity.GetInfo().GetExternalSource().GetCidr()); err != nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-	}
-
-	if entity.GetInfo().GetExternalSource().GetName() == "" {
-		entity.Info.GetExternalSource().Name = entity.GetInfo().GetExternalSource().GetCidr()
-	}
-	// CIDR Block uniqueness is handled by unique key CRUD. Refer to `UpsertExternalNetworkEntity(...)`.
-	return nil
-}
-
 func (ds *dataStoreImpl) validateNoCIDRUpdate(newEntity *storage.NetworkEntity) (bool, error) {
 	old, found, err := ds.storage.Get(newEntity.GetInfo().GetId())
 	if err != nil {
@@ -453,6 +495,30 @@ func (ds *dataStoreImpl) allowed(ctx context.Context, access storage.Access, id 
 		return networkGraphSAC.ScopeChecker(ctx, access).Allowed(ctx)
 	}
 	return networkGraphSAC.ScopeChecker(ctx, access).AnyAllowed(ctx, scopeKeys)
+}
+
+func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
+	if _, err := parseAndValidateID(entity.GetInfo().GetId()); err != nil {
+		return err
+	}
+
+	if entity.GetInfo().GetType() != storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "only external network graph sources can be created")
+	}
+
+	if entity.GetInfo().GetExternalSource() == nil {
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity must be specified")
+	}
+
+	if _, err := networkgraph.ValidateCIDR(entity.GetInfo().GetExternalSource().GetCidr()); err != nil {
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+	}
+
+	if entity.GetInfo().GetExternalSource().GetName() == "" {
+		entity.Info.GetExternalSource().Name = entity.GetInfo().GetExternalSource().GetCidr()
+	}
+	// CIDR Block uniqueness is handled by unique key CRUD. Refer to `UpsertExternalNetworkEntity(...)`.
+	return nil
 }
 
 func parseAndValidateID(id string) (sac.ResourceID, error) {
