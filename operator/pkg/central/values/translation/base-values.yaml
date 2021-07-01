@@ -14,6 +14,8 @@ central:
   adminPassword:
     generate: false
 scanner:
+  dbPassword:
+    generate: false
   serviceTLS:
     generate: false
   dbServiceTLS:
