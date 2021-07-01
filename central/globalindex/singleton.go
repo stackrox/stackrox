@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const (
+var (
 	// DefaultBlevePath is the default path to Bleve's on-disk files
 	DefaultBlevePath = "/var/lib/stackrox/scorch.bleve"
 	// DefaultTmpBlevePath is the default path to Bleve's temporary on-disk files

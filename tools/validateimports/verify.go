@@ -42,6 +42,7 @@ var (
 	ignoredRoots = []string{
 		"generated",
 		"tests",
+		"local",
 	}
 
 	forbiddenImports = map[string]struct {

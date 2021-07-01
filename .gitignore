@@ -63,3 +63,6 @@ combined_coverage.dat
 
 # Cypress
 cypress-report.xml
+
+# Local exclusions
+local/database-restore/*

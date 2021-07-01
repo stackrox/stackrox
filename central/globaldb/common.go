@@ -5,7 +5,9 @@ const (
 	// This is a shared global constant across datastores, just for the sake of DRY.
 	// Individual datastores are free to use another value.
 	DefaultDataStorePoolSize = 16
+)
 
+var (
 	// PVCPath is the path to where we expect the mounted PVC.
 	PVCPath = "/var/lib/stackrox"
 )
