@@ -15,5 +15,7 @@ import (
 func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error {
 	return reconciler.SetupReconcilerWithManager(
 		mgr, centralV1Alpha1.CentralGVK, image.CentralServicesChartPrefix, translation.Translator{Client: client},
-		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client)))
+		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client)),
+		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(client)),
+	)
 }
