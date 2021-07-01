@@ -2734,7 +2734,7 @@ jobs:
 
       - run:
           name: Install Python's Virtualenv
-          command: sudo apt-get install -y --no-install-recommends python3-venv
+          command: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-venv
 
       - run:
           name: Build Operator Bundle image
