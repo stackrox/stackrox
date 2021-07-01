@@ -144,18 +144,25 @@ type ExposureRoute struct {
 // ScannerComponentSpec defines settings for the "scanner" component.
 type ScannerComponentSpec struct {
 	// Defaults to Enabled
-	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
-	Replicas         *ScannerReplicas        `json:"replicas,omitempty"`
-	Analyzer         *common.DeploymentSpec  `json:"analyzer,omitempty"`
-	ScannerDB        *common.DeploymentSpec  `json:"scannerDB,omitempty"`
+	ScannerComponent *ScannerComponentPolicy   `json:"scannerComponent,omitempty"`
+	Analyzer         *ScannerAnalyzerComponent `json:"analyzer,omitempty"`
+	ScannerDB        *common.DeploymentSpec    `json:"scannerDB,omitempty"`
+}
+
+// GetAnalyzer returns the analyzer component even if receiver is nil
+func (s *ScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
+	if s == nil {
+		return nil
+	}
+	return s.Analyzer
 }
 
 // IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
-func (a *ScannerComponentSpec) IsEnabled() bool {
-	if a == nil || a.ScannerComponent == nil {
+func (s *ScannerComponentSpec) IsEnabled() bool {
+	if s == nil || s.ScannerComponent == nil {
 		return true // enabled by default
 	}
-	return *a.ScannerComponent == ScannerComponentEnabled
+	return *s.ScannerComponent == ScannerComponentEnabled
 }
 
 // ScannerComponentPolicy is a type for values of spec.scannerSpec.scannerComponent.
@@ -168,8 +175,22 @@ const (
 	ScannerComponentDisabled ScannerComponentPolicy = "Disabled"
 )
 
-// ScannerReplicas defines replication settings of scanner.
-type ScannerReplicas struct {
+// ScannerAnalyzerComponent describes the analyzer component
+type ScannerAnalyzerComponent struct {
+	common.DeploymentSpec `json:",inline"`
+	Scaling               *ScannerAnalyzerScaling `json:"scaling,omitempty"`
+}
+
+// GetScaling returns scaling config even if receiver is nil
+func (s *ScannerAnalyzerComponent) GetScaling() *ScannerAnalyzerScaling {
+	if s == nil {
+		return nil
+	}
+	return s.Scaling
+}
+
+// ScannerAnalyzerScaling defines replication settings of the analyzer.
+type ScannerAnalyzerScaling struct {
 	AutoScaling *AutoScalingPolicy `json:"autoScaling,omitempty"`
 	// Defaults to 3
 	Replicas *int32 `json:"replicas,omitempty"`

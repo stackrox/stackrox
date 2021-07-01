@@ -16,10 +16,10 @@ spec:
     adminPasswordSecret:
       name: admin-pass
   scanner:
-    replicas:
-      autoScaling: Disabled
-      replicas: 1
     analyzer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
       resources:
         requests:
           memory: 500Mi
