@@ -21,7 +21,7 @@ func ReconcileScannerDBPasswordExtension(k8sClient kubernetes.Interface) extensi
 	return wrapExtension(reconcileScannerDBPassword, k8sClient)
 }
 
-func reconcileScannerDBPassword(ctx context.Context, c *centralv1Alpha1.Central, k8sClient kubernetes.Interface, log logr.Logger) error {
+func reconcileScannerDBPassword(ctx context.Context, c *centralv1Alpha1.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
@@ -47,7 +47,7 @@ func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
 	return nil
 }
 
-func (r *reconcileScannerDBPasswordExtensionRun) validateScannerDBPasswordData(data secretDataMap) error {
+func (r *reconcileScannerDBPasswordExtensionRun) validateScannerDBPasswordData(data secretDataMap, _ bool) error {
 	if len(data[scannerDBPasswordKey]) == 0 {
 		return errors.Errorf("scanner-db-password secret must contain a non-empty %q entry", scannerDBPasswordKey)
 	}

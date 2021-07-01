@@ -23,9 +23,13 @@ func GenerateHtpasswd(c *Config) ([]byte, error) {
 		c.Password = CreatePassword()
 		c.PasswordAuto = true
 	}
+	return CreateHtpasswd(c.Password)
+}
 
+// CreateHtpasswd creates the contents for the htpasswd secret.
+func CreateHtpasswd(password string) ([]byte, error) {
 	hf := htpasswd.New()
-	if err := hf.Set(adminUsername, c.Password); err != nil {
+	if err := hf.Set(adminUsername, password); err != nil {
 		return nil, err
 	}
 	buf := new(bytes.Buffer)

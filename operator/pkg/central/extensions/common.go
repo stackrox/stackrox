@@ -15,12 +15,14 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
+type updateStatusFunc func(*centralv1Alpha1.CentralStatus) bool
+
 var (
 	errUnexpectedGVK = errors.New("invoked reconciliation extension for object with unexpected GVK")
 )
 
-func wrapExtension(runFn func(ctx context.Context, central *centralv1Alpha1.Central, k8sClient kubernetes.Interface, log logr.Logger) error, k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return func(ctx context.Context, u *unstructured.Unstructured, log logr.Logger) error {
+func wrapExtension(runFn func(ctx context.Context, central *centralv1Alpha1.Central, k8sClient kubernetes.Interface, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, k8sClient kubernetes.Interface) extensions.ReconcileExtension {
+	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != centralv1Alpha1.CentralGVK {
 			log.Error(errUnexpectedGVK, "unable to reconcile central TLS secrets", "expectedGVK", centralv1Alpha1.CentralGVK, "actualGVK", u.GroupVersionKind())
 			return errUnexpectedGVK
@@ -32,6 +34,18 @@ func wrapExtension(runFn func(ctx context.Context, central *centralv1Alpha1.Cent
 			return errors.Wrap(err, "converting object to Central")
 		}
 
-		return runFn(ctx, &c, k8sClient, log)
+		wrappedStatusUpdater := func(typedUpdateStatus updateStatusFunc) {
+			statusUpdater(func(uSt *unstructured.Unstructured) bool {
+				var status centralv1Alpha1.CentralStatus
+				_ = runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status)
+				if !typedUpdateStatus(&status) {
+					return false
+				}
+				uStNew, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&status)
+				uSt.Object = uStNew
+				return true
+			})
+		}
+		return runFn(ctx, &c, k8sClient, wrappedStatusUpdater, log)
 	}
 }

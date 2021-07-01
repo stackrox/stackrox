@@ -57,6 +57,11 @@ spec:
       specDescriptors:
       - displayName: Central
         path: central
+      - description: The name of the referenced secret.
+        displayName: Name
+        path: central.adminPasswordSecret.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
       - description: A Kubernetes secret that contains a TLS certificate and key for HTTPS serving of the web UI.
         displayName: User-facing TLS secret
         path: central.defaultTLSSecret
@@ -79,6 +84,9 @@ spec:
       statusDescriptors:
       - displayName: Central Status
         path: centralStatus
+      - description: Info stores information on how to obtain the admin password.
+        displayName: Info
+        path: centralStatus.adminPassword.info
       - displayName: Conditions
         path: conditions
       - displayName: Last Transition Time

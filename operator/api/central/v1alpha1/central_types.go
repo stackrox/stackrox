@@ -77,12 +77,20 @@ type CentralComponentSpec struct {
 	// Reference to a user-created Secret with admin password stored in data item "value".
 	// If omitted, the operator will instead auto-generate a password, create such secret and
 	// expose the name of that secret (if it is different from the name "central-admin-password") in status.central.generatedAdminPasswordSecret
-	AdminPasswordSecret *corev1.LocalObjectReference `json:"adminPasswordSecret,omitempty"`
+	AdminPasswordSecret *common.LocalSecretReference `json:"adminPasswordSecret,omitempty"`
 	Persistence         *Persistence                 `json:"persistence,omitempty"`
 	Exposure            *Exposure                    `json:"exposure,omitempty"`
 	// TODO(ROX-7123): determine whether we want to make `extraMounts` available in the operator
 	// TODO(ROX-7112): should we expose central.config? It's exposed in helm charts but not documented in help.stackrox.com.
 	// TODO(ROX-7147): design central endpoint
+}
+
+// GetAdminPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
+func (s *CentralComponentSpec) GetAdminPasswordSecret() *common.LocalSecretReference {
+	if s == nil {
+		return nil
+	}
+	return s.AdminPasswordSecret
 }
 
 // Persistence defines persistence settings for central.
@@ -194,12 +202,17 @@ type CentralStatus struct {
 	CentralStatus *CentralComponentStatus `json:"centralStatus,omitempty"`
 }
 
+// AdminPasswordStatus shows status related to the admin password.
+type AdminPasswordStatus struct {
+	// Info stores information on how to obtain the admin password.
+	//+operator-sdk:csv:customresourcedefinitions:type=status
+	Info string `json:"info,omitempty"`
+}
+
 // CentralComponentStatus describes status specific to the central component.
 type CentralComponentStatus struct {
-	// If the admin password was auto-generated, it will be stored in this secret.
-	// This field is omitted if the name of the secret is "central-admin-password".
-	// See also spec.central.adminPasswordSecret
-	GeneratedAdminPasswordSecret *corev1.LocalObjectReference `json:"generatedAdminPasswordSecret"`
+	// AdminPassword stores information related to the auto-generated admin password.
+	AdminPassword *AdminPasswordStatus `json:"adminPassword,omitempty"`
 }
 
 //+kubebuilder:object:root=true

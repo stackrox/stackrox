@@ -38,4 +38,4 @@ metadata:
   name: admin-pass
 data:
   # letmein
-  value: bGV0bWVpbg==
+  password: bGV0bWVpbg==

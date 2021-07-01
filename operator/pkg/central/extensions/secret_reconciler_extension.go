@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/utils"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +14,7 @@ import (
 	coreV1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-type validateSecretDataFunc func(secretDataMap) error
+type validateSecretDataFunc func(secretDataMap, bool) error
 type generateSecretDataFunc func() (secretDataMap, error)
 
 type secretReconciliationExtension struct {
@@ -52,12 +53,17 @@ func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist
 	}
 
 	if secret != nil {
-		if err := validate(secret.Data); err != nil {
-			return errors.Wrapf(err, "validating existing %s secret", name)
+		if validate != nil {
+			if err := validate(secret.Data, metav1.IsControlledBy(secret, r.centralObj)); err != nil {
+				return errors.Wrapf(err, "validating existing %s secret", name)
+			}
 		}
 		return nil
 	}
 
+	if generate == nil {
+		return pkgUtils.Should(errors.Errorf("secret %s should exist, but no generation logic has been specified", name))
+	}
 	data, err := generate()
 	if err != nil {
 		return errors.Wrapf(err, "generating data for new %s secret", name)

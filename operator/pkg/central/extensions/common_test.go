@@ -19,16 +19,34 @@ const (
 	testNamespace = `testns`
 )
 
+type secretVerifyFunc func(t *testing.T, data secretDataMap)
+type statusVerifyFunc func(t *testing.T, status *centralv1Alpha1.CentralStatus)
+
 type secretReconciliationTestCase struct {
-	ScannerEnabled bool
-	Deleted        bool
-	Existing       []*v1.Secret
+	Spec     centralv1Alpha1.CentralSpec
+	Deleted  bool
+	Existing []*v1.Secret
 
 	ExpectedCreatedSecrets map[string]secretVerifyFunc
 	ExpectedError          string
+	VerifyStatus           statusVerifyFunc
 }
 
-func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *centralv1Alpha1.Central, k8sClient kubernetes.Interface, log logr.Logger) error, c secretReconciliationTestCase) {
+func basicSpecWithScanner(scannerEnabled bool) centralv1Alpha1.CentralSpec {
+	spec := centralv1Alpha1.CentralSpec{
+		Scanner: &centralv1Alpha1.ScannerComponentSpec{
+			ScannerComponent: new(centralv1Alpha1.ScannerComponentPolicy),
+		},
+	}
+	if scannerEnabled {
+		*spec.Scanner.ScannerComponent = centralv1Alpha1.ScannerComponentEnabled
+	} else {
+		*spec.Scanner.ScannerComponent = centralv1Alpha1.ScannerComponentDisabled
+	}
+	return spec
+}
+
+func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *centralv1Alpha1.Central, k8sClient kubernetes.Interface, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
 	central := &centralv1Alpha1.Central{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "platform.stackrox.io/v1alpha1",
@@ -38,35 +56,38 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 			Name:      "test-central",
 			Namespace: testNamespace,
 		},
-		Spec: centralv1Alpha1.CentralSpec{
-			Scanner: &centralv1Alpha1.ScannerComponentSpec{
-				ScannerComponent: new(centralv1Alpha1.ScannerComponentPolicy),
-			},
-		},
+		Spec: *c.Spec.DeepCopy(),
 	}
 
-	if c.ScannerEnabled {
-		*central.Spec.Scanner.ScannerComponent = centralv1Alpha1.ScannerComponentEnabled
-	} else {
-		*central.Spec.Scanner.ScannerComponent = centralv1Alpha1.ScannerComponentDisabled
+	if c.Deleted {
+		central.DeletionTimestamp = new(metav1.Time)
+		*central.DeletionTimestamp = metav1.Now()
+	}
+
+	statusUpdater := func(statusFunc updateStatusFunc) {
+		statusFunc(&central.Status)
 	}
 
 	var allExisting []runtime.Object
 	for _, existingSecret := range c.Existing {
-		allExisting = append(allExisting, existingSecret)
+		allExisting = append(allExisting, existingSecret.DeepCopy())
 	}
 
 	client := fake.NewSimpleClientset(allExisting...)
 
 	// Verify that an initial invocation does not touch any of the existing secrets, and creates
 	// the expected ones.
-	err := runFn(context.Background(), central.DeepCopy(), client, logr.Discard())
+	err := runFn(context.Background(), central.DeepCopy(), client, statusUpdater, logr.Discard())
 	if c.ExpectedError == "" {
 		require.NoError(t, err)
 	} else {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), c.ExpectedError)
 		return
+	}
+
+	if c.VerifyStatus != nil {
+		c.VerifyStatus(t, &central.Status)
 	}
 
 	secretsList, err := client.CoreV1().Secrets(testNamespace).List(context.Background(), metav1.ListOptions{})
@@ -105,8 +126,12 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	assert.Empty(t, secretsByName, "one or more unexpected secrets exist")
 
 	// Verify that a second invocation does not further change the cluster state
-	err = runFn(context.Background(), central.DeepCopy(), client, logr.Discard())
+	err = runFn(context.Background(), central.DeepCopy(), client, statusUpdater, logr.Discard())
 	assert.NoError(t, err, "second invocation of reconciliation function failed")
+
+	if c.VerifyStatus != nil {
+		c.VerifyStatus(t, &central.Status)
+	}
 
 	secretsList2, err := client.CoreV1().Secrets(testNamespace).List(context.Background(), metav1.ListOptions{})
 	require.NoError(t, err)
@@ -117,7 +142,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	central.DeletionTimestamp = new(metav1.Time)
 	*central.DeletionTimestamp = metav1.Now()
 
-	err = runFn(context.Background(), central.DeepCopy(), client, logr.Discard())
+	err = runFn(context.Background(), central.DeepCopy(), client, statusUpdater, logr.Discard())
 	assert.NoError(t, err, "deletion of CR resulted in error")
 
 	secretsList3, err := client.CoreV1().Secrets(testNamespace).List(context.Background(), metav1.ListOptions{})
