@@ -644,8 +644,8 @@ commands:
                     fi
                   fi
 
-  check-master-or-tag-or-label:
-    description: "If run-on-master is set, run on master.  If run-on-tags is set, run on all tags.  If the label is set, run when the label is present.  Otherwise skip."
+  check-to-run:
+    description: "If run-on-master is set, run on master. If run-on-tags is set, run on all tags. If the label is set, run when the label is present. If changed-path is set run on changes compared to master in the given path.Otherwise skip."
     parameters:
       label:
         type: string
@@ -653,36 +653,43 @@ commands:
         type: boolean
       run-on-tags:
         type: boolean
+      changed-path:
+        type: string
+        default: ""
     steps:
-      - when:
-          condition: << parameters.label >>
-          steps:
-            - run:
-                name: Determine whether to run tests
-                command: |
-                  set +e
-                  halt=1
-                  if [[ "<< parameters.run-on-master >>" == "true" && "${CIRCLE_BRANCH}" == "master" ]]; then
-                    echo "Running tests because we are on master"
-                    halt=0
-                  elif [[ "<< parameters.run-on-tags >>" == "true" && -n "${CIRCLE_TAG}" ]]; then
-                    echo "Running tests because this is a tagged build"
-                    halt=0
-                  elif [[ -n "<< parameters.label >>" ]]; then
-                    # Split on commas
-                    IFS=', ' ;for label in `echo "<< parameters.label >>"`; do
-                      .circleci/pr_has_label.sh "${label}"
-                      if [[ $? -eq 0 ]]; then
-                        echo "Running tests because the label << parameters.label >> has been set"
-                        halt=0
-                      fi
-                    done
-                  fi
+    - run:
+        name: Determine whether to run tests
+        command: |
+          set +e -x
+          halt=1
+          if [[ "<< parameters.run-on-master >>" == "true" && "${CIRCLE_BRANCH}" == "master" ]]; then
+            echo "Running tests because we are on master"
+            halt=0
+          elif [[ "<< parameters.run-on-tags >>" == "true" && -n "${CIRCLE_TAG}" ]]; then
+            echo "Running tests because this is a tagged build"
+            halt=0
+          elif [[ -n "<< parameters.changed-path >>" ]]; then
+            merge_base="$(git merge-base HEAD origin/master)"
+            { git diff --name-only "${merge_base}" || echo "???" ; } | egrep -q '<< parameters.changed-path >>'
+            if [[ $? -eq 0 ]]; then
+              echo "Running tests because path '<< parameters.changed-path >>' had changed."
+              halt=0
+            fi
+          elif [[ -n "<< parameters.label >>" ]]; then
+            # Split on commas
+            IFS=', ' ;for label in `echo "<< parameters.label >>"`; do
+              .circleci/pr_has_label.sh "${label}"
+              if [[ $? -eq 0 ]]; then
+                echo "Running tests because the label << parameters.label >> has been set"
+                halt=0
+              fi
+            done
+          fi
 
-                  if [[ "${halt}" -eq 1 ]]; then
-                    echo "Not running tests"
-                    circleci step halt
-                  fi
+          if [[ "${halt}" -eq 1 ]]; then
+            echo "Not running tests"
+            circleci step halt
+          fi
 
   get-and-store-debug-dump:
     description: Runs roxctl debug dump and stores it for the job.
@@ -1029,13 +1036,16 @@ commands:
       when:
         type: enum
         enum: ["on_fail", "always"]
+      cluster-name:
+        type: string
+        default: "openshift-4"
 
     steps:
       - run:
           name: Pack openshift volume for remote docker
           command: |
             docker create -v /data --name openshift alpine:3.9 /bin/true
-            docker cp openshift-4/data/. openshift:/data
+            docker cp << parameters.cluster-name >>/data/. openshift:/data
           when: << parameters.when >>
 
       - run:
@@ -1043,7 +1053,7 @@ commands:
           environment:
             - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
           command: |
-            if [ ! -d "$PWD/openshift-4" ]; then
+            if [ ! -d "$PWD/<< parameters.cluster-name >>" ]; then
               echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
               exit 0
             fi
@@ -2015,6 +2025,30 @@ commands:
       - store-test-results-and-artifacts:
           path: << parameters.path >>
 
+
+  create-openshift-4-cluster:
+    description: "Create an OpenShift 4 cluster"
+    parameters:
+      cluster-name:
+        type: string
+    steps:
+      - run:
+          name: Create OpenShift 4 cluster
+          environment:
+          - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
+          - GCP_PROJECT: stackrox-ci
+          command: |
+            mkdir $PWD/<< parameters.cluster-name >>
+            docker run --name openshift-4-automation -t \
+              -v $PWD/<< parameters.cluster-name >>:/data \
+              -e GOOGLE_CREDENTIALS="${GOOGLE_OPENSHIFT_4_CREDENTIALS}" \
+              -e PULL_SECRET="${REDHAT_PULL_SECRET}" \
+              -e REGION="us-central1" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION \
+              create << parameters.cluster-name >>-"${CIRCLE_WORKFLOW_ID:0:7}" "${GCP_PROJECT}" openshift.ci.rox.systems
+            docker cp openshift-4-automation:/data $PWD/<< parameters.cluster-name >>
+          no_output_timeout: 45m
+
 jobs:
   ###
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
@@ -2782,7 +2816,7 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
-      - check-master-or-tag-or-label:
+      - check-to-run:
           label: ci-rhel-tests,ci-race-tests
           run-on-master: false
           run-on-tags: true
@@ -2800,7 +2834,7 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
-      - check-master-or-tag-or-label:
+      - check-to-run:
           label: ci-rhel-tests,ci-race-tests
           run-on-master: false
           run-on-tags: true
@@ -2814,7 +2848,7 @@ jobs:
       - checkout
       - check-backend-changes
 
-      - check-master-or-tag-or-label:
+      - check-to-run:
           label: ci-kernel-module-tests
           run-on-master: true
           run-on-tags: true
@@ -3086,7 +3120,7 @@ jobs:
     executor: custom
     steps:
       - checkout
-      - check-master-or-tag-or-label:
+      - check-to-run:
           label: ci-openshift-4-tests
           run-on-master: true
           run-on-tags: true
@@ -3097,22 +3131,8 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *loginToGCR
-      - run:
-          name: Create OpenShift 4 cluster
-          environment:
-            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
-            - GCP_PROJECT: stackrox-ci
-          command: |
-            mkdir $PWD/openshift-4
-            docker run --name openshift-4-automation -t \
-              -v $PWD/openshift-4:/data \
-              -e GOOGLE_CREDENTIALS="${GOOGLE_OPENSHIFT_4_CREDENTIALS}" \
-              -e PULL_SECRET="${REDHAT_PULL_SECRET}" \
-              -e REGION="us-central1" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION \
-              create openshift-4-"${CIRCLE_WORKFLOW_ID:0:7}" "${GCP_PROJECT}" openshift.ci.rox.systems
-            docker cp openshift-4-automation:/data $PWD/openshift-4
-          no_output_timeout: 45m
+      - create-openshift-4-cluster:
+          cluster-name: openshift-4
 
       - run:
           name: Validate Kubeconfig
@@ -3135,6 +3155,48 @@ jobs:
 
       - destroy-openshift-4-cluster:
           when: on_fail
+
+  provision-openshift-4-operator-e2e-tests:
+    executor: custom
+    steps:
+    - checkout
+    - check-to-run:
+        label: ci-openshift-4-operator-tests
+        run-on-master: true
+        run-on-tags: true
+        changed-path: "operator"
+
+    - setup_remote_docker
+
+    - attach_workspace:
+        at: /go/src/github.com/stackrox/rox
+
+    - *loginToGCR
+    - create-openshift-4-cluster:
+        cluster-name: operator-oc4
+
+    - run:
+        name: Validate Kubeconfig
+        command: |
+          ls -lh $PWD/operator-oc4/data
+          export KUBECONFIG=$PWD/operator-oc4/data/auth/kubeconfig
+          sudo chown "$USER" $PWD/operator-oc4/data/auth/kubeconfig
+          oc get nodes
+
+    - store_artifacts:
+        path: operator-oc4
+        destination: operator-oc4
+
+    - build-liveness-check
+
+    - persist_to_workspace:
+        root: .
+        paths:
+        - operator-oc4
+
+    - destroy-openshift-4-cluster:
+        when: on_fail
+        cluster-name: operator-oc4
 
   ###
   # Test jobs against built artifacts
@@ -3186,18 +3248,6 @@ jobs:
       - attach-gke-cluster:
           cluster-id: api-nongroovy-tests
       - remove-existing-stackrox-resources
-
-      # TODO(ROX-7403): break out operator tests in their own job.
-      - run:
-          name: Run Operator e2e tests
-          command: make -C operator test-e2e
-      - store-test-results-and-artifacts:
-          path: operator/build/kuttl-test-artifacts
-      - remove-existing-stackrox-resources
-
-      - run:
-          name: Run Operator Bundle Scorecard tests
-          command: make -C operator bundle-test-image
 
       - run:
           name: Export Trusted CA file
@@ -3582,7 +3632,7 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
-      - check-master-or-tag-or-label:
+      - check-to-run:
           label: ci-rhel-tests,ci-race-tests
           run-on-master: false
           run-on-tags: true
@@ -3619,7 +3669,7 @@ jobs:
           cluster-id: rhel-api-e2e-tests
           # sensor-deploy-flavor: helm TODO(ROX-4606)
           determine-whether-to-run:
-            - check-master-or-tag-or-label:
+            - check-to-run:
                 label: ci-rhel-tests,ci-race-tests
                 run-on-master: false
                 run-on-tags: true
@@ -3654,7 +3704,7 @@ jobs:
       - run-qa-tests:
           cluster-id: kernel-api-e2e-tests
           determine-whether-to-run:
-            - check-master-or-tag-or-label:
+            - check-to-run:
                 label: ci-kernel-module-tests
                 run-on-master: true
                 run-on-tags: true
@@ -4613,7 +4663,7 @@ jobs:
           cluster-id: aks-api-e2e-tests
           sensor-deploy-flavor: helm
           determine-whether-to-run:
-            - check-master-or-tag-or-label:
+            - check-to-run:
                 label: ci-aks-tests
                 run-on-master: false
                 run-on-tags: true
@@ -4656,7 +4706,7 @@ jobs:
           sensor-deploy-flavor: helm
           orchestrator-flavor: openshift
           determine-whether-to-run:
-            - check-master-or-tag-or-label:
+            - check-to-run:
                 label: ci-openshift-4-tests
                 run-on-master: true
                 run-on-tags: true
@@ -4673,6 +4723,50 @@ jobs:
             - *loginToGCR
             - destroy-openshift-4-cluster:
                 when: always
+
+  openshift-4-operator-e2e-tests:
+    executor: custom
+
+    steps:
+    - checkout
+    - check-to-run:
+        label: ci-openshift-4-operator-tests
+        run-on-master: true
+        run-on-tags: true
+        changed-path: "operator"
+
+    - setup_remote_docker
+
+    - attach_workspace:
+        at: /go/src/github.com/stackrox/rox
+
+    - run:
+        name: Restore KUBECONFIG
+        command: |
+          ls -lh $PWD/operator-oc4/data
+          cci-export KUBECONFIG "$PWD/operator-oc4/data/auth/kubeconfig"
+          oc get nodes
+
+    - *loginToGCR
+    - *setupRoxctl
+    - setup-gcp
+    - setup-dep-env
+    - remove-existing-stackrox-resources
+    - *setupGoogleAppCreds
+
+    - run:
+        name: Run Operator e2e tests
+        command: make -C operator test-e2e
+    - store-test-results-and-artifacts:
+        path: operator/build/kuttl-test-artifacts
+
+    - run:
+        name: Run Operator Bundle Scorecard tests
+        command: make -C operator bundle-test-image
+
+    - destroy-openshift-4-cluster:
+        when: always
+        cluster-name: operator-oc4
 
   roxctl-windows-test:
     executor:
@@ -5180,6 +5274,14 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-openshift-4-api-e2e-tests
+      - provision-openshift-4-operator-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - openshift-4-operator-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build
+            - build-operator
+            - provision-openshift-4-operator-e2e-tests
       - roxctl-windows-test:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
