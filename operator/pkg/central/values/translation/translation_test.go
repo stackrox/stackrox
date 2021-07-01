@@ -102,7 +102,6 @@ func TestTranslate(t *testing.T) {
 							DefaultTLSSecret: &common.LocalSecretReference{
 								Name: "my-default-tls-secret",
 							},
-							AdminPasswordSecret: &corev1.LocalObjectReference{Name: "admin-password-secret"},
 							Persistence: &v1alpha1.Persistence{
 								HostPath: &hostPath,
 								PersistentVolumeClaim: &v1alpha1.PersistentVolumeClaim{
@@ -189,7 +188,6 @@ func TestTranslate(t *testing.T) {
 							"key":  "central-tls-spec-secret-key-content",
 							"cert": "central-tls-spec-secret-cert-content",
 						}),
-					makeSecret("admin-password-secret", map[string]string{"value": "admin-password-plaintext"}),
 					makeSecret("scanner-tls-spec-secret",
 						map[string]string{
 							"key":  "scanner-tls-spec-secret-key-content",
@@ -208,9 +206,6 @@ func TestTranslate(t *testing.T) {
 					"ca2-name": "ca2-content",
 				},
 				"central": map[string]interface{}{
-					"adminPassword": map[string]interface{}{
-						"value": "admin-password-plaintext",
-					},
 					"defaultTLS": map[string]interface{}{
 						"reference": "my-default-tls-secret",
 					},

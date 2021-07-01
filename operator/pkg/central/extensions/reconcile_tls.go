@@ -22,7 +22,7 @@ func ReconcileCentralTLSExtensions(k8sClient kubernetes.Interface) extensions.Re
 	return wrapExtension(reconcileCentralTLS, k8sClient)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *centralv1Alpha1.Central, k8sClient kubernetes.Interface, log logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *centralv1Alpha1.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
@@ -57,7 +57,7 @@ func (r *createCentralTLSExtensionRun) Execute() error {
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap secretDataMap) error {
+func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap secretDataMap, _ bool) error {
 	var err error
 	r.ca, err = certgen.LoadCAFromFileMap(fileMap)
 	if err != nil {
@@ -113,7 +113,7 @@ func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject,
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) validateScannerTLSData(fileMap secretDataMap) error {
+func (r *createCentralTLSExtensionRun) validateScannerTLSData(fileMap secretDataMap, _ bool) error {
 	return r.validateServiceTLSData(mtls.ScannerSubject, fileMap)
 }
 
@@ -125,7 +125,7 @@ func (r *createCentralTLSExtensionRun) generateScannerTLSData() (secretDataMap, 
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) validateScannerDBTLSData(fileMap secretDataMap) error {
+func (r *createCentralTLSExtensionRun) validateScannerDBTLSData(fileMap secretDataMap, _ bool) error {
 	return r.validateServiceTLSData(mtls.ScannerDBSubject, fileMap)
 }
 

@@ -85,7 +85,7 @@ func (s *secretReconcilerExtensionTestSuite) SetupTest() {
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNothing() {
-	validateFn := func(secretDataMap) error {
+	validateFn := func(secretDataMap, bool) error {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
@@ -102,7 +102,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnNonExisting_S
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingManaged_ShouldDelete() {
-	validateFn := func(secretDataMap) error {
+	validateFn := func(secretDataMap, bool) error {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
@@ -119,7 +119,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingManag
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingUnmanaged_ShouldDoNothing() {
-	validateFn := func(secretDataMap) error {
+	validateFn := func(secretDataMap, bool) error {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
@@ -136,7 +136,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingUnman
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnNonExisting_ShouldCreateSecretWithOwnerRef() {
-	validateFn := func(secretDataMap) error {
+	validateFn := func(secretDataMap, bool) error {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
@@ -166,8 +166,9 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	s.Require().NoError(err)
 
 	validated := false
-	validateFn := func(data secretDataMap) error {
-		s.Require().Equal("existing-managed-secret", string(data["secret-name"]))
+	validateFn := func(data secretDataMap, managed bool) error {
+		s.Equal("existing-managed-secret", string(data["secret-name"]))
+		s.True(managed)
 		validated = true
 		return nil
 	}
@@ -192,11 +193,10 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	s.Require().NoError(err)
 
 	failValidationErr := pkgErrors.New("failed validation")
-	validateFn := func(data secretDataMap) error {
-		if string(data["secret-name"]) == "existing-managed-secret" {
-			return failValidationErr
-		}
-		return nil
+	validateFn := func(data secretDataMap, managed bool) error {
+		s.Equal("existing-managed-secret", string(data["secret-name"]))
+		s.True(managed)
+		return failValidationErr
 	}
 
 	generateFn := func() (secretDataMap, error) {
@@ -218,8 +218,9 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanage
 	s.Require().NoError(err)
 
 	validated := false
-	validateFn := func(data secretDataMap) error {
-		s.Require().Equal("existing-secret", string(data["secret-name"]))
+	validateFn := func(data secretDataMap, managed bool) error {
+		s.Equal("existing-secret", string(data["secret-name"]))
+		s.False(managed)
 		validated = true
 		return nil
 	}
@@ -244,11 +245,10 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanage
 	s.Require().NoError(err)
 
 	failValidationErr := pkgErrors.New("failed validation")
-	validateFn := func(data secretDataMap) error {
-		if string(data["secret-name"]) == "existing-secret" {
-			return failValidationErr
-		}
-		return nil
+	validateFn := func(data secretDataMap, managed bool) error {
+		s.Equal("existing-secret", string(data["secret-name"]))
+		s.False(managed)
+		return failValidationErr
 	}
 
 	generateFn := func() (secretDataMap, error) {
