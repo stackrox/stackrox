@@ -97,19 +97,20 @@ func (mr *MockDataStoreMockRecorder) GetRisk(ctx, subjectID, subjectType interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRisk", reflect.TypeOf((*MockDataStore)(nil).GetRisk), ctx, subjectID, subjectType)
 }
 
-// GetRiskByIndicators mocks base method
-func (m *MockDataStore) GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, riskIndicatorNames []string) (*storage.Risk, error) {
+// GetRiskForDeployment mocks base method
+func (m *MockDataStore) GetRiskForDeployment(ctx context.Context, deployment *storage.Deployment) (*storage.Risk, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRiskByIndicators", ctx, subjectID, subjectType, riskIndicatorNames)
+	ret := m.ctrl.Call(m, "GetRiskForDeployment", ctx, deployment)
 	ret0, _ := ret[0].(*storage.Risk)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetRiskByIndicators indicates an expected call of GetRiskByIndicators
-func (mr *MockDataStoreMockRecorder) GetRiskByIndicators(ctx, subjectID, subjectType, riskIndicatorNames interface{}) *gomock.Call {
+// GetRiskForDeployment indicates an expected call of GetRiskForDeployment
+func (mr *MockDataStoreMockRecorder) GetRiskForDeployment(ctx, deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRiskByIndicators", reflect.TypeOf((*MockDataStore)(nil).GetRiskByIndicators), ctx, subjectID, subjectType, riskIndicatorNames)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRiskForDeployment", reflect.TypeOf((*MockDataStore)(nil).GetRiskForDeployment), ctx, deployment)
 }
 
 // UpsertRisk mocks base method

@@ -41,7 +41,7 @@ class SACv2Test extends SACTest {
                 (NOACCESSTOKEN)           : [noaccess],
                 (ALLACCESSTOKEN)          : [createRole("", allResourcesAccess)],
                 "deployments-access-token": [createRole(createAccessScope(
-                        "remote", "qa-test2").id, ["Deployment": READ_ACCESS])],
+                        "remote", "qa-test2").id, ["Deployment": READ_ACCESS, "Risk": READ_ACCESS])],
                 "getSummaryCountsToken"   : [createRole(remoteQaTest1.id, allResourcesAccess)],
                 "listSecretsToken"        : [createRole("", ["Secret": READ_ACCESS])],
                 "searchDeploymentsToken"  : [createRole(remoteQaTest1.id, ["Deployment": READ_ACCESS]), noaccess],

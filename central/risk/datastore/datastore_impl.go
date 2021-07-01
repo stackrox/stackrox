@@ -62,6 +62,17 @@ func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectTy
 	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
 		return nil, false, err
 	}
+	return d.getRiskForSubject(subjectID, subjectType)
+}
+
+func (d *datastoreImpl) GetRiskForDeployment(ctx context.Context, deployment *storage.Deployment) (*storage.Risk, bool, error) {
+	if allowed, err := riskSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !allowed {
+		return nil, false, err
+	}
+	return d.getRiskForSubject(deployment.GetId(), storage.RiskSubjectType_DEPLOYMENT)
+}
+
+func (d *datastoreImpl) getRiskForSubject(subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error) {
 	id, err := GetID(subjectID, subjectType)
 	if err != nil {
 		return nil, false, err

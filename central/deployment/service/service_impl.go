@@ -138,7 +138,7 @@ func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.Res
 		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
 
-	risk, _, err := s.risks.GetRisk(ctx, request.GetId(), storage.RiskSubjectType_DEPLOYMENT)
+	risk, _, err := s.risks.GetRiskForDeployment(ctx, deployment)
 	if err != nil {
 		return nil, err
 	}

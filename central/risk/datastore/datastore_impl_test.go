@@ -72,19 +72,84 @@ func (suite *RiskDataStoreTestSuite) TearDownSuite() {
 
 func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
 	risk := fixtures.GetRisk()
-	err := suite.datastore.UpsertRisk(suite.hasWriteCtx, risk)
-	suite.Require().NoError(err)
+	deployment := &storage.Deployment{
+		Id:        risk.GetSubject().GetId(),
+		Namespace: risk.GetSubject().GetNamespace(),
+		ClusterId: risk.GetSubject().GetClusterId(),
+	}
 
-	result, found, err := suite.datastore.GetRisk(suite.hasReadCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
-	suite.Require().NoError(err)
-	suite.Require().True(found)
-	suite.Require().NotNil(result)
+	testCases := map[string]func() (*storage.Risk, bool, error){
+		"GetRisk": func() (*storage.Risk, bool, error) {
+			return suite.datastore.GetRisk(suite.hasReadCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
+		},
+		"GetRiskForDeployment": func() (*storage.Risk, bool, error) {
+			return suite.datastore.GetRiskForDeployment(suite.hasReadCtx, deployment)
+		},
+	}
+	for name, getRisk := range testCases {
+		suite.Run(name, func() {
+			err := suite.datastore.UpsertRisk(suite.hasWriteCtx, risk)
+			suite.Require().NoError(err)
 
-	err = suite.datastore.RemoveRisk(suite.hasWriteCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
-	suite.Require().NoError(err)
+			result, found, err := getRisk()
+			suite.Require().NoError(err)
+			suite.Require().True(found)
+			suite.Require().NotNil(result)
 
-	result, found, err = suite.datastore.GetRisk(suite.hasReadCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
-	suite.Require().NoError(err)
-	suite.Require().False(found)
-	suite.Require().Nil(result)
+			err = suite.datastore.RemoveRisk(suite.hasWriteCtx, risk.GetSubject().GetId(), risk.GetSubject().GetType())
+			suite.Require().NoError(err)
+
+			result, found, err = getRisk()
+			suite.Require().NoError(err)
+			suite.Require().False(found)
+			suite.Require().Nil(result)
+		})
+	}
+
+	scopedAccess := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Risk),
+			sac.ClusterScopeKeys("FakeClusterID"),
+			sac.NamespaceScopeKeys("FakeNS")))
+
+	scopedAccessForDifferentNamespace := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Risk),
+			sac.ClusterScopeKeys("FakeClusterID"),
+			sac.NamespaceScopeKeys("DifferentNS")))
+
+	suite.Run("GetRiskForDeployment with scoped access", func() {
+		err := suite.datastore.UpsertRisk(suite.hasWriteCtx, risk)
+		suite.Require().NoError(err)
+
+		result, found, err := suite.datastore.GetRiskForDeployment(scopedAccess, deployment)
+		suite.Require().NoError(err)
+		suite.Require().True(found)
+		suite.Require().NotNil(result)
+	})
+
+	testCasesForScopedAccess := map[string]func() (*storage.Risk, bool, error){
+		"GetRiskForDeployment with access to different namespace": func() (*storage.Risk, bool, error) {
+			return suite.datastore.GetRiskForDeployment(scopedAccessForDifferentNamespace, deployment)
+		},
+		"GetRisk with scoped access": func() (*storage.Risk, bool, error) {
+			return suite.datastore.GetRisk(scopedAccess, risk.GetSubject().GetId(), risk.GetSubject().GetType())
+		},
+		"GetRisk with scoped access for different namespace": func() (*storage.Risk, bool, error) {
+			return suite.datastore.GetRisk(scopedAccessForDifferentNamespace, risk.GetSubject().GetId(), risk.GetSubject().GetType())
+		},
+	}
+	for name, getRisk := range testCasesForScopedAccess {
+		suite.Run(name, func() {
+			err := suite.datastore.UpsertRisk(suite.hasWriteCtx, risk)
+			suite.Require().NoError(err)
+
+			result, found, err := getRisk()
+			suite.Require().NoError(err)
+			suite.Require().False(found)
+			suite.Require().Nil(result)
+		})
+	}
 }

@@ -99,7 +99,7 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Deployment")
 
-	oldRisk, exists, err := e.riskStorage.GetRisk(allAccessCtx, deployment.GetId(), storage.RiskSubjectType_DEPLOYMENT)
+	oldRisk, exists, err := e.riskStorage.GetRiskForDeployment(allAccessCtx, deployment)
 	if err != nil {
 		log.Errorf("error getting risk for deployment %s: %v", deployment.GetName(), err)
 	}

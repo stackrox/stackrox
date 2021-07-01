@@ -24,6 +24,10 @@ class DeploymentService extends BaseService {
         return getDeploymentService().getDeployment(getResourceByID(id))
     }
 
+    static getDeploymentWithRisk(String id) {
+        return getDeploymentService().getDeploymentWithRisk(getResourceByID(id))
+    }
+
     static getDeploymentCount(RawQuery query = RawQuery.newBuilder().build()) {
         return getDeploymentService().countDeployments(query).count
     }
