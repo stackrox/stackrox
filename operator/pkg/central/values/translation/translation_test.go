@@ -126,25 +126,27 @@ func TestTranslate(t *testing.T) {
 						},
 						Scanner: &v1alpha1.ScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
-							Replicas: &v1alpha1.ScannerReplicas{
-								AutoScaling: &scannerAutoScalingPolicy,
-								Replicas:    &scannerReplicas,
-								MinReplicas: &scannerMinReplicas,
-								MaxReplicas: &scannerMaxReplicas,
-							},
-							Analyzer: &common.DeploymentSpec{
-								NodeSelector: map[string]string{
-									"scanner-node-selector-label1": "scanner-node-selector-value1",
-									"scanner-node-selector-label2": "scanner-node-selector-value2",
+							Analyzer: &v1alpha1.ScannerAnalyzerComponent{
+								Scaling: &v1alpha1.ScannerAnalyzerScaling{
+									AutoScaling: &scannerAutoScalingPolicy,
+									Replicas:    &scannerReplicas,
+									MinReplicas: &scannerMinReplicas,
+									MaxReplicas: &scannerMaxReplicas,
 								},
-								Resources: &corev1.ResourceRequirements{
-									Limits: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("50"),
-										corev1.ResourceMemory: resource.MustParse("60"),
+								DeploymentSpec: common.DeploymentSpec{
+									NodeSelector: map[string]string{
+										"scanner-node-selector-label1": "scanner-node-selector-value1",
+										"scanner-node-selector-label2": "scanner-node-selector-value2",
 									},
-									Requests: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("70"),
-										corev1.ResourceMemory: resource.MustParse("80"),
+									Resources: &corev1.ResourceRequirements{
+										Limits: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse("50"),
+											corev1.ResourceMemory: resource.MustParse("60"),
+										},
+										Requests: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse("70"),
+											corev1.ResourceMemory: resource.MustParse("80"),
+										},
 									},
 								},
 							},

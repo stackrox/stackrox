@@ -169,7 +169,7 @@ spec:
                 description: ScannerComponentSpec defines settings for the "scanner" component.
                 properties:
                   analyzer:
-                    description: DeploymentSpec defines settings that affect a deployment.
+                    description: ScannerAnalyzerComponent describes the analyzer component
                     properties:
                       nodeSelector:
                         additionalProperties:
@@ -197,25 +197,25 @@ spec:
                             description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
-                    type: object
-                  replicas:
-                    description: ScannerReplicas defines replication settings of scanner.
-                    properties:
-                      autoScaling:
-                        description: AutoScalingPolicy is a type for values of spec.scannerSpec.replicas.autoScaling.
-                        type: string
-                      maxReplicas:
-                        description: Defaults to 5
-                        format: int32
-                        type: integer
-                      minReplicas:
-                        description: Defaults to 2
-                        format: int32
-                        type: integer
-                      replicas:
-                        description: Defaults to 3
-                        format: int32
-                        type: integer
+                      scaling:
+                        description: ScannerAnalyzerScaling defines replication settings of the analyzer.
+                        properties:
+                          autoScaling:
+                            description: AutoScalingPolicy is a type for values of spec.scannerSpec.replicas.autoScaling.
+                            type: string
+                          maxReplicas:
+                            description: Defaults to 5
+                            format: int32
+                            type: integer
+                          minReplicas:
+                            description: Defaults to 2
+                            format: int32
+                            type: integer
+                          replicas:
+                            description: Defaults to 3
+                            format: int32
+                            type: integer
+                        type: object
                     type: object
                   scannerComponent:
                     description: Defaults to Enabled

@@ -67,7 +67,7 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 	}
 
 	if c.Spec.Scanner != nil {
-		v.AddChild("scanner", getScannerComponentValues(ctx, clientSet, c.Namespace, c.Spec.Scanner))
+		v.AddChild("scanner", getScannerComponentValues(c.Spec.Scanner))
 	}
 
 	v.AddChild("customize", &customize)
@@ -155,7 +155,7 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 	return &cv
 }
 
-func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, s *central.ScannerComponentSpec) *translation.ValuesBuilder {
+func getScannerComponentValues(s *central.ScannerComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	if s.ScannerComponent != nil {
@@ -169,27 +169,29 @@ func getScannerComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 		}
 	}
 
-	if s.Replicas != nil {
-		sv.SetInt32("replicas", s.Replicas.Replicas)
+	if s.GetAnalyzer().GetScaling() != nil {
+		scaling := s.GetAnalyzer().GetScaling()
+		sv.SetInt32("replicas", scaling.Replicas)
+
 		autoscaling := translation.NewValuesBuilder()
-		if s.Replicas.AutoScaling != nil {
-			switch *s.Replicas.AutoScaling {
+		if scaling.AutoScaling != nil {
+			switch *scaling.AutoScaling {
 			case central.ScannerAutoScalingDisabled:
 				autoscaling.SetBoolValue("disable", true)
 			case central.ScannerAutoScalingEnabled:
 				autoscaling.SetBoolValue("disable", false)
 			default:
-				return autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *s.Replicas.AutoScaling))
+				return autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
 			}
 		}
-		autoscaling.SetInt32("minReplicas", s.Replicas.MinReplicas)
-		autoscaling.SetInt32("maxReplicas", s.Replicas.MaxReplicas)
+		autoscaling.SetInt32("minReplicas", scaling.MinReplicas)
+		autoscaling.SetInt32("maxReplicas", scaling.MaxReplicas)
 		sv.AddChild("autoscaling", &autoscaling)
 	}
 
-	if s.Analyzer != nil {
-		sv.SetStringMap("nodeSelector", s.Analyzer.NodeSelector)
-		sv.AddChild(translation.ResourcesKey, translation.GetResources(s.Analyzer.Resources))
+	if s.GetAnalyzer() != nil {
+		sv.SetStringMap("nodeSelector", s.GetAnalyzer().NodeSelector)
+		sv.AddChild(translation.ResourcesKey, translation.GetResources(s.GetAnalyzer().Resources))
 	}
 
 	if s.ScannerDB != nil {
