@@ -254,10 +254,7 @@ spec:
                             type: integer
                         type: object
                     type: object
-                  scannerComponent:
-                    description: Defaults to Enabled
-                    type: string
-                  scannerDB:
+                  db:
                     description: DeploymentSpec defines settings that affect a deployment.
                     properties:
                       nodeSelector:
@@ -293,6 +290,9 @@ spec:
                             type: object
                         type: object
                     type: object
+                  scannerComponent:
+                    description: Defaults to Enabled
+                    type: string
                 type: object
               tls:
                 description: TLSConfig defines common TLS-related settings for all

@@ -482,8 +482,8 @@ func (in *ScannerComponentSpec) DeepCopyInto(out *ScannerComponentSpec) {
 		*out = new(ScannerAnalyzerComponent)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.ScannerDB != nil {
-		in, out := &in.ScannerDB, &out.ScannerDB
+	if in.DB != nil {
+		in, out := &in.DB, &out.DB
 		*out = new(commonv1alpha1.DeploymentSpec)
 		(*in).DeepCopyInto(*out)
 	}

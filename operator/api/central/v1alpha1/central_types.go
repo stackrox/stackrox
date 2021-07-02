@@ -146,7 +146,7 @@ type ScannerComponentSpec struct {
 	// Defaults to Enabled
 	ScannerComponent *ScannerComponentPolicy   `json:"scannerComponent,omitempty"`
 	Analyzer         *ScannerAnalyzerComponent `json:"analyzer,omitempty"`
-	ScannerDB        *common.DeploymentSpec    `json:"scannerDB,omitempty"`
+	DB               *common.DeploymentSpec    `json:"db,omitempty"`
 }
 
 // GetAnalyzer returns the analyzer component even if receiver is nil
