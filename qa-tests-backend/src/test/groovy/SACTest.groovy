@@ -1,25 +1,29 @@
 import static Services.waitForViolation
+import static com.jayway.restassured.RestAssured.given
 
+import services.AlertService
+import services.ApiTokenService
+import services.BaseService
+import services.DeploymentService
+import services.ImageService
+import services.NamespaceService
 import services.NetworkGraphService
-import util.NetworkGraphUtil
+import services.SearchService
+import services.SecretService
+import services.SummaryService
 
+import com.jayway.restassured.config.RestAssuredConfig
+import com.jayway.restassured.config.SSLConfig
 import groups.BAT
+import objects.Deployment
 import org.junit.experimental.categories.Category
+import spock.lang.Unroll
+import util.Env
+import util.NetworkGraphUtil
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
-import objects.Deployment
-import services.AlertService
-import services.DeploymentService
-import services.ImageService
-import services.NamespaceService
-import services.ApiTokenService
-import services.BaseService
-import services.SearchService
-import services.SecretService
-import services.SummaryService
-import spock.lang.Unroll
 
 @Category(BAT)
 class SACTest extends BaseSpecification {
@@ -90,9 +94,10 @@ class SACTest extends BaseSpecification {
         return NamespaceService.getNamespaces().size()
     }
 
-    def useToken(String tokenName) {
+    GenerateTokenResponse useToken(String tokenName) {
         GenerateTokenResponse token = ApiTokenService.generateToken(tokenName, NONE)
         BaseService.useApiToken(token.token)
+        token
     }
 
     static getSpecificQuery(String category) {
@@ -197,6 +202,36 @@ class SACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         deleteSecret(DEPLOYMENT_QA1.namespace)
         deleteSecret(DEPLOYMENT_QA2.namespace)
+    }
+
+    @Unroll
+    def "Verify alerts count between #alertsMin and #alertsMax for #tokenName"() {
+        when:
+        "GetSummaryCounts is called using a token with all access"
+        def token = useToken(tokenName)
+
+        def response = given()
+                .config(RestAssuredConfig.newConfig()
+                        .sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation().allowAllHostnames()))
+                .header("Authorization", "Bearer " + token.token)
+                .when()
+                .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}/v1/alertscount?query=")
+        def count = response.jsonPath().getInt("count")
+
+        then:
+        assert alertsMin <= alertsMax
+        assert alertsMax >= count
+
+        cleanup:
+        "Cleanup"
+        BaseService.useBasicAuth()
+
+        where:
+        // lower bound is from local cluster and upper bound from CI
+        tokenName               | alertsMin | alertsMax
+        NOACCESSTOKEN           | 0         | 0
+        ALLACCESSTOKEN          | 7         | 200
+        "getSummaryCountsToken" | 2         | 4
     }
 
     def "Verify ListSecrets using a token without access receives no results"() {

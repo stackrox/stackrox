@@ -61,9 +61,10 @@ class SACv2Test extends SACTest {
     }
 
     @Override
-    def useToken(String tokenName) {
+    ApiTokenService.GenerateTokenResponse useToken(String tokenName) {
         ApiTokenService.GenerateTokenResponse token = generateToken(tokenName, *(tokenToRoles.get(tokenName)))
         BaseService.useApiToken(token.token)
+        token
     }
 
     @Override

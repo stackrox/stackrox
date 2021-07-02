@@ -74,8 +74,7 @@ func (h *searchHelper) Apply(rawSearchFunc func(*v1.Query, ...blevesearch.Search
 }
 
 // ApplyCount takes in a context-less count function, and returns a count function taking in a context and applying
-// scoped access control checks for result filtering. We apply scoped access control on query but not filtering results
-// after the query.
+// scoped access control checks for result filtering.
 func (h *searchHelper) ApplyCount(rawCountFunc func(*v1.Query, ...blevesearch.SearchOption) (int, error)) func(context.Context, *v1.Query) (int, error) {
 	return func(ctx context.Context, q *v1.Query) (int, error) {
 		searcher := blevesearch.UnsafeSearcherImpl{
@@ -138,14 +137,8 @@ func (h *searchHelper) executeCount(ctx context.Context, q *v1.Query, searcher b
 		return searcher.Count(q)
 	}
 
-	fieldQB := search.NewQueryBuilder()
-	queryWithFields := search.NewConjunctionQuery(q, fieldQB.ProtoQuery())
-
-	var opts []blevesearch.SearchOption
-	if hook := h.resultsChecker.BleveHook(ctx, scopeChecker); hook != nil {
-		opts = append(opts, blevesearch.WithHook(hook))
-	}
-	return searcher.Count(queryWithFields, opts...)
+	results, err := h.executeSearch(ctx, q, searcher)
+	return len(results), err
 }
 
 func filterDocsOnce(resultsChecker searchResultsChecker, resourceScopeChecker ScopeChecker, results []*bleveSearchLib.DocumentMatch) (allowed []*bleveSearchLib.DocumentMatch, maybe []*bleveSearchLib.DocumentMatch) {
