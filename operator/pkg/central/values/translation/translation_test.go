@@ -150,7 +150,7 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
-							ScannerDB: &common.DeploymentSpec{
+							DB: &common.DeploymentSpec{
 								NodeSelector: map[string]string{
 									"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 									"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",

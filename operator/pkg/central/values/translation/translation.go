@@ -194,9 +194,9 @@ func getScannerComponentValues(s *central.ScannerComponentSpec) *translation.Val
 		sv.AddChild(translation.ResourcesKey, translation.GetResources(s.GetAnalyzer().Resources))
 	}
 
-	if s.ScannerDB != nil {
-		sv.SetStringMap("dbNodeSelector", s.ScannerDB.NodeSelector)
-		sv.AddChild("dbResources", translation.GetResources(s.ScannerDB.Resources))
+	if s.DB != nil {
+		sv.SetStringMap("dbNodeSelector", s.DB.NodeSelector)
+		sv.AddChild("dbResources", translation.GetResources(s.DB.Resources))
 	}
 
 	return &sv
