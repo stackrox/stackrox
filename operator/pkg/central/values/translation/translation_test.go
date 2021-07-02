@@ -15,6 +15,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/utils/pointer"
 )
 
 func TestReadBaseValues(t *testing.T) {
@@ -29,9 +30,7 @@ func TestTranslate(t *testing.T) {
 	}
 
 	connectivityPolicy := v1alpha1.ConnectivityOffline
-	hostPath := "/central/host/path"
 	claimName := "central-claim-name"
-	createClaimPolicy := v1alpha1.ClaimCreate
 	scannerComponentPolicy := v1alpha1.ScannerComponentEnabled
 	scannerAutoScalingPolicy := v1alpha1.ScannerAutoScalingEnabled
 
@@ -103,10 +102,11 @@ func TestTranslate(t *testing.T) {
 								Name: "my-default-tls-secret",
 							},
 							Persistence: &v1alpha1.Persistence{
-								HostPath: &hostPath,
+								HostPath: &v1alpha1.HostPathSpec{
+									Path: pointer.StringPtr("/central/host/path"),
+								},
 								PersistentVolumeClaim: &v1alpha1.PersistentVolumeClaim{
-									ClaimName:   &claimName,
-									CreateClaim: &createClaimPolicy,
+									ClaimName: &claimName,
 								},
 							},
 							Exposure: &v1alpha1.Exposure{
@@ -232,9 +232,7 @@ func TestTranslate(t *testing.T) {
 					"persistence": map[string]interface{}{
 						"hostPath": "/central/host/path",
 						"persistentVolumeClaim": map[string]interface{}{
-							"claimName":   "central-claim-name",
-							"createClaim": true,
-							// TODO(ROX-7149): more details TBD, values files are inconsistent and require more investigation and template reading
+							"claimName": "central-claim-name",
 						},
 					},
 					"resources": map[string]interface{}{
