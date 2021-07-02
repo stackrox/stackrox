@@ -6,6 +6,7 @@ import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import org.junit.experimental.categories.Category
+import services.ClusterService
 import services.GraphQLService
 import services.PolicyService
 import services.SummaryService
@@ -30,6 +31,24 @@ class UpgradesTest extends BaseSpecification {
                 }
             }
         }"""
+
+    @Category(Upgrade)
+    def "Verify cluster has listen on exec/pf webhook turned on"() {
+        expect:
+        "Migrated clusters to have admissionControllerEvents set to true"
+        def cluster = ClusterService.getCluster()
+        cluster != null
+        assert(cluster.getAdmissionControllerEvents() == true)
+    }
+
+    @Category(Upgrade)
+    def "Verify cluster has disable audit logs set to true"() {
+        expect:
+        "Migrated k8s clusters to have disableAuditLogs set to true"
+        def cluster = ClusterService.getCluster()
+        cluster != null
+        assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
+    }
 
     @Category(Upgrade)
     def "Verify that summary API returns non-zero values on upgrade"() {
