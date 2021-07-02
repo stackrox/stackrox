@@ -255,6 +255,9 @@ spec:
           status:
             description: SecuredClusterStatus defines the observed state of SecuredCluster
             properties:
+              clusterName:
+                description: The assigned cluster name per the spec. This cannot be changed afterwards. If you need to change the cluster name, please delete and recreate this resource.
+                type: string
               conditions:
                 items:
                   description: StackRoxCondition defines a condition for a StackRox custom resource.

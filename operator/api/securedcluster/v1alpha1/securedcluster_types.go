@@ -29,8 +29,6 @@ import (
 
 // SecuredClusterSpec defines the desired configuration state of a secured cluster.
 type SecuredClusterSpec struct {
-	// TODO(ROX-7125): decide how to guarantee immutability; use metadata.name instead?
-
 	// ClusterName should specify the name assigned to your secured cluster.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	ClusterName string `json:"clusterName"`
@@ -166,6 +164,11 @@ type SecuredClusterStatus struct {
 	DeployedRelease *common.StackRoxRelease `json:"deployedRelease,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status
 	SensorStatus *SensorComponentStatus `json:"sensorStatus,omitempty"`
+
+	// The assigned cluster name per the spec. This cannot be changed afterwards. If you need to change the
+	// cluster name, please delete and recreate this resource.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="Cluster Name"
+	ClusterName string `json:"clusterName,omitempty"`
 }
 
 // SensorComponentStatus describes status specific to the sensor component.
@@ -198,3 +201,8 @@ type SecuredClusterList struct {
 func init() {
 	SchemeBuilder.Register(&SecuredCluster{}, &SecuredClusterList{})
 }
+
+var (
+	// SecuredClusterGVK is the GVK for the SecuredCluster type.
+	SecuredClusterGVK = GroupVersion.WithKind("SecuredCluster")
+)

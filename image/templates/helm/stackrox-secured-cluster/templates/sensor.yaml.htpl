@@ -236,6 +236,7 @@ spec:
     app: sensor
   type: ClusterIP
   sessionAffinity: None
+[<- if not .Operator >]
 {{- if or .Release.IsInstall (eq ._rox.confirmNewClusterName ._rox.clusterName) }}
 ---
 apiVersion: v1
@@ -254,3 +255,4 @@ stringData:
   cluster-name: |
     {{- ._rox.clusterName | nindent 4 }}
 {{- end}}
+[<- end >]

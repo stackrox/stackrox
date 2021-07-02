@@ -72,7 +72,6 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 		v.AddAllFrom(t.getHelmDevelopmentDefaults(sc))
 	}
 
-	// TODO(ROX-7125): prevent/allow cluster name change?
 	v.SetStringValue("clusterName", sc.Spec.ClusterName)
 
 	v.SetString("centralEndpoint", sc.Spec.CentralEndpoint)
