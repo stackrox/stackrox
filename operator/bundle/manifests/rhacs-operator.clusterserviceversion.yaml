@@ -137,6 +137,9 @@ spec:
       - displayName: TLS
         path: tls
       statusDescriptors:
+      - description: The assigned cluster name per the spec. This cannot be changed afterwards. If you need to change the cluster name, please delete and recreate this resource.
+        displayName: Cluster Name
+        path: clusterName
       - displayName: Conditions
         path: conditions
       - displayName: Last Transition Time
