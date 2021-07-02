@@ -19,7 +19,9 @@ package v1alpha1
 import (
 	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 // Important: Run "make generate manifests" to regenerate code after modifying this file
@@ -85,36 +87,46 @@ type CentralComponentSpec struct {
 	// TODO(ROX-7147): design central endpoint
 }
 
+// GetHostPath returns Central's configured host path
+func (c *CentralComponentSpec) GetHostPath() string {
+	if c == nil {
+		return ""
+	}
+	if c.Persistence == nil {
+		return ""
+	}
+	if c.Persistence.HostPath == nil {
+		return ""
+	}
+
+	return pointer.StringPtrDerefOr(c.Persistence.HostPath.Path, "")
+}
+
 // GetAdminPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
-func (s *CentralComponentSpec) GetAdminPasswordSecret() *common.LocalSecretReference {
-	if s == nil {
+func (c *CentralComponentSpec) GetAdminPasswordSecret() *common.LocalSecretReference {
+	if c == nil {
 		return nil
 	}
-	return s.AdminPasswordSecret
+	return c.AdminPasswordSecret
 }
 
 // Persistence defines persistence settings for central.
 type Persistence struct {
-	HostPath              *string                `json:"hostPath,omitempty"`
+	HostPath              *HostPathSpec          `json:"hostPath,omitempty"`
 	PersistentVolumeClaim *PersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
+}
+
+// HostPathSpec defines settings for host path config.
+type HostPathSpec struct {
+	Path *string `json:"path,omitempty"`
 }
 
 // PersistentVolumeClaim defines PVC-based persistence settings.
 type PersistentVolumeClaim struct {
-	ClaimName   *string            `json:"claimName,omitempty"`
-	CreateClaim *ClaimCreatePolicy `json:"createClaim,omitempty"`
-	// TODO(ROX-7149): more details TBD, values files are inconsistent and require more investigation and template reading
+	ClaimName        *string           `json:"claimName,omitempty"`
+	StorageClassName *string           `json:"storageClassName,omitempty"`
+	Size             resource.Quantity `json:"size,omitempty"`
 }
-
-// ClaimCreatePolicy is a type for values of spec.centralSpec.persistence.createClaim.
-type ClaimCreatePolicy string
-
-const (
-	// ClaimCreate means a PVC should be created at install time.
-	ClaimCreate ClaimCreatePolicy = "Create"
-	// ClaimReuse means a pre-existing PVC should be used.
-	ClaimReuse ClaimCreatePolicy = "Reuse"
-)
 
 // Exposure defines how central is exposed.
 type Exposure struct {

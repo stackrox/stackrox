@@ -110,20 +110,11 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 
 	if c.Persistence != nil {
 		persistence := translation.NewValuesBuilder()
-		persistence.SetString("hostPath", c.Persistence.HostPath)
+		persistence.SetStringValue("hostPath", c.GetHostPath())
 		if c.Persistence.PersistentVolumeClaim != nil {
 			pvc := translation.NewValuesBuilder()
 			pvc.SetString("claimName", c.Persistence.PersistentVolumeClaim.ClaimName)
-			if c.Persistence.PersistentVolumeClaim.CreateClaim != nil {
-				switch *c.Persistence.PersistentVolumeClaim.CreateClaim {
-				case central.ClaimCreate:
-					pvc.SetBoolValue("createClaim", true)
-				case central.ClaimReuse:
-					pvc.SetBoolValue("createClaim", false)
-				default:
-					return cv.SetError(fmt.Errorf("invalid spec.central.persistence.persistentVolumeClaim.createClaim %q", *c.Persistence.PersistentVolumeClaim.CreateClaim))
-				}
-			}
+			pvc.SetString("storageClass", c.Persistence.PersistentVolumeClaim.StorageClassName)
 			// TODO(ROX-7149): more details TBD, values files are inconsistent and require more investigation and template reading
 			persistence.AddChild("persistentVolumeClaim", &pvc)
 		}
