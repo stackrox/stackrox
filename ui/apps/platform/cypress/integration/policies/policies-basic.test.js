@@ -1,6 +1,7 @@
 import { selectors, text, url } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import checkFeatureFlag from '../../helpers/features';
 
 describe('Policies basic tests', () => {
     withAuth();
@@ -257,6 +258,157 @@ describe('Policies basic tests', () => {
             goToNextWizardStage();
             savePolicy();
             cy.get(selectors.policyDetailsPanel.detailsSection).should('not.contain', categoryName);
+        });
+    });
+
+    describe('audit log tests', () => {
+        before(function beforeHook() {
+            if (checkFeatureFlag('ROX_K8S_AUDIT_LOG_DETECTION', false)) {
+                this.skip();
+            }
+        });
+
+        it('should show Event Source as disabled if Lifecycle Stage is NOT Runtime', () => {
+            addPolicy();
+            cy.get(selectors.eventSourceField.select).should(
+                'have.class',
+                'react-select--is-disabled'
+            );
+            cy.get(selectors.eventSourceField.select).should('contain', 'Not applicable');
+        });
+
+        it('should show Event Source as enabled if Lifecycle Stage is Runtime', () => {
+            addPolicy();
+            cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
+            cy.get(selectors.eventSourceField.select).should(
+                'not.have.class',
+                'react-select--is-disabled'
+            );
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(selectors.eventSourceField.options).should('contain', 'Deployment');
+            cy.get(selectors.eventSourceField.options).should('contain', 'Audit Log');
+            cy.get(selectors.eventSourceField.options).should('not.contain', 'Not applicable');
+        });
+
+        it('should clear Event Source value if Lifecycle Stage is no longer Runtime', () => {
+            addPolicy();
+            cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(`${selectors.eventSourceField.options}:contains("Audit Log")`).click();
+            cy.get(selectors.eventSourceField.select).should('contain', 'Audit Log');
+            // clearing Lifecycle Stage should also clear Event Source
+            cy.get(selectors.lifecycleStageField.clearBtn).click();
+            cy.get(selectors.eventSourceField.select).should(
+                'have.class',
+                'react-select--is-disabled'
+            );
+            cy.get(selectors.eventSourceField.select).should('contain', 'Not applicable');
+        });
+
+        it('should clear and disable Excluded Images if Lifecycle Stage is Runtime AND Event Source is Audit Log', () => {
+            addPolicy();
+            cy.get(selectors.excludedImagesField.input).type('docker.io{enter}');
+
+            // set Lifecycle Stage to Runtime
+            cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
+            cy.get(selectors.excludedImagesField.select).should('contain', 'docker.io');
+            cy.get(selectors.excludedImagesField.select).should(
+                'not.have.class',
+                'react-select--is-disabled'
+            );
+
+            // set Event Source to Deployment
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(`${selectors.eventSourceField.options}:contains("Deployment")`).click();
+            cy.get(selectors.excludedImagesField.select).should('contain', 'docker.io');
+            cy.get(selectors.excludedImagesField.select).should(
+                'not.have.class',
+                'react-select--is-disabled'
+            );
+
+            // set Event Source to Audit Log
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(`${selectors.eventSourceField.options}:contains("Audit Log")`).click();
+            cy.get(selectors.excludedImagesField.select).should('not.contain', 'docker.io');
+            cy.get(selectors.excludedImagesField.select).should(
+                'have.class',
+                'react-select--is-disabled'
+            );
+        });
+
+        it('should clear and disable Label Key/Value in Restrict to Scope field if Lifecycle Stage is Runtime AND Event Source is Audit Log', () => {
+            addPolicy();
+            cy.get(selectors.restrictToScopeField.addBtn).click();
+            cy.get(selectors.restrictToScopeField.labelKeyInput).type('key1');
+            cy.get(selectors.restrictToScopeField.labelValueInput).type('value1');
+
+            // set Lifecycle Stage to Runtime
+            cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
+            cy.get(selectors.restrictToScopeField.labelKeyInput).should(
+                'not.have.class',
+                'react-select--is-disabled'
+            );
+            cy.get(selectors.restrictToScopeField.labelValueInput).should(
+                'not.have.class',
+                'react-select--is-disabled'
+            );
+
+            // set Event Source to Deployment
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(`${selectors.eventSourceField.options}:contains("Deployment")`).click();
+            cy.get(selectors.restrictToScopeField.labelKeyInput).should('not.be.disabled');
+            cy.get(selectors.restrictToScopeField.labelValueInput).should('not.be.disabled');
+
+            // set Event Source to Audit Log
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(`${selectors.eventSourceField.options}:contains("Audit Log")`).click();
+            cy.get(selectors.restrictToScopeField.labelKeyInput).should('not.contain', 'key1');
+            cy.get(selectors.restrictToScopeField.labelKeyInput).should('be.disabled');
+            cy.get(selectors.restrictToScopeField.labelValueInput).should('not.contain', 'value1');
+            cy.get(selectors.restrictToScopeField.labelValueInput).should('be.disabled');
+        });
+
+        it('should clear and disable Label Key/Value and Deployment Name in Exclude by Scope field if Lifecycle Stage is Runtime AND Event Source is Audit Log', () => {
+            addPolicy();
+            cy.get(selectors.excludeByScopeField.addBtn).click();
+            cy.get(selectors.excludeByScopeField.labelKeyInput).type('key1');
+            cy.get(selectors.excludeByScopeField.labelValueInput).type('value1');
+            cy.get(selectors.excludeByScopeField.deploymentNameSelect).type('sensor{enter}');
+
+            // set Lifecycle Stage to Runtime
+            cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
+            cy.get(selectors.excludeByScopeField.labelKeyInput).should('not.be.disabled');
+            cy.get(selectors.excludeByScopeField.labelValueInput).should('not.be.disabled');
+            cy.get(selectors.excludeByScopeField.deploymentNameSelect).should(
+                'not.have.class',
+                'react-select__control--is-disabled'
+            );
+
+            // set Event Source to Deployment
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(`${selectors.eventSourceField.options}:contains("Deployment")`).click();
+            cy.get(selectors.excludeByScopeField.labelKeyInput).should('not.be.disabled');
+            cy.get(selectors.excludeByScopeField.labelValueInput).should('not.be.disabled');
+            cy.get(selectors.excludeByScopeField.deploymentNameSelect).should(
+                'not.have.class',
+                'react-select__control--is-disabled'
+            );
+
+            // set Event Source to Audit Log
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(`${selectors.eventSourceField.options}:contains("Audit Log")`).click();
+            cy.get(selectors.excludeByScopeField.labelKeyInput).should('not.contain', 'key1');
+            cy.get(selectors.excludeByScopeField.labelKeyInput).should('be.disabled');
+            cy.get(selectors.excludeByScopeField.labelValueInput).should('not.contain', 'value1');
+            cy.get(selectors.excludeByScopeField.labelValueInput).should('be.disabled');
+            cy.get(selectors.excludeByScopeField.deploymentNameSelect).should(
+                'not.contain',
+                'sensor'
+            );
+            cy.get(selectors.excludeByScopeField.deploymentNameSelect).should(
+                'have.class',
+                'react-select__control--is-disabled'
+            );
         });
     });
 });

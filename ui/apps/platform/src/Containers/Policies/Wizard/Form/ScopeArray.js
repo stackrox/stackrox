@@ -31,6 +31,7 @@ const ScopeArray = ({ fields, clusters, deployments, isDeploymentScope }) => {
                     className="text-base-500"
                     onClick={addFieldArrayHandler(fields, {})}
                     type="button"
+                    data-testid="add-scope"
                 >
                     <Icon.PlusSquare size="40" />
                 </button>

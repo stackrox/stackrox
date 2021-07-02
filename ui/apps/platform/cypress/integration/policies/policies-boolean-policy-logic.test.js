@@ -2,6 +2,7 @@ import { selectors, url } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
+import checkFeatureFlag from '../../helpers/features';
 
 describe('Boolean Policy Logic Section', () => {
     withAuth();
@@ -349,6 +350,19 @@ describe('Boolean Policy Logic Section', () => {
             cy.get(selectors.booleanPolicySection.policyKeyGroupBtn).should((values) => {
                 expect(values).to.have.length(9);
             });
+        });
+
+        it('should filter keys based on Event Source value', () => {
+            if (checkFeatureFlag('ROX_K8S_AUDIT_LOG_DETECTION', true)) {
+                goToPrevWizardStage();
+                cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
+                cy.get(selectors.eventSourceField.selectArrow).click();
+                cy.get(`${selectors.eventSourceField.options}:contains("Audit Log")`).click();
+                goToNextWizardStage();
+                cy.get(selectors.booleanPolicySection.policyKeyGroupBtn).should((values) => {
+                    expect(values).to.have.length(1);
+                });
+            }
         });
 
         it('should collapse categories when clicking the carrot', () => {

@@ -56,6 +56,33 @@ export const selectors = {
         input: 'div:contains("Categories") + div.flex .react-select__input > input',
         valueContainer: 'div:contains("Categories") + div.flex .react-select__value-container',
     },
+    lifecycleStageField: {
+        select: '[data-testid="lifecycle-stages"] div:nth(0)',
+        input: '[data-testid="lifecycle-stages"] .react-select__input > input',
+        clearBtn: '[data-testid="lifecycle-stages"] div.react-select__clear-indicator',
+    },
+    eventSourceField: {
+        select: '[data-testid="event-sources"] div:nth(0)',
+        selectArrow: '[data-testid="event-sources"] .react-select__dropdown-indicator',
+        options: '[data-testid="event-sources"] .react-select__option',
+    },
+    restrictToScopeField: {
+        addBtn: '[data-testid="restrict-to-scope"] [data-testid="add-scope"]',
+        labelKeyInput: '[data-testid="restrict-to-scope"] [name="scope[0].label.key"]',
+        labelValueInput: '[data-testid="restrict-to-scope"] [name="scope[0].label.value"]',
+    },
+    excludeByScopeField: {
+        addBtn: '[data-testid="exclude-by-scope"] [data-testid="add-scope"]',
+        labelKeyInput:
+            '[data-testid="exclude-by-scope"] [name="whitelistedDeploymentScopes[0].scope.label.key"]',
+        labelValueInput:
+            '[data-testid="exclude-by-scope"] [name="whitelistedDeploymentScopes[0].scope.label.value"]',
+        deploymentNameSelect: '[data-testid="exclude-by-scope"] .react-select__control:nth(1)',
+    },
+    excludedImagesField: {
+        select: '[data-testid="excluded-images"] div:nth(0)',
+        input: '[data-testid="excluded-images"] .react-select__input > input',
+    },
     policyPreview: {
         loading: '[data-testid="dry-run-loading"]',
         message: '.warn-message',

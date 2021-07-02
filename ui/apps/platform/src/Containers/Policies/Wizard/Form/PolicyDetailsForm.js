@@ -86,7 +86,7 @@ function PolicyDetailsForm({
                                 placeholder="Select a severity level"
                             />
                         </FormField>
-                        <FormField label="Lifecycle Stages" required>
+                        <FormField label="Lifecycle Stages" required testId="lifecycle-stages">
                             <ReduxMultiSelectField
                                 name="lifecycleStages"
                                 options={Object.keys(lifecycleStageLabels).map((key) => ({
@@ -99,6 +99,7 @@ function PolicyDetailsForm({
                             <FormField
                                 label="Event Sources"
                                 required={includesRuntimeLifecycleStage}
+                                testId="event-sources"
                             >
                                 <ReduxSelectField
                                     name="eventSource"
@@ -154,16 +155,19 @@ function PolicyDetailsForm({
                                 }))}
                             />
                         </FormField>
-                        <FormField label="Restrict to Scope">
+                        <FormField label="Restrict to Scope" testId="restrict-to-scope">
                             <FieldArray name="scope" component={RestrictToScope} />
                         </FormField>
-                        <FormField label="Exclude by Scope">
+                        <FormField label="Exclude by Scope" testId="exclude-by-scope">
                             <FieldArray
                                 name={clientOnlyExclusionFieldNames.EXCLUDED_DEPLOYMENT_SCOPES}
                                 component={ExcludedScope}
                             />
                         </FormField>
-                        <FormField label="Excluded Images (Build Lifecycle only)">
+                        <FormField
+                            label="Excluded Images (Build Lifecycle only)"
+                            testId="excluded-images"
+                        >
                             <ReduxMultiSelectCreatableField
                                 name={clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES}
                                 options={images.map((image) => ({
