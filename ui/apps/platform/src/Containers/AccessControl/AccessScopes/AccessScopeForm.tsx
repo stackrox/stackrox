@@ -300,7 +300,7 @@ function AccessScopeForm({
             >
                 <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                     <FormGroup
-                        label="Effective access scope"
+                        label="Allowed resources"
                         fieldId="effectiveAccessScope"
                         labelIcon={labelIconEffectiveAccessScope}
                         className="pf-u-pb-lg"

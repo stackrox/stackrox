@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { CSSProperties, ReactElement, useState } from 'react';
-import { Button, Switch } from '@patternfly/react-core';
+import { Badge, Button, Flex, FlexItem, Switch, TextInput } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
 
@@ -84,19 +84,35 @@ function EffectiveAccessScopeTable({
         Object.create(null)
     );
 
+    const [clusterNameFilter, setClusterNameFilter] = useState('');
+    const [namespaceNameFilter, setNamespaceNameFilter] = useState('');
+
     const isDisabled = !hasAction;
 
     function onCollapseNamespace() {} // required, but namespace has no children
 
+    let clusterFilterCount = 0;
+    let namespaceFilterCount = 0;
+    let namespaceTotalCount = 0;
+
     const rows: ReactElement[] = [];
-    clusters.forEach((cluster, clusterIndex) => {
+
+    for (let clusterIndex = 0; clusterIndex !== clusters.length; clusterIndex += 1) {
         const {
             id: clusterId,
             name: clusterName,
             state: clusterState,
             labels: clusterLabels,
             namespaces,
-        } = cluster;
+        } = clusters[clusterIndex];
+
+        namespaceTotalCount += namespaces.length;
+
+        if (clusterNameFilter && !clusterName.includes(clusterNameFilter)) {
+            continue; // eslint-disable-line no-continue
+        }
+
+        clusterFilterCount += 1;
 
         const isExpanded = Boolean(isExpandedCluster[clusterId]);
         const clusterProps = {
@@ -160,13 +176,19 @@ function EffectiveAccessScopeTable({
             </TreeRowWrapper>
         );
 
-        namespaces.forEach((namespace, namespaceIndex) => {
+        for (let namespaceIndex = 0; namespaceIndex !== namespaces.length; namespaceIndex += 1) {
             const {
                 id: namespaceId,
                 name: namespaceName,
                 state: namespaceState,
                 labels: namespaceLabels,
-            } = namespace;
+            } = namespaces[namespaceIndex];
+
+            if (namespaceNameFilter && !namespaceName.includes(namespaceNameFilter)) {
+                continue; // eslint-disable-line no-continue
+            }
+
+            namespaceFilterCount += 1;
 
             const namespaceProps = {
                 'aria-level': 2,
@@ -239,26 +261,59 @@ function EffectiveAccessScopeTable({
                     </Td>
                 </TreeRowWrapper>
             );
-        });
-    });
+        }
+    }
 
     return (
-        <TableComposable variant="compact" isStickyHeader isTreeTable style={{ overflow: 'auto' }}>
-            <Thead>
-                <Tr>
-                    <Th info={infoName}>Name</Th>
-                    <Th
-                        modifier="fitContent"
-                        className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
-                    >
-                        State
-                    </Th>
-                    <Th modifier="fitContent">Manual inclusion</Th>
-                    <Th info={infoLabels}>Labels</Th>
-                </Tr>
-            </Thead>
-            <Tbody>{rows}</Tbody>
-        </TableComposable>
+        <>
+            <Flex className="pf-u-pt-sm pf-u-pb-sm pf-u-pl-lg">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                    <FlexItem>
+                        <span className="pf-u-font-size-sm pf-u-text-nowrap">Cluster filter:</span>
+                    </FlexItem>
+                    <FlexItem>
+                        <TextInput value={clusterNameFilter} onChange={setClusterNameFilter} />
+                    </FlexItem>
+                    <FlexItem>
+                        <Badge isRead>{`${clusterFilterCount} / ${clusters.length}`}</Badge>
+                    </FlexItem>
+                </Flex>
+                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                    <FlexItem>
+                        <span className="pf-u-font-size-sm pf-u-text-nowrap">
+                            Namespace filter:
+                        </span>
+                    </FlexItem>
+                    <FlexItem>
+                        <TextInput value={namespaceNameFilter} onChange={setNamespaceNameFilter} />
+                    </FlexItem>
+                    <FlexItem>
+                        <Badge isRead>{`${namespaceFilterCount} / ${namespaceTotalCount}`}</Badge>
+                    </FlexItem>
+                </Flex>
+            </Flex>
+            <TableComposable
+                variant="compact"
+                isStickyHeader
+                isTreeTable
+                style={{ overflow: 'auto' }}
+            >
+                <Thead>
+                    <Tr>
+                        <Th info={infoName}>Cluster name</Th>
+                        <Th
+                            modifier="fitContent"
+                            className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
+                        >
+                            State
+                        </Th>
+                        <Th modifier="fitContent">Manual inclusion</Th>
+                        <Th info={infoLabels}>Labels</Th>
+                    </Tr>
+                </Thead>
+                <Tbody>{rows}</Tbody>
+            </TableComposable>
+        </>
     );
 }
 
