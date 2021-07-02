@@ -13,15 +13,15 @@ package storage;
 // permission set by its id in permission_set_name.
 message Role {
     // `id` is generated and cannot be changed.
-    string id            = 4;
+    string id          = 4;
 
     // `name` and `description` are provided by the user and can be changed.
-    string name          = 1;
-    string description   = 5;
+    string name        = 1;
+    string description = 5;
 
     // The associated PermissionSet and AccessScope for this Role.
     string permission_set_id = 6;
-    string access_scope_id = 7;
+    string access_scope_id   = 7;
 
     // Minimum (not default!) access level for every resource. Can be extended
     // below by explicit permissions but not shrunk.
@@ -64,27 +64,28 @@ message SimpleAccessScope {
             string namespace_name = 2;
         }
 
-        repeated string included_clusters                = 1;
-        repeated Namespace included_namespaces           = 2;
+        repeated string included_clusters      = 1;
+        repeated Namespace included_namespaces = 2;
 
         repeated SetBasedLabelSelector cluster_label_selectors   = 3;
         repeated SetBasedLabelSelector namespace_label_selectors = 4;
     }
 
     // `id` is generated and cannot be changed.
-    string id           = 1;
+    string id          = 1;
 
     // `name` and `description` are provided by the user and can be changed.
-    string name         = 2;
-    string description  = 3;
+    string name        = 2;
+    string description = 3;
 
-    Rules  rules        = 4;
+    Rules  rules       = 4;
 }
 
-// This message created to represent collection of permissions
-// Previously we used `Role` for this purpose, but after work on SAC we will not be able to do that
-// When `PermissionsSet` can be created and modified my customer, `ResourceToAccess` is internal proto aimed ot reduce
-// amount of unnecessary usage of `Role` proto
+// This message is created to represent a collection of permissions. It is
+// wire-compatible with the old format of the Role message and aims to replace
+// it in places where only aggregated permissions are required. Note the
+// similarity to PermissionsSet which in contrast to ResourceToAccess can be
+// created and modified by users.
 message ResourceToAccess {
     reserved 1; // name, likely not used in permission checking
     reserved 2; // global_access, likely not used outside system roles

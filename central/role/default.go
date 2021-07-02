@@ -10,13 +10,13 @@ const (
 	// Admin is a role that's, well, authorized to do anything.
 	Admin = "Admin"
 
-	// Analyst is a role that has read access to all resources
+	// Analyst is a role that has read access to all resources.
 	Analyst = "Analyst"
 
 	// None role has no access.
 	None = user.NoneRole
 
-	// ContinuousIntegration is for CI piplines.
+	// ContinuousIntegration is for CI pipelines.
 	ContinuousIntegration = "Continuous Integration"
 
 	// SensorCreator is a role that has the minimal privileges required to create a sensor.

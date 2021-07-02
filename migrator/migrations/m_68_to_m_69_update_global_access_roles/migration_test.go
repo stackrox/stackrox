@@ -12,11 +12,23 @@ import (
 	"go.etcd.io/bbolt"
 )
 
+type permission struct {
+	resource string
+	access   storage.Access
+}
+
 var (
 	unmigratedRoles = []*storage.Role{
 		{
 			Name:         "role0",
 			GlobalAccess: storage.Access_READ_WRITE_ACCESS,
+		},
+		{
+			Name:         "role1",
+			GlobalAccess: storage.Access_READ_ACCESS,
+			ResourceToAccess: map[string]storage.Access{
+				"Image": storage.Access_READ_WRITE_ACCESS,
+			},
 		},
 	}
 
@@ -25,26 +37,31 @@ var (
 			Name:             "role0",
 			ResourceToAccess: allResourcesWithAccess(storage.Access_READ_WRITE_ACCESS),
 		},
+		{
+			Name:             "role1",
+			ResourceToAccess: allResourcesWithAccess(storage.Access_READ_ACCESS, permission{"Image", storage.Access_READ_WRITE_ACCESS}),
+		},
 	}
 
 	alreadyMigratedRoles = []*storage.Role{
 		{
-			Name: "role1",
-			ResourceToAccess: map[string]storage.Access{
-				"Image": storage.Access_READ_WRITE_ACCESS,
-			},
+			Name:             "role2",
+			ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_WRITE_ACCESS},
 		},
 		{
-			Name:             "role2",
+			Name:             "role3",
 			ResourceToAccess: allResourcesWithAccess(storage.Access_READ_ACCESS),
 		},
 	}
 )
 
-func allResourcesWithAccess(access storage.Access) map[string]storage.Access {
+func allResourcesWithAccess(access storage.Access, overrides ...permission) map[string]storage.Access {
 	resources := make(map[string]storage.Access, len(AllResources))
 	for _, v := range AllResources {
 		resources[v] = access
+	}
+	for _, override := range overrides {
+		resources[override.resource] = override.access
 	}
 	return resources
 }

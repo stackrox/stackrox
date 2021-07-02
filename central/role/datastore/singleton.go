@@ -33,6 +33,8 @@ func Singleton() DataStore {
 		sacV2Enabled := features.ScopedAccessControl.Enabled()
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, sacV2Enabled)
 
+		// Both operations are upserts, the syntactic difference is due to the
+		// distinct underlying stores, boltdb vs rocksdb.
 		roles, permissionSets := getDefaultObjects()
 		utils.Must(upsertDefaultRoles(roleStorage, roles))
 		utils.Must(permissionSetStorage.UpsertMany(permissionSets))

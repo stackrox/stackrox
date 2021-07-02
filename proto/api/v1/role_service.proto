@@ -14,19 +14,19 @@ package v1;
 // storage.Access values should be in escalating order. IE READ_WRITE means you have READ as well.
 
 message Permission {
-    string resource = 1;
-    storage.Access access = 2;
+    string         resource = 1;
+    storage.Access access   = 2;
 }
 
 message GetRolesResponse {
     repeated storage.Role roles = 1;
 }
 
+// GetPermissionsResponse is wire-compatible with the old format of the Role
+// message and represents a collection of aggregated permissions.
 message GetPermissionsResponse {
-    // instead of role name
-    reserved 1;
-    // instead of globalAccess
-    reserved 2;
+    reserved 1; // for compatibility with Role.name
+    reserved 2; // for compatibility with Role.global_access
     map<string, storage.Access> resource_to_access = 3;
 }
 

@@ -10,22 +10,22 @@ package storage;
 
 // User is an object that allows us to track the roles a user is tied to, and how they logged in.
 message User {
-    string id = 1;
+    string id               = 1;
     string auth_provider_id = 2;
 
     repeated UserAttribute attributes = 3;
 }
 
 message UserAttribute {
-    string key = 1;
+    string key   = 1;
     string value = 2;
 }
 
 message UserInfo {
-    string       username                   = 1;
-    string       friendly_name              = 2;
-    storage.ResourceToAccess permissions    = 4;
-    repeated storage.Role roles             = 5;
+    string                   username      = 1;
+    string                   friendly_name = 2;
+    storage.ResourceToAccess permissions   = 4;
+    repeated storage.Role    roles         = 5;
 
     reserved 3; // used to be role; use permissions instead
 }

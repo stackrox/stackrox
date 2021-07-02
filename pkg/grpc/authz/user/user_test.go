@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -134,6 +135,41 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			p := With(tt.requiredPermissions...)
 			err := p.Authorized(tt.ctx, "not used")
 			assert.ErrorIs(t, err, tt.err)
+		})
+	}
+}
+
+func TestEvaluateAgainstPermissions(t *testing.T) {
+	type expectation struct {
+		view   bool
+		modify bool
+	}
+	writeAccessibleResource := permissions.ResourceMetadata{
+		Resource: permissions.Resource("writeaccessible"),
+	}
+	readAccessibleResource := permissions.ResourceMetadata{
+		Resource: permissions.Resource("readaccessible"),
+	}
+	forbiddenResource := permissions.ResourceMetadata{
+		Resource: permissions.Resource("forbidden"),
+	}
+
+	perms := &storage.ResourceToAccess{
+		ResourceToAccess: permissions.ResourcesWithAccessToResourceToAccess(
+			permissions.Modify(writeAccessibleResource),
+			permissions.View(readAccessibleResource)),
+	}
+
+	expectations := map[permissions.ResourceMetadata]expectation{
+		writeAccessibleResource: {view: true, modify: true},
+		readAccessibleResource:  {view: true},
+		forbiddenResource:       {},
+	}
+
+	for resourceMetadata, exp := range expectations {
+		t.Run(fmt.Sprintf("resource: %s", resourceMetadata), func(t *testing.T) {
+			assert.Equal(t, exp.view, evaluateAgainstPermissions(perms, permissions.View(resourceMetadata)))
+			assert.Equal(t, exp.modify, evaluateAgainstPermissions(perms, permissions.Modify(resourceMetadata)))
 		})
 	}
 }

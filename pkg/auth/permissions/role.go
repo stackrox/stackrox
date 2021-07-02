@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// NewRoleWithAccess returns a new role with the given resource accesses.
-func NewRoleWithAccess(name string, resourceWithAccess ...ResourceWithAccess) *storage.Role {
+// Converts a slice of ResourceWithAccess to a slice of *v1.Permission.
+func resourcesWithAccessToPermissions(resourceWithAccess ...ResourceWithAccess) []*v1.Permission {
 	var permissions []*v1.Permission
 	for _, rAndA := range resourceWithAccess {
 		permissions = append(permissions, &v1.Permission{
@@ -17,25 +17,42 @@ func NewRoleWithAccess(name string, resourceWithAccess ...ResourceWithAccess) *s
 			Access:   rAndA.Access,
 		})
 	}
-	return NewRoleWithPermissions(name, permissions...)
+	return permissions
+}
+
+// Combines permissions into a map by resource name, using the maximum access
+// level for any resource with more than one permission set.
+func permissionsToResourceToAccess(permissions ...*v1.Permission) map[string]storage.Access {
+	resourceToAccess := make(map[string]storage.Access, len(permissions))
+	for _, permission := range permissions {
+		if access, exists := resourceToAccess[permission.GetResource()]; exists {
+			resourceToAccess[permission.GetResource()] = maxAccess(access, permission.GetAccess())
+		} else {
+			resourceToAccess[permission.GetResource()] = permission.GetAccess()
+		}
+	}
+	return resourceToAccess
+}
+
+// ResourcesWithAccessToResourceToAccess converts a slice of ResourceWithAccess
+// to map[string]storage.Access.
+func ResourcesWithAccessToResourceToAccess(resourceWithAccess ...ResourceWithAccess) map[string]storage.Access {
+	return permissionsToResourceToAccess(resourcesWithAccessToPermissions(resourceWithAccess...)...)
+}
+
+// NewRoleWithAccess returns a new role with the given resource accesses.
+func NewRoleWithAccess(name string, resourceWithAccess ...ResourceWithAccess) *storage.Role {
+	return &storage.Role{
+		Name:             name,
+		ResourceToAccess: ResourcesWithAccessToResourceToAccess(resourceWithAccess...),
+	}
 }
 
 // NewRoleWithPermissions returns a new role with the given name and permissions.
 func NewRoleWithPermissions(name string, permissions ...*v1.Permission) *storage.Role {
-	// Combine permissions into a map by resource, using the maximum access level for any
-	// resource with more than one permission set.
-	resourcetoAccess := make(map[string]storage.Access, len(permissions))
-	for _, permission := range permissions {
-		if access, exists := resourcetoAccess[permission.GetResource()]; exists {
-			resourcetoAccess[permission.GetResource()] = maxAccess(access, permission.GetAccess())
-		} else {
-			resourcetoAccess[permission.GetResource()] = permission.GetAccess()
-		}
-	}
-
 	return &storage.Role{
 		Name:             name,
-		ResourceToAccess: resourcetoAccess,
+		ResourceToAccess: permissionsToResourceToAccess(permissions...),
 	}
 }
 
@@ -69,11 +86,6 @@ func NewUnionPermissions(resolvedRoles []*ResolvedRole) *storage.ResourceToAcces
 	return &storage.ResourceToAccess{
 		ResourceToAccess: result,
 	}
-}
-
-// RoleHasPermission is a helper function that returns if the given roles provides the given permission.
-func RoleHasPermission(role *storage.Role, perm ResourceWithAccess) bool {
-	return role.GetResourceToAccess()[string(perm.Resource.GetResource())] >= perm.Access
 }
 
 func maxAccess(access1, access2 storage.Access) storage.Access {

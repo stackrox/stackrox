@@ -135,6 +135,8 @@ func completeResourceList(role *storage.Role) {
 		role.ResourceToAccess = make(map[string]storage.Access)
 	}
 	for _, resource := range AllResources {
+		// Evaluates to true if the resource does not exist in the map because
+		// it is guaranteed here that role.GetGlobalAccess() > 0.
 		if role.ResourceToAccess[resource] < role.GetGlobalAccess() {
 			role.ResourceToAccess[resource] = role.GetGlobalAccess()
 		}
