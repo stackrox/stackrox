@@ -230,7 +230,7 @@ class SACTest extends BaseSpecification {
         // lower bound is from local cluster and upper bound from CI
         tokenName               | alertsMin | alertsMax
         NOACCESSTOKEN           | 0         | 0
-        ALLACCESSTOKEN          | 7         | 200
+        ALLACCESSTOKEN          | 7         | 400
         "getSummaryCountsToken" | 2         | 4
     }
 
