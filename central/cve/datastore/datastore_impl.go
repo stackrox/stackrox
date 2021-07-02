@@ -270,7 +270,7 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 	var filteredIDs []string
 	var err error
 	graph.Context(ctx, ds.graphProvider, func(graphContext context.Context) {
-		filteredIDs, err = filtered.ApplySACFilters(graphContext, ids, sacFilters.GetSACFilters()...)
+		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
 }

@@ -15,7 +15,7 @@ type Filter interface {
 }
 
 // UnsafeSearcher generates a Searcher from an UnsafeSearcher by filtering its outputs with the input filter.
-func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filters ...Filter) search.Searcher {
+func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filter Filter) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 			results, err := searcher.Search(q)
@@ -23,7 +23,7 @@ func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filters ...Filter) sear
 				return results, err
 			}
 
-			allFiltered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
+			allFiltered, err := ApplySACFilter(ctx, search.ResultsToIDs(results), filter)
 			if err != nil {
 				return nil, err
 			}
@@ -44,7 +44,7 @@ func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filters ...Filter) sear
 }
 
 // Searcher returns a new searcher based on the filtered output from the input Searcher.
-func Searcher(searcher search.Searcher, filters ...Filter) search.Searcher {
+func Searcher(searcher search.Searcher, filter Filter) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 			results, err := searcher.Search(ctx, q)
@@ -52,7 +52,7 @@ func Searcher(searcher search.Searcher, filters ...Filter) search.Searcher {
 				return results, err
 			}
 
-			allFiltered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
+			allFiltered, err := ApplySACFilter(ctx, search.ResultsToIDs(results), filter)
 			if err != nil {
 				return nil, err
 			}
@@ -67,7 +67,7 @@ func Searcher(searcher search.Searcher, filters ...Filter) search.Searcher {
 			return filteredResults, nil
 		},
 		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			if len(filters) == 0 {
+			if filter == nil {
 				return searcher.Count(ctx, q)
 			}
 			// If we have SAC filters configured, we count search results.
@@ -76,7 +76,7 @@ func Searcher(searcher search.Searcher, filters ...Filter) search.Searcher {
 				return 0, err
 			}
 
-			filtered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
+			filtered, err := ApplySACFilter(ctx, search.ResultsToIDs(results), filter)
 			if err != nil {
 				return 0, err
 			}
@@ -85,20 +85,11 @@ func Searcher(searcher search.Searcher, filters ...Filter) search.Searcher {
 	}
 }
 
-// ApplySACFilters filters ids with sac filters
-func ApplySACFilters(ctx context.Context, ids []string, filters ...Filter) ([]string, error) {
-	var allFiltered []string
-	for _, filter := range filters {
-		filtered, err := filter.Apply(ctx, ids...)
-		if err != nil {
-			return nil, err
-		} else if len(filtered) == 0 {
-			continue
-		}
-
-		allFiltered = append(allFiltered, filtered...)
-		// evaluate unfiltered ids on other sac filters
-		ids = set.NewStringSet(ids...).Difference(set.NewStringSet(filtered...)).AsSlice()
+// ApplySACFilter filters ids with sac filters
+func ApplySACFilter(ctx context.Context, ids []string, filter Filter) ([]string, error) {
+	filtered, err := filter.Apply(ctx, ids...)
+	if err != nil {
+		return nil, err
 	}
-	return allFiltered, nil
+	return filtered, nil
 }

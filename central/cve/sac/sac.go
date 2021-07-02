@@ -19,8 +19,8 @@ var (
 	once           sync.Once
 )
 
-// GetSACFilters returns the sac filters for reading cve ids.
-func GetSACFilters() []filtered.Filter {
+// GetSACFilter returns the sac filters for reading cve ids.
+func GetSACFilter() filtered.Filter {
 	once.Do(func() {
 		var err error
 		combinedFilter, err = dackbox.NewSharedObjectSACFilter(
@@ -31,5 +31,5 @@ func GetSACFilters() []filtered.Filter {
 		)
 		utils.CrashOnError(err)
 	})
-	return []filtered.Filter{combinedFilter}
+	return combinedFilter
 }
