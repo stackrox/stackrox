@@ -95,6 +95,7 @@ export const basePathToLabelMap = {
     [policiesBasePath]: 'System Policies',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
+    [accessControlBasePathV2]: 'Access Control',
     [systemConfigPath]: 'System Configuration',
     [systemHealthPath]: 'System Health',
     [loginPath]: 'Log In',
