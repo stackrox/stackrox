@@ -102,6 +102,22 @@ func (c *CentralComponentSpec) GetHostPath() string {
 	return pointer.StringPtrDerefOr(c.Persistence.HostPath.Path, "")
 }
 
+// GetPersistence returns Central's persistence config
+func (c *CentralComponentSpec) GetPersistence() *Persistence {
+	if c == nil {
+		return nil
+	}
+	return c.Persistence
+}
+
+// GetPersistentVolumeClaim returns Central's configured PVC
+func (c *CentralComponentSpec) GetPersistentVolumeClaim() *PersistentVolumeClaim {
+	if c.GetPersistence() == nil {
+		return nil
+	}
+	return c.GetPersistence().PersistentVolumeClaim
+}
+
 // GetAdminPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
 func (c *CentralComponentSpec) GetAdminPasswordSecret() *common.LocalSecretReference {
 	if c == nil {

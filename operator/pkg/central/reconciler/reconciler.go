@@ -18,5 +18,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error 
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(client)),
+		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(client)),
 	)
 }
