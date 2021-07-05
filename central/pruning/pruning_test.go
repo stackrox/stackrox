@@ -22,10 +22,10 @@ import (
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
+	dackboxNodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	dackboxNodeGlobalDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/globaldatastore"
 	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
-	nodeGlobalStore "github.com/stackrox/rox/central/node/globalstore"
-	nodeIndex "github.com/stackrox/rox/central/node/index"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
@@ -213,7 +213,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 }
 
 func generateNodeDataStructures(t *testing.T) nodeGlobalDatastore.GlobalDataStore {
-	db := testutils.DBForT(t)
+	db := rocksdbtest.RocksDBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
@@ -222,7 +222,10 @@ func generateNodeDataStructures(t *testing.T) nodeGlobalDatastore.GlobalDataStor
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	nodes, err := nodeGlobalDatastore.New(nodeGlobalStore.NewGlobalStore(db), nodeIndex.New(bleveIndex), mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
+	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+	require.NoError(t, err)
+
+	nodes, err := dackboxNodeGlobalDatastore.New(dackboxNodeDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker()))
 	require.NoError(t, err)
 
 	return nodes
