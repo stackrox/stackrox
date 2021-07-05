@@ -2,6 +2,9 @@ defs: |
   def container(obj; name):
     obj.spec.template.spec.containers[] | select(.name == name);
 
+  def rawEnvVars(obj; container):
+    [container(obj; container) | .env[] | (.value = del(.name))] | from_entries;
+
   def envVars(obj; container):
     container(obj; container) | .env | from_entries;
 

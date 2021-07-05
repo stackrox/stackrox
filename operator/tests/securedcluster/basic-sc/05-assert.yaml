@@ -19,6 +19,8 @@ status:
   - status: "False"
     type: Irreconcilable
   - status: "False"
+    type: ProxyConfigFailed
+  - status: "False"
     type: ReleaseFailed
 ---
 apiVersion: apps/v1

@@ -1,0 +1,41 @@
+name: "Test environment variables"
+tests:
+- name: with a plain value
+  values:
+    customize:
+      envVars:
+        FOO: bar
+  expect: |
+    envVars(.deployments.sensor; "sensor")["FOO"] | assertThat(. == "bar")
+- name: with a plain value specified the Kubernetes way
+  values:
+    customize:
+      envVars:
+        FOO:
+          value: bar
+  expect: |
+    envVars(.deployments.sensor; "sensor")["FOO"] | assertThat(. == "bar")
+- name: with a complex spec
+  values:
+    customize:
+      envVars:
+        FOO:
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+  expect: |
+    rawEnvVars(.deployments.sensor; "sensor")["FOO"] | assertThat(.valueFrom.fieldRef.fieldPath == "spec.nodeName")
+- name: with a mix thereof
+  values:
+    customize:
+      envVars:
+        FOO: bar
+        BAR:
+          valueFrom:
+            configMapKeyRef:
+              name: configmap
+              key: mykey
+  expect: |
+    rawEnvVars(.deployments.sensor; "sensor") | [
+      (.["FOO"] | assertThat(.value == "bar")),
+      (.["BAR"] | assertThat(.valueFrom.configMapKeyRef.name == "configmap"))]

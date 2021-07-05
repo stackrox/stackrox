@@ -48,6 +48,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	if err != nil {
 		return nil, errors.Wrap(err, "computing image override values")
 	}
+
 	return helmutil.CoalesceTables(baseValues, imageOverrideVals, valsFromCR), nil
 }
 
@@ -90,7 +91,6 @@ func getEnv(ctx context.Context, clientSet kubernetes.Interface, namespace strin
 				return env.SetError(fmt.Errorf("invalid spec.egress.connectivityPolicy %q", *egress.ConnectivityPolicy))
 			}
 		}
-		env.AddAllFrom(translation.NewBuilderFromSecret(ctx, clientSet, namespace, egress.ProxyConfigSecret, map[string]string{"config.yaml": "proxyConfig"}, "spec.egress.proxyConfigSecret"))
 	}
 	ret := translation.NewValuesBuilder()
 	ret.AddChild("env", &env)

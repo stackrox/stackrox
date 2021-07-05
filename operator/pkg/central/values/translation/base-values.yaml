@@ -6,6 +6,8 @@
 # reconciliation loop is executed, regardless of changes to the CR.
 ca:
   generate: false
+env:
+  proxyConfig: ""
 central:
   serviceTLS:
     generate: false

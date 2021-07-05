@@ -6,6 +6,7 @@ import (
 	centralV1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/central/values/translation"
+	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -13,11 +14,14 @@ import (
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error {
+	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	return reconciler.SetupReconcilerWithManager(
-		mgr, centralV1Alpha1.CentralGVK, image.CentralServicesChartPrefix, translation.Translator{Client: client},
+		mgr, centralV1Alpha1.CentralGVK, image.CentralServicesChartPrefix,
+		proxy.InjectProxyEnvVars(translation.Translator{Client: client}, proxyEnv),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(client)),
+		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(client, proxyEnv)),
 	)
 }

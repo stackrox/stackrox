@@ -58,9 +58,9 @@ func (in *CustomizeSpec) DeepCopyInto(out *CustomizeSpec) {
 	}
 	if in.EnvVars != nil {
 		in, out := &in.EnvVars, &out.EnvVars
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 }

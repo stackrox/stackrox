@@ -11,5 +11,7 @@ status:
     type: Initialized
   - status: "True"
     type: Irreconcilable
+  - status: "False"
+    type: ProxyConfigFailed
   - status: "Unknown"
     type: ReleaseFailed

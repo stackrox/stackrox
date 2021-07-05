@@ -4,6 +4,7 @@ import (
 	pkgReconciler "github.com/joelanford/helm-operator/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/extensions"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/values/translation"
@@ -13,8 +14,10 @@ import (
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error {
+	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	return reconciler.SetupReconcilerWithManager(mgr, securedClusterv1Alpha1.SecuredClusterGVK,
 		image.SecuredClusterServicesChartPrefix,
-		translation.NewTranslator(client),
-		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension(client)))
+		proxy.InjectProxyEnvVars(translation.NewTranslator(client), proxyEnv),
+		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension(client)),
+		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(client, proxyEnv)))
 }

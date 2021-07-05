@@ -18,6 +18,19 @@ func CloneStringCompiledPolicyMap(inputMap map[string]CompiledPolicy) map[string
 	return cloned
 }
 
+// StringCompiledPolicyMapsEqual compares if two maps of the given type are equal.
+func StringCompiledPolicyMapsEqual(a, b map[string]CompiledPolicy) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, aV := range a {
+		if bV, ok := b[k]; !ok || aV != bV {
+			return false
+		}
+	}
+	return true
+}
+
 // StringCompiledPolicyFastRMap is a thread-safe map from string to CompiledPolicy that is optimized for read-heavy access patterns.
 // Writes are expensive because it clones, mutates and replaces the map instead of an in-place addition.
 // Use NewStringCompiledPolicy to instantiate.

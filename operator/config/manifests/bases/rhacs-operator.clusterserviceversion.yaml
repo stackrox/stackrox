@@ -8,7 +8,7 @@ metadata:
     containerImage: docker.io/stackrox/stackrox-operator:0.0.1
     createdAt: "1999-12-31T23:59:59Z"
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the services necessary to secure each of your OpenShift and Kubernetes clusters.
-    operators.openshift.io/infrastructure-features: '["disconnected"]'
+    operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware"]'
     support: Red Hat
   name: rhacs-operator.v0.0.0
   namespace: placeholder

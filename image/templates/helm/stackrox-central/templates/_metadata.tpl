@@ -51,9 +51,14 @@
 {{- define "srox.envVars" -}}
 {{- $envVars := dict -}}
 {{- $_ := include "srox._envVars" (prepend . $envVars) -}}
-{{- range $k, $v := $envVars -}}
+{{- range $k := keys $envVars | sortAlpha -}}
+{{- $v := index $envVars $k }}
 - name: {{ quote $k }}
+{{- if kindIs "map" $v }}
+  {{- toYaml $v | nindent 2 }}
+{{- else }}
   value: {{ quote $v }}
+{{- end }}
 {{ end -}}
 {{- end -}}
 
@@ -118,11 +123,11 @@
 {{/*
   srox._envVars $envVars $ $objType $objName $containerName
 
-  Writes all applicable [pod] labels (including default labels) for $objType/$objName
-  into $labels. Pod labels are written iff $forPod is true.
+  Writes all applicable environment variables for $objType/$objName
+  into $envVars.
 
   This template receives the $ parameter as its second (not its first, as usual) parameter
-  such that it can be used easier in "srox.labels".
+  such that it can be used easier in "srox.envVars".
    */}}
 {{ define "srox._envVars" }}
 {{ $envVars := index . 0 }}
