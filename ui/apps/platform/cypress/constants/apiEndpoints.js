@@ -122,6 +122,14 @@ export const roles = {
     mypermissions: 'v1/mypermissions',
 };
 
+export const permissionSets = {
+    list: '/v1/permissionsets',
+};
+
+export const accessScopes = {
+    list: '/v1/simpleaccessscopes',
+};
+
 export const groups = {
     list: '/v1/groups/*',
 };

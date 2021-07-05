@@ -147,7 +147,7 @@ function RoleForm({
                     value={values.name}
                     validated={nameValidatedState}
                     onChange={onChange}
-                    isDisabled={isViewing}
+                    isDisabled={isViewing || action === 'update'}
                     isRequired
                 />
             </FormGroup>
