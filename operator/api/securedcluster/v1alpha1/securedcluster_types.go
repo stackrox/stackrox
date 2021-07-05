@@ -29,65 +29,104 @@ import (
 
 // SecuredClusterSpec defines the desired configuration state of a secured cluster.
 type SecuredClusterSpec struct {
-	// ClusterName should specify the name assigned to your secured cluster.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	// The unique name of this cluster, as it will be shown in the Red Hat Advanced Cluster Security UI.
+	// Note: Once a name is set here, you will not be able to change it again. You will need to delete
+	// and re-create this object in order to register a cluster with a new name.
+	//+kubebuilder:validation:Required
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ClusterName string `json:"clusterName"`
-	// CentralEndpoint should specify the address of the Central endpoint, including the port number.
-	// If using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address
-	// with wss://.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	CentralEndpoint *string `json:"centralEndpoint,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	TLS *common.TLSConfig `json:"tls,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	// The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
+	// including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by
+	// prefixing the endpoint address with wss://.
+	// Note: the default value will only work if Central is deployed in the same cluster, inside the "stackrox"
+	// namespace.
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Default="central.stackrox:443"
+	//+kubebuilder:default="central.stackrox:443"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	CentralEndpoint string `json:"centralEndpoint"`
+
+	// Settings for the Sensor component.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Sensor Settings"
 	Sensor *SensorComponentSpec `json:"sensor,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+
+	// Settings for the Admission Control component, which is necessary for preventive policy enforcement,
+	// and for Kubernetes event monitoring.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="Admission Control Settings"
 	AdmissionControl *AdmissionControlComponentSpec `json:"admissionControl,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+
+	// Settings for the components running on each node in the cluster (Collector and Compliance).
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Per Node Settings"
 	PerNode *PerNodeSpec `json:"perNode,omitempty"`
-	// Customizations to apply on all secured cluster components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+
+	// Allows you to specify additional trusted Root CAs.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6
+	TLS *common.TLSConfig `json:"tls,omitempty"`
+
+	// Additional image pull secrets to be taken into account for pulling images.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=7
+	ImagePullSecrets []common.LocalSecretReference `json:"imagePullSecrets,omitempty"`
+
+	// Customizations to apply on all Central Services components.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=8
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
 type SensorComponentSpec struct {
-	ContainerSpec `json:",inline"`
-
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	common.DeploymentSpec `json:",inline"`
 }
 
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.
 type AdmissionControlComponentSpec struct {
-	ContainerSpec `json:",inline"`
-
-	// ListenOnCreates controls whether Kubernetes is configured to contact Secured Cluster Services with
-	// `AdmissionReview` requests for workload creation events.
+	// Set this to 'true' to enable preventive policy enforcement for object creations.
+	//+kubebuilder:validation:Default=false
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ListenOnCreates *bool `json:"listenOnCreates,omitempty"`
 
-	// ListenOnUpdates controls whether Kubernetes is configured to contact Secured Cluster Services with
-	// `AdmissionReview` requests for update events on Kubernetes objects.
+	// Set this to 'true' to enable preventive policy enforcement for object updates.
+	//
+	// Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well.
+	//+kubebuilder:validation:Default=false
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ListenOnUpdates *bool `json:"listenOnUpdates,omitempty"`
 
-	// ListenOnEvents controls whether Kubernetes is configured to contact Secured Cluster Services with
-	// `AdmissionReview` requests for update Kubernetes events like exec and portforward.
-	// Defaults to `false` on OpenShift, to `true` otherwise.
+	// Set this to 'true' to enable monitoring and enforcement for Kubernetes events (port-forward and exec).
+	//+kubebuilder:validation:Default=true
+	//+kubebuilder:default=true
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	common.DeploymentSpec `json:",inline"`
 }
 
 // PerNodeSpec declares configuration settings for components which are deployed to all nodes.
 type PerNodeSpec struct {
-	Collection      *CollectionMethod      `json:"collection,omitempty"`
-	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
+	// Settings for the Collector container, which is responsible for collecting process and networking
+	// activity at the host level.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Collector Settings"
+	Collector *CollectorContainerSpec `json:"collector,omitempty"`
 
-	Collector  *CollectorContainerSpec `json:"collector,omitempty"`
-	Compliance *ContainerSpec          `json:"compliance,omitempty"`
+	// Settings for the Compliance container, which is responsible for checking host-level configurations.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Compliance Settings"
+	Compliance *ContainerSpec `json:"compliance,omitempty"`
+
+	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
+	// will run services on every node in the cluster, including tainted nodes by default. If you do
+	// not want this behavior, please select 'AvoidTaints' here.
+	//+kubebuilder:validation:Default=TolerateTaints
+	//+kubebuilder:default=TolerateTaints
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 }
 
 // CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
+//+kubebuilder:validation:Enum=EBPF;KernelModule;NoCollection
 type CollectionMethod string
 
 const (
@@ -105,6 +144,7 @@ func (c CollectionMethod) Pointer() *CollectionMethod {
 }
 
 // TaintTolerationPolicy is a type for values of spec.collector.taintToleration
+//+kubebuilder:validation:Enum=TolerateTaints;AvoidTaints
 type TaintTolerationPolicy string
 
 const (
@@ -121,24 +161,37 @@ func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 
 // CollectorContainerSpec defines settings for the collector container.
 type CollectorContainerSpec struct {
+	// The method for system-level data collection. Kernel module is recommended.
+	// If you select "NoCollection", you will not be able to see any information about network activity
+	// and process executions. The remaining settings in these section will not have any effect.
+	//+kubebuilder:validation:Default=KernelModule
+	//+kubebuilder:default=KernelModule
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Collection *CollectionMethod `json:"collection,omitempty"`
+
+	// The image flavor to use for collector. "Regular" images are bigger in size, but contain kernel modules
+	// for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance
+	// is connected to the internet, or regularly receives Collector Support Package updates (for further
+	// instructions, please refer to the documentation).
+	//+kubebuilder:validation:Default=Regular
+	//+kubebuilder:default=Regular
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	ContainerSpec `json:",inline"`
-	ImageFlavor   *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 }
 
 // ContainerSpec defines container settings.
 type ContainerSpec struct {
+	// Allows overriding the default resource settings for this component. Please consult the documentation
+	// for an overview of default resource requirements and a sizing guide.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:resourceRequirements"},order=100
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-	// Customize specifies additional attributes for all containers.
-	Customize *ContainerCustomizeSpec `json:"customize,omitempty"`
-}
-
-// ContainerCustomizeSpec contains customizations to apply on a container.
-type ContainerCustomizeSpec struct {
-	// EnvVars set custom environment variables on pods' containers.
-	EnvVars map[string]string `json:"envVars,omitempty"`
 }
 
 // CollectorImageFlavor is a type for values of spec.collector.collector.imageFlavor
+//+kubebuilder:validation:Enum=Regular;Slim
 type CollectorImageFlavor string
 
 const (

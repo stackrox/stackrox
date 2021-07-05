@@ -68,7 +68,7 @@ func TestTranslate(t *testing.T) {
 				c: v1alpha1.Central{
 					ObjectMeta: v1.ObjectMeta{Namespace: "stackrox"},
 					Spec: v1alpha1.CentralSpec{
-						ImagePullSecrets: []corev1.LocalObjectReference{
+						ImagePullSecrets: []common.LocalSecretReference{
 							{Name: "image-pull-secrets-secret1"},
 							{Name: "image-pull-secrets-secret2"},
 						},
@@ -324,7 +324,7 @@ func TestTranslate(t *testing.T) {
 								PersistentVolumeClaim: &v1alpha1.PersistentVolumeClaim{
 									ClaimName:        pointer.StringPtr("stackrox-db-test"),
 									StorageClassName: pointer.StringPtr("storage-class"),
-									Size:             resource.MustParse("50Gi"),
+									Size:             pointer.StringPtr("50Gi"),
 								},
 							},
 						},

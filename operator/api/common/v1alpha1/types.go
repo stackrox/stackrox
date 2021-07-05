@@ -10,22 +10,31 @@ import (
 // Important: Run "make generate" in the common directory to regenerate code,
 // and run "make manifests" in the "central" and "securedcluster" directories
 // to regenerate manifests, after modifying this file
-// TODO(ROX-7110): prevent merging PRs if manifests are not up to date.
 
 // CustomizeSpec defines customizations to apply.
 type CustomizeSpec struct {
-	// Custom labels to set on all objects apart from Pods.
+	// Custom labels to set on all managed objects.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Labels map[string]string `json:"labels,omitempty"`
-	// Custom annotations to set on all objects apart from Pods.
+	// Custom annotations to set on all managed objects.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	Annotations map[string]string `json:"annotations,omitempty"`
-	// Custom environment variables to set on pods' containers.
+
+	// Custom environment variables to set on managed pods' containers.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Environment Variables"
 	EnvVars []corev1.EnvVar `json:"envVars,omitempty"`
 }
 
 // DeploymentSpec defines settings that affect a deployment.
 type DeploymentSpec struct {
-	NodeSelector map[string]string            `json:"nodeSelector,omitempty"`
-	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Allows overriding the default resource settings for this component. Please consult the documentation
+	// for an overview of default resource requirements and a sizing guide.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:resourceRequirements"},order=100
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// If you want this component to only run on specific nodes, you can configure a node selector here.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node Selector",order=101
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // StackRoxCondition defines a condition for a StackRox custom resource.
@@ -87,6 +96,7 @@ type AdditionalCA struct {
 
 // TLSConfig defines common TLS-related settings for all components.
 type TLSConfig struct {
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Additional CAs"
 	AdditionalCAs []AdditionalCA `json:"additionalCAs,omitempty"`
 }
 

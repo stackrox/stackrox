@@ -18,8 +18,6 @@ package v1alpha1
 
 import (
 	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -31,27 +29,44 @@ import (
 
 // CentralSpec defines the desired state of Central
 type CentralSpec struct {
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	Egress *Egress `json:"egress,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	TLS *common.TLSConfig `json:"tls,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	// Settings for the Central component, which is responsible for all user interaction.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Central Component Settings"
 	Central *CentralComponentSpec `json:"central,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+
+	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
+	// images.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
-	// Customizations to apply on all central components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+
+	// Settings related to outgoing network traffic.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	Egress *Egress `json:"egress,omitempty"`
+
+	// Allows you to specify additional trusted Root CAs.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	TLS *common.TLSConfig `json:"tls,omitempty"`
+
+	// Additional image pull secrets to be taken into account for pulling images.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=5
+	ImagePullSecrets []common.LocalSecretReference `json:"imagePullSecrets,omitempty"`
+
+	// Customizations to apply on all Central Services components.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=6
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
 type Egress struct {
+	// Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode.
+	// In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
+	//+kubebuilder:validation:Default=Online
+	//+kubebuilder:default=Online
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Connectivity Policy,order=1
 	ConnectivityPolicy *ConnectivityPolicy `json:"connectivityPolicy,omitempty"`
 }
 
 // ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.
+//+kubebuilder:validation:Enum=Online;Offline
 type ConnectivityPolicy string
 
 const (
@@ -63,24 +78,35 @@ const (
 
 // CentralComponentSpec defines settings for the "central" component.
 type CentralComponentSpec struct {
-	common.DeploymentSpec `json:",inline"`
+	// Specify a secret that contains the administrator password in the "password" data item.
+	// If omitted, the operator will auto-generate a password and store it in the "password" item
+	// in the "central-htpasswd" secret.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
+	AdminPasswordSecret *common.LocalSecretReference `json:"adminPasswordSecret,omitempty"`
 
-	// Implementation note: this is distinct from the secret that contains the htpasswd-encoded password mounted in central.
-	// TODO(ROX-7242): expose the secret name unconditionally
+	// Here you can configure if you want to expose central through a node port, a load balancer, or an OpenShift
+	// route.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Exposure *Exposure `json:"exposure,omitempty"`
 
-	// A Kubernetes secret that contains a TLS certificate and key for HTTPS serving of the web UI.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="User-facing TLS secret"
+	// By default, Central will only serve an internal TLS certificate, which means that you will
+	// need to handle TLS termination at the ingress or load balancer level.
+	// If you want to terminate TLS in Central and serve a custom server certificate, you can specify
+	// a secret containing the certificate and private key here.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="User-facing TLS certificate secret",order=3
 	DefaultTLSSecret *common.LocalSecretReference `json:"defaultTLSSecret,omitempty"`
 
-	// Reference to a user-created Secret with admin password stored in data item "value".
-	// If omitted, the operator will instead auto-generate a password, create such secret and
-	// expose the name of that secret (if it is different from the name "central-admin-password") in status.central.generatedAdminPasswordSecret
-	AdminPasswordSecret *common.LocalSecretReference `json:"adminPasswordSecret,omitempty"`
-	Persistence         *Persistence                 `json:"persistence,omitempty"`
-	Exposure            *Exposure                    `json:"exposure,omitempty"`
+	// Configures how Central should store its persistent data. You can choose between using a persistent
+	// volume claim (recommended default), and a host path.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	Persistence *Persistence `json:"persistence,omitempty"`
+
 	// TODO(ROX-7123): determine whether we want to make `extraMounts` available in the operator
 	// TODO(ROX-7112): should we expose central.config? It's exposed in helm charts but not documented in help.stackrox.com.
 	// TODO(ROX-7147): design central endpoint
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
+	common.DeploymentSpec `json:",inline"`
 }
 
 // GetHostPath returns Central's configured host path
@@ -124,53 +150,122 @@ func (c *CentralComponentSpec) GetAdminPasswordSecret() *common.LocalSecretRefer
 
 // Persistence defines persistence settings for central.
 type Persistence struct {
-	HostPath              *HostPathSpec          `json:"hostPath,omitempty"`
+	// Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
+	// Recommended for most users.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Persistent volume claim",order=1
 	PersistentVolumeClaim *PersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
+
+	// Stores persistent data on a directory on the host. This is not recommended, and should only
+	// be used together with a node selector (only available in YAML view).
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host path",order=99
+	HostPath *HostPathSpec `json:"hostPath,omitempty"`
 }
 
 // HostPathSpec defines settings for host path config.
 type HostPathSpec struct {
+	// The path on the host running Central.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	Path *string `json:"path,omitempty"`
 }
 
 // PersistentVolumeClaim defines PVC-based persistence settings.
 type PersistentVolumeClaim struct {
-	ClaimName        *string           `json:"claimName,omitempty"`
-	StorageClassName *string           `json:"storageClassName,omitempty"`
-	Size             resource.Quantity `json:"size,omitempty"`
+	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
+	// created. Defaults to "stackrox-db" if not set.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
+	//+kubebuilder:validation:Default=stackrox-db
+	//+kubebuilder:default=stackrox-db
+	ClaimName *string `json:"claimName,omitempty"`
+
+	// The size of the persistent volume when created through the claim. If a claim was automatically created,
+	// this can be used after the initial deployment to resize (grow) the volume (only supported by some
+	// storage class controllers).
+	//+kubebuilder:validation:Default="100Gi"
+	//+kubebuilder:default="100Gi"
+	//+kubebuilder:validation:Pattern=^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Size",order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
+	Size *string `json:"size,omitempty"`
+
+	// The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
+	// class, you must select a value here.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Storage Class",order=3,xDescriptors={"urn:alm:descriptor:io.kubernetes:StorageClass"}
+	StorageClassName *string `json:"storageClassName,omitempty"`
 }
 
 // Exposure defines how central is exposed.
 type Exposure struct {
+	// Expose Central through an OpenShift route.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Route"
+	Route *ExposureRoute `json:"route,omitempty"`
+
+	// Expose Central through a load balancer service.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Load Balancer"
 	LoadBalancer *ExposureLoadBalancer `json:"loadBalancer,omitempty"`
-	NodePort     *ExposureNodePort     `json:"nodePort,omitempty"`
-	Route        *ExposureRoute        `json:"route,omitempty"`
+
+	// Expose Central through a node port.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Port"
+	NodePort *ExposureNodePort `json:"nodePort,omitempty"`
 }
 
 // ExposureLoadBalancer defines settings for exposing central via a LoadBalancer.
 type ExposureLoadBalancer struct {
-	Enabled *bool   `json:"enabled,omitempty"`
-	Port    *int32  `json:"port,omitempty"`
-	IP      *string `json:"ip,omitempty"`
+	//+kubebuilder:validation:Default=false
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Defaults to 443 if not set.
+	//+kubebuilder:validation:Minimum=1
+	//+kubebuilder:validation:Maximum=65535
+	//+kubebuilder:validation:Default=443
+	//+kubebuilder:default=443
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true"}
+	Port *int32 `json:"port,omitempty"`
+
+	// If you have a static IP address reserved for your load balancer, you can enter it here.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true"}
+	IP *string `json:"ip,omitempty"`
 }
 
 // ExposureNodePort defines settings for exposing central via a NodePort.
 type ExposureNodePort struct {
-	Enabled *bool  `json:"enabled,omitempty"`
-	Port    *int32 `json:"port,omitempty"`
+	//+kubebuilder:validation:Default=false
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Use this to specify an explicit node port. Most users should leave this empty.
+	//+kubebuilder:validation:Minimum=1
+	//+kubebuilder:validation:Maximum=65535
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true"}
+	Port *int32 `json:"port,omitempty"`
 }
 
 // ExposureRoute defines settings for exposing central via a Route.
 type ExposureRoute struct {
+	//+kubebuilder:validation:Default=false
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // ScannerComponentSpec defines settings for the "scanner" component.
 type ScannerComponentSpec struct {
-	// Defaults to Enabled
-	ScannerComponent *ScannerComponentPolicy   `json:"scannerComponent,omitempty"`
-	Analyzer         *ScannerAnalyzerComponent `json:"analyzer,omitempty"`
-	DB               *common.DeploymentSpec    `json:"db,omitempty"`
+	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
+	// (not recommended).
+	// If you do so, all the settings in this section will have no effect.
+	//+kubebuilder:validation:Default=Enabled
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
+	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
+
+	// Settings pertaining to the analyzer deployment, such as for autoscaling.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	Analyzer *ScannerAnalyzerComponent `json:"analyzer,omitempty"`
+
+	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	DB *common.DeploymentSpec `json:"db,omitempty"`
 }
 
 // GetAnalyzer returns the analyzer component even if receiver is nil
@@ -190,6 +285,7 @@ func (s *ScannerComponentSpec) IsEnabled() bool {
 }
 
 // ScannerComponentPolicy is a type for values of spec.scannerSpec.scannerComponent.
+//+kubebuilder:validation:Enum=Enabled;Disabled
 type ScannerComponentPolicy string
 
 const (
@@ -201,8 +297,11 @@ const (
 
 // ScannerAnalyzerComponent describes the analyzer component
 type ScannerAnalyzerComponent struct {
+	// Controls the number of analyzer replicas and autoscaling.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Scaling *ScannerAnalyzerScaling `json:"scaling,omitempty"`
+
 	common.DeploymentSpec `json:",inline"`
-	Scaling               *ScannerAnalyzerScaling `json:"scaling,omitempty"`
 }
 
 // GetScaling returns scaling config even if receiver is nil
@@ -215,16 +314,35 @@ func (s *ScannerAnalyzerComponent) GetScaling() *ScannerAnalyzerScaling {
 
 // ScannerAnalyzerScaling defines replication settings of the analyzer.
 type ScannerAnalyzerScaling struct {
+	// When enabled, the number of analyzer replicas is managed dynamically based on the load, within the limits
+	// specified below.
+	//+kubebuilder:validation:Default=Enabled
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling",order=1
 	AutoScaling *AutoScalingPolicy `json:"autoScaling,omitempty"`
-	// Defaults to 3
+
+	// When autoscaling is disabled, the number of replicas will always be configured to match this value.
+	//+kubebuilder:validation:Default=3
+	//+kubebuilder:default=3
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Default Replicas",order=2
 	Replicas *int32 `json:"replicas,omitempty"`
-	// Defaults to 2
+
+	//+kubebuilder:validation:Default=2
+	//+kubebuilder:default=2
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling Minimum Replicas",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled"}
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
-	// Defaults to 5
+
+	//+kubebuilder:validation:Default=5
+	//+kubebuilder:default=5
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling Maximum Replicas",order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled"}
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 }
 
 // AutoScalingPolicy is a type for values of spec.scannerSpec.replicas.autoScaling.
+//+kubebuilder:validation:Enum=Enabled;Disabled
 type AutoScalingPolicy string
 
 const (

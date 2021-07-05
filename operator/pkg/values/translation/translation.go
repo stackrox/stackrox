@@ -61,9 +61,8 @@ func GetCustomize(customizeSpec *common.CustomizeSpec) *ValuesBuilder {
 }
 
 // GetImagePullSecrets converts corev1.LocalObjectReference to a *ValuesBuilder with an "imagePullSecrets" field.
-func GetImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) *ValuesBuilder {
+func GetImagePullSecrets(imagePullSecrets []common.LocalSecretReference) *ValuesBuilder {
 	res := NewValuesBuilder()
-	// TODO(ROX-7179): support imagePullSecrets.allowNone and/or disabling fromDefaultServiceAccount?
 	if len(imagePullSecrets) > 0 {
 		var ps []string
 		for _, secret := range imagePullSecrets {

@@ -57,7 +57,7 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 	v := translation.NewValuesBuilder()
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
-	v.AddAllFrom(getEnv(ctx, clientSet, c.Namespace, c.Spec.Egress))
+	v.AddAllFrom(getEnv(c.Spec.Egress))
 	v.AddAllFrom(translation.GetTLSValues(c.Spec.TLS))
 
 	customize := translation.NewValuesBuilder()
@@ -67,7 +67,7 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 	if centralSpec == nil {
 		centralSpec = &central.CentralComponentSpec{}
 	}
-	v.AddChild("central", getCentralComponentValues(ctx, clientSet, c.Namespace, centralSpec))
+	v.AddChild("central", getCentralComponentValues(centralSpec))
 
 	if c.Spec.Scanner != nil {
 		v.AddChild("scanner", getScannerComponentValues(c.Spec.Scanner))
@@ -78,7 +78,7 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 	return v.Build()
 }
 
-func getEnv(ctx context.Context, clientSet kubernetes.Interface, namespace string, egress *central.Egress) *translation.ValuesBuilder {
+func getEnv(egress *central.Egress) *translation.ValuesBuilder {
 	env := translation.NewValuesBuilder()
 	if egress != nil {
 		if egress.ConnectivityPolicy != nil {
@@ -97,7 +97,7 @@ func getEnv(ctx context.Context, clientSet kubernetes.Interface, namespace strin
 	return &ret
 }
 
-func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interface, namespace string, c *central.CentralComponentSpec) *translation.ValuesBuilder {
+func getCentralComponentValues(c *central.CentralComponentSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))

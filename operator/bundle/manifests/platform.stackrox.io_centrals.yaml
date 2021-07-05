@@ -31,10 +31,10 @@ spec:
             description: CentralSpec defines the desired state of Central
             properties:
               central:
-                description: CentralComponentSpec defines settings for the "central" component.
+                description: Settings for the Central component, which is responsible for all user interaction.
                 properties:
                   adminPasswordSecret:
-                    description: Reference to a user-created Secret with admin password stored in data item "value". If omitted, the operator will instead auto-generate a password, create such secret and expose the name of that secret (if it is different from the name "central-admin-password") in status.central.generatedAdminPasswordSecret
+                    description: Specify a secret that contains the administrator password in the "password" data item. If omitted, the operator will auto-generate a password and store it in the "password" item in the "central-htpasswd" secret.
                     properties:
                       name:
                         description: The name of the referenced secret.
@@ -43,7 +43,7 @@ spec:
                     - name
                     type: object
                   defaultTLSSecret:
-                    description: A Kubernetes secret that contains a TLS certificate and key for HTTPS serving of the web UI.
+                    description: By default, Central will only serve an internal TLS certificate, which means that you will need to handle TLS termination at the ingress or load balancer level. If you want to terminate TLS in Central and serve a custom server certificate, you can specify a secret containing the certificate and private key here.
                     properties:
                       name:
                         description: The name of the referenced secret.
@@ -52,65 +52,80 @@ spec:
                     - name
                     type: object
                   exposure:
-                    description: Exposure defines how central is exposed.
+                    description: Here you can configure if you want to expose central through a node port, a load balancer, or an OpenShift route.
                     properties:
                       loadBalancer:
-                        description: ExposureLoadBalancer defines settings for exposing central via a LoadBalancer.
+                        description: Expose Central through a load balancer service.
                         properties:
                           enabled:
+                            default: false
                             type: boolean
                           ip:
+                            description: If you have a static IP address reserved for your load balancer, you can enter it here.
                             type: string
                           port:
+                            default: 443
+                            description: Defaults to 443 if not set.
                             format: int32
+                            maximum: 65535
+                            minimum: 1
                             type: integer
                         type: object
                       nodePort:
-                        description: ExposureNodePort defines settings for exposing central via a NodePort.
+                        description: Expose Central through a node port.
                         properties:
                           enabled:
+                            default: false
                             type: boolean
                           port:
+                            description: Use this to specify an explicit node port. Most users should leave this empty.
                             format: int32
+                            maximum: 65535
+                            minimum: 1
                             type: integer
                         type: object
                       route:
-                        description: ExposureRoute defines settings for exposing central via a Route.
+                        description: Expose Central through an OpenShift route.
                         properties:
                           enabled:
+                            default: false
                             type: boolean
                         type: object
                     type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
+                    description: If you want this component to only run on specific nodes, you can configure a node selector here.
                     type: object
                   persistence:
-                    description: Persistence defines persistence settings for central.
+                    description: Configures how Central should store its persistent data. You can choose between using a persistent volume claim (recommended default), and a host path.
                     properties:
                       hostPath:
-                        description: HostPathSpec defines settings for host path config.
+                        description: Stores persistent data on a directory on the host. This is not recommended, and should only be used together with a node selector (only available in YAML view).
                         properties:
                           path:
+                            description: The path on the host running Central.
                             type: string
                         type: object
                       persistentVolumeClaim:
-                        description: PersistentVolumeClaim defines PVC-based persistence settings.
+                        description: Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data. Recommended for most users.
                         properties:
                           claimName:
+                            default: stackrox-db
+                            description: The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be created. Defaults to "stackrox-db" if not set.
                             type: string
                           size:
-                            anyOf:
-                            - type: integer
-                            - type: string
+                            default: 100Gi
+                            description: The size of the persistent volume when created through the claim. If a claim was automatically created, this can be used after the initial deployment to resize (grow) the volume (only supported by some storage class controllers).
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                            x-kubernetes-int-or-string: true
+                            type: string
                           storageClassName:
+                            description: The name of the storage class to use for the PVC. If your cluster is not configured with a default storage class, you must select a value here.
                             type: string
                         type: object
                     type: object
                   resources:
-                    description: ResourceRequirements describes the compute resource requirements.
+                    description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
                     properties:
                       limits:
                         additionalProperties:
@@ -133,15 +148,15 @@ spec:
                     type: object
                 type: object
               customize:
-                description: Customizations to apply on all central components.
+                description: Customizations to apply on all Central Services components.
                 properties:
                   annotations:
                     additionalProperties:
                       type: string
-                    description: Custom annotations to set on all objects apart from Pods.
+                    description: Custom annotations to set on all managed objects.
                     type: object
                   envVars:
-                    description: Custom environment variables to set on pods' containers.
+                    description: Custom environment variables to set on managed pods' containers.
                     items:
                       description: EnvVar represents an environment variable present in a Container.
                       properties:
@@ -223,37 +238,45 @@ spec:
                   labels:
                     additionalProperties:
                       type: string
-                    description: Custom labels to set on all objects apart from Pods.
+                    description: Custom labels to set on all managed objects.
                     type: object
                 type: object
               egress:
-                description: Egress defines settings related to outgoing network traffic.
+                description: Settings related to outgoing network traffic.
                 properties:
                   connectivityPolicy:
-                    description: ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.
+                    default: Online
+                    description: Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode. In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
+                    enum:
+                    - Online
+                    - Offline
                     type: string
                 type: object
               imagePullSecrets:
+                description: Additional image pull secrets to be taken into account for pulling images.
                 items:
-                  description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+                  description: LocalSecretReference is a reference to a secret within the same namespace.
                   properties:
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: The name of the referenced secret.
                       type: string
+                  required:
+                  - name
                   type: object
                 type: array
               scanner:
-                description: ScannerComponentSpec defines settings for the "scanner" component.
+                description: Settings for the Scanner component, which is responsible for vulnerability scanning of container images.
                 properties:
                   analyzer:
-                    description: ScannerAnalyzerComponent describes the analyzer component
+                    description: Settings pertaining to the analyzer deployment, such as for autoscaling.
                     properties:
                       nodeSelector:
                         additionalProperties:
                           type: string
+                        description: If you want this component to only run on specific nodes, you can configure a node selector here.
                         type: object
                       resources:
-                        description: ResourceRequirements describes the compute resource requirements.
+                        description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
                         properties:
                           limits:
                             additionalProperties:
@@ -275,34 +298,43 @@ spec:
                             type: object
                         type: object
                       scaling:
-                        description: ScannerAnalyzerScaling defines replication settings of the analyzer.
+                        description: Controls the number of analyzer replicas and autoscaling.
                         properties:
                           autoScaling:
-                            description: AutoScalingPolicy is a type for values of spec.scannerSpec.replicas.autoScaling.
+                            default: Enabled
+                            description: When enabled, the number of analyzer replicas is managed dynamically based on the load, within the limits specified below.
+                            enum:
+                            - Enabled
+                            - Disabled
                             type: string
                           maxReplicas:
-                            description: Defaults to 5
+                            default: 5
                             format: int32
+                            minimum: 1
                             type: integer
                           minReplicas:
-                            description: Defaults to 2
+                            default: 2
                             format: int32
+                            minimum: 1
                             type: integer
                           replicas:
-                            description: Defaults to 3
+                            default: 3
+                            description: When autoscaling is disabled, the number of replicas will always be configured to match this value.
                             format: int32
+                            minimum: 1
                             type: integer
                         type: object
                     type: object
                   db:
-                    description: DeploymentSpec defines settings that affect a deployment.
+                    description: Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
                     properties:
                       nodeSelector:
                         additionalProperties:
                           type: string
+                        description: If you want this component to only run on specific nodes, you can configure a node selector here.
                         type: object
                       resources:
-                        description: ResourceRequirements describes the compute resource requirements.
+                        description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
                         properties:
                           limits:
                             additionalProperties:
@@ -325,11 +357,15 @@ spec:
                         type: object
                     type: object
                   scannerComponent:
-                    description: Defaults to Enabled
+                    default: Enabled
+                    description: If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here (not recommended). If you do so, all the settings in this section will have no effect.
+                    enum:
+                    - Enabled
+                    - Disabled
                     type: string
                 type: object
               tls:
-                description: TLSConfig defines common TLS-related settings for all components.
+                description: Allows you to specify additional trusted Root CAs.
                 properties:
                   additionalCAs:
                     items:

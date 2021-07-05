@@ -2183,6 +2183,10 @@ jobs:
             ./scripts/check-todos.sh 'do\s?n.*merge'
 
       - run:
+          name: Install Python's Virtualenv
+          command: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-venv
+
+      - run:
           name: Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)
           no_output_timeout: 30m
           command: |
