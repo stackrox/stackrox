@@ -18,6 +18,19 @@ func CloneStringStringMap(inputMap map[string]string) map[string]string {
 	return cloned
 }
 
+// StringStringMapsEqual compares if two maps of the given type are equal.
+func StringStringMapsEqual(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, aV := range a {
+		if bV, ok := b[k]; !ok || aV != bV {
+			return false
+		}
+	}
+	return true
+}
+
 // StringStringFastRMap is a thread-safe map from string to string that is optimized for read-heavy access patterns.
 // Writes are expensive because it clones, mutates and replaces the map instead of an in-place addition.
 // Use NewStringString to instantiate.

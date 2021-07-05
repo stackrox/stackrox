@@ -105,9 +105,15 @@ func TestTranslateComplete(t *testing.T) {
 								"customize-annotation1": "customize-annotation1-value",
 								"customize-annotation2": "customize-annotation2-value",
 							},
-							EnvVars: map[string]string{
-								"customize-env-var1": "customize-env-var1-value",
-								"customize-env-var2": "customize-env-var2-value",
+							EnvVars: []v1.EnvVar{
+								{
+									Name:  "customize-env-var1",
+									Value: "customize-env-var1-value",
+								},
+								{
+									Name:  "customize-env-var2",
+									Value: "customize-env-var2-value",
+								},
 							},
 						},
 					},
@@ -137,9 +143,13 @@ func TestTranslateComplete(t *testing.T) {
 						"customize-label1": "customize-label1-value",
 						"customize-label2": "customize-label2-value",
 					},
-					"envVars": map[string]string{
-						"customize-env-var1": "customize-env-var1-value",
-						"customize-env-var2": "customize-env-var2-value",
+					"envVars": map[string]interface{}{
+						"customize-env-var1": map[string]interface{}{
+							"value": "customize-env-var1-value",
+						},
+						"customize-env-var2": map[string]interface{}{
+							"value": "customize-env-var2-value",
+						},
 					},
 				},
 				"collector": map[string]interface{}{

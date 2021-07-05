@@ -19,7 +19,7 @@ type CustomizeSpec struct {
 	// Custom annotations to set on all objects apart from Pods.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Custom environment variables to set on pods' containers.
-	EnvVars map[string]string `json:"envVars,omitempty"`
+	EnvVars []corev1.EnvVar `json:"envVars,omitempty"`
 }
 
 // DeploymentSpec defines settings that affect a deployment.

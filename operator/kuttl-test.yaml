@@ -10,7 +10,9 @@ timeout: 900
 reportFormat: xml
 artifactsDir: build/kuttl-test-artifacts
 commands:
-- command: ./bin/manager
+- command: env NO_PROXY=127.1.2.3/8 ./bin/manager  # use a test value for NO_PROXY. This will not have any impact
+                                                   # on the services at runtime, but we can test if it gets piped
+                                                   # through correctly.
   background: true
 # The following stackrox_namespaces commands are only necessary because we only support a fixed namespace name, which in turn requires
 # kuttl --namespace flag, and this in turn requires namespace to be in place before we start testing.

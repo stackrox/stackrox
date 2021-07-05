@@ -25,6 +25,8 @@ status:
   - status: "False"
     type: Irreconcilable
   - status: "False"
+    type: ProxyConfigFailed
+  - status: "False"
     type: ReleaseFailed
 ---
 apiVersion: apps/v1
@@ -54,3 +56,10 @@ metadata:
   name: additional-ca
 data:
   00-foo.pem.crt: c29tZSBjZXJ0IGNvbnRlbnQK
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-stackrox-central-services-proxy-env
+data:
+  NO_PROXY: MTI3LjEuMi4zLzg= # 127.1.2.3/8

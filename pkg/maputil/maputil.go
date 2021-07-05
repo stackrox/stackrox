@@ -22,6 +22,19 @@ func CloneKeyTypeValueTypeMap(inputMap map[KeyType]ValueType) map[KeyType]ValueT
 	return cloned
 }
 
+// KeyTypeValueTypeMapsEqual compares if two maps of the given type are equal.
+func KeyTypeValueTypeMapsEqual(a, b map[KeyType]ValueType) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, aV := range a {
+		if bV, ok := b[k]; !ok || aV != bV {
+			return false
+		}
+	}
+	return true
+}
+
 // KeyTypeValueTypeFastRMap is a thread-safe map from KeyType to ValueType that is optimized for read-heavy access patterns.
 // Writes are expensive because it clones, mutates and replaces the map instead of an in-place addition.
 // Use NewKeyTypeValueType to instantiate.

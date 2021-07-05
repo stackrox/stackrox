@@ -49,10 +49,6 @@ type CentralSpec struct {
 // Egress defines settings related to outgoing network traffic.
 type Egress struct {
 	ConnectivityPolicy *ConnectivityPolicy `json:"connectivityPolicy,omitempty"`
-	// TODO(ROX-7272): support proxy-aware openshift infrastructure feature
-
-	// Reference to a secret which must contain a member named "config.yaml" that specifies the proxy configuration for central and scanner.
-	ProxyConfigSecret *corev1.LocalObjectReference `json:"proxyConfigSecret,omitempty"`
 }
 
 // ConnectivityPolicy is a type for values of spec.egress.connectivityPolicy.

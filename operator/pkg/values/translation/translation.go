@@ -1,14 +1,10 @@
 package translation
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/pkg/errors"
 	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -41,7 +37,26 @@ func GetCustomize(customizeSpec *common.CustomizeSpec) *ValuesBuilder {
 	res := NewValuesBuilder()
 	res.SetStringMap("labels", customizeSpec.Labels)
 	res.SetStringMap("annotations", customizeSpec.Annotations)
-	res.SetStringMap("envVars", customizeSpec.EnvVars)
+	envVarMap := make(map[string]interface{}, len(customizeSpec.EnvVars))
+	for _, envVar := range customizeSpec.EnvVars {
+		if _, ok := envVarMap[envVar.Name]; ok {
+			res.SetError(errors.Errorf("duplicate environment variable name %q", envVar.Name))
+			return &res
+		}
+
+		// We need the content of the env var without the name for the Helm charts. We cannot set the name to "",
+		// since it doesn't have an omitempty tag. We could create a `map[string]interface{}` with `Value` and
+		// `ValueFrom` ported over, but that would break if Kubernetes ever adds to the corev1.EnvVar type.
+		// Hence, rely on unstructured conversion.
+		unstructuredEnvVar, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&envVar)
+		if err != nil {
+			res.SetError(errors.Wrapf(err, "failed parsing environment variable %q", envVar.Name))
+			return &res
+		}
+		delete(unstructuredEnvVar, "name")
+		envVarMap[envVar.Name] = unstructuredEnvVar
+	}
+	res.SetMap("envVars", envVarMap)
 	return &res
 }
 
@@ -76,26 +91,4 @@ func GetTLSValues(tls *common.TLSConfig) *ValuesBuilder {
 	res := NewValuesBuilder()
 	res.AddChild("additionalCAs", &cas)
 	return &res
-}
-
-// NewBuilderFromSecret returns a *ValuesBuilder with string values with given keys based on components in the referred kubernetes Secret.
-func NewBuilderFromSecret(ctx context.Context, clientSet kubernetes.Interface, namespace string, secret *corev1.LocalObjectReference, membersToKeys map[string]string, crPath string) *ValuesBuilder {
-	v := NewValuesBuilder()
-	if secret == nil {
-		return &v
-	}
-	secretObj, err := clientSet.CoreV1().Secrets(namespace).Get(ctx, secret.Name, metav1.GetOptions{})
-	if err != nil {
-		return v.SetError(errors.Wrapf(err, "failed to retrieve secret %q in namespace %q configured in %s", secret.Name, namespace, crPath))
-	}
-	for secretMember, builderKey := range membersToKeys {
-		value, ok := secretObj.Data[secretMember]
-		if ok {
-			v.SetStringValue(builderKey, string(value))
-		} else {
-			// Check all items in map before returning.
-			v.SetError(fmt.Errorf("secret %q in namespace %q configured in %s does not contain member %q", secret.Name, namespace, crPath, secretMember))
-		}
-	}
-	return &v
 }

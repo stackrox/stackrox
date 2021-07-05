@@ -29,12 +29,21 @@ func TestGetCustomize(t *testing.T) {
 			customizeSpec: &common.CustomizeSpec{
 				Labels:      map[string]string{"label1": "value2"},
 				Annotations: map[string]string{"annotation1": "value3"},
-				EnvVars:     map[string]string{"ENV_VAR1": "value6"},
+				EnvVars: []corev1.EnvVar{
+					{
+						Name:  "ENV_VAR1",
+						Value: "value6",
+					},
+				},
 			},
 			wantValues: chartutil.Values{
 				"labels":      map[string]string{"label1": "value2"},
 				"annotations": map[string]string{"annotation1": "value3"},
-				"envVars":     map[string]string{"ENV_VAR1": "value6"},
+				"envVars": map[string]interface{}{
+					"ENV_VAR1": map[string]interface{}{
+						"value": "value6",
+					},
+				},
 			},
 		},
 		"partial-data": {
