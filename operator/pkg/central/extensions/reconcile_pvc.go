@@ -25,8 +25,9 @@ const (
 )
 
 var (
-	defaultPVCSize       = resource.MustParse("100Gi")
 	errMultipleOwnedPVCs = errors.New("operator is only allowed to have 1 owned PVC")
+
+	defaultPVCSize = resource.MustParse("100Gi")
 )
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
@@ -93,7 +94,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 
 	// The reconciliation loop should fail if a PVC should be reconciled which is not owned by the operator.
 	if pvc != nil && !metav1.IsControlledBy(pvc, r.centralObj) {
-		if pvcConfig.StorageClassName != nil || !pvcConfig.Size.IsZero() {
+		if pvcConfig.StorageClassName != nil || pointer.StringPtrDerefOr(pvcConfig.Size, "") != "" {
 			err := errors.Errorf("Failed reconciling PVC %q. Please remove the storageClassName and size properties from your spec, or change the name to allow the operator to create a new one with a different name.", claimName)
 			r.log.Error(err, "failed reconciling PVC")
 			return err
@@ -126,6 +127,10 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 }
 
 func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *centralv1Alpha1.PersistentVolumeClaim) error {
+	size, err := parseResourceQuantityOr(pvcConfig.Size, defaultPVCSize)
+	if err != nil {
+		return errors.Wrap(err, "invalid PVC size")
+	}
 	newPVC := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: claimName,
@@ -138,7 +143,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *cen
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: getResourceQuantityOr(pvcConfig.Size, defaultPVCSize),
+					corev1.ResourceStorage: size,
 				},
 			},
 			StorageClassName: pvcConfig.StorageClassName,
@@ -154,9 +159,13 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *cen
 func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.PersistentVolumeClaim, pvcConfig *centralv1Alpha1.PersistentVolumeClaim) error {
 	shouldUpdate := false
 
-	if !pvcConfig.Size.IsZero() {
+	if pvcSize := pointer.StringPtrDerefOr(pvcConfig.Size, ""); pvcSize != "" {
+		quantity, err := resource.ParseQuantity(pvcSize)
+		if err != nil {
+			return errors.Wrapf(err, "invalid PVC size %q", pvcSize)
+		}
 		existingPVC.Spec.Resources.Requests = corev1.ResourceList{
-			corev1.ResourceStorage: pvcConfig.Size,
+			corev1.ResourceStorage: quantity,
 		}
 		shouldUpdate = true
 	}
@@ -174,11 +183,16 @@ func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.Persisten
 	return nil
 }
 
-func getResourceQuantityOr(q resource.Quantity, d resource.Quantity) resource.Quantity {
-	if q.IsZero() {
-		return d
+func parseResourceQuantityOr(qStrPtr *string, d resource.Quantity) (resource.Quantity, error) {
+	qStr := pointer.StringPtrDerefOr(qStrPtr, "")
+	if qStr == "" {
+		return d, nil
 	}
-	return q
+	q, err := resource.ParseQuantity(qStr)
+	if err != nil {
+		return resource.Quantity{}, errors.Wrapf(err, "%q", qStr)
+	}
+	return q, nil
 }
 
 func (r *reconcilePVCExtensionRun) getOwnedPVC() ([]*corev1.PersistentVolumeClaim, error) {

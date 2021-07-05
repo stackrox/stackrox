@@ -74,7 +74,7 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 
 	v.SetStringValue("clusterName", sc.Spec.ClusterName)
 
-	v.SetString("centralEndpoint", sc.Spec.CentralEndpoint)
+	v.SetStringValue("centralEndpoint", sc.Spec.CentralEndpoint)
 
 	v.AddAllFrom(t.getTLSValues(ctx, sc))
 
@@ -180,19 +180,6 @@ func (t Translator) getAdmissionControlValues(admissionControl *securedcluster.A
 func (t Translator) getCollectorValues(perNode *securedcluster.PerNodeSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
-	if perNode.Collection != nil {
-		switch *perNode.Collection {
-		case securedcluster.CollectionEBPF:
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
-		case securedcluster.CollectionKernelModule:
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_KERNEL_MODULE.String())
-		case securedcluster.CollectionNone:
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
-		default:
-			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *perNode.Collection))
-		}
-	}
-
 	if perNode.TaintToleration != nil {
 		switch *perNode.TaintToleration {
 		case securedcluster.TaintTolerate:
@@ -216,6 +203,20 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *securedc
 	}
 
 	cv := translation.NewValuesBuilder()
+
+	if c := collectorContainerSpec.Collection; c != nil {
+		switch *c {
+		case securedcluster.CollectionEBPF:
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
+		case securedcluster.CollectionKernelModule:
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_KERNEL_MODULE.String())
+		case securedcluster.CollectionNone:
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
+		default:
+			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *c))
+		}
+	}
+
 	if collectorContainerSpec.ImageFlavor != nil {
 		switch *collectorContainerSpec.ImageFlavor {
 		case securedcluster.ImageFlavorSlim:
@@ -229,7 +230,6 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *securedc
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(collectorContainerSpec.Resources))
 
-	// TODO(ROX-7176): make "customize" work for collector container
 	return &cv
 }
 
@@ -241,7 +241,6 @@ func (t Translator) getComplianceContainerValues(compliance *securedcluster.Cont
 	cv := translation.NewValuesBuilder()
 	cv.AddChild("complianceResources", translation.GetResources(compliance.Resources))
 
-	// TODO(ROX-7176): make "customize" work for compliance container
 	return &cv
 }
 

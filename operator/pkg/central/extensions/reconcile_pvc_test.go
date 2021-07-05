@@ -83,7 +83,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 	changedPVCConfigCentral := makeCentral(&centralv1Alpha1.Persistence{
 		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
-			Size:             resource.MustParse("500Gi"),
+			Size:             pointer.StringPtr("500Gi"),
 			StorageClassName: pointer.StringPtr("new-storage-class"),
 			ClaimName:        pointer.StringPtr(testPVCName),
 		},
@@ -91,7 +91,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 	changedPVCNameCentral := makeCentral(&centralv1Alpha1.Persistence{
 		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
 			ClaimName: pointer.StringPtr(testPVCName),
-			Size:      resource.MustParse("500Gi"),
+			Size:      pointer.StringPtr("500Gi"),
 		},
 	})
 	referencedPVCCentral := makeCentral(&centralv1Alpha1.Persistence{
@@ -102,13 +102,13 @@ func TestReconcilePVCExtension(t *testing.T) {
 	pvcShouldCreateWithConfigCentral := makeCentral(&centralv1Alpha1.Persistence{
 		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
 			ClaimName:        pointer.StringPtr(testPVCName),
-			Size:             resource.MustParse("50Gi"),
+			Size:             pointer.StringPtr("50Gi"),
 			StorageClassName: pointer.StringPtr("test-storage-class"),
 		},
 	})
 	notOwnedPVCConfigChangeCentral := makeCentral(&centralv1Alpha1.Persistence{
 		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
-			Size:             resource.MustParse("500Gi"),
+			Size:             pointer.StringPtr("500Gi"),
 			StorageClassName: pointer.StringPtr("new-storage-class"),
 		},
 	})

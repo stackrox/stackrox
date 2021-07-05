@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/utils/pointer"
 )
 
 func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
@@ -66,8 +65,8 @@ func TestTranslateComplete(t *testing.T) {
 					},
 					Spec: v1alpha1.SecuredClusterSpec{
 						ClusterName:     "test-cluster",
-						CentralEndpoint: pointer.StringPtr("central.test:443"),
-						ImagePullSecrets: []v1.LocalObjectReference{
+						CentralEndpoint: "central.test:443",
+						ImagePullSecrets: []common.LocalSecretReference{
 							{Name: "image-pull-secrets-secret1"},
 							{Name: "image-pull-secrets-secret2"},
 						},
@@ -80,8 +79,8 @@ func TestTranslateComplete(t *testing.T) {
 						PerNode: &v1alpha1.PerNodeSpec{
 							Collector: &v1alpha1.CollectorContainerSpec{
 								ImageFlavor: v1alpha1.ImageFlavorRegular.Pointer(),
+								Collection:  v1alpha1.CollectionEBPF.Pointer(),
 							},
-							Collection:      v1alpha1.CollectionEBPF.Pointer(),
 							TaintToleration: v1alpha1.TaintTolerate.Pointer(),
 							Compliance: &v1alpha1.ContainerSpec{
 								Resources: &v1.ResourceRequirements{

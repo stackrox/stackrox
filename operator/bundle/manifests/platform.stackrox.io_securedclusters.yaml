@@ -31,28 +31,27 @@ spec:
             description: SecuredClusterSpec defines the desired configuration state of a secured cluster.
             properties:
               admissionControl:
-                description: AdmissionControlComponentSpec defines settings for the admission controller configuration.
+                description: Settings for the Admission Control component, which is necessary for preventive policy enforcement, and for Kubernetes event monitoring.
                 properties:
-                  customize:
-                    description: Customize specifies additional attributes for all containers.
-                    properties:
-                      envVars:
-                        additionalProperties:
-                          type: string
-                        description: EnvVars set custom environment variables on pods' containers.
-                        type: object
-                    type: object
                   listenOnCreates:
-                    description: ListenOnCreates controls whether Kubernetes is configured to contact Secured Cluster Services with `AdmissionReview` requests for workload creation events.
+                    default: false
+                    description: Set this to 'true' to enable preventive policy enforcement for object creations.
                     type: boolean
                   listenOnEvents:
-                    description: ListenOnEvents controls whether Kubernetes is configured to contact Secured Cluster Services with `AdmissionReview` requests for update Kubernetes events like exec and portforward. Defaults to `false` on OpenShift, to `true` otherwise.
+                    default: true
+                    description: Set this to 'true' to enable monitoring and enforcement for Kubernetes events (port-forward and exec).
                     type: boolean
                   listenOnUpdates:
-                    description: ListenOnUpdates controls whether Kubernetes is configured to contact Secured Cluster Services with `AdmissionReview` requests for update events on Kubernetes objects.
+                    default: false
+                    description: "Set this to 'true' to enable preventive policy enforcement for object updates. \n Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well."
                     type: boolean
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: If you want this component to only run on specific nodes, you can configure a node selector here.
+                    type: object
                   resources:
-                    description: ResourceRequirements describes the compute resource requirements.
+                    description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
                     properties:
                       limits:
                         additionalProperties:
@@ -75,21 +74,22 @@ spec:
                     type: object
                 type: object
               centralEndpoint:
-                description: CentralEndpoint should specify the address of the Central endpoint, including the port number. If using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with wss://.
+                default: central.stackrox:443
+                description: 'The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to, including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by prefixing the endpoint address with wss://. Note: the default value will only work if Central is deployed in the same cluster, inside the "stackrox" namespace.'
                 type: string
               clusterName:
-                description: ClusterName should specify the name assigned to your secured cluster.
+                description: 'The unique name of this cluster, as it will be shown in the Red Hat Advanced Cluster Security UI. Note: Once a name is set here, you will not be able to change it again. You will need to delete and re-create this object in order to register a cluster with a new name.'
                 type: string
               customize:
-                description: Customizations to apply on all secured cluster components.
+                description: Customizations to apply on all Central Services components.
                 properties:
                   annotations:
                     additionalProperties:
                       type: string
-                    description: Custom annotations to set on all objects apart from Pods.
+                    description: Custom annotations to set on all managed objects.
                     type: object
                   envVars:
-                    description: Custom environment variables to set on pods' containers.
+                    description: Custom environment variables to set on managed pods' containers.
                     items:
                       description: EnvVar represents an environment variable present in a Container.
                       properties:
@@ -171,41 +171,44 @@ spec:
                   labels:
                     additionalProperties:
                       type: string
-                    description: Custom labels to set on all objects apart from Pods.
+                    description: Custom labels to set on all managed objects.
                     type: object
                 type: object
               imagePullSecrets:
+                description: Additional image pull secrets to be taken into account for pulling images.
                 items:
-                  description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+                  description: LocalSecretReference is a reference to a secret within the same namespace.
                   properties:
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: The name of the referenced secret.
                       type: string
+                  required:
+                  - name
                   type: object
                 type: array
               perNode:
-                description: PerNodeSpec declares configuration settings for components which are deployed to all nodes.
+                description: Settings for the components running on each node in the cluster (Collector and Compliance).
                 properties:
-                  collection:
-                    description: CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
-                    type: string
                   collector:
-                    description: CollectorContainerSpec defines settings for the collector container.
+                    description: Settings for the Collector container, which is responsible for collecting process and networking activity at the host level.
                     properties:
-                      customize:
-                        description: Customize specifies additional attributes for all containers.
-                        properties:
-                          envVars:
-                            additionalProperties:
-                              type: string
-                            description: EnvVars set custom environment variables on pods' containers.
-                            type: object
-                        type: object
+                      collection:
+                        default: KernelModule
+                        description: The method for system-level data collection. Kernel module is recommended. If you select "NoCollection", you will not be able to see any information about network activity and process executions. The remaining settings in these section will not have any effect.
+                        enum:
+                        - EBPF
+                        - KernelModule
+                        - NoCollection
+                        type: string
                       imageFlavor:
-                        description: CollectorImageFlavor is a type for values of spec.collector.collector.imageFlavor
+                        default: Regular
+                        description: The image flavor to use for collector. "Regular" images are bigger in size, but contain kernel modules for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance is connected to the internet, or regularly receives Collector Support Package updates (for further instructions, please refer to the documentation).
+                        enum:
+                        - Regular
+                        - Slim
                         type: string
                       resources:
-                        description: ResourceRequirements describes the compute resource requirements.
+                        description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
                         properties:
                           limits:
                             additionalProperties:
@@ -228,19 +231,10 @@ spec:
                         type: object
                     type: object
                   compliance:
-                    description: ContainerSpec defines container settings.
+                    description: Settings for the Compliance container, which is responsible for checking host-level configurations.
                     properties:
-                      customize:
-                        description: Customize specifies additional attributes for all containers.
-                        properties:
-                          envVars:
-                            additionalProperties:
-                              type: string
-                            description: EnvVars set custom environment variables on pods' containers.
-                            type: object
-                        type: object
                       resources:
-                        description: ResourceRequirements describes the compute resource requirements.
+                        description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
                         properties:
                           limits:
                             additionalProperties:
@@ -263,27 +257,23 @@ spec:
                         type: object
                     type: object
                   taintToleration:
-                    description: TaintTolerationPolicy is a type for values of spec.collector.taintToleration
+                    default: TolerateTaints
+                    description: To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security will run services on every node in the cluster, including tainted nodes by default. If you do not want this behavior, please select 'AvoidTaints' here.
+                    enum:
+                    - TolerateTaints
+                    - AvoidTaints
                     type: string
                 type: object
               sensor:
-                description: SensorComponentSpec defines settings for sensor.
+                description: Settings for the Sensor component.
                 properties:
-                  customize:
-                    description: Customize specifies additional attributes for all containers.
-                    properties:
-                      envVars:
-                        additionalProperties:
-                          type: string
-                        description: EnvVars set custom environment variables on pods' containers.
-                        type: object
-                    type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
+                    description: If you want this component to only run on specific nodes, you can configure a node selector here.
                     type: object
                   resources:
-                    description: ResourceRequirements describes the compute resource requirements.
+                    description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
                     properties:
                       limits:
                         additionalProperties:
@@ -306,7 +296,7 @@ spec:
                     type: object
                 type: object
               tls:
-                description: TLSConfig defines common TLS-related settings for all components.
+                description: Allows you to specify additional trusted Root CAs.
                 properties:
                   additionalCAs:
                     items:
@@ -325,6 +315,7 @@ spec:
                     type: array
                 type: object
             required:
+            - centralEndpoint
             - clusterName
             type: object
           status:
