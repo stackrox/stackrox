@@ -46,20 +46,21 @@ func TestTranslate(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
-		"empty": {
-			args: args{
-				c: v1alpha1.Central{},
-			},
-			want: chartutil.Values{},
-		},
-
 		"empty spec": {
 			args: args{
 				c: v1alpha1.Central{
 					Spec: v1alpha1.CentralSpec{},
 				},
 			},
-			want: chartutil.Values{},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"createClaim": false,
+						},
+					},
+				},
+			},
 		},
 
 		"everything and the kitchen sink": {
@@ -231,9 +232,6 @@ func TestTranslate(t *testing.T) {
 					},
 					"persistence": map[string]interface{}{
 						"hostPath": "/central/host/path",
-						"persistentVolumeClaim": map[string]interface{}{
-							"claimName": "central-claim-name",
-						},
 					},
 					"resources": map[string]interface{}{
 						"limits": map[string]interface{}{
@@ -304,6 +302,34 @@ func TestTranslate(t *testing.T) {
 						"requests": map[string]interface{}{
 							"cpu":    "110",
 							"memory": "120",
+						},
+					},
+				},
+			},
+		},
+
+		"with configured PVC": {
+			args: args{
+				c: v1alpha1.Central{
+					Spec: v1alpha1.CentralSpec{
+						Central: &v1alpha1.CentralComponentSpec{
+							Persistence: &v1alpha1.Persistence{
+								PersistentVolumeClaim: &v1alpha1.PersistentVolumeClaim{
+									ClaimName:        pointer.StringPtr("stackrox-db-test"),
+									StorageClassName: pointer.StringPtr("storage-class"),
+									Size:             resource.MustParse("50Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"claimName":   "stackrox-db-test",
+							"createClaim": false,
 						},
 					},
 				},

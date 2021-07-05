@@ -62,9 +62,11 @@ func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Ce
 	customize := translation.NewValuesBuilder()
 	customize.AddAllFrom(translation.GetCustomize(c.Spec.Customize))
 
-	if c.Spec.Central != nil {
-		v.AddChild("central", getCentralComponentValues(ctx, clientSet, c.Namespace, c.Spec.Central))
+	centralSpec := c.Spec.Central
+	if centralSpec == nil {
+		centralSpec = &central.CentralComponentSpec{}
 	}
+	v.AddChild("central", getCentralComponentValues(ctx, clientSet, c.Namespace, centralSpec))
 
 	if c.Spec.Scanner != nil {
 		v.AddChild("scanner", getScannerComponentValues(c.Spec.Scanner))
@@ -108,16 +110,18 @@ func getCentralComponentValues(ctx context.Context, clientSet kubernetes.Interfa
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
-	if c.Persistence != nil {
-		persistence := translation.NewValuesBuilder()
+	persistence := translation.NewValuesBuilder()
+	if c.GetHostPath() != "" {
 		persistence.SetStringValue("hostPath", c.GetHostPath())
-		if c.Persistence.PersistentVolumeClaim != nil {
-			pvc := translation.NewValuesBuilder()
-			pvc.SetString("claimName", c.Persistence.PersistentVolumeClaim.ClaimName)
-			pvc.SetString("storageClass", c.Persistence.PersistentVolumeClaim.StorageClassName)
-			// TODO(ROX-7149): more details TBD, values files are inconsistent and require more investigation and template reading
-			persistence.AddChild("persistentVolumeClaim", &pvc)
+		cv.AddChild("persistence", &persistence)
+	} else {
+		pvcBuilder := translation.NewValuesBuilder()
+		pvcBuilder.SetBoolValue("createClaim", false)
+		if c.GetPersistentVolumeClaim() != nil {
+			pvcBuilder.SetString("claimName", c.GetPersistentVolumeClaim().ClaimName)
 		}
+
+		persistence.AddChild("persistentVolumeClaim", &pvcBuilder)
 		cv.AddChild("persistence", &persistence)
 	}
 
