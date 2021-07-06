@@ -12,7 +12,7 @@ import (
 // and they can be built statically
 
 // RocksDBForT creates and returns a RocksDB for the test
-func RocksDBForT(t *testing.T) *rocksdb.RocksDB {
+func RocksDBForT(t testing.TB) *rocksdb.RocksDB {
 	db, err := rocksdb.NewTemp(testutils.DBFileNameForT(t))
 	require.NoError(t, err)
 	require.NotNil(t, db)

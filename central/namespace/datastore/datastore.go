@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
+	"github.com/stackrox/rox/central/idmap"
 	imageSAC "github.com/stackrox/rox/central/image/sac"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
@@ -45,13 +46,14 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) (DataStore, error) {
+func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
 	ds := &datastoreImpl{
 		store:             store,
 		indexer:           indexer,
 		formattedSearcher: formatSearcher(indexer, graphProvider, namespaceRanker),
 		deployments:       deploymentDataStore,
 		namespaceRanker:   namespaceRanker,
+		idMapStorage:      idMapStorage,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -77,6 +79,8 @@ type datastoreImpl struct {
 	formattedSearcher search.Searcher
 	namespaceRanker   *ranking.Ranker
 
+	idMapStorage idmap.Storage
+
 	deployments deploymentDataStore.DataStore
 }
 
@@ -89,6 +93,10 @@ func (b *datastoreImpl) buildIndex() error {
 	})
 	if err != nil {
 		return err
+	}
+
+	if b.idMapStorage != nil {
+		b.idMapStorage.OnNamespaceAdd(namespaces...)
 	}
 
 	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
@@ -144,6 +152,9 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 	if err := b.store.Upsert(namespace); err != nil {
 		return err
 	}
+	if b.idMapStorage != nil {
+		b.idMapStorage.OnNamespaceAdd(namespace)
+	}
 	return b.indexer.AddNamespaceMetadata(namespace)
 }
 
@@ -171,6 +182,9 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 
 	if err := b.store.Delete(id); err != nil {
 		return err
+	}
+	if b.idMapStorage != nil {
+		b.idMapStorage.OnNamespaceRemove(id)
 	}
 	// Remove ranker record here since removal is not handled in risk store as no entry present for namespace
 	b.namespaceRanker.Remove(id)

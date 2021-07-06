@@ -59,6 +59,7 @@ func (suite *NamespaceDataStoreTestSuite) SetupTest() {
 		suite.indexer,
 		suite.deploymentDataStore,
 		ranking.NewRanker(),
+		nil,
 	)
 	suite.NoError(err)
 }

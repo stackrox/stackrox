@@ -171,14 +171,12 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 		imageKeys = append(imageKeys, imageDackBox.BucketHandler.GetKey(container.GetImage().GetId()))
 	}
 	deploymentKey := deploymentDackBox.KeyFunc(deployment)
-	namespaceSACKey := namespaceDackBox.SACBucketHandler.GetKey(deployment.GetNamespace())
 	namespaceKey := namespaceDackBox.BucketHandler.GetKey(deployment.GetNamespaceId())
 	clusterKey := clusterDackBox.BucketHandler.GetKey(deployment.GetClusterId())
 
 	keysToLock := concurrency.DiscreteKeySet(append(imageKeys,
 		deploymentKey,
 		namespaceKey,
-		namespaceSACKey,
 		clusterKey,
 	)...)
 
@@ -200,7 +198,7 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 		if err != nil {
 			return err
 		}
-		err = txn.Graph().AddRefs(namespaceKey, deploymentKey, namespaceSACKey)
+		err = txn.Graph().AddRefs(namespaceKey, deploymentKey)
 		if err != nil {
 			return err
 		}
@@ -276,9 +274,6 @@ func (b *StoreImpl) collectDeploymentKeys(id string) ([]byte, [][]byte) {
 		return nil, allKeys
 	}
 	namespaceKey := namespaceKeys[0]
-
-	namespaceSACKeys := namespaceDackBox.SACBucketHandler.FilterKeys(graphView.GetRefsFrom(namespaceKey))
-	allKeys = allKeys.Union(namespaceSACKeys)
 
 	clusterKeys := clusterDackBox.BucketHandler.FilterKeys(graphView.GetRefsTo(namespaceKey))
 	allKeys = allKeys.Union(clusterKeys)

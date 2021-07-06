@@ -5,7 +5,7 @@ import (
 
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
-	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
+	"github.com/stackrox/rox/central/idmap"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 	"github.com/stackrox/rox/pkg/logging"
@@ -85,33 +85,22 @@ func namespaceScoped(toNamespaceIDs transformation.OneToMany) filtered.ScopeTran
 }
 
 func namespaceIDsToScopes(ctx context.Context, namespaceIDs [][]byte) [][]sac.ScopeKey {
+	idMap := idmap.FromContext(ctx)
+
 	ret := make([][]sac.ScopeKey, 0, len(namespaceIDs))
 	for _, namespaceID := range namespaceIDs {
-		namespace := namespaceIDToNamespaces(ctx, namespaceID)
-		if len(namespace) == 0 {
+		nsInfo := idMap.ByNamespaceID(string(namespaceID))
+		if nsInfo == nil {
+			// If we can't find the namespace info, conservatively check for any/any. This will prevent information
+			// leakage, while not impacted users with sufficient (global) privileges.
+			ret = append(ret, []sac.ScopeKey{sac.ClusterScopeKey(""), sac.NamespaceScopeKey("")})
 			continue
 		}
-		if len(namespace) > 1 {
-			log.Errorf("namespace id %s had multiple namespaces", namespaceID)
-			continue
-		}
-		cluster := GraphTransformations[v1.SearchCategory_NAMESPACES][v1.SearchCategory_CLUSTERS](ctx, namespaceID)
-		if len(cluster) == 0 {
-			continue
-		}
-		if len(cluster) > 1 {
-			log.Errorf("namespace id %s had multiple clusters", namespaceID)
-			continue
-		}
-		ret = append(ret, []sac.ScopeKey{sac.ClusterScopeKey(cluster[0]), sac.NamespaceScopeKey(namespace[0])})
+
+		ret = append(ret, []sac.ScopeKey{sac.ClusterScopeKey(nsInfo.ClusterID), sac.NamespaceScopeKey(nsInfo.Name)})
 	}
 	return ret
 }
-
-// This transforms the namespace ID to the namespace with the graph.
-var namespaceIDToNamespaces = transformation.AddPrefix(nsDackBox.Bucket).
-	ThenMapToMany(transformation.ForwardFromContext(nsDackBox.SACBucket)).
-	ThenMapEachToOne(transformation.StripPrefixUnchecked(nsDackBox.SACBucket))
 
 var cveToClustersWithoutDeploymentsNorNodes = transformation.AddPrefix(cveDackBox.Bucket).
 	ThenMapToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).

@@ -57,4 +57,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_68_to_m_69_update_global_access_roles"
 	_ "github.com/stackrox/rox/migrator/migrations/m_69_to_m_70_add_xmrig_to_crypto_policy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_70_to_m_71_disable_audit_log_collection"
+	_ "github.com/stackrox/rox/migrator/migrations/m_71_to_m_72_delete_namespacesac_bucket"
 )

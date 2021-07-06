@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	dackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/idmap"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
@@ -23,7 +24,7 @@ func initialize() {
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
 
 	var err error
-	as, err = New(storage, dackbox.GetGlobalDackBox(), indexer, deploymentDataStore.Singleton(), ranking.NamespaceRanker())
+	as, err = New(storage, dackbox.GetGlobalDackBox(), indexer, deploymentDataStore.Singleton(), ranking.NamespaceRanker(), idmap.StorageSingleton())
 	utils.CrashOnError(err)
 }
 
