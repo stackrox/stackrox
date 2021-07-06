@@ -2,12 +2,13 @@ import React, { ReactElement } from 'react';
 import { Badge, SelectOption } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
+import SelectSingle from 'Components/SelectSingle';
 import { accessControl as accessTypeLabels } from 'messages/common';
 import { PermissionsMap } from 'services/RolesService';
 
-import SelectSingle from '../SelectSingle'; // TODO import from where?
 import { ReadAccessIcon, WriteAccessIcon } from './AccessIcons';
 import { getReadAccessCount, getWriteAccessCount } from './permissionSets.utils';
+import ResourceDescription from './ResourceDescription';
 
 export type PermissionsTableProps = {
     resourceToAccess: PermissionsMap;
@@ -22,49 +23,50 @@ function PermissionsTable({
 }: PermissionsTableProps): ReactElement {
     const resourceToAccessEntries = Object.entries(resourceToAccess);
 
-    // TODO Access level does not need excess width.
     return (
         <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
-                    <Th key="resourceName">
+                    <Th width={20}>
                         Resource
                         <Badge isRead className="pf-u-ml-sm">
                             {resourceToAccessEntries.length}
                         </Badge>
                     </Th>
-                    <Th key="read">
+                    <Th width={40}>Description</Th>
+                    <Th width={10}>
                         Read
                         <Badge isRead className="pf-u-ml-sm">
                             {getReadAccessCount(resourceToAccess)}
                         </Badge>
                     </Th>
-                    <Th key="write">
+                    <Th width={10}>
                         Write
                         <Badge isRead className="pf-u-ml-sm">
                             {getWriteAccessCount(resourceToAccess)}
                         </Badge>
                     </Th>
-                    <Th key="accessLevel">Access level</Th>
+                    <Th width={20}>Access level</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 {resourceToAccessEntries.map(([resource, accessLevel]) => (
                     <Tr key={resource}>
-                        <Td key="resourceName" dataLabel="Resource">
-                            {resource}
+                        <Td dataLabel="Resource">{resource}</Td>
+                        <Td dataLabel="Description">
+                            <ResourceDescription resource={resource} />
                         </Td>
-                        <Td key="read" dataLabel="Read" data-testid="read">
+                        <Td dataLabel="Read" data-testid="read">
                             <ReadAccessIcon accessLevel={accessLevel} />
                         </Td>
-                        <Td key="write" dataLabel="Write" data-testid="write">
+                        <Td dataLabel="Write" data-testid="write">
                             <WriteAccessIcon accessLevel={accessLevel} />
                         </Td>
-                        <Td key="accessLevel" dataLabel="Access level">
+                        <Td dataLabel="Access level">
                             <SelectSingle
                                 id={resource}
                                 value={accessLevel}
-                                setFieldValue={setResourceValue}
+                                handleSelect={setResourceValue}
                                 isDisabled={isDisabled}
                             >
                                 {Object.entries(accessTypeLabels).map(([id, name]) => (
