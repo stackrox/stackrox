@@ -19,6 +19,11 @@ func GetBucketKey(prefix []byte, id []byte) []byte {
 	return result
 }
 
+// GetBucketKeyLen returns the length of the bucket
+func GetBucketKeyLen(prefix []byte) int {
+	return len(prefix) + len(separator)
+}
+
 // GetPrefix returns the first prefix found on the input key, and it's remainder afterwards.
 func GetPrefix(key []byte) (prefix []byte) {
 	idx := bytes.Index(key, separator)

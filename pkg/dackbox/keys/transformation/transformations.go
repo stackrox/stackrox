@@ -69,7 +69,7 @@ func StripPrefix(prefix []byte) OneToOne {
 // StripPrefixUnchecked removes the input bucket prefix from the keys before output. It must only
 // be used if you can be absolutely sure that all keys will have the prefix.
 func StripPrefixUnchecked(prefix []byte) OneToOne {
-	prefixLen := len(dbhelper.GetBucketKey(prefix, nil))
+	prefixLen := dbhelper.GetBucketKeyLen(prefix)
 	return func(ctx context.Context, key []byte) []byte {
 		return key[prefixLen:]
 	}
