@@ -170,9 +170,6 @@ func TestTranslateComplete(t *testing.T) {
 						},
 					},
 				},
-				"meta": map[string]interface{}{
-					"useLookup": false,
-				},
 			},
 		},
 	}
@@ -182,11 +179,8 @@ func TestTranslateComplete(t *testing.T) {
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
-			u, err := toUnstructured(tt.args.sc)
-			require.NoError(t, err)
-
 			translator := Translator{clientSet: tt.args.clientSet}
-			got, err := translator.Translate(context.Background(), u)
+			got, err := translator.translate(context.Background(), tt.args.sc)
 			require.NoError(t, err)
 
 			// Remove config fingerprint as it changes as the test case changes

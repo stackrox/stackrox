@@ -8,3 +8,5 @@
 # reconciliation loop is executed, regardless of changes to the CR.
 meta:
   useLookup: false
+allowNonstandardReleaseName: true
+allowNonstandardNamespace: true

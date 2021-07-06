@@ -39,7 +39,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 		return nil, err
 	}
 
-	valsFromCR, err := translate(ctx, t.Client, c)
+	valsFromCR, err := translate(c)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 }
 
 // translate translates a Central CR into helm values.
-func translate(ctx context.Context, clientSet kubernetes.Interface, c central.Central) (chartutil.Values, error) {
+func translate(c central.Central) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
