@@ -23,6 +23,11 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
+func TestReadBaseValues(t *testing.T) {
+	_, err := chartutil.ReadValues(baseValuesYAML)
+	assert.NoError(t, err)
+}
+
 func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	sc := v1alpha1.SecuredCluster{
 		Spec: v1alpha1.SecuredClusterSpec{
@@ -164,6 +169,9 @@ func TestTranslateComplete(t *testing.T) {
 							"memory": "1Gi",
 						},
 					},
+				},
+				"meta": map[string]interface{}{
+					"useLookup": false,
 				},
 			},
 		},

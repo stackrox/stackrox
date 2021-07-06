@@ -5,12 +5,16 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	// Required for the usage of go:embed below.
+	_ "embed"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	securedcluster "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stackrox/rox/pkg/helmutil"
+	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +32,11 @@ const (
 	collectorTLSSecretName        = "collector-tls"
 )
 
+var (
+	//go:embed base-values.yaml
+	baseValuesYAML []byte
+)
+
 // NewTranslator creates a translator
 func NewTranslator(client kubernetes.Interface) Translator {
 	return Translator{clientSet: client}
@@ -40,8 +49,11 @@ type Translator struct {
 
 // Translate translates and enriches helm values
 func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
+	baseValues, err := chartutil.ReadValues(baseValuesYAML)
+	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
+
 	sc := securedcluster.SecuredCluster{}
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &sc)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &sc)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +72,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 		return nil, errors.Wrap(err, "computing image override values")
 	}
 
-	return helmutil.CoalesceTables(imageOverrideVals, valsFromCR), nil
+	return helmutil.CoalesceTables(baseValues, imageOverrideVals, valsFromCR), nil
 }
 
 // Translate translates a SecuredCluster CR into helm values.
