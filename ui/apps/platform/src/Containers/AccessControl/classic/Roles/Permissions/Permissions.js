@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
-import { defaultRoles } from 'constants/accessControl';
+import { getIsDefaultRoleName } from 'constants/accessControl';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 
 import Button from './Button';
@@ -38,7 +38,7 @@ const Permissions = ({
     if (name || username) {
         headerText = name ? `"${name}" Permissions` : 'User Permissions';
     }
-    const headerComponents = defaultRoles[selectedRole.name] ? (
+    const headerComponents = getIsDefaultRoleName(selectedRole.name) ? (
         <span className="uppercase text-base-500 leading-normal mr-3 font-700">system default</span>
     ) : (
         <>

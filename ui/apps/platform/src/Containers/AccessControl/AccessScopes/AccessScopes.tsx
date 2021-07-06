@@ -6,15 +6,8 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertVariant,
-    Badge,
     Bullseye,
-    Button,
     Spinner,
-    Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 
 import {
@@ -27,6 +20,7 @@ import {
     updateAccessScope,
 } from 'services/RolesService';
 
+import AccessControlHeading from '../AccessControlHeading';
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
@@ -57,15 +51,17 @@ function AccessScopes(): ReactElement {
     const { action } = queryObject;
     const { entityId } = useParams();
 
-    const [isFetching, setIsFetching] = useState(false);
+    const [counterFetching, setCounterFetching] = useState(0);
+
     const [accessScopes, setAccessScopes] = useState<AccessScope[]>([]);
     const [alertAccessScopes, setAlertAccessScopes] = useState<ReactElement | null>(null);
+
     const [roles, setRoles] = useState<Role[]>([]);
     const [alertRoles, setAlertRoles] = useState<ReactElement | null>(null);
 
     useEffect(() => {
-        // The primary request has fetching spinner and unclosable alert.
-        setIsFetching(true);
+        // The primary request has an unclosable alert.
+        setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertAccessScopes(null);
         fetchAccessScopes()
             .then((accessScopesFetched) => {
@@ -83,10 +79,12 @@ function AccessScopes(): ReactElement {
                 );
             })
             .finally(() => {
-                setIsFetching(false);
+                setCounterFetching((counterPrev) => counterPrev - 1);
             });
 
-        // TODO Until secondary requests succeed, disable Create and Edit because selections might be incomplete?
+        // The secondary requests have closable alerts.
+
+        setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertRoles(null);
         fetchRolesAsArray()
             .then((rolesFetched) => {
@@ -104,10 +102,13 @@ function AccessScopes(): ReactElement {
                         {error.message}
                     </Alert>
                 );
+            })
+            .finally(() => {
+                setCounterFetching((counterPrev) => counterPrev - 1);
             });
     }, []);
 
-    function onClickCreate() {
+    function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
@@ -115,7 +116,7 @@ function AccessScopes(): ReactElement {
         return deleteAccessScope(idDelete).then(() => {
             // Remove the deleted entity.
             setAccessScopes(accessScopes.filter(({ id }) => id !== idDelete));
-        }); // TODO catch error display alert
+        }); // list has catch
     }
 
     function handleEdit() {
@@ -159,10 +160,17 @@ function AccessScopes(): ReactElement {
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
-            <AccessControlNav entityType={entityType} />
+            <AccessControlHeading
+                entityType={entityType}
+                entityName={
+                    accessScope && (action === 'create' ? 'Create access scope' : accessScope.name)
+                }
+                isDisabled={hasAction}
+            />
+            <AccessControlNav entityType={entityType} isDisabled={hasAction} />
             {alertAccessScopes}
             {alertRoles}
-            {isFetching ? (
+            {counterFetching !== 0 ? (
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
@@ -177,38 +185,12 @@ function AccessScopes(): ReactElement {
                     handleSubmit={handleSubmit}
                 />
             ) : (
-                <>
-                    <Toolbar inset={{ default: 'insetNone' }}>
-                        <ToolbarContent>
-                            <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
-                                <ToolbarItem>
-                                    <Title headingLevel="h2">Access scopes</Title>
-                                </ToolbarItem>
-                                <ToolbarItem>
-                                    <Badge isRead>{accessScopes.length}</Badge>
-                                </ToolbarItem>
-                            </ToolbarGroup>
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                <Button
-                                    variant="primary"
-                                    onClick={onClickCreate}
-                                    isDisabled={isFetching}
-                                    isSmall
-                                >
-                                    Create access scope
-                                </Button>
-                            </ToolbarItem>
-                        </ToolbarContent>
-                    </Toolbar>
-                    {accessScopes.length !== 0 && (
-                        <AccessScopesList
-                            entityId={entityId}
-                            accessScopes={accessScopes}
-                            roles={roles}
-                            handleDelete={handleDelete}
-                        />
-                    )}
-                </>
+                <AccessScopesList
+                    accessScopes={accessScopes}
+                    roles={roles}
+                    handleCreate={handleCreate}
+                    handleDelete={handleDelete}
+                />
             )}
         </>
     );

@@ -6,18 +6,11 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertVariant,
-    Badge,
     Bullseye,
-    Button,
     Spinner,
-    Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 
-import { defaultRoles } from 'constants/accessControl';
+import { defaultRoleDescriptions, getIsDefaultRoleName } from 'constants/accessControl';
 import {
     PermissionSet,
     Role,
@@ -29,6 +22,7 @@ import {
     updatePermissionSet,
 } from 'services/RolesService';
 
+import AccessControlHeading from '../AccessControlHeading';
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
@@ -46,11 +40,11 @@ function PermissionSets(): ReactElement {
     const { action } = queryObject;
     const { entityId } = useParams();
 
-    const [isFetchingPrimary, setIsFetchingPrimary] = useState(false);
+    const [counterFetching, setCounterFetching] = useState(0);
+
     const [permissionSets, setPermissionSets] = useState<PermissionSet[]>([]);
     const [alertPermissionSets, setAlertPermissionSets] = useState<ReactElement | null>(null);
 
-    const [isFetchingSecondary, setIsFetchingSecondary] = useState(false);
     const [resources, setResources] = useState<string[]>([]);
     const [alertResources, setAlertResources] = useState<ReactElement | null>(null);
 
@@ -58,12 +52,22 @@ function PermissionSets(): ReactElement {
     const [alertRoles, setAlertRoles] = useState<ReactElement | null>(null);
 
     useEffect(() => {
-        // The primary request has fetching spinner and unclosable alert.
-        setIsFetchingPrimary(true);
+        // The primary request has an unclosable alert.
+        setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertPermissionSets(null);
         fetchPermissionSets()
             .then((permissionSetsFetched) => {
-                setPermissionSets(permissionSetsFetched);
+                // Provide descriptions for default permission sets until backend returns them.
+                setPermissionSets(
+                    permissionSetsFetched.map((permissionSet) =>
+                        getIsDefaultRoleName(permissionSet.name)
+                            ? {
+                                  ...permissionSet,
+                                  description: defaultRoleDescriptions[permissionSet.name],
+                              }
+                            : permissionSet
+                    )
+                );
             })
             .catch((error) => {
                 setAlertPermissionSets(
@@ -77,10 +81,12 @@ function PermissionSets(): ReactElement {
                 );
             })
             .finally(() => {
-                setIsFetchingPrimary(false);
+                setCounterFetching((counterPrev) => counterPrev - 1);
             });
 
-        setIsFetchingSecondary(true);
+        // The secondary requests have closable alerts.
+
+        setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertResources(null);
         fetchResourcesAsArray()
             .then((resourcesFetched) => {
@@ -100,9 +106,10 @@ function PermissionSets(): ReactElement {
                 );
             })
             .finally(() => {
-                setIsFetchingSecondary(false);
+                setCounterFetching((counterPrev) => counterPrev - 1);
             });
 
+        setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertRoles(null);
         fetchRolesAsArray()
             .then((rolesFetched) => {
@@ -120,12 +127,13 @@ function PermissionSets(): ReactElement {
                         {error.message}
                     </Alert>
                 );
+            })
+            .finally(() => {
+                setCounterFetching((counterPrev) => counterPrev - 1);
             });
     }, []);
 
-    const isFetching = isFetchingPrimary || isFetchingSecondary;
-
-    function onClickCreate() {
+    function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
@@ -133,7 +141,7 @@ function PermissionSets(): ReactElement {
         return deletePermissionSet(idDelete).then(() => {
             // Remove the deleted entity.
             setPermissionSets(permissionSets.filter(({ id }) => id !== idDelete));
-        }); // TODO catch error display alert
+        }); // list has catch
     }
 
     function handleEdit() {
@@ -171,18 +179,26 @@ function PermissionSets(): ReactElement {
 
     const permissionSet =
         permissionSets.find(({ id }) => id === entityId) || getNewPermissionSet(resources);
-    const isActionable = !defaultRoles[permissionSet.name];
+    const isActionable = !getIsDefaultRoleName(permissionSet.name);
     const hasAction = Boolean(action);
     const isEntity = hasAction || Boolean(entityId);
 
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
-            <AccessControlNav entityType={entityType} />
+            <AccessControlHeading
+                entityType={entityType}
+                entityName={
+                    permissionSet &&
+                    (action === 'create' ? 'Create permission set' : permissionSet.name)
+                }
+                isDisabled={hasAction}
+            />
+            <AccessControlNav entityType={entityType} isDisabled={hasAction} />
             {alertPermissionSets}
             {alertResources}
             {alertRoles}
-            {isFetching ? (
+            {counterFetching !== 0 ? (
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
@@ -197,38 +213,12 @@ function PermissionSets(): ReactElement {
                     handleSubmit={handleSubmit}
                 />
             ) : (
-                <>
-                    <Toolbar inset={{ default: 'insetNone' }}>
-                        <ToolbarContent>
-                            <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
-                                <ToolbarItem>
-                                    <Title headingLevel="h2">Permission sets</Title>
-                                </ToolbarItem>
-                                <ToolbarItem>
-                                    <Badge isRead>{permissionSets.length}</Badge>
-                                </ToolbarItem>
-                            </ToolbarGroup>
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                <Button
-                                    variant="primary"
-                                    onClick={onClickCreate}
-                                    isDisabled={isFetching || resources.length === 0}
-                                    isSmall
-                                >
-                                    Create permission set
-                                </Button>
-                            </ToolbarItem>
-                        </ToolbarContent>
-                    </Toolbar>
-                    {permissionSets.length !== 0 && (
-                        <PermissionSetsList
-                            entityId={entityId}
-                            permissionSets={permissionSets}
-                            roles={roles}
-                            handleDelete={handleDelete}
-                        />
-                    )}
-                </>
+                <PermissionSetsList
+                    permissionSets={permissionSets}
+                    roles={roles}
+                    handleCreate={handleCreate}
+                    handleDelete={handleDelete}
+                />
             )}
         </>
     );

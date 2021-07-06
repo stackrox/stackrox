@@ -1,6 +1,7 @@
 import React, { CSSProperties, ReactElement } from 'react';
 import { Alert, AlertVariant, List, ListItem, Stack, StackItem } from '@patternfly/react-core';
 
+import AccessControlHeading from './AccessControlHeading';
 import AccessControlNav from './AccessControlNav';
 
 // Separate list from the title with same margin-top as second list item from the first.
@@ -12,6 +13,7 @@ function AccessControlRouteNotFound(): ReactElement {
     return (
         <Stack hasGutter>
             <StackItem>
+                <AccessControlHeading />
                 <AccessControlNav />
             </StackItem>
             <StackItem>

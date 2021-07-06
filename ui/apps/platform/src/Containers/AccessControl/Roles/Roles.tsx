@@ -6,18 +6,12 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertVariant,
-    Badge,
     Bullseye,
-    Button,
     Spinner,
-    Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 
-import { defaultRoles } from 'constants/accessControl';
+import { defaultRoleDescriptions, getIsDefaultRoleName } from 'constants/accessControl';
+import { fetchGroups } from 'services/GroupsService';
 import {
     AccessScope,
     PermissionSet,
@@ -30,12 +24,15 @@ import {
     updateRole,
 } from 'services/RolesService';
 
+import AccessControlHeading from '../AccessControlHeading';
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import RoleForm from './RoleForm';
 import RolesList from './RolesList';
+
+type Group = { roleName: string }; // TODO import from services/GroupsServices
 
 const entityType = 'ROLE';
 
@@ -55,21 +52,34 @@ function Roles(): ReactElement {
     const { action } = queryObject;
     const { entityId: entityName } = useParams(); // identify role by name in routes
 
-    const [isFetching, setIsFetching] = useState(false);
+    const [counterFetching, setCounterFetching] = useState(0);
+
     const [roles, setRoles] = useState<Role[]>([]);
     const [alertRoles, setAlertRoles] = useState<ReactElement | null>(null);
+
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [alertGroups, setAlertGroups] = useState<ReactElement | null>(null);
+
     const [permissionSets, setPermissionSets] = useState<PermissionSet[]>([]);
     const [alertPermissionSets, setAlertPermissionSets] = useState<ReactElement | null>(null);
+
     const [accessScopes, setAccessScopes] = useState<AccessScope[]>([]);
     const [alertAccessScopes, setAlertAccessScopes] = useState<ReactElement | null>(null);
 
     useEffect(() => {
-        // The primary request has fetching spinner and unclosable alert.
-        setIsFetching(true);
+        // The primary request has unclosable alert.
+        setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertRoles(null);
         fetchRolesAsArray()
             .then((rolesFetched) => {
-                setRoles(rolesFetched);
+                // Provide descriptions for default roles until backend returns them.
+                setRoles(
+                    rolesFetched.map((role) =>
+                        getIsDefaultRoleName(role.name)
+                            ? { ...role, description: defaultRoleDescriptions[role.name] }
+                            : role
+                    )
+                );
             })
             .catch((error) => {
                 setAlertRoles(
@@ -79,10 +89,36 @@ function Roles(): ReactElement {
                 );
             })
             .finally(() => {
-                setIsFetching(false);
+                setCounterFetching((counterPrev) => counterPrev - 1);
             });
 
-        // TODO Until secondary requests succeed, disable Create and Edit because selections might be incomplete?
+        // The secondary requests have closable alerts.
+
+        setCounterFetching((counterPrev) => counterPrev + 1);
+        setAlertGroups(null);
+        fetchGroups()
+            .then((dataFetched) => {
+                console.log(dataFetched.response.groups); // eslint-disable-line
+                setGroups(dataFetched.response.groups);
+            })
+            .catch((error) => {
+                const actionClose = <AlertActionCloseButton onClose={() => setAlertGroups(null)} />;
+                setAlertGroups(
+                    <Alert
+                        title="Fetch groups failed"
+                        variant={AlertVariant.warning}
+                        isInline
+                        actionClose={actionClose}
+                    >
+                        {error.message}
+                    </Alert>
+                );
+            })
+            .finally(() => {
+                setCounterFetching((counterPrev) => counterPrev - 1);
+            });
+
+        setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertPermissionSets(null);
         fetchPermissionSets()
             .then((permissionSetsFetched) => {
@@ -100,8 +136,12 @@ function Roles(): ReactElement {
                         {error.message}
                     </Alert>
                 );
+            })
+            .finally(() => {
+                setCounterFetching((counterPrev) => counterPrev - 1);
             });
 
+        setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertAccessScopes(null);
         fetchAccessScopes()
             .then((accessScopesFetched) => {
@@ -119,10 +159,13 @@ function Roles(): ReactElement {
                         {error.message}
                     </Alert>
                 );
+            })
+            .finally(() => {
+                setCounterFetching((counterPrev) => counterPrev - 1);
             });
     }, []);
 
-    function onClickCreate() {
+    function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
@@ -130,7 +173,7 @@ function Roles(): ReactElement {
         return deleteRole(nameDelete).then(() => {
             // Remove the deleted entity.
             setRoles(roles.filter(({ name }) => name !== nameDelete));
-        }); // TODO catch error display alert
+        }); // list has catch
     }
 
     function handleEdit() {
@@ -165,18 +208,24 @@ function Roles(): ReactElement {
     }
 
     const role = roles.find(({ name }) => name === entityName) || roleNew;
-    const isActionable = !defaultRoles[role.name];
+    const isActionable = !getIsDefaultRoleName(role.name);
     const hasAction = Boolean(action);
     const isEntity = hasAction || Boolean(entityName);
 
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
-            <AccessControlNav entityType={entityType} />
+            <AccessControlHeading
+                entityType={entityType}
+                entityName={role && (action === 'create' ? 'Create role' : role.name)}
+                isDisabled={hasAction}
+            />
+            <AccessControlNav entityType={entityType} isDisabled={hasAction} />
             {alertRoles}
             {alertPermissionSets}
             {alertAccessScopes}
-            {isFetching ? (
+            {alertGroups}
+            {counterFetching !== 0 ? (
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
@@ -193,39 +242,14 @@ function Roles(): ReactElement {
                     handleSubmit={handleSubmit}
                 />
             ) : (
-                <>
-                    <Toolbar inset={{ default: 'insetNone' }}>
-                        <ToolbarContent>
-                            <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
-                                <ToolbarItem>
-                                    <Title headingLevel="h2">Roles</Title>
-                                </ToolbarItem>
-                                <ToolbarItem>
-                                    <Badge isRead>{roles.length}</Badge>
-                                </ToolbarItem>
-                            </ToolbarGroup>
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                <Button
-                                    variant="primary"
-                                    onClick={onClickCreate}
-                                    isDisabled={isFetching}
-                                    isSmall
-                                >
-                                    Create role
-                                </Button>
-                            </ToolbarItem>
-                        </ToolbarContent>
-                    </Toolbar>
-                    {roles.length !== 0 && (
-                        <RolesList
-                            entityName={entityName}
-                            roles={roles}
-                            permissionSets={permissionSets}
-                            accessScopes={accessScopes}
-                            handleDelete={handleDelete}
-                        />
-                    )}
-                </>
+                <RolesList
+                    roles={roles}
+                    groups={groups}
+                    permissionSets={permissionSets}
+                    accessScopes={accessScopes}
+                    handleCreate={handleCreate}
+                    handleDelete={handleDelete}
+                />
             )}
         </>
     );

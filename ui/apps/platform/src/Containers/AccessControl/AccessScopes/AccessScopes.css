@@ -1,13 +1,4 @@
 /*
- * Bottom border mitigates left padding and separates generic page head from specific page body.
- */
-#access-control .pf-c-nav.pf-m-horizontal.pf-m-tertiary {
-    border-bottom-color: var(--pf-global--BorderColor--100);
-    border-bottom-style: solid;
-    border-bottom-width: 1px;
-}
-
-/*
  * Make form group labelIcon prop look similar to info prop in table head cell.
  * From PatternFly rule with selector: .pf-c-table__column-help-action .pf-c-button
  */

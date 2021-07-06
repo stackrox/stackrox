@@ -3,13 +3,14 @@ import { connect } from 'react-redux';
 import { Redirect, Route, Switch } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
-import { Alert, AlertVariant, PageSection, Title } from '@patternfly/react-core';
+import { PageSection } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions, getHasReadPermission } from 'reducers/roles';
 
 import { accessControlBasePath, accessControlPath, getEntityPath } from './accessControlPaths';
 
+import AccessControlNoPermission from './AccessControlNoPermission';
 import AccessControlRouteNotFound from './AccessControlRouteNotFound';
 import AccessScopes from './AccessScopes/AccessScopes';
 import AuthProviders from './AuthProviders/AuthProviders';
@@ -27,9 +28,6 @@ function AccessControl({ userRolePermissions }) {
 
     return (
         <PageSection variant="light" isFilled id="access-control">
-            <Title headingLevel="h1" className="pf-u-pb-md">
-                Access Control
-            </Title>
             {hasReadAccess ? (
                 <Switch>
                     <Route exact path={accessControlBasePath}>
@@ -56,11 +54,7 @@ function AccessControl({ userRolePermissions }) {
                     </Route>
                 </Switch>
             ) : (
-                <Alert
-                    title="You do not have permission to view Access Control"
-                    variant={AlertVariant.info}
-                    isInline
-                />
+                <AccessControlNoPermission />
             )}
         </PageSection>
     );

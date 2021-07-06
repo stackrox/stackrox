@@ -1,4 +1,29 @@
 /*
+ * Specify recommended padding for breadcrumb and title h1 in AccessControlHeading element.
+ */
+#access-control.pf-c-page__main-section {
+    --pf-c-page__main-section--PaddingTop: 0;
+}
+
+#access-control .pf-c-breadcrumb {
+    padding-top: var(--pf-global--spacer--md);
+    padding-bottom: var(--pf-global--spacer--md);
+}
+
+#access-control h1 {
+    padding-bottom: var(--pf-global--spacer--md);
+}
+
+/*
+ * Bottom border mitigates left padding and separates generic page head from specific page body.
+ */
+ #access-control .pf-c-nav.pf-m-tertiary {
+    border-bottom-color: var(--pf-global--BorderColor--100);
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+}
+
+/*
  * Dropdown has (via className) font size compatible with Button.
  */
 #access-control .pf-c-dropdown.pf-m-small {

@@ -5,7 +5,7 @@ import { createStructuredSelector, createSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/roles';
 import Dialog from 'Components/Dialog';
-import { defaultRoles, defaultSelectedRole } from 'constants/accessControl';
+import { defaultSelectedRole, getIsDefaultRoleName } from 'constants/accessControl';
 
 import SideBar from '../SideBar';
 import Permissions from './Permissions/Permissions';
@@ -121,7 +121,7 @@ Roles.defaultProps = {
 };
 
 const getRolesWithDefault = createSelector([selectors.getRoles], (roles) =>
-    roles.map((role) => ({ ...role, noAction: defaultRoles[role.name] }))
+    roles.map((role) => ({ ...role, noAction: getIsDefaultRoleName(role.name) }))
 );
 
 const mapStateToProps = createStructuredSelector({

@@ -1,90 +1,134 @@
 import React, { ReactElement, useState } from 'react';
+import {
+    Alert,
+    AlertVariant,
+    Badge,
+    Button,
+    Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+    ToolbarItem,
+} from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
+import { defaultRoleDescriptions } from 'constants/accessControl';
 import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 
-// TODO import from where?
-const unselectedRowStyle = {};
-const selectedRowStyle = {
-    borderLeft: '3px solid var(--pf-global--primary-color--100)',
-};
-
 const entityType = 'PERMISSION_SET';
 
 export type PermissionSetsListProps = {
-    entityId?: string;
     permissionSets: PermissionSet[];
     roles: Role[];
+    handleCreate: () => void;
     handleDelete: (id: string) => Promise<void>;
 };
 
 function PermissionSetsList({
-    entityId,
     permissionSets,
     roles,
+    handleCreate,
     handleDelete,
 }: PermissionSetsListProps): ReactElement {
     const [idDeleting, setIdDeleting] = useState('');
+    const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
 
     function onClickDelete(id: string) {
         setIdDeleting(id);
-        handleDelete(id).finally(() => {
-            setIdDeleting('');
-        });
+        setAlertDelete(null);
+        handleDelete(id)
+            .catch((error) => {
+                setAlertDelete(
+                    <Alert
+                        title="Delete permission set failed"
+                        variant={AlertVariant.danger}
+                        isInline
+                    >
+                        {error.message}
+                    </Alert>
+                );
+            })
+            .finally(() => {
+                setIdDeleting('');
+            });
     }
 
     return (
-        <TableComposable variant="compact" isStickyHeader>
-            <Thead>
-                <Tr>
-                    <Th>Name</Th>
-                    <Th>Description</Th>
-                    <Th>Roles</Th>
-                    <Th aria-label="Row actions" />
-                </Tr>
-            </Thead>
-            <Tbody>
-                {permissionSets.map(({ id, name, description }) => (
-                    <Tr key={id} style={id === entityId ? selectedRowStyle : unselectedRowStyle}>
-                        <Td dataLabel="Name">
-                            <AccessControlEntityLink
-                                entityType={entityType}
-                                entityId={id}
-                                entityName={name}
-                            />
-                        </Td>
-                        <Td dataLabel="Description">{description}</Td>
-                        <Td dataLabel="Roles">
-                            <RolesLink
-                                roles={roles.filter(
-                                    ({ permissionSetId }) => permissionSetId === id
+        <>
+            <Toolbar inset={{ default: 'insetNone' }}>
+                <ToolbarContent>
+                    <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
+                        <ToolbarItem>
+                            <Title headingLevel="h2">Permission sets</Title>
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <Badge isRead>{permissionSets.length}</Badge>
+                        </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarItem alignment={{ default: 'alignRight' }}>
+                        <Button variant="primary" onClick={handleCreate} isSmall>
+                            Create permission set
+                        </Button>
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+            {alertDelete}
+            {permissionSets.length !== 0 && (
+                <TableComposable variant="compact" isStickyHeader>
+                    <Thead>
+                        <Tr>
+                            <Th width={20}>Name</Th>
+                            <Th width={30}>Description</Th>
+                            <Th width={40}>Roles</Th>
+                            <Th width={10} aria-label="Row actions" />
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        {permissionSets.map(({ id, name, description }) => (
+                            <Tr key={id}>
+                                <Td dataLabel="Name">
+                                    <AccessControlEntityLink
+                                        entityType={entityType}
+                                        entityId={id}
+                                        entityName={name}
+                                    />
+                                </Td>
+                                <Td dataLabel="Description">
+                                    {description || (defaultRoleDescriptions[name] ?? '')}
+                                </Td>
+                                <Td dataLabel="Roles">
+                                    <RolesLink
+                                        roles={roles.filter(
+                                            ({ permissionSetId }) => permissionSetId === id
+                                        )}
+                                        entityType={entityType}
+                                        entityId={id}
+                                    />
+                                </Td>
+                                {roles.some(({ permissionSetId }) => permissionSetId === id) ? (
+                                    <Td />
+                                ) : (
+                                    <Td
+                                        actions={{
+                                            disable: idDeleting === id,
+                                            items: [
+                                                {
+                                                    title: 'Delete permission set',
+                                                    onClick: () => onClickDelete(id),
+                                                },
+                                            ],
+                                        }}
+                                        className="pf-u-text-align-right"
+                                    />
                                 )}
-                                entityType={entityType}
-                                entityId={id}
-                            />
-                        </Td>
-                        {roles.some(({ permissionSetId }) => permissionSetId === id) ? (
-                            <Td />
-                        ) : (
-                            <Td
-                                actions={{
-                                    disable: Boolean(entityId) || idDeleting === id,
-                                    items: [
-                                        {
-                                            title: 'Delete permission set',
-                                            onClick: () => onClickDelete(id),
-                                        },
-                                    ],
-                                }}
-                                className="pf-u-text-align-right"
-                            />
-                        )}
-                    </Tr>
-                ))}
-            </Tbody>
-        </TableComposable>
+                            </Tr>
+                        ))}
+                    </Tbody>
+                </TableComposable>
+            )}
+        </>
     );
 }
 
