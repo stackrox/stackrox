@@ -17,10 +17,9 @@ var (
 			ThenMapEachToOne(transformation.Decode()).
 			Then(transformation.AtIndex(0)).
 			ThenMapEachToOne(transformation.AddPrefix(nodeDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+			ThenMapEachToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// Edge (parse first key in pair) Node
 		v1.SearchCategory_NODES: transformation.Split([]byte(":")).
@@ -36,12 +35,10 @@ var (
 				ThenMapEachToOne(transformation.Decode()).
 				Then(transformation.AtIndex(0)),
 			transformation.AddPrefix(nodeDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToMany(transformation.ForwardFromContext()).
-				Then(transformation.Dedupe()).
-				Then(transformation.HasPrefix(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 		),
 
 		// Edge
@@ -61,9 +58,8 @@ var (
 				ThenMapEachToOne(transformation.Decode()).
 				Then(transformation.AtIndex(1)),
 			transformation.AddPrefix(componentDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
 		),
 
 		// Edge (parse second key in pair) Component (forward) CVE
@@ -71,10 +67,9 @@ var (
 			ThenMapEachToOne(transformation.Decode()).
 			Then(transformation.AtIndex(1)).
 			ThenMapEachToOne(transformation.AddPrefix(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.ForwardFromContext()).
-			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(cveDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+			ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// We don't want to surface cluster level vulns from a node:component scope.
 		v1.SearchCategory_CLUSTER_VULN_EDGE: ReturnNothing,

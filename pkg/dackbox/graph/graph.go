@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/utils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // RGraph is a read-only view of a Graph.
@@ -19,7 +20,9 @@ type RGraph interface {
 	GetRefsFrom(from []byte) [][]byte
 	GetRefsTo(to []byte) [][]byte
 
-	GetRefsFromPrefix(to, prefix []byte) [][]byte
+	GetRefsFromPrefix(from, prefix []byte) [][]byte
+	GetRefsToPrefix(to, prefix []byte) [][]byte
+
 	ReferencedFromPrefix(to, prefix []byte) bool
 }
 
@@ -91,7 +94,7 @@ func (s *Graph) CountRefsTo(to []byte) int {
 // GetRefsFrom returns the children referenced by the input parent key.
 func (s *Graph) GetRefsFrom(from []byte) [][]byte {
 	if keys, exist := s.forward[string(from)]; exist {
-		return append([][]byte{}, keys...)
+		return sliceutils.ByteSliceClone(keys)
 	}
 	return nil
 }
@@ -99,13 +102,27 @@ func (s *Graph) GetRefsFrom(from []byte) [][]byte {
 // GetRefsTo returns the parents that reference the input child key.
 func (s *Graph) GetRefsTo(to []byte) [][]byte {
 	if keys, exist := s.backward[string(to)]; exist {
-		return append([][]byte{}, keys...)
+		return sliceutils.ByteSliceClone(keys)
 	}
 	return nil
 }
 
-// GetRefsFromPrefix returns the keys that have the passed prefix that reference the passed key
+// GetRefsFromPrefix returns the children referenced by the input parent key that have the passed prefix.
 func (s *Graph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
+	if keys, exist := s.forward[string(to)]; exist {
+		var filtered [][]byte
+		for _, key := range keys {
+			if bytes.HasPrefix(key, prefix) {
+				filtered = append(filtered, key)
+			}
+		}
+		return filtered
+	}
+	return nil
+}
+
+// GetRefsToPrefix returns the keys that have the passed prefix that reference the passed key
+func (s *Graph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 	if keys, exist := s.backward[string(to)]; exist {
 		var filtered [][]byte
 		for _, key := range keys {

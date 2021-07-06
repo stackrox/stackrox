@@ -16,25 +16,21 @@ var (
 	DeploymentTransformations = map[v1.SearchCategory]transformation.OneToMany{
 		// Deployment (backwards) Namespaces (backwards) Clusters
 		v1.SearchCategory_CLUSTERS: transformation.AddPrefix(deploymentDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(nsDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+			ThenMapToMany(transformation.BackwardFromContext(nsDackBox.Bucket)).
+			ThenMapEachToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)),
 
 		// Deployment (backwards) Namespaces
 		v1.SearchCategory_NAMESPACES: transformation.AddPrefix(deploymentDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(nsDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(nsDackBox.Bucket)),
+			ThenMapToMany(transformation.BackwardFromContext(nsDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(nsDackBox.Bucket)),
 
 		v1.SearchCategory_DEPLOYMENTS: DoNothing,
 
 		// Deployment (forwards) Images
 		v1.SearchCategory_IMAGES: transformation.AddPrefix(deploymentDackBox.Bucket).
-			ThenMapToMany(transformation.ForwardFromContext()).
-			Then(transformation.HasPrefix(imageDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+			ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)),
 
 		// Combine ( { k1, k2 }
 		//          Deployments (forwards) Images,
@@ -42,16 +38,13 @@ var (
 		//          )
 		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ForwardEdgeKeys(
 			transformation.AddPrefix(deploymentDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(imageDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)),
 			transformation.AddPrefix(imageDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToMany(transformation.ForwardFromContext()).
+				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
 				Then(transformation.Dedupe()).
-				Then(transformation.HasPrefix(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
 		),
 
 		// Combine ( { k1, k2 }
@@ -60,23 +53,19 @@ var (
 		//          )
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: transformation.ForwardEdgeKeys(
 			transformation.AddPrefix(deploymentDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(imageDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)),
 			transformation.AddPrefix(imageDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 		),
 
 		// Deployment (forwards) Images (forwards) Components
 		v1.SearchCategory_IMAGE_COMPONENTS: transformation.AddPrefix(deploymentDackBox.Bucket).
-			ThenMapToMany(transformation.ForwardFromContext()).
-			Then(transformation.HasPrefix(imageDackBox.Bucket)).
-			ThenMapEachToMany(transformation.ForwardFromContext()).
-			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+			ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
+			ThenMapEachToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// Combine ( { k1, k2 }
 		//          Deployment (forwards) Images (forwards) Components,
@@ -84,30 +73,24 @@ var (
 		//          )
 		v1.SearchCategory_COMPONENT_VULN_EDGE: transformation.ForwardEdgeKeys(
 			transformation.AddPrefix(deploymentDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(imageDackBox.Bucket)).
-				ThenMapEachToMany(transformation.ForwardFromContext()).
-				Then(transformation.Dedupe()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 			transformation.AddPrefix(componentDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
 		),
 
 		// We don't want to surface cluster level CVEs from a deployment, so just surface CVEs from images it has.
 		// Deployment (forwards) Images (forwards) Components (forwards) CVEs
 		v1.SearchCategory_VULNERABILITIES: transformation.AddPrefix(deploymentDackBox.Bucket).
-			ThenMapToMany(transformation.ForwardFromContext()).
-			Then(transformation.HasPrefix(imageDackBox.Bucket)).
-			ThenMapEachToMany(transformation.ForwardFromContext()).
+			ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
+			ThenMapEachToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
 			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.ForwardFromContext()).
-			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(cveDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+			ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// We don't want to surface cluster level CVEs from a deployment scope.
 		v1.SearchCategory_CLUSTER_VULN_EDGE: ReturnNothing,

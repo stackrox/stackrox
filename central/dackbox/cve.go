@@ -24,71 +24,53 @@ var (
 		v1.SearchCategory_CLUSTERS: transformation.AddPrefix(cveDackBox.Bucket).
 			ThenMapToMany(
 				transformation.Many(
-					transformation.BackwardFromContext().
-						Then(transformation.HasPrefix(componentDackBox.Bucket)).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
-						Then(transformation.HasPrefix(imageDackBox.Bucket)).
+					transformation.BackwardFromContext(componentDackBox.Bucket).
+						ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
 						Then(transformation.Dedupe()).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
-						Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
+						ThenMapEachToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
 						Then(transformation.Dedupe()).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
+						ThenMapEachToMany(transformation.BackwardFromContext(nsDackBox.Bucket)).
 						Then(transformation.Dedupe()).
-						Then(transformation.HasPrefix(nsDackBox.Bucket)).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
+						ThenMapEachToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
+						ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)).
+						Then(transformation.Dedupe()),
+					transformation.BackwardFromContext(clusterDackBox.Bucket).
+						ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)),
+					transformation.BackwardFromContext(componentDackBox.Bucket).
+						ThenMapEachToMany(transformation.BackwardFromContext(nodeDackBox.Bucket)).
 						Then(transformation.Dedupe()).
-						Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-						ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
-					transformation.BackwardFromContext().
-						Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-						ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
-					transformation.BackwardFromContext().
-						Then(transformation.HasPrefix(componentDackBox.Bucket)).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
-						Then(transformation.HasPrefix(nodeDackBox.Bucket)).
-						Then(transformation.Dedupe()).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
-						Then(transformation.Dedupe()).
-						Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-						ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+						ThenMapEachToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
+						ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)).
+						Then(transformation.Dedupe()),
 				),
 			),
 
 		// CVE (backwards) Components (backwards) Images (backwards) Deployments (backwards) Namespaces
 		v1.SearchCategory_NAMESPACES: transformation.AddPrefix(cveDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(imageDackBox.Bucket)).
+			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
 			Then(transformation.Dedupe()).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
+			ThenMapEachToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
 			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(nsDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(nsDackBox.Bucket)),
+			ThenMapEachToMany(transformation.BackwardFromContext(nsDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(nsDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// CVE (backwards) Components (backwards) Images (backwards) Deployments
 		v1.SearchCategory_DEPLOYMENTS: transformation.AddPrefix(cveDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(imageDackBox.Bucket)).
+			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
 			Then(transformation.Dedupe()).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
-			Then(transformation.Dedupe()).
-			ThenMapEachToOne(transformation.StripPrefix(deploymentDackBox.Bucket)),
+			ThenMapEachToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// CVE (backwards) Components (backwards) Images
 		v1.SearchCategory_IMAGES: transformation.AddPrefix(cveDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(imageDackBox.Bucket)).
-			Then(transformation.Dedupe()).
-			ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// CombineReversed ( { k1, k2 }
 		//          CVEs,
@@ -97,13 +79,11 @@ var (
 		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ReverseEdgeKeys(
 			DoNothing,
 			transformation.AddPrefix(cveDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)).
-				ThenMapEachToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(imageDackBox.Bucket)).
-				Then(transformation.Dedupe()).
-				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+				ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 		),
 
 		// CombineReversed ( { k2, k1 }
@@ -112,23 +92,19 @@ var (
 		//          )
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: transformation.ReverseEdgeKeys(
 			transformation.AddPrefix(cveDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 			transformation.AddPrefix(componentDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(imageDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+				ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)),
 		),
 
 		// CVE (backwards) Components (backwards) Nodes
 		v1.SearchCategory_NODES: transformation.AddPrefix(cveDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(nodeDackBox.Bucket)).
-			Then(transformation.Dedupe()).
-			ThenMapEachToOne(transformation.StripPrefix(nodeDackBox.Bucket)),
+			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToMany(transformation.BackwardFromContext(nodeDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(nodeDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// CombineReversed ( { k1, k2 }
 		//          CVEs,
@@ -137,13 +113,11 @@ var (
 		v1.SearchCategory_NODE_VULN_EDGE: transformation.ReverseEdgeKeys(
 			DoNothing,
 			transformation.AddPrefix(cveDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)).
-				ThenMapEachToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(nodeDackBox.Bucket)).
-				Then(transformation.Dedupe()).
-				ThenMapEachToOne(transformation.StripPrefix(nodeDackBox.Bucket)),
+				ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.BackwardFromContext(nodeDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(nodeDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 		),
 
 		// CombineReversed ( { k2, k1 }
@@ -152,20 +126,17 @@ var (
 		//          )
 		v1.SearchCategory_NODE_COMPONENT_EDGE: transformation.ReverseEdgeKeys(
 			transformation.AddPrefix(cveDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 			transformation.AddPrefix(componentDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(nodeDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(nodeDackBox.Bucket)),
+				ThenMapToMany(transformation.BackwardFromContext(nodeDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(nodeDackBox.Bucket)),
 		),
 
 		// CVE (backwards) Components
 		v1.SearchCategory_IMAGE_COMPONENTS: transformation.AddPrefix(cveDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 
 		// CombineReversed ( { k2, k1 }
 		//          CVE,
@@ -174,9 +145,8 @@ var (
 		v1.SearchCategory_COMPONENT_VULN_EDGE: transformation.ReverseEdgeKeys(
 			DoNothing,
 			transformation.AddPrefix(cveDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 		),
 
 		// CVE
@@ -189,33 +159,29 @@ var (
 		v1.SearchCategory_CLUSTER_VULN_EDGE: transformation.ReverseEdgeKeys(
 			DoNothing,
 			transformation.AddPrefix(cveDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext()).
-				Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+				ThenMapToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)),
 		),
 	}
 
 	// This transformation specifically excludes images because we need to attribute the cluster IDs from
 	// the nodes which contain this cve
 	cveNodeClusterSACTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-					ThenMapToMany(transformation.BackwardFromContext().
-						Then(transformation.HasPrefix(componentDackBox.Bucket)).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
-						Then(transformation.HasPrefix(nodeDackBox.Bucket)).
-						Then(transformation.Dedupe()).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
-						Then(transformation.Dedupe()).
-						Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-						ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)))
+					ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+					ThenMapEachToMany(transformation.BackwardFromContext(nodeDackBox.Bucket)).
+					Then(transformation.Dedupe()).
+					ThenMapEachToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)).
+					Then(transformation.Dedupe())
 
 	// CVEToImageExistenceTransformation maps a cve to whether or not an image exists that contains that cve
 	CVEToImageExistenceTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-						ThenMapToMany(transformation.BackwardFromContextWithPrefix(componentDackBox.Bucket)).
+						ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
 						ThenMapEachToBool(transformation.BackwardExistence(imageDackBox.Bucket))
 
 	// CVEToNodeExistenceTransformation maps a cve to whether or not a node exists that contains that cve
 	CVEToNodeExistenceTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-						ThenMapToMany(transformation.BackwardFromContextWithPrefix(componentDackBox.Bucket)).
+						ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
 						ThenMapEachToBool(transformation.BackwardExistence(nodeDackBox.Bucket))
 
 	// CVEToClusterExistenceTransformation maps a cve to whether or not a cluster exists that contains that cve

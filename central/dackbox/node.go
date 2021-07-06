@@ -14,10 +14,9 @@ var (
 	NodeTransformations = map[v1.SearchCategory]transformation.OneToMany{
 		// Node (backwards) Clusters
 		v1.SearchCategory_CLUSTERS: transformation.AddPrefix(nodeDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext()).
-			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+			ThenMapToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// Node
 		v1.SearchCategory_NODES: DoNothing,
@@ -29,12 +28,10 @@ var (
 		v1.SearchCategory_NODE_VULN_EDGE: transformation.ForwardEdgeKeys(
 			DoNothing,
 			transformation.AddPrefix(nodeDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToMany(transformation.ForwardFromContext()).
-				Then(transformation.Dedupe()).
-				Then(transformation.HasPrefix(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 		),
 
 		// Combine ( { k1, k2 }
@@ -44,16 +41,14 @@ var (
 		v1.SearchCategory_NODE_COMPONENT_EDGE: transformation.ForwardEdgeKeys(
 			DoNothing,
 			transformation.AddPrefix(nodeDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 		),
 
 		// Node (forwards) Components
 		v1.SearchCategory_IMAGE_COMPONENTS: transformation.AddPrefix(nodeDackBox.Bucket).
-			ThenMapToMany(transformation.ForwardFromContext()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+			ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 
 		// Combine ( { k1, k2 }
 		//          Node (forwards) Components,
@@ -61,25 +56,21 @@ var (
 		//          )
 		v1.SearchCategory_COMPONENT_VULN_EDGE: transformation.ForwardEdgeKeys(
 			transformation.AddPrefix(nodeDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.Dedupe()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 			transformation.AddPrefix(componentDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
 		),
 
 		// We don't want to surface cluster level CVEs from a node scope, so we just descend to the CVEs.
 		// Node (forwards) Components (forwards) CVEs
 		v1.SearchCategory_VULNERABILITIES: transformation.AddPrefix(nodeDackBox.Bucket).
-			ThenMapToMany(transformation.ForwardFromContext()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.ForwardFromContext()).
-			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(cveDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+			ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// We don't want to surface cluster level CVEs from a node scope.
 		v1.SearchCategory_CLUSTER_VULN_EDGE: ReturnNothing,

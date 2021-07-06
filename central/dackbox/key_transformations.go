@@ -13,116 +13,91 @@ import (
 var (
 	// ClusterToCVETransformation uses a graph context to transform a cluster ID into a cve ID.
 	ClusterToCVETransformation = transformation.AddPrefix(clusterDackBox.Bucket).
-					ThenMapToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(nsDackBox.Bucket)).
-					ThenMapEachToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
-					ThenMapEachToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(imageDackBox.Bucket)).
+					ThenMapToMany(transformation.ForwardFromContext(nsDackBox.Bucket)).
+					ThenMapEachToMany(transformation.ForwardFromContext(deploymentDackBox.Bucket)).
+					ThenMapEachToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
 					Then(transformation.Dedupe()).
-					ThenMapEachToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(componentDackBox.Bucket)).
+					ThenMapEachToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
 					Then(transformation.Dedupe()).
-					ThenMapEachToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(cveDackBox.Bucket)).
-					Then(transformation.Dedupe()).
-					ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket))
+					ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+					Then(transformation.Dedupe())
 
 	// ClusterToClusterCVETransformation uses a graph context to transform a cluster ID into a cluster cve ID.
 	ClusterToClusterCVETransformation = transformation.AddPrefix(clusterDackBox.Bucket).
-						ThenMapToMany(transformation.ForwardFromContext()).
-						Then(transformation.HasPrefix(cveDackBox.Bucket)).
-						ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket))
+						ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+						ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket))
 
 	// DeploymentToImageComponentTransformation uses a graph context to transform a deployment ID into a component ID.
 	DeploymentToImageComponentTransformation = transformation.AddPrefix(deploymentDackBox.Bucket).
-							ThenMapToMany(transformation.ForwardFromContext()).
-							Then(transformation.HasPrefix(imageDackBox.Bucket)).
-							ThenMapEachToMany(transformation.ForwardFromContext()).
-							Then(transformation.HasPrefix(componentDackBox.Bucket)).
-							Then(transformation.Dedupe()).
-							ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket))
+							ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
+							ThenMapEachToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+							ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)).
+							Then(transformation.Dedupe())
 
 	// DeploymentToCVETransformation uses a graph context to transform a deployment ID into a cve ID.
 	DeploymentToCVETransformation = transformation.AddPrefix(deploymentDackBox.Bucket).
-					ThenMapToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(imageDackBox.Bucket)).
-					ThenMapEachToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(componentDackBox.Bucket)).
+					ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
+					ThenMapEachToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
 					Then(transformation.Dedupe()).
-					ThenMapEachToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(cveDackBox.Bucket)).
-					Then(transformation.Dedupe()).
-					ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket))
+					ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+					Then(transformation.Dedupe())
 
 	// ImageToDeploymentTransformation uses a graph context to transform a image ID into a Deployment ID.
 	ImageToDeploymentTransformation = transformation.AddPrefix(imageDackBox.Bucket).
-					ThenMapToMany(transformation.BackwardFromContext()).
-					Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
-					ThenMapEachToOne(transformation.StripPrefix(deploymentDackBox.Bucket))
+					ThenMapToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket))
 
 	// ImageToImageComponentTransformation trasforms an image id to a set of image component ids.
 	ImageToImageComponentTransformation = transformation.AddPrefix(imageDackBox.Bucket).
-						ThenMapToMany(transformation.ForwardFromContext()).
-						Then(transformation.HasPrefix(componentDackBox.Bucket)).
-						ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket))
+						ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+						ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket))
 
 	// ImageToCVETransformation uses a graph context to transform a image ID into a cve ID.
 	ImageToCVETransformation = transformation.AddPrefix(imageDackBox.Bucket).
-					ThenMapToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(componentDackBox.Bucket)).
-					ThenMapEachToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(cveDackBox.Bucket)).
-					Then(transformation.Dedupe()).
-					ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket))
+					ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+					ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+					Then(transformation.Dedupe())
 
 	// ComponentToDeploymentTransformation uses a graph context to transform a component ID into a Deployment ID.
 	ComponentToDeploymentTransformation = transformation.AddPrefix(componentDackBox.Bucket).
-						ThenMapToMany(transformation.BackwardFromContext()).
-						Then(transformation.HasPrefix(imageDackBox.Bucket)).
-						ThenMapEachToMany(transformation.BackwardFromContext()).
-						Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
-						Then(transformation.Dedupe()).
-						ThenMapEachToOne(transformation.StripPrefix(deploymentDackBox.Bucket))
+						ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+						ThenMapEachToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
+						ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)).
+						Then(transformation.Dedupe())
 
 	// ComponentToImageTransformation uses a graph context to transform a component ID into an image ID.
 	ComponentToImageTransformation = transformation.AddPrefix(componentDackBox.Bucket).
-					ThenMapToMany(transformation.BackwardFromContext()).
-					Then(transformation.HasPrefix(imageDackBox.Bucket)).
-					ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket))
+					ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket))
 
 	// ComponentToCVETransformation uses a graph context to transform a component ID into a cve ID.
 	ComponentToCVETransformation = transformation.AddPrefix(componentDackBox.Bucket).
-					ThenMapToMany(transformation.ForwardFromContext()).
-					Then(transformation.HasPrefix(cveDackBox.Bucket)).
-					ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket))
+					ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket))
 
 	// CVEToComponentTransformation uses a graph context to transform a cve ID into a component ID.
 	CVEToComponentTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-					ThenMapToMany(transformation.BackwardFromContext()).
-					Then(transformation.HasPrefix(componentDackBox.Bucket)).
-					ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket))
+					ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket))
 
 	// CVEToImageTransformation uses a graph context to transform a cve ID into an image ID.
 	CVEToImageTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-					ThenMapToMany(transformation.BackwardFromContext()).
-					Then(transformation.HasPrefix(componentDackBox.Bucket)).
-					ThenMapEachToMany(transformation.BackwardFromContext()).
-					Then(transformation.HasPrefix(imageDackBox.Bucket)).
+					ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+					ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
 					Then(transformation.Dedupe()).
-					ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket))
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket))
 
 	// CVEToDeploymentTransformation uses a graph context to transform a cve ID into a deployment ID.
 	CVEToDeploymentTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-					ThenMapToMany(transformation.BackwardFromContext()).
-					Then(transformation.HasPrefix(componentDackBox.Bucket)).
-					ThenMapEachToMany(transformation.BackwardFromContext()).
-					Then(transformation.HasPrefix(imageDackBox.Bucket)).
+					ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+					ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
 					Then(transformation.Dedupe()).
-					ThenMapEachToMany(transformation.BackwardFromContext()).
-					Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
-					Then(transformation.Dedupe()).
-					ThenMapEachToOne(transformation.StripPrefix(deploymentDackBox.Bucket))
+					ThenMapEachToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)).
+					Then(transformation.Dedupe())
 
 	// ComponentCVEEdgeToCVETransformation transforms a component:cve edge ID into a cve ID.
 	ComponentCVEEdgeToCVETransformation = transformation.Split([]byte{':'}).

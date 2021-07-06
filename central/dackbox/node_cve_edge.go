@@ -18,7 +18,7 @@ var (
 			Then(transformation.AtIndex(0)).
 			ThenMapEachToOne(transformation.AddPrefix(nodeDackBox.Bucket)).
 			Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)),
 
 		// Edge (parse first key in pair) Node
 		v1.SearchCategory_NODES: transformation.Split([]byte(":")).
@@ -37,9 +37,8 @@ var (
 				ThenMapEachToOne(transformation.Decode()).
 				Then(transformation.AtIndex(0)),
 			transformation.AddPrefix(nodeDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 		),
 
 		// Edge (parse first key in pair) Node (forwards) Components
@@ -47,9 +46,8 @@ var (
 			ThenMapEachToOne(transformation.Decode()).
 			Then(transformation.AtIndex(0)).
 			ThenMapEachToOne(transformation.AddPrefix(nodeDackBox.Bucket)).
-			ThenMapEachToMany(transformation.ForwardFromContext()).
-			Then(transformation.HasPrefix(componentDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+			ThenMapEachToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 
 		// Combine ( { k1, k2 }
 		//          Node (forwards) Components,
@@ -60,14 +58,12 @@ var (
 				ThenMapEachToOne(transformation.Decode()).
 				Then(transformation.AtIndex(0)).
 				ThenMapEachToOne(transformation.AddPrefix(nodeDackBox.Bucket)).
-				ThenMapEachToMany(transformation.ForwardFromContext()).
-				Then(transformation.Dedupe()).
-				Then(transformation.HasPrefix(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)),
+				ThenMapEachToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 			transformation.AddPrefix(componentDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext()).
-				Then(transformation.HasPrefix(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+				ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
 		),
 
 		// Edge (parse second key in pair) CVE

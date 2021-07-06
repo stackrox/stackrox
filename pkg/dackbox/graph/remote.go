@@ -76,10 +76,16 @@ func (rm *RemoteGraph) GetRefsTo(to []byte) [][]byte {
 	return rm.RWGraph.GetRefsTo(to)
 }
 
-// GetRefsFromPrefix gets the references to the key filtered by prefix
-func (rm *RemoteGraph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
+// GetRefsFromPrefix returns the children referenced by the input parent key filtered by prefix.
+func (rm *RemoteGraph) GetRefsFromPrefix(from, prefix []byte) [][]byte {
+	rm.ensureFrom(from)
+	return rm.RWGraph.GetRefsFromPrefix(from, prefix)
+}
+
+// GetRefsToPrefix gets the references to the key filtered by prefix
+func (rm *RemoteGraph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 	rm.ensureTo(to)
-	return rm.RWGraph.GetRefsFromPrefix(to, prefix)
+	return rm.RWGraph.GetRefsToPrefix(to, prefix)
 }
 
 // ReferencedFromPrefix returns whether there exists a reference to this key with the specific prefix

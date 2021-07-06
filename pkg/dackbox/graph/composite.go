@@ -30,9 +30,14 @@ func (cs compositeGraph) HasRefsTo(to []byte) bool {
 	return s.HasRefsTo(to)
 }
 
-func (cs compositeGraph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
+func (cs compositeGraph) GetRefsFromPrefix(from, prefix []byte) [][]byte {
+	s := cs.getFirstStateWithFrom(from)
+	return s.GetRefsFromPrefix(from, prefix)
+}
+
+func (cs compositeGraph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 	s := cs.getFirstStateWithTo(to)
-	return s.GetRefsFromPrefix(to, prefix)
+	return s.GetRefsToPrefix(to, prefix)
 }
 
 func (cs compositeGraph) ReferencedFromPrefix(to, prefix []byte) bool {

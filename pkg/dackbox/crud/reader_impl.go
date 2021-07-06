@@ -3,6 +3,7 @@ package crud
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 type readerImpl struct {
@@ -48,7 +49,7 @@ func (rc *readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]
 func (rc *readerImpl) ReadKeysIn(prefix []byte, dackTxn *dackbox.Transaction) ([][]byte, error) {
 	var ret [][]byte
 	err := dackTxn.BucketKeyForEach(prefix, false, func(k []byte) error {
-		ret = append(ret, append([]byte{}, k...))
+		ret = append(ret, sliceutils.ByteClone(k))
 		return nil
 	})
 	return ret, err

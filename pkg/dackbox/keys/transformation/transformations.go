@@ -40,25 +40,38 @@ func (oto OneToOne) ThenMapToBool(fn OneToBool) OneToBool {
 // MapEachToOne converts the input OneToOne function to a ManyToMany by applying it to all input keys one by one.
 func MapEachToOne(fn OneToOne) ManyToMany {
 	return func(ctx context.Context, keys [][]byte) [][]byte {
-		ret := make([][]byte, 0, len(keys))
-		for _, key := range keys {
-			ret = append(ret, fn(ctx, key))
+		for i, key := range keys {
+			keys[i] = fn(ctx, key)
 		}
-		return ret
+		return keys
 	}
 }
 
 // AddPrefix adds the given bucket prefix to the keys before output.
 func AddPrefix(prefix []byte) OneToOne {
+	dbPrefix := dbhelper.GetBucketKey(prefix, nil)
 	return func(ctx context.Context, key []byte) []byte {
-		return dbhelper.GetBucketKey(prefix, key)
+		ret := make([]byte, 0, len(key)+len(dbPrefix))
+		ret = append(ret, dbPrefix...)
+		ret = append(ret, key...)
+		return ret
 	}
 }
 
 // StripPrefix removes the input bucket prefix from the keys before output.
 func StripPrefix(prefix []byte) OneToOne {
+	dbPrefix := dbhelper.GetBucketKey(prefix, nil)
 	return func(ctx context.Context, key []byte) []byte {
-		return dbhelper.StripBucket(prefix, key)
+		return dbhelper.StripPrefix(dbPrefix, key)
+	}
+}
+
+// StripPrefixUnchecked removes the input bucket prefix from the keys before output. It must only
+// be used if you can be absolutely sure that all keys will have the prefix.
+func StripPrefixUnchecked(prefix []byte) OneToOne {
+	prefixLen := len(dbhelper.GetBucketKey(prefix, nil))
+	return func(ctx context.Context, key []byte) []byte {
+		return key[prefixLen:]
 	}
 }
 
@@ -236,36 +249,25 @@ func Backward(graph graph.RGraph) OneToMany {
 }
 
 // ForwardFromContext steps forward (finding the values that are pointed to FROM the input keys) in the input RGraph for
-// all the input keys.
-func ForwardFromContext() OneToMany {
-	return func(ctx context.Context, key []byte) [][]byte {
-		g := graph.GetGraph(ctx)
-		if g == nil {
-			return nil
-		}
-		return g.GetRefsFrom(key)
-	}
-}
-
-// BackwardFromContext steps backwards (finding the values that point TO the input keys) in the input graph for all the input keys.
-func BackwardFromContext() OneToMany {
-	return func(ctx context.Context, key []byte) [][]byte {
-		g := graph.GetGraph(ctx)
-		if g == nil {
-			return nil
-		}
-		return g.GetRefsTo(key)
-	}
-}
-
-// BackwardFromContextWithPrefix gets the references to the key filtered by the specified prefix
-func BackwardFromContextWithPrefix(prefix []byte) OneToMany {
+// all the input keys, filtering on the given prefix.
+func ForwardFromContext(prefix []byte) OneToMany {
 	return func(ctx context.Context, key []byte) [][]byte {
 		g := graph.GetGraph(ctx)
 		if g == nil {
 			return nil
 		}
 		return g.GetRefsFromPrefix(key, prefix)
+	}
+}
+
+// BackwardFromContext steps backwards (finding the values that point TO the input keys) in the input graph for all the input keys.
+func BackwardFromContext(prefix []byte) OneToMany {
+	return func(ctx context.Context, key []byte) [][]byte {
+		g := graph.GetGraph(ctx)
+		if g == nil {
+			return nil
+		}
+		return g.GetRefsToPrefix(key, prefix)
 	}
 }
 

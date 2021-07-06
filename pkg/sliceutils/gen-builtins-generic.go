@@ -5,10 +5,6 @@
 
 package sliceutils
 
-import (
-	"github.com/pkg/errors"
-)
-
 // BoolDiff returns, given two sorted bool slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func BoolDiff(a, b []bool, lessFunc func(a, b bool) bool) (aOnly, bOnly []bool) {
@@ -31,22 +27,6 @@ func BoolDiff(a, b []bool, lessFunc func(a, b bool) bool) (aOnly, bOnly []bool) 
 	return
 }
 
-// BoolClone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func BoolClone(in []bool) []bool {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []bool{}
-	}
-	out := make([]bool, len(in))
-	copy(out, in)
-	return out
-}
-
 // BoolFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func BoolFind(slice []bool, elem bool) int {
@@ -56,23 +36,6 @@ func BoolFind(slice []bool, elem bool) int {
 		}
 	}
 	return -1
-}
-
-// ConcatBoolSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatBoolSlices(slices ...[]bool) []bool {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]bool, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // BoolUnique returns a new slice that contains only the first occurrence of each element in slice.
@@ -152,19 +115,6 @@ func BoolEqual(a, b []bool) bool {
 	return true
 }
 
-// BoolSelect returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func BoolSelect(a []bool, indices ...int) []bool {
-	result := make([]bool, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // ByteDiff returns, given two sorted byte slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) {
@@ -187,22 +137,6 @@ func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) 
 	return
 }
 
-// ByteClone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func ByteClone(in []byte) []byte {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []byte{}
-	}
-	out := make([]byte, len(in))
-	copy(out, in)
-	return out
-}
-
 // ByteFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func ByteFind(slice []byte, elem byte) int {
@@ -212,23 +146,6 @@ func ByteFind(slice []byte, elem byte) int {
 		}
 	}
 	return -1
-}
-
-// ConcatByteSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatByteSlices(slices ...[]byte) []byte {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]byte, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // ByteUnique returns a new slice that contains only the first occurrence of each element in slice.
@@ -308,19 +225,6 @@ func ByteEqual(a, b []byte) bool {
 	return true
 }
 
-// ByteSelect returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func ByteSelect(a []byte, indices ...int) []byte {
-	result := make([]byte, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Complex128Diff returns, given two sorted complex128 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Complex128Diff(a, b []complex128, lessFunc func(a, b complex128) bool) (aOnly, bOnly []complex128) {
@@ -343,22 +247,6 @@ func Complex128Diff(a, b []complex128, lessFunc func(a, b complex128) bool) (aOn
 	return
 }
 
-// Complex128Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Complex128Clone(in []complex128) []complex128 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []complex128{}
-	}
-	out := make([]complex128, len(in))
-	copy(out, in)
-	return out
-}
-
 // Complex128Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Complex128Find(slice []complex128, elem complex128) int {
@@ -368,23 +256,6 @@ func Complex128Find(slice []complex128, elem complex128) int {
 		}
 	}
 	return -1
-}
-
-// ConcatComplex128Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatComplex128Slices(slices ...[]complex128) []complex128 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]complex128, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Complex128Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -464,19 +335,6 @@ func Complex128Equal(a, b []complex128) bool {
 	return true
 }
 
-// Complex128Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Complex128Select(a []complex128, indices ...int) []complex128 {
-	result := make([]complex128, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Complex64Diff returns, given two sorted complex64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly, bOnly []complex64) {
@@ -499,22 +357,6 @@ func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly,
 	return
 }
 
-// Complex64Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Complex64Clone(in []complex64) []complex64 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []complex64{}
-	}
-	out := make([]complex64, len(in))
-	copy(out, in)
-	return out
-}
-
 // Complex64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Complex64Find(slice []complex64, elem complex64) int {
@@ -524,23 +366,6 @@ func Complex64Find(slice []complex64, elem complex64) int {
 		}
 	}
 	return -1
-}
-
-// ConcatComplex64Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatComplex64Slices(slices ...[]complex64) []complex64 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]complex64, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Complex64Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -620,19 +445,6 @@ func Complex64Equal(a, b []complex64) bool {
 	return true
 }
 
-// Complex64Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Complex64Select(a []complex64, indices ...int) []complex64 {
-	result := make([]complex64, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // ErrorDiff returns, given two sorted error slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func ErrorDiff(a, b []error, lessFunc func(a, b error) bool) (aOnly, bOnly []error) {
@@ -655,22 +467,6 @@ func ErrorDiff(a, b []error, lessFunc func(a, b error) bool) (aOnly, bOnly []err
 	return
 }
 
-// ErrorClone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func ErrorClone(in []error) []error {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []error{}
-	}
-	out := make([]error, len(in))
-	copy(out, in)
-	return out
-}
-
 // ErrorFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func ErrorFind(slice []error, elem error) int {
@@ -680,23 +476,6 @@ func ErrorFind(slice []error, elem error) int {
 		}
 	}
 	return -1
-}
-
-// ConcatErrorSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatErrorSlices(slices ...[]error) []error {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]error, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // ErrorUnique returns a new slice that contains only the first occurrence of each element in slice.
@@ -776,19 +555,6 @@ func ErrorEqual(a, b []error) bool {
 	return true
 }
 
-// ErrorSelect returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func ErrorSelect(a []error, indices ...int) []error {
-	result := make([]error, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Float32Diff returns, given two sorted float32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly []float32) {
@@ -811,22 +577,6 @@ func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly
 	return
 }
 
-// Float32Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Float32Clone(in []float32) []float32 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []float32{}
-	}
-	out := make([]float32, len(in))
-	copy(out, in)
-	return out
-}
-
 // Float32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Float32Find(slice []float32, elem float32) int {
@@ -836,23 +586,6 @@ func Float32Find(slice []float32, elem float32) int {
 		}
 	}
 	return -1
-}
-
-// ConcatFloat32Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatFloat32Slices(slices ...[]float32) []float32 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]float32, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Float32Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -932,19 +665,6 @@ func Float32Equal(a, b []float32) bool {
 	return true
 }
 
-// Float32Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Float32Select(a []float32, indices ...int) []float32 {
-	result := make([]float32, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Float64Diff returns, given two sorted float64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Float64Diff(a, b []float64, lessFunc func(a, b float64) bool) (aOnly, bOnly []float64) {
@@ -967,22 +687,6 @@ func Float64Diff(a, b []float64, lessFunc func(a, b float64) bool) (aOnly, bOnly
 	return
 }
 
-// Float64Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Float64Clone(in []float64) []float64 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []float64{}
-	}
-	out := make([]float64, len(in))
-	copy(out, in)
-	return out
-}
-
 // Float64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Float64Find(slice []float64, elem float64) int {
@@ -992,23 +696,6 @@ func Float64Find(slice []float64, elem float64) int {
 		}
 	}
 	return -1
-}
-
-// ConcatFloat64Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatFloat64Slices(slices ...[]float64) []float64 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]float64, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Float64Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -1088,19 +775,6 @@ func Float64Equal(a, b []float64) bool {
 	return true
 }
 
-// Float64Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Float64Select(a []float64, indices ...int) []float64 {
-	result := make([]float64, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // IntDiff returns, given two sorted int slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
@@ -1123,22 +797,6 @@ func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
 	return
 }
 
-// IntClone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func IntClone(in []int) []int {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []int{}
-	}
-	out := make([]int, len(in))
-	copy(out, in)
-	return out
-}
-
 // IntFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func IntFind(slice []int, elem int) int {
@@ -1148,23 +806,6 @@ func IntFind(slice []int, elem int) int {
 		}
 	}
 	return -1
-}
-
-// ConcatIntSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatIntSlices(slices ...[]int) []int {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]int, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // IntUnique returns a new slice that contains only the first occurrence of each element in slice.
@@ -1244,19 +885,6 @@ func IntEqual(a, b []int) bool {
 	return true
 }
 
-// IntSelect returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func IntSelect(a []int, indices ...int) []int {
-	result := make([]int, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Int16Diff returns, given two sorted int16 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int16Diff(a, b []int16, lessFunc func(a, b int16) bool) (aOnly, bOnly []int16) {
@@ -1279,22 +907,6 @@ func Int16Diff(a, b []int16, lessFunc func(a, b int16) bool) (aOnly, bOnly []int
 	return
 }
 
-// Int16Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Int16Clone(in []int16) []int16 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []int16{}
-	}
-	out := make([]int16, len(in))
-	copy(out, in)
-	return out
-}
-
 // Int16Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Int16Find(slice []int16, elem int16) int {
@@ -1304,23 +916,6 @@ func Int16Find(slice []int16, elem int16) int {
 		}
 	}
 	return -1
-}
-
-// ConcatInt16Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatInt16Slices(slices ...[]int16) []int16 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]int16, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Int16Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -1400,19 +995,6 @@ func Int16Equal(a, b []int16) bool {
 	return true
 }
 
-// Int16Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Int16Select(a []int16, indices ...int) []int16 {
-	result := make([]int16, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Int32Diff returns, given two sorted int32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int32) {
@@ -1435,22 +1017,6 @@ func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int
 	return
 }
 
-// Int32Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Int32Clone(in []int32) []int32 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []int32{}
-	}
-	out := make([]int32, len(in))
-	copy(out, in)
-	return out
-}
-
 // Int32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Int32Find(slice []int32, elem int32) int {
@@ -1460,23 +1026,6 @@ func Int32Find(slice []int32, elem int32) int {
 		}
 	}
 	return -1
-}
-
-// ConcatInt32Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatInt32Slices(slices ...[]int32) []int32 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]int32, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Int32Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -1556,19 +1105,6 @@ func Int32Equal(a, b []int32) bool {
 	return true
 }
 
-// Int32Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Int32Select(a []int32, indices ...int) []int32 {
-	result := make([]int32, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Int64Diff returns, given two sorted int64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int64Diff(a, b []int64, lessFunc func(a, b int64) bool) (aOnly, bOnly []int64) {
@@ -1591,22 +1127,6 @@ func Int64Diff(a, b []int64, lessFunc func(a, b int64) bool) (aOnly, bOnly []int
 	return
 }
 
-// Int64Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Int64Clone(in []int64) []int64 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []int64{}
-	}
-	out := make([]int64, len(in))
-	copy(out, in)
-	return out
-}
-
 // Int64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Int64Find(slice []int64, elem int64) int {
@@ -1616,23 +1136,6 @@ func Int64Find(slice []int64, elem int64) int {
 		}
 	}
 	return -1
-}
-
-// ConcatInt64Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatInt64Slices(slices ...[]int64) []int64 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]int64, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Int64Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -1712,19 +1215,6 @@ func Int64Equal(a, b []int64) bool {
 	return true
 }
 
-// Int64Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Int64Select(a []int64, indices ...int) []int64 {
-	result := make([]int64, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Int8Diff returns, given two sorted int8 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) {
@@ -1747,22 +1237,6 @@ func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) 
 	return
 }
 
-// Int8Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Int8Clone(in []int8) []int8 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []int8{}
-	}
-	out := make([]int8, len(in))
-	copy(out, in)
-	return out
-}
-
 // Int8Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Int8Find(slice []int8, elem int8) int {
@@ -1772,23 +1246,6 @@ func Int8Find(slice []int8, elem int8) int {
 		}
 	}
 	return -1
-}
-
-// ConcatInt8Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatInt8Slices(slices ...[]int8) []int8 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]int8, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Int8Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -1868,19 +1325,6 @@ func Int8Equal(a, b []int8) bool {
 	return true
 }
 
-// Int8Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Int8Select(a []int8, indices ...int) []int8 {
-	result := make([]int8, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // RuneDiff returns, given two sorted rune slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func RuneDiff(a, b []rune, lessFunc func(a, b rune) bool) (aOnly, bOnly []rune) {
@@ -1903,22 +1347,6 @@ func RuneDiff(a, b []rune, lessFunc func(a, b rune) bool) (aOnly, bOnly []rune) 
 	return
 }
 
-// RuneClone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func RuneClone(in []rune) []rune {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []rune{}
-	}
-	out := make([]rune, len(in))
-	copy(out, in)
-	return out
-}
-
 // RuneFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func RuneFind(slice []rune, elem rune) int {
@@ -1928,23 +1356,6 @@ func RuneFind(slice []rune, elem rune) int {
 		}
 	}
 	return -1
-}
-
-// ConcatRuneSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatRuneSlices(slices ...[]rune) []rune {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]rune, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // RuneUnique returns a new slice that contains only the first occurrence of each element in slice.
@@ -2024,19 +1435,6 @@ func RuneEqual(a, b []rune) bool {
 	return true
 }
 
-// RuneSelect returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func RuneSelect(a []rune, indices ...int) []rune {
-	result := make([]rune, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // StringDiff returns, given two sorted string slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []string) {
@@ -2059,22 +1457,6 @@ func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []
 	return
 }
 
-// StringClone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func StringClone(in []string) []string {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []string{}
-	}
-	out := make([]string, len(in))
-	copy(out, in)
-	return out
-}
-
 // StringFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func StringFind(slice []string, elem string) int {
@@ -2084,23 +1466,6 @@ func StringFind(slice []string, elem string) int {
 		}
 	}
 	return -1
-}
-
-// ConcatStringSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatStringSlices(slices ...[]string) []string {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]string, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // StringUnique returns a new slice that contains only the first occurrence of each element in slice.
@@ -2180,19 +1545,6 @@ func StringEqual(a, b []string) bool {
 	return true
 }
 
-// StringSelect returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func StringSelect(a []string, indices ...int) []string {
-	result := make([]string, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // UintDiff returns, given two sorted uint slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintDiff(a, b []uint, lessFunc func(a, b uint) bool) (aOnly, bOnly []uint) {
@@ -2215,22 +1567,6 @@ func UintDiff(a, b []uint, lessFunc func(a, b uint) bool) (aOnly, bOnly []uint) 
 	return
 }
 
-// UintClone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func UintClone(in []uint) []uint {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []uint{}
-	}
-	out := make([]uint, len(in))
-	copy(out, in)
-	return out
-}
-
 // UintFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func UintFind(slice []uint, elem uint) int {
@@ -2240,23 +1576,6 @@ func UintFind(slice []uint, elem uint) int {
 		}
 	}
 	return -1
-}
-
-// ConcatUintSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatUintSlices(slices ...[]uint) []uint {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]uint, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // UintUnique returns a new slice that contains only the first occurrence of each element in slice.
@@ -2336,19 +1655,6 @@ func UintEqual(a, b []uint) bool {
 	return true
 }
 
-// UintSelect returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func UintSelect(a []uint, indices ...int) []uint {
-	result := make([]uint, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Uint16Diff returns, given two sorted uint16 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []uint16) {
@@ -2371,22 +1677,6 @@ func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []
 	return
 }
 
-// Uint16Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Uint16Clone(in []uint16) []uint16 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []uint16{}
-	}
-	out := make([]uint16, len(in))
-	copy(out, in)
-	return out
-}
-
 // Uint16Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Uint16Find(slice []uint16, elem uint16) int {
@@ -2396,23 +1686,6 @@ func Uint16Find(slice []uint16, elem uint16) int {
 		}
 	}
 	return -1
-}
-
-// ConcatUint16Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatUint16Slices(slices ...[]uint16) []uint16 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]uint16, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Uint16Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -2492,19 +1765,6 @@ func Uint16Equal(a, b []uint16) bool {
 	return true
 }
 
-// Uint16Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Uint16Select(a []uint16, indices ...int) []uint16 {
-	result := make([]uint16, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Uint32Diff returns, given two sorted uint32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint32Diff(a, b []uint32, lessFunc func(a, b uint32) bool) (aOnly, bOnly []uint32) {
@@ -2527,22 +1787,6 @@ func Uint32Diff(a, b []uint32, lessFunc func(a, b uint32) bool) (aOnly, bOnly []
 	return
 }
 
-// Uint32Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Uint32Clone(in []uint32) []uint32 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []uint32{}
-	}
-	out := make([]uint32, len(in))
-	copy(out, in)
-	return out
-}
-
 // Uint32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Uint32Find(slice []uint32, elem uint32) int {
@@ -2552,23 +1796,6 @@ func Uint32Find(slice []uint32, elem uint32) int {
 		}
 	}
 	return -1
-}
-
-// ConcatUint32Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatUint32Slices(slices ...[]uint32) []uint32 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]uint32, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Uint32Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -2648,19 +1875,6 @@ func Uint32Equal(a, b []uint32) bool {
 	return true
 }
 
-// Uint32Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Uint32Select(a []uint32, indices ...int) []uint32 {
-	result := make([]uint32, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Uint64Diff returns, given two sorted uint64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []uint64) {
@@ -2683,22 +1897,6 @@ func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []
 	return
 }
 
-// Uint64Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Uint64Clone(in []uint64) []uint64 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []uint64{}
-	}
-	out := make([]uint64, len(in))
-	copy(out, in)
-	return out
-}
-
 // Uint64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Uint64Find(slice []uint64, elem uint64) int {
@@ -2708,23 +1906,6 @@ func Uint64Find(slice []uint64, elem uint64) int {
 		}
 	}
 	return -1
-}
-
-// ConcatUint64Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatUint64Slices(slices ...[]uint64) []uint64 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]uint64, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Uint64Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -2804,19 +1985,6 @@ func Uint64Equal(a, b []uint64) bool {
 	return true
 }
 
-// Uint64Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Uint64Select(a []uint64, indices ...int) []uint64 {
-	result := make([]uint64, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // Uint8Diff returns, given two sorted uint8 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint8Diff(a, b []uint8, lessFunc func(a, b uint8) bool) (aOnly, bOnly []uint8) {
@@ -2839,22 +2007,6 @@ func Uint8Diff(a, b []uint8, lessFunc func(a, b uint8) bool) (aOnly, bOnly []uin
 	return
 }
 
-// Uint8Clone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func Uint8Clone(in []uint8) []uint8 {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []uint8{}
-	}
-	out := make([]uint8, len(in))
-	copy(out, in)
-	return out
-}
-
 // Uint8Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Uint8Find(slice []uint8, elem uint8) int {
@@ -2864,23 +2016,6 @@ func Uint8Find(slice []uint8, elem uint8) int {
 		}
 	}
 	return -1
-}
-
-// ConcatUint8Slices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatUint8Slices(slices ...[]uint8) []uint8 {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]uint8, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // Uint8Unique returns a new slice that contains only the first occurrence of each element in slice.
@@ -2960,19 +2095,6 @@ func Uint8Equal(a, b []uint8) bool {
 	return true
 }
 
-// Uint8Select returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func Uint8Select(a []uint8, indices ...int) []uint8 {
-	result := make([]uint8, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
-}
-
 // UintptrDiff returns, given two sorted uintptr slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly []uintptr) {
@@ -2995,22 +2117,6 @@ func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly
 	return
 }
 
-// UintptrClone clones a slice, creating a new slice
-// and copying the contents of the underlying array.
-// If `in` is a nil slice, a nil slice is returned.
-// If `in` is an empty slice, an empty slice is returned.
-func UintptrClone(in []uintptr) []uintptr {
-	if in == nil {
-		return nil
-	}
-	if len(in) == 0 {
-		return []uintptr{}
-	}
-	out := make([]uintptr, len(in))
-	copy(out, in)
-	return out
-}
-
 // UintptrFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func UintptrFind(slice []uintptr, elem uintptr) int {
@@ -3020,23 +2126,6 @@ func UintptrFind(slice []uintptr, elem uintptr) int {
 		}
 	}
 	return -1
-}
-
-// ConcatUintptrSlices concatenates slices, returning a slice with newly allocated backing storage of the exact
-// size.
-func ConcatUintptrSlices(slices ...[]uintptr) []uintptr {
-	length := 0
-	for _, slice := range slices {
-		length += len(slice)
-	}
-	result := make([]uintptr, length)
-	i := 0
-	for _, slice := range slices {
-		nextI := i + len(slice)
-		copy(result[i:nextI], slice)
-		i = nextI
-	}
-	return result
 }
 
 // UintptrUnique returns a new slice that contains only the first occurrence of each element in slice.
@@ -3114,17 +2203,4 @@ func UintptrEqual(a, b []uintptr) bool {
 		}
 	}
 	return true
-}
-
-// UintptrSelect returns a slice containing the elements at the given indices of the input slice.
-// CAUTION: This function panics if any index is out of range.
-func UintptrSelect(a []uintptr, indices ...int) []uintptr {
-	result := make([]uintptr, 0, len(indices))
-	for _, idx := range indices {
-		if idx < 0 || idx >= len(a) {
-			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
-		}
-		result = append(result, a[idx])
-	}
-	return result
 }

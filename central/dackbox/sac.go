@@ -110,11 +110,9 @@ func namespaceIDsToScopes(ctx context.Context, namespaceIDs [][]byte) [][]sac.Sc
 
 // This transforms the namespace ID to the namespace with the graph.
 var namespaceIDToNamespaces = transformation.AddPrefix(nsDackBox.Bucket).
-	ThenMapToMany(transformation.ForwardFromContext()).
-	Then(transformation.HasPrefix(nsDackBox.SACBucket)).
-	ThenMapEachToOne(transformation.StripPrefix(nsDackBox.SACBucket))
+	ThenMapToMany(transformation.ForwardFromContext(nsDackBox.SACBucket)).
+	ThenMapEachToOne(transformation.StripPrefixUnchecked(nsDackBox.SACBucket))
 
 var cveToClustersWithoutDeploymentsNorNodes = transformation.AddPrefix(cveDackBox.Bucket).
-	ThenMapToMany(transformation.BackwardFromContext()).
-	Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-	ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket))
+	ThenMapToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
+	ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket))

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -218,7 +219,7 @@ func loadGraphIntoMem(dbFactory transactions.DBTransactionFactory, graphPrefix [
 		if err != nil {
 			return err
 		}
-		return initial.SetRefs(append([]byte{}, k...), sk)
+		return initial.SetRefs(sliceutils.ByteClone(k), sk)
 	})
 	if err != nil {
 		return nil, err
