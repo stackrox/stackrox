@@ -10,6 +10,20 @@ import (
 // SortedKeys is a helper class that is a serializable list of keys with a maximum length of 1 << 16. Optimized for a small number of keys stored together.
 type SortedKeys [][]byte
 
+type byteSliceSorter [][]byte
+
+func (s byteSliceSorter) Len() int {
+	return len(s)
+}
+
+func (s byteSliceSorter) Less(i, j int) bool {
+	return bytes.Compare(s[i], s[j]) < 0
+}
+
+func (s byteSliceSorter) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
 // Sort sorts an input list of keys to create a sorted keys. If you know the keys are already sorted, you can simply
 // cast like SortedKeys(keys) instead of using Sort().
 func Sort(in [][]byte) SortedKeys {
@@ -18,9 +32,7 @@ func Sort(in [][]byte) SortedKeys {
 	}
 	ret := make([][]byte, len(in))
 	copy(ret, in)
-	sort.Slice(ret, func(i, j int) bool {
-		return bytes.Compare(ret[i], ret[j]) < 0
-	})
+	sort.Sort(byteSliceSorter(ret))
 	// dedupe values
 	deduped := ret[:1]
 	dedIdx := 0

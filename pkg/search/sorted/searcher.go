@@ -39,13 +39,10 @@ func Searcher(searcher search.Searcher, field search.FieldLabel, ranker Ranker) 
 				return results, err
 			}
 
-			sort.SliceStable(results, func(i, j int) bool {
-				if reversed {
-					i, j = j, i
-				}
-				rankI := ranker.GetRankForID(results[i].ID)
-				rankJ := ranker.GetRankForID(results[j].ID)
-				return rankI < rankJ
+			sort.Stable(&resultsSorter{
+				results:  results,
+				reversed: reversed,
+				ranker:   ranker,
 			})
 			return results, nil
 		},
@@ -53,4 +50,27 @@ func Searcher(searcher search.Searcher, field search.FieldLabel, ranker Ranker) 
 			return searcher.Count(ctx, q)
 		},
 	}
+}
+
+type resultsSorter struct {
+	results  []search.Result
+	reversed bool
+	ranker   Ranker
+}
+
+func (s *resultsSorter) Len() int {
+	return len(s.results)
+}
+
+func (s *resultsSorter) Less(i, j int) bool {
+	if s.reversed {
+		i, j = j, i
+	}
+	rankI := s.ranker.GetRankForID(s.results[i].ID)
+	rankJ := s.ranker.GetRankForID(s.results[j].ID)
+	return rankI < rankJ
+}
+
+func (s *resultsSorter) Swap(i, j int) {
+	s.results[i], s.results[j] = s.results[j], s.results[i]
 }
