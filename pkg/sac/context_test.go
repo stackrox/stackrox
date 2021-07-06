@@ -8,31 +8,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsContextSACV2Enabled(t *testing.T) {
-
+func TestIsContextBuiltinScopedAuthzEnabled(t *testing.T) {
 	tests := []struct {
-		ctx   context.Context
-		sac   bool
-		sacV2 bool
+		ctx                context.Context
+		sac                bool
+		builtinScopedAuthz bool
 	}{{
 		ctx: context.Background(),
-		sac: false, sacV2: false,
+		sac: false, builtinScopedAuthz: false,
 	}, {
 		ctx: SetContextSACEnabled(context.Background()),
-		sac: true, sacV2: false,
+		sac: true, builtinScopedAuthz: false,
 	}, {
-		ctx: SetContextSACV2Enabled(context.Background()),
-		sac: true, sacV2: true,
+		ctx: SetContextBuiltinScopedAuthzEnabled(context.Background()),
+		sac: true, builtinScopedAuthz: true,
 	}, {
-		ctx: context.WithValue(context.Background(), sacV2Enabled{}, struct{}{}),
-		sac: false, sacV2: false,
+		ctx: context.WithValue(context.Background(), builtinScopedAuthzEnabled{}, struct{}{}),
+		sac: false, builtinScopedAuthz: false,
 	},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.ctx), func(t *testing.T) {
 			assert.Equal(t, tt.sac, IsContextSACEnabled(tt.ctx))
-			assert.Equal(t, tt.sacV2, IsContextSACV2Enabled(tt.ctx))
+			assert.Equal(t, tt.builtinScopedAuthz, IsContextBuiltinScopedAuthzEnabled(tt.ctx))
 		})
 	}
-
 }

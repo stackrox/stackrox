@@ -8,7 +8,7 @@ import (
 
 type globalAccessScopeContextKey struct{}
 type sacEnabled struct{}
-type sacV2Enabled struct{}
+type builtinScopedAuthzEnabled struct{}
 
 // GlobalAccessScopeChecker retrieves the global access scope from the context.
 // This function is guaranteed to return a non-nil value.
@@ -47,17 +47,20 @@ func SetContextSACEnabled(ctx context.Context) context.Context {
 	return context.WithValue(ctx, sacEnabled{}, struct{}{})
 }
 
-// IsContextSACV2Enabled will return true if SACv2 and SAC are enabled for a context and false otherwise
-func IsContextSACV2Enabled(ctx context.Context) bool {
-	contextHasSACv2 := ctx.Value(sacV2Enabled{})
-	return contextHasSACv2 != nil && IsContextSACEnabled(ctx)
+// IsContextBuiltinScopedAuthzEnabled will return true if the built-in scoped
+// authorizer and SAC are enabled for a context and false otherwise.
+func IsContextBuiltinScopedAuthzEnabled(ctx context.Context) bool {
+	builtinScopedAuthz := ctx.Value(builtinScopedAuthzEnabled{})
+	return builtinScopedAuthz != nil && IsContextSACEnabled(ctx)
 }
 
-// SetContextSACV2Enabled enables SACv2 for a context.  Note, this must be done separately from setting a
-// GlobalAccessScopeChecker for a context.  All contexts must have a GlobalAccessScopeChecker but not all contexts must
-// have SAC enabled.
-func SetContextSACV2Enabled(ctx context.Context) context.Context {
-	return context.WithValue(SetContextSACEnabled(ctx), sacV2Enabled{}, struct{}{})
+// SetContextBuiltinScopedAuthzEnabled indicates the built-in scoped authorizer
+// must be used in this context. This must be done separately from setting a
+// GlobalAccessScopeChecker for a context. All contexts must have a
+// GlobalAccessScopeChecker but not all contexts must use the built-in scoped
+// authorizer.
+func SetContextBuiltinScopedAuthzEnabled(ctx context.Context) context.Context {
+	return context.WithValue(SetContextSACEnabled(ctx), builtinScopedAuthzEnabled{}, struct{}{})
 }
 
 // WithGlobalAccessScopeChecker returns a context that is a child of the given context and contains

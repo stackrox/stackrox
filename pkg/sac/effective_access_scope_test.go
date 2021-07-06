@@ -811,12 +811,12 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 	}
 }
 
-func TestEffectiveAccessScopeAllowEverything(t *testing.T) {
+func TestUnrestrictedEffectiveAccessScope(t *testing.T) {
 	expected := &EffectiveAccessScopeTree{
 		State:    Included,
 		Clusters: make(map[string]*ClustersScopeSubTree),
 	}
-	result := EffectiveAccessScopeAllowEverything()
+	result := UnrestrictedEffectiveAccessScope()
 	assert.Exactly(t, expected, result)
 }
 

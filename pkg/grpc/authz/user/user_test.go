@@ -72,7 +72,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			}, {
 				Resource: nsScopedResource, Access: storage.Access_READ_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACV2Enabled(ctx)),
+			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
 			err: authz.ErrNotAuthorized("not authorized to READ_ACCESS dummy-2"),
 		},
 		{
@@ -80,14 +80,14 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACV2Enabled(ctx)),
+			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
 		},
 		{
 			name: "built in scope auth check permissions but nil permissions in ID",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACV2Enabled(ctxWithNoPermissions)),
+			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctxWithNoPermissions)),
 			err: authz.ErrNoCredentials,
 		},
 		{

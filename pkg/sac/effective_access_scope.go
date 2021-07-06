@@ -81,9 +81,9 @@ const (
 	scopeSeparator     = "::"
 )
 
-// EffectiveAccessScopeAllowEverything returns EffectiveAccessScopeTree
+// UnrestrictedEffectiveAccessScope returns EffectiveAccessScopeTree
 // allowing everything implicitly via marking the root Included.
-func EffectiveAccessScopeAllowEverything() *EffectiveAccessScopeTree {
+func UnrestrictedEffectiveAccessScope() *EffectiveAccessScopeTree {
 	return newEffectiveAccessScopeTree(Included)
 }
 
@@ -124,8 +124,7 @@ func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, cl
 		populateStateForNamespace(namespace, parentCluster, namespaceSelectors, detail)
 	}
 
-	// Recursively update parent nodes.
-	bubbleUpStates(root, detail)
+	bubbleUpStatesAndCompactify(root, detail)
 
 	return root, nil
 }
@@ -350,31 +349,40 @@ func matchLabels(selectors []labels.Selector, lbls map[string]string) ScopeState
 	return Excluded
 }
 
-// bubbleUpStates updates the state of parent nodes based on the state of their
-// children. If any child is Included or Partial, its parent becomes at least
-// Partial. If all children are Included, the parent will still be Partial
-// unless it has been included directly.
-func bubbleUpStates(root *EffectiveAccessScopeTree, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+// bubbleUpStatesAndCompactify updates the state of parent nodes based on the
+// state of their children and compactifies the tree iff the requested level of
+// detail is MINIMAL.
+//
+// If any child is Included or Partial, its parent becomes at least Partial. If
+// all children are Included, the parent is still Partial unless it has been
+// included directly.
+//
+// For MINIMAL level of detail, delete from the tree:
+//   * subtrees *with roots* in the Excluded state,
+//   * subtrees *of nodes* in the Included state.
+func bubbleUpStatesAndCompactify(root *EffectiveAccessScopeTree, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	deleteUnnecessaryNodes := detail == v1.ComputeEffectiveAccessScopeRequest_MINIMAL
 	for clusterName, cluster := range root.Clusters {
 		for namespaceName, namespace := range cluster.Namespaces {
 			// Update the cluster's state from Excluded to Partial
-			// if its child namespace is included.
+			// if any of its namespaces is included.
 			if cluster.State == Excluded &&
 				(namespace.State == Included || namespace.State == Partial) {
 				cluster.State = Partial
 
-				// OPTIONAL optimization to short-circuit if we don't need to trim nodes
+				// If we don't need to delete nodes, we can short-circuit.
 				if !deleteUnnecessaryNodes {
 					break
 				}
 			}
-			// Delete the namespace if desired.
+			// Delete Excluded namespaces if desired.
 			if deleteUnnecessaryNodes && namespace.State == Excluded {
 				delete(cluster.Namespaces, namespaceName)
 			}
 		}
 
+		// Delete all namespaces for Included clusters and Excluded clusters
+		// if desired.
 		if deleteUnnecessaryNodes {
 			if cluster.State == Included {
 				cluster.Namespaces = nil
@@ -383,6 +391,7 @@ func bubbleUpStates(root *EffectiveAccessScopeTree, detail v1.ComputeEffectiveAc
 			}
 		}
 
+		// Update the root's state from to Partial if any cluster is included.
 		if root.State == Excluded && (cluster.State == Included || cluster.State == Partial) {
 			root.State = Partial
 		}

@@ -137,7 +137,7 @@ func (c *authorizerDataCache) getEffectiveAccessScope(accessScope *storage.Simpl
 
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*sac.EffectiveAccessScopeTree, error) {
 	if accessScope == nil {
-		return sac.EffectiveAccessScopeAllowEverything(), nil
+		return sac.UnrestrictedEffectiveAccessScope(), nil
 	}
 	eas, err := sac.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 	if err != nil {

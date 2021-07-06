@@ -55,7 +55,7 @@ func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context
 			return ctx, nil
 		}
 		client = authorizer.Singleton()
-		ctx = sac.SetContextSACV2Enabled(ctx)
+		ctx = sac.SetContextBuiltinScopedAuthzEnabled(ctx)
 	}
 	ctx = sac.SetContextSACEnabled(ctx)
 
