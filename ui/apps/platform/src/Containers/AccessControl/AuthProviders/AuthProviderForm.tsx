@@ -1,12 +1,14 @@
-import React, { ReactElement, useState } from 'react';
-import { useFormik } from 'formik';
+import React, { ReactElement, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+import { useFormik, FormikProvider } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Button,
     Form,
     FormGroup,
+    FormSection,
     Grid,
     GridItem,
     SelectOption,
@@ -18,25 +20,40 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import { availableAuthProviders } from 'constants/accessControl';
+import { selectors } from 'reducers';
+import { actions as authActions } from 'reducers/auth';
+import { actions as groupActions } from 'reducers/groups';
 import { AuthProvider } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 
 import ConfigurationFormFields from './ConfigurationFormFields';
-import { getInitialAuthProviderValues, transformValuesBeforeSaving } from './authProviders.utils';
+import RuleGroups from './RuleGroups';
+import {
+    getInitialAuthProviderValues,
+    transformInitialValues,
+    transformValuesBeforeSaving,
+    getGroupsByAuthProviderId,
+    getDefaultRoleByAuthProviderId,
+} from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
-
-import SelectSingle from '../SelectSingle'; // TODO import from where?
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
-    authProvider: AuthProvider;
+    selectedAuthProvider: AuthProvider;
     roles: Role[];
     onClickCancel: () => void;
     onClickEdit: () => void;
     submitValues: (values: AuthProvider) => Promise<AuthProvider>;
 };
+
+const authProviderState = createStructuredSelector({
+    roles: selectors.getRoles,
+    groups: selectors.getRuleGroups,
+    saveAuthProviderError: selectors.getSaveAuthProviderError,
+});
 
 function getNewAuthProviderTitle(type) {
     const selectedType = availableAuthProviders.find(({ value }) => value === type);
@@ -46,19 +63,30 @@ function getNewAuthProviderTitle(type) {
 function AuthProviderForm({
     isActionable,
     action,
-    authProvider,
-    roles,
+    selectedAuthProvider,
     onClickCancel,
     onClickEdit,
-    submitValues,
 }: AuthProviderFormProps): ReactElement {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { groups, roles, saveAuthProviderError } = useSelector(authProviderState);
+    const dispatch = useDispatch();
 
-    const initialValues = getInitialAuthProviderValues(authProvider);
+    useEffect(() => {
+        dispatch(groupActions.fetchGroups.request());
+    }, [dispatch]);
 
-    const { dirty, handleChange, isValid, setFieldValue, values } = useFormik({
-        initialValues,
+    const initialValues = getInitialAuthProviderValues(selectedAuthProvider);
+    const filteredGroups = getGroupsByAuthProviderId(groups, selectedAuthProvider.id);
+    const defaultRole = getDefaultRoleByAuthProviderId(groups, selectedAuthProvider.id);
+
+    const modifiedInitialValues = {
+        ...transformInitialValues(initialValues),
+        groups: filteredGroups,
+        defaultRole,
+    };
+
+    const formik = useFormik({
+        initialValues: modifiedInitialValues,
         onSubmit: () => {},
         validationSchema: yup.object({
             name: yup.string().required(),
@@ -97,42 +125,26 @@ function AuthProviderForm({
                 }),
         }),
     });
+    const { dirty, handleChange, isValid, setFieldValue, values } = formik;
 
     function onChange(_value, event) {
         handleChange(event);
     }
 
     function onClickSubmit() {
-        // TODO submit through Formik, especially to update its initialValue.
-        // For example, to make a change, submit, and then make the opposite change.
-        setIsSubmitting(true);
-        setAlertSubmit(null);
-
         const transformedValues = transformValuesBeforeSaving(values);
 
-        submitValues(transformedValues as AuthProvider)
-            .catch((error) => {
-                setAlertSubmit(
-                    <Alert
-                        title="Failed to submit auth provider"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
-                        {error.message}
-                    </Alert>
-                );
-            })
-            .finally(() => {
-                setIsSubmitting(false);
-            });
+        // Still submitting via Redux for MVP of Scoped Access feature
+        dispatch(authActions.saveAuthProvider(transformedValues));
     }
 
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
     const formTitle =
-        action === 'create' ? getNewAuthProviderTitle(authProvider.type) : authProvider.name;
+        action === 'create'
+            ? getNewAuthProviderTitle(selectedAuthProvider.type)
+            : selectedAuthProvider.name;
 
-    // TODO Minimum access role: replace select with radio button table as in Role form?
     return (
         <Form>
             <Toolbar inset={{ default: 'insetNone' }}>
@@ -151,8 +163,7 @@ function AuthProviderForm({
                                         <Button
                                             variant="primary"
                                             onClick={onClickSubmit}
-                                            isDisabled={!dirty || !isValid || isSubmitting}
-                                            isLoading={isSubmitting}
+                                            isDisabled={!dirty || !isValid}
                                             isSmall
                                         >
                                             Save
@@ -180,58 +191,98 @@ function AuthProviderForm({
                     )}
                 </ToolbarContent>
             </Toolbar>
-            {alertSubmit}
-            <Grid hasGutter>
-                <GridItem span={12} lg={6}>
-                    <FormGroup label="Name" fieldId="name" isRequired>
-                        <TextInput
-                            type="text"
-                            id="name"
-                            value={values.name}
+            {!!saveAuthProviderError && (
+                <Alert isInline variant="danger" title="Problem saving auth provider">
+                    <p>{saveAuthProviderError?.message}</p>
+                </Alert>
+            )}
+            <FormikProvider value={formik}>
+                <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
+                    <Grid hasGutter>
+                        <GridItem span={12} lg={6}>
+                            <FormGroup label="Name" fieldId="name" isRequired>
+                                <TextInput
+                                    type="text"
+                                    id="name"
+                                    value={values.name}
+                                    onChange={onChange}
+                                    isDisabled={isViewing}
+                                    isRequired
+                                />
+                            </FormGroup>
+                        </GridItem>
+                        <GridItem span={12} lg={6}>
+                            <FormGroup label="Auth provider type" fieldId="type" isRequired>
+                                <SelectSingle
+                                    id="type"
+                                    value={values.type}
+                                    handleSelect={setFieldValue}
+                                    isDisabled
+                                >
+                                    {availableAuthProviders.map(({ value, label }) => (
+                                        <SelectOption key={value} value={value}>
+                                            {label}
+                                        </SelectOption>
+                                    ))}
+                                </SelectSingle>
+                            </FormGroup>
+                        </GridItem>
+                        <ConfigurationFormFields
+                            config={values.config}
+                            isViewing={isViewing}
                             onChange={onChange}
-                            isDisabled={isViewing}
-                            isRequired
-                        />
-                    </FormGroup>
-                </GridItem>
-                {/* TODO: decide if we even need this, given that it is never editable? */}
-                <GridItem span={12} lg={6}>
-                    <FormGroup label="Auth provider type" fieldId="type" isRequired>
-                        <SelectSingle
-                            id="type"
-                            value={values.type}
                             setFieldValue={setFieldValue}
-                            isDisabled
+                            type={values.type}
+                        />
+                    </Grid>
+                </FormSection>
+                <FormSection
+                    title={`Assign roles to your ${selectedAuthProvider.type} users`}
+                    titleElement="h3"
+                >
+                    <FormGroup
+                        className="pf-u-w-100 pf-u-w-75-on-md pf-u-w-50-on-lg"
+                        label="Minimum access role"
+                        fieldId="minimumAccessRole"
+                        isRequired
+                    >
+                        <SelectSingle
+                            id="defaultRole"
+                            value={values.defaultRole} // TODO see getDefaultRoleByAuthProviderId in classic code
+                            handleSelect={setFieldValue}
+                            isDisabled={isViewing}
                         >
-                            {availableAuthProviders.map(({ value, label }) => (
-                                <SelectOption key={value} value={value}>
-                                    {label}
-                                </SelectOption>
+                            {roles.map(({ name }) => (
+                                <SelectOption key={name} value={name} />
                             ))}
                         </SelectSingle>
                     </FormGroup>
-                </GridItem>
-                <ConfigurationFormFields
-                    config={values.config}
-                    isViewing={isViewing}
-                    onChange={onChange}
-                    setFieldValue={setFieldValue}
-                    type={values.type}
-                />
-            </Grid>
-            <FormGroup label="Minimum access role" fieldId="minimumAccessRole" isRequired>
-                <SelectSingle
-                    id="minimumAccessRole"
-                    value="" // TODO see getDefaultRoleByAuthProviderId in classic code
-                    setFieldValue={setFieldValue}
-                    isDisabled={isViewing}
-                >
-                    {roles.map(({ name }) => (
-                        <SelectOption key={name} value={name} />
-                    ))}
-                </SelectSingle>
-            </FormGroup>
-            <FormGroup label="Rules" fieldId="rules" />
+                    <div id="minimum-access-role-description">
+                        <Alert isInline variant="info" title="">
+                            <p>
+                                The minimum access role is granted to all users who sign in with
+                                this authentication provider.
+                            </p>
+                            <p>
+                                To give users different roles, add rules. Users are granted all
+                                matching roles.
+                            </p>
+                            <p>
+                                Set the minimum access role to <strong>None</strong> if you want to
+                                define permissions completely using specific rules below.
+                            </p>
+                        </Alert>
+                    </div>
+                    <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
+                        <RuleGroups
+                            groups={values.groups}
+                            roles={roles}
+                            onChange={onChange}
+                            setFieldValue={setFieldValue}
+                        />
+                    </FormSection>
+                </FormSection>
+            </FormikProvider>
         </Form>
     );
 }

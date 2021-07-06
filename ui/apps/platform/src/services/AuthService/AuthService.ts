@@ -44,6 +44,15 @@ export type AuthProviderConfig = Record<
     string | number | undefined | boolean | Record<string, boolean>
 >;
 
+export type Group = {
+    roleName: string;
+    props: {
+        authProviderId: string;
+        key?: string;
+        value?: string;
+    };
+};
+
 export type AuthProvider = {
     id: string;
     name: string;
@@ -54,6 +63,8 @@ export type AuthProvider = {
     loginUrl?: string;
     extraUiEndpoints?: string[];
     active?: boolean;
+    groups?: Group[];
+    defaultRole?: string;
 };
 
 /**

@@ -11,7 +11,7 @@ import {
 
 import { oidcCallbackModes } from 'constants/accessControl';
 import { AuthProviderType, AuthProviderConfig } from 'services/AuthService';
-import SelectSingle from '../SelectSingle'; // TODO import from where?
+import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 
 export type ConfigurationFormFieldsProps = {
     config: AuthProviderConfig;
@@ -96,7 +96,7 @@ function ConfigurationFormFields({
                             <SelectSingle
                                 id="config.mode"
                                 value={config.mode as string}
-                                setFieldValue={setFieldValue}
+                                handleSelect={setFieldValue}
                                 isDisabled={isViewing}
                             >
                                 {oidcCallbackModes.map(({ value, label }) => (
@@ -236,7 +236,7 @@ function ConfigurationFormFields({
                             <SelectSingle
                                 id="config.configurationType"
                                 value={config.configurationType as string}
-                                setFieldValue={setFieldValue}
+                                handleSelect={setFieldValue}
                                 isDisabled={isViewing}
                             >
                                 <SelectOption value="dynamic">

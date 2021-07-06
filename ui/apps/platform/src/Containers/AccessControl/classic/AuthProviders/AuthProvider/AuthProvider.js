@@ -254,6 +254,7 @@ class AuthProvider extends Component {
                     onSave={this.onSave}
                     onCancel={onCancel}
                     onTest={onTest}
+                    editDisabled={false}
                 />
             );
         }

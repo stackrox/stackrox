@@ -1,10 +1,10 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
-    Alert,
-    AlertActionCloseButton,
-    AlertVariant,
     Badge,
     Bullseye,
     Dropdown,
@@ -20,14 +20,9 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import { availableAuthProviders } from 'constants/accessControl';
-import { filterAuthProviders } from 'reducers/auth';
-import {
-    AuthProvider,
-    createAuthProvider,
-    fetchAuthProviders,
-    updateAuthProvider,
-} from 'services/AuthService';
-import { Role, fetchRolesAsArray } from 'services/RolesService';
+import { actions as authActions, types as authActionTypes } from 'reducers/auth';
+import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
+import { AuthProvider, createAuthProvider, updateAuthProvider } from 'services/AuthService';
 
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
@@ -46,6 +41,15 @@ const authProviderNew = {
     config: {},
 } as AuthProvider; // TODO what are the minimum properties for create request?
 
+const authProviderState = createStructuredSelector({
+    authProviders: selectors.getAvailableAuthProviders,
+    roles: selectors.getRoles,
+    isFetchingAuthProviders: (state) =>
+        selectors.getLoadingStatus(state, authActionTypes.FETCH_AUTH_PROVIDERS) as boolean,
+    isFetchingRoles: (state) =>
+        selectors.getLoadingStatus(state, roleActionTypes.FETCH_ROLES) as boolean,
+});
+
 function getNewAuthProviderObj(type) {
     return { ...authProviderNew, type };
 }
@@ -56,57 +60,17 @@ function AuthProviders(): ReactElement {
     const queryObject = getQueryObject(search);
     const { action, type } = queryObject;
     const { entityId } = useParams();
+    const dispatch = useDispatch();
 
-    const [isFetching, setIsFetching] = useState(false);
     const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-    const [authProviders, setAuthProviders] = useState<AuthProvider[]>([]);
-    const [alertAuthProviders, setAlertAuthProviders] = useState<ReactElement | null>(null);
-    const [roles, setRoles] = useState<Role[]>([]);
-    const [alertRoles, setAlertRoles] = useState<ReactElement | null>(null);
+    const { authProviders, roles, isFetchingAuthProviders, isFetchingRoles } = useSelector(
+        authProviderState
+    );
 
     useEffect(() => {
-        // The primary request has fetching spinner and unclosable alert.
-        setIsFetching(true);
-        setAlertAuthProviders(null);
-        fetchAuthProviders()
-            .then((data) => {
-                setAuthProviders(filterAuthProviders(data.response)); // filter out Login with username/password
-            })
-            .catch((error) => {
-                setAlertAuthProviders(
-                    <Alert
-                        title="Fetch auth providers failed"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
-                        {error.message}
-                    </Alert>
-                );
-            })
-            .finally(() => {
-                setIsFetching(false);
-            });
-
-        // TODO Until secondary requests succeed, disable Create and Edit because selections might be incomplete?
-        setAlertRoles(null);
-        fetchRolesAsArray()
-            .then((rolesFetched) => {
-                setRoles(rolesFetched);
-            })
-            .catch((error) => {
-                const actionClose = <AlertActionCloseButton onClose={() => setAlertRoles(null)} />;
-                setAlertRoles(
-                    <Alert
-                        title="Fetch roles failed"
-                        variant={AlertVariant.warning}
-                        isInline
-                        actionClose={actionClose}
-                    >
-                        {error.message}
-                    </Alert>
-                );
-            });
-    }, []);
+        dispatch(authActions.fetchAuthProviders.request());
+        dispatch(roleActions.fetchRoles.request());
+    }, [dispatch]);
 
     function onToggleCreateMenu(isOpen) {
         setIsCreateMenuOpen(isOpen);
@@ -137,7 +101,7 @@ function AuthProviders(): ReactElement {
         return action === 'create'
             ? createAuthProvider(values).then((entityCreated) => {
                   // Append the created entity.
-                  setAuthProviders([...authProviders, entityCreated]);
+                  //   setAuthProviders([...authProviders, entityCreated]);
 
                   // Replace path which had action=create with plain entity path.
                   history.replace(getEntityPath(entityType, entityCreated.id));
@@ -146,11 +110,11 @@ function AuthProviders(): ReactElement {
               })
             : updateAuthProvider(values).then((entityUpdated) => {
                   // Replace the updated entity.
-                  setAuthProviders(
-                      authProviders.map((entity) =>
-                          entity.id === entityUpdated.id ? entityUpdated : entity
-                      )
-                  );
+                  //   setAuthProviders(
+                  //       authProviders.map((entity) =>
+                  //           entity.id === entityUpdated.id ? entityUpdated : entity
+                  //       )
+                  //   );
 
                   // Replace path which had action=update with plain entity path.
                   history.replace(getEntityPath(entityType, entityId));
@@ -159,7 +123,7 @@ function AuthProviders(): ReactElement {
               });
     }
 
-    const authProvider =
+    const selectedAuthProvider =
         authProviders.find(({ id }) => id === entityId) || getNewAuthProviderObj(type);
     const isActionable = true; // TODO does it depend on user role?
     const hasAction = Boolean(action);
@@ -176,25 +140,23 @@ function AuthProviders(): ReactElement {
         <>
             <AccessControlPageTitle entityType={entityType} isEntity={isExpanded} />
             <AccessControlNav entityType={entityType} />
-            {alertAuthProviders}
-            {alertRoles}
-            {isFetching && (
+            {(isFetchingAuthProviders || isFetchingRoles) && (
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
             )}
-            {!isFetching && isExpanded && (
+            {!isFetchingAuthProviders && !isFetchingRoles && isExpanded && (
                 <AuthProviderForm
                     isActionable={isActionable}
                     action={action}
-                    authProvider={authProvider}
+                    selectedAuthProvider={selectedAuthProvider}
                     roles={roles}
                     onClickCancel={onClickCancel}
                     onClickEdit={onClickEdit}
                     submitValues={submitValues}
                 />
             )}
-            {!isFetching && !isExpanded && (
+            {!isFetchingAuthProviders && !isFetchingRoles && !isExpanded && (
                 <>
                     <Toolbar inset={{ default: 'insetNone' }}>
                         <ToolbarContent>
@@ -214,7 +176,6 @@ function AuthProviders(): ReactElement {
                                             onToggle={onToggleCreateMenu}
                                             toggleIndicator={CaretDownIcon}
                                             isPrimary
-                                            isDisabled={isFetching}
                                         >
                                             Add auth provider
                                         </DropdownToggle>

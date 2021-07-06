@@ -1,11 +1,15 @@
 /* eslint-disable import/prefer-default-export */
-import { AuthProvider, AuthProviderConfig } from 'services/AuthService';
+import { AuthProvider, AuthProviderConfig, Group } from 'services/AuthService';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
+    defaultRole?: string;
+    groups?: Group[];
 };
 
-function transformInitialValues(initialValues: DisplayedAuthProvider): DisplayedAuthProvider {
+export function transformInitialValues(
+    initialValues: DisplayedAuthProvider
+): DisplayedAuthProvider {
     // TODO-ivan: eventually logic for different auth provider type should live
     // with the form component that renders form for the corresponding auth provider
     // type, probably makes sense to refactor after moving away from redux-form
@@ -56,6 +60,12 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
         // @ts-ignore
         newInitialValues.config = { mode: 'auto', do_not_use_client_secret: false };
     }
+    newInitialValues.groups = Array.isArray(authProvider.groups) ? [...authProvider.groups] : [];
+    newInitialValues.groups.push({
+        roleName: '',
+        props: { authProviderId: '', key: '', value: '' },
+    });
+
     return newInitialValues;
 }
 
@@ -73,8 +83,8 @@ export function getInitialAuthProviderValues(authProvider: AuthProvider): Displa
 }
 
 export function transformValuesBeforeSaving(
-    values: Record<string, string | string[] | boolean | AuthProviderConfig | undefined>
-): Record<string, string | string[] | boolean | AuthProviderConfig | undefined> {
+    values: Record<string, string | string[] | boolean | AuthProviderConfig | Group[] | undefined>
+): Record<string, string | string[] | boolean | AuthProviderConfig | Group[] | undefined> {
     if (values.type === 'oidc') {
         const alteredConfig = { ...(values.config as AuthProviderConfig) };
 
@@ -120,4 +130,35 @@ export function transformValuesBeforeSaving(
         };
     }
     return values;
+}
+
+export function getGroupsByAuthProviderId(groups: Group[], id: string): Group[] {
+    const filteredGroups = groups.filter(
+        (group) =>
+            group.props &&
+            group.props.authProviderId &&
+            group.props.authProviderId === id &&
+            group.props.key !== ''
+    );
+    return filteredGroups;
+}
+
+export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): string {
+    let defaultRoleGroups = groups.filter(
+        (group) =>
+            group.props &&
+            group.props.authProviderId &&
+            group.props.authProviderId === id &&
+            group.props.key === '' &&
+            group.props.value === ''
+    );
+    if (defaultRoleGroups.length) {
+        return defaultRoleGroups[0].roleName;
+    }
+    // if there is no default role specified for this auth provider then use the global default role
+    defaultRoleGroups = groups.filter((group) => !group.props);
+    if (defaultRoleGroups.length) {
+        return defaultRoleGroups[0].roleName;
+    }
+    return 'Admin';
 }
