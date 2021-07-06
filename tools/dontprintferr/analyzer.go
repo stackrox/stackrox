@@ -2,7 +2,9 @@ package dontprintferr
 
 import (
 	"go/ast"
+	"go/constant"
 	"go/types"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -29,11 +31,16 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		call := n.(*ast.CallExpr)
 		fn, ok := typeutil.Callee(pass.TypesInfo, call).(*types.Func)
 		if ok && fn.FullName() == "fmt.Errorf" {
+			// Check if the format string contains %w (new style error wrapping, allowed)
+			lit := pass.TypesInfo.Types[call.Args[0]].Value
+			if lit != nil && lit.Kind() == constant.String && strings.Contains(constant.StringVal(lit), "%w") {
+				return
+			}
 			for _, arg := range call.Args[1:] {
 				if matchType(pass.TypesInfo, arg, "error") {
 					pass.Report(analysis.Diagnostic{
 						Pos:     arg.Pos(),
-						Message: "Don't use fmt.Errorf to wrap errors, use pkg/errors.(Wrap/Wrapf)",
+						Message: "Use '%w' when wrapping errors using fmt.Errorf, or use pkg/errors.(Wrap/Wrapf)",
 					})
 				}
 			}

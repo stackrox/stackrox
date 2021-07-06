@@ -94,7 +94,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnNonExisting_S
 		panic("unexpected")
 	}
 
-	err := s.reconcileExt.reconcileSecret("absent-secret", false, validateFn, generateFn)
+	err := s.reconcileExt.reconcileSecret("absent-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	_, err = s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "absent-secret", metav1.GetOptions{})
@@ -111,7 +111,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingManag
 		panic("unexpected")
 	}
 
-	err := s.reconcileExt.reconcileSecret("existing-managed-secret", false, validateFn, generateFn)
+	err := s.reconcileExt.reconcileSecret("existing-managed-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	_, err = s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
@@ -128,7 +128,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldNotExist_OnExistingUnman
 		panic("unexpected")
 	}
 
-	err := s.reconcileExt.reconcileSecret("existing-secret", false, validateFn, generateFn)
+	err := s.reconcileExt.reconcileSecret("existing-secret", false, validateFn, generateFn, false)
 	s.Require().NoError(err)
 
 	_, err = s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
@@ -149,7 +149,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnNonExisting_Shou
 		}, nil
 	}
 
-	err := s.reconcileExt.reconcileSecret("absent-secret", true, validateFn, generateFn)
+	err := s.reconcileExt.reconcileSecret("absent-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.NotEmpty(markerID, "generate function has not been called")
 
@@ -178,7 +178,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 		panic("unexpected")
 	}
 
-	err = s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn)
+	err = s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.True(validated)
 
@@ -188,10 +188,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	s.Equal(initSecret, secret)
 }
 
-func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_FailingValidation_ShouldDoNothingAndFail() {
-	initSecret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
-	s.Require().NoError(err)
-
+func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_FailingValidation_NoFixExisting_ShouldFail() {
 	failValidationErr := pkgErrors.New("failed validation")
 	validateFn := func(data secretDataMap, managed bool) error {
 		s.Equal("existing-managed-secret", string(data["secret-name"]))
@@ -200,17 +197,41 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_
 	}
 
 	generateFn := func() (secretDataMap, error) {
-		s.Require().Fail("this function should not be called")
-		panic("unexpected")
+		return secretDataMap{
+			"new-secret-data": []byte("foo"),
+		}, nil
 	}
 
-	err = s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn)
+	err := s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
 	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
 	s.Require().NoError(err)
 
-	s.Equal(initSecret, secret)
+	s.Equal("existing-managed-secret", string(secret.Data["secret-name"]))
+}
+
+func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingManaged_FailingValidation_WithFixExisting_ShouldFix() {
+	failValidationErr := pkgErrors.New("failed validation")
+	validateFn := func(data secretDataMap, managed bool) error {
+		s.Equal("existing-managed-secret", string(data["secret-name"]))
+		s.True(managed)
+		return failValidationErr
+	}
+
+	generateFn := func() (secretDataMap, error) {
+		return secretDataMap{
+			"new-secret-data": []byte("foo"),
+		}, nil
+	}
+
+	err := s.reconcileExt.reconcileSecret("existing-managed-secret", true, validateFn, generateFn, true)
+	s.NoError(err)
+
+	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-managed-secret", metav1.GetOptions{})
+	s.Require().NoError(err)
+
+	s.Equal("foo", string(secret.Data["new-secret-data"]))
 }
 
 func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanaged_PassingValidation_ShouldDoNothing() {
@@ -230,7 +251,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanage
 		panic("unexpected")
 	}
 
-	err = s.reconcileExt.reconcileSecret("existing-secret", true, validateFn, generateFn)
+	err = s.reconcileExt.reconcileSecret("existing-secret", true, validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.True(validated)
 
@@ -256,7 +277,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnExistingUnmanage
 		panic("unexpected")
 	}
 
-	err = s.reconcileExt.reconcileSecret("existing-secret", true, validateFn, generateFn)
+	err = s.reconcileExt.reconcileSecret("existing-secret", true, validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
 	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "existing-secret", metav1.GetOptions{})

@@ -40,7 +40,7 @@ func (r *reconcileScannerDBPasswordExtensionRun) Execute() error {
 	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
 	shouldDelete := r.centralObj.DeletionTimestamp != nil || !r.centralObj.Spec.Scanner.IsEnabled()
 
-	if err := r.reconcileSecret("scanner-db-password", !shouldDelete, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData); err != nil {
+	if err := r.reconcileSecret("scanner-db-password", !shouldDelete, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db-password secret")
 	}
 

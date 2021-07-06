@@ -74,14 +74,14 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret() 
 
 func (r *reconcileAdminPasswordExtensionRun) Execute() error {
 	if r.centralObj.DeletionTimestamp != nil {
-		return r.reconcileSecret("central-htpasswd", false, nil, nil)
+		return r.reconcileSecret("central-htpasswd", false, nil, nil, false)
 	}
 
 	if err := r.readPasswordFromReferencedSecret(); err != nil {
 		return err
 	}
 
-	if err := r.reconcileSecret("central-htpasswd", true, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData); err != nil {
+	if err := r.reconcileSecret("central-htpasswd", true, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData, true); err != nil {
 		return errors.Wrap(err, "reconciling central-htpasswd secret")
 	}
 
