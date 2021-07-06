@@ -52,11 +52,7 @@ func (d *datastoreShim) GetNode(id string) (*storage.Node, error) {
 }
 
 func (d *datastoreShim) CountNodes() (int, error) {
-	results, err := d.dacky.Search(allNodeAccessCtx, d.clusterQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(results), nil
+	return d.dacky.Count(allNodeAccessCtx, d.clusterQuery())
 }
 
 func (d *datastoreShim) UpsertNode(node *storage.Node) error {

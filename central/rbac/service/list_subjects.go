@@ -166,8 +166,27 @@ func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Res
 
 // Count returns the number of search results from the query
 func (s *SubjectSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
-	results, err := s.Search(ctx, q)
-	return len(results), err
+	subjectQuery, _ := search.FilterQueryWithMap(q, mapping.OptionsMap)
+	pred, err := subjectFactory.GeneratePredicate(subjectQuery)
+	if err != nil {
+		return 0, err
+	}
+
+	bindings, err := s.k8sRoleBindingDatastore.SearchRawRoleBindings(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	// Subject return only users and groups, there is a separate resolver for service accounts.
+	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
+
+	numResults := 0
+	for _, subject := range subjects {
+		if _, match := pred.Evaluate(subject); match {
+			numResults++
+		}
+	}
+
+	return numResults, nil
 }
 
 // SearchSubjects implements the search interface that returns v1.SearchResult

@@ -97,11 +97,11 @@ func (s *serviceImpl) CountSecrets(ctx context.Context, request *v1.RawQuery) (*
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
-	alerts, err := s.secrets.Search(ctx, parsedQuery)
+	numSecrets, err := s.secrets.Count(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountSecretsResponse{Count: int32(len(alerts))}, nil
+	return &v1.CountSecretsResponse{Count: int32(numSecrets)}, nil
 }
 
 // ListSecrets returns all secrets that match the query.

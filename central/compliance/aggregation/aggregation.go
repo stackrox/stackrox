@@ -128,8 +128,19 @@ func (a *aggregatorImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resu
 
 // Count returns the number of search results from the query
 func (a *aggregatorImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	results, err := a.Search(ctx, q)
-	return len(results), err
+	totalResults := 0
+	specifiedFields := getSpecifiedFieldsFromQuery(q)
+	for category, searchFuncAndMap := range a.getSearchFuncs() {
+		if !search.HasApplicableOptions(specifiedFields, searchFuncAndMap.optionsMap) {
+			continue
+		}
+		numResults, err := searchFuncAndMap.count(ctx, q)
+		if err != nil {
+			return 0, errors.Wrapf(err, "searching category %s", category)
+		}
+		totalResults += numResults
+	}
+	return totalResults, nil
 }
 
 type passFailCounts struct {
@@ -571,8 +582,23 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []storage.ComplianceAggreg
 }
 
 type searchFuncAndOptionsMap struct {
+	// The function used for searching. Must not be nil.
 	searchFunc func(context.Context, *v1.Query) ([]search.Result, error)
+	// The function used for counting. In contrast to searchFunc, this may be nil, in
+	// which case counting is done via searching.
+	countFunc  func(context.Context, *v1.Query) (int, error)
 	optionsMap search.OptionsMap
+}
+
+func (s *searchFuncAndOptionsMap) count(ctx context.Context, q *v1.Query) (int, error) {
+	if s.countFunc != nil {
+		return s.countFunc(ctx, q)
+	}
+	results, err := s.searchFunc(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return len(results), nil
 }
 
 func wrapContextLessSearchFunc(f func(*v1.Query) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error) {
@@ -591,14 +617,17 @@ func (a *aggregatorImpl) getSearchFuncs() map[storage.ComplianceAggregation_Scop
 		},
 		storage.ComplianceAggregation_CLUSTER: {
 			searchFunc: a.clusters.Search,
+			countFunc:  a.clusters.Count,
 			optionsMap: clusterMappings.OptionsMap,
 		},
 		storage.ComplianceAggregation_NODE: {
 			searchFunc: a.nodes.Search,
+			countFunc:  a.nodes.Count,
 			optionsMap: nodeMappings.OptionsMap,
 		},
 		storage.ComplianceAggregation_NAMESPACE: {
 			searchFunc: a.namespaces.Search,
+			countFunc:  a.namespaces.Count,
 			optionsMap: namespaceMappings.OptionsMap,
 		},
 		storage.ComplianceAggregation_CONTROL: {
@@ -607,6 +636,7 @@ func (a *aggregatorImpl) getSearchFuncs() map[storage.ComplianceAggregation_Scop
 		},
 		storage.ComplianceAggregation_DEPLOYMENT: {
 			searchFunc: a.deployments.Search,
+			countFunc:  a.deployments.Count,
 			optionsMap: deployments.OptionsMap,
 		},
 	}

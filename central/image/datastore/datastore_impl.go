@@ -129,12 +129,7 @@ func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 		return ds.storage.CountImages()
 	}
 
-	searchResults, err := ds.Search(ctx, pkgSearch.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-
-	return len(searchResults), nil
+	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 
 func (ds *datastoreImpl) canReadImage(ctx context.Context, sha string) (bool, error) {

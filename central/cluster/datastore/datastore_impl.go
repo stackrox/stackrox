@@ -284,11 +284,7 @@ func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
 		return ds.clusterStorage.Count()
 	}
 
-	visible, err := ds.Search(ctx, pkgSearch.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(visible), nil
+	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 
 func checkWriteSac(ctx context.Context, clusterID string) error {

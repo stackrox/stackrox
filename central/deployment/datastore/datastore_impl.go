@@ -219,11 +219,7 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 		return ds.deploymentStore.CountDeployments()
 	}
 
-	searchResults, err := ds.Search(ctx, pkgSearch.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(searchResults), nil
+	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer

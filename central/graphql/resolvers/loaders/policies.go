@@ -73,7 +73,7 @@ func (idl *policyLoaderImpl) FromID(ctx context.Context, id string) (*storage.Po
 	return policies[0], nil
 }
 
-// ForDeploymentFromQuery loads a set of policies that match a query.
+// FromQuery loads a set of policies that match a query.
 func (idl *policyLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Policy, error) {
 	results, err := idl.policyDS.Search(ctx, query)
 	if err != nil {
@@ -85,12 +85,12 @@ func (idl *policyLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]
 
 // CountFromQuery returns the number of policies that match a given query.
 func (idl *policyLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
-	results, err := idl.FromQuery(ctx, query)
+	numResults, err := idl.policyDS.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
 
-	return int32(len(results)), nil
+	return int32(numResults), nil
 }
 
 // CountFromQuery returns the total number of policies.

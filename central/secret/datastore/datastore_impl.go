@@ -76,11 +76,7 @@ func (d *datastoreImpl) CountSecrets(ctx context.Context) (int, error) {
 		return d.storage.Count()
 	}
 
-	searchResults, err := d.Search(ctx, searchPkg.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(searchResults), nil
+	return d.Count(ctx, searchPkg.EmptyQuery())
 }
 
 func (d *datastoreImpl) UpsertSecret(ctx context.Context, request *storage.Secret) error {

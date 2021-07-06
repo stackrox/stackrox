@@ -157,11 +157,11 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
-	deployments, err := s.datastore.Search(ctx, parsedQuery)
+	numDeployments, err := s.datastore.Count(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountDeploymentsResponse{Count: int32(len(deployments))}, nil
+	return &v1.CountDeploymentsResponse{Count: int32(numDeployments)}, nil
 }
 
 // ListDeployments returns ListDeployments according to the request.

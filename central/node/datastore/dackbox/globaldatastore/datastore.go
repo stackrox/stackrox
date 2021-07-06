@@ -124,21 +124,7 @@ func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterID
 }
 
 func (s *globalDataStore) CountAllNodes(ctx context.Context) (int, error) {
-	if ok, err := nodesSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if ok {
-		results, err := s.datastore.Search(allNodeAccessCtx, search.EmptyQuery())
-		if err != nil {
-			return 0, err
-		}
-		return len(results), nil
-	}
-
-	searchResults, err := s.Search(ctx, search.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(searchResults), nil
+	return s.datastore.CountNodes(ctx)
 }
 
 // SearchResults returns any node matches to the query

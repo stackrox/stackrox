@@ -105,12 +105,7 @@ func (ds *datastoreImpl) CountNodes(ctx context.Context) (int, error) {
 		return ds.storage.CountNodes()
 	}
 
-	searchResults, err := ds.Search(ctx, pkgSearch.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-
-	return len(searchResults), nil
+	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 
 func (ds *datastoreImpl) canReadNode(ctx context.Context, id string) (bool, error) {

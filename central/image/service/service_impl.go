@@ -123,11 +123,11 @@ func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
-	images, err := s.datastore.Search(ctx, parsedQuery)
+	numImages, err := s.datastore.Count(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountImagesResponse{Count: int32(len(images))}, nil
+	return &v1.CountImagesResponse{Count: int32(numImages)}, nil
 }
 
 // ListImages retrieves all images in minimal form.

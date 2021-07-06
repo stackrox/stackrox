@@ -85,11 +85,11 @@ func (ndl *nodeLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*s
 
 // CountFromQuery returns the number of nodes that match a given query.
 func (ndl *nodeLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
-	results, err := ndl.ds.Search(ctx, query)
+	numResults, err := ndl.ds.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(numResults), nil
 }
 
 // CountFromQuery returns the total number of nodes.
