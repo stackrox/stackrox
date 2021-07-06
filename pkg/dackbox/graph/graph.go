@@ -110,13 +110,7 @@ func (s *Graph) GetRefsTo(to []byte) [][]byte {
 // GetRefsFromPrefix returns the children referenced by the input parent key that have the passed prefix.
 func (s *Graph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
 	if keys, exist := s.forward[string(to)]; exist {
-		var filtered [][]byte
-		for _, key := range keys {
-			if bytes.HasPrefix(key, prefix) {
-				filtered = append(filtered, key)
-			}
-		}
-		return filtered
+		return sliceutils.ByteSliceClone(filterByPrefix(prefix, keys))
 	}
 	return nil
 }
@@ -124,13 +118,7 @@ func (s *Graph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
 // GetRefsToPrefix returns the keys that have the passed prefix that reference the passed key
 func (s *Graph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 	if keys, exist := s.backward[string(to)]; exist {
-		var filtered [][]byte
-		for _, key := range keys {
-			if bytes.HasPrefix(key, prefix) {
-				filtered = append(filtered, key)
-			}
-		}
-		return filtered
+		return sliceutils.ByteSliceClone(filterByPrefix(prefix, keys))
 	}
 	return nil
 }
@@ -139,11 +127,7 @@ func (s *Graph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 // with the specified prefix exists in the graph.
 func (s *Graph) ReferencedFromPrefix(to []byte, prefix []byte) bool {
 	if keys, exists := s.backward[string(to)]; exists {
-		for _, key := range keys {
-			if bytes.HasPrefix(key, prefix) {
-				return true
-			}
-		}
+		return findFirstWithPrefix(prefix, keys) != -1
 	}
 	return false
 }
@@ -265,4 +249,50 @@ func (s *Graph) removeMappingsTo(to []byte) {
 		}
 	}
 	delete(s.backward, sTo)
+}
+
+// findFirstWithPrefix determines the first index of a key that has the desired prefix. If no key
+// has the desired prefix, it returns -1.
+func findFirstWithPrefix(prefix []byte, keys [][]byte) int {
+	if len(keys) == 0 {
+		return -1
+	}
+
+	// If the prefix is lexicographically larger than the largest element in the slice, we can't have a match
+	if bytes.Compare(prefix, keys[len(keys)-1]) > 0 {
+		return -1
+	}
+
+	prefixLen := len(prefix)
+	for i, key := range keys {
+		if len(key) > prefixLen {
+			key = key[:prefixLen]
+		}
+		if cmp := bytes.Compare(prefix, key); cmp == 0 {
+			// we have a match
+			return i
+		} else if cmp < 0 {
+			// prefix is lexicographically smaller already, and keys only get bigger - we can no longer have a match
+			return -1
+		}
+	}
+	return -1
+}
+
+// filterByPrefix returns a subslice (no copy) of the range within keys of all elements with the desired prefix.
+// If no element in keys has the desired prefix, nil is returned.
+func filterByPrefix(prefix []byte, keys [][]byte) [][]byte {
+	low := findFirstWithPrefix(prefix, keys)
+	if low == -1 {
+		return nil
+	}
+
+	for high := len(keys) - 1; high >= low; high-- {
+		// We no longer need to do a comparison, because we already have established that the last element is >= prefix,
+		// and there exists an element (keys[low]) that has the desired prefix.
+		if bytes.HasPrefix(keys[high], prefix) {
+			return keys[low : high+1]
+		}
+	}
+	return nil
 }

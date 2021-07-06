@@ -151,7 +151,8 @@ func (otm OneToMany) ThenMapEachToOne(fn OneToOne) OneToMany {
 // MapEachToMany converts a OneToMany into a ManyToMany by applying it to all of the keys one by one.
 func MapEachToMany(fn OneToMany) ManyToMany {
 	return func(ctx context.Context, keys [][]byte) [][]byte {
-		ret := make([][]byte, 0, len(keys))
+		// try to re-use whatever space is left over (e.g., because of a dedupe)
+		ret := keys[len(keys):]
 		for _, key := range keys {
 			ret = append(ret, fn(ctx, key)...)
 		}
