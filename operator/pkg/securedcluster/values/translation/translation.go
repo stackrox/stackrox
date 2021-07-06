@@ -4,14 +4,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"os"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	securedcluster "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"helm.sh/helm/v3/pkg/chartutil"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -68,9 +66,6 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 // Translate translates a SecuredCluster CR into helm values.
 func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredCluster) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
-	if !buildinfo.ReleaseBuild {
-		v.AddAllFrom(t.getHelmDevelopmentDefaults(sc))
-	}
 
 	v.SetStringValue("clusterName", sc.Spec.ClusterName)
 
@@ -242,27 +237,6 @@ func (t Translator) getComplianceContainerValues(compliance *securedcluster.Cont
 	cv.AddChild("complianceResources", translation.GetResources(compliance.Resources))
 
 	return &cv
-}
-
-func (t Translator) getHelmDevelopmentDefaults(sc securedcluster.SecuredCluster) *translation.ValuesBuilder {
-	rootBuilder := translation.NewValuesBuilder()
-
-	// Set development image from docker hub
-	imageBuilder := translation.NewValuesBuilder()
-	if os.Getenv("MAIN_IMAGE_TAG") != "" {
-		imageBuilder.SetStringValue("tag", os.Getenv("MAIN_IMAGE_TAG"))
-	}
-	rootBuilder.AddChild("image", &imageBuilder)
-
-	// Set development image pull secrets if no secret was referenced in Spec
-	if len(sc.Spec.ImagePullSecrets) == 0 {
-		rootBuilder.SetStringMap("imagePullSecrets", map[string]string{
-			"username": os.Getenv("REGISTRY_USERNAME"),
-			"password": os.Getenv("REGISTRY_PASSWORD"),
-		})
-	}
-
-	return &rootBuilder
 }
 
 func getMetaValues(sc securedcluster.SecuredCluster) *translation.ValuesBuilder {
