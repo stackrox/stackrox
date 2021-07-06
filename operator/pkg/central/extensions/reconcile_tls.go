@@ -42,15 +42,18 @@ type createCentralTLSExtensionRun struct {
 func (r *createCentralTLSExtensionRun) Execute() error {
 	shouldDelete := r.centralObj.DeletionTimestamp != nil
 
-	if err := r.reconcileSecret("central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData); err != nil {
+	// If we find a broken central-tls secret, do NOT try to auto-fix it. Doing so would invalidate all previously issued certificates
+	// (including sensor certificates and init bundles), and is very unlikely to result in a working state.
+	if err := r.reconcileSecret("central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
+	// scanner and scanner-db certs can be re-issued without a problem.
 	scannerEnabled := r.centralObj.Spec.Scanner.IsEnabled()
-	if err := r.reconcileSecret("scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData); err != nil {
+	if err := r.reconcileSecret("scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner secret")
 	}
-	if err := r.reconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData); err != nil {
+	if err := r.reconcileSecret("scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
 

@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
@@ -31,7 +32,7 @@ func (r *secretReconciliationExtension) SecretsClient() coreV1.SecretInterface {
 	return r.k8sClient.CoreV1().Secrets(r.Namespace())
 }
 
-func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
+func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
 	secretsClient := r.SecretsClient()
 
 	secret, err := secretsClient.Get(r.ctx, name, metav1.GetOptions{})
@@ -53,17 +54,27 @@ func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist
 	}
 
 	if secret != nil {
+		isManaged := metav1.IsControlledBy(secret, r.centralObj)
+		var validateErr error
 		if validate != nil {
-			if err := validate(secret.Data, metav1.IsControlledBy(secret, r.centralObj)); err != nil {
-				return errors.Wrapf(err, "validating existing %s secret", name)
-			}
+			validateErr = validate(secret.Data, isManaged)
 		}
-		return nil
+
+		if validateErr == nil {
+			return nil // validation of existing secret successful - no reconciliation needed
+		}
+		// If the secret is unmanaged, we cannot fix it, so we should fail. The same applies if there is no
+		// generate function specified, or if the caller told us not to attempt to fix it.
+		if !isManaged || generate == nil || !fixExisting {
+			return fmt.Errorf("Existing %s secret is invalid: %w. Please delete the secret to allow fixing the issue.", name, validateErr)
+		}
 	}
 
 	if generate == nil {
 		return pkgUtils.Should(errors.Errorf("secret %s should exist, but no generation logic has been specified", name))
 	}
+
+	// Try to generate the secret, in order to fix it.
 	data, err := generate()
 	if err != nil {
 		return errors.Wrapf(err, "generating data for new %s secret", name)
@@ -77,8 +88,16 @@ func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist
 		},
 		Data: data,
 	}
-	if _, err := secretsClient.Create(r.ctx, newSecret, metav1.CreateOptions{}); err != nil {
-		return errors.Wrapf(err, "creating new %s secret", name)
+
+	if secret == nil {
+		if _, err := secretsClient.Create(r.ctx, newSecret, metav1.CreateOptions{}); err != nil {
+			return errors.Wrapf(err, "creating new %s secret", name)
+		}
+	} else {
+		newSecret.ResourceVersion = secret.ResourceVersion
+		if _, err := secretsClient.Update(r.ctx, newSecret, metav1.UpdateOptions{}); err != nil {
+			return errors.Wrapf(err, "updating %s secret because existing instance failed validation", secret.Name)
+		}
 	}
 	return nil
 }
