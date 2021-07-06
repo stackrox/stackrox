@@ -164,6 +164,10 @@ func (rm *RemoteGraph) ensureFromAll(froms [][]byte) {
 		}
 	}
 
+	if len(unfetched) == 0 {
+		return
+	}
+
 	// Read them all at once.
 	rm.remoteToRead(func(g RGraph) {
 		for _, from := range unfetched {
@@ -185,6 +189,10 @@ func (rm *RemoteGraph) ensureToAll(tos [][]byte) {
 		if rm.readBackward.Add(strTo) {
 			unfetched = append(unfetched, to)
 		}
+	}
+
+	if len(unfetched) == 0 {
+		return
 	}
 
 	// Read them all at once.
