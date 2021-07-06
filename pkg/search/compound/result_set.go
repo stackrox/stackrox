@@ -36,6 +36,10 @@ func (rs resultSet) intersect(other resultSet) resultSet {
 		minLen = len(other.results)
 	}
 
+	if minLen == 0 {
+		return resultSet{}
+	}
+
 	order := rs.order
 	if other.order != nil {
 		order = other.order

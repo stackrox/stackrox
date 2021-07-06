@@ -48,15 +48,18 @@ func executeOrRec(ctx context.Context, ors []*searchRequestSpec) (resultSet, err
 
 func executeAndRec(ctx context.Context, ands []*searchRequestSpec) (resultSet, error) {
 	var results resultSet
-	for _, child := range ands {
+	for i, child := range ands {
 		other, err := executeRec(ctx, child)
 		if err != nil {
 			return resultSet{}, err
 		}
-		if results.results == nil {
+		if i == 0 {
 			results = other
 		} else {
 			results = results.intersect(other)
+		}
+		if len(results.results) == 0 {
+			return resultSet{}, nil
 		}
 	}
 	return results, nil
@@ -78,6 +81,9 @@ func executeLeftJoinWithRightOrderRec(ctx context.Context, parts *joinRequestSpe
 	left, err := executeRec(ctx, parts.left)
 	if err != nil {
 		return resultSet{}, err
+	}
+	if len(left.results) == 0 {
+		return resultSet{}, nil
 	}
 
 	right, err := executeRec(ctx, parts.right)
