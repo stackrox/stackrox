@@ -1,4 +1,4 @@
-# This file specifies values for the stackrox-central-services chart that are always applied
+# This file specifies values for the stackrox-secured-cluster-services chart that are always applied
 # in the context of the operator. The settings here mostly take care of disabling any features
 # that auto-generate values (in a random fashion, such as certificates and the admin password),
 # or inspect the current cluster state (unavailable on dry-run, which operator uses to determine
@@ -8,21 +8,3 @@
 # reconciliation loop is executed, regardless of changes to the CR.
 meta:
   useLookup: false
-ca:
-  generate: false
-env:
-  proxyConfig: ""
-central:
-  serviceTLS:
-    generate: false
-  jwtSigner:
-    generate: false
-  adminPassword:
-    generate: false
-scanner:
-  dbPassword:
-    generate: false
-  serviceTLS:
-    generate: false
-  dbServiceTLS:
-    generate: false
