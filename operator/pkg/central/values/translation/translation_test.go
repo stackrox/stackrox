@@ -1,7 +1,6 @@
 package translation
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stackrox/rox/operator/api/central/v1alpha1"
@@ -348,7 +347,7 @@ func TestTranslate(t *testing.T) {
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
-			got, err := translate(context.Background(), tt.args.clientSet, tt.args.c)
+			got, err := translate(tt.args.c)
 			assert.NoError(t, err)
 
 			assert.Equal(t, wantAsValues, got)

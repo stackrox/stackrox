@@ -26,3 +26,5 @@ scanner:
     generate: false
   dbServiceTLS:
     generate: false
+allowNonstandardReleaseName: true
+allowNonstandardNamespace: true
