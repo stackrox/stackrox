@@ -67,6 +67,9 @@ spec:
       - description: Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode. In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
         displayName: Connectivity Policy
         path: egress.connectivityPolicy
+      - description: Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This isn't usually needed, and may interfere with other workloads.
+        displayName: Create SecurityContextConstraints for Operand
+        path: misc.createSCCs
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
@@ -155,9 +158,18 @@ spec:
       - description: Additional image pull secrets to be taken into account for pulling images.
         displayName: Image Pull Secrets
         path: imagePullSecrets
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Customizations to apply on all Central Services components.
         displayName: Customizations
         path: customize
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Miscellaneous settings.
+        displayName: Miscellaneous
+        path: misc
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Stores persistent data on a directory on the host. This is not recommended, and should only be used together with a node selector (only available in YAML view).
         displayName: Host path
         path: central.persistence.hostPath
@@ -238,6 +250,9 @@ spec:
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
+      - description: Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This isn't usually needed, and may interfere with other workloads.
+        displayName: Create SecurityContextConstraints for Operand
+        path: misc.createSCCs
       - description: Settings for the Collector container, which is responsible for collecting process and networking activity at the host level.
         displayName: Collector Settings
         path: perNode.collector
@@ -283,9 +298,18 @@ spec:
       - description: Additional image pull secrets to be taken into account for pulling images.
         displayName: Image Pull Secrets
         path: imagePullSecrets
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Customizations to apply on all Central Services components.
         displayName: Customizations
         path: customize
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Miscellaneous settings.
+        displayName: Miscellaneous
+        path: misc
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: admissionControl.resources

@@ -108,6 +108,7 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 	v.AddChild("customize", &customize)
 	v.AddChild("meta", getMetaValues(sc))
+	v.AddAllFrom(translation.GetMisc(sc.Spec.Misc))
 
 	return v.Build()
 }

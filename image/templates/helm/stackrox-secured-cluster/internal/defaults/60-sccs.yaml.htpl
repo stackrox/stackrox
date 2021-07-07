@@ -1,0 +1,2 @@
+system:
+  createSCCs: [< not .Operator >]

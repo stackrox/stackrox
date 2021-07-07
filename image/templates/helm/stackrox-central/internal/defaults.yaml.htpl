@@ -73,6 +73,9 @@ defaults:
       name: scanner-db
       tag: [< .Versions.ScannerVersion >]
 
+  system:
+    createSCCs: [< not .Operator >]
+
 pvcDefaults:
   claimName: "stackrox-db"
   size: "100Gi"

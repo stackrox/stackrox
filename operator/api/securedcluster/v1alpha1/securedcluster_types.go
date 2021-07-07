@@ -62,12 +62,16 @@ type SecuredClusterSpec struct {
 	TLS *common.TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=7
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []common.LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=8
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
+
+	// Miscellaneous settings.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Misc *common.MiscSpec `json:"misc,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.

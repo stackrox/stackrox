@@ -47,12 +47,16 @@ type CentralSpec struct {
 	TLS *common.TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=5
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []common.LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=6
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
+
+	// Miscellaneous settings.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Misc *common.MiscSpec `json:"misc,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
