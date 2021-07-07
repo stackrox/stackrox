@@ -322,6 +322,16 @@ function launch_central {
             LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
         done
         export API_ENDPOINT="${LB_IP}:443"
+    elif [[ "${LOAD_BALANCER}" == "route" ]]; then
+        # wait for route
+        echo "Waiting for route to provision"
+        ROUTE_HOST=""
+        until [ -n "${ROUTE_HOST}" ]; do
+            echo -n "."
+            sleep 1
+            ROUTE_HOST=$(kubectl -n stackrox get route/central -o jsonpath='{.status.ingress[0].host}')
+        done
+        export API_ENDPOINT="${ROUTE_HOST}:443"
     else
         $central_scripts_dir/port-forward.sh 8000
     fi
