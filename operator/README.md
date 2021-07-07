@@ -252,7 +252,7 @@ metadata:
   name: rhacs-operator-test-subscription
   namespace: index-test
 spec:
-  channel: preview
+  channel: latest
   name: rhacs-operator
   source: rhacs-operator-test-index
   sourceNamespace: index-test

@@ -3,7 +3,7 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[]'
-    capabilities: Basic Install
+    capabilities: Seamless Upgrades
     categories: Security
     containerImage: docker.io/stackrox/stackrox-operator:0.0.1
     createdAt: "1999-12-31T23:59:59Z"

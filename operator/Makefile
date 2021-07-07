@@ -12,7 +12,7 @@ VERSION ?= $(shell $(MAKE) --quiet -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
 # - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=preview,fast,stable)
 # - use environment variables to overwrite this value (e.g export CHANNELS="preview,fast,stable")
-CHANNELS ?= preview
+CHANNELS ?= latest
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
@@ -22,7 +22,7 @@ endif
 # To re-generate a bundle for any other default channel without changing the default setup, you can:
 # - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
 # - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
-DEFAULT_CHANNEL ?= preview
+DEFAULT_CHANNEL ?= latest
 ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
@@ -35,6 +35,8 @@ IMAGE_TAG_BASE ?= docker.io/stackrox/stackrox-operator
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+
+ALL_BUNDLE_IMGS ?= $(BUNDLE_IMG)
 
 # INDEX_IMG defines the image:tag used for the index (a.k.a. catalog) image, containing the single operator bundle image.
 INDEX_IMG ?= $(IMAGE_TAG_BASE)-index:v$(VERSION)
@@ -295,7 +297,7 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 	./bundle_helpers/patch-csv.py \
 		--use-version $(VERSION) \
 		--first-version 3.62.0 \
-		--operator-image docker.io/stackrox/stackrox-operator:$(VERSION) \
+		--operator-image $(IMG) \
 		--no-related-images \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 # Check that the resulting bundle still passes validations.
@@ -315,7 +317,7 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 
 .PHONY: index-build
 index-build: opm ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(BUNDLE_IMG) --tag $(INDEX_IMG) --build-tool docker
+	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(ALL_BUNDLE_IMGS) --tag $(INDEX_IMG) --build-tool docker
 
 ##@ Push images
 

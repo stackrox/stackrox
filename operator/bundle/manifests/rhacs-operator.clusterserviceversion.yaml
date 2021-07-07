@@ -9,7 +9,7 @@ metadata:
       ,\n    \"metadata\": {\n      \"name\": \"stackrox-secured-cluster-services\"\
       ,\n      \"namespace\": \"stackrox\"\n    },\n    \"spec\": {\n      \"clusterName\"\
       : \"my-cluster\"\n    }\n  }\n]"
-    capabilities: Basic Install
+    capabilities: Seamless Upgrades
     categories: Security
     containerImage: docker.io/stackrox/stackrox-operator:0.0.1
     createdAt: '1999-12-31T23:59:59Z'
