@@ -5,6 +5,7 @@ kind: ServiceMonitor
 metadata:
   labels:
     control-plane: controller-manager
+    app: rhacs-operator
   name: controller-manager-metrics-monitor
   namespace: system
 spec:
@@ -14,3 +15,4 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      app: rhacs-operator

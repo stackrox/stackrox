@@ -3,6 +3,7 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
+    app: rhacs-operator
     control-plane: controller-manager
   name: rhacs-operator-controller-manager-metrics-service
 spec:
@@ -11,6 +12,7 @@ spec:
     port: 8443
     targetPort: https
   selector:
+    app: rhacs-operator
     control-plane: controller-manager
 status:
   loadBalancer: {}

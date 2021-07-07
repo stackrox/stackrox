@@ -3,6 +3,7 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
+    app: rhacs-operator
   name: system
 ---
 apiVersion: apps/v1
@@ -12,15 +13,18 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
+    app: rhacs-operator
 spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      app: rhacs-operator
   replicas: 1
   template:
     metadata:
       labels:
         control-plane: controller-manager
+        app: rhacs-operator
     spec:
       securityContext:
         runAsNonRoot: true
