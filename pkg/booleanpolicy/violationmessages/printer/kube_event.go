@@ -79,16 +79,14 @@ func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	readableResourceName := strings.ToLower(object.Resource.String())
 
 	if object.GetName() == "" {
-		return fmt.Sprintf("Access to %s in \"%s / %s\"",
+		return fmt.Sprintf("Access to %s in \"%s\"",
 			readableResourceName,
-			object.GetClusterId(), // TODO: ROX-7355 Convert this to a name instead of just id once the name is available
 			object.GetNamespace())
 	}
 
-	return fmt.Sprintf("Access to %s \"%s\" in \"%s / %s\"",
+	return fmt.Sprintf("Access to %s \"%s\" in \"%s\"",
 		strings.TrimSuffix(readableResourceName, "s"), // resources are plural but that's incorrect for non-list/watch verbs. Need to change when l10n happens
 		object.GetName(),
-		object.GetClusterId(), // TODO: ROX-7355 Convert this to a name instead of just id once the name is available
 		object.GetNamespace())
 }
 
