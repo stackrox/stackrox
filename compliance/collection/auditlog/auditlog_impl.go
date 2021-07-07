@@ -13,10 +13,19 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	// stagesAllowList is the set of stages that will be sent.
+	// Currently only `ResponseComplete` ("The response body has been completed, and no more bytes will be sent.") OR
+	// `Panic` ("Events generated when a panic occurred.") are supported
+	stagesAllowList = set.NewFrozenStringSet("ResponseComplete", "Panic")
+
+	// resourceTypesAllowList is set of resources that will be sent.
+	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps")
 )
 
 type auditLogReaderImpl struct {
@@ -129,7 +138,8 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.T
 		s.startState = nil
 	}
 
-	return event.ObjectRef.Resource == "secrets" || event.ObjectRef.Resource == "configmaps"
+	// Only send when both the stage and resource type are in their corresponding allow list
+	return stagesAllowList.Contains(event.Stage) && resourceTypesAllowList.Contains(event.ObjectRef.Resource)
 }
 
 func (s *auditLogReaderImpl) cleanupTailOnStop(tailer *tail.Tail) {

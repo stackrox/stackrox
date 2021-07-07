@@ -138,7 +138,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 	}
 }
 
-func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchFilter() {
+func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchResourceTypeFilter() {
 	tempDir, err := ioutil.TempDir("", "")
 	s.NoError(err)
 	defer func() {
@@ -152,7 +152,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchFi
 	s.NoError(err)
 	defer s.cleanupFile(f, logPath)
 
-	// Write a few log lines that should get filtered out
+	// Write a few log lines that should get filtered out due to unsupported resource type
 	for i := 0; i < 5; i++ {
 		line, _ := s.fakeAuditLogLine("get", "something-else", "fake-thing", "stackrox")
 		_, err = f.Write([]byte(line))
@@ -173,6 +173,54 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchFi
 
 	event := s.getSentEvent(sender.sentC)
 	s.Equal(expectedEvent, *event) // First event received should match the one not filtered out
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForValidStages() {
+	tempDir, err := ioutil.TempDir("", "")
+	s.NoError(err)
+	defer func() {
+		s.NoError(os.RemoveAll(tempDir))
+	}()
+	logPath := filepath.Join(tempDir, "testaudit_filter.log")
+
+	sender, reader := s.getMocks(logPath)
+
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	s.NoError(err)
+	defer s.cleanupFile(f, logPath)
+
+	// Write a few log lines for other stages
+	unsupportedStages := []string{"RequestReceived", "ResponseStarted", "wut"}
+	for _, stage := range unsupportedStages {
+		line, _ := s.fakeAuditLogLineWithStage("get", "secrets", "fake-token", "stackrox", types.TimestampString(types.TimestampNow()), stage)
+		_, err = f.Write([]byte(line))
+		s.NoError(err)
+		s.NoError(f.Sync())
+	}
+
+	// Then ResponseComplete and Panic as those are allowed
+	supportedStages := []string{"ResponseComplete", "Panic"}
+	expectedEvents := make([]auditEvent, 0, 2)
+	for _, stage := range supportedStages {
+		line, expectedEvent := s.fakeAuditLogLineWithStage("get", "secrets", "fake-token", "stackrox", types.TimestampString(types.TimestampNow()), stage)
+		_, err = f.Write([]byte(line))
+		s.NoError(err)
+		s.NoError(f.Sync())
+		expectedEvents = append(expectedEvents, expectedEvent)
+	}
+
+	started, err := reader.StartReader(context.Background())
+	s.True(started)
+	s.NoError(err)
+	defer reader.StopReader()
+
+	// Give it a sec to catch up
+	time.Sleep(1 * time.Second)
+
+	for _, expectedEvent := range expectedEvents {
+		event := s.getSentEvent(sender.sentC)
+		s.Equal(expectedEvent, *event) // First event received should match the one not filtered out
+	}
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBeParsed() {
@@ -355,7 +403,12 @@ func (s *ComplianceAuditLogReaderTestSuite) cleanupFile(f *os.File, path string)
 func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLine(verb, resourceType, resourceName, namespace string) (string, auditEvent) {
 	return s.fakeAuditLogLineAtTime(verb, resourceType, resourceName, namespace, "2021-05-06T00:19:49.915375Z")
 }
+
 func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLineAtTime(verb, resourceType, resourceName, namespace, time string) (string, auditEvent) {
+	return s.fakeAuditLogLineWithStage(verb, resourceType, resourceName, namespace, time, "ResponseComplete")
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLineWithStage(verb, resourceType, resourceName, namespace, time, stage string) (string, auditEvent) {
 	uri := fmt.Sprintf("/api/v1/namespaces/stackrox/%s/%s", resourceType, resourceName)
 	event := auditEvent{
 		Annotations: map[string]string{
@@ -381,7 +434,7 @@ func (s *ComplianceAuditLogReaderTestSuite) fakeAuditLogLineAtTime(verb, resourc
 			Code:     200,
 		},
 		SourceIPs:      []string{"10.0.119.155"},
-		Stage:          "ResponseComplete",
+		Stage:          stage,
 		StageTimestamp: time,
 		User: userRef{
 			Username: "cluster-admin",
