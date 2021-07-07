@@ -1,7 +1,8 @@
 import React, { ReactElement, useState } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Button, PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
+import { ActionGroup, Button, PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
+import { useFormik } from 'formik';
 
 import { selectors } from 'reducers';
 import { actions } from 'reducers/systemConfig';
@@ -61,7 +62,20 @@ const Page = ({
     telemetryConfig,
     saveTelemetryConfig,
 }: PageProps): ReactElement => {
+    const initialValues = getInitialValues(systemConfig, telemetryConfig);
     const [isEditing, setIsEditing] = useState(false);
+    const {
+        submitForm,
+        setFieldValue,
+        values,
+        dirty,
+        isValid,
+        isSubmitting,
+        setSubmitting,
+    } = useFormik({
+        initialValues,
+        onSubmit,
+    });
 
     function editSystemConfig() {
         setIsEditing(true);
@@ -71,24 +85,49 @@ const Page = ({
         setIsEditing(false);
     }
 
-    function submitForm(config) {
+    function onSubmit(config) {
         saveSystemConfig(config);
         saveTelemetryConfig(config.telemetryConfig);
         setIsEditing(false);
+        setSubmitting(false);
     }
 
-    const initialValues = getInitialValues(systemConfig, telemetryConfig);
+    function onSubmitForm(event) {
+        event.preventDefault();
+        return submitForm();
+    }
 
     return (
         <>
-            <PageSection variant="light">
+            <PageSection variant="light" sticky="top">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">System Configuration</Title>
                     </FlexItem>
                     <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
                         <FlexItem>
-                            {!isEditing && (
+                            {isEditing ? (
+                                <ActionGroup className="pf-u-display-flex pf-u-justify-content-flex-end">
+                                    <Button
+                                        variant="secondary"
+                                        className="pf-u-mr-sm"
+                                        onClick={cancelEdit}
+                                        data-testid="cancel-btn"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        data-testid="save-btn"
+                                        form="system-config-edit-form"
+                                        type="submit"
+                                        isDisabled={!dirty || !isValid || isSubmitting}
+                                        isLoading={isSubmitting}
+                                    >
+                                        Save
+                                    </Button>
+                                </ActionGroup>
+                            ) : (
                                 <Button
                                     variant="primary"
                                     data-testid="edit-btn"
@@ -104,9 +143,9 @@ const Page = ({
             <PageSection>
                 {isEditing ? (
                     <SystemConfigForm
-                        initialValues={initialValues}
-                        onSubmitForm={submitForm}
-                        onCancel={cancelEdit}
+                        values={values}
+                        onSubmitForm={onSubmitForm}
+                        setFieldValue={setFieldValue}
                     />
                 ) : (
                     <Details systemConfig={systemConfig} telemetryConfig={telemetryConfig} />

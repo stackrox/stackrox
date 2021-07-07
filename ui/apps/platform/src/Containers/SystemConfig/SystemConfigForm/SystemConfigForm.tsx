@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
 import {
-    Button,
     TextArea,
     Form,
     FormSection,
@@ -17,9 +16,7 @@ import {
     GridItem,
     CardActions,
     Switch,
-    ActionGroup,
 } from '@patternfly/react-core';
-import { useFormik } from 'formik';
 
 import ColorPicker from 'Components/ColorPicker';
 import { ConfigTelemetryDetailContent } from '../ConfigTelemetryDetailWidget';
@@ -27,25 +24,21 @@ import { PrivateConfig, PublicConfig, TelemetryConfig } from '../SystemConfigTyp
 import FormSelect from './FormSelect';
 
 export type SystemConfigFormProps = {
-    initialValues: {
+    values: {
         privateConfig: PrivateConfig;
         publicConfig: PublicConfig;
         telemetryConfig: TelemetryConfig;
     };
-    onCancel: () => void;
-    onSubmitForm: (config) => void;
+    onSubmitForm: (event) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
 };
 
 const SystemConfigForm = ({
-    initialValues,
-    onCancel,
     onSubmitForm,
+    values,
+    setFieldValue,
 }: SystemConfigFormProps): ReactElement => {
-    const { submitForm, setFieldValue, values, dirty, isValid, isSubmitting } = useFormik({
-        initialValues,
-        onSubmit: onSubmitForm,
-    });
-
     function onChange(value, event) {
         return setFieldValue(event.target.id, value, false);
     }
@@ -55,7 +48,7 @@ const SystemConfigForm = ({
     }
 
     return (
-        <Form>
+        <Form id="system-config-edit-form" onSubmit={onSubmitForm}>
             <Grid hasGutter md={12}>
                 <GridItem md={12}>
                     <Card>
@@ -414,27 +407,6 @@ const SystemConfigForm = ({
                             <ConfigTelemetryDetailContent />
                         </CardBody>
                     </Card>
-                </GridItem>
-                <GridItem>
-                    <ActionGroup className="pf-u-display-flex pf-u-justify-content-flex-end">
-                        <Button
-                            variant="secondary"
-                            className="pf-u-mr-sm"
-                            onClick={onCancel}
-                            data-testid="cancel-btn"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={submitForm}
-                            data-testid="save-btn"
-                            isDisabled={!dirty || !isValid || isSubmitting}
-                            isLoading={isSubmitting}
-                        >
-                            Save
-                        </Button>
-                    </ActionGroup>
                 </GridItem>
             </Grid>
         </Form>
