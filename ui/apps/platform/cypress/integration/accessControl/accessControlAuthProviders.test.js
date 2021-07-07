@@ -44,11 +44,11 @@ describe('Access Control Auth providers', () => {
         // cy.get(selectors.h1).should('have.text', 'Access Control');
         cy.get(selectors.navLinkCurrent).should('have.text', 'Auth providers');
         cy.get(selectors.h2).should('have.text', 'Auth Providers'); // TODO sentence case
-        cy.get(selectors.list.authProviders.addButton).should('have.text', 'Add auth provider'); // TODO Create?
+        cy.get(selectors.list.authProviders.addButton).should('have.text', 'Add auth provider');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Type")`);
         cy.get(`${selectors.list.th}:contains("Minimum access role")`);
-        cy.get(`${selectors.list.th}:contains("Rules")`); // TODO Auth providers?
+        cy.get(`${selectors.list.th}:contains("Assigned rules")`);
     });
 });
