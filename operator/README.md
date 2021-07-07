@@ -196,7 +196,7 @@ $ bin/operator-sdk-1.9.0 run bundle \
 # We hope that in OpenShift world things will be different and we will not have to do this.
 $ kubectl -n bundle-test patch serviceaccount rhacs-operator-controller-manager -p '{"imagePullSecrets": [{"name": "my-opm-image-pull-secrets"}]}'
 # You may need to bounce operator pods after this if they can't pull images for a while.
-$ kubectl -n bundle-test delete pod -l control-plane=controller-manager
+$ kubectl -n bundle-test delete pod -l app=rhacs-operator
 
 # 6. operator-sdk run bundle command should complete successfully.
 # If it does not, watch pod statuses and check pod logs.

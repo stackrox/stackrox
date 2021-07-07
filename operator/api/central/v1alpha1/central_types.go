@@ -357,7 +357,6 @@ const (
 
 // CentralStatus defines the observed state of Central.
 type CentralStatus struct {
-	//+operator-sdk:csv:customresourcedefinitions:type=status
 	Conditions []common.StackRoxCondition `json:"conditions"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status
 	DeployedRelease *common.StackRoxRelease `json:"deployedRelease,omitempty"`
@@ -380,9 +379,10 @@ type CentralComponentStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,central},{Deployment,v1,scanner},{Deployment,v1,scanner-db}}
+//+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,central},{Deployment,v1,scanner},{Deployment,v1,scanner-db},{Secret,v1,central-htpasswd},{Service,v1,central-loadbalancer},{Route,v1,central}}
 
-// Central is the configuration template for the central services.
+// Central is the configuration template for the central services. This includes the API server, persistent storage,
+// and the web UI, as well as the image scanner.
 type Central struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

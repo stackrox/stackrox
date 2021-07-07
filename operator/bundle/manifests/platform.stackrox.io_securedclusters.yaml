@@ -17,7 +17,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: SecuredCluster is the configuration template for the secured cluster services.
+        description: SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is responsible for the connection to Central, and Collector, which performs host-level collection of process and network events.<p> **Important:** Please see the _Installation Prerequisites_ on the main page before deploying, or consult the RHACS documentation on creating cluster init bundles.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -74,8 +74,7 @@ spec:
                     type: object
                 type: object
               centralEndpoint:
-                default: central.stackrox:443
-                description: 'The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to, including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by prefixing the endpoint address with wss://. Note: the default value will only work if Central is deployed in the same cluster, inside the "stackrox" namespace.'
+                description: 'The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to, including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by prefixing the endpoint address with wss://. Note: when leaving this blank, Sensor will attempt to connect to a Central instance running in the same namespace.'
                 type: string
               clusterName:
                 description: 'The unique name of this cluster, as it will be shown in the Red Hat Advanced Cluster Security UI. Note: Once a name is set here, you will not be able to change it again. You will need to delete and re-create this object in order to register a cluster with a new name.'
@@ -315,7 +314,6 @@ spec:
                     type: array
                 type: object
             required:
-            - centralEndpoint
             - clusterName
             type: object
           status:

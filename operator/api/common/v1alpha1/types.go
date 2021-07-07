@@ -39,16 +39,11 @@ type DeploymentSpec struct {
 
 // StackRoxCondition defines a condition for a StackRox custom resource.
 type StackRoxCondition struct {
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	Type ConditionType `json:"type"`
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	Status ConditionStatus `json:"status"`
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	Reason ConditionReason `json:"reason,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	Message string `json:"message,omitempty"`
+	Type    ConditionType   `json:"type"`
+	Status  ConditionStatus `json:"status"`
+	Reason  ConditionReason `json:"reason,omitempty"`
+	Message string          `json:"message,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=status
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 

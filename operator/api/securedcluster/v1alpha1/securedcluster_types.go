@@ -39,13 +39,10 @@ type SecuredClusterSpec struct {
 	// The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
 	// including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by
 	// prefixing the endpoint address with wss://.
-	// Note: the default value will only work if Central is deployed in the same cluster, inside the "stackrox"
+	// Note: when leaving this blank, Sensor will attempt to connect to a Central instance running in the same
 	// namespace.
-	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:Default="central.stackrox:443"
-	//+kubebuilder:default="central.stackrox:443"
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
-	CentralEndpoint string `json:"centralEndpoint"`
+	CentralEndpoint string `json:"centralEndpoint,omitempty"`
 
 	// Settings for the Sensor component.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Sensor Settings"
@@ -233,7 +230,11 @@ type SensorComponentStatus struct {
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,admission-control},{DaemonSet,v1,collector},{Deployment,v1,sensor}}
 
-// SecuredCluster is the configuration template for the secured cluster services.
+// SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is
+// responsible for the connection to Central, and Collector, which performs host-level collection of process and
+// network events.<p>
+// **Important:** Please see the _Installation Prerequisites_ on the main page before deploying, or consult the RHACS
+// documentation on creating cluster init bundles.
 type SecuredCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

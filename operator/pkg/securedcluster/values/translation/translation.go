@@ -81,7 +81,9 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 
 	v.SetStringValue("clusterName", sc.Spec.ClusterName)
 
-	v.SetStringValue("centralEndpoint", sc.Spec.CentralEndpoint)
+	if sc.Spec.CentralEndpoint != "" {
+		v.SetStringValue("centralEndpoint", sc.Spec.CentralEndpoint)
+	}
 
 	v.AddAllFrom(t.getTLSValues(ctx, sc))
 
