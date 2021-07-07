@@ -70,7 +70,7 @@ func (e *auditEvent) parseTimestamp(timestamp string) (*types.Timestamp, error) 
 	return protoTime, nil
 }
 
-func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEvent {
+func (e *auditEvent) getEventTime() (*types.Timestamp, error) {
 	protoTime, err := e.parseTimestamp(e.StageTimestamp)
 	if err != nil {
 		log.Errorf("Failed to parse stage time %s from audit log, so falling back to received time: %v", e.StageTimestamp, err)
@@ -78,10 +78,25 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 		// While it's not as accurate it should be relatively close. This should also be a rare occurrence.
 		protoTime, err = e.parseTimestamp(e.RequestReceivedTimestamp)
 		if err != nil {
-			// If we're still not able to get a valid time, fall back to "now".
-			log.Errorf("Failed to parse received time %s from audit log, so falling back to current time: %v", e.RequestReceivedTimestamp, err)
-			protoTime = types.TimestampNow()
+			return nil, err
 		}
+	}
+	return protoTime, nil
+}
+
+func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEvent {
+	protoTime, err := e.getEventTime()
+	if err != nil {
+		// If we're still not able to get a valid time, fall back to "now".
+		log.Errorf(
+			"Failed to parse received time %s from audit log for event %s:%s/%s/%s, so falling back to current time. Error: %v",
+			e.RequestReceivedTimestamp,
+			e.Verb,
+			e.ObjectRef.Namespace,
+			e.ObjectRef.Resource,
+			e.ObjectRef.Name,
+			err)
+		protoTime = types.TimestampNow()
 	}
 
 	reason := e.Annotations[reasonAnnotationKey]

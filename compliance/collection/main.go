@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -68,7 +69,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 					log.Info("Audit log reader is being restarted")
 					auditReader.StopReader() // stop the old one
 				}
-				auditReader = startAuditLogCollection(ctx, client, r.StartReq.GetClusterId())
+				auditReader = startAuditLogCollection(ctx, client, r.StartReq)
 			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StopReq:
 				if auditReader != nil {
 					auditReader.StopReader()
@@ -83,9 +84,15 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 	}
 }
 
-func startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, clusterID string) auditlog.Reader {
-	auditReader := auditlog.NewReader(client, getNode(), clusterID)
-	//TODO: Use AuditLogFileState here to restart processing based on previous state: ROX-7175
+func startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, request *sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest) auditlog.Reader {
+	if request.GetCollectStartState() == nil {
+		log.Infof("Starting audit log reader on node %s in cluster %s with no saved state", getNode(), request.GetClusterId())
+	} else {
+		log.Infof("Starting audit log reader on node %s in cluster %s using previously saved state: %s)",
+			getNode(), request.GetClusterId(), protoutils.NewWrapper(request.GetCollectStartState()))
+	}
+
+	auditReader := auditlog.NewReader(client, getNode(), request.GetClusterId(), request.GetCollectStartState())
 	start, err := auditReader.StartReader(ctx)
 	if err != nil {
 		log.Errorf("Failed to start audit log reader %v", err)

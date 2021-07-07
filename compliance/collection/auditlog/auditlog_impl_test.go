@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -209,6 +211,97 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBePar
 	reader.StopReader() // force stop
 }
 
+func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAfterStartState() {
+	tempDir, err := ioutil.TempDir("", "")
+	s.NoError(err)
+	defer func() {
+		s.NoError(os.RemoveAll(tempDir))
+	}()
+	logPath := filepath.Join(tempDir, "testaudit_filestate.log")
+
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	s.NoError(err)
+	defer s.cleanupFile(f, logPath)
+
+	// Write a few log lines that are in the past
+	eventTime := time.Now()
+	var latestEvent auditEvent
+	var line string
+	for i := 0; i < 5; i++ {
+		eventTime = eventTime.Add(1 * time.Second)
+		line, latestEvent = s.fakeAuditLogLineAtTime("get", "secrets", "fake-token", "stackrox", eventTime.Format(time.RFC3339Nano))
+		_, err = f.Write([]byte(line))
+		s.NoError(err)
+		s.NoError(f.Sync())
+	}
+
+	// Then something that that's after `CollectLogsSince` which shouldn't be filtered out
+	line, expectedEvent := s.fakeAuditLogLineAtTime("get", "secrets", "new-fake-token", "stackrox", eventTime.Add(1*time.Minute).Format(time.RFC3339Nano))
+	_, err = f.Write([]byte(line))
+	s.NoError(err)
+	s.NoError(f.Sync())
+
+	collectSinceTs, _ := types.TimestampProto(eventTime)
+	sender, reader := s.getMocksWithStartState(logPath, &storage.AuditLogFileState{
+		CollectLogsSince: collectSinceTs,
+		LastAuditId:      latestEvent.AuditID,
+	})
+
+	started, err := reader.StartReader(context.Background())
+	s.True(started)
+	s.NoError(err)
+	defer reader.StopReader()
+
+	event := s.getSentEvent(sender.sentC)
+	s.Equal(expectedEvent, *event) // First event received should match the one after CollectLogsSince
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAtStartStateIfIdsDontMatch() {
+	tempDir, err := ioutil.TempDir("", "")
+	s.NoError(err)
+	defer func() {
+		s.NoError(os.RemoveAll(tempDir))
+	}()
+	logPath := filepath.Join(tempDir, "testaudit_filestate.log")
+
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	s.NoError(err)
+	defer s.cleanupFile(f, logPath)
+
+	// Write a few lines to start
+	eventTime := time.Now().Add(1 * time.Minute)
+	var latestEvent auditEvent
+	var line string
+	for i := 0; i < 5; i++ {
+		eventTime = eventTime.Add(1 * time.Second)
+		line, latestEvent = s.fakeAuditLogLineAtTime("get", "secrets", "fake-token", "stackrox", eventTime.Format(time.RFC3339Nano))
+		_, err = f.Write([]byte(line))
+		s.NoError(err)
+		s.NoError(f.Sync())
+	}
+
+	// Write a new line at the exact same time as the last one written
+	line, expectedEvent := s.fakeAuditLogLineAtTime("get", "secrets", "new-fake-token", "stackrox", eventTime.Format(time.RFC3339Nano))
+	_, err = f.Write([]byte(line))
+	s.NoError(err)
+	s.NoError(f.Sync())
+
+	// Set CollectLogSince to be same exact time as the last two logs, but the ID should be the first of the two
+	collectSinceTs, _ := types.TimestampProto(eventTime)
+	sender, reader := s.getMocksWithStartState(logPath, &storage.AuditLogFileState{
+		CollectLogsSince: collectSinceTs,
+		LastAuditId:      latestEvent.AuditID,
+	})
+
+	started, err := reader.StartReader(context.Background())
+	s.True(started)
+	s.NoError(err)
+	defer reader.StopReader()
+
+	event := s.getSentEvent(sender.sentC)
+	s.Equal(expectedEvent, *event) // First event received should match the last one written
+}
+
 func (s *ComplianceAuditLogReaderTestSuite) getMocks(logPath string) (*mockSender, *auditLogReaderImpl) {
 	sender := &mockSender{
 		sentC: make(chan *auditEvent, 10), // large enough to be able to buffer everything in the tests
@@ -237,6 +330,20 @@ func (s *ComplianceAuditLogReaderTestSuite) appendToFile(logPath string, lines .
 
 	_, err = f.WriteString(strings.Join(lines, "\n"))
 	s.NoError(err)
+}
+
+func (s *ComplianceAuditLogReaderTestSuite) getMocksWithStartState(logPath string, startState *storage.AuditLogFileState) (*mockSender, *auditLogReaderImpl) {
+	sender := &mockSender{
+		sentC: make(chan *auditEvent, 5),
+	}
+
+	reader := &auditLogReaderImpl{
+		logPath:    logPath,
+		stopC:      concurrency.NewSignal(),
+		sender:     sender,
+		startState: startState,
+	}
+	return sender, reader
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) cleanupFile(f *os.File, path string) {

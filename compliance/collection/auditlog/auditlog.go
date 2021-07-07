@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
@@ -22,10 +23,11 @@ type Reader interface {
 }
 
 // NewReader returns a new instance of Reader
-func NewReader(client sensor.ComplianceService_CommunicateClient, nodeName string, clusterID string) Reader {
+func NewReader(client sensor.ComplianceService_CommunicateClient, nodeName string, clusterID string, startState *storage.AuditLogFileState) Reader {
 	return &auditLogReaderImpl{
-		logPath: defaultLogPath,
-		stopC:   concurrency.NewSignal(),
-		sender:  newAuditLogSender(client, nodeName, clusterID),
+		logPath:    defaultLogPath,
+		stopC:      concurrency.NewSignal(),
+		sender:     newAuditLogSender(client, nodeName, clusterID),
+		startState: startState,
 	}
 }

@@ -6,10 +6,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/nxadm/tail"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 var (
@@ -17,9 +20,10 @@ var (
 )
 
 type auditLogReaderImpl struct {
-	logPath string
-	stopC   concurrency.Signal
-	sender  auditLogSender
+	logPath    string
+	stopC      concurrency.Signal
+	sender     auditLogSender
+	startState *storage.AuditLogFileState
 }
 
 func (s *auditLogReaderImpl) StartReader(ctx context.Context) (bool, error) {
@@ -27,7 +31,6 @@ func (s *auditLogReaderImpl) StartReader(ctx context.Context) (bool, error) {
 		return false, errors.New("Cannot start reader because stopC is already done. Reader might have already been stopped")
 	}
 
-	//TODO: Restart processing based on previous state: https://stack-rox.atlassian.net/browse/ROX-7175
 	t, err := tail.TailFile(s.logPath, tail.Config{
 		ReOpen:    true,
 		MustExist: true,
@@ -36,10 +39,7 @@ func (s *auditLogReaderImpl) StartReader(ctx context.Context) (bool, error) {
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			// TODO: Only gracefully exit if this is _not_ a master node. This can be done once that information is sent from Sensor
-			// (or once senor only starts the process on compliance running on master nodes)
-			// gracefully exit if this is not on master nodes and hence doesn't have the k8s audit logs
-			log.Infof("Audit log file %s doesn't exist on this compliance node", s.logPath)
+			log.Errorf("Audit log file %s doesn't exist on this compliance node", s.logPath)
 			return false, nil
 		}
 		// handle other errors
@@ -92,20 +92,43 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 				continue // just move on
 			}
 
-			if s.shouldSendEvent(&auditLine) {
-				if err := s.sender.Send(ctx, &auditLine); err != nil {
-					// It's very likely that this failure is due to Sensor being unavailable
-					// In that case when Sensor next comes available it will ask to restart from the last
-					// message it got. Therefore this event will end up being sent at that point.
-					// Therefore, we skip retrying at this point in time.
-					log.Errorf("Failed sending event to Sensor: %v", err)
-				}
+			eventTS, err := auditLine.getEventTime()
+			if err != nil {
+				log.Errorf("Unable to parse timestamp from audit log: %v", err)
+				continue
+			}
+
+			if !s.shouldSendEvent(&auditLine, eventTS) {
+				continue
+			}
+
+			if err := s.sender.Send(ctx, &auditLine); err != nil {
+				// It's very likely that this failure is due to Sensor being unavailable
+				// In that case when Sensor next comes available it will ask to restart from the last
+				// message it got. Therefore this event will end up being sent at that point.
+				// Therefore, we skip retrying at this point in time.
+				log.Errorf("Failed sending event to Sensor: %v", err)
+				continue
 			}
 		}
 	}
 }
 
-func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent) bool {
+func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.Timestamp) bool {
+	if s.startState != nil {
+		if !protoutils.After(eventTS, s.startState.CollectLogsSince) {
+			// don't send since time hasn't matched yet
+			// but if the id matches then we're in the same time and everything after can be sent
+			if event.AuditID == s.startState.LastAuditId {
+				s.startState = nil
+			}
+			// in either case don't send
+			return false
+		}
+		// otherwise the time is after prev state so clear out state and send (if it matches other conditions)
+		s.startState = nil
+	}
+
 	return event.ObjectRef.Resource == "secrets" || event.ObjectRef.Resource == "configmaps"
 }
 

@@ -12,6 +12,7 @@ import "internalapi/central/telemetry.proto";
 import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
+import "storage/cluster.proto";
 
 package central;
 
@@ -27,6 +28,7 @@ message MsgFromSensor {
         PullTelemetryDataResponse    telemetry_data_response         = 6;
         RawClusterHealthInfo         cluster_health_info             = 9;
         SensorHello                  hello                           = 10;
+        AuditLogStatusInfo           audit_log_status_info           = 11;
     }
 }
 
@@ -47,7 +49,16 @@ message MsgToSensor {
         PushNetworkEntitiesRequest     push_network_entities_request      = 11;
         CentralHello                   hello                              = 12;
         NetworkBaselineSync            network_baseline_sync              = 13;
+        AuditLogSync                   audit_log_sync                     = 14;
     }
+}
+
+message AuditLogSync {
+    map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
+}
+
+message AuditLogStatusInfo {
+    map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
 }
 
 service SensorService {

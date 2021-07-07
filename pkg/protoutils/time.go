@@ -20,3 +20,9 @@ func Sub(ts1, ts2 *types.Timestamp) time.Duration {
 
 	return time.Duration(seconds*secondInt64 + nanos)
 }
+
+// After returns whether the ts1 is after ts2.
+func After(ts1, ts2 *types.Timestamp) bool {
+	diff := Sub(ts1, ts2)
+	return diff > 0
+}
