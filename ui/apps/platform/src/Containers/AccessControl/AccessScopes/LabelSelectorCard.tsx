@@ -17,7 +17,7 @@ import {
     ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
-import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
+import { OutlinedQuestionCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Th, Thead, Tr } from '@patternfly/react-table';
 
 import {
@@ -25,12 +25,11 @@ import {
     LabelSelectorRequirement,
     LabelSelectorsKey,
     getIsValidRequirements,
-    getIsKeyInSetOperator,
 } from 'services/RolesService';
 
 import { Activity, getRequirementActivity } from './accessScopes.utils';
-import AddRequirementDropdown from './AddRequirementDropdown';
-import { RequirementRow, RequirementRowAddKey } from './RequirementRow';
+import RequirementRow from './RequirementRow';
+import RequirementRowAddKey from './RequirementRowAddKey';
 
 const labelIconLabelSelector = (
     <Tooltip
@@ -93,7 +92,7 @@ function LabelSelectorCard({
     handleRequirementsChange,
 }: LabelSelectorCardProps): ReactElement {
     const [requirementsCancel, setRequirementsCancel] = useState<LabelSelectorRequirement[]>([]);
-    const [opAdd, setOpAdd] = useState<LabelSelectorOperator>('UNKNOWN');
+    const [hasAddKey, setHasAddKey] = useState(false);
 
     const title =
         labelSelectorsKey === 'namespaceLabelSelectors'
@@ -113,32 +112,28 @@ function LabelSelectorCard({
         );
     }
 
-    function onAddRequirement(op: LabelSelectorOperator) {
+    function onAddRequirement() {
         // Render an active extra row to enter the key.
         setIndexRequirementActive(requirements.length);
-        setOpAdd(op);
+        setHasAddKey(true);
     }
 
     function handleRequirementKeyOK(key) {
         // Append requirement and render it as the last ordinary row.
-        handleRequirementsChange([...requirements, { key, op: opAdd, values: [] }]);
-        if (getIsKeyInSetOperator(opAdd)) {
-            // The added "key in set" requirement remains active,
-            // just as if editing an existing requirement.
-            // Because it has no values yet:
-            // its OK button is disabled initially
-            // getIsValidRules in AccessScopeForm short-circuits computeeffectiveaccessscopes request
-            setRequirementsCancel(requirements);
-        } else {
-            // The added "key exists" requirement is not active.
-            setIndexRequirementActive(-1);
-        }
-        setOpAdd('UNKNOWN');
+        handleRequirementsChange([...requirements, { key, op: 'IN', values: [] }]);
+
+        // The added requirement remains active,
+        // just as if editing an existing requirement.
+        // Because it has no values yet:
+        // its OK button is disabled initially
+        // getIsValidRules in AccessScopeForm short-circuits computeeffectiveaccessscopes request
+        setRequirementsCancel(requirements);
+        setHasAddKey(false);
     }
 
     function handleRequirementKeyCancel() {
         setIndexRequirementActive(-1);
-        setOpAdd('UNKNOWN');
+        setHasAddKey(false);
     }
 
     function handleRequirementDelete(indexRequirement: number) {
@@ -158,6 +153,15 @@ function LabelSelectorCard({
         handleRequirementsChange(requirementsCancel);
         setRequirementsCancel([]);
         setIndexRequirementActive(-1);
+    }
+
+    function handleOperatorSelect(indexRequirement: number, op: LabelSelectorOperator) {
+        const { key, values } = requirements[indexRequirement];
+        handleRequirementChange(indexRequirement, {
+            key,
+            op,
+            values,
+        });
     }
 
     function handleValueAdd(indexRequirement: number, value: string) {
@@ -207,74 +211,78 @@ function LabelSelectorCard({
                         <Badge isRead>{requirements.length}</Badge>
                     </FlexItem>
                 </Flex>
-                <TableComposable variant="compact">
-                    <Thead>
-                        <Tr>
-                            <Th modifier="breakWord">Key</Th>
-                            <Th modifier="fitContent">Operator</Th>
-                            <Th modifier="breakWord" info={infoValues}>
-                                Values
-                            </Th>
-                            {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
-                        </Tr>
-                    </Thead>
-                    <Tbody
-                        className={
-                            labelSelectorsKey === 'namespaceLabelSelectors'
-                                ? 'pf-u-background-color-200'
-                                : ''
-                        }
-                    >
-                        {requirements.map((requirement, indexRequirement) => (
-                            <RequirementRow
-                                key={`${requirement.key} ${requirement.op}`}
-                                requirement={requirement}
-                                isOnlyRequirement={requirements.length === 1}
-                                hasAction={isLabelSelectorActive}
-                                activity={getRequirementActivity(
-                                    indexRequirement,
-                                    indexRequirementActive
-                                )}
-                                handleRequirementDelete={() =>
-                                    handleRequirementDelete(indexRequirement)
-                                }
-                                handleRequirementEdit={() =>
-                                    handleRequirementEdit(indexRequirement)
-                                }
-                                handleRequirementOK={handleRequirementOK}
-                                handleRequirementCancel={handleRequirementCancel}
-                                handleValueAdd={(value: string) =>
-                                    handleValueAdd(indexRequirement, value)
-                                }
-                                handleValueDelete={(indexValue: number) =>
-                                    handleValueDelete(indexRequirement, indexValue)
-                                }
-                            />
-                        ))}
-                        {opAdd !== 'UNKNOWN' && (
-                            <RequirementRowAddKey
-                                op={opAdd}
-                                requirements={requirements}
-                                handleRequirementKeyOK={handleRequirementKeyOK}
-                                handleRequirementKeyCancel={handleRequirementKeyCancel}
-                            />
-                        )}
-                    </Tbody>
-                </TableComposable>
-                {/* isLabelSelectorActive && requirements.length === 1 && (
-                    <div className="pf-u-font-size-sm pf-u-info-color-100 pf-u-pt-sm">
-                        If you need to replace the last requirement, first add its replacement
-                    </div>
-                ) */}
+                {(requirements.length !== 0 || hasAddKey) && (
+                    <TableComposable variant="compact">
+                        <Thead>
+                            <Tr>
+                                <Th modifier="breakWord">Key</Th>
+                                <Th modifier="fitContent">Operator</Th>
+                                <Th modifier="breakWord" info={infoValues}>
+                                    Values
+                                </Th>
+                                {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
+                            </Tr>
+                        </Thead>
+                        <Tbody
+                            className={
+                                labelSelectorsKey === 'namespaceLabelSelectors'
+                                    ? 'pf-u-background-color-200'
+                                    : ''
+                            }
+                        >
+                            {requirements.map((requirement, indexRequirement) => (
+                                <RequirementRow
+                                    key={`${requirement.key} ${requirement.op}`}
+                                    requirement={requirement}
+                                    requirements={requirements}
+                                    hasAction={isLabelSelectorActive}
+                                    activity={getRequirementActivity(
+                                        indexRequirement,
+                                        indexRequirementActive
+                                    )}
+                                    handleRequirementDelete={() =>
+                                        handleRequirementDelete(indexRequirement)
+                                    }
+                                    handleRequirementEdit={() =>
+                                        handleRequirementEdit(indexRequirement)
+                                    }
+                                    handleRequirementOK={handleRequirementOK}
+                                    handleRequirementCancel={handleRequirementCancel}
+                                    handleOperatorSelect={(op: LabelSelectorOperator) =>
+                                        handleOperatorSelect(indexRequirement, op)
+                                    }
+                                    handleValueAdd={(value: string) =>
+                                        handleValueAdd(indexRequirement, value)
+                                    }
+                                    handleValueDelete={(indexValue: number) =>
+                                        handleValueDelete(indexRequirement, indexValue)
+                                    }
+                                />
+                            ))}
+                            {hasAddKey && (
+                                <RequirementRowAddKey
+                                    handleRequirementKeyOK={handleRequirementKeyOK}
+                                    handleRequirementKeyCancel={handleRequirementKeyCancel}
+                                />
+                            )}
+                        </Tbody>
+                    </TableComposable>
+                )}
                 {hasAction && (
                     <Toolbar className="pf-u-pb-0" inset={{ default: 'insetNone' }}>
                         {isLabelSelectorActive ? (
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <AddRequirementDropdown
-                                        onAddRequirement={onAddRequirement}
+                                    <Button
+                                        key="Add requirement"
+                                        variant="link"
+                                        isInline
+                                        icon={<PlusCircleIcon className="pf-u-mr-sm" />}
+                                        onClick={onAddRequirement}
                                         isDisabled={indexRequirementActive !== -1}
-                                    />
+                                    >
+                                        Add requirement
+                                    </Button>
                                 </ToolbarItem>
                                 <ToolbarGroup alignment={{ default: 'alignRight' }}>
                                     <ToolbarItem>
@@ -305,6 +313,7 @@ function LabelSelectorCard({
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button
+                                        key="Edit label selector"
                                         variant="primary"
                                         className="pf-m-smaller"
                                         isDisabled={activity === 'DISABLED'}

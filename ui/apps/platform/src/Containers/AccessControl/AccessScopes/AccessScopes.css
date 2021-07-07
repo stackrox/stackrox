@@ -85,6 +85,19 @@ table .pf-c-dropdown__toggle.pf-m-plain svg {
 }
 
 /*
+ * Render SelectSingle with compatible size and padding as small input (see below).
+ * Because no border, the padding is one pixel greater than input element.
+ */
+#access-scope-form td[data-label="Operator"] .pf-c-select {
+    --pf-c-select__toggle--FontSize: var(--pf-global--FontSize--sm);
+    --pf-c-select__toggle--PaddingTop: 3px;
+    --pf-c-select__toggle--PaddingBottom: 3px;
+    --pf-c-select__menu-item--FontSize: var(--pf-global--FontSize--sm);
+    --pf-c-select__menu-item--PaddingTop: var(--pf-global--spacer--xs);
+    --pf-c-select__menu-item--PaddingBottom: var(--pf-global--spacer--xs);
+}
+
+/*
  * Form control has (via className) font size compatible with table.
  */
 #access-scope-form .pf-c-form-control.pf-m-small {
