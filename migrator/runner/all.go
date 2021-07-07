@@ -58,4 +58,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_69_to_m_70_add_xmrig_to_crypto_policy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_70_to_m_71_disable_audit_log_collection"
 	_ "github.com/stackrox/rox/migrator/migrations/m_71_to_m_72_delete_namespacesac_bucket"
+	_ "github.com/stackrox/rox/migrator/migrations/m_72_to_m_73_change_roles_to_sac_v2"
 )
