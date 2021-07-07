@@ -666,6 +666,162 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
 	suite.Error(err)
 }
 
+func (suite *ClusterDataStoreTestSuite) TestUpdateAuditLogFileStates() {
+	t1 := time.Now()
+	t2 := time.Now().Add(-30 * time.Minute)
+	ts1 := protoconv.ConvertTimeToTimestamp(t1)
+	ts2 := protoconv.ConvertTimeToTimestamp(t2)
+
+	fakeCluster := &storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination"}
+
+	states := map[string]*storage.AuditLogFileState{
+		"node-1": {CollectLogsSince: ts1, LastAuditId: "abcd"},
+		"node-2": {CollectLogsSince: ts2, LastAuditId: "efgh"},
+		"node-3": {CollectLogsSince: ts1, LastAuditId: "zyxw"},
+	}
+
+	suite.clusters.EXPECT().Get(fakeClusterID).Return(fakeCluster, true, nil)
+	suite.clusters.EXPECT().Upsert(&storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: states}).Return(nil)
+
+	err := suite.clusterDataStore.UpdateAuditLogFileStates(suite.hasWriteCtx, fakeClusterID, states)
+	suite.NoError(err)
+}
+
+func (suite *ClusterDataStoreTestSuite) TestUpdateAuditLogFileStatesLeavesUnmodifiedNodesAlone() {
+	t1 := time.Now()
+	t2 := time.Now().Add(-30 * time.Minute)
+	t3 := time.Now().Add(-10 * time.Minute)
+	ts1 := protoconv.ConvertTimeToTimestamp(t1)
+	ts2 := protoconv.ConvertTimeToTimestamp(t2)
+	ts3 := protoconv.ConvertTimeToTimestamp(t3)
+
+	fakeCluster := &storage.Cluster{
+		Id:   fakeClusterID,
+		Name: "it's just your imagination",
+		AuditLogState: map[string]*storage.AuditLogFileState{
+			"old-node1": {CollectLogsSince: ts3, LastAuditId: "ggggg"},
+		},
+	}
+
+	newStates := map[string]*storage.AuditLogFileState{
+		"node-1": {CollectLogsSince: ts1, LastAuditId: "abcd"},
+		"node-2": {CollectLogsSince: ts2, LastAuditId: "efgh"},
+	}
+
+	expectedStates := map[string]*storage.AuditLogFileState{
+		"node-1":    {CollectLogsSince: ts1, LastAuditId: "abcd"},
+		"node-2":    {CollectLogsSince: ts2, LastAuditId: "efgh"},
+		"old-node1": {CollectLogsSince: ts3, LastAuditId: "ggggg"},
+	}
+
+	suite.clusters.EXPECT().Get(fakeClusterID).Return(fakeCluster, true, nil)
+	suite.clusters.EXPECT().Upsert(&storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: expectedStates}).Return(nil)
+
+	err := suite.clusterDataStore.UpdateAuditLogFileStates(suite.hasWriteCtx, fakeClusterID, newStates)
+	suite.NoError(err)
+}
+
+func (suite *ClusterDataStoreTestSuite) TestUpdateAuditLogFileStatesErrorConditions() {
+	t1 := time.Now()
+	t2 := time.Now().Add(-30 * time.Minute)
+	ts1 := protoconv.ConvertTimeToTimestamp(t1)
+	ts2 := protoconv.ConvertTimeToTimestamp(t2)
+
+	fakeCluster := &storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination"}
+
+	states := map[string]*storage.AuditLogFileState{
+		"node-1": {CollectLogsSince: ts1, LastAuditId: "abcd"},
+		"node-2": {CollectLogsSince: ts2, LastAuditId: "efgh"},
+		"node-3": {CollectLogsSince: ts1, LastAuditId: "zyxw"},
+	}
+
+	cases := []struct {
+		name             string
+		ctx              context.Context
+		clusterID        string
+		states           map[string]*storage.AuditLogFileState
+		clusterIsMissing bool
+		realClusterFound bool
+		upsertWillError  bool
+	}{
+		{
+			name:             "Error when no cluster id is provided",
+			ctx:              suite.hasWriteCtx,
+			clusterID:        "",
+			states:           states,
+			clusterIsMissing: false,
+			upsertWillError:  false,
+		},
+		{
+			name:             "Error when no states are provided",
+			ctx:              suite.hasWriteCtx,
+			clusterID:        fakeClusterID,
+			states:           nil,
+			clusterIsMissing: false,
+			upsertWillError:  false,
+		},
+		{
+			name:             "Error when empty states are provided",
+			ctx:              suite.hasWriteCtx,
+			clusterID:        fakeClusterID,
+			states:           map[string]*storage.AuditLogFileState{},
+			clusterIsMissing: false,
+			upsertWillError:  false,
+		},
+		{
+			name:             "Error when context has no perms",
+			ctx:              suite.hasNoneCtx,
+			clusterID:        fakeClusterID,
+			states:           states,
+			clusterIsMissing: false,
+			upsertWillError:  false,
+		},
+		{
+			name:             "Error when is not read only",
+			ctx:              suite.hasReadCtx,
+			clusterID:        fakeClusterID,
+			states:           states,
+			clusterIsMissing: false,
+			realClusterFound: false,
+			upsertWillError:  false,
+		},
+		{
+			name:             "Error when cluster cannot be found",
+			ctx:              suite.hasWriteCtx,
+			clusterID:        fakeClusterID,
+			states:           states,
+			clusterIsMissing: true,
+			realClusterFound: false,
+			upsertWillError:  false,
+		},
+		{
+			name:             "Error when Upsert fails",
+			ctx:              suite.hasWriteCtx,
+			clusterID:        fakeClusterID,
+			states:           states,
+			clusterIsMissing: false,
+			realClusterFound: true,
+			upsertWillError:  true,
+		},
+	}
+
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			if c.clusterIsMissing {
+				suite.clusters.EXPECT().Get(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
+			}
+			if c.realClusterFound {
+				suite.clusters.EXPECT().Get(fakeClusterID).Return(fakeCluster, true, nil)
+			}
+			if c.upsertWillError {
+				suite.clusters.EXPECT().Upsert(&storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: states}).Return(errors.New("test"))
+			}
+			err := suite.clusterDataStore.UpdateAuditLogFileStates(c.ctx, c.clusterID, c.states)
+			suite.Error(err)
+		})
+	}
+}
+
 func (suite *ClusterDataStoreTestSuite) TestNormalizeCluster() {
 	cases := []struct {
 		name     string

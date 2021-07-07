@@ -58,6 +58,9 @@ type DataStore interface {
 	UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error
 	UpdateClusterHealth(ctx context.Context, id string, clusterHealthStatus *storage.ClusterHealthStatus) error
 	UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error
+	// UpdateAuditLogFileStates updates for each node in the cluster where the audit log was last at
+	// states is a map of node name to the state for that node
+	UpdateAuditLogFileStates(ctx context.Context, id string, states map[string]*storage.AuditLogFileState) error
 
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)

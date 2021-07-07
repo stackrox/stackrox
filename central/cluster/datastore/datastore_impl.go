@@ -432,6 +432,38 @@ func (ds *datastoreImpl) UpdateSensorDeploymentIdentification(ctx context.Contex
 	return ds.clusterStorage.Upsert(cluster)
 }
 
+func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string, states map[string]*storage.AuditLogFileState) error {
+	if id == "" {
+		return errors.New("cannot update audit log file states because cluster id was not provided")
+	}
+	if len(states) == 0 {
+		return errors.Errorf("cannot update audit log file states for cluster %s. No state information available", id)
+	}
+
+	if err := checkWriteSac(ctx, id); err != nil {
+		return err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	cluster, err := ds.getClusterOnly(id)
+	if err != nil {
+		return err
+	}
+
+	// If a state is missing in the new update, keep it in the saved state.
+	// It could be that compliance is down temporarily and we don't want to lose the data
+	if cluster.GetAuditLogState() == nil {
+		cluster.AuditLogState = make(map[string]*storage.AuditLogFileState)
+	}
+	for node, state := range states {
+		cluster.AuditLogState[node] = state
+	}
+
+	return ds.clusterStorage.Upsert(cluster)
+}
+
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
 	if err := checkWriteSac(ctx, id); err != nil {
 		return err
