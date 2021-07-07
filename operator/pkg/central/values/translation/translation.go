@@ -75,6 +75,8 @@ func translate(c central.Central) (chartutil.Values, error) {
 
 	v.AddChild("customize", &customize)
 
+	v.AddAllFrom(translation.GetMisc(c.Spec.Misc))
+
 	return v.Build()
 }
 

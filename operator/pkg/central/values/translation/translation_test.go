@@ -186,6 +186,9 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 						},
+						Misc: &common.MiscSpec{
+							CreateSCCs: pointer.BoolPtr(true),
+						},
 					},
 				},
 				clientSet: fake.NewSimpleClientset(
@@ -310,6 +313,9 @@ func TestTranslate(t *testing.T) {
 							"memory": "120",
 						},
 					},
+				},
+				"system": map[string]interface{}{
+					"createSCCs": true,
 				},
 			},
 		},

@@ -125,3 +125,5 @@ meta:
     version: null # string
     overrideAPIResources: null # [string]
     extraAPIResources: null # [string]
+system:
+  createSCCs: null # bool

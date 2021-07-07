@@ -72,7 +72,7 @@ spec:
   fsGroup:
     rule: 'RunAsAny'
 
-{{- if ._rox.env.openshift }}
+{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
 ---
 
 kind: SecurityContextConstraints
@@ -108,6 +108,45 @@ fsGroup:
   type: RunAsAny
 readOnlyRootFilesystem: false
 requiredDropCapabilities: []
+
+{{- else if eq ._rox.env.openshift 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-scanner-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-scanner-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-scanner-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - anyuid
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scanner-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "scanner-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "scanner-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-scanner-scc
+subjects:
+- kind: ServiceAccount
+  name: scanner
+  namespace: {{ .Release.Namespace }}
 {{ end -}}
 
 {{ end -}}

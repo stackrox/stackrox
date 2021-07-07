@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/utils/pointer"
 )
 
 func TestReadBaseValues(t *testing.T) {
@@ -120,6 +121,9 @@ func TestTranslateComplete(t *testing.T) {
 								},
 							},
 						},
+						Misc: &common.MiscSpec{
+							CreateSCCs: pointer.BoolPtr(true),
+						},
 					},
 				},
 			},
@@ -169,6 +173,9 @@ func TestTranslateComplete(t *testing.T) {
 							"memory": "1Gi",
 						},
 					},
+				},
+				"system": map[string]interface{}{
+					"createSCCs": true,
 				},
 			},
 		},

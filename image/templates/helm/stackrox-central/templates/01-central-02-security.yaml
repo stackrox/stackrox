@@ -77,7 +77,7 @@ spec:
       - min: 4000
         max: 4000
 
-{{- if ._rox.env.openshift }}
+{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
 ---
 
 kind: SecurityContextConstraints
@@ -118,4 +118,45 @@ users:
 volumes:
   - '*'
 
+{{- else if eq ._rox.env.openshift 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-central-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-central-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-central-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - anyuid
+  {{- if ._rox.central.persistence.hostPath }}
+  - hostmount-anyuid
+  {{- end }}
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "central-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "central-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-central-scc
+subjects:
+- kind: ServiceAccount
+  name: central
+  namespace: {{.Release.Namespace}}
 {{- end }}
