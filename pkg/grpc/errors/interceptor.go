@@ -41,6 +41,8 @@ func errorTypeToGrpcCode(err error) codes.Code {
 		return codes.InvalidArgument
 	case errors.Is(err, errorhelpers.ErrAlreadyExists):
 		return codes.AlreadyExists
+	case errors.Is(err, errorhelpers.ErrReferencedByAnotherObject):
+		return codes.FailedPrecondition
 	case errors.Is(err, sac.ErrPermissionDenied):
 		return codes.PermissionDenied
 	default:
