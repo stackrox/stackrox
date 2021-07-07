@@ -189,3 +189,37 @@ func (sk SortedKeys) removeAt(idx int) SortedKeys {
 	}
 	return append(ret, sk[idx+1:]...)
 }
+
+type sortedKeysSliceByFirstElem []SortedKeys
+
+func (s sortedKeysSliceByFirstElem) Len() int {
+	return len(s)
+}
+
+func (s sortedKeysSliceByFirstElem) Less(i, j int) bool {
+	if len(s[i]) == 0 {
+		return true
+	}
+	if len(s[j]) == 0 {
+		return false
+	}
+	return bytes.Compare(s[i][0], s[j][0]) < 0
+}
+
+func (s sortedKeysSliceByFirstElem) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+// DisjointPrefixUnion returns the union of the given sets, assuming that each set has a distinct prefix.
+func DisjointPrefixUnion(skss ...SortedKeys) SortedKeys {
+	sort.Sort(sortedKeysSliceByFirstElem(skss))
+	total := 0
+	for _, sks := range skss {
+		total += len(sks)
+	}
+	result := make(SortedKeys, 0, total)
+	for _, sks := range skss {
+		result = append(result, sks...)
+	}
+	return result
+}

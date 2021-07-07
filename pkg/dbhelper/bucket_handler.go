@@ -33,13 +33,31 @@ func (bh *BucketHandler) GetIDs(keys ...[]byte) []string {
 	return ids
 }
 
-// FilterKeys filters the deployment keys out of a list of keys.
-func (bh *BucketHandler) FilterKeys(keys [][]byte) [][]byte {
-	ret := make([][]byte, 0, len(keys))
-	for _, key := range keys {
-		if HasPrefix(bh.BucketPrefix, key) {
-			ret = append(ret, key)
-		}
-	}
-	return ret
+// Graph repliactes the DackBox graph interface, in order to avoid an import cycle.
+type Graph interface {
+	GetRefsFromPrefix(from, prefix []byte) [][]byte
+	GetRefsToPrefix(to, prefix []byte) [][]byte
+
+	CountRefsFromPrefix(from, prefix []byte) int
+	CountRefsToPrefix(to, prefix []byte) int
+}
+
+// GetFilteredRefsFrom retrieves the refs from `from` in `g`, filtered to keys with this bucket's prefix.
+func (bh *BucketHandler) GetFilteredRefsFrom(g Graph, from []byte) [][]byte {
+	return g.GetRefsFromPrefix(from, bh.BucketPrefix)
+}
+
+// GetFilteredRefsTo retrieves the refs to `to` in `g`, filtered to keys with this bucket's prefix.
+func (bh *BucketHandler) GetFilteredRefsTo(g Graph, to []byte) [][]byte {
+	return g.GetRefsToPrefix(to, bh.BucketPrefix)
+}
+
+// CountFilteredRefsFrom counts the refs from `from` in `g`, filtered to keys with this bucket's prefix.
+func (bh *BucketHandler) CountFilteredRefsFrom(g Graph, from []byte) int {
+	return g.CountRefsFromPrefix(from, bh.BucketPrefix)
+}
+
+// CountFilteredRefsTo counts the refs to `to` in `g`, filtered to keys with this bucket's prefix.
+func (bh *BucketHandler) CountFilteredRefsTo(g Graph, to []byte) int {
+	return g.CountRefsToPrefix(to, bh.BucketPrefix)
 }

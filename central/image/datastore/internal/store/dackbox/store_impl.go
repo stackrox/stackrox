@@ -606,7 +606,7 @@ func gatherKeysForImage(txn *dackbox.Transaction, imageID string) (*imageKeySet,
 	allKeys = append(allKeys, ret.listImageKey)
 
 	// Get the keys of the components.
-	for _, componentKey := range componentDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(ret.imageKey)) {
+	for _, componentKey := range componentDackBox.BucketHandler.GetFilteredRefsFrom(txn.Graph(), ret.imageKey) {
 		componentEdgeID := edges.EdgeID{ParentID: imageID,
 			ChildID: componentDackBox.BucketHandler.GetID(componentKey),
 		}.ToString()
@@ -614,7 +614,7 @@ func gatherKeysForImage(txn *dackbox.Transaction, imageID string) (*imageKeySet,
 			componentKey:          componentKey,
 			imageComponentEdgeKey: imageComponentEdgeDackBox.BucketHandler.GetKey(componentEdgeID),
 		}
-		for _, cveKey := range cveDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(componentKey)) {
+		for _, cveKey := range cveDackBox.BucketHandler.GetFilteredRefsFrom(txn.Graph(), componentKey) {
 			cveID := cveDackBox.BucketHandler.GetID(cveKey)
 			cveEdgeID := edges.EdgeID{
 				ParentID: componentDackBox.BucketHandler.GetID(componentKey),

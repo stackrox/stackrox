@@ -88,6 +88,18 @@ func (rm *RemoteGraph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 	return rm.RWGraph.GetRefsToPrefix(to, prefix)
 }
 
+// CountRefsFromPrefix returns the number of children referenced by the input parent key filtered by prefix.
+func (rm *RemoteGraph) CountRefsFromPrefix(from, prefix []byte) int {
+	rm.ensureFrom(from)
+	return rm.RWGraph.CountRefsFromPrefix(from, prefix)
+}
+
+// CountRefsToPrefix gets the number of references to the key filtered by prefix
+func (rm *RemoteGraph) CountRefsToPrefix(to, prefix []byte) int {
+	rm.ensureTo(to)
+	return rm.RWGraph.CountRefsToPrefix(to, prefix)
+}
+
 // ReferencedFromPrefix returns whether there exists a reference to this key with the specific prefix
 func (rm *RemoteGraph) ReferencedFromPrefix(to, prefix []byte) bool {
 	rm.ensureTo(to)

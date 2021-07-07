@@ -65,6 +65,7 @@ func BenchmarkLinearGraphDerivedFieldCounting(b *testing.B) {
 		_, err := counter.Count(ctx, froms...)
 		require.NoError(b, err)
 	}
+	b.StopTimer()
 
 	rocksdbtest.TearDownRocksDB(db)
 }
@@ -74,6 +75,7 @@ func BenchmarkBranchedGraphDerivedFieldCounting(b *testing.B) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	filter, err := filtered.NewSACFilter(
 		filtered.WithResourceHelper(sac.ForResource(globalResource)),
+		filtered.WithReadAccess(),
 	)
 	require.NoError(b, err, "filter creation should have succeeded")
 
@@ -89,6 +91,7 @@ func BenchmarkBranchedGraphDerivedFieldCounting(b *testing.B) {
 		require.NoError(b, err)
 		require.EqualValues(b, expectedCounts, actualCounts)
 	}
+	b.StopTimer()
 
 	rocksdbtest.TearDownRocksDB(db)
 }

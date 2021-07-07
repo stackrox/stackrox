@@ -22,17 +22,3 @@ func NewReader(opts ...ReaderOption) Reader {
 	}
 	return rc
 }
-
-// PartialReader represents reading in part of a messages data from a separate reader.
-type PartialReader interface {
-	ReadPartialIn(key []byte, msg proto.Message, dackTxn *dackbox.Transaction) (proto.Message, error)
-}
-
-// NewPartialReader creates a new instance of a PartialReader.
-func NewPartialReader(opts ...PartialReaderOption) PartialReader {
-	rc := &partialReaderImpl{}
-	for _, opt := range opts {
-		opt(rc)
-	}
-	return rc
-}

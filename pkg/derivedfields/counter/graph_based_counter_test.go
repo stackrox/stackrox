@@ -16,10 +16,9 @@ import (
 )
 
 var (
-	prefix1       = []byte("pre1")
-	prefix2       = []byte("pre2")
-	prefix3       = []byte("pre3")
-	clusterPrefix = []byte("cluster")
+	prefix1 = []byte("pre1")
+	prefix2 = []byte("pre2")
+	prefix3 = []byte("pre3")
 
 	id1  = []byte("id1")
 	id2  = []byte("id2")
@@ -29,19 +28,18 @@ var (
 	id6  = []byte("id6")
 	id11 = []byte("id11")
 
-	prefixedID1  = dbhelper.GetBucketKey(prefix1, id1)
-	prefixedID2  = dbhelper.GetBucketKey(prefix2, id2)
-	prefixedID3  = dbhelper.GetBucketKey(prefix2, id3)
-	prefixedID4  = dbhelper.GetBucketKey(prefix3, id4)
-	prefixedID5  = dbhelper.GetBucketKey(prefix3, id5)
-	prefixedID6  = dbhelper.GetBucketKey(clusterPrefix, id6)
-	prefixedID11 = dbhelper.GetBucketKey(prefix1, id11)
+	prefixed1ID1  = dbhelper.GetBucketKey(prefix1, id1)
+	prefixed2ID2  = dbhelper.GetBucketKey(prefix2, id2)
+	prefixed2ID3  = dbhelper.GetBucketKey(prefix2, id3)
+	prefixed3ID4  = dbhelper.GetBucketKey(prefix3, id4)
+	prefixed3ID5  = dbhelper.GetBucketKey(prefix3, id5)
+	prefixed1ID11 = dbhelper.GetBucketKey(prefix1, id11)
 
 	// Fake hierarchy for test, use prefixed values since that is what will be stored in the graph.
-	fromID1  = [][]byte{prefixedID2, prefixedID3}
-	fromID2  = [][]byte{prefixedID4}
-	fromID3  = [][]byte{prefixedID5}
-	fromID11 = [][]byte{prefixedID2}
+	fromID1Prefixed2  = [][]byte{prefixed2ID2, prefixed2ID3}
+	fromID2Prefixed3  = [][]byte{prefixed3ID4}
+	fromID3Prefixed3  = [][]byte{prefixed3ID5}
+	fromID11Prefixed2 = [][]byte{prefixed2ID2}
 
 	globalResource = permissions.ResourceMetadata{
 		Resource: "resource",
@@ -76,9 +74,9 @@ id1 -> id2 -> id4
 id1 -> id3 -> id5
 */
 func (s *derivedFieldCounterTestSuite) TestCounterForward() {
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID1).Return(fromID1)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID2).Return(fromID2)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID3).Return(fromID3)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed1ID1, prefix2).Return(fromID1Prefixed2)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID2, prefix3).Return(fromID2Prefixed3)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID3, prefix3).Return(fromID3Prefixed3)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
@@ -99,9 +97,9 @@ id1 -> id2 -> id4
 id1 -> id3
 */
 func (s *derivedFieldCounterTestSuite) TestCounterForwardWithPartialPath() {
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID1).Return(fromID1)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID2).Return(fromID2)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID3).Return([][]byte{})
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed1ID1, prefix2).Return(fromID1Prefixed2)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID2, prefix3).Return(fromID2Prefixed3)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID3, prefix3).Return([][]byte{})
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
@@ -122,9 +120,9 @@ id1 -> id2 -> id5
 id1 -> id3 -> id5
 */
 func (s *derivedFieldCounterTestSuite) TestCounterForwardRepeated() {
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID1).Return(fromID1)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID2).Return([][]byte{prefixedID5})
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID3).Return(fromID3)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed1ID1, prefix2).Return(fromID1Prefixed2)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID2, prefix3).Return([][]byte{prefixed3ID5})
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID3, prefix3).Return(fromID3Prefixed3)
 
 	graphProvider := fakeGraphProvider{mg: s.mockRGraph}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
@@ -147,10 +145,10 @@ id1 -> id3 -> id6
 id11 -> id2 ->id4
 */
 func (s *derivedFieldCounterTestSuite) TestCounterForwardOneToMany() {
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID1).Return(fromID1)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID2).Return(fromID2)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID3).Return([][]byte{prefixedID5, dbhelper.GetBucketKey(prefix3, id6)})
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID11).Return(fromID11)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed1ID1, prefix2).Return(fromID1Prefixed2)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID2, prefix3).Return(fromID2Prefixed3)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID3, prefix3).Return([][]byte{prefixed3ID5, dbhelper.GetBucketKey(prefix3, id6)})
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed1ID11, prefix2).Return(fromID11Prefixed2)
 
 	graphProvider := fakeGraphProvider{mg: s.mockRGraph}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
@@ -172,9 +170,9 @@ id1 -> id3 -> id5
 id1 -> id3 -> id6 (diff prefix)
 */
 func (s *derivedFieldCounterTestSuite) TestCounterForwardWithDiffPrefix() {
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID1).Return(fromID1)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID2).Return(fromID2)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID3).Return([][]byte{prefixedID5, prefixedID6})
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed1ID1, prefix2).Return(fromID1Prefixed2)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID2, prefix3).Return(fromID2Prefixed3)
+	s.mockRGraph.EXPECT().GetRefsFromPrefix(prefixed2ID3, prefix3).Return([][]byte{prefixed3ID5})
 
 	graphProvider := fakeGraphProvider{mg: s.mockRGraph}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())

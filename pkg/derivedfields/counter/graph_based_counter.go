@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stackrox/rox/pkg/set"
@@ -38,22 +37,22 @@ func (c *graphBasedDerivedFieldCounterImpl) Count(ctx context.Context, keys ...s
 	idGraph := c.graphProvider.NewGraphView()
 	defer idGraph.Discard()
 
-	var step func([]byte) [][]byte
+	var filteredStep func([]byte, []byte) [][]byte
 	if c.forwardTraversal {
-		step = idGraph.GetRefsFrom
+		filteredStep = idGraph.GetRefsFromPrefix
 	} else {
-		step = idGraph.GetRefsTo
+		filteredStep = idGraph.GetRefsToPrefix
 	}
 
-	return count(ctx, currentIDs, c.prefixPath, step, c.sacFilter)
+	return count(ctx, currentIDs, c.prefixPath, filteredStep, c.sacFilter)
 }
 
-func count(ctx context.Context, currentIDs [][]byte, prefixPath [][]byte, step func([]byte) [][]byte, sacFilter filtered.Filter) (map[string]int32, error) {
+func count(ctx context.Context, currentIDs [][]byte, prefixPath [][]byte, filteredStep func([]byte, []byte) [][]byte, sacFilter filtered.Filter) (map[string]int32, error) {
 	counts := make(map[string]int32)
 	cache := make(map[string]int32)
 	var err error
 	for _, currentID := range currentIDs {
-		counts[GetIDForKey(prefixPath[0], currentID)], err = dfs(ctx, currentID, cache, set.NewStringSet(), prefixPath, step, sacFilter)
+		counts[GetIDForKey(prefixPath[0], currentID)], err = dfs(ctx, currentID, cache, set.NewStringSet(), prefixPath, filteredStep, sacFilter)
 		if err != nil {
 			return nil, err
 		}
@@ -61,58 +60,53 @@ func count(ctx context.Context, currentIDs [][]byte, prefixPath [][]byte, step f
 	return counts, nil
 }
 
-func dfs(ctx context.Context, currentID []byte, cache map[string]int32, seenIDs set.StringSet, prefixPath [][]byte, step func([]byte) [][]byte, sacFilter filtered.Filter) (int32, error) {
+func dfs(ctx context.Context, currentID []byte, cache map[string]int32, seenIDs set.StringSet, prefixPath [][]byte, step func([]byte, []byte) [][]byte, sacFilter filtered.Filter) (int32, error) {
 	if len(prefixPath) == 0 {
 		return 0, nil
 	}
 
-	if seenIDs.Contains(string(currentID)) {
+	currentIDStr := string(currentID)
+	if !seenIDs.Add(currentIDStr) {
 		return 0, nil
 	}
-	seenIDs.Add(string(currentID))
 
-	if count, ok := cache[string(currentID)]; ok {
+	if count, ok := cache[currentIDStr]; ok {
 		return count, nil
 	}
 
-	// Destination prefix visited
-	if len(prefixPath) == 1 {
-		id := GetIDForKey(prefixPath[0], currentID)
-		// Perform SAC check only on final prefix
-		allowed, err := filtered.ApplySACFilter(ctx, []string{id}, sacFilter)
-		if err != nil || len(allowed) == 0 {
-			return 0, err
+	count, err := func() (int32, error) {
+		// Destination prefix visited
+		if len(prefixPath) == 1 {
+			id := GetIDForKey(prefixPath[0], currentID)
+			// Perform SAC check only on final prefix
+			allowed, err := filtered.ApplySACFilter(ctx, []string{id}, sacFilter)
+			if err != nil || len(allowed) == 0 {
+				return 0, err
+			}
+			return 1, nil
 		}
-		return 1, nil
-	}
 
-	// Cannot reach destination
-	transformedIDs := step(currentID)
-	if len(transformedIDs) == 0 {
-		return 0, nil
-	}
-
-	totalCount := int32(0)
-	nextIDs := filterByPrefix(prefixPath[1], transformedIDs)
-	for _, nextID := range nextIDs {
-		count, err := dfs(ctx, nextID, cache, seenIDs, prefixPath[1:], step, sacFilter)
-		if err != nil {
-			return 0, err
+		nextIDs := step(currentID, prefixPath[1])
+		if len(nextIDs) == 0 {
+			// Cannot reach destination
+			return 0, nil
 		}
-		totalCount += count
-	}
-	cache[string(currentID)] = totalCount
-	return totalCount, nil
-}
 
-func filterByPrefix(prefix []byte, input sortedkeys.SortedKeys) sortedkeys.SortedKeys {
-	filteredKeys := input[:0]
-	for _, key := range input {
-		if dbhelper.HasPrefix(prefix, key) {
-			filteredKeys = append(filteredKeys, key)
+		totalCount := int32(0)
+		for _, nextID := range nextIDs {
+			count, err := dfs(ctx, nextID, cache, seenIDs, prefixPath[1:], step, sacFilter)
+			if err != nil {
+				return 0, err
+			}
+			totalCount += count
 		}
+		return totalCount, nil
+	}()
+	if err != nil {
+		return 0, err
 	}
-	return filteredKeys
+	cache[currentIDStr] = count
+	return count, nil
 }
 
 // GetIDForKey returns id for a prefixed key

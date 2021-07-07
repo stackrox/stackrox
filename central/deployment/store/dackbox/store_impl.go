@@ -242,7 +242,7 @@ func (b *StoreImpl) RemoveDeployment(id string) error {
 		}
 
 		// If the namespace has no more deployments, remove refs in both directions.
-		if namespaceKey != nil && len(deploymentDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(namespaceKey))) == 0 {
+		if namespaceKey != nil && deploymentDackBox.BucketHandler.CountFilteredRefsFrom(txn.Graph(), namespaceKey) == 0 {
 			if err := txn.Graph().DeleteRefsFrom(namespaceKey); err != nil {
 				return err
 			}
@@ -261,24 +261,21 @@ func (b *StoreImpl) collectDeploymentKeys(id string) ([]byte, [][]byte) {
 	defer graphView.Discard()
 
 	deploymentKey := deploymentDackBox.BucketHandler.GetKey(id)
-	allKeys := sortedkeys.SortedKeys{deploymentKey}
+	deploymentKeys := sortedkeys.SortedKeys{deploymentKey}
 
-	imageKeys := imageDackBox.BucketHandler.FilterKeys(graphView.GetRefsFrom(deploymentKey))
-	allKeys = allKeys.Union(imageKeys)
+	imageKeys := imageDackBox.BucketHandler.GetFilteredRefsFrom(graphView, deploymentKey)
 
-	namespaceKeys := namespaceDackBox.BucketHandler.FilterKeys(graphView.GetRefsTo(deploymentKey))
-	allKeys = allKeys.Union(namespaceKeys)
+	namespaceKeys := namespaceDackBox.BucketHandler.GetFilteredRefsTo(graphView, deploymentKey)
 
 	// Deployment should have a single namespace link up. If not, early exit.
 	if len(namespaceKeys) != 1 {
-		return nil, allKeys
+		return nil, sortedkeys.DisjointPrefixUnion(deploymentKeys, imageKeys, namespaceKeys)
 	}
 	namespaceKey := namespaceKeys[0]
 
-	clusterKeys := clusterDackBox.BucketHandler.FilterKeys(graphView.GetRefsTo(namespaceKey))
-	allKeys = allKeys.Union(clusterKeys)
+	clusterKeys := clusterDackBox.BucketHandler.GetFilteredRefsTo(graphView, namespaceKey)
 
-	return namespaceKey, allKeys
+	return namespaceKey, sortedkeys.DisjointPrefixUnion(deploymentKeys, imageKeys, namespaceKeys, clusterKeys)
 }
 
 func convertDeploymentToListDeployment(d *storage.Deployment) *storage.ListDeployment {

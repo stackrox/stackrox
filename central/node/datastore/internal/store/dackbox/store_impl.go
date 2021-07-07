@@ -618,7 +618,7 @@ func gatherKeysForNode(txn *dackbox.Transaction, nodeID string) (*nodeKeySet, er
 
 	allCVEsSet := set.NewStringSet()
 	// Get the keys of the components.
-	for _, componentKey := range componentDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(ret.nodeKey)) {
+	for _, componentKey := range componentDackBox.BucketHandler.GetFilteredRefsFrom(txn.Graph(), ret.nodeKey) {
 		componentEdgeID := edges.EdgeID{ParentID: nodeID,
 			ChildID: componentDackBox.BucketHandler.GetID(componentKey),
 		}.ToString()
@@ -626,7 +626,7 @@ func gatherKeysForNode(txn *dackbox.Transaction, nodeID string) (*nodeKeySet, er
 			componentKey:         componentKey,
 			nodeComponentEdgeKey: nodeComponentEdgeDackBox.BucketHandler.GetKey(componentEdgeID),
 		}
-		for _, cveKey := range cveDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(componentKey)) {
+		for _, cveKey := range cveDackBox.BucketHandler.GetFilteredRefsFrom(txn.Graph(), componentKey) {
 			cveID := cveDackBox.BucketHandler.GetID(cveKey)
 			cveEdgeID := edges.EdgeID{
 				ParentID: componentDackBox.BucketHandler.GetID(componentKey),
@@ -657,7 +657,7 @@ func gatherKeysForNode(txn *dackbox.Transaction, nodeID string) (*nodeKeySet, er
 		allKeys = append(allKeys, nodeCVEEdgeKey)
 	}
 
-	clusterKeys := clusterDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(ret.nodeKey))
+	clusterKeys := clusterDackBox.BucketHandler.GetFilteredRefsFrom(txn.Graph(), ret.nodeKey)
 	allKeys = append(allKeys, clusterKeys...)
 
 	// Generate a set of all the keys.

@@ -23,6 +23,9 @@ type RGraph interface {
 	GetRefsFromPrefix(from, prefix []byte) [][]byte
 	GetRefsToPrefix(to, prefix []byte) [][]byte
 
+	CountRefsFromPrefix(from, prefix []byte) int
+	CountRefsToPrefix(to, prefix []byte) int
+
 	ReferencedFromPrefix(to, prefix []byte) bool
 }
 
@@ -121,6 +124,22 @@ func (s *Graph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 		return sliceutils.ByteSliceClone(filterByPrefix(prefix, keys))
 	}
 	return nil
+}
+
+// CountRefsFromPrefix returns the number of children referenced by the input parent key that have the passed prefix.
+func (s *Graph) CountRefsFromPrefix(to, prefix []byte) int {
+	if keys, exist := s.forward[string(to)]; exist {
+		return len(filterByPrefix(prefix, keys))
+	}
+	return 0
+}
+
+// CountRefsToPrefix returns the number of keys that have the passed prefix that reference the passed key
+func (s *Graph) CountRefsToPrefix(to, prefix []byte) int {
+	if keys, exist := s.backward[string(to)]; exist {
+		return len(filterByPrefix(prefix, keys))
+	}
+	return 0
 }
 
 // ReferencedFromPrefix returns whether a reference to the current key

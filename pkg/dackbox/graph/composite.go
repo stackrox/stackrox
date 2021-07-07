@@ -40,6 +40,16 @@ func (cs compositeGraph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 	return s.GetRefsToPrefix(to, prefix)
 }
 
+func (cs compositeGraph) CountRefsFromPrefix(from, prefix []byte) int {
+	s := cs.getFirstStateWithFrom(from)
+	return s.CountRefsFromPrefix(from, prefix)
+}
+
+func (cs compositeGraph) CountRefsToPrefix(to, prefix []byte) int {
+	s := cs.getFirstStateWithTo(to)
+	return s.CountRefsToPrefix(to, prefix)
+}
+
 func (cs compositeGraph) ReferencedFromPrefix(to, prefix []byte) bool {
 	s := cs.getFirstStateWithTo(to)
 	return s.ReferencedFromPrefix(to, prefix)
