@@ -245,7 +245,7 @@ function AccessScopeForm({
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
-                            {action === 'create' ? 'Create access scope' : accessScope.name}
+                            {action === 'create' ? 'Add access scope' : accessScope.name}
                         </Title>
                     </ToolbarItem>
                     {isActionable && action !== 'create' && (
@@ -281,6 +281,7 @@ function AccessScopeForm({
                     onChange={onChange}
                     isDisabled={isViewing}
                     isRequired
+                    className="pf-m-limit-width"
                 />
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">

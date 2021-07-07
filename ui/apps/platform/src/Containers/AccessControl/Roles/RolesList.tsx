@@ -13,11 +13,10 @@ import {
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { getIsDefaultRoleName } from 'constants/accessControl';
+import { Group } from 'services/AuthService';
 import { AccessScope, PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
-
-type Group = { roleName: string }; // TODO import from services/GroupsServices
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.
@@ -85,7 +84,7 @@ function RolesList({
                     </ToolbarGroup>
                     <ToolbarItem alignment={{ default: 'alignRight' }}>
                         <Button variant="primary" onClick={handleCreate} isSmall>
-                            Create role
+                            Add role
                         </Button>
                     </ToolbarItem>
                 </ToolbarContent>

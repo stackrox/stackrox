@@ -44,7 +44,7 @@ describe('Access Control Access scopes', () => {
         cy.get(selectors.h1).should('have.text', 'Access Control');
         cy.get(selectors.navLinkCurrent).should('have.text', 'Access scopes');
         cy.get(selectors.h2).should('have.text', 'Access scopes');
-        cy.get(selectors.list.createButton).should('have.text', 'Create access scope');
+        cy.get(selectors.list.addButton).should('have.text', 'Add access scope');
 
         // Although no default access scopes, do not assume whether or not table exists.
     });

@@ -23,14 +23,14 @@ function PermissionSetsTable({
             <Thead>
                 <Tr>
                     <Th key="radio" />
-                    <Th key="name">Name</Th>
-                    <Th key="description">Description</Th>
+                    <Th width={20}>Name</Th>
+                    <Th>Description</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 {permissionSets.map(({ id, name, description }) => (
                     <Tr key={id}>
-                        <Td key="radio" className="pf-c-table__check">
+                        <Td className="pf-c-table__check">
                             <input
                                 type="radio"
                                 name={fieldId}
@@ -41,12 +41,10 @@ function PermissionSetsTable({
                                 disabled={isDisabled}
                             />
                         </Td>
-                        <Td key="name" dataLabel="Name" modifier="nowrap">
+                        <Td dataLabel="Name" modifier="nowrap">
                             {name}
                         </Td>
-                        <Td key="description" dataLabel="Description">
-                            {description}
-                        </Td>
+                        <Td dataLabel="Description">{description}</Td>
                     </Tr>
                 ))}
             </Tbody>

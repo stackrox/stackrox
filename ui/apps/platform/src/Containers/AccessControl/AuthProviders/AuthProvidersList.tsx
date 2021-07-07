@@ -29,10 +29,10 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
         <TableComposable variant="compact">
             <Thead>
                 <Tr>
-                    <Th>Name</Th>
-                    <Th>Type</Th>
-                    <Th>Minimum access role</Th>
-                    <Th>Assigned rules</Th>
+                    <Th width={20}>Name</Th>
+                    <Th width={20}>Type</Th>
+                    <Th width={20}>Minimum access role</Th>
+                    <Th width={40}>Assigned rules</Th>
                 </Tr>
             </Thead>
             <Tbody>

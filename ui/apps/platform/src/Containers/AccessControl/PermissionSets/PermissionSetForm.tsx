@@ -118,7 +118,7 @@ function PermissionSetForm({
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
-                            {action === 'create' ? 'Create permission set' : permissionSet.name}
+                            {action === 'create' ? 'Add permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
                     {action !== 'create' && (
@@ -158,6 +158,7 @@ function PermissionSetForm({
                     onChange={onChange}
                     isDisabled={isViewing}
                     isRequired
+                    className="pf-m-limit-width"
                 />
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">

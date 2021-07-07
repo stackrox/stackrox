@@ -44,7 +44,7 @@ describe('Access Control Permission sets', () => {
         cy.get(selectors.h1).should('have.text', 'Access Control');
         cy.get(selectors.navLinkCurrent).should('have.text', 'Permission sets');
         cy.get(selectors.h2).should('have.text', 'Permission sets');
-        cy.get(selectors.list.createButton).should('have.text', 'Create permission set');
+        cy.get(selectors.list.addButton).should('have.text', 'Add permission set');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Description")`);

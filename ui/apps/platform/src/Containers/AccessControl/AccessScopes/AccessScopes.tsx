@@ -163,7 +163,7 @@ function AccessScopes(): ReactElement {
             <AccessControlHeading
                 entityType={entityType}
                 entityName={
-                    accessScope && (action === 'create' ? 'Create access scope' : accessScope.name)
+                    accessScope && (action === 'create' ? 'Add access scope' : accessScope.name)
                 }
                 isDisabled={hasAction}
             />

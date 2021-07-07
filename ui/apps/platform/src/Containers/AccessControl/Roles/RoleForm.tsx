@@ -109,7 +109,7 @@ function RoleForm({
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
-                            {action === 'create' ? 'Create role' : role.name}
+                            {action === 'create' ? 'Add role' : role.name}
                         </Title>
                     </ToolbarItem>
                     {action !== 'create' && (
@@ -149,6 +149,7 @@ function RoleForm({
                     onChange={onChange}
                     isDisabled={isViewing || action === 'update'}
                     isRequired
+                    className="pf-m-limit-width"
                 />
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
@@ -173,7 +174,7 @@ function RoleForm({
                 <AccessScopesTable
                     fieldId="accessScopeId"
                     accessScopeId={values.accessScopeId}
-                    accessScopes={accessScopes}
+                    accessScopes={isActionable ? accessScopes : []}
                     handleChange={handleChange}
                     isDisabled={isViewing}
                 />

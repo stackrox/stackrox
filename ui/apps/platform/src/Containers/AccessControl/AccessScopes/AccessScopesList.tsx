@@ -68,7 +68,7 @@ function AccessScopesList({
                     </ToolbarGroup>
                     <ToolbarItem alignment={{ default: 'alignRight' }}>
                         <Button variant="primary" onClick={handleCreate} isSmall>
-                            Create access scope
+                            Add access scope
                         </Button>
                     </ToolbarItem>
                 </ToolbarContent>

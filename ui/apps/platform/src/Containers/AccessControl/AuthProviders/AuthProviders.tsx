@@ -31,6 +31,7 @@ import { mergeGroupsWithAuthProviders } from './authProviders.utils';
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 
+import AccessControlHeading from '../AccessControlHeading';
 import AuthProviderForm from './AuthProviderForm';
 import AuthProvidersList from './AuthProvidersList';
 
@@ -112,10 +113,17 @@ function AuthProviders(): ReactElement {
         </DropdownItem>
     ));
 
-    // TODO Display backdrop which covers nav links and drawer body during action.
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isEntity={isExpanded} />
+            <AccessControlHeading
+                entityType={entityType}
+                entityName={
+                    selectedAuthProvider &&
+                    (action === 'create' ? 'Add auth provider' : selectedAuthProvider.name)
+                }
+                isDisabled={hasAction}
+            />
             <AccessControlNav entityType={entityType} />
             {(isFetchingAuthProviders || isFetchingRoles) && (
                 <Bullseye>
@@ -136,7 +144,7 @@ function AuthProviders(): ReactElement {
                     <Toolbar inset={{ default: 'insetNone' }}>
                         <ToolbarContent>
                             <ToolbarItem>
-                                <Title headingLevel="h2">Auth Providers</Title>
+                                <Title headingLevel="h2">Auth providers</Title>
                             </ToolbarItem>
                             <ToolbarItem>
                                 <Badge isRead>{authProvidersWithRules.length}</Badge>

@@ -69,7 +69,7 @@ function PermissionSetsList({
                     </ToolbarGroup>
                     <ToolbarItem alignment={{ default: 'alignRight' }}>
                         <Button variant="primary" onClick={handleCreate} isSmall>
-                            Create permission set
+                            Add permission set
                         </Button>
                     </ToolbarItem>
                 </ToolbarContent>

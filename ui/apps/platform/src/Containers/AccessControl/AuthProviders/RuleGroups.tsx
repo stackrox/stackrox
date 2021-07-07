@@ -98,7 +98,7 @@ function RuleGroups({
                             <Button
                                 variant="link"
                                 isInline
-                                icon={<PlusCircleIcon />}
+                                icon={<PlusCircleIcon className="pf-u-mr-sm" />}
                                 onClick={() =>
                                     arrayHelpers.push({
                                         roleName: '',

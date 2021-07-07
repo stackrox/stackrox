@@ -29,7 +29,7 @@ describe('Access Control Auth providers', () => {
         cy.visit(authProvidersUrl);
         cy.wait('@GetMyPermissions');
 
-        // cy.get(selectors.h1).should('have.text', 'Access Control');
+        cy.get(selectors.h1).should('have.text', 'Access Control');
         cy.get(selectors.navLink).should('not.exist');
         cy.get(selectors.h2).should('not.exist');
         cy.get(selectors.alertTitle).should(
@@ -41,10 +41,10 @@ describe('Access Control Auth providers', () => {
     it('list has headings, link, button, and table head cells', () => {
         visitAuthProviders();
 
-        // cy.get(selectors.h1).should('have.text', 'Access Control');
+        cy.get(selectors.h1).should('have.text', 'Access Control');
         cy.get(selectors.navLinkCurrent).should('have.text', 'Auth providers');
-        cy.get(selectors.h2).should('have.text', 'Auth Providers'); // TODO sentence case
-        cy.get(selectors.list.authProviders.addButton).should('have.text', 'Add auth provider');
+        cy.get(selectors.h2).should('have.text', 'Auth providers');
+        cy.get(selectors.list.addButton).should('have.text', 'Add auth provider');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Type")`);

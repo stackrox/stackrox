@@ -11,6 +11,7 @@ import {
 } from '@patternfly/react-core';
 
 import { defaultRoleDescriptions, getIsDefaultRoleName } from 'constants/accessControl';
+import { Group } from 'services/AuthService';
 import { fetchGroups } from 'services/GroupsService';
 import {
     AccessScope,
@@ -31,8 +32,6 @@ import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import RoleForm from './RoleForm';
 import RolesList from './RolesList';
-
-type Group = { roleName: string }; // TODO import from services/GroupsServices
 
 const entityType = 'ROLE';
 
@@ -217,7 +216,7 @@ function Roles(): ReactElement {
             <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
             <AccessControlHeading
                 entityType={entityType}
-                entityName={role && (action === 'create' ? 'Create role' : role.name)}
+                entityName={role && (action === 'create' ? 'Add role' : role.name)}
                 isDisabled={hasAction}
             />
             <AccessControlNav entityType={entityType} isDisabled={hasAction} />

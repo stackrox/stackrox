@@ -48,3 +48,10 @@
     background-color: var(--pf-global--disabled-color--200);
     color: var(--pf-global--disabled-color--100);
 }
+
+/*
+ * Limit width (via className) of individual input elements.
+ */
+#access-control .pf-c-form-control.pf-m-limit-width {
+    max-width: var(--pf-c-form--m-limit-width--MaxWidth);
+}

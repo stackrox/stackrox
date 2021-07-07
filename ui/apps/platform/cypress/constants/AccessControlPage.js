@@ -14,13 +14,12 @@ export const selectors = scopeSelectors('#access-control', {
     alertTitle: '.pf-c-alert__title',
 
     list: {
-        createButton: 'button:contains("Create")',
+        addButton: 'button:contains("Add")',
         th: 'th',
         tdLinkName: 'td[data-label="Name"] button',
         tdDescription: 'td[data-label="Description"]',
 
         authProviders: {
-            addButton: 'button:contains("Add")',
             tdType: 'td[data-label="Type"]',
             tdMinimumAccessRole: 'td[data-label="Minimum access role',
             tdRules: 'td[data-label="Rules"]',

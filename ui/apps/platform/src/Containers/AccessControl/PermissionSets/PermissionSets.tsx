@@ -190,7 +190,7 @@ function PermissionSets(): ReactElement {
                 entityType={entityType}
                 entityName={
                     permissionSet &&
-                    (action === 'create' ? 'Create permission set' : permissionSet.name)
+                    (action === 'create' ? 'Add permission set' : permissionSet.name)
                 }
                 isDisabled={hasAction}
             />

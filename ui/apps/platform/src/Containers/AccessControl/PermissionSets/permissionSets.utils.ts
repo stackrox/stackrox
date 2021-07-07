@@ -21,7 +21,7 @@ export function getNewPermissionSet(resources: string[]): PermissionSet {
 }
 
 function getCompletePermissions(permissions: PermissionsMap, resources: string[]): PermissionsMap {
-    const completePermissions: PermissionsMap = { ...permissions };
+    const completePermissions: PermissionsMap = {};
 
     resources.forEach((resource) => {
         completePermissions[resource] = permissions[resource] ?? 'NO_ACCESS';

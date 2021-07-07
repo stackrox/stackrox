@@ -22,14 +22,14 @@ function AccessScopesTable({
         <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
-                    <Th key="radio" />
-                    <Th key="name">Name</Th>
-                    <Th key="description">Description</Th>
+                    <Th />
+                    <Th width={20}>Name</Th>
+                    <Th>Description</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 <Tr className="pf-u-background-color-200">
-                    <Td key="radio" className="pf-c-table__check">
+                    <Td className="pf-c-table__check">
                         <input
                             type="radio"
                             name={fieldId}
@@ -40,16 +40,14 @@ function AccessScopesTable({
                             disabled={isDisabled}
                         />
                     </Td>
-                    <Td key="name" dataLabel="Name" modifier="nowrap">
+                    <Td dataLabel="Name" modifier="nowrap">
                         No access scope
                     </Td>
-                    <Td key="description" dataLabel="Description">
-                        Role does not have an access scope
-                    </Td>
+                    <Td dataLabel="Description">Role does not have an access scope</Td>
                 </Tr>
                 {accessScopes.map(({ id, name, description }) => (
                     <Tr key={id}>
-                        <Td key="radio" className="pf-c-table__check">
+                        <Td className="pf-c-table__check">
                             <input
                                 type="radio"
                                 name={fieldId}
@@ -60,12 +58,10 @@ function AccessScopesTable({
                                 disabled={isDisabled}
                             />
                         </Td>
-                        <Td key="name" dataLabel="Name" modifier="nowrap">
+                        <Td dataLabel="Name" modifier="nowrap">
                             {name}
                         </Td>
-                        <Td key="description" dataLabel="Description">
-                            {description}
-                        </Td>
+                        <Td dataLabel="Description">{description}</Td>
                     </Tr>
                 ))}
             </Tbody>
