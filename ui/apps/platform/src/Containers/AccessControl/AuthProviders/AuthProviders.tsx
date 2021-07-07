@@ -21,10 +21,12 @@ import { CaretDownIcon } from '@patternfly/react-icons';
 
 import { availableAuthProviders } from 'constants/accessControl';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
+import { actions as groupActions } from 'reducers/groups';
 import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
-import { AuthProvider, createAuthProvider, updateAuthProvider } from 'services/AuthService';
+import { AuthProvider } from 'services/AuthService';
 
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
+import { mergeGroupsWithAuthProviders } from './authProviders.utils';
 
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -43,7 +45,7 @@ const authProviderNew = {
 
 const authProviderState = createStructuredSelector({
     authProviders: selectors.getAvailableAuthProviders,
-    roles: selectors.getRoles,
+    groups: selectors.getRuleGroups,
     isFetchingAuthProviders: (state) =>
         selectors.getLoadingStatus(state, authActionTypes.FETCH_AUTH_PROVIDERS) as boolean,
     isFetchingRoles: (state) =>
@@ -63,13 +65,16 @@ function AuthProviders(): ReactElement {
     const dispatch = useDispatch();
 
     const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-    const { authProviders, roles, isFetchingAuthProviders, isFetchingRoles } = useSelector(
+    const { authProviders, groups, isFetchingAuthProviders, isFetchingRoles } = useSelector(
         authProviderState
     );
+
+    const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
 
     useEffect(() => {
         dispatch(authActions.fetchAuthProviders.request());
         dispatch(roleActions.fetchRoles.request());
+        dispatch(groupActions.fetchGroups.request());
     }, [dispatch]);
 
     function onToggleCreateMenu(isOpen) {
@@ -93,34 +98,6 @@ function AuthProviders(): ReactElement {
     function onClickCancel() {
         // The entityId is undefined for create and defined for update.
         history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
-    }
-
-    function submitValues(values: AuthProvider): Promise<AuthProvider> {
-        // TODO research special case for update active auth provider
-        // See saveAuthProvider function in AuthService.ts
-        return action === 'create'
-            ? createAuthProvider(values).then((entityCreated) => {
-                  // Append the created entity.
-                  //   setAuthProviders([...authProviders, entityCreated]);
-
-                  // Replace path which had action=create with plain entity path.
-                  history.replace(getEntityPath(entityType, entityCreated.id));
-
-                  return entityCreated;
-              })
-            : updateAuthProvider(values).then((entityUpdated) => {
-                  // Replace the updated entity.
-                  //   setAuthProviders(
-                  //       authProviders.map((entity) =>
-                  //           entity.id === entityUpdated.id ? entityUpdated : entity
-                  //       )
-                  //   );
-
-                  // Replace path which had action=update with plain entity path.
-                  history.replace(getEntityPath(entityType, entityId));
-
-                  return entityUpdated;
-              });
     }
 
     const selectedAuthProvider =
@@ -150,10 +127,8 @@ function AuthProviders(): ReactElement {
                     isActionable={isActionable}
                     action={action}
                     selectedAuthProvider={selectedAuthProvider}
-                    roles={roles}
                     onClickCancel={onClickCancel}
                     onClickEdit={onClickEdit}
-                    submitValues={submitValues}
                 />
             )}
             {!isFetchingAuthProviders && !isFetchingRoles && !isExpanded && (
@@ -164,7 +139,7 @@ function AuthProviders(): ReactElement {
                                 <Title headingLevel="h2">Auth Providers</Title>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Badge isRead>{authProviders.length}</Badge>
+                                <Badge isRead>{authProvidersWithRules.length}</Badge>
                             </ToolbarItem>
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
                                 <Dropdown
@@ -186,7 +161,7 @@ function AuthProviders(): ReactElement {
                             </ToolbarItem>
                         </ToolbarContent>
                     </Toolbar>
-                    <AuthProvidersList entityId={entityId} authProviders={authProviders} />
+                    <AuthProvidersList entityId={entityId} authProviders={authProvidersWithRules} />
                 </>
             )}
         </>

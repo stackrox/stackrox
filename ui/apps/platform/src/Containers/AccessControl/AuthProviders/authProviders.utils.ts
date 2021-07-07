@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/dot-notation */
 /* eslint-disable import/prefer-default-export */
 import { AuthProvider, AuthProviderConfig, Group } from 'services/AuthService';
 
@@ -141,6 +142,34 @@ export function getGroupsByAuthProviderId(groups: Group[], id: string): Group[] 
             group.props.key !== ''
     );
     return filteredGroups;
+}
+
+export function mergeGroupsWithAuthProviders(
+    authProviders: AuthProvider[],
+    groups: Group[]
+): AuthProvider[] {
+    const authProvidersWithGroupsDict = authProviders.reduce((obj, item) => {
+        // reset rules on each calculation
+        // eslint-disable-next-line no-param-reassign
+        item.groups = [];
+
+        // comma operator is much faster than spread in a reduce loop
+        // eslint-disable-next-line prettier/prettier, no-return-assign, no-param-reassign, no-sequences, @typescript-eslint/dot-notation
+            return (obj[item.id] = item), obj;
+    }, {});
+
+    if (authProviders.length) {
+        groups.forEach((group) => {
+            if (group.props.key !== '') {
+                authProvidersWithGroupsDict[group.props.authProviderId].groups.push(group);
+            } else {
+                authProvidersWithGroupsDict[group.props.authProviderId].defaultRole =
+                    group.roleName;
+            }
+        });
+    }
+
+    return Object.values(authProvidersWithGroupsDict);
 }
 
 export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): string {

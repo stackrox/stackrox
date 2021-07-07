@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from 'react';
+import React, { ReactElement } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { useFormik, FormikProvider } from 'formik';
@@ -24,9 +24,7 @@ import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import { availableAuthProviders } from 'constants/accessControl';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { actions as groupActions } from 'reducers/groups';
 import { AuthProvider } from 'services/AuthService';
-import { Role } from 'services/RolesService';
 
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups from './RuleGroups';
@@ -43,10 +41,8 @@ export type AuthProviderFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     selectedAuthProvider: AuthProvider;
-    roles: Role[];
     onClickCancel: () => void;
     onClickEdit: () => void;
-    submitValues: (values: AuthProvider) => Promise<AuthProvider>;
 };
 
 const authProviderState = createStructuredSelector({
@@ -67,13 +63,8 @@ function AuthProviderForm({
     onClickCancel,
     onClickEdit,
 }: AuthProviderFormProps): ReactElement {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { groups, roles, saveAuthProviderError } = useSelector(authProviderState);
     const dispatch = useDispatch();
-
-    useEffect(() => {
-        dispatch(groupActions.fetchGroups.request());
-    }, [dispatch]);
 
     const initialValues = getInitialAuthProviderValues(selectedAuthProvider);
     const filteredGroups = getGroupsByAuthProviderId(groups, selectedAuthProvider.id);

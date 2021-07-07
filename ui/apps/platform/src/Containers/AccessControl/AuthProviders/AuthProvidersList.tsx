@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react';
+import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { availableAuthProviders } from 'constants/accessControl';
@@ -31,11 +32,11 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                     <Th>Name</Th>
                     <Th>Type</Th>
                     <Th>Minimum access role</Th>
-                    <Th>Rules</Th>
+                    <Th>Assigned rules</Th>
                 </Tr>
             </Thead>
             <Tbody>
-                {authProviders.map(({ id, name, type }) => {
+                {authProviders.map(({ id, name, type, defaultRole, groups = [] }) => {
                     const typeLabel = getAuthProviderTypeLabel(type);
                     // TODO for minimumAccessRoleName see getDefaultRoleByAuthProviderId in classic code
 
@@ -53,13 +54,16 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                             </Td>
                             <Td dataLabel="Type">{typeLabel}</Td>
                             <Td dataLabel="Minimum access role">
-                                {/* <AccessControlEntityLink
+                                <AccessControlEntityLink
                                     entityType="ROLE"
-                                    entityId={minimumAccessRoleName}
-                                    entityName={minimumAccessRoleName}
-                                /> */}
+                                    entityId={defaultRole || ''}
+                                    entityName={defaultRole || ''}
+                                />
                             </Td>
-                            <Td dataLabel="Rules">{/* TODO */}</Td>
+                            <Td dataLabel="Assigned rules">{`${groups.length} ${pluralize(
+                                'rules',
+                                groups.length
+                            )}`}</Td>
                         </Tr>
                     );
                 })}
