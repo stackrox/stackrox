@@ -202,10 +202,7 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 		return errors.New("permission denied")
 	}
 
-	ds.netEntityLock.Lock()
-	defer ds.netEntityLock.Unlock()
-
-	if err := ds.createNoLock(ctx, entity); err != nil {
+	if err := ds.create(ctx, entity); err != nil {
 		return err
 	}
 
@@ -253,9 +250,6 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 		}
 	}
 
-	ds.netEntityLock.Lock()
-	defer ds.netEntityLock.Unlock()
-
 	inserted := make([]string, 0, len(entities)-len(skipList))
 	for _, entity := range entities {
 		if skipList.Contains(entity.GetInfo().GetId()) {
@@ -263,7 +257,7 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 		}
 
 		inserted = append(inserted, entity.GetInfo().GetId())
-		if err := ds.createNoLock(ctx, entity); err != nil {
+		if err := ds.create(ctx, entity); err != nil {
 			errs.AddError(err)
 		}
 	}
@@ -273,11 +267,14 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 	return inserted, errs.ToError()
 }
 
-func (ds *dataStoreImpl) createNoLock(ctx context.Context, entity *storage.NetworkEntity) error {
+func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEntity) error {
 	network, err := externalsrcs.NetworkFromID(entity.GetInfo().GetId())
 	if err != nil {
 		return err
 	}
+
+	ds.netEntityLock.Lock()
+	defer ds.netEntityLock.Unlock()
 
 	if stored, found, err := ds.storage.Get(entity.GetInfo().GetId()); err != nil {
 		return errors.Wrapf(err, "could not determine if network entity %s already exists in DB. SKIPPING",
