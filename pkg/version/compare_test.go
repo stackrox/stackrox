@@ -60,6 +60,56 @@ func TestCompareReleaseVersion(t *testing.T) {
 			"2.5.1.0",
 			-1,
 		},
+		{
+			"3.62.0-rc.1-375-g7ab3c70477",
+			"3.62.0-rc.1-376-g7ab3c70473",
+			0,
+		},
+		{
+			"3.62.0-rc.1-375-g7ab3c70477",
+			"3.63.0",
+			0,
+		},
+		{
+			"3.62.0",
+			"3.62.0",
+			0,
+		},
+		{
+			"3.0.61.1",
+			"3.62.0",
+			-1,
+		},
+		{
+			"3.62.0",
+			"3.63.0",
+			-1,
+		},
+		{
+			"3.62",
+			"3.62.1",
+			-1,
+		},
+		{
+			"3.62.2",
+			"3.62.1",
+			1,
+		},
+		{
+			"4.0.0",
+			"3.62.1",
+			1,
+		},
+		{
+			"3.62.9",
+			"3.63.1",
+			-1,
+		},
+		{
+			"3.62.1",
+			"4.10.0",
+			-1,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -226,6 +276,63 @@ func TestCompareAnyVersion(t *testing.T) {
 			versionA:     "3.0.58.x-some-20210405",
 			versionB:     "3.0.58.x-140-other-dirty",
 			incomparable: true,
+		},
+		// Compare with nightly - new semver-based scheme
+		{
+			versionA:       "3.62.x-nightly-20210405",
+			versionB:       "3.62.x-nightly-20210305",
+			expectedResult: 1,
+		},
+		{
+			versionA:     "3.62.x-nightly-20210405",
+			versionB:     "3.62.x-140-gc520327875-dirty",
+			incomparable: true,
+		},
+		{
+			versionA:       "3.62.x-nightly-20210405",
+			versionB:       "3.63.x-140-gc520327875-dirty",
+			expectedResult: -1,
+		},
+		{
+			versionA:       "3.63.x-nightly-20210405",
+			versionB:       "3.62.1",
+			expectedResult: 1,
+		},
+		{
+			versionA:       "3.62.x-nightly-20210405",
+			versionB:       "3.62.1",
+			expectedResult: 1,
+		},
+		{
+			versionA:       "3.62.x-nightly-20210405",
+			versionB:       "3.62.1-rc.2",
+			expectedResult: 1,
+		},
+		{
+			versionA:     "3.62.x-nightly-20210405",
+			versionB:     "3.62.x-140-gc520327875-dirty",
+			incomparable: true,
+		},
+		{
+			versionA:     "3.62.x-some-20210405",
+			versionB:     "3.62.x-140-other-dirty",
+			incomparable: true,
+		},
+		// Compare with nightly - mixed old/new
+		{
+			versionA:       "3.0.61.x-nightly-20210405",
+			versionB:       "3.62.x-nightly-20210305",
+			expectedResult: -1,
+		},
+		{
+			versionA:       "3.0.61.x-nightly-20210405",
+			versionB:       "3.62.x-140-gc520327875-dirty",
+			expectedResult: -1,
+		},
+		{
+			versionA:       "3.62.x-nightly-20210405",
+			versionB:       "3.0.61.1",
+			expectedResult: 1,
 		},
 	}
 

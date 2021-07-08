@@ -58,7 +58,7 @@ fi
 [[ -n "$GH_TOKEN" ]] || die "Must set GH_TOKEN to an API token with 'repo' scope"
 
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
-if [[ "$current_branch" =~ ^release/([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+)\.x$ ]]; then
+if [[ "$current_branch" =~ ^release/([[:digit:]]+(\.[[:digit:]]+)?\.[[:digit:]]+)\.x$ ]]; then
   current_release_family="${BASH_REMATCH[1]}"
 else
   die "This does not look like a release branch: ${current_branch}"
@@ -66,7 +66,7 @@ fi
 
 # Compile list of milestones
 
-short_release_family="$(cut -d. -f 3 <<<"$current_release_family")"
+short_release_family="$(awk -F. '{print $(NF-1)}' <<<"$current_release_family")"
 echo "Release family names: ${current_release_family}.x, ${short_release_family}.x"
 
 echo "Searching GitHub milestones ..."

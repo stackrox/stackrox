@@ -6,7 +6,7 @@ echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
 export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-stackrox/collector}"
 echo "COLLECTOR_IMAGE_REPO set to $COLLECTOR_IMAGE_REPO"
 
-export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet -C "$(git rev-parse --show-toplevel)" tag)}"
+export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" tag)}"
 
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 
@@ -97,7 +97,7 @@ function wait_for_central {
 #   - central API server endpoint reachable from this host
 #   - name of cluster
 #   - type of cluster (e.g., KUBERNETES_CLUSTER)
-#   - image reference (e.g., stackrox/main:$(git describe --tags --abbrev=10 --dirty))
+#   - image reference (e.g., stackrox/main:$(make tag))
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in
 #   - collection method

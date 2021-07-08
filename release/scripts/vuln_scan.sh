@@ -35,7 +35,7 @@ function retag_with_rhel {
 }
 
 # Main images
-RELEASE_TAG=$(git describe --tags)
+RELEASE_TAG=$(make --no-print-directory --quiet -C "${DIR}/.." tag)
 retag_with_rhel stackrox/main "$RELEASE_TAG"
 
 # Docs image

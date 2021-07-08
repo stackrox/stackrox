@@ -5,7 +5,7 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
 ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
+TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
 ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
@@ -640,7 +640,7 @@ ifneq (,$(wildcard CI_TAG))
 	@cat CI_TAG
 else
 ifdef COMMIT
-	@git describe $(COMMIT) --tags --abbrev=10 --long
+	@git describe $(COMMIT) --tags --abbrev=10 --long --exclude '*-nightly-*'
 else
 	@echo $(TAG)
 endif

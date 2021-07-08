@@ -7,7 +7,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 # Example: ./launch_mock_collector.sh -max-collectors 100 -max-processes 1000 will launch
 # mockcollector with the args -max-collectors 100 and -max-processes 1000.
 
-tag="$(git describe --tags --abbrev=10 --dirty)"
+tag="$(make --quiet --no-print-directory -C "${DIR}/.." tag)"
 echo "Launching mock collector with tag: ${tag}"
 if [[ "$#" -gt 0 ]]; then
   for (( i=$#;i>0;i-- ));do

@@ -4,6 +4,6 @@ set -euo pipefail
 
 dir="$(dirname "${BASH_SOURCE[0]}")"
 
-export TAG="$(git describe --tags --abbrev=10 --dirty --long)"
+export TAG="$(make --quiet -C "${dir}/.." tag)"
 
 envsubst < "${dir}/deploy.yaml" | kubectl apply -f -

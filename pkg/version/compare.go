@@ -57,11 +57,11 @@ func lexicographicCompareIntArrays(a, b []int) int {
 // Otherwise, a result of < 0 is returned if versionA is lower than versionB,
 // a result of > 0 is returned if versionA is higher than versionB, and 0 is returned if both versions are equal.
 func CompareReleaseVersionsOr(versionA, versionB string, incomparableRes int) int {
-	kindA := GetVersionKind(versionA)
-	kindB := GetVersionKind(versionB)
 	if versionA == versionB {
 		return 0
 	}
+	kindA := GetVersionKind(versionA)
+	kindB := GetVersionKind(versionB)
 	if kindA != ReleaseKind || kindB != ReleaseKind {
 		return incomparableRes
 	}
@@ -109,7 +109,7 @@ func CompareVersionsOr(versionA, versionB string, incomparableRes int) int {
 		return CompareReleaseVersionsOr(versionA, versionB, incomparableRes)
 	}
 
-	// Compare first version part 3.0.58.x
+	// Compare first version part 3(.0)?.58.x
 	// Because we always bump release and rc version before release date, dev and nightly version is greater than
 	// release and rc version.
 	// for example: 3.0.58.x-1 > 3.0.58.0-rc.1

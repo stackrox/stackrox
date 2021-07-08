@@ -8,7 +8,7 @@ runOnAllTags: &runOnAllTags
 runOnlyOnReleaseCandidateBuilds: &runOnlyOnReleaseCandidateBuilds
   filters:
     tags:
-      only: /^\d+\.\d+\.\d+\.\d+-rc\.\d$/
+      only: /^\d+(\.\d+)?\.\d+\.\d+-rc\.\d$/
     branches:
       ignore: /.*/
 
@@ -17,7 +17,7 @@ runOnlyOnReleaseCandidateBuilds: &runOnlyOnReleaseCandidateBuilds
 runOnlyOnReleaseBuilds: &runOnlyOnReleaseBuilds
   filters:
     tags:
-      only: /^\d+\.\d+\.\d+\.\d+$/
+      only: /^\d+(\.\d+)?\.\d+\.\d+$/
     branches:
       ignore: /.*/
 
@@ -5100,7 +5100,7 @@ jobs:
           command: |
             # Add an empty commit to diverge from master
             git commit --allow-empty -m "Nightly build $(date)"
-            NIGHTLY_TAG="$(git describe --tags --abbrev=0)-nightly-$(date '+%Y%m%d')"
+            NIGHTLY_TAG="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
             git tag "$NIGHTLY_TAG"
             cci-export NIGHTLY_TAG "$NIGHTLY_TAG"
 

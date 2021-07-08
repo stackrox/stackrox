@@ -42,7 +42,39 @@ func TestChartVersionGeneration(t *testing.T) {
 			chartVersion: "48.5.0",
 		},
 		{
-			mainVersion:  "3.0.48",
+			mainVersion:  "3.62",
+			chartVersion: "",
+		},
+		{
+			mainVersion:  "3.62.x-1-ga0897a21ee-dirty",
+			chartVersion: "62.0.1-ga0897a21ee-dirty",
+		},
+		{
+			mainVersion:  "3.62.0-1-ga0897a21ee",
+			chartVersion: "62.0.1-ga0897a21ee",
+		},
+		{
+			mainVersion:  "3.62.1-22-ga0897a21ee",
+			chartVersion: "62.1.22-ga0897a21ee",
+		},
+		{
+			mainVersion:  "99.101.42-212-ga0897a21ee",
+			chartVersion: "101.42.212-ga0897a21ee",
+		},
+		{
+			mainVersion:  "3.62.0-rc.1",
+			chartVersion: "62.0.0-rc.1",
+		},
+		{
+			mainVersion:  "3.62.5-nightly-20200910",
+			chartVersion: "62.5.0-nightly-20200910",
+		},
+		{
+			mainVersion:  "3.62.5",
+			chartVersion: "62.5.0",
+		},
+		{
+			mainVersion:  "3.62",
 			chartVersion: "",
 		},
 	}

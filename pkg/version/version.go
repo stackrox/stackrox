@@ -61,18 +61,20 @@ func GetAllVersions() Versions {
 // parsedMainVersion contains a parsed StackRox Main Version (see https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/673808422/Product+Versioning+yes+again).
 type parsedMainVersion struct {
 	MarketingMajor int
-	MarketingMinor int
+	MarketingMinor *int
 	EngRelease     int
 	PatchLevel     string // A string, since the current scheme allows versions like "3.0.49.x-1-ga0897a21ee" where patch level is "x".
 	PatchSuffix    string // Everything after the (dash-separated) `PatchLevel`.
 }
 
 func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
-	components := strings.SplitN(mainVersion, ".", 4)
+	parts := strings.SplitN(mainVersion, "-", 2)
+
+	components := strings.SplitN(parts[0], ".", 4)
 
 	nComponents := len(components)
-	if nComponents != 4 {
-		return parsedMainVersion{}, errors.Errorf("invalid number of components (expected 4, got %d)", nComponents)
+	if nComponents < 3 || nComponents > 4 {
+		return parsedMainVersion{}, errors.Errorf("invalid number of components (expected 3 or 4, got %d)", nComponents)
 	}
 
 	marketingMajor, err := strconv.Atoi(components[0])
@@ -80,33 +82,37 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 		return parsedMainVersion{}, errors.Wrapf(err, "invalid marketing major version (%q)", components[0])
 	}
 
-	marketingMinor, err := strconv.Atoi(components[1])
-	if err != nil {
-		return parsedMainVersion{}, errors.Wrapf(err, "invalid marketing minor major version (%q)", components[1])
+	var marketingMinorOpt *int
+	engReleaseOfs := 1
+	if len(components) == 4 {
+		marketingMinor, err := strconv.Atoi(components[1])
+		if err != nil {
+			return parsedMainVersion{}, errors.Wrapf(err, "invalid marketing minor major version (%q)", components[1])
+		}
+		engReleaseOfs = 2
+		marketingMinorOpt = &marketingMinor
 	}
 
-	engRelease, err := strconv.Atoi(components[2])
+	engRelease, err := strconv.Atoi(components[engReleaseOfs])
 	if err != nil {
-		return parsedMainVersion{}, errors.Wrapf(err, "invalid eng release version (%q)", components[2])
+		return parsedMainVersion{}, errors.Wrapf(err, "invalid eng release version (%q)", components[engReleaseOfs])
 	}
 
-	patchComponents := strings.SplitN(components[3], "-", 2)
-	nPatchComponents := len(patchComponents)
+	patchLevel := components[engReleaseOfs+1]
 
-	if nPatchComponents == 0 {
+	if patchLevel == "" {
 		// Main Version scheme requires the "patch" component to be non-empty.
 		return parsedMainVersion{}, errors.New("empty patch component")
 	}
 
-	patchLevel := patchComponents[0]
 	patchSuffix := ""
-	if nPatchComponents == 2 {
-		patchSuffix = patchComponents[1]
+	if len(parts) == 2 {
+		patchSuffix = parts[1]
 	}
 
 	parsedVersion := parsedMainVersion{
 		MarketingMajor: marketingMajor,
-		MarketingMinor: marketingMinor,
+		MarketingMinor: marketingMinorOpt,
 		EngRelease:     engRelease,
 		PatchLevel:     patchLevel,
 		PatchSuffix:    patchSuffix,

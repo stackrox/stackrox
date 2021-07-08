@@ -73,7 +73,7 @@ function compare_fixable_vulns {
 FAIL_SCRIPT=false
 
 # determine all image tags
-RELEASE_TAG=$(git describe --tags)
+RELEASE_TAG=$(make --quiet --no-print-directory -C "${DIR}/.." tag)
 COLLECTOR_TAG=$(cat "$DIR/../../COLLECTOR_VERSION")
 SCANNER_TAG=$(cat "$DIR/../../SCANNER_VERSION")
 DOCS_PRERELEASE_TAG=$(cat "$DIR/../../DOCS_VERSION")
