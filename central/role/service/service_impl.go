@@ -89,8 +89,14 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
 	roles, err := s.roleDataStore.GetAllRoles(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to retrieve roles")
 	}
+
+	// List roles in the same order for consistency across requests.
+	sort.Slice(roles, func(i, j int) bool {
+		return roles[i].GetName() < roles[j].GetName()
+	})
+
 	return &v1.GetRolesResponse{Roles: roles}, nil
 }
 
@@ -197,6 +203,12 @@ func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve permission sets")
 	}
+
+	// List permission sets in the same order for consistency across requests.
+	sort.Slice(permissionSets, func(i, j int) bool {
+		return permissionSets[i].GetName() < permissionSets[j].GetName()
+	})
+
 	return &v1.ListPermissionSetsResponse{PermissionSets: permissionSets}, nil
 }
 
@@ -274,6 +286,11 @@ func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve access scopes")
 	}
+
+	// List access scopes in the same order for consistency across requests.
+	sort.Slice(scopes, func(i, j int) bool {
+		return scopes[i].GetName() < scopes[j].GetName()
+	})
 
 	return &v1.ListSimpleAccessScopesResponse{AccessScopes: scopes}, nil
 }
