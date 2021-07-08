@@ -24,6 +24,8 @@ import (
 	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -59,6 +61,8 @@ func init() {
 }
 
 func main() {
+	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
+
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -68,7 +72,7 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	opts := zap.Options{
-		Development: true,
+		Development: !buildinfo.ReleaseBuild,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
