@@ -13,7 +13,7 @@ import (
 // Verbs contain a map of Nouns, Nouns contain a map of Clusters, and Clusters contain a map of Namespaces
 // Each of these is a valid scope and so each will contain a TryAllowedResult
 type ScopeCheckerCoreImpl struct {
-	childrenLock sync.Mutex
+	childrenLock sync.RWMutex
 	children     map[ScopeKey]ScopeCheckerCore
 
 	requestedLock sync.Mutex
@@ -45,14 +45,23 @@ func (scc *ScopeCheckerCoreImpl) SubScopeChecker(scopeKey ScopeKey) ScopeChecker
 		return allowAllScopeCheckerCore
 	}
 
-	scc.childrenLock.Lock()
-	defer scc.childrenLock.Unlock()
-	subScope, ok := scc.children[scopeKey]
-	if !ok {
-		subScope = NewScopeCheckerCore(createSubScope(scc.currentScope, scopeKey), scc.reqTracker)
-		scc.children[scopeKey] = subScope
+	var subScope ScopeCheckerCore
+	concurrency.WithRLock(&scc.childrenLock, func() {
+		subScope = scc.children[scopeKey]
+	})
+	if subScope != nil {
 		return subScope
 	}
+
+	scc.childrenLock.Lock()
+	defer scc.childrenLock.Unlock()
+	subScope = scc.children[scopeKey]
+	if subScope != nil {
+		return subScope
+	}
+
+	subScope = NewScopeCheckerCore(createSubScope(scc.currentScope, scopeKey), scc.reqTracker)
+	scc.children[scopeKey] = subScope
 	return subScope
 }
 
