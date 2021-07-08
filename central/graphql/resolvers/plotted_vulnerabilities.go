@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -21,7 +22,7 @@ func init() {
 type PlottedVulnerabilitiesResolver struct {
 	root    *Resolver
 	all     []string
-	fixable []string
+	fixable int
 }
 
 func newPlottedVulnerabilitiesResolver(ctx context.Context, root *Resolver, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
@@ -31,12 +32,20 @@ func newPlottedVulnerabilitiesResolver(ctx context.Context, root *Resolver, args
 	}
 
 	q = tryUnsuppressedQuery(q)
+	q.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+		},
+	}
 	all, err := root.CVEDataStore.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	fixable, err := root.CVEDataStore.Search(ctx,
+	fixable, err := root.CVEDataStore.Count(ctx,
 		search.NewConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
 	if err != nil {
 		return nil, err
@@ -45,7 +54,7 @@ func newPlottedVulnerabilitiesResolver(ctx context.Context, root *Resolver, args
 	return &PlottedVulnerabilitiesResolver{
 		root:    root,
 		all:     search.ResultsToIDs(all),
-		fixable: search.ResultsToIDs(fixable),
+		fixable: fixable,
 	}, nil
 }
 
@@ -54,7 +63,7 @@ func (pvr *PlottedVulnerabilitiesResolver) BasicVulnCounter(ctx context.Context)
 	return &VulnerabilityCounterResolver{
 		all: &VulnerabilityFixableCounterResolver{
 			total:   int32(len(pvr.all)),
-			fixable: int32(len(pvr.fixable)),
+			fixable: int32(pvr.fixable),
 		},
 	}, nil
 }
@@ -70,18 +79,21 @@ func (pvr *PlottedVulnerabilitiesResolver) Vulns(ctx context.Context, args Pagin
 		return nil, nil
 	}
 
-	pagination := q.GetPagination()
-	q = search.NewQueryBuilder().AddDocIDs(pvr.all...).ProtoQuery()
-	q.Pagination = pagination
-
-	paginatedVulns, err := pvr.root.CVEDataStore.SearchRawCVEs(ctx, q)
+	cvesInterface, err := paginationWrapper{
+		pv: q.GetPagination(),
+	}.paginate(pvr.all, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	vulns := make([]VulnerabilityResolver, 0, len(paginatedVulns))
-	for _, vuln := range paginatedVulns {
-		vulns = append(vulns, &cVEResolver{root: pvr.root, data: vuln})
+	vulns, err := pvr.root.CVEDataStore.GetBatch(ctx, cvesInterface.([]string))
+	if err != nil {
+		return nil, err
 	}
-	return vulns, nil
+
+	vulnerabilityResolvers := make([]VulnerabilityResolver, 0, len(vulns))
+	for _, vuln := range vulns {
+		vulnerabilityResolvers = append(vulnerabilityResolvers, &cVEResolver{root: pvr.root, data: vuln})
+	}
+	return vulnerabilityResolvers, nil
 }
