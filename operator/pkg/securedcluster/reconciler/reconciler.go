@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/extensions"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/values/translation"
+	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -22,5 +23,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error 
 		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension(client)),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(client, proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
+		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 	)
 }

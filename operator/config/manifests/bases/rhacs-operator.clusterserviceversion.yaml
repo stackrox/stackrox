@@ -218,13 +218,14 @@ spec:
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
-      - displayName: Central Status
-        path: centralStatus
       - description: Info stores information on how to obtain the admin password.
-        displayName: Info
-        path: centralStatus.adminPassword.info
-      - displayName: Deployed Release
-        path: deployedRelease
+        displayName: Admin Credentials Info
+        path: central.adminPassword.info
+      - description: The deployed version of the product.
+        displayName: Product Version
+        path: productVersion
+      - displayName: Central
+        path: central
       version: v1alpha1
     - description: SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is responsible for the connection to Central, and Collector, which performs host-level collection of process and network events.<p> **Important:** Please see the _Installation Prerequisites_ on the main page before deploying, or consult the RHACS documentation on creating cluster init bundles.
       displayName: Secured Cluster
@@ -344,15 +345,12 @@ spec:
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
+      - description: The deployed version of the product.
+        displayName: Product Version
+        path: productVersion
       - description: The assigned cluster name per the spec. This cannot be changed afterwards. If you need to change the cluster name, please delete and recreate this resource.
         displayName: Cluster Name
         path: clusterName
-      - displayName: Conditions
-        path: conditions
-      - displayName: Deployed Release
-        path: deployedRelease
-      - displayName: Sensor Status
-        path: sensorStatus
       version: v1alpha1
   description: |
     ## Why use Red Hat Advanced Cluster Security for Kubernetes?

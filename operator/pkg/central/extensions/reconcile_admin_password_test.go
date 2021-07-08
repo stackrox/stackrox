@@ -63,25 +63,25 @@ func TestReconcileAdminPassword(t *testing.T) {
 				},
 			},
 			VerifyStatus: func(t *testing.T, status *v1alpha1.CentralStatus) {
-				require.NotNil(t, status.CentralStatus)
-				require.NotNil(t, status.CentralStatus.AdminPassword)
-				assert.Contains(t, status.CentralStatus.AdminPassword.Info, "A password for the 'admin' user has been automatically generated and stored")
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "A password for the 'admin' user has been automatically generated and stored")
 			},
 		},
 		"If a central-htpasswd secret with a password exists, no password should be generated": {
 			Existing: []*v1.Secret{htpasswdWithSomePassword},
 			VerifyStatus: func(t *testing.T, status *v1alpha1.CentralStatus) {
-				require.NotNil(t, status.CentralStatus)
-				require.NotNil(t, status.CentralStatus.AdminPassword)
-				assert.Contains(t, status.CentralStatus.AdminPassword.Info, "A user-defined central-htpasswd secret was found, containing htpasswd-encoded credentials.")
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "A user-defined central-htpasswd secret was found, containing htpasswd-encoded credentials.")
 			},
 		},
 		"If a central-htpasswd secret with no password exists, no password should be generated and the user should be informed that basic auth is disabled": {
 			Existing: []*v1.Secret{htpasswdWithNoPassword},
 			VerifyStatus: func(t *testing.T, status *v1alpha1.CentralStatus) {
-				require.NotNil(t, status.CentralStatus)
-				require.NotNil(t, status.CentralStatus.AdminPassword)
-				assert.Contains(t, status.CentralStatus.AdminPassword.Info, "Login with username/password has been disabled")
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "Login with username/password has been disabled")
 			},
 		},
 		"If a secret with a plaintext password is referenced, a central-htpasswd secret should be created accordingly": {

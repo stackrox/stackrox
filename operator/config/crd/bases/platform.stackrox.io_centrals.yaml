@@ -144,7 +144,6 @@ spec:
                               be created. Defaults to "stackrox-db" if not set.
                             type: string
                           size:
-                            default: 100Gi
                             description: The size of the persistent volume when created
                               through the claim. If a claim was automatically created,
                               this can be used after the initial deployment to resize
@@ -502,7 +501,7 @@ spec:
           status:
             description: CentralStatus defines the observed state of Central.
             properties:
-              centralStatus:
+              central:
                 description: CentralComponentStatus describes status specific to the
                   central component.
                 properties:
@@ -550,6 +549,9 @@ spec:
                   version:
                     type: string
                 type: object
+              productVersion:
+                description: The deployed version of the product.
+                type: string
             required:
             - conditions
             type: object

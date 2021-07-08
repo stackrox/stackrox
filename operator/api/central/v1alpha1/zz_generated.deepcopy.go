@@ -220,8 +220,8 @@ func (in *CentralStatus) DeepCopyInto(out *CentralStatus) {
 		*out = new(commonv1alpha1.StackRoxRelease)
 		**out = **in
 	}
-	if in.CentralStatus != nil {
-		in, out := &in.CentralStatus, &out.CentralStatus
+	if in.Central != nil {
+		in, out := &in.Central, &out.Central
 		*out = new(CentralComponentStatus)
 		(*in).DeepCopyInto(*out)
 	}

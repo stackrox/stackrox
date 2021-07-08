@@ -358,12 +358,9 @@ spec:
                   version:
                     type: string
                 type: object
-              sensorStatus:
-                description: SensorComponentStatus describes status specific to the sensor component.
-                properties:
-                  clusterID:
-                    type: string
-                type: object
+              productVersion:
+                description: The deployed version of the product.
+                type: string
             required:
             - conditions
             type: object

@@ -212,22 +212,17 @@ func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
 
 // SecuredClusterStatus defines the observed state of SecuredCluster
 type SecuredClusterStatus struct {
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	Conditions []common.StackRoxCondition `json:"conditions"`
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	DeployedRelease *common.StackRoxRelease `json:"deployedRelease,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	SensorStatus *SensorComponentStatus `json:"sensorStatus,omitempty"`
+	Conditions      []common.StackRoxCondition `json:"conditions"`
+	DeployedRelease *common.StackRoxRelease    `json:"deployedRelease,omitempty"`
+
+	// The deployed version of the product.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=1
+	ProductVersion string `json:"productVersion,omitempty"`
 
 	// The assigned cluster name per the spec. This cannot be changed afterwards. If you need to change the
 	// cluster name, please delete and recreate this resource.
-	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="Cluster Name"
+	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="Cluster Name",order=2
 	ClusterName string `json:"clusterName,omitempty"`
-}
-
-// SensorComponentStatus describes status specific to the sensor component.
-type SensorComponentStatus struct {
-	ClusterID *string `json:"clusterID,omitempty"`
 }
 
 //+kubebuilder:object:root=true

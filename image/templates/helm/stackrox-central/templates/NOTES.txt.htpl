@@ -2,6 +2,7 @@
 
 StackRox {{.Chart.AppVersion}} has been installed.
 
+[< if not .Operator >]
 {{ if include "srox.checkGenerated" (list . "central.adminPassword.value") -}}
 An administrator password has been generated automatically. Use username 'admin' and the following
 password to log in for initial setup:
@@ -44,6 +45,6 @@ IMPORTANT: You have deployed into an OpenShift-enabled cluster. If you see that 
 
              oc annotate namespace/{{ .Release.Namespace }} --overwrite openshift.io/node-selector=""
 {{ end -}}
-
+[< end >]
 
 Thank you for using StackRox!

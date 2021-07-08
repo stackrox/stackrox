@@ -9,9 +9,8 @@ metadata:
       : true\n          }\n        }\n      }\n    }\n  },\n  {\n    \"apiVersion\"\
       : \"platform.stackrox.io/v1alpha1\",\n    \"kind\": \"SecuredCluster\",\n  \
       \  \"metadata\": {\n      \"name\": \"stackrox-secured-cluster-services\",\n\
-      \      \"namespace\": \"stackrox\"\n    },\n    \"spec\": {\n      \"centralEndpoint\"\
-      : \"central.stackrox:443\",\n      \"clusterName\": \"my-cluster\"\n    }\n\
-      \  }\n]"
+      \      \"namespace\": \"stackrox\"\n    },\n    \"spec\": {\n      \"clusterName\"\
+      : \"my-cluster\"\n    }\n  }\n]"
     capabilities: Seamless Upgrades
     categories: Security
     containerImage: docker.io/stackrox/stackrox-operator:0.0.1
@@ -274,13 +273,14 @@ spec:
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
-      - displayName: Central Status
-        path: centralStatus
       - description: Info stores information on how to obtain the admin password.
-        displayName: Info
-        path: centralStatus.adminPassword.info
-      - displayName: Deployed Release
-        path: deployedRelease
+        displayName: Admin Credentials Info
+        path: central.adminPassword.info
+      - description: The deployed version of the product.
+        displayName: Product Version
+        path: productVersion
+      - displayName: Central
+        path: central
       version: v1alpha1
     - description: SecuredCluster is the configuration template for the secured cluster
         services. These include Sensor, which is responsible for the connection to
@@ -443,17 +443,14 @@ spec:
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
+      - description: The deployed version of the product.
+        displayName: Product Version
+        path: productVersion
       - description: The assigned cluster name per the spec. This cannot be changed
           afterwards. If you need to change the cluster name, please delete and recreate
           this resource.
         displayName: Cluster Name
         path: clusterName
-      - displayName: Conditions
-        path: conditions
-      - displayName: Deployed Release
-        path: deployedRelease
-      - displayName: Sensor Status
-        path: sensorStatus
       version: v1alpha1
   description: "## Why use Red Hat Advanced Cluster Security for Kubernetes?\n\nProtecting\
     \ cloud-native applications requires significant changes in how we approach security\u2014\

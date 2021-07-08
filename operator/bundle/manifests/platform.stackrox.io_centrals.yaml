@@ -115,7 +115,6 @@ spec:
                             description: The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be created. Defaults to "stackrox-db" if not set.
                             type: string
                           size:
-                            default: 100Gi
                             description: The size of the persistent volume when created through the claim. If a claim was automatically created, this can be used after the initial deployment to resize (grow) the volume (only supported by some storage class controllers).
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             type: string
@@ -394,7 +393,7 @@ spec:
           status:
             description: CentralStatus defines the observed state of Central.
             properties:
-              centralStatus:
+              central:
                 description: CentralComponentStatus describes status specific to the central component.
                 properties:
                   adminPassword:
@@ -434,6 +433,9 @@ spec:
                   version:
                     type: string
                 type: object
+              productVersion:
+                description: The deployed version of the product.
+                type: string
             required:
             - conditions
             type: object
