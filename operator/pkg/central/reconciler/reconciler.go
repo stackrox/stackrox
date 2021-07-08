@@ -6,6 +6,7 @@ import (
 	centralV1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/central/values/translation"
+	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"k8s.io/client-go/kubernetes"
@@ -23,5 +24,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error 
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(client)),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(client, proxyEnv)),
+		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 	)
 }

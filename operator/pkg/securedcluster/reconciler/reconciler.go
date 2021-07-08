@@ -4,6 +4,7 @@ import (
 	pkgReconciler "github.com/joelanford/helm-operator/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
+	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/extensions"
@@ -19,5 +20,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error 
 		image.SecuredClusterServicesChartPrefix,
 		proxy.InjectProxyEnvVars(translation.NewTranslator(client), proxyEnv),
 		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension(client)),
-		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(client, proxyEnv)))
+		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(client, proxyEnv)),
+		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
+	)
 }

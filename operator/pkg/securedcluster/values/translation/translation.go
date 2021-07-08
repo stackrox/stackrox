@@ -25,8 +25,6 @@ import (
 )
 
 const (
-	supportedOperandNamespace     = "stackrox"
-	supportedResourceName         = "stackrox-secured-cluster-services"
 	sensorTLSSecretName           = "sensor-tls"
 	admissionControlTLSSecretName = "admission-control-tls"
 	collectorTLSSecretName        = "collector-tls"
@@ -55,10 +53,6 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	sc := securedcluster.SecuredCluster{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &sc)
 	if err != nil {
-		return nil, err
-	}
-
-	if err := validate(sc); err != nil {
 		return nil, err
 	}
 
@@ -111,16 +105,6 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 	v.AddAllFrom(translation.GetMisc(sc.Spec.Misc))
 
 	return v.Build()
-}
-
-func validate(sc securedcluster.SecuredCluster) error {
-	if sc.Name != supportedResourceName {
-		return errors.Errorf("invalid metadata.name: currently only %q is supported", supportedResourceName)
-	}
-	if sc.Namespace != supportedOperandNamespace {
-		return errors.Errorf("invalid metadata.namespace: currently only %q is supported", supportedOperandNamespace)
-	}
-	return nil
 }
 
 // getTLSValues reads TLS configuration and looks up CA certificate from secrets.

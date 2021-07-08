@@ -35,8 +35,8 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 			ClusterName: "my-cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: supportedOperandNamespace,
-			Name:      supportedResourceName,
+			Namespace: "stackrox",
+			Name:      "my-secured-cluster",
 		},
 	}
 
@@ -66,8 +66,8 @@ func TestTranslateComplete(t *testing.T) {
 				clientSet: newFakeClientSetWithInitBundle(),
 				sc: v1alpha1.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      supportedResourceName,
-						Namespace: supportedOperandNamespace,
+						Name:      "my-secured-cluster",
+						Namespace: "stackrox",
 					},
 					Spec: v1alpha1.SecuredClusterSpec{
 						ClusterName:     "test-cluster",
