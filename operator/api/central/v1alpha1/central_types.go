@@ -184,8 +184,6 @@ type PersistentVolumeClaim struct {
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,
 	// this can be used after the initial deployment to resize (grow) the volume (only supported by some
 	// storage class controllers).
-	//+kubebuilder:validation:Default="100Gi"
-	//+kubebuilder:default="100Gi"
 	//+kubebuilder:validation:Pattern=^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Size",order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	Size *string `json:"size,omitempty"`
@@ -361,17 +359,20 @@ const (
 
 // CentralStatus defines the observed state of Central.
 type CentralStatus struct {
-	Conditions []common.StackRoxCondition `json:"conditions"`
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	DeployedRelease *common.StackRoxRelease `json:"deployedRelease,omitempty"`
-	//+operator-sdk:csv:customresourcedefinitions:type=status
-	CentralStatus *CentralComponentStatus `json:"centralStatus,omitempty"`
+	Conditions      []common.StackRoxCondition `json:"conditions"`
+	DeployedRelease *common.StackRoxRelease    `json:"deployedRelease,omitempty"`
+
+	// The deployed version of the product.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=1
+	ProductVersion string `json:"productVersion,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
+	Central *CentralComponentStatus `json:"central,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
 type AdminPasswordStatus struct {
 	// Info stores information on how to obtain the admin password.
-	//+operator-sdk:csv:customresourcedefinitions:type=status
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=1,displayName="Admin Credentials Info"
 	Info string `json:"info,omitempty"`
 }
 

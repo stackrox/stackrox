@@ -87,16 +87,16 @@ func (r *reconcileAdminPasswordExtensionRun) Execute() error {
 
 	if r.infoUpdate != "" {
 		r.statusUpdater(func(status *centralV1alpha1.CentralStatus) bool {
-			if status.CentralStatus == nil {
-				status.CentralStatus = &centralV1alpha1.CentralComponentStatus{}
+			if status.Central == nil {
+				status.Central = &centralV1alpha1.CentralComponentStatus{}
 			}
-			if status.CentralStatus.AdminPassword == nil {
-				status.CentralStatus.AdminPassword = &centralV1alpha1.AdminPasswordStatus{}
+			if status.Central.AdminPassword == nil {
+				status.Central.AdminPassword = &centralV1alpha1.AdminPasswordStatus{}
 			}
-			if r.infoUpdate == status.CentralStatus.AdminPassword.Info {
+			if r.infoUpdate == status.Central.AdminPassword.Info {
 				return false
 			}
-			status.CentralStatus.AdminPassword.Info = r.infoUpdate
+			status.Central.AdminPassword.Info = r.infoUpdate
 			return true
 		})
 	}
