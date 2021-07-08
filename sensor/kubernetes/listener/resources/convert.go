@@ -482,6 +482,12 @@ func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc *serviceWrap) {
 			portCfg.Exposure = exposureInfo.GetLevel()
 		}
 	}
+	for _, portCfg := range w.portConfigs {
+		sort.Slice(portCfg.ExposureInfos, func(i, j int) bool {
+			return portCfg.ExposureInfos[i].ServiceName < portCfg.ExposureInfos[j].ServiceName
+		})
+	}
+
 	sort.Slice(w.Ports, func(i, j int) bool {
 		return w.Ports[i].ContainerPort < w.Ports[j].ContainerPort
 	})

@@ -14,6 +14,9 @@ var (
 	annotationKeys = set.NewFrozenStringSet(
 		"kubectl.kubernetes.io/last-applied-configuration",
 		"deployment.kubernetes.io/revision",
+		"k8s.ovn.org/pod-networks",
+		"k8s.v1.cni.cncf.io/network-status",
+		"k8s.v1.cni.cncf.io/networks-status",
 	)
 )
 

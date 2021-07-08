@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/cloudflare/cfssl/certinfo"
@@ -179,6 +180,9 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 		}
 		secret.Files = append(secret.Files, file)
 	}
+	sort.Slice(secret.Files, func(i, j int) bool {
+		return secret.Files[i].Name < secret.Files[j].Name
+	})
 }
 
 // secretDispatcher handles secret resource events.
