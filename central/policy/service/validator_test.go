@@ -183,7 +183,7 @@ func (s *PolicyValidatorTestSuite) TestValidateDescription() {
 	s.Error(err, "no special characters")
 }
 
-func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, fieldsToVals map[string]string) *storage.Policy {
+func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, eventSource storage.EventSource, fieldsToVals map[string]string) *storage.Policy {
 	groups := make([]*storage.PolicyGroup, 0, len(fieldsToVals))
 	for k, v := range fieldsToVals {
 		groups = append(groups, &storage.PolicyGroup{FieldName: k, Values: []*storage.PolicyValue{{Value: v}}})
@@ -191,11 +191,16 @@ func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, fieldsToVals
 	return &storage.Policy{
 		PolicyVersion:   policyversion.CurrentVersion().String(),
 		LifecycleStages: []storage.LifecycleStage{lifecycleStage},
+		EventSource:     eventSource,
 		PolicySections:  []*storage.PolicySection{{PolicyGroups: groups}},
 	}
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping ...", features.K8sAuditLogDetection.EnvVar())
+	}
 	testCases := []struct {
 		description string
 		p           *storage.Policy
@@ -203,70 +208,74 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	}{
 		{
 			description: "Build time policy with non-image fields",
-			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, map[string]string{
-				fieldnames.ImageRemote:       "blah",
-				fieldnames.ContainerCPULimit: "1.0",
-			}),
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NOT_APPLICABLE,
+				map[string]string{
+					fieldnames.ImageRemote:       "blah",
+					fieldnames.ContainerCPULimit: "1.0",
+				}),
 			errExpected: true,
 		},
 		{
 			description: "Build time policy with no image fields",
-			p:           booleanPolicyWithFields(storage.LifecycleStage_BUILD, nil),
+			p:           booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NOT_APPLICABLE, nil),
 			errExpected: true,
 		},
 		{
 			description: "valid build time",
-			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, map[string]string{
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NOT_APPLICABLE, map[string]string{
 				fieldnames.ImageTag: "latest",
 			}),
 		},
 		{
 			description: "deploy time with no fields",
-			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, nil),
+			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NOT_APPLICABLE, nil),
 			errExpected: true,
 		},
 		{
 			description: "deploy time with runtime fields",
-			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, map[string]string{
-				fieldnames.ImageTag:    "latest",
-				fieldnames.ProcessName: "BLAH",
-			}),
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NOT_APPLICABLE,
+				map[string]string{
+					fieldnames.ImageTag:    "latest",
+					fieldnames.ProcessName: "BLAH",
+				}),
 			errExpected: true,
 		},
 
 		{
 			description: "Valid deploy time",
-			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, map[string]string{
-				fieldnames.ImageTag:   "latest",
-				fieldnames.VolumeName: "BLAH",
-			}),
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NOT_APPLICABLE,
+				map[string]string{
+					fieldnames.ImageTag:   "latest",
+					fieldnames.VolumeName: "BLAH",
+				}),
 		},
 		{
 			description: "Run time with no fields",
-			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, nil),
+			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT, nil),
 			errExpected: true,
 		},
 		{
 			description: "Run time with only deploy-time fields",
-			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, map[string]string{
-				fieldnames.ImageTag:   "latest",
-				fieldnames.VolumeName: "BLAH",
-			}),
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.ImageTag:   "latest",
+					fieldnames.VolumeName: "BLAH",
+				}),
 			errExpected: true,
 		},
 		{
 			description: "Valid Run time with just process fields",
-			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, map[string]string{
-				fieldnames.ProcessName: "BLAH",
-			}),
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.ProcessName: "BLAH",
+				}),
 		},
 		{
 			description: "Valid Run time with all sorts of fields",
-			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, map[string]string{
-				fieldnames.ImageTag:    "latest",
-				fieldnames.VolumeName:  "BLAH",
-				fieldnames.ProcessName: "PROCESS",
-			}),
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.ProcessName: "PROCESS",
+				}),
 		},
 	}
 
@@ -500,6 +509,10 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 }
 
 func (s *PolicyValidatorTestSuite) TestAllDefaultPoliciesValidate() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping ...", features.K8sAuditLogDetection.EnvVar())
+	}
 	defaultPolicies, err := policies.DefaultPolicies()
 	s.Require().NoError(err)
 
@@ -576,7 +589,10 @@ func (s *PolicyValidatorTestSuite) TestNoScopeLabelsForAuditEventSource() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "false")
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping ...", features.K8sAuditLogDetection.EnvVar())
+	}
 
 	assert.Error(s.T(), s.validator.validateEventSource(&storage.Policy{
 		Name:            "deploy-policy",

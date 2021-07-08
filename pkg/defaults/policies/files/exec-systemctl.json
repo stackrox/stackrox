@@ -35,5 +35,6 @@
         }
       ]
     }
-  ]
+  ],
+  "eventSource": "DEPLOYMENT_EVENT"
 }

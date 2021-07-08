@@ -145,6 +145,17 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 		return errors.New("event source is not applicable to policies unless ROX_K8S_AUDIT_LOG_DETECTION feature flag is turned on")
 	}
 
+	if features.K8sAuditLogDetection.Enabled() {
+		if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_NOT_APPLICABLE {
+			return errors.New("event source must be deployment or audit event for runtime policies")
+		}
+
+		if (policies.AppliesAtBuildTime(policy) || policies.AppliesAtDeployTime(policy)) &&
+			policy.GetEventSource() != storage.EventSource_NOT_APPLICABLE {
+			return errors.New("event source must not be set for build or deploy time policies")
+		}
+	}
+
 	if s.isAuditEventPolicy(policy) {
 		if len(policy.GetEnforcementActions()) != 0 {
 			return errors.New("enforcement actions are not applicable for runtime policies with audit log as the event source")

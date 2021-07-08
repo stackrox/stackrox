@@ -86,6 +86,7 @@ message ListPolicy {
     repeated LifecycleStage lifecycle_stages    = 6;
     repeated string notifiers                   = 7;
     google.protobuf.Timestamp last_updated      = 8;
+    EventSource event_source                    = 9;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.

@@ -36,7 +36,7 @@ var (
 		fieldnames.UnexpectedNetworkFlowDetected,
 	)
 
-	runtimeFields = set.NewFrozenStringSet(
+	DeploymentEventFields = set.NewFrozenStringSet(
 		fieldnames.ProcessName,
 		fieldnames.ProcessArguments,
 		fieldnames.ProcessAncestor,
@@ -62,14 +62,15 @@ func ContainsOneOf(policy *storage.Policy, fieldSet set.FrozenStringSet) bool {
 
 // ContainsRuntimeFields returns whether the policy contains runtime specific fields.
 func ContainsRuntimeFields(policy *storage.Policy) bool {
-	return ContainsOneOf(policy, runtimeFields)
+	return ContainsOneOf(policy, DeploymentEventFields) || ContainsOneOf(policy, AuditLogEventsFields)
 }
 
 // ContainsDeployTimeFields returns whether the policy contains deploy-time specific fields.
 func ContainsDeployTimeFields(policy *storage.Policy) bool {
 	for _, section := range policy.GetPolicySections() {
 		for _, group := range section.GetPolicyGroups() {
-			if !runtimeFields.Contains(group.GetFieldName()) {
+			if !DeploymentEventFields.Contains(group.GetFieldName()) &&
+				!AuditLogEventsFields.Contains(group.GetFieldName()) {
 				return true
 			}
 		}

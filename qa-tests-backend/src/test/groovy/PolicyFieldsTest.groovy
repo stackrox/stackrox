@@ -240,6 +240,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private BASE_RUNTIME_POLICY = BASE_POLICY.clone()
             .clearLifecycleStages()
             .addLifecycleStages(LifecycleStage.RUNTIME)
+            .setEventSourceValue(PolicyOuterClass.EventSource.DEPLOYMENT_EVENT)
 
     // "Add Capabilities"
 

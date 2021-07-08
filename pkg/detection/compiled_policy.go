@@ -34,7 +34,8 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		policy: policy,
 	}
 	if features.K8sAuditLogDetection.Enabled() {
-		if policies.AppliesAtRunTime(policy) {
+		if policies.AppliesAtRunTime(policy) &&
+			policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
 			filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
 				return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.AuditLogEventsFields)
 			})
@@ -49,7 +50,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		}
 	}
 
-	if !compiled.hasAuditEventsSection && policies.AppliesAtRunTime(policy) {
+	if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT {
 		// TODO: Change inverse filter to filter by process fields once section validation is added to prohibit deploy time only fields.
 		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
 			return !booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields) &&
@@ -100,7 +101,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		}
 	}
 
-	if !compiled.hasAuditEventsSection && policies.AppliesAtDeployTime(policy) {
+	if policies.AppliesAtDeployTime(policy) {
 		deploymentMatcher, err := booleanpolicy.BuildDeploymentMatcher(policy)
 		if err != nil {
 			return nil, errors.Wrapf(err, "building deployment matcher for policy %q", policy.GetName())
@@ -108,7 +109,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		compiled.deploymentMatcher = deploymentMatcher
 	}
 
-	if !compiled.hasAuditEventsSection && policies.AppliesAtBuildTime(policy) {
+	if policies.AppliesAtBuildTime(policy) {
 		imageMatcher, err := booleanpolicy.BuildImageMatcher(policy)
 		if err != nil {
 			return nil, errors.Wrapf(err, "building image matcher for policy %q", policy.GetName())
