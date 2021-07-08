@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react';
+import { FormikErrors, FormikTouched } from 'formik';
 import {
     Alert,
     Checkbox,
@@ -7,6 +8,7 @@ import {
     SelectOption,
     TextArea,
     TextInput,
+    ValidatedOptions,
 } from '@patternfly/react-core';
 
 import { oidcCallbackModes } from 'constants/accessControl';
@@ -20,8 +22,13 @@ export type ConfigurationFormFieldsProps = {
         _value: unknown,
         event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
     ) => void;
-    setFieldValue: (name: string, value: string) => void;
+    onBlur: (
+        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
+    ) => void;
+    setFieldValue: (name: string, value: string | boolean) => void;
     type: AuthProviderType;
+    configErrors?: FormikErrors<Record<string, string>>;
+    configTouched?: FormikTouched<Record<string, string>>;
 };
 
 const baseURL = `${window.location.protocol}//${window.location.host}`;
@@ -32,10 +39,36 @@ const samlACSURL = `${baseURL}/sso/providers/saml/acs`;
 function ConfigurationFormFields({
     isViewing,
     onChange,
+    onBlur,
     config,
     setFieldValue,
     type,
+    configErrors,
+    configTouched,
 }: ConfigurationFormFieldsProps): ReactElement {
+    const showIssuerError = Boolean(configErrors?.issuer && configTouched?.issuer);
+    const showClientIdError = Boolean(configErrors?.client_id && configTouched?.client_id);
+    const showClientSecretError = Boolean(
+        configErrors?.client_secret && configTouched?.client_secret
+    );
+    const showSpIssuerError = Boolean(configErrors?.sp_issuer && configTouched?.sp_issuer);
+    const showIdpMetadataUrlError = Boolean(
+        configErrors?.idp_metadata_url && configTouched?.idp_metadata_url
+    );
+    const showIdpIssuerError = Boolean(configErrors?.idp_issuer && configTouched?.idp_issuer);
+    const showIdpSsoUrlError = Boolean(configErrors?.idp_sso_url && configTouched?.idp_sso_url);
+    const showIdpCertPemError = Boolean(configErrors?.idp_cert_pem && configTouched?.idp_cert_pem);
+    const showAudienceError = Boolean(configErrors?.audience && configTouched?.audience);
+
+    function updateClientSecretFlagOnChange(name: string, value: string) {
+        setFieldValue(name, value);
+        if (value === 'fragment' && config.do_not_use_client_secret !== true) {
+            setFieldValue('config.do_not_use_client_secret', true);
+        } else if (value !== 'fragment' && config.do_not_use_client_secret !== false) {
+            setFieldValue('config.do_not_use_client_secret', false);
+        }
+    }
+
     return (
         <>
             {type === 'auth0' && (
@@ -51,6 +84,8 @@ function ConfigurationFormFields({
                                     <kbd className="pf-u-font-size-xs">your-tenant.auth0.com</kbd>
                                 </span>
                             }
+                            helperTextInvalid={configErrors?.issuer || ''}
+                            validated={showIssuerError ? ValidatedOptions.error : 'default'}
                         >
                             <TextInput
                                 type="text"
@@ -59,11 +94,19 @@ function ConfigurationFormFields({
                                 onChange={onChange}
                                 isDisabled={isViewing}
                                 isRequired
+                                onBlur={onBlur}
+                                validated={showIssuerError ? ValidatedOptions.error : 'default'}
                             />
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
-                        <FormGroup label="Client ID" fieldId="config.client_id" isRequired>
+                        <FormGroup
+                            label="Client ID"
+                            fieldId="config.client_id"
+                            isRequired
+                            helperTextInvalid={configErrors?.client_id || ''}
+                            validated={showClientIdError ? ValidatedOptions.error : 'default'}
+                        >
                             <TextInput
                                 type="text"
                                 id="config.client_id"
@@ -71,6 +114,8 @@ function ConfigurationFormFields({
                                 onChange={onChange}
                                 isDisabled={isViewing}
                                 isRequired
+                                onBlur={onBlur}
+                                validated={showClientIdError ? ValidatedOptions.error : 'default'}
                             />
                         </FormGroup>
                     </GridItem>
@@ -96,7 +141,7 @@ function ConfigurationFormFields({
                             <SelectSingle
                                 id="config.mode"
                                 value={config.mode as string}
-                                handleSelect={setFieldValue}
+                                handleSelect={updateClientSecretFlagOnChange}
                                 isDisabled={isViewing}
                             >
                                 {oidcCallbackModes.map(({ value, label }) => (
@@ -120,6 +165,8 @@ function ConfigurationFormFields({
                                     </kbd>
                                 </span>
                             }
+                            helperTextInvalid={configErrors?.issuer || ''}
+                            validated={showIssuerError ? ValidatedOptions.error : 'default'}
                         >
                             <TextInput
                                 type="text"
@@ -128,11 +175,19 @@ function ConfigurationFormFields({
                                 onChange={onChange}
                                 isDisabled={isViewing}
                                 isRequired
+                                onBlur={onBlur}
+                                validated={showIssuerError ? ValidatedOptions.error : 'default'}
                             />
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
-                        <FormGroup label="Client ID" fieldId="config.client_id" isRequired>
+                        <FormGroup
+                            label="Client ID"
+                            fieldId="config.client_id"
+                            isRequired
+                            helperTextInvalid={configErrors?.client_id || ''}
+                            validated={showClientIdError ? ValidatedOptions.error : 'default'}
+                        >
                             <TextInput
                                 type="text"
                                 id="config.client_id"
@@ -140,6 +195,8 @@ function ConfigurationFormFields({
                                 onChange={onChange}
                                 isDisabled={isViewing}
                                 isRequired
+                                onBlur={onBlur}
+                                validated={showClientIdError ? ValidatedOptions.error : 'default'}
                             />
                         </FormGroup>
                     </GridItem>
@@ -147,24 +204,38 @@ function ConfigurationFormFields({
                         <FormGroup
                             label="Client Secret"
                             fieldId="config.client_secret"
-                            isRequired={config.mode !== 'fragment'}
+                            isRequired={
+                                !(config.mode === 'fragment' || config.do_not_use_client_secret)
+                            }
                             helperText={
                                 <span className="pf-u-font-size-sm">
                                     Client Secret provided by your IdP
                                 </span>
                             }
+                            helperTextInvalid={configErrors?.client_secret || ''}
+                            validated={showClientSecretError ? ValidatedOptions.error : 'default'}
                         >
                             <TextInput
-                                type="text"
+                                type="password"
                                 id="config.client_secret"
                                 value={(config.client_secret as string) || ''}
                                 onChange={onChange}
-                                isDisabled={isViewing || config.mode === 'fragment'}
-                                isRequired={config.mode !== 'fragment'}
+                                isDisabled={
+                                    isViewing ||
+                                    config.mode === 'fragment' ||
+                                    !!config.do_not_use_client_secret
+                                }
+                                isRequired={
+                                    !(config.mode === 'fragment' || config.do_not_use_client_secret)
+                                }
                                 placeholder={
                                     config.mode === 'fragment'
                                         ? 'Client Secret is not supported with Fragment callback mode.'
                                         : ''
+                                }
+                                onBlur={onBlur}
+                                validated={
+                                    showClientSecretError ? ValidatedOptions.error : 'default'
                                 }
                             />
                         </FormGroup>
@@ -216,6 +287,8 @@ function ConfigurationFormFields({
                                     </kbd>
                                 </span>
                             }
+                            helperTextInvalid={configErrors?.sp_issuer || ''}
+                            validated={showSpIssuerError ? ValidatedOptions.error : 'default'}
                         >
                             <TextInput
                                 type="text"
@@ -224,6 +297,8 @@ function ConfigurationFormFields({
                                 onChange={onChange}
                                 isDisabled={isViewing}
                                 isRequired
+                                onBlur={onBlur}
+                                validated={showSpIssuerError ? ValidatedOptions.error : 'default'}
                             />
                         </FormGroup>
                     </GridItem>
@@ -263,6 +338,10 @@ function ConfigurationFormFields({
                                             </kbd>
                                         </span>
                                     }
+                                    helperTextInvalid={configErrors?.idp_metadata_url || ''}
+                                    validated={
+                                        showIdpMetadataUrlError ? ValidatedOptions.error : 'default'
+                                    }
                                 >
                                     <TextInput
                                         type="text"
@@ -271,6 +350,12 @@ function ConfigurationFormFields({
                                         onChange={onChange}
                                         isDisabled={isViewing}
                                         isRequired
+                                        onBlur={onBlur}
+                                        validated={
+                                            showIdpMetadataUrlError
+                                                ? ValidatedOptions.error
+                                                : 'default'
+                                        }
                                     />
                                 </FormGroup>
                             </GridItem>
@@ -291,6 +376,10 @@ function ConfigurationFormFields({
                                             </kbd>
                                         </span>
                                     }
+                                    helperTextInvalid={configErrors?.idp_issuer || ''}
+                                    validated={
+                                        showIdpIssuerError ? ValidatedOptions.error : 'default'
+                                    }
                                 >
                                     <TextInput
                                         type="text"
@@ -299,6 +388,10 @@ function ConfigurationFormFields({
                                         onChange={onChange}
                                         isDisabled={isViewing}
                                         isRequired={config.configurationType === 'static'}
+                                        onBlur={onBlur}
+                                        validated={
+                                            showIdpIssuerError ? ValidatedOptions.error : 'default'
+                                        }
                                     />
                                 </FormGroup>
                             </GridItem>
@@ -315,6 +408,10 @@ function ConfigurationFormFields({
                                             </kbd>
                                         </span>
                                     }
+                                    helperTextInvalid={configErrors?.idp_sso_url || ''}
+                                    validated={
+                                        showIdpSsoUrlError ? ValidatedOptions.error : 'default'
+                                    }
                                 >
                                     <TextInput
                                         type="text"
@@ -323,6 +420,10 @@ function ConfigurationFormFields({
                                         onChange={onChange}
                                         isDisabled={isViewing}
                                         isRequired={config.configurationType === 'static'}
+                                        onBlur={onBlur}
+                                        validated={
+                                            showIdpSsoUrlError ? ValidatedOptions.error : 'default'
+                                        }
                                     />
                                 </FormGroup>
                             </GridItem>
@@ -330,7 +431,6 @@ function ConfigurationFormFields({
                                 <FormGroup
                                     label="Name/ID Format"
                                     fieldId="config.idp_nameid_format"
-                                    isRequired={config.configurationType === 'static'}
                                     helperText={
                                         <span className="pf-u-font-size-sm">
                                             for example,{' '}
@@ -346,7 +446,7 @@ function ConfigurationFormFields({
                                         value={(config.idp_nameid_format as string) || ''}
                                         onChange={onChange}
                                         isDisabled={isViewing}
-                                        isRequired={config.configurationType === 'static'}
+                                        onBlur={onBlur}
                                     />
                                 </FormGroup>
                             </GridItem>
@@ -355,8 +455,13 @@ function ConfigurationFormFields({
                                     label="IdP Certificate(s) (PEM)"
                                     fieldId="config.idp_cert_pem"
                                     isRequired={config.configurationType === 'static'}
+                                    helperTextInvalid={configErrors?.idp_cert_pem || ''}
+                                    validated={
+                                        showIdpCertPemError ? ValidatedOptions.error : 'default'
+                                    }
                                 >
                                     <TextArea
+                                        className="certificate-input"
                                         autoResize
                                         resizeOrientation="vertical"
                                         id="config.idp_cert_pem"
@@ -366,6 +471,10 @@ function ConfigurationFormFields({
                                         isRequired={config.configurationType === 'static'}
                                         placeholder={
                                             '-----BEGIN CERTIFICATE-----\nYour certificate data\n-----END CERTIFICATE-----'
+                                        }
+                                        onBlur={onBlur}
+                                        validated={
+                                            showIdpCertPemError ? ValidatedOptions.error : 'default'
                                         }
                                     />
                                 </FormGroup>
@@ -393,19 +502,24 @@ function ConfigurationFormFields({
                     <FormGroup
                         label="IdP Certificate(s) (PEM)"
                         fieldId="config.idp_cert_pem"
-                        isRequired={config.configurationType === 'static'}
+                        isRequired
+                        helperTextInvalid={configErrors?.idp_cert_pem || ''}
+                        validated={showIdpCertPemError ? ValidatedOptions.error : 'default'}
                     >
                         <TextArea
+                            className="certificate-input"
                             autoResize
                             resizeOrientation="vertical"
                             id="config.idp_cert_pem"
                             value={(config.idp_cert_pem as string) || ''}
                             onChange={onChange}
                             isDisabled={isViewing}
-                            isRequired={config.configurationType === 'static'}
+                            isRequired
                             placeholder={
                                 '-----BEGIN CERTIFICATE-----\nAuthority certificate data\n-----END CERTIFICATE-----'
                             }
+                            onBlur={onBlur}
+                            validated={showIdpCertPemError ? ValidatedOptions.error : 'default'}
                         />
                     </FormGroup>
                 </GridItem>
@@ -424,6 +538,8 @@ function ConfigurationFormFields({
                                 </kbd>
                             </span>
                         }
+                        helperTextInvalid={configErrors?.audience || ''}
+                        validated={showAudienceError ? ValidatedOptions.error : 'default'}
                     >
                         <TextInput
                             type="text"
@@ -432,6 +548,8 @@ function ConfigurationFormFields({
                             onChange={onChange}
                             isDisabled={isViewing}
                             isRequired
+                            onBlur={onBlur}
+                            validated={showAudienceError ? ValidatedOptions.error : 'default'}
                         />
                     </FormGroup>
                 </GridItem>

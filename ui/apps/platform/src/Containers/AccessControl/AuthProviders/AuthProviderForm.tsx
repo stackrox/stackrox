@@ -18,6 +18,7 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    ValidatedOptions,
 } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
@@ -76,47 +77,97 @@ function AuthProviderForm({
         defaultRole,
     };
 
+    const authProviderValidationSchema = yup.object().shape({
+        name: yup.string().required('A name is required.'),
+        type: yup.string().required(),
+        config: yup
+            .object()
+            .when('type', {
+                is: 'auth0',
+                then: yup.object({
+                    issuer: yup.string().required('An issuer is required.'),
+                    client_id: yup.string().required('A client ID is required.'),
+                }),
+            })
+            .when('type', {
+                is: 'oidc',
+                then: yup.object({
+                    client_id: yup.string().required('A client ID is required.'),
+                    issuer: yup.string().required('An issuer is required.'),
+                    mode: yup.string().required(), // selected from a list where one is always selected
+                    client_secret: yup.string().when('mode', {
+                        is: (value) => value === 'auto' || value === 'post' || value === 'query',
+                        then: yup.string().required('A client secret is required.'),
+                    }),
+                }),
+            })
+            .when('type', {
+                is: 'saml',
+                then: yup.object({
+                    configurationType: yup.string().required(), // selected from a list where one is always selected
+                    sp_issuer: yup.string().required('A service provider issuer is required.'),
+                    idp_metadata_url: yup.string().when('configurationType', {
+                        is: (value) => value === 'dynamic',
+                        then: yup
+                            .string()
+                            .required('An IdP metadata URL is required.')
+                            .url(
+                                'Must be a valid URL, for example, https://idp.example.com/metadata'
+                            ),
+                    }),
+                    idp_issuer: yup.string().when('configurationType', {
+                        is: (value) => value === 'static',
+                        then: yup
+                            .string()
+                            .required('An IdP issuer is required.')
+                            .url('Must be a valid URL, for example, https://idp.example.com/'),
+                    }),
+                    idp_sso_url: yup.string().when('configurationType', {
+                        is: (value) => value === 'static',
+                        then: yup
+                            .string()
+                            .required('An IdP SSO URL is required.')
+                            .url('Must be a valid URL, for example, https://idp.example.com/login'),
+                    }),
+                    idp_cert_pem: yup.string().when('configurationType', {
+                        is: (value) => value === 'static',
+                        then: yup
+                            .string()
+                            .required('One or more IdP certificate (PEM) is required.'),
+                    }),
+                }),
+            })
+            .when('type', {
+                is: 'userpki',
+                then: yup.object({
+                    idp_cert_pem: yup
+                        .string()
+                        .required('One or more IdP certificate (PEM) is required.'),
+                }),
+            })
+            .when('type', {
+                is: 'iap',
+                then: yup.object({
+                    audience: yup.string().required('An audience is required.'),
+                }),
+            }),
+    });
+
     const formik = useFormik({
         initialValues: modifiedInitialValues,
         onSubmit: () => {},
-        validationSchema: yup.object({
-            name: yup.string().required(),
-            type: yup.string().required(),
-            config: yup
-                .object()
-                .when('type', {
-                    is: 'auth0',
-                    then: yup.object({
-                        issuer: yup.string().required(),
-                        client_id: yup.string().required(),
-                    }),
-                })
-                .when('type', {
-                    is: 'oidc',
-                    then: yup.object({
-                        client_id: yup.string().required(),
-                        issuer: yup.string().required(),
-                        mode: yup.string().required(),
-                        client_secret: yup.string().when('mode', {
-                            is: (value) => value === 'auto' || value === 'post',
-                            then: yup.string().required(),
-                        }),
-                    }),
-                })
-                .when('type', {
-                    is: 'saml',
-                    then: yup.object({
-                        configurationType: yup.string().required(),
-                        sp_issuer: yup.string().required(),
-                        idp_metadata_url: yup.string().when('mode', {
-                            is: (value) => value === 'auto' || value === 'post',
-                            then: yup.string().required(),
-                        }),
-                    }),
-                }),
-        }),
+        validationSchema: authProviderValidationSchema,
     });
-    const { dirty, handleChange, isValid, setFieldValue, values } = formik;
+    const {
+        dirty,
+        handleChange,
+        isValid,
+        setFieldValue,
+        handleBlur,
+        values,
+        errors,
+        touched,
+    } = formik;
 
     function onChange(_value, event) {
         handleChange(event);
@@ -191,7 +242,15 @@ function AuthProviderForm({
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
-                            <FormGroup label="Name" fieldId="name" isRequired>
+                            <FormGroup
+                                label="Name"
+                                fieldId="name"
+                                isRequired
+                                helperTextInvalid={errors.name || ''}
+                                validated={
+                                    errors.name && touched.name ? ValidatedOptions.error : 'default'
+                                }
+                            >
                                 <TextInput
                                     type="text"
                                     id="name"
@@ -199,6 +258,12 @@ function AuthProviderForm({
                                     onChange={onChange}
                                     isDisabled={isViewing}
                                     isRequired
+                                    onBlur={handleBlur}
+                                    validated={
+                                        errors.name && touched.name
+                                            ? ValidatedOptions.error
+                                            : 'default'
+                                    }
                                 />
                             </FormGroup>
                         </GridItem>
@@ -224,6 +289,9 @@ function AuthProviderForm({
                             onChange={onChange}
                             setFieldValue={setFieldValue}
                             type={values.type}
+                            onBlur={handleBlur}
+                            configErrors={errors.config}
+                            configTouched={touched.config}
                         />
                     </Grid>
                 </FormSection>

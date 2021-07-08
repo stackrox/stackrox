@@ -121,13 +121,16 @@ table .pf-c-dropdown__toggle.pf-m-plain svg {
     .pf-c-form__group.pf-m-horizontal {
         display: grid;
         grid-column-gap: var(--pf-c-form--m-horizontal__group-label--md--GridColumnGap);
-        grid-template-columns: minmax(
-                var(--pf-c-form--m-horizontal__group-label--md--GridColumnWidth),
-                max-content
-            ) var(--pf-c-form--m-horizontal__group-control--md--GridColumnWidth);
+        grid-template-columns:
+            minmax(var(--pf-c-form--m-horizontal__group-label--md--GridColumnWidth), max-content)
+            var(--pf-c-form--m-horizontal__group-control--md--GridColumnWidth);
     }
 
     .pf-c-form__group.pf-m-horizontal .pf-c-form__group-label {
         padding-bottom: 0;
     }
+}
+
+.certificate-input {
+    min-height: 12ex;
 }
