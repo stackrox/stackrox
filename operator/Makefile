@@ -205,8 +205,13 @@ stackrox-image-pull-secret: ## Create default image pull secret for StackRox ima
 # Create stackrox image pull secret in stackrox namespace.
 	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox docker.io | kubectl -n stackrox apply -f -
 
-run: manifests generate fmt vet ## Run operator from your host without deploying it to a cluster.
+.PHONY: run
+run: manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
 	../scripts/go-run.sh ./main.go
+
+.PHONY: ensure-rox-main-image-exists
+ensure-rox-main-image-exists:
+	./hack/ensure-rox-image-exist.sh
 
 ##@ Build
 
