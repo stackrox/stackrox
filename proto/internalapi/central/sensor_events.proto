@@ -34,9 +34,15 @@ message ReprocessDeploymentRisk {
 }
 
 message AlertResults {
+    enum Source {
+      DEPLOYMENT_EVENT = 0;
+      AUDIT_EVENT      = 1;
+    }
+    // Only relevant if source == DEPLOYMENT.
     string deployment_id          = 1;
     repeated storage.Alert alerts = 2;
     storage.LifecycleStage stage  = 3;
+    Source source                 = 4;
 }
 
 // Next tag: 24.

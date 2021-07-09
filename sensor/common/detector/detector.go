@@ -325,13 +325,12 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 			case d.output <- &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_Event{
 					Event: &central.SensorEvent{
-						Id:     "",
 						Action: central.ResourceAction_CREATE_RESOURCE,
 						Resource: &central.SensorEvent_AlertResults{
 							AlertResults: &central.AlertResults{
-								DeploymentId: "",
-								Alerts:       alerts,
-								Stage:        storage.LifecycleStage_RUNTIME,
+								Source: central.AlertResults_AUDIT_EVENT,
+								Alerts: alerts,
+								Stage:  storage.LifecycleStage_RUNTIME,
 							},
 						},
 					},

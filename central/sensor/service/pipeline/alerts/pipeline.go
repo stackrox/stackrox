@@ -84,8 +84,8 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		}
 	}
 
-	// Technically there's nothing stopping both types of alerts in a single message, but it's not being done right now
-	if features.K8sAuditLogDetection.Enabled() && alertResults.GetDeploymentId() == "" {
+	// All alerts in an `alertResults` message will correspond to just one source (ie, either audit event or deployment), by construction.
+	if features.K8sAuditLogDetection.Enabled() && alertResults.GetSource() == central.AlertResults_AUDIT_EVENT {
 		if err := s.lifecycleManager.HandleResourceAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
 			return errors.Wrap(err, "error handling resource alerts")
 		}
