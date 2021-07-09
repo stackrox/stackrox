@@ -22,8 +22,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
         knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
     );
 
-    const isLoggingSupported =
-        clusterType === !clusterTypes.KUBERNETES && clusterType === !clusterTypes.OPENSHIFT_3;
+    const isLoggingSupported = clusterType === clusterTypes.OPENSHIFT_4;
     // @TODO, replace open prop with dynamic logic, based on clusterType
     return (
         <CollapsibleSection
@@ -182,7 +181,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                                 name="dynamicConfig.disableAuditLogs"
                                 disabled={!isLoggingSupported}
                                 toggleHandler={handleChange}
-                                enabled={admissionControllerConfig.disableAuditLogs}
+                                enabled={!admissionControllerConfig.disableAuditLogs}
                             />
                         </div>
                         {!isLoggingSupported && (
