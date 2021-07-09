@@ -141,10 +141,6 @@ func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage
 }
 
 func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
-	if !features.K8sAuditLogDetection.Enabled() && policy.GetEventSource() != storage.EventSource_NOT_APPLICABLE {
-		return errors.New("event source is not applicable to policies unless ROX_K8S_AUDIT_LOG_DETECTION feature flag is turned on")
-	}
-
 	if features.K8sAuditLogDetection.Enabled() {
 		if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_NOT_APPLICABLE {
 			return errors.New("event source must be deployment or audit event for runtime policies")

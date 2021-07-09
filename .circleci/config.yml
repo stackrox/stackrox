@@ -4705,6 +4705,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_DETECTION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_AUDIT_LOG_DETECTION: true
 
     steps:
       - run-qa-tests:
