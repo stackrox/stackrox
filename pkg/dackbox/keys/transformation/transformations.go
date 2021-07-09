@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"sort"
 
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/keys"
@@ -55,14 +54,6 @@ func AddPrefix(prefix []byte) OneToOne {
 		ret = append(ret, dbPrefix...)
 		ret = append(ret, key...)
 		return ret
-	}
-}
-
-// StripPrefix removes the input bucket prefix from the keys before output.
-func StripPrefix(prefix []byte) OneToOne {
-	dbPrefix := dbhelper.GetBucketKey(prefix, nil)
-	return func(ctx context.Context, key []byte) []byte {
-		return dbhelper.StripPrefix(dbPrefix, key)
 	}
 }
 
@@ -197,55 +188,6 @@ func Dedupe() ManyToMany {
 			}
 		}
 		return deduped
-	}
-}
-
-// Sort sorts the output keys.
-func Sort() ManyToMany {
-	return func(ctx context.Context, keys [][]byte) [][]byte {
-		sort.SliceStable(keys, func(i, j int) bool {
-			return bytes.Compare(keys[i], keys[j]) < 0
-		})
-		return keys
-	}
-}
-
-// Predicate represents a boolean on a key.
-type Predicate func(key []byte) bool
-
-// Filtered filters the input with an input predicate.
-func Filtered(pred Predicate) ManyToMany {
-	return func(ctx context.Context, keys [][]byte) [][]byte {
-		filtered := keys[:0]
-		for _, key := range keys {
-			if !pred(key) {
-				continue
-			}
-			filtered = append(filtered, key)
-		}
-		return filtered
-	}
-}
-
-// HasPrefix filters out items that do not have the matching bucket prefix.
-func HasPrefix(prefix []byte) ManyToMany {
-	return Filtered(func(key []byte) bool {
-		return dbhelper.HasPrefix(prefix, key)
-	})
-}
-
-// Forward steps forward (finding the values that are pointed to FROM the input keys) in the input RGraph for all the
-// input keys.
-func Forward(graph graph.RGraph) OneToMany {
-	return func(ctx context.Context, key []byte) [][]byte {
-		return graph.GetRefsFrom(key)
-	}
-}
-
-// Backward steps backwards (finding the values that point TO the input keys) in the input graph for all the input keys.
-func Backward(graph graph.RGraph) OneToMany {
-	return func(ctx context.Context, key []byte) [][]byte {
-		return graph.GetRefsTo(key)
 	}
 }
 

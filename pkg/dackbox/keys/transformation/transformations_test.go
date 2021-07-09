@@ -6,6 +6,7 @@ import (
 
 	graph2 "github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dackbox/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,27 +24,25 @@ func TestTransformations(t *testing.T) {
 	_ = graph.SetRefs([]byte("p2\x00Key1"), sortedkeys.SortedKeys{[]byte("p4\x00Key1"), []byte("p3\x00Key2")})
 	_ = graph.SetRefs([]byte("p2\x00Key2"), sortedkeys.SortedKeys{[]byte("p3\x00Key1"), []byte("p3\x00Key2")})
 
-	walker := Forward(graph).
-		Then(HasPrefix(prefix2)).
+	walker := ForwardFromContext(prefix2).
 		Then(Dedupe()).
-		ThenMapEachToMany(Forward(graph)).
-		Then(HasPrefix(prefix3)).
-		ThenMapEachToOne(StripPrefix(prefix1)).
-		Then(Dedupe()).
-		Then(Sort())
-	assert.Equal(t, [][]byte{[]byte("Key2")}, walker(context.Background(), []byte("p1\x00Key1")))
-	assert.Equal(t, [][]byte{[]byte("Key1"), []byte("Key2")}, walker(context.Background(), []byte("p1\x00Key2")))
-	assert.Equal(t, [][]byte{[]byte("Key1"), []byte("Key2")}, walker(context.Background(), []byte("p1\x00Key3")))
+		ThenMapEachToMany(ForwardFromContext(prefix3)).
+		ThenMapEachToOne(StripPrefixUnchecked(prefix3)).
+		Then(Dedupe())
+	testutils.DoWithGraph(context.Background(), graph, func(ctx context.Context) {
+		assert.Equal(t, [][]byte{[]byte("Key2")}, walker(ctx, []byte("p1\x00Key1")))
+		assert.ElementsMatch(t, [][]byte{[]byte("Key1"), []byte("Key2")}, walker(ctx, []byte("p1\x00Key2")))
+		assert.ElementsMatch(t, [][]byte{[]byte("Key1"), []byte("Key2")}, walker(ctx, []byte("p1\x00Key3")))
+	})
 
-	walker = Backward(graph).
-		Then(HasPrefix(prefix2)).
+	walker = BackwardFromContext(prefix2).
 		Then(Dedupe()).
-		ThenMapEachToMany(Backward(graph)).
-		Then(HasPrefix(prefix1)).
-		ThenMapEachToOne(StripPrefix(prefix1)).
-		Then(Dedupe()).
-		Then(Sort())
-	assert.Equal(t, [][]byte{[]byte("Key1"), []byte("Key2"), []byte("Key3")}, walker(context.Background(), []byte("p4\x00Key1")))
-	assert.Equal(t, [][]byte{[]byte("Key1"), []byte("Key2"), []byte("Key3")}, walker(context.Background(), []byte("p3\x00Key2")))
-	assert.Equal(t, [][]byte{[]byte("Key2"), []byte("Key3")}, walker(context.Background(), []byte("p3\x00Key1")))
+		ThenMapEachToMany(BackwardFromContext(prefix1)).
+		ThenMapEachToOne(StripPrefixUnchecked(prefix1)).
+		Then(Dedupe())
+	testutils.DoWithGraph(context.Background(), graph, func(ctx context.Context) {
+		assert.ElementsMatch(t, [][]byte{[]byte("Key1"), []byte("Key2"), []byte("Key3")}, walker(ctx, []byte("p4\x00Key1")))
+		assert.ElementsMatch(t, [][]byte{[]byte("Key1"), []byte("Key2"), []byte("Key3")}, walker(ctx, []byte("p3\x00Key2")))
+		assert.ElementsMatch(t, [][]byte{[]byte("Key2"), []byte("Key3")}, walker(ctx, []byte("p3\x00Key1")))
+	})
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/nodecveedge/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	dackyMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,15 @@ func TestGetScopedAccess(t *testing.T) {
 	store := mocks.NewMockStore(ctrl)
 	store.EXPECT().Get("id").Return(&storage.NodeCVEEdge{Id: "id"}, true, nil)
 
-	dataStore := New(dackyMocks.NewMockProvider(ctrl), store)
+	mockProvider := dackyMocks.NewMockProvider(ctrl)
+	mockProvider.EXPECT().NewGraphView().DoAndReturn(func() graph.DiscardableRGraph {
+		g := dackyMocks.NewMockDiscardableRGraph(ctrl)
+		g.EXPECT().Discard()
+		g.EXPECT().GetRefsFromPrefix(gomock.Any(), gomock.Any()).Return([][]byte(nil))
+		return g
+	})
+
+	dataStore := New(mockProvider, store)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -57,7 +66,15 @@ func TestGetScopedAccess(t *testing.T) {
 func TestGetNoAccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	dataStore := New(dackyMocks.NewMockProvider(ctrl), mocks.NewMockStore(ctrl))
+	mockProvider := dackyMocks.NewMockProvider(ctrl)
+	mockProvider.EXPECT().NewGraphView().DoAndReturn(func() graph.DiscardableRGraph {
+		g := dackyMocks.NewMockDiscardableRGraph(ctrl)
+		g.EXPECT().Discard()
+		g.EXPECT().GetRefsFromPrefix(gomock.Any(), gomock.Any()).Return([][]byte(nil))
+		return g
+	})
+
+	dataStore := New(mockProvider, mocks.NewMockStore(ctrl))
 
 	node, found, err := dataStore.Get(sac.WithNoAccess(context.Background()), "id")
 	assert.Nil(t, node)

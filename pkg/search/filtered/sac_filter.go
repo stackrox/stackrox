@@ -44,13 +44,6 @@ func WithReadAccess() SACFilterOption {
 	}
 }
 
-// WithWriteAccess filters out elements the context has no write access to.
-func WithWriteAccess() SACFilterOption {
-	return func(filter *filterBuilder) {
-		filter.access = storage.Access_READ_WRITE_ACCESS
-	}
-}
-
 type filterBuilder struct {
 	resourceHelper *sac.ForResourceHelper
 	scopeTransform ScopeTransform

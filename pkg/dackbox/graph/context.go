@@ -12,16 +12,6 @@ func Context(ctx context.Context, provider Provider, fn func(hasGraphConext cont
 	fn(inner)
 }
 
-// ContextWithStatus functions the same as GraphContext, but returns an error value, which is returned from the
-// input function to be executed.
-func ContextWithStatus(ctx context.Context, provider Provider, fn func(hasGraphConext context.Context) error) error {
-	inner := context.WithValue(ctx, graphContextKey{}, &graphContext{
-		provider: provider,
-	})
-	defer discardGraph(inner)
-	return fn(inner)
-}
-
 // GetGraph returns the RGraph from the input context, or nil if the input context has no graph context.
 func GetGraph(hasGraphContext context.Context) RGraph {
 	gc, ok := hasGraphContext.Value(graphContextKey{}).(*graphContext)

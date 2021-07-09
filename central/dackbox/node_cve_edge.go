@@ -17,7 +17,7 @@ var (
 			ThenMapEachToOne(transformation.Decode()).
 			Then(transformation.AtIndex(0)).
 			ThenMapEachToOne(transformation.AddPrefix(nodeDackBox.Bucket)).
-			Then(transformation.HasPrefix(clusterDackBox.Bucket)).
+			ThenMapEachToMany(transformation.ForwardFromContext(clusterDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)),
 
 		// Edge (parse first key in pair) Node
