@@ -69,6 +69,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 				clusterStore.EXPECT().GetClusters(gomock.Any()).Return(nil, mockError).Times(1)
 			},
 			principal: principalWithNoRoles,
+			scopes:    []payload.AccessScope{firstClusterScope},
 			wantErr:   true,
 		},
 		{
@@ -78,6 +79,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 				nsStore.EXPECT().GetNamespaces(gomock.Any()).Return(nil, mockError).Times(1)
 			},
 			principal: principalWithNoRoles,
+			scopes:    []payload.AccessScope{firstClusterScope},
 			wantErr:   true,
 		},
 		{
@@ -86,6 +88,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 				roleStore.EXPECT().GetAndResolveRole(gomock.Any(), gomock.Any()).Return(nil, mockError).Times(1)
 			},
 			principal: adminRolePrincipal,
+			scopes:    []payload.AccessScope{firstClusterScope},
 			wantErr:   true,
 		},
 		{

@@ -2,6 +2,7 @@ package authorizer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/client"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,6 +27,8 @@ var (
 
 	view = sac.AccessModeScopeKey(storage.Access_READ_ACCESS).Verb()
 	edit = sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS).Verb()
+
+	log = logging.LoggerForModule()
 )
 
 type builtInScopeAuthorizer struct {
@@ -56,14 +60,26 @@ type authorizerDataCache struct {
 func (a *builtInScopeAuthorizer) ForUser(ctx context.Context, principal payload.Principal, scopes ...payload.AccessScope) ([]payload.AccessScope, []payload.AccessScope, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
 
+	errors := errorhelpers.NewErrorList("scope validation")
+	validScopes := make([]payload.AccessScope, 0, len(scopes))
 	for _, scope := range scopes {
 		if err := payload.ValidateScope(&scope); err != nil {
-			return nil, nil, errors.Wrapf(err, "scope [%v] is invalid", scope)
+			msg := fmt.Sprintf("UNEXPECTED: scope [%v] is invalid: %v", scope, err)
+			log.Error(msg)
+			errors.AddString(msg)
+			continue
 		}
 		_, ok := resources.MetadataForResource(permissions.Resource(scope.Noun))
 		if !ok && scope.Noun != "" {
-			return nil, nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "unknown resource %s", scope.Noun)
+			msg := fmt.Sprintf("UNEXPECTED: unknown resource %s", scope.Noun)
+			log.Error(msg)
+			errors.AddString(msg)
+			continue
 		}
+		validScopes = append(validScopes, scope)
+	}
+	if len(validScopes) == 0 {
+		return nil, nil, errors.ToError()
 	}
 
 	roles, err := a.resolveRoles(adminCtx, principal.Roles...)
@@ -89,7 +105,7 @@ func (a *builtInScopeAuthorizer) ForUser(ctx context.Context, principal payload.
 	var denied []payload.AccessScope
 
 SCOPE:
-	for _, scope := range scopes {
+	for _, scope := range validScopes {
 		for _, role := range roles {
 			permitted, err := roleHasPermissions(role, cache, scope)
 			if err != nil {
