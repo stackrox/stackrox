@@ -80,7 +80,7 @@ class RuntimePolicyTest extends BaseSpecification  {
                 .setDisabled(false)
                 .setSeverityValue(2)
                 .setName("runtime-removal-policy")
-                .setEventSourceValue(PolicyOuterClass.EventSource.DEPLOYMENT_EVENT)
+                .setEventSource(PolicyOuterClass.EventSource.DEPLOYMENT_EVENT)
                 .addPolicySections(PolicyOuterClass.PolicySection.newBuilder()
                 .addPolicyGroups(
                     PolicyOuterClass.PolicyGroup.newBuilder()
