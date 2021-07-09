@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/updater"
 	"google.golang.org/grpc"
 )
 
@@ -48,7 +49,8 @@ type Detector interface {
 
 // New returns a new detector
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
-	deploymentStore store.DeploymentStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents) Detector {
+	deploymentStore store.DeploymentStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
+	auditLogUpdater updater.Component) Detector {
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
@@ -66,6 +68,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		enforcer:            enforcer,
 
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
+		auditLogUpdater:    auditLogUpdater,
 
 		detectorStopper:   concurrency.NewStopper(),
 		auditStopper:      concurrency.NewStopper(),
@@ -97,6 +100,7 @@ type detectorImpl struct {
 	deduper             *deduper
 
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
+	auditLogUpdater    updater.Component
 
 	detectorStopper   concurrency.Stopper
 	auditStopper      concurrency.Stopper
@@ -300,6 +304,16 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 			return
 		case auditEvents := <-d.auditEventsChan:
 			alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
+
+			// If alerts are detected force update the audit log status
+			// This is required because if sensor were to restart right after this alert, it's possible that
+			// the saved state is prior to this the event that generated this alert (because the updater updates on a timer)
+			// To avoid duplicate alerts force the state to be updated
+			if len(alerts) > 0 {
+				// This is non-blocking as the updates happen on another goroutine
+				d.auditLogUpdater.ForceUpdate()
+			}
+
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})

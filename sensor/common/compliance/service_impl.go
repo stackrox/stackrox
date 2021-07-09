@@ -13,15 +13,17 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
 )
 
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
-	output      chan *compliance.ComplianceReturn
-	auditEvents chan *sensor.AuditEvents
+	output        chan *compliance.ComplianceReturn
+	auditEvents   chan *sensor.AuditEvents
+	auditMessages chan *sensor.MsgFromCompliance
+
+	auditLogCollectionManager *AuditLogCollectionManager
 
 	orchestrator orchestrator.Orchestrator
 
@@ -120,27 +122,12 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		return errors.Wrapf(err, "sending config to %q", hostname)
 	}
 
-	// [TEMPORARY] This will automatically enable audit log collection on all collector nodes running on master nodes
-	// as long as the feature is enabled. This will be migrated out to respond to changes to DynamicClusterConfig
-	// when that part is fully implemented. Currently there is no way to disable this setting other than to disable
-	// the feature flag itself.
+	// Set up this node to start collecting audit log events if it's a master node. It may send a message if the feature is already enabled
 	if features.K8sAuditLogDetection.Enabled() {
 		if conf.GetIsMasterNode() {
-			log.Infof("Sending message to start audit collection to %v because it is on master node", hostname)
-			err := server.Send(&sensor.MsgToCompliance{
-				Msg: &sensor.MsgToCompliance_AuditLogCollectionRequest_{
-					AuditLogCollectionRequest: &sensor.MsgToCompliance_AuditLogCollectionRequest{
-						Req: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq{
-							StartReq: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest{
-								ClusterId: clusterid.Get(),
-							},
-						},
-					},
-				},
-			})
-			if err != nil {
-				return errors.Wrapf(err, "sending audit log enable to %q", hostname)
-			}
+			log.Infof("Adding node %s to list of eligible compliance nodes for audit log collection because it is on a master node", hostname)
+			s.auditLogCollectionManager.AddEligibleComplianceNode(hostname, server)
+			defer s.auditLogCollectionManager.RemoveEligibleComplianceNode(hostname)
 		}
 	}
 
@@ -156,6 +143,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			s.output <- t.Return
 		case *sensor.MsgFromCompliance_AuditEvents:
 			s.auditEvents <- t.AuditEvents
+			s.auditMessages <- msg
 		}
 	}
 }
@@ -181,4 +169,8 @@ func (s *serviceImpl) Output() chan *compliance.ComplianceReturn {
 
 func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 	return s.auditEvents
+}
+
+func (s *serviceImpl) AuditMessages() <-chan *sensor.MsgFromCompliance {
+	return s.auditMessages
 }

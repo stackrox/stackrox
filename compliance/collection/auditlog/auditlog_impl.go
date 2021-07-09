@@ -143,8 +143,11 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.T
 }
 
 func (s *auditLogReaderImpl) cleanupTailOnStop(tailer *tail.Tail) {
+	// Only want to call tailer.Stop here as that stops the tailing. However do _not_ call tailer.Cleanup() because as the docs mention
+	// "If you plan to re-read a file, don't call Cleanup in between."
+	// Cleanup is recommended for after the process exits, but that's not strictly necessary as if the process exits the container will be restarted anyway
+	// See https://pkg.go.dev/github.com/nxadm/tail#Tail.Cleanup for details on Cleanup()
 	if err := tailer.Stop(); err != nil {
 		log.Errorf("Audit log tailer stopped with an error %v", err)
 	}
-	tailer.Cleanup()
 }

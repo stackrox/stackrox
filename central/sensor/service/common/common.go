@@ -32,6 +32,8 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 		return "NetworkPoliciesResponse"
 	case *central.MsgFromSensor_ClusterHealthInfo:
 		return "ClusterHealthInfo"
+	case *central.MsgFromSensor_AuditLogStatusInfo:
+		return "AuditLogStatusInfo"
 	default:
 		utils.Should(errors.Errorf("Unknown message type: %T", t))
 		return "Unknown"

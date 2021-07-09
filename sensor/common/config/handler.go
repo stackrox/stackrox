@@ -6,11 +6,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/compliance"
 )
 
 var (
@@ -28,12 +30,13 @@ type Handler interface {
 }
 
 // NewCommandHandler returns a new instance of a Handler.
-func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, deploymentIdentification *storage.SensorDeploymentIdentification, helmManagedConfig *central.HelmManagedConfigInit) Handler {
+func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, deploymentIdentification *storage.SensorDeploymentIdentification, helmManagedConfig *central.HelmManagedConfigInit, auditLogCollectionManager *compliance.AuditLogCollectionManager) Handler {
 	return &configHandlerImpl{
-		stopC:                    concurrency.NewErrorSignal(),
-		admCtrlSettingsMgr:       admCtrlSettingsMgr,
-		helmManagedConfig:        helmManagedConfig,
-		deploymentIdentification: deploymentIdentification,
+		stopC:                     concurrency.NewErrorSignal(),
+		admCtrlSettingsMgr:        admCtrlSettingsMgr,
+		helmManagedConfig:         helmManagedConfig,
+		deploymentIdentification:  deploymentIdentification,
+		auditLogCollectionManager: auditLogCollectionManager,
 	}
 }
 
@@ -44,7 +47,8 @@ type configHandlerImpl struct {
 	config *storage.DynamicClusterConfig
 	lock   sync.RWMutex
 
-	admCtrlSettingsMgr admissioncontroller.SettingsManager
+	admCtrlSettingsMgr        admissioncontroller.SettingsManager
+	auditLogCollectionManager *compliance.AuditLogCollectionManager
 
 	stopC concurrency.ErrorSignal
 }
@@ -66,22 +70,50 @@ func (c *configHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	config := msg.GetClusterConfig()
-	if config == nil {
-		return nil
+	if features.K8sAuditLogDetection.Enabled() && msg.GetAuditLogSync() != nil {
+		err := c.parseMessage(func() {
+			log.Infof("Received audit log sync state from Central: %s", protoutils.NewWrapper(msg.GetAuditLogSync()))
+			// This will restart collection only if it's already started. If it's the first time, it just saves the state and does nothing (until it is started eventually)
+			c.auditLogCollectionManager.UpdateAuditLogFileState(msg.GetAuditLogSync().GetNodeAuditLogFileStates())
+		})
+		if err != nil {
+			return err
+		}
 	}
 
+	if config := msg.GetClusterConfig(); config != nil {
+		err := c.parseMessage(func() {
+			log.Infof("Received configuration from Central: %s", protoutils.NewWrapper(config))
+			c.lock.Lock()
+			defer c.lock.Unlock()
+			c.config = config.Config
+			if c.admCtrlSettingsMgr != nil {
+				c.admCtrlSettingsMgr.UpdateConfig(config.GetConfig())
+			}
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// TODO: Handle the dynamic config changes to enable/disable audit log and call service.StartAuditLogCollection or StopAuditLogCollection appropriately
+	// for now start is called immediately as soon as the auditlogsync message is received (iff the feature flag is on)
+	if features.K8sAuditLogDetection.Enabled() {
+		if msg.GetAuditLogSync() != nil {
+			log.Infof("[TEMP] Starting audit log collection")
+			c.auditLogCollectionManager.EnableCollection()
+		}
+	}
+
+	return nil
+}
+
+func (c *configHandlerImpl) parseMessage(parseFn func()) error {
 	select {
 	case <-c.stopC.Done():
 		return errors.New("could not process new cluster config")
 	default:
-		log.Infof("Received configuration from Central: %s", protoutils.NewWrapper(config))
-		c.lock.Lock()
-		defer c.lock.Unlock()
-		c.config = config.Config
-		if c.admCtrlSettingsMgr != nil {
-			c.admCtrlSettingsMgr.UpdateConfig(config.GetConfig())
-		}
+		parseFn()
 		return nil
 	}
 }

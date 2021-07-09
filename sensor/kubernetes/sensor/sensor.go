@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
+	"github.com/stackrox/rox/sensor/kubernetes/auditlog"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
@@ -90,7 +91,13 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
-	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig)
+	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
+	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
+
+	o := orchestrator.New(client.Kubernetes())
+	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager)
+
+	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(client)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating enforcer")
@@ -98,8 +105,8 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 
-	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
-	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput)
+	auditLogUpdaterComponent := auditlog.NewUpdater(0, complianceService.AuditMessages())
+	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogUpdaterComponent)
 
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector))
 
@@ -108,8 +115,6 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		return nil, errors.Wrap(err, "creating upgrade command handler")
 	}
 
-	o := orchestrator.New(client.Kubernetes())
-	complianceService := compliance.NewService(o, auditLogEventsInput)
 	imageService := image.NewService(imageCache)
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
@@ -148,6 +153,10 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
+	}
+
+	if features.K8sAuditLogDetection.Enabled() {
+		components = append(components, auditLogUpdaterComponent)
 	}
 
 	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())

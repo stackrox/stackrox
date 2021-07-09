@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterhealthupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorprofiles"
@@ -66,6 +67,9 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 			complianceoperatorscansettingbinding.GetPipeline(),
 			complianceoperatorrules.GetPipeline(),
 		)
+	}
+	if features.K8sAuditLogDetection.Enabled() {
+		pipelines = append(pipelines, auditlogstateupdate.GetPipeline())
 	}
 
 	return NewClusterPipeline(clusterID, pipelines...), nil

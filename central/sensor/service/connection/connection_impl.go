@@ -356,6 +356,24 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 	}, nil
 }
 
+func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	cluster, exists, err := c.clusterMgr.GetCluster(ctx, c.clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Errorf("could not pull config for cluster %q because it does not exist", c.clusterID)
+	}
+
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_AuditLogSync{
+			AuditLogSync: &central.AuditLogSync{
+				NodeAuditLogFileStates: cluster.GetAuditLogState(),
+			},
+		},
+	}, nil
+}
+
 func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities centralsensor.SensorCapabilitySet) error {
 	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
 	msg, err := c.getClusterConfigMsg(ctx)
@@ -401,6 +419,18 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 	if connectionCapabilities.Contains(centralsensor.NetworkGraphExternalSrcsCap) {
 		if err := c.NetworkEntities().SyncNow(ctx); err != nil {
 			log.Errorf("Unable to sync initial external network entities to cluster %q: %v", c.clusterID, err)
+		}
+	}
+
+	if features.K8sAuditLogDetection.Enabled() && connectionCapabilities.Contains(centralsensor.AuditLogEventsCap) {
+		msg, err := c.getAuditLogSyncMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get audit log file state sync msg for %q", c.clusterID)
+		}
+
+		// Send the audit log state to sensor even if the the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
+		if err := server.Send(msg); err != nil {
+			return errors.Wrapf(err, "unable to sync audit log file state to cluster %q", c.clusterID)
 		}
 	}
 
