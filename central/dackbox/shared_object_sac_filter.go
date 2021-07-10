@@ -108,7 +108,7 @@ func hasGlobalAccessScope(ctx context.Context, helper *sac.ForResourceHelper) bo
 	return ok
 }
 
-func (f *combinedSAC) noSACApply(ctx context.Context, from ...string) []string {
+func (f *combinedSAC) noSACApply(ctx context.Context, from ...string) ([]int, bool) {
 	var hasImageRead, hasNodeRead, hasClusterRead bool
 	if id := authn.IdentityFromContext(ctx); id != nil {
 		hasImageRead = imageAuthorizer(ctx) == nil
@@ -121,44 +121,45 @@ func (f *combinedSAC) noSACApply(ctx context.Context, from ...string) []string {
 	}
 
 	if hasImageRead && hasNodeRead && (f.clusterResourceHelper == nil || hasClusterRead) {
-		return from
+		return nil, true
 	}
 	if !hasImageRead && !hasNodeRead && (f.clusterResourceHelper == nil || !hasClusterRead) {
-		return nil
+		return nil, false
 	}
 
-	filtered := make([]string, 0, len(from))
-	for _, id := range from {
+	filteredIndices := make([]int, 0, len(from))
+	for idx, id := range from {
 		idBytes := []byte(id)
 		if hasImageRead && f.imageExistenceCheck(ctx, idBytes) {
-			filtered = append(filtered, id)
+			filteredIndices = append(filteredIndices, idx)
 			continue
 		}
 		if hasNodeRead && f.nodeExistenceCheck(ctx, idBytes) {
-			filtered = append(filtered, id)
+			filteredIndices = append(filteredIndices, idx)
 			continue
 		}
 		if hasClusterRead && f.clusterExistenceCheck(ctx, idBytes) {
-			filtered = append(filtered, id)
+			filteredIndices = append(filteredIndices, idx)
 			continue
 		}
 	}
-	return filtered
+	return filteredIndices, false
 }
 
-func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]string, error) {
+func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]int, bool, error) {
 	if !sac.IsContextSACEnabled(ctx) {
-		return f.noSACApply(ctx, from...), nil
+		filteredIndices, all := f.noSACApply(ctx, from...)
+		return filteredIndices, all, nil
 	}
 
 	nodeAccess, err := f.nodeResourceHelper.AccessAllowed(ctx, f.access)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	imageAccess, err := f.imageResourceHelper.AccessAllowed(ctx, f.access)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	nodeScopeChecker := f.nodeResourceHelper.ScopeChecker(ctx, f.access)
@@ -169,20 +170,20 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]string, erro
 	if f.clusterResourceHelper != nil {
 		clusterAccess, err = f.clusterResourceHelper.AccessAllowed(ctx, f.access)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		clusterScopeChecker = f.clusterResourceHelper.ScopeChecker(ctx, f.access)
 	}
 
 	errorList := errorhelpers.NewErrorList("errors during SAC filtering")
-	filtered := make([]string, 0, len(from))
-	for _, id := range from {
+	filteredIndices := make([]int, 0, len(from))
+	for idx, id := range from {
 		idBytes := []byte(id)
 
 		if imageAccess {
 			// If the image exists and we have image access, then allow
 			if exists := f.imageExistenceCheck(ctx, idBytes); exists {
-				filtered = append(filtered, id)
+				filteredIndices = append(filteredIndices, idx)
 				continue
 			}
 		} else if scopes := f.imageScopeTransform(ctx, idBytes); len(scopes) != 0 {
@@ -192,14 +193,14 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]string, erro
 				continue
 			}
 			if ok {
-				filtered = append(filtered, id)
+				filteredIndices = append(filteredIndices, idx)
 				continue
 			}
 		}
 
 		if scopes := f.nodeScopeTransform(ctx, idBytes); len(scopes) != 0 {
 			if nodeAccess {
-				filtered = append(filtered, id)
+				filteredIndices = append(filteredIndices, idx)
 				continue
 			}
 			ok, err := nodeScopeChecker.AnyAllowed(ctx, scopes)
@@ -208,7 +209,7 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]string, erro
 				continue
 			}
 			if ok {
-				filtered = append(filtered, id)
+				filteredIndices = append(filteredIndices, idx)
 				continue
 			}
 		}
@@ -216,7 +217,7 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]string, erro
 		if f.clusterResourceHelper != nil {
 			if scopes := f.clusterScopeTransform(ctx, idBytes); len(scopes) != 0 {
 				if clusterAccess {
-					filtered = append(filtered, id)
+					filteredIndices = append(filteredIndices, idx)
 					continue
 				}
 				ok, err := clusterScopeChecker.AnyAllowed(ctx, scopes)
@@ -225,11 +226,11 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]string, erro
 					continue
 				}
 				if ok {
-					filtered = append(filtered, id)
+					filteredIndices = append(filteredIndices, idx)
 					continue
 				}
 			}
 		}
 	}
-	return filtered, errorList.ToError()
+	return filteredIndices, false, errorList.ToError()
 }

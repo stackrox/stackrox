@@ -5,6 +5,9 @@ import "github.com/pkg/errors"
 // ElemTypeSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func ElemTypeSelect(a []ElemType, indices ...int) []ElemType {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]ElemType, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {

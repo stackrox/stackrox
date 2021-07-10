@@ -139,7 +139,7 @@ func TestSelect(t *testing.T) {
 		},
 		{
 			indices:  []int{},
-			expected: []string{},
+			expected: nil,
 		},
 		{
 			indices:  []int{0, 0, 1, 1, 2, 2, 3, 3},

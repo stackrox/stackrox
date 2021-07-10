@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	sac "github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -114,9 +115,13 @@ func TestNoSACApplyWithoutIdentity(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 
-			filtered, err := filter.Apply(c.ctx, c.keys...)
+			filteredIndices, all, err := filter.Apply(c.ctx, c.keys...)
 			require.NoError(t, err)
-			assert.Equal(t, c.expectedKeys, filtered)
+			if all {
+				assert.Equal(t, c.expectedKeys, c.keys)
+			} else {
+				assert.Equal(t, c.expectedKeys, sliceutils.StringSelect(c.keys, filteredIndices...))
+			}
 		})
 	}
 }
@@ -177,9 +182,13 @@ func TestNoSACApplyWithIdentity(t *testing.T) {
 			defer mockCtrl.Finish()
 
 			ctx := c.identityFunc(mockCtrl, t)
-			filtered, err := filter.Apply(ctx, c.keys...)
+			filteredIndices, all, err := filter.Apply(ctx, c.keys...)
 			require.NoError(t, err)
-			assert.Equal(t, c.expectedKeys, filtered)
+			if all {
+				assert.Equal(t, c.expectedKeys, c.keys)
+			} else {
+				assert.Equal(t, c.expectedKeys, sliceutils.StringSelect(c.keys, filteredIndices...))
+			}
 		})
 	}
 }

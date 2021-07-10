@@ -14,18 +14,18 @@ type scopedSACFilterImpl struct {
 	access         storage.Access
 }
 
-func (f *scopedSACFilterImpl) Apply(ctx context.Context, from ...string) ([]string, error) {
+func (f *scopedSACFilterImpl) Apply(ctx context.Context, from ...string) ([]int, bool, error) {
 	if ok, err := f.resourceHelper.AccessAllowed(ctx, f.access); err != nil {
-		return nil, err
+		return nil, false, err
 	} else if ok {
-		return from, nil
+		return nil, true, nil
 	}
 
 	scopeChecker := f.resourceHelper.ScopeChecker(ctx, f.access)
 
 	errorList := errorhelpers.NewErrorList("errors during SAC filtering")
-	filtered := make([]string, 0, len(from))
-	for _, id := range from {
+	filteredIndices := make([]int, 0, len(from))
+	for idx, id := range from {
 		scopes := f.scopeFunc(ctx, []byte(id))
 		if len(scopes) == 0 {
 			continue
@@ -36,9 +36,9 @@ func (f *scopedSACFilterImpl) Apply(ctx context.Context, from ...string) ([]stri
 			continue
 		}
 		if ok {
-			filtered = append(filtered, id)
+			filteredIndices = append(filteredIndices, idx)
 		}
 	}
 
-	return filtered, errorList.ToError()
+	return filteredIndices, false, errorList.ToError()
 }

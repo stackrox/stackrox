@@ -6,12 +6,15 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // Filter represents a process of converting from one id-space to another.
 type Filter interface {
-	Apply(ctx context.Context, from ...string) ([]string, error)
+	// Apply applies the filter to the elements. The return value is a slice of the indices that passed the filter,
+	// alternatively a bool indicating that no elements should be removed by the filter. The error return value
+	// always needs to be checked first.
+	Apply(ctx context.Context, from ...string) ([]int, bool, error)
 }
 
 // UnsafeSearcher generates a Searcher from an UnsafeSearcher by filtering its outputs with the input filter.
@@ -23,19 +26,10 @@ func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filter Filter) search.S
 				return results, err
 			}
 
-			allFiltered, err := ApplySACFilter(ctx, search.ResultsToIDs(results), filter)
-			if err != nil {
+			if err := ApplySACFilterToSearchResults(ctx, &results, filter); err != nil {
 				return nil, err
 			}
-
-			filteredResults := results[:0]
-			filteredSet := set.NewStringSet(allFiltered...)
-			for _, result := range results {
-				if filteredSet.Contains(result.ID) {
-					filteredResults = append(filteredResults, result)
-				}
-			}
-			return filteredResults, nil
+			return results, nil
 		},
 		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
 			return searcher.Count(q)
@@ -52,19 +46,11 @@ func Searcher(searcher search.Searcher, filter Filter) search.Searcher {
 				return results, err
 			}
 
-			allFiltered, err := ApplySACFilter(ctx, search.ResultsToIDs(results), filter)
-			if err != nil {
+			if err := ApplySACFilterToSearchResults(ctx, &results, filter); err != nil {
 				return nil, err
 			}
 
-			filteredResults := results[:0]
-			filteredSet := set.NewStringSet(allFiltered...)
-			for _, result := range results {
-				if filteredSet.Contains(result.ID) {
-					filteredResults = append(filteredResults, result)
-				}
-			}
-			return filteredResults, nil
+			return results, nil
 		},
 		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
 			if filter == nil {
@@ -85,11 +71,34 @@ func Searcher(searcher search.Searcher, filter Filter) search.Searcher {
 	}
 }
 
-// ApplySACFilter filters ids with sac filters
+// ApplySACFilter filters ids with a SAC filter.
 func ApplySACFilter(ctx context.Context, ids []string, filter Filter) ([]string, error) {
-	filtered, err := filter.Apply(ctx, ids...)
+	filteredIndices, all, err := filter.Apply(ctx, ids...)
 	if err != nil {
 		return nil, err
 	}
-	return filtered, nil
+	if all || len(filteredIndices) == len(ids) {
+		return ids, nil
+	}
+	return sliceutils.StringSelect(ids, filteredIndices...), nil
+}
+
+// ApplySACFilterToSearchResults filters search results with a SAC filter.
+func ApplySACFilterToSearchResults(ctx context.Context, resultsInOut *[]search.Result, filter Filter) error {
+	results := *resultsInOut
+
+	ids := search.ResultsToIDs(results)
+	filteredIndices, all, err := filter.Apply(ctx, ids...)
+	if err != nil {
+		return err
+	}
+	if all || len(filteredIndices) == len(results) {
+		return nil
+	}
+	filteredResults := results[:0]
+	for _, idx := range filteredIndices {
+		filteredResults = append(filteredResults, results[idx])
+	}
+	*resultsInOut = filteredResults
+	return nil
 }

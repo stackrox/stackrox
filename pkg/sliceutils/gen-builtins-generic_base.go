@@ -12,6 +12,9 @@ import (
 // BoolSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func BoolSelect(a []bool, indices ...int) []bool {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]bool, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -58,6 +61,9 @@ func ConcatBoolSlices(slices ...[]bool) []bool {
 // ByteSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func ByteSelect(a []byte, indices ...int) []byte {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]byte, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -104,6 +110,9 @@ func ConcatByteSlices(slices ...[]byte) []byte {
 // Complex128Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Complex128Select(a []complex128, indices ...int) []complex128 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]complex128, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -150,6 +159,9 @@ func ConcatComplex128Slices(slices ...[]complex128) []complex128 {
 // Complex64Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Complex64Select(a []complex64, indices ...int) []complex64 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]complex64, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -196,6 +208,9 @@ func ConcatComplex64Slices(slices ...[]complex64) []complex64 {
 // ErrorSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func ErrorSelect(a []error, indices ...int) []error {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]error, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -242,6 +257,9 @@ func ConcatErrorSlices(slices ...[]error) []error {
 // Float32Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Float32Select(a []float32, indices ...int) []float32 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]float32, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -288,6 +306,9 @@ func ConcatFloat32Slices(slices ...[]float32) []float32 {
 // Float64Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Float64Select(a []float64, indices ...int) []float64 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]float64, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -334,6 +355,9 @@ func ConcatFloat64Slices(slices ...[]float64) []float64 {
 // IntSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func IntSelect(a []int, indices ...int) []int {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]int, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -380,6 +404,9 @@ func ConcatIntSlices(slices ...[]int) []int {
 // Int16Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Int16Select(a []int16, indices ...int) []int16 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]int16, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -426,6 +453,9 @@ func ConcatInt16Slices(slices ...[]int16) []int16 {
 // Int32Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Int32Select(a []int32, indices ...int) []int32 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]int32, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -472,6 +502,9 @@ func ConcatInt32Slices(slices ...[]int32) []int32 {
 // Int64Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Int64Select(a []int64, indices ...int) []int64 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]int64, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -518,6 +551,9 @@ func ConcatInt64Slices(slices ...[]int64) []int64 {
 // Int8Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Int8Select(a []int8, indices ...int) []int8 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]int8, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -564,6 +600,9 @@ func ConcatInt8Slices(slices ...[]int8) []int8 {
 // RuneSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func RuneSelect(a []rune, indices ...int) []rune {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]rune, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -610,6 +649,9 @@ func ConcatRuneSlices(slices ...[]rune) []rune {
 // StringSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func StringSelect(a []string, indices ...int) []string {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]string, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -656,6 +698,9 @@ func ConcatStringSlices(slices ...[]string) []string {
 // UintSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func UintSelect(a []uint, indices ...int) []uint {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]uint, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -702,6 +747,9 @@ func ConcatUintSlices(slices ...[]uint) []uint {
 // Uint16Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Uint16Select(a []uint16, indices ...int) []uint16 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]uint16, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -748,6 +796,9 @@ func ConcatUint16Slices(slices ...[]uint16) []uint16 {
 // Uint32Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Uint32Select(a []uint32, indices ...int) []uint32 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]uint32, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -794,6 +845,9 @@ func ConcatUint32Slices(slices ...[]uint32) []uint32 {
 // Uint64Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Uint64Select(a []uint64, indices ...int) []uint64 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]uint64, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -840,6 +894,9 @@ func ConcatUint64Slices(slices ...[]uint64) []uint64 {
 // Uint8Select returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func Uint8Select(a []uint8, indices ...int) []uint8 {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]uint8, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -886,6 +943,9 @@ func ConcatUint8Slices(slices ...[]uint8) []uint8 {
 // UintptrSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func UintptrSelect(a []uintptr, indices ...int) []uintptr {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]uintptr, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
@@ -932,6 +992,9 @@ func ConcatUintptrSlices(slices ...[]uintptr) []uintptr {
 // ByteSliceSelect returns a slice containing the elements at the given indices of the input slice.
 // CAUTION: This function panics if any index is out of range.
 func ByteSliceSelect(a []ByteSlice, indices ...int) []ByteSlice {
+	if len(indices) == 0 {
+		return nil
+	}
 	result := make([]ByteSlice, 0, len(indices))
 	for _, idx := range indices {
 		if idx < 0 || idx >= len(a) {
