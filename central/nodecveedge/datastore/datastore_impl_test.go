@@ -38,7 +38,7 @@ func TestGetScopedAccess(t *testing.T) {
 	mockProvider.EXPECT().NewGraphView().DoAndReturn(func() graph.DiscardableRGraph {
 		g := dackyMocks.NewMockDiscardableRGraph(ctrl)
 		g.EXPECT().Discard()
-		g.EXPECT().GetRefsFromPrefix(gomock.Any(), gomock.Any()).Return([][]byte(nil))
+		g.EXPECT().GetRefsToPrefix(gomock.Any(), gomock.Any()).Return([][]byte(nil))
 		return g
 	})
 
@@ -70,7 +70,7 @@ func TestGetNoAccess(t *testing.T) {
 	mockProvider.EXPECT().NewGraphView().DoAndReturn(func() graph.DiscardableRGraph {
 		g := dackyMocks.NewMockDiscardableRGraph(ctrl)
 		g.EXPECT().Discard()
-		g.EXPECT().GetRefsFromPrefix(gomock.Any(), gomock.Any()).Return([][]byte(nil))
+		g.EXPECT().GetRefsToPrefix(gomock.Any(), gomock.Any()).Return([][]byte(nil))
 		return g
 	})
 
