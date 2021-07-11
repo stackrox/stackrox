@@ -2861,8 +2861,9 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
-      - check-label-to-skip-tests:
-          label: ci-no-upgrade-tests
+      - check-label-exists-or-skip:
+          label: ci-upgrade-tests
+          run-on-master: true
 
       - provision-gke-cluster:
           cluster-id: upgrade-test
@@ -2927,6 +2928,9 @@ jobs:
   provision-openshift-api-e2e-tests:
     machine: true
     steps:
+      - check-label-exists-or-skip:
+          label: ci-openshift-tests
+          run-on-master: false
       - provision-openshift-cluster:
           crio: false
           gate-label: ci-openshift-tests
@@ -2935,6 +2939,9 @@ jobs:
   provision-openshift-crio-api-e2e-tests:
     machine: true
     steps:
+      - check-label-exists-or-skip:
+          label: ci-openshift-crio-tests
+          run-on-master: false
       - provision-openshift-cluster:
           crio: true
           gate-label: ci-openshift-crio-tests
@@ -3728,8 +3735,9 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
-      - check-label-to-skip-tests:
-          label: ci-no-upgrade-tests
+      - check-label-exists-or-skip:
+          label: ci-upgrade-tests
+          run-on-master: true
 
       - setup_remote_docker
       - attach_workspace:
@@ -4403,6 +4411,9 @@ jobs:
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
+      - check-label-exists-or-skip:
+          label: ci-openshift-tests
+          run-on-master: false
       - run-openshift-tests:
           gate-label: ci-openshift-tests
           version: 0.2.11-1-geb3414898d
@@ -4429,6 +4440,9 @@ jobs:
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
+      - check-label-exists-or-skip:
+          label: ci-openshift-crio-tests
+          run-on-master: false
       - run-openshift-tests:
           suffix: "-crio"
           gate-label: ci-openshift-crio-tests
