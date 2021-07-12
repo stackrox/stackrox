@@ -2,7 +2,6 @@ package authorizer
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
@@ -13,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/client"
@@ -60,28 +58,6 @@ type authorizerDataCache struct {
 func (a *builtInScopeAuthorizer) ForUser(ctx context.Context, principal payload.Principal, scopes ...payload.AccessScope) ([]payload.AccessScope, []payload.AccessScope, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
 
-	errors := errorhelpers.NewErrorList("scope validation")
-	validScopes := make([]payload.AccessScope, 0, len(scopes))
-	for _, scope := range scopes {
-		if err := payload.ValidateScope(&scope); err != nil {
-			msg := fmt.Sprintf("UNEXPECTED: scope [%v] is invalid: %v", scope, err)
-			log.Error(msg)
-			errors.AddString(msg)
-			continue
-		}
-		_, ok := resources.MetadataForResource(permissions.Resource(scope.Noun))
-		if !ok && scope.Noun != "" {
-			msg := fmt.Sprintf("UNEXPECTED: unknown resource %s", scope.Noun)
-			log.Error(msg)
-			errors.AddString(msg)
-			continue
-		}
-		validScopes = append(validScopes, scope)
-	}
-	if len(validScopes) == 0 {
-		return nil, nil, errors.ToError()
-	}
-
 	roles, err := a.resolveRoles(adminCtx, principal.Roles...)
 	if err != nil {
 		return nil, nil, err
@@ -101,11 +77,11 @@ func (a *builtInScopeAuthorizer) ForUser(ctx context.Context, principal payload.
 		effectiveAccessScopesByID: make(map[string]*sac.EffectiveAccessScopeTree),
 	}
 
-	var allowed []payload.AccessScope
 	var denied []payload.AccessScope
+	var allowed []payload.AccessScope
 
 SCOPE:
-	for _, scope := range validScopes {
+	for _, scope := range scopes {
 		for _, role := range roles {
 			permitted, err := roleHasPermissions(role, cache, scope)
 			if err != nil {

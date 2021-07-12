@@ -214,12 +214,11 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 }
 
 func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
-	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
-		return nil, false, err
-	}
-
 	cluster, found, err := ds.clusterStorage.Get(id)
 	if err != nil || !found {
+		return nil, false, err
+	}
+	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
 		return nil, false, err
 	}
 

@@ -92,19 +92,6 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			wantErr:   true,
 		},
 		{
-			name:      "invalid resource name => error",
-			mockSetup: noInteractions,
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{
-				{
-					Verb:       view,
-					Noun:       "unknown",
-					Attributes: payload.NounAttributes{},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "compute access scope error => error",
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
@@ -242,16 +229,6 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 					Verb: view, Noun: cluster,
 					Attributes: payload.NounAttributes{Cluster: secondCluster},
 				}},
-		},
-		{
-			name:      "scope omits noun but declares cluster => error",
-			mockSetup: noInteractions,
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{
-				{Attributes: payload.NounAttributes{Cluster: firstCluster}},
-				{Attributes: payload.NounAttributes{Cluster: secondCluster}},
-			},
-			wantErr: true,
 		},
 		{
 			name: "just a verb and no noun => require verb to all resources",
@@ -493,9 +470,6 @@ func mapResourcesToAccess(res []permissions.ResourceWithAccess) map[string]stora
 		idToAccess[rwa.Resource.String()] = rwa.Access
 	}
 	return idToAccess
-}
-
-func noInteractions(_ *clusterDataStoreMocks.MockDataStore, _ *namespaceMocks.MockDataStore, _ *roleMocks.MockDataStore) {
 }
 
 func mockedClient(t *testing.T, setupMocks func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore)) (client.Client, *gomock.Controller) {

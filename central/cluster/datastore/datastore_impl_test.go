@@ -184,9 +184,10 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGet() {
-	suite.clusters.EXPECT().Get(gomock.Any()).Times(0)
+	testCluster := &storage.Cluster{Id: fakeClusterID}
+	suite.clusters.EXPECT().Get(fakeClusterID).Return(testCluster, true, nil)
 
-	cluster, exists, err := suite.clusterDataStore.GetCluster(suite.hasNoneCtx, "hkjddjhk")
+	cluster, exists, err := suite.clusterDataStore.GetCluster(suite.hasNoneCtx, fakeClusterID)
 	suite.NoError(err, "expected no error, should return nil without access")
 	suite.False(exists)
 	suite.Nil(cluster, "expected return value to be nil")
