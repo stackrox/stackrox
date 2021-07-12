@@ -7,6 +7,7 @@ import { defaultDeploymentSort } from './List/Deployments/VulnMgmtListDeployment
 import { defaultImageSort } from './List/Images/VulnMgmtListImages';
 import { defaultNamespaceSort } from './List/Namespaces/VulnMgmtListNamespaces';
 import { defaultPolicySort } from './List/Policies/VulnMgmtListPolicies';
+import { defaultNodeSort } from './List/Nodes/VulnMgmtListNodes';
 
 const vulnMgmtDefaultSorts = {
     [entityTypes.CLUSTER]: defaultClusterSort,
@@ -16,6 +17,7 @@ const vulnMgmtDefaultSorts = {
     [entityTypes.IMAGE]: defaultImageSort,
     [entityTypes.NAMESPACE]: defaultNamespaceSort,
     [entityTypes.POLICY]: defaultPolicySort,
+    [entityTypes.NODE]: defaultNodeSort,
 };
 
 export default vulnMgmtDefaultSorts;
