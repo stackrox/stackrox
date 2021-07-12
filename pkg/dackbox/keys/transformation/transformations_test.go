@@ -17,12 +17,12 @@ func TestTransformations(t *testing.T) {
 
 	graph := graph2.NewGraph()
 
-	_ = graph.SetRefs([]byte("p1\x00Key1"), sortedkeys.SortedKeys{[]byte("p2\x00Key1")})
-	_ = graph.SetRefs([]byte("p1\x00Key2"), sortedkeys.SortedKeys{[]byte("p2\x00Key1"), []byte("p2\x00Key2")})
-	_ = graph.SetRefs([]byte("p1\x00Key3"), sortedkeys.SortedKeys{[]byte("p2\x00Key1"), []byte("p2\x00Key2")})
+	graph.SetRefs([]byte("p1\x00Key1"), sortedkeys.SortedKeys{[]byte("p2\x00Key1")})
+	graph.SetRefs([]byte("p1\x00Key2"), sortedkeys.SortedKeys{[]byte("p2\x00Key1"), []byte("p2\x00Key2")})
+	graph.SetRefs([]byte("p1\x00Key3"), sortedkeys.SortedKeys{[]byte("p2\x00Key1"), []byte("p2\x00Key2")})
 
-	_ = graph.SetRefs([]byte("p2\x00Key1"), sortedkeys.SortedKeys{[]byte("p4\x00Key1"), []byte("p3\x00Key2")})
-	_ = graph.SetRefs([]byte("p2\x00Key2"), sortedkeys.SortedKeys{[]byte("p3\x00Key1"), []byte("p3\x00Key2")})
+	graph.SetRefs([]byte("p2\x00Key1"), sortedkeys.SortedKeys{[]byte("p4\x00Key1"), []byte("p3\x00Key2")})
+	graph.SetRefs([]byte("p2\x00Key2"), sortedkeys.SortedKeys{[]byte("p3\x00Key1"), []byte("p3\x00Key2")})
 
 	walker := ForwardFromContext(prefix2).
 		Then(Dedupe()).

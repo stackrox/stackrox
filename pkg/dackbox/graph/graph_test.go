@@ -10,12 +10,12 @@ import (
 func TestGraph(t *testing.T) {
 	graph := NewGraph()
 
-	_ = graph.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	_ = graph.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	_ = graph.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	graph.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	graph.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	graph.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
 
-	_ = graph.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")}) // resets
-	_ = graph.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")}) // resets
+	graph.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")}) // resets
+	graph.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")}) // resets
 
 	assert.Equal(t, [][]byte{[]byte("toKey1"), []byte("toKey2")}, graph.GetRefsFrom([]byte("fromKey1")))
 	assert.Equal(t, [][]byte{[]byte("toKey3"), []byte("toKey4")}, graph.GetRefsFrom([]byte("fromKey2")))
@@ -26,8 +26,8 @@ func TestGraph(t *testing.T) {
 	assert.Equal(t, [][]byte{[]byte("fromKey2")}, graph.GetRefsTo([]byte("toKey3")))
 	assert.Equal(t, [][]byte{[]byte("fromKey2")}, graph.GetRefsTo([]byte("toKey4")))
 
-	_ = graph.DeleteRefsFrom([]byte("fromKey2")) // resets
-	_ = graph.DeleteRefsTo([]byte("toKey2"))     // resets
+	graph.DeleteRefsFrom([]byte("fromKey2")) // resets
+	graph.DeleteRefsTo([]byte("toKey2"))     // resets
 
 	assert.Equal(t, [][]byte{[]byte("toKey1")}, graph.GetRefsFrom([]byte("fromKey1")))
 	assert.Equal(t, [][]byte(nil), graph.GetRefsFrom([]byte("fromKey2")))

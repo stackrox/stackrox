@@ -335,16 +335,11 @@ func (b *storeImpl) writeNodeParts(parts *NodeParts, clusterKey []byte, iTime *p
 
 	nodeKey := nodeDackBox.KeyFunc(parts.node)
 
-	err = dackTxn.Graph().AddRefs(clusterKey, nodeKey)
-	if err != nil {
-		return err
-	}
+	dackTxn.Graph().AddRefs(clusterKey, nodeKey)
 
 	// Update the downstream node links in the graph iff the node upsert has updated scan.
 	if scanUpdated {
-		if err := dackTxn.Graph().SetRefs(nodeKey, componentKeys); err != nil {
-			return err
-		}
+		dackTxn.Graph().SetRefs(nodeKey, componentKeys)
 	}
 
 	return dackTxn.Commit()
@@ -388,9 +383,7 @@ func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *Compone
 		return nil, err
 	}
 
-	if err := txn.Graph().SetRefs(componentKey, cveKeys); err != nil {
-		return nil, err
-	}
+	txn.Graph().SetRefs(componentKey, cveKeys)
 	return componentKey, nil
 }
 
@@ -475,9 +468,7 @@ func (b *storeImpl) deleteNodeKeys(keys *nodeKeySet) error {
 	}
 
 	// Delete the references from cluster to node.
-	if err := deleteTxn.Graph().DeleteRefsTo(keys.nodeKey); err != nil {
-		return err
-	}
+	deleteTxn.Graph().DeleteRefsTo(keys.nodeKey)
 
 	return deleteTxn.Commit()
 }

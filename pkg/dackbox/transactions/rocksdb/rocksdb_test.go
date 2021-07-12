@@ -48,7 +48,7 @@ func (s *TestSuite) TestTransactions() {
 
 	txn, err = s.factory.NewTransaction(true)
 	s.NoError(err)
-	s.NoError(txn.Set(key, value))
+	txn.Set(key, value)
 	s.NoError(txn.Commit())
 	txn.Discard()
 
@@ -62,7 +62,7 @@ func (s *TestSuite) TestTransactions() {
 
 	txn, err = s.factory.NewTransaction(true)
 	s.NoError(err)
-	s.NoError(txn.Set(key, value2))
+	txn.Set(key, value2)
 	s.NoError(txn.Commit())
 	txn.Discard()
 
@@ -80,11 +80,11 @@ func (s *TestSuite) TestTransactionPanicOnUpdate() {
 	s.NoError(err)
 	defer txn1.Discard()
 	s.Panics(func() {
-		_ = txn1.Set([]byte("1"), []byte("2"))
+		txn1.Set([]byte("1"), []byte("2"))
 	})
 
 	s.Panics(func() {
-		_ = txn1.Delete([]byte("1"), []byte("2"))
+		txn1.Delete([]byte("1"), []byte("2"))
 	})
 
 }
@@ -103,8 +103,8 @@ func (s *TestSuite) TestConcurrentTransactions() {
 	s.NoError(err)
 	defer txn2.Discard()
 
-	s.NoError(txn1.Set(key, value))
-	s.NoError(txn2.Set(key2, value2))
+	txn1.Set(key, value)
+	txn2.Set(key2, value2)
 
 	_, exists, err := txn1.Get(key2)
 	s.NoError(err)
@@ -140,8 +140,8 @@ func (s *TestSuite) TestConcurrentTransactions() {
 	txn4, err := s.factory.NewTransaction(true)
 	s.NoError(err)
 	defer txn4.Discard()
-	s.NoError(txn4.Delete(key))
-	s.NoError(txn4.Delete(key2))
+	txn4.Delete(key)
+	txn4.Delete(key2)
 	s.NoError(txn4.Commit())
 
 	// txn3 should still show them

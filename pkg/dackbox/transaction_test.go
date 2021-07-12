@@ -42,12 +42,9 @@ func (s *DackBoxTransactionTestSuite) TestRefView() {
 	s.NoError(err)
 	defer firstGraph.Discard()
 
-	err = firstGraph.Graph().SetRefs([]byte("f1"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
-	s.NoError(err)
-	err = firstGraph.Graph().SetRefs([]byte("f2"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
-	s.NoError(err)
-	err = firstGraph.Graph().SetRefs([]byte("f3"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
-	s.NoError(err)
+	firstGraph.Graph().SetRefs([]byte("f1"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
+	firstGraph.Graph().SetRefs([]byte("f2"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
+	firstGraph.Graph().SetRefs([]byte("f3"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
 
 	s.Equal([][]byte{[]byte("t1"), []byte("t2")}, firstGraph.Graph().GetRefsFrom([]byte("f1")))
 	s.Equal([][]byte{[]byte("t1"), []byte("t2")}, firstGraph.Graph().GetRefsFrom([]byte("f2")))
@@ -65,10 +62,8 @@ func (s *DackBoxTransactionTestSuite) TestRefView() {
 	s.NoError(err)
 	defer secondGraph.Discard()
 
-	err = secondGraph.Graph().SetRefs([]byte("f2"), sortedkeys.SortedKeys{[]byte("t3"), []byte("t4")})
-	s.NoError(err)
-	err = secondGraph.Graph().SetRefs([]byte("f3"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
-	s.NoError(err)
+	secondGraph.Graph().SetRefs([]byte("f2"), sortedkeys.SortedKeys{[]byte("t3"), []byte("t4")})
+	secondGraph.Graph().SetRefs([]byte("f3"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
 
 	s.Equal([][]byte{[]byte("t1"), []byte("t2")}, secondGraph.Graph().GetRefsFrom([]byte("f1")))
 	s.Equal([][]byte{[]byte("t3"), []byte("t4")}, secondGraph.Graph().GetRefsFrom([]byte("f2")))
@@ -85,8 +80,7 @@ func (s *DackBoxTransactionTestSuite) TestRefView() {
 	defer thirdGraph.Discard()
 
 	// Delete a ref in the second view after three has been created.
-	err = secondGraph.Graph().DeleteRefsFrom([]byte("f3"))
-	s.NoError(err)
+	secondGraph.Graph().DeleteRefsFrom([]byte("f3"))
 
 	// Commit the second view.
 	err = secondGraph.Commit()

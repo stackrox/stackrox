@@ -40,8 +40,7 @@ func (s *DackBoxTestSuite) TestRaceAddConfig1() {
 	s.NoError(err)
 	defer view1.Discard()
 
-	err = view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey2")})
-	s.NoError(err, "set should have succeeded")
+	view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey2")})
 	err = view1.Commit()
 	s.NoError(err, "commit should have succeeded")
 
@@ -49,8 +48,7 @@ func (s *DackBoxTestSuite) TestRaceAddConfig1() {
 	s.NoError(err)
 	defer view2.Discard()
 
-	err = view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
-	s.NoError(err, "set should have succeeded")
+	view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
 	err = view2.Commit()
 	s.NoError(err, "commit should have succeeded")
 
@@ -58,8 +56,7 @@ func (s *DackBoxTestSuite) TestRaceAddConfig1() {
 	s.NoError(err)
 	defer view3.Discard()
 
-	err = view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
+	view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
 	err = view3.Commit()
 	s.NoError(err, "commit should have succeeded")
 
@@ -74,22 +71,19 @@ func (s *DackBoxTestSuite) TestRaceAddConfig2() {
 	s.NoError(err)
 	defer view1.Discard()
 
-	err = view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey2")})
-	s.NoError(err, "set should have succeeded")
+	view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey2")})
 
 	view2, err := s.sdb.NewTransaction()
 	s.NoError(err)
 	defer view2.Discard()
 
-	err = view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
-	s.NoError(err, "set should have succeeded")
+	view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
 
 	view3, err := s.sdb.NewTransaction()
 	s.NoError(err)
 	defer view3.Discard()
 
-	err = view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
+	view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
 
 	err = view1.Commit()
 	s.NoError(err, "commit should have succeeded")
@@ -119,14 +113,11 @@ func (s *DackBoxTestSuite) TestRaceAddConfig3() {
 	s.NoError(err)
 	defer view3.Discard()
 
-	err = view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey2")})
-	s.NoError(err, "set should have succeeded")
+	view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey2")})
 
-	err = view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
-	s.NoError(err, "set should have succeeded")
+	view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
 
-	err = view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
+	view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
 
 	err = view1.Commit()
 	s.NoError(err, "commit should have succeeded")
@@ -156,18 +147,15 @@ func (s *DackBoxTestSuite) TestRaceAddConfig4() {
 	s.NoError(err)
 	defer view3.Discard()
 
-	err = view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey2")})
-	s.NoError(err, "set should have succeeded")
+	view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey2")})
 	err = view1.Commit()
 	s.NoError(err, "commit should have succeeded")
 
-	err = view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
-	s.NoError(err, "set should have succeeded")
+	view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
 	err = view2.Commit()
 	s.NoError(err, "commit should have succeeded")
 
-	err = view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
+	view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
 	err = view3.Commit()
 	s.NoError(err, "commit should have succeeded")
 
@@ -190,14 +178,11 @@ func (s *DackBoxTestSuite) TestRaceAddConfig5() {
 	s.NoError(err)
 	defer view3.Discard()
 
-	err = view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
+	view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
 
-	err = view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
-	s.NoError(err, "set should have succeeded")
+	view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
 
-	err = view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
+	view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
 
 	err = view1.Commit()
 	s.NoError(err, "commit should have succeeded")
@@ -225,16 +210,12 @@ func (s *DackBoxTestSuite) TestRaceAddDeleteToConfig5() {
 	s.NoError(err)
 	defer view3.Discard()
 
-	err = view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
-	err = view3.Graph().DeleteRefsTo([]byte("toKey1"))
-	s.NoError(err, "set should have succeeded")
+	view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
+	view3.Graph().DeleteRefsTo([]byte("toKey1"))
 
-	err = view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
-	s.NoError(err, "set should have succeeded")
+	view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
 
-	err = view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
+	view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
 
 	err = view1.Commit()
 	s.NoError(err, "commit should have succeeded")
@@ -262,16 +243,12 @@ func (s *DackBoxTestSuite) TestRaceAddDeleteFromConfig5() {
 	s.NoError(err)
 	defer view3.Discard()
 
-	err = view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
-	err = view3.Graph().DeleteRefsFrom([]byte("fromKey"))
-	s.NoError(err, "set should have succeeded")
+	view3.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
+	view3.Graph().DeleteRefsFrom([]byte("fromKey"))
 
-	err = view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
-	s.NoError(err, "set should have succeeded")
+	view2.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey1"), []byte("toKey3")})
 
-	err = view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
-	s.NoError(err, "set should have succeeded")
+	view1.Graph().SetRefs([]byte("fromKey"), [][]byte{[]byte("toKey4"), []byte("toKey1")})
 
 	err = view1.Commit()
 	s.NoError(err, "commit should have succeeded")

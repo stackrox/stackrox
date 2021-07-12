@@ -57,14 +57,13 @@ type txnWrapper struct {
 	snapshot                   *gorocksdb.Snapshot
 }
 
-func (t *txnWrapper) Delete(keys ...[]byte) error {
+func (t *txnWrapper) Delete(keys ...[]byte) {
 	if !t.isUpdate {
 		panic("trying to delete a key during a read txn")
 	}
 	for _, k := range keys {
 		t.batch.Delete(k)
 	}
-	return nil
 }
 
 func (t *txnWrapper) Get(key []byte) ([]byte, bool, error) {
@@ -72,13 +71,12 @@ func (t *txnWrapper) Get(key []byte) ([]byte, bool, error) {
 	return data, data != nil, err
 }
 
-func (t *txnWrapper) Set(key, value []byte) error {
+func (t *txnWrapper) Set(key, value []byte) {
 	if !t.isUpdate {
 		panic("trying to set during a read txn")
 	}
 
 	t.batch.Put(key, value)
-	return nil
 }
 
 func (t *txnWrapper) BucketForEach(graphPrefix []byte, stripPrefix bool, fn func(k, v []byte) error) error {

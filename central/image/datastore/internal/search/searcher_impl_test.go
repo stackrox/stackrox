@@ -167,8 +167,7 @@ func generateGraph(t *testing.T, dacky *dackbox.DackBox, links map[string][]stri
 
 	for from, tos := range links {
 		for _, to := range tos {
-			err = view.Graph().AddRefs(dbhelper.GetBucketKey(deployment.Bucket, []byte(from)), dbhelper.GetBucketKey(image.Bucket, []byte(to)))
-			assert.NoError(t, err, "addRef should have succeeded")
+			view.Graph().AddRefs(dbhelper.GetBucketKey(deployment.Bucket, []byte(from)), dbhelper.GetBucketKey(image.Bucket, []byte(to)))
 		}
 	}
 	assert.NoError(t, view.Commit(), "commit should have succeeded")

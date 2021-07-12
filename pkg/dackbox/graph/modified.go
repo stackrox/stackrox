@@ -63,37 +63,37 @@ func (ms *ModifiedGraph) ToModified(to []byte) bool {
 
 // SetRefs sets the children of 'from' to be the input list of keys 'to'.
 // Will add all of the input keys, we well as any keys that were previously children of 'from' to the list of values modified.
-func (ms *ModifiedGraph) SetRefs(from []byte, to [][]byte) error {
+func (ms *ModifiedGraph) SetRefs(from []byte, to [][]byte) {
 	ms.modifiedFrom, _ = ms.modifiedFrom.Insert(from)
 	ms.modifiedTo = ms.modifiedTo.Union(sortedkeys.Sort(to))
 	ms.modifiedTo = ms.modifiedTo.Union(ms.GetRefsFrom(from))
 
-	return ms.RWGraph.SetRefs(from, to)
+	ms.RWGraph.SetRefs(from, to)
 }
 
 // AddRefs adds the set of keys 'to' to the list of children of 'from'.
 // Will add all of the input keys to the list of values modified.
-func (ms *ModifiedGraph) AddRefs(from []byte, to ...[]byte) error {
+func (ms *ModifiedGraph) AddRefs(from []byte, to ...[]byte) {
 	ms.modifiedFrom, _ = ms.modifiedFrom.Insert(from)
 	ms.modifiedTo = ms.modifiedTo.Union(sortedkeys.Sort(to))
 
-	return ms.RWGraph.AddRefs(from, to...)
+	ms.RWGraph.AddRefs(from, to...)
 }
 
 // DeleteRefsFrom removes all children from the input key, and removes the input key from the maps.
 // The key and it's current list of children will be added to the lists of modified values.
-func (ms *ModifiedGraph) DeleteRefsFrom(from []byte) error {
+func (ms *ModifiedGraph) DeleteRefsFrom(from []byte) {
 	ms.modifiedFrom, _ = ms.modifiedFrom.Insert(from)
 	ms.modifiedTo = ms.modifiedTo.Union(ms.GetRefsFrom(from))
 
-	return ms.RWGraph.DeleteRefsFrom(from)
+	ms.RWGraph.DeleteRefsFrom(from)
 }
 
 // DeleteRefsTo removes all parents from the input key, and removes the input key from the maps.
 // The key and it's current list of children will be added to the lists of modified values.
-func (ms *ModifiedGraph) DeleteRefsTo(to []byte) error {
+func (ms *ModifiedGraph) DeleteRefsTo(to []byte) {
 	ms.modifiedTo, _ = ms.modifiedTo.Insert(to)
 	ms.modifiedFrom = ms.modifiedFrom.Union(ms.GetRefsTo(to))
 
-	return ms.RWGraph.DeleteRefsTo(to)
+	ms.RWGraph.DeleteRefsTo(to)
 }

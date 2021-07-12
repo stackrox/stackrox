@@ -35,11 +35,11 @@ type RWGraph interface {
 	RGraph
 	applyableGraph
 
-	SetRefs(from []byte, to [][]byte) error
-	AddRefs(from []byte, to ...[]byte) error
+	SetRefs(from []byte, to [][]byte)
+	AddRefs(from []byte, to ...[]byte)
 
-	DeleteRefsFrom(from []byte) error
-	DeleteRefsTo(from []byte) error
+	DeleteRefsFrom(from []byte)
+	DeleteRefsTo(from []byte)
 }
 
 type applyableGraph interface {
@@ -152,28 +152,24 @@ func (s *Graph) ReferencedFromPrefix(to []byte, prefix []byte) bool {
 }
 
 // SetRefs sets the children of 'from' to be the input list of keys 'to'.
-func (s *Graph) SetRefs(from []byte, to [][]byte) error {
+func (s *Graph) SetRefs(from []byte, to [][]byte) {
 	s.removeMappingsFrom(from)
 	s.setMappings(from, to)
-	return nil
 }
 
 // AddRefs adds the set of keys 'to' to the list of children of 'from'.
-func (s *Graph) AddRefs(from []byte, to ...[]byte) error {
+func (s *Graph) AddRefs(from []byte, to ...[]byte) {
 	s.addMappings(from, to)
-	return nil
 }
 
 // DeleteRefsFrom removes all references from the input key.
-func (s *Graph) DeleteRefsFrom(from []byte) error {
+func (s *Graph) DeleteRefsFrom(from []byte) {
 	s.removeMappingsFrom(from)
-	return nil
 }
 
 // DeleteRefsTo removes all references to the input key.
-func (s *Graph) DeleteRefsTo(to []byte) error {
+func (s *Graph) DeleteRefsTo(to []byte) {
 	s.removeMappingsTo(to)
-	return nil
 }
 
 // Copy creates a copy of the Graph.

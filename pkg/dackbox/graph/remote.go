@@ -109,38 +109,38 @@ func (rm *RemoteGraph) ReferencedFromPrefix(to, prefix []byte) bool {
 // SetRefs sets the children of 'from' to be the input list of keys 'to'.
 // All keys affected by the change (parent and existing and new children) will have their states read if not already read
 // so that the modification is consistent with the current remote state.
-func (rm *RemoteGraph) SetRefs(from []byte, to [][]byte) error {
+func (rm *RemoteGraph) SetRefs(from []byte, to [][]byte) {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
 	rm.ensureFrom(from)
 	rm.ensureToAll(rm.GetRefsFrom(from))
 	rm.ensureToAll(to)
-	return rm.RWGraph.SetRefs(from, to)
+	rm.RWGraph.SetRefs(from, to)
 }
 
 // AddRefs adds the set of keys 'to' to the list of children of 'from'.
 // The remote state for all input keys will be read if not already read to ensure a consistent update.
-func (rm *RemoteGraph) AddRefs(from []byte, to ...[]byte) error {
+func (rm *RemoteGraph) AddRefs(from []byte, to ...[]byte) {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
 	rm.ensureFrom(from)
 	rm.ensureToAll(rm.GetRefsFrom(from))
 	rm.ensureToAll(to)
-	return rm.RWGraph.AddRefs(from, to...)
+	rm.RWGraph.AddRefs(from, to...)
 }
 
 // DeleteRefsFrom removes all references from the given input id.
-func (rm *RemoteGraph) DeleteRefsFrom(from []byte) error {
+func (rm *RemoteGraph) DeleteRefsFrom(from []byte) {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
 	rm.ensureFrom(from)
 	rm.ensureToAll(rm.GetRefsFrom(from))
-	return rm.RWGraph.DeleteRefsFrom(from)
+	rm.RWGraph.DeleteRefsFrom(from)
 }
 
 // DeleteRefsTo removes the input id from all ids that reference it.
-func (rm *RemoteGraph) DeleteRefsTo(to []byte) error {
+func (rm *RemoteGraph) DeleteRefsTo(to []byte) {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
 	rm.ensureTo(to)
 	rm.ensureFromAll(rm.GetRefsTo(to))
-	return rm.RWGraph.DeleteRefsTo(to)
+	rm.RWGraph.DeleteRefsTo(to)
 }
 
 func (rm *RemoteGraph) ensureFrom(from []byte) {

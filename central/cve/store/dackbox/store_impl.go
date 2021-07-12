@@ -215,9 +215,7 @@ func (b *storeImpl) upsertClusterCVEsNoBatch(parts ...converter.ClusterCVEParts)
 				return err
 			}
 
-			if err := dackTxn.Graph().AddRefs(clusterDackBox.BucketHandler.GetKey(child.ClusterID), vulnDackBox.KeyFunc(clusterCVE.CVE)); err != nil {
-				return err
-			}
+			dackTxn.Graph().AddRefs(clusterDackBox.BucketHandler.GetKey(child.ClusterID), vulnDackBox.KeyFunc(clusterCVE.CVE))
 		}
 
 		currCVEMsg, err := vulnDackBox.Reader.ReadIn(vulnDackBox.BucketHandler.GetKey(clusterCVE.CVE.GetId()), dackTxn)

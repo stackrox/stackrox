@@ -187,25 +187,14 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 		}
 		defer txn.Discard()
 
+		g := txn.Graph()
 		// Clear cluster pointing to the namespace before setting the new one.
 		// This is to handle situations where a new cluster bundle is generated for an existing cluster, as the cluster
 		// ID will change, the the IDs for child objects will remain the same.
-		err = txn.Graph().DeleteRefsTo(namespaceKey)
-		if err != nil {
-			return err
-		}
-		err = txn.Graph().AddRefs(clusterKey, namespaceKey)
-		if err != nil {
-			return err
-		}
-		err = txn.Graph().AddRefs(namespaceKey, deploymentKey)
-		if err != nil {
-			return err
-		}
-		err = txn.Graph().SetRefs(deploymentKey, imageKeys)
-		if err != nil {
-			return err
-		}
+		g.DeleteRefsTo(namespaceKey)
+		g.AddRefs(clusterKey, namespaceKey)
+		g.AddRefs(namespaceKey, deploymentKey)
+		g.SetRefs(deploymentKey, imageKeys)
 
 		err = deploymentDackBox.Upserter.UpsertIn(nil, deployment, txn)
 		if err != nil {
@@ -242,14 +231,11 @@ func (b *StoreImpl) RemoveDeployment(id string) error {
 		}
 
 		// If the namespace has no more deployments, remove refs in both directions.
-		if namespaceKey != nil && deploymentDackBox.BucketHandler.CountFilteredRefsFrom(txn.Graph(), namespaceKey) == 0 {
-			if err := txn.Graph().DeleteRefsFrom(namespaceKey); err != nil {
-				return err
-			}
+		g := txn.Graph()
+		if namespaceKey != nil && deploymentDackBox.BucketHandler.CountFilteredRefsFrom(g, namespaceKey) == 0 {
+			g.DeleteRefsFrom(namespaceKey)
 			// This deletes all references from cluster to this namespace.
-			if err := txn.Graph().DeleteRefsTo(namespaceKey); err != nil {
-				return err
-			}
+			g.DeleteRefsTo(namespaceKey)
 		}
 
 		return txn.Commit()

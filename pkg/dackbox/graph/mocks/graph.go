@@ -412,11 +412,9 @@ func (mr *MockRWGraphMockRecorder) deleteTo(to interface{}) *gomock.Call {
 }
 
 // SetRefs mocks base method
-func (m *MockRWGraph) SetRefs(from []byte, to [][]byte) error {
+func (m *MockRWGraph) SetRefs(from []byte, to [][]byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetRefs", from, to)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "SetRefs", from, to)
 }
 
 // SetRefs indicates an expected call of SetRefs
@@ -426,15 +424,13 @@ func (mr *MockRWGraphMockRecorder) SetRefs(from, to interface{}) *gomock.Call {
 }
 
 // AddRefs mocks base method
-func (m *MockRWGraph) AddRefs(from []byte, to ...[]byte) error {
+func (m *MockRWGraph) AddRefs(from []byte, to ...[]byte) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{from}
 	for _, a := range to {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "AddRefs", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "AddRefs", varargs...)
 }
 
 // AddRefs indicates an expected call of AddRefs
@@ -445,11 +441,9 @@ func (mr *MockRWGraphMockRecorder) AddRefs(from interface{}, to ...interface{}) 
 }
 
 // DeleteRefsFrom mocks base method
-func (m *MockRWGraph) DeleteRefsFrom(from []byte) error {
+func (m *MockRWGraph) DeleteRefsFrom(from []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteRefsFrom", from)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "DeleteRefsFrom", from)
 }
 
 // DeleteRefsFrom indicates an expected call of DeleteRefsFrom
@@ -459,11 +453,9 @@ func (mr *MockRWGraphMockRecorder) DeleteRefsFrom(from interface{}) *gomock.Call
 }
 
 // DeleteRefsTo mocks base method
-func (m *MockRWGraph) DeleteRefsTo(from []byte) error {
+func (m *MockRWGraph) DeleteRefsTo(from []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteRefsTo", from)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "DeleteRefsTo", from)
 }
 
 // DeleteRefsTo indicates an expected call of DeleteRefsTo

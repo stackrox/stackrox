@@ -152,8 +152,7 @@ func addLink(t require.TestingT, dacky *dackbox.DackBox, from []byte, to []byte)
 	assert.NoError(t, err)
 	defer view.Discard()
 
-	err = view.Graph().AddRefs(from, to)
-	require.NoError(t, err, "addRef should have succeeded")
+	view.Graph().AddRefs(from, to)
 	err = view.Commit()
 	require.NoError(t, err, "commit should have succeeded")
 }

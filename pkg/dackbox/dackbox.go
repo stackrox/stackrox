@@ -130,9 +130,7 @@ func (rc *DackBox) AckIndexed(keys ...[]byte) error {
 	}
 	defer txn.Discard()
 	for _, key := range keys {
-		if err := txn.Delete(dbhelper.GetBucketKey(rc.dirtyPrefix, key)); err != nil {
-			return err
-		}
+		txn.Delete(dbhelper.GetBucketKey(rc.dirtyPrefix, key))
 	}
 	return txn.Commit()
 }
@@ -219,7 +217,8 @@ func loadGraphIntoMem(dbFactory transactions.DBTransactionFactory, graphPrefix [
 		if err != nil {
 			return err
 		}
-		return initial.SetRefs(sliceutils.ByteClone(k), sk)
+		initial.SetRefs(sliceutils.ByteClone(k), sk)
+		return nil
 	})
 	if err != nil {
 		return nil, err

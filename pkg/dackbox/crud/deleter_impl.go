@@ -12,31 +12,25 @@ type deleterImpl struct {
 
 // DeleteIn deletes the data for the input key on the input transaction.
 func (dc *deleterImpl) DeleteIn(key []byte, dackTxn *dackbox.Transaction) error {
+	g := dackTxn.Graph()
 	// If shared, check that no more references exist for the object before deleting.
 	if dc.shared {
-		if dackTxn.Graph().CountRefsTo(key) > 0 {
+		if g.CountRefsTo(key) > 0 {
 			return nil
 		}
 	}
 	// If indexed, add the key to the set of dirty keys.
 	if dc.removeFromIndex {
-		if err := dackTxn.MarkDirty(key, nil); err != nil {
-			return err
-		}
+		dackTxn.MarkDirty(key, nil)
 	}
 	// Collect the keys the item currently points to in case we need to clean them up.
-	partialKeys := dackTxn.Graph().GetRefsFrom(key)
+	partialKeys := g.GetRefsFrom(key)
 
 	// Remove the key from the id map and the DB.
-	if err := dackTxn.Graph().DeleteRefsFrom(key); err != nil {
-		return err
-	}
-	if err := dackTxn.Graph().DeleteRefsTo(key); err != nil {
-		return err
-	}
-	if err := dackTxn.Delete(key); err != nil {
-		return err
-	}
+	g.DeleteRefsFrom(key)
+	g.DeleteRefsTo(key)
+	dackTxn.Delete(key)
+
 	// Delete the partial objects. This needs to come after the shared check so that we can clean objects up in line.
 	for _, partial := range dc.partials {
 		if err := partial.DeletePartialsIn(partialKeys, dackTxn); err != nil {

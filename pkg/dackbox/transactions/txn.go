@@ -7,9 +7,9 @@ type DBTransactionFactory interface {
 
 // DBTransaction is an abstraction of a database transaction
 type DBTransaction interface {
-	Delete(key ...[]byte) error
+	Delete(key ...[]byte)
 	Get(key []byte) ([]byte, bool, error)
-	Set(key, value []byte) error
+	Set(key, value []byte)
 	BucketForEach(graphPrefix []byte, stripPrefix bool, fn func(k, v []byte) error) error
 	BucketKeyForEach(graphPrefix []byte, stripPrefix bool, fn func(k []byte) error) error
 	BucketKeyCount(prefix []byte) (int, error)

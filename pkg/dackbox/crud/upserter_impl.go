@@ -27,14 +27,10 @@ func (uc *upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *d
 
 	// If a parent key is set, add the generated key to the parent's child list.
 	if len(parentKey) != 0 {
-		if err := dackTxn.Graph().AddRefs(parentKey, key); err != nil {
-			return err
-		}
+		dackTxn.Graph().AddRefs(parentKey, key)
 	}
 	if uc.addToIndex {
-		if err := dackTxn.MarkDirty(key, msg); err != nil {
-			return err
-		}
+		dackTxn.MarkDirty(key, msg)
 	}
 
 	// Marshal an upsert the base object.
@@ -42,10 +38,7 @@ func (uc *upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *d
 	if err != nil {
 		return err
 	}
-	err = dackTxn.Set(key, toWrite)
-	if err != nil {
-		return err
-	}
+	dackTxn.Set(key, toWrite)
 	return nil
 }
 

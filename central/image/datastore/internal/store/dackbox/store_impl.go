@@ -333,9 +333,7 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 
 	// Update the image links in the graph iff the image upsert has updated scan.
 	if scanUpdated {
-		if err := dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), componentKeys); err != nil {
-			return err
-		}
+		dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), componentKeys)
 	}
 	return dackTxn.Commit()
 }
@@ -377,9 +375,7 @@ func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *Compone
 		return nil, err
 	}
 
-	if err := txn.Graph().SetRefs(componentKey, cveKeys); err != nil {
-		return nil, err
-	}
+	txn.Graph().SetRefs(componentKey, cveKeys)
 	return componentKey, nil
 }
 

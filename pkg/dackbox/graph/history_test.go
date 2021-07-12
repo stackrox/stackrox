@@ -16,9 +16,9 @@ func TestHistory(t *testing.T) {
 	modification1 := NewModifiedGraph(NewRemoteGraph(NewGraph(), func(fn func(g RGraph)) {
 		fn(history.View(emptyTS))
 	}))
-	_ = modification1.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	_ = modification1.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	_ = modification1.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	modification1.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	modification1.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	modification1.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
 	history.Apply(modification1)
 
 	firstStateVew1 := history.Hold()
@@ -27,8 +27,8 @@ func TestHistory(t *testing.T) {
 	modification2 := NewModifiedGraph(NewRemoteGraph(NewGraph(), func(fn func(g RGraph)) {
 		fn(history.View(firstStateVew1))
 	}))
-	_ = modification2.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")}) // resets
-	_ = modification2.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")}) // resets
+	modification2.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")}) // resets
+	modification2.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")}) // resets
 	history.Apply(modification2)
 
 	allModifications := history.Hold()

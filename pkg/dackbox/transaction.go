@@ -38,12 +38,9 @@ func (dbt *Transaction) Graph() *graph.RemoteGraph {
 }
 
 // MarkDirty adds the input key to the dirty set, and adds he key and value to the queue for indexing.
-func (dbt *Transaction) MarkDirty(key []byte, msg proto.Message) error {
-	if err := dbt.Set(dbhelper.GetBucketKey(dbt.dirtyPrefix, key), emptyByte); err != nil {
-		return err
-	}
+func (dbt *Transaction) MarkDirty(key []byte, msg proto.Message) {
+	dbt.Set(dbhelper.GetBucketKey(dbt.dirtyPrefix, key), emptyByte)
 	dbt.dirtyMap[string(key)] = msg
-	return nil
 }
 
 // BaseTS returns the time-step the transaction was created at.

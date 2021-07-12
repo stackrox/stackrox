@@ -9,15 +9,15 @@ import (
 
 func TestComposite(t *testing.T) {
 	baseGraph := NewGraph()
-	_ = baseGraph.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	_ = baseGraph.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey4")})
-	_ = baseGraph.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey6")})
+	baseGraph.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	baseGraph.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey4")})
+	baseGraph.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey6")})
 
 	graph1 := NewModifiedGraph(baseGraph.Copy())
-	_ = graph1.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey2"), []byte("toKey3")})
+	graph1.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey2"), []byte("toKey3")})
 
 	graph2 := NewModifiedGraph(graph1.RWGraph.(*Graph).Copy())
-	_ = graph2.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")})
+	graph2.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")})
 
 	composite := NewCompositeGraph(baseGraph, graph1, graph2)
 

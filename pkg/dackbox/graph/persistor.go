@@ -29,11 +29,11 @@ func (prv *Persistor) ToError() error {
 
 // Implement applyableGraph.
 func (prv *Persistor) setFrom(from []byte, to [][]byte) {
-	prv.errors.AddError(prv.txn.Set(prv.prefixKey(from), sortedkeys.SortedKeys(to).Marshal()))
+	prv.txn.Set(prv.prefixKey(from), sortedkeys.SortedKeys(to).Marshal())
 }
 
 func (prv *Persistor) deleteFrom(from []byte) {
-	prv.errors.AddError(prv.txn.Delete(prv.prefixKey(from)))
+	prv.txn.Delete(prv.prefixKey(from))
 }
 
 func (prv *Persistor) setTo(to []byte, from [][]byte) {
