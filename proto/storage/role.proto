@@ -12,8 +12,7 @@ package storage;
 // resource_to_access together with global_access or by referencing a
 // permission set by its id in permission_set_name.
 message Role {
-    // `id` is generated and cannot be changed.
-    string id          = 4;
+    reserved             4; // id, future field
 
     // `name` and `description` are provided by the user and can be changed.
     string name        = 1;

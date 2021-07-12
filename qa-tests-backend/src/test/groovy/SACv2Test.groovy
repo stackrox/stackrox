@@ -83,10 +83,8 @@ class SACv2Test extends SACTest {
     }
 
     String createRole(String sacId, Map<String, RoleOuterClass.Access> resources) {
-        String id = UUID.randomUUID()
         RoleService.createRole(RoleOuterClass.Role.newBuilder()
-                .setId(id)
-                .setName("SACv2 Test Automation Role " + id)
+                .setName("SACv2 Test Automation Role " + UUID.randomUUID())
                 .putAllResourceToAccess(resources)
                 .setAccessScopeId(sacId)
                 .build()

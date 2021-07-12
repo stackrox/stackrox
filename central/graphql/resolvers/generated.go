@@ -1076,7 +1076,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"accessScopeId: String!",
 		"description: String!",
 		"globalAccess: Access!",
-		"id: ID!",
 		"name: String!",
 		"permissionSetId: String!",
 	}))
@@ -9335,11 +9334,6 @@ func (resolver *roleResolver) Description(ctx context.Context) string {
 func (resolver *roleResolver) GlobalAccess(ctx context.Context) string {
 	value := resolver.data.GetGlobalAccess()
 	return value.String()
-}
-
-func (resolver *roleResolver) Id(ctx context.Context) graphql.ID {
-	value := resolver.data.GetId()
-	return graphql.ID(value)
 }
 
 func (resolver *roleResolver) Name(ctx context.Context) string {

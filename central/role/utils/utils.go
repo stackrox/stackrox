@@ -14,11 +14,6 @@ import (
 )
 
 const (
-	// roleIDPrefix should be prepended to every human-hostile ID of a role for
-	//  readability, e.g.,
-	//     "io.stackrox.authz.role.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
-	roleIDPrefix = "io.stackrox.authz.role."
-
 	// permissionSetIDPrefix should be prepended to every human-hostile ID of a
 	// permission set for readability, e.g.,
 	//     "io.stackrox.authz.permissionset.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
@@ -29,19 +24,6 @@ const (
 	//     "io.stackrox.authz.accessscope.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
 	accessScopeIDPrefix = "io.stackrox.authz.accessscope."
 )
-
-// GenerateRoleID returns a random valid role ID.
-func GenerateRoleID() string {
-	return roleIDPrefix + uuid.NewV4().String()
-}
-
-// EnsureValidRoleID converts id to the correct format if necessary.
-func EnsureValidRoleID(id string) string {
-	if strings.HasPrefix(id, roleIDPrefix) {
-		return id
-	}
-	return roleIDPrefix + id
-}
 
 // GeneratePermissionSetID returns a random valid permission set ID.
 func GeneratePermissionSetID() string {

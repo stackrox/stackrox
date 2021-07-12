@@ -94,7 +94,6 @@ func (s *roleDataStoreTestSuite) TearDownTest() {
 
 func getValidRole(id, name, permissionSetID, accessScopeID string) *storage.Role {
 	return &storage.Role{
-		Id:              utils.EnsureValidRoleID(id),
 		Name:            name,
 		PermissionSetId: permissionSetID,
 		AccessScopeId:   accessScopeID,
@@ -103,7 +102,6 @@ func getValidRole(id, name, permissionSetID, accessScopeID string) *storage.Role
 
 func getInvalidRole(id, name string) *storage.Role {
 	return &storage.Role{
-		Id:              utils.EnsureValidPermissionSetID(id),
 		Name:            name,
 		PermissionSetId: "some non-existent permission set",
 		AccessScopeId:   "some non-existent scope",
@@ -426,12 +424,10 @@ func (s *roleDataStoreTestSuite) TestResolveRoles() {
 		"Image": storage.Access_READ_WRITE_ACCESS,
 	}
 	legacyRole := &storage.Role{
-		Id:               utils.EnsureValidRoleID("legacy"),
 		Name:             "legacy",
 		ResourceToAccess: resourceToAccess,
 	}
 	regularRole := &storage.Role{
-		Id:              utils.EnsureValidRoleID("regular"),
 		Name:            "regular",
 		PermissionSetId: s.existingPermissionSet.GetId(),
 		AccessScopeId:   s.existingScope.GetId(),
@@ -515,24 +511,20 @@ func (s *roleDataStoreTestSuite) TestForeignKeyConstraints() {
 func (s *roleDataStoreTestSuite) TestValidateRole_WithSAC() {
 	s.initDataStore(true)
 	// has name
-	err := s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{
-		Id: utils.EnsureValidRoleID("id"),
-	})
-	s.Errorf(err, "role id=%s: name field must be set", utils.EnsureValidRoleID("id"))
+	err := s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{})
+	s.Errorf(err, "role name field must be set")
 
 	// zero-len resourceToAccess if SAC enabled
 	err = s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{
-		Id:   utils.EnsureValidRoleID("id"),
 		Name: "name",
 		ResourceToAccess: map[string]storage.Access{
 			"Policy": storage.Access_READ_ACCESS,
 		},
 	})
-	s.Errorf(err, "role id=%s: must not have resourceToAccess, use a permission set instead", utils.EnsureValidRoleID("id"))
+	s.Errorf(err, "role must not have resourceToAccess, use a permission set instead")
 
 	// successful pass if SAC enabled
 	err = s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{
-		Id:              utils.EnsureValidRoleID("id"),
 		Name:            "uniqueName1",
 		PermissionSetId: s.existingPermissionSet.GetId(),
 		AccessScopeId:   s.existingScope.GetId(),
@@ -545,33 +537,29 @@ func (s *roleDataStoreTestSuite) TestValidateRole_WithoutSAC() {
 
 	// unset permissionSetId if SAC disabled
 	err := s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{
-		Id:              utils.EnsureValidRoleID("id"),
 		Name:            "name",
 		PermissionSetId: "aba",
 	})
-	s.Errorf(err, "role id=%s: permission sets are not supported without the scoped access control feature", utils.EnsureValidRoleID("id"))
+	s.Errorf(err, "permission sets are not supported without the scoped access control feature")
 
 	// unset accessScopeId if SAC disabled
 	err = s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{
-		Id:            utils.EnsureValidRoleID("id"),
 		Name:          "name",
 		AccessScopeId: "aba",
 	})
-	s.Errorf(err, "role id=%s: access scopes are not supported without the scoped access control feature", utils.EnsureValidRoleID("id"))
+	s.Errorf(err, "access scopes are not supported without the scoped access control feature")
 
 	// check for non-existing resource if SAC disabled
 	err = s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{
-		Id:   utils.EnsureValidRoleID("id"),
 		Name: "name",
 		ResourceToAccess: map[string]storage.Access{
 			"A": storage.Access_READ_WRITE_ACCESS,
 		},
 	})
-	s.Errorf(err, "role id=%s: resource %q does not exist", utils.EnsureValidRoleID("id"), "A")
+	s.Errorf(err, "resource %q does not exist", "A")
 
 	// successful pass if SAC disabled
 	err = s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{
-		Id:   utils.EnsureValidRoleID("id"),
 		Name: "uniqueName2",
 		ResourceToAccess: map[string]storage.Access{
 			"Policy": storage.Access_READ_ACCESS,
