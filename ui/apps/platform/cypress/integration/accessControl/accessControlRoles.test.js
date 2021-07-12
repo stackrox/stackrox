@@ -5,7 +5,14 @@ import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 
 // Migration from cy.server and cy.route to cy.intercept fails for /v1/roles/* imported from apiEndpoints.
-const rolesApiList = '/v1/roles'; // instead of rolesApi.list
+const rolesApi = {
+    list: '/v1/roles',
+};
+
+const h1 = 'Access Control';
+const h2 = 'Roles';
+
+const defaultNames = ['Admin', 'Analyst', 'Continuous Integration', 'None', 'Sensor Creator'];
 
 describe('Access Control Roles', () => {
     withAuth();
@@ -17,33 +24,45 @@ describe('Access Control Roles', () => {
     });
 
     function visitRoles() {
-        cy.intercept('GET', rolesApiList).as('GetRoles');
+        cy.intercept('GET', rolesApi.list).as('GetRoles');
         cy.visit(rolesUrl);
         cy.wait('@GetRoles');
     }
 
-    it('displays alert if no permission for AuthProvider', () => {
+    function visitRole(name) {
+        cy.intercept('GET', rolesApi.list).as('GetRoles');
+        cy.visit(`${rolesUrl}/${name}`);
+        cy.wait('@GetRoles');
+    }
+
+    it('displays alert if no permission', () => {
         cy.intercept('GET', permissionsApi.mypermissions, {
             fixture: 'auth/mypermissionsMinimalAccess.json',
         }).as('GetMyPermissions');
         cy.visit(rolesUrl);
         cy.wait('@GetMyPermissions');
 
-        cy.get(selectors.h1).should('have.text', 'Access Control');
+        cy.get(selectors.h1).should('have.text', h1);
         cy.get(selectors.navLink).should('not.exist');
+
         cy.get(selectors.h2).should('not.exist');
+
         cy.get(selectors.alertTitle).should(
             'contain', // not have.text because it contains "Info alert:" for screen reader
             'You do not have permission to view Access Control'
         );
     });
 
-    it('list has headings, link, button, and table head cells', () => {
+    it('list has breadcrumbs, headings, link, button, and table head cells', () => {
         visitRoles();
 
-        cy.get(selectors.h1).should('have.text', 'Access Control');
-        cy.get(selectors.navLinkCurrent).should('have.text', 'Roles');
-        cy.get(selectors.h2).should('have.text', 'Roles');
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
+
+        cy.get(selectors.h1).should('have.text', h1);
+        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+
+        cy.get(selectors.h2).should('have.text', h2);
         cy.get(selectors.list.addButton).should('have.text', 'Add role');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
@@ -52,55 +71,65 @@ describe('Access Control Roles', () => {
         cy.get(`${selectors.list.th}:contains("Access scope")`);
     });
 
-    it('list has default roles', () => {
+    it('list has default names', () => {
         visitRoles();
 
-        cy.get(`${selectors.list.tdLinkName}:contains("Admin")`);
-        cy.get(`${selectors.list.tdLinkName}:contains("Analyst")`);
-        cy.get(`${selectors.list.tdLinkName}:contains("Continuous Integration")`);
-        cy.get(`${selectors.list.tdLinkName}:contains("None")`);
-        cy.get(`${selectors.list.tdLinkName}:contains("Sensor Creator")`);
+        const { tdPermissionSetLink, tdAccessScope } = selectors.list.roles;
+
+        cy.get(selectors.list.tdNameLink).then(($tds) => {
+            $tds.get().forEach((td, index) => {
+                const roleName = td.textContent;
+                if (defaultNames.includes(roleName)) {
+                    cy.get(`${tdPermissionSetLink}:eq(${index})`).should('have.text', roleName);
+                    cy.get(`${tdAccessScope}:eq(${index})`).should('have.text', 'No access scope');
+                }
+            });
+        });
     });
 
-    it('list link goes to form which has headings, link, and label instead of button', () => {
+    it('list link goes to form which has label instead of button and disabled input values', () => {
         visitRoles();
 
-        cy.get(`${selectors.list.tdLinkName}:contains("Admin")`).click();
+        const name = 'Admin';
+        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
 
-        cy.get(selectors.h1).should('have.text', 'Access Control');
-        cy.get(selectors.navLinkCurrent).should('have.text', 'Roles');
-        cy.get(selectors.h2).should('have.text', 'Admin');
+        cy.get(selectors.h1).should('have.text', h1);
+        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+
+        cy.get(selectors.h2).should('have.text', name);
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');
-    });
 
-    it('list link goes to form which has disabled input values', () => {
-        visitRoles();
-
-        cy.get(`${selectors.list.tdLinkName}:contains("Admin")`).click();
-
-        cy.get(selectors.form.inputName).should('be.disabled').should('have.value', 'Admin');
+        cy.get(selectors.form.inputName).should('be.disabled');
         cy.get(selectors.form.inputDescription).should('be.disabled');
 
-        cy.get(selectors.form.role.getRadioPermissionSetForName('Admin'))
-            .should('be.disabled')
-            .should('be.checked');
-        cy.get(selectors.form.role.getRadioPermissionSetForName('Analyst'))
-            .should('be.disabled')
-            .should('not.be.checked');
-        cy.get(selectors.form.role.getRadioPermissionSetForName('Continuous Integration'))
-            .should('be.disabled')
-            .should('not.be.checked');
-        cy.get(selectors.form.role.getRadioPermissionSetForName('None'))
-            .should('be.disabled')
-            .should('not.be.checked');
-        cy.get(selectors.form.role.getRadioPermissionSetForName('Sensor Creator'))
-            .should('be.disabled')
-            .should('not.be.checked');
+        const { getRadioPermissionSetForName, getRadioAccessScopeForName } = selectors.form.role;
 
-        cy.get(selectors.form.role.getRadioAccessScopeForName('No access scope'))
-            .should('be.disabled')
-            .should('be.checked');
+        defaultNames.forEach((defaultName) => {
+            cy.get(getRadioPermissionSetForName(defaultName)).should('be.disabled');
+        });
+
+        cy.get(getRadioAccessScopeForName('No access scope')).should('be.disabled');
+    });
+
+    describe('direct link to default role', () => {
+        const { getRadioPermissionSetForName, getRadioAccessScopeForName } = selectors.form.role;
+
+        defaultNames.forEach((roleName) => {
+            it(`${roleName} has corresponding permission set and no access scope`, () => {
+                visitRole(roleName);
+
+                cy.get(selectors.form.inputName).should('have.value', roleName);
+
+                defaultNames.forEach((defaultName) => {
+                    cy.get(getRadioPermissionSetForName(defaultName)).should(
+                        defaultName === roleName ? 'be.checked' : 'not.be.checked'
+                    );
+                });
+
+                cy.get(getRadioAccessScopeForName('No access scope')).should('be.checked');
+            });
+        });
     });
 
     it('creates a new role and form disables name input when editing an existing role', () => {
@@ -129,7 +158,7 @@ describe('Access Control Roles', () => {
             .should('be.enabled')
             .should('be.checked');
 
-        cy.intercept('POST', rolesApiList).as('PostRoles');
+        cy.intercept('POST', rolesApi.list).as('PostRoles');
         cy.get(selectors.form.saveButton).click();
         cy.wait('@PostRoles');
 

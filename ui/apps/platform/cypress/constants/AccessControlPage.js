@@ -6,7 +6,13 @@ export const rolesUrl = '/main/access-control/roles';
 export const permissionSetsUrl = '/main/access-control/permission-sets';
 export const accessScopesUrl = '/main/access-control/access-scopes';
 
+function getFormGroupControlForLabel(label) {
+    return `.pf-c-form__group-label:contains("${label}") + .pf-c-form__group-control`;
+}
+
 export const selectors = scopeSelectors('#access-control', {
+    breadcrumbItem: '.pf-c-breadcrumb__item',
+    breadcrumbLink: 'a.pf-c-breadcrumb__link',
     h1: 'h1',
     h2: 'h2',
     navLink: 'nav a',
@@ -16,26 +22,30 @@ export const selectors = scopeSelectors('#access-control', {
     list: {
         addButton: 'button:contains("Add")',
         th: 'th',
-        tdLinkName: 'td[data-label="Name"] button',
+        tdNameLink: 'td[data-label="Name"] button',
         tdDescription: 'td[data-label="Description"]',
 
         authProviders: {
+            addDropdownItem: 'button:contains("Add auth provider") + ul button',
             tdType: 'td[data-label="Type"]',
             tdMinimumAccessRole: 'td[data-label="Minimum access role',
             tdRules: 'td[data-label="Rules"]',
         },
 
         roles: {
-            tdPermissionSet: 'td[data-label="Permission set"]',
-            tdAccessScope: 'td[data-label="Access scope"]',
+            tdPermissionSetLink: 'td[data-label="Permission set"] button a',
+            tdAccessScopeLink: 'td[data-label="Access scope"] button a',
+            tdAccessScope: 'td[data-label="Access scope"]', // No access scope
         },
 
         permissionSets: {
-            tdRoles: 'td[data-label="Roles"]',
+            tdRolesLink: 'td[data-label="Roles"] button a',
+            tdRoles: 'td[data-label="Roles"]', // No roles
         },
 
         accessScopes: {
-            tdRoles: 'td[data-label="Roles"]',
+            tdRolesLink: 'td[data-label="Roles"] ',
+            tdRoles: 'td[data-label="Roles"]', // No roles
         },
     },
 
@@ -45,11 +55,49 @@ export const selectors = scopeSelectors('#access-control', {
         saveButton: 'button:contains("Save")',
         cancelButton: 'button:contains("Cancel")',
 
-        inputName: '.pf-c-form__group-label:contains("Name") + .pf-c-form__group-control input',
-        inputDescription:
-            '.pf-c-form__group-label:contains("Description") + .pf-c-form__group-control input',
+        inputName: `${getFormGroupControlForLabel('Name')} input`,
+        inputDescription: `${getFormGroupControlForLabel('Description')} input`,
 
-        authProvider: scopeSelectors('form', {}),
+        authProvider: scopeSelectors('form', {
+            selectAuthProviderType: `${getFormGroupControlForLabel(
+                'Auth provider type'
+            )} .pf-c-select button`,
+
+            auth0: {
+                inputAuth0Tenant: `${getFormGroupControlForLabel('Auth0 tenant')} input`,
+                inputClientID: `${getFormGroupControlForLabel('Client ID')} input`,
+            },
+            oidc: {
+                selectCallbackMode: `${getFormGroupControlForLabel(
+                    'Callback mode'
+                )} .pf-c-select button`,
+                selectCallbackModeItem: `${getFormGroupControlForLabel(
+                    'Callback mode'
+                )} .pf-c-select button + ul button`,
+                inputIssuer: `${getFormGroupControlForLabel('Issuer')} input`,
+                inputClientID: `${getFormGroupControlForLabel('Client ID')} input`,
+                inputClientSecret: `${getFormGroupControlForLabel('Client Secret')} input`, // TODO sentence case?
+                checkboxDoNotUseClientSecret:
+                    '.pf-c-check:contains("Do not use Client Secret") input[type="checkbox"]',
+            },
+            saml: {
+                inputServiceProviderIssuer: `${getFormGroupControlForLabel(
+                    'Service Provider issuer'
+                )} input`, // TODO sentence case?
+                selectConfiguration: `${getFormGroupControlForLabel(
+                    'Configuration'
+                )} .pf-c-select button`,
+                inputMetadataURL: `${getFormGroupControlForLabel('IdP Metadata URL')} input`, // TODO sentence case?
+            },
+            userpki: {
+                textareaCertificates: `${getFormGroupControlForLabel(
+                    'IdP Certificate(s) (PEM)'
+                )} textarea`, // TODO sentence case?
+            },
+            iap: {
+                inputAudience: `${getFormGroupControlForLabel('Audience')} input`,
+            },
+        }),
 
         role: scopeSelectors('#role-form', {
             getRadioPermissionSetForName: (name) =>
@@ -59,10 +107,18 @@ export const selectors = scopeSelectors('#access-control', {
         }),
 
         permissionSet: scopeSelectors('#permission-set-form', {
+            resourceCount: 'th:contains("Resource") .pf-c-badge',
             readCount: 'th:contains("Read") .pf-c-badge',
             writeCount: 'th:contains("Write") .pf-c-badge',
-            getAccessLevelForResourceName: (resourceName) =>
-                `.pf-c-form__group-label:contains("Permissions") + .pf-c-form__group-control tr:contains("${resourceName}") .pf-c-select__toggle-text`,
+            tdResource: 'td[data-label="Resource"]',
+
+            // Zero-based index for Image instead of ImageComponent, ImageIntegration, WatchedImage.
+            getReadAccessIconForResource: (resource, index = 0) =>
+                `td[data-label="Resource"]:contains("${resource}"):eq(${index}) ~ td[data-label="Read"] svg`,
+            getWriteAccessIconForResource: (resource, index = 0) =>
+                `td[data-label="Resource"]:contains("${resource}"):eq(${index}) ~ td[data-label="Write"] svg`,
+            getAccessLevelSelectForResource: (resource, index = 0) =>
+                `td[data-label="Resource"]:contains("${resource}"):eq(${index}) ~ td[data-label="Access level"] .pf-c-select__toggle`,
         }),
 
         accessScope: scopeSelectors('#access-scope-form', {}),
