@@ -5,12 +5,49 @@ import {
     getIsKeyExistsOperator,
 } from 'services/RolesService';
 
+/*
+ * Each tab key has value either index of a label selector while (adding or) editing;
+ * otherwise -1 if neither adding nor editing.
+ */
 export type LabelSelectorsEditingState = {
-    labelSelectorsKey: LabelSelectorsKey; // tab key corresponds to data key
-    indexLabelSelector: number;
+    clusterLabelSelectors: number;
+    namespaceLabelSelectors: number;
 };
 
+export function getIsEditingLabelSelectors({
+    clusterLabelSelectors,
+    namespaceLabelSelectors,
+}: LabelSelectorsEditingState): boolean {
+    return clusterLabelSelectors !== -1 || namespaceLabelSelectors !== -1;
+}
+
+export function getIsEditingLabelSelectorOnTab(
+    labelSelectorsEditingState: LabelSelectorsEditingState,
+    labelSelectorsKey: LabelSelectorsKey
+): boolean {
+    return labelSelectorsEditingState[labelSelectorsKey] !== -1;
+}
+
 export type Activity = 'DISABLED' | 'ENABLED' | 'ACTIVE';
+
+/*
+ * Return whether a label selector is ACTIVE to create or update; otherwise:
+ * ENABLED to update, because no other label selector is active
+ * DISABLED from update, because some other label selector is active
+ */
+export function getLabelSelectorActivity(
+    labelSelectorsEditingState: LabelSelectorsEditingState,
+    labelSelectorsKey: LabelSelectorsKey,
+    indexLabelSelector: number
+): Activity {
+    if (labelSelectorsEditingState[labelSelectorsKey] === indexLabelSelector) {
+        return 'ACTIVE';
+    }
+
+    return labelSelectorsEditingState[labelSelectorsKey] === -1
+        ? 'ENABLED' // because not editing on this tab
+        : 'DISABLED'; // because editing another label selector on this tab
+}
 
 /*
  * Return whether a requirement is ACTIVE to create or update; otherwise:
@@ -23,29 +60,6 @@ export function getRequirementActivity(index: number, indexActive: number): Acti
     }
 
     return indexActive === -1 ? 'ENABLED' : 'DISABLED';
-}
-
-/*
- * Return whether a label selector is ACTIVE to create or update; otherwise:
- * ENABLED to update, because no other label selector is active
- * DISABLED from update, because some other label selector is active
- */
-export function getLabelSelectorActivity(
-    labelSelectorsKey: LabelSelectorsKey,
-    indexLabelSelectorActive: number,
-    labelSelectorsEditingState: LabelSelectorsEditingState | null
-): Activity {
-    if (labelSelectorsEditingState) {
-        if (labelSelectorsKey === labelSelectorsEditingState.labelSelectorsKey) {
-            return indexLabelSelectorActive === labelSelectorsEditingState.indexLabelSelector
-                ? 'ACTIVE'
-                : 'DISABLED'; // because editing another label selector on this tab
-        }
-
-        return 'DISABLED'; // because editing on the other tab
-    }
-
-    return 'ENABLED'; // because not editing on either tab
 }
 
 export function getOpText(op: LabelSelectorOperator): string {

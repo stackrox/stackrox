@@ -26,11 +26,12 @@ import {
     LabelSelectorsKey,
     computeEffectiveAccessScopeClusters,
     getIsValidRules,
+    getTemporarilyValidRules,
 } from 'services/RolesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
-import { LabelSelectorsEditingState } from './accessScopes.utils';
+import { LabelSelectorsEditingState, getIsEditingLabelSelectors } from './accessScopes.utils';
 import EffectiveAccessScopeTable from './EffectiveAccessScopeTable';
 import LabelInclusion from './LabelInclusion';
 
@@ -102,14 +103,14 @@ function AccessScopeForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
-    /*
-     * Disable Submit button while editing a label selector.
-     * Prevent simultaneous editing on both tabs.
-     */
+    // Disable Save button while editing label selectors.
     const [
         labelSelectorsEditingState,
         setLabelSelectorsEditingState,
-    ] = useState<LabelSelectorsEditingState | null>(null);
+    ] = useState<LabelSelectorsEditingState>({
+        clusterLabelSelectors: -1,
+        namespaceLabelSelectors: -1,
+    });
 
     const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: accessScope,
@@ -138,28 +139,28 @@ function AccessScopeForm({
     const isValidRules = getIsValidRules(values.rules);
 
     useEffect(() => {
-        if (isValidRules) {
-            setCounterComputing((counterPrev) => counterPrev + 1);
-            computeEffectiveAccessScopeClusters(values.rules)
-                .then((clustersComputed) => {
-                    setClusters(clustersComputed);
-                    setAlertCompute(null);
-                })
-                .catch((error) => {
-                    setAlertCompute(
-                        <Alert
-                            title="Compute effective access scope failed"
-                            variant={AlertVariant.danger}
-                            isInline
-                        >
-                            {error.message}
-                        </Alert>
-                    );
-                })
-                .finally(() => {
-                    setCounterComputing((counterPrev) => counterPrev - 1);
-                });
-        }
+        setCounterComputing((counterPrev) => counterPrev + 1);
+        computeEffectiveAccessScopeClusters(
+            isValidRules ? values.rules : getTemporarilyValidRules(values.rules)
+        )
+            .then((clustersComputed) => {
+                setClusters(clustersComputed);
+                setAlertCompute(null);
+            })
+            .catch((error) => {
+                setAlertCompute(
+                    <Alert
+                        title="Compute effective access scope failed"
+                        variant={AlertVariant.danger}
+                        isInline
+                    >
+                        {error.message}
+                    </Alert>
+                );
+            })
+            .finally(() => {
+                setCounterComputing((counterPrev) => counterPrev - 1);
+            });
     }, [isValidRules, values.rules]);
 
     function onChange(_value, event) {
@@ -347,7 +348,7 @@ function AccessScopeForm({
                                         !dirty ||
                                         !isValid ||
                                         !isValidRules ||
-                                        Boolean(labelSelectorsEditingState) ||
+                                        getIsEditingLabelSelectors(labelSelectorsEditingState) ||
                                         isSubmitting
                                     }
                                     isLoading={isSubmitting}

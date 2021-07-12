@@ -11,8 +11,8 @@ export type LabelInclusionProps = {
     clusterLabelSelectors: LabelSelector[];
     namespaceLabelSelectors: LabelSelector[];
     hasAction: boolean;
-    labelSelectorsEditingState: LabelSelectorsEditingState | null;
-    setLabelSelectorsEditingState: (nextState: LabelSelectorsEditingState | null) => void;
+    labelSelectorsEditingState: LabelSelectorsEditingState;
+    setLabelSelectorsEditingState: (nextState: LabelSelectorsEditingState) => void;
     handleLabelSelectorsChange: (
         labelSelectorsKey: LabelSelectorsKey,
         labelSelectorsNext: LabelSelector[]

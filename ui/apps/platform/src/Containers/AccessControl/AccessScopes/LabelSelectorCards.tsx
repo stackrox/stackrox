@@ -5,15 +5,19 @@ import { Button, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-
 
 import { LabelSelector, LabelSelectorRequirement, LabelSelectorsKey } from 'services/RolesService';
 
-import { LabelSelectorsEditingState, getLabelSelectorActivity } from './accessScopes.utils';
+import {
+    LabelSelectorsEditingState,
+    getIsEditingLabelSelectorOnTab,
+    getLabelSelectorActivity,
+} from './accessScopes.utils';
 import LabelSelectorCard from './LabelSelectorCard';
 
 export type LabelSelectorCardsProps = {
     labelSelectors: LabelSelector[];
     labelSelectorsKey: LabelSelectorsKey;
     hasAction: boolean;
-    labelSelectorsEditingState: LabelSelectorsEditingState | null;
-    setLabelSelectorsEditingState: (nextState: LabelSelectorsEditingState | null) => void;
+    labelSelectorsEditingState: LabelSelectorsEditingState;
+    setLabelSelectorsEditingState: (nextState: LabelSelectorsEditingState) => void;
     handleLabelSelectorsChange: (
         labelSelectorsKey: LabelSelectorsKey,
         labelSelectorsNext: LabelSelector[]
@@ -52,28 +56,37 @@ function LabelSelectorCards({
 
     function handleLabelSelectorEdit(indexLabelSelector: number) {
         setLabelSelectorsCancel(labelSelectors);
-        setLabelSelectorsEditingState({ labelSelectorsKey, indexLabelSelector });
+        setLabelSelectorsEditingState({
+            ...labelSelectorsEditingState,
+            [labelSelectorsKey]: indexLabelSelector,
+        });
     }
 
     function handleLabelSelectorOK() {
         setLabelSelectorsCancel([]);
         setIndexRequirementActive(-1);
-        setLabelSelectorsEditingState(null);
+        setLabelSelectorsEditingState({
+            ...labelSelectorsEditingState,
+            [labelSelectorsKey]: -1,
+        });
     }
 
     function handleLabelSelectorCancel() {
         handleLabelSelectorsChange(labelSelectorsKey, labelSelectorsCancel);
         setLabelSelectorsCancel([]);
         setIndexRequirementActive(-1);
-        setLabelSelectorsEditingState(null);
+        setLabelSelectorsEditingState({
+            ...labelSelectorsEditingState,
+            [labelSelectorsKey]: -1,
+        });
     }
 
     function onAddLabelSelector() {
         setLabelSelectorsCancel(labelSelectors);
         handleLabelSelectorsChange(labelSelectorsKey, [...labelSelectors, { requirements: [] }]);
         setLabelSelectorsEditingState({
-            labelSelectorsKey,
-            indexLabelSelector: labelSelectors.length,
+            ...labelSelectorsEditingState,
+            [labelSelectorsKey]: labelSelectors.length,
         });
     }
 
@@ -88,9 +101,9 @@ function LabelSelectorCards({
                         indexRequirementActive={indexRequirementActive}
                         setIndexRequirementActive={setIndexRequirementActive}
                         activity={getLabelSelectorActivity(
+                            labelSelectorsEditingState,
                             labelSelectorsKey,
-                            indexLabelSelector,
-                            labelSelectorsEditingState
+                            indexLabelSelector
                         )}
                         handleLabelSelectorDelete={() =>
                             handleLabelSelectorDelete(indexLabelSelector)
@@ -112,7 +125,10 @@ function LabelSelectorCards({
                                 <Button
                                     variant="primary"
                                     className="pf-m-smaller"
-                                    isDisabled={Boolean(labelSelectorsEditingState)}
+                                    isDisabled={getIsEditingLabelSelectorOnTab(
+                                        labelSelectorsEditingState,
+                                        labelSelectorsKey
+                                    )}
                                     onClick={onAddLabelSelector}
                                 >
                                     Add label selector

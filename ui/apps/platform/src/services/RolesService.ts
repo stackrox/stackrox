@@ -195,6 +195,37 @@ export function getIsValidRules({
     );
 }
 
+function getTemporarilyValidLabelSelectors(labelSelectors: LabelSelector[]): LabelSelector[] {
+    const temporarilyValidLabelSelectors: LabelSelector[] = [];
+
+    labelSelectors.forEach((labelSelector) => {
+        if (getIsValidRequirements(labelSelector.requirements)) {
+            temporarilyValidLabelSelectors.push(labelSelector);
+        } else {
+            const requirements = labelSelector.requirements.filter(getIsValidRequirement);
+            if (requirements.length !== 0) {
+                temporarilyValidLabelSelectors.push({ requirements });
+            }
+        }
+    });
+
+    return temporarilyValidLabelSelectors;
+}
+
+/*
+ * If rules are temporarily invalid while adding or editing label selectors,
+ * return rules that are valid for computeeffectiveaccessscope request.
+ */
+export function getTemporarilyValidRules(rules: SimpleAccessScopeRules): SimpleAccessScopeRules {
+    const { clusterLabelSelectors, namespaceLabelSelectors } = rules;
+
+    return {
+        ...rules,
+        clusterLabelSelectors: getTemporarilyValidLabelSelectors(clusterLabelSelectors),
+        namespaceLabelSelectors: getTemporarilyValidLabelSelectors(namespaceLabelSelectors),
+    };
+}
+
 export type AccessScope = {
     id: string;
     name: string;
