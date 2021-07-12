@@ -181,7 +181,8 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                                 name="dynamicConfig.disableAuditLogs"
                                 disabled={!isLoggingSupported}
                                 toggleHandler={handleChange}
-                                enabled={!dynamicConfig.disableAuditLogs}
+                                enabled={dynamicConfig.disableAuditLogs}
+                                flipped
                             />
                         </div>
                         {!isLoggingSupported && (
