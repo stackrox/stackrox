@@ -644,6 +644,7 @@ commands:
     parameters:
       label:
         type: string
+        default: ""
       run-on-master:
         type: boolean
       run-on-tags:
@@ -651,42 +652,51 @@ commands:
       changed-path:
         type: string
         default: ""
+      changed-path-ignore:
+        type: string
+        default: ""
     steps:
     - run:
         name: Determine whether to run tests
         command: |
-          set +e -x
-          halt=1
           if [[ "<< parameters.run-on-master >>" == "true" && "${CIRCLE_BRANCH}" == "master" ]]; then
             echo "Running tests because we are on master"
-            halt=0
-          elif [[ "<< parameters.run-on-tags >>" == "true" && -n "${CIRCLE_TAG}" ]]; then
+            exit 0
+          fi
+
+          if [[ "<< parameters.run-on-tags >>" == "true" && -n "${CIRCLE_TAG}" ]]; then
             echo "Running tests because this is a tagged build"
-            halt=0
-          elif [[ -n "<< parameters.label >>" ]]; then
+            exit 0
+          fi
+
+          if [[ -n "<< parameters.label >>" ]]; then
             # Split on commas
             IFS=', ' ;for label in `echo "<< parameters.label >>"`; do
-              .circleci/pr_has_label.sh "${label}"
-              if [[ $? -eq 0 ]]; then
+              if .circleci/pr_has_label.sh "${label}"; then
                 echo "Running tests because the label << parameters.label >> has been set"
-                halt=0
+                exit 0
               fi
             done
           fi
 
-          if [[ -n "<< parameters.changed-path >>" ]]; then
-            merge_base="$(git merge-base HEAD origin/master)"
-            { git diff --name-only "${merge_base}" || echo "???" ; } | egrep -q '<< parameters.changed-path >>'
-            if [[ $? -eq 0 ]]; then
-              echo "Running tests because path '<< parameters.changed-path >>' had changed."
-              halt=0
+          if [[ -n "<< parameters.changed-path >>" || -n "<< parameters.changed-path-ignore>>" ]]; then
+            if [[ "$CIRCLE_BRANCH" == "master" ]]; then
+              diff_base="HEAD^"
+            else
+              diff_base="$(git merge-base HEAD origin/master)"
+            fi
+            ignored_regex='<< parameters.changed-path-ignore >>'
+            [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
+            match_regex='<< parameters.changed-path >>'
+            [[ -n "$match_regex" ]] || match_regex='^.*$' # egrep -q '' returns 0 even on empty input, so we have to specify some pattern
+            if { git diff --name-only "${diff_base}" || echo "???" ; } | egrep -v "$ignored_regex" | egrep -q "$match_regex"; then
+              echo "Running tests because paths matching $match_regex (and not matching ${ignored_regex}) had changed."
+              exit 0
             fi
           fi
 
-          if [[ "${halt}" -eq 1 ]]; then
-            echo "Not running tests"
-            circleci step halt
-          fi
+          echo "Not running tests"
+          circleci step halt
 
   get-and-store-debug-dump:
     description: Runs roxctl debug dump and stores it for the job.
@@ -1906,14 +1916,10 @@ commands:
 
   check-backend-changes:
     steps:
-      - run:
-          name: Check if there were any backend changes
-          command: |
-            if [[ "$CIRCLE_BRANCH" == "master" || -n "$CIRCLE_TAG" || "$CIRCLE_BRANCH" =~ ^release/.* ]]; then
-              exit 0  # Always run on master, tags, or release branches
-            fi
-            merge_base="$(git merge-base HEAD origin/master)"
-            { git diff --name-only "${merge_base}" || echo "???" ; } | egrep -qv '^ui/' || circleci step halt
+      - check-to-run:
+          run-on-master: false
+          run-on-tags: true
+          changed-path-ignore: '^ui/'
 
   compare-with-stored-metrics:
     parameters:
@@ -2013,6 +2019,10 @@ commands:
     description: "Common pre go test steps"
     steps:
       - checkout
+      - check-to-run:
+          run-on-master: false  # don't run by default, only with changed go files
+          run-on-tags: true
+          changed-path: '^go\.(mod|sum)|\.(go|proto)$'
       - *restoreGoModCache
       - setup-go-build-env
       - *restoreGoBuildCache
@@ -2132,6 +2142,10 @@ jobs:
     resource_class: xlarge
     steps:
       - checkout
+      - check-to-run:
+          run-on-master: false # don't run on master by default
+          run-on-tags: true
+          changed-path: '^ui/'
       - restore-npm-deps-cache
 
       - run:
@@ -2878,14 +2892,6 @@ jobs:
       - provision-gke-cluster:
           cluster-id: upgrade-test
 
-  provision-test-helm-charts-repo:
-    executor: custom
-    steps:
-      - checkout
-      - provision-gke-cluster:
-          cluster-id: test-helm-charts
-          num-nodes: 2
-
   build-scale-monitoring-and-mock-server:
     executor: custom
     resource_class: large
@@ -3141,6 +3147,7 @@ jobs:
           label: ci-openshift-4-tests
           run-on-master: true
           run-on-tags: true
+      - check-backend-changes
 
       - setup_remote_docker
 
@@ -3187,7 +3194,8 @@ jobs:
         label: ci-openshift-4-operator-tests
         run-on-master: true
         run-on-tags: true
-        changed-path: "operator"
+        changed-path: '^operator/'
+    - check-backend-changes
 
     - setup_remote_docker
 
@@ -4764,7 +4772,9 @@ jobs:
         label: ci-openshift-4-operator-tests
         run-on-master: true
         run-on-tags: true
-        changed-path: "operator"
+        changed-path: '^operator/'
+    - check-backend-changes
+
 
     - setup_remote_docker
 
@@ -5037,51 +5047,6 @@ jobs:
           command: |
             export QUAY_BEARER_TOKEN=${QUAY_BEARER_TOKEN}
             ./release/scripts/vuln_check.sh
-
-  test-helm-charts-repo:
-    executor: custom
-    environment:
-      - SCANNER_SUPPORT: true
-      - AUTH0_SUPPORT: false
-
-    steps:
-      - checkout
-      - check-backend-changes
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - *setupRoxctl
-      - setup_remote_docker
-      - setup-gcp
-      - setup-dep-env
-
-      - attach-gke-cluster:
-          cluster-id: test-helm-charts
-
-      - *setupGoogleAppCreds
-      - run:
-          name: Creating License Key
-          command: |
-            echo "Issuing a CI license for testing the release build"
-            ROX_LICENSE_KEY="$(licenses/ci.sh)"
-            cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
-
-      - deploy-stackrox:
-          sensor-deploy-flavor: helm
-          helm-from-repo: true
-          post-central-deploy-steps:
-            - *setupClientTLSCerts
-            - setup-egress-proxies
-
-      - *collectK8sLogs
-      - get-and-store-debug-dump
-      - get-central-data
-      - *backupCentral
-      - *storeCentralBackupArtifact
-      - check-stackrox-logs
-      - store-k8s-logs
-      - teardown-gke
 
   ###
   # Infrastructure and workflow utility jobs
@@ -5376,16 +5341,6 @@ workflows:
               ignore: /.*/
             tags:
               only: /.*/
-
-#      - provision-test-helm-charts-repo:
-#          <<: *runOnlyOnReleaseBuilds
-#          context: docker-io-pull
-#      - test-helm-charts-repo:
-#          <<: *runOnlyOnReleaseBuilds
-#          context: docker-io-pull
-#          requires:
-#            - push-release
-#            - provision-test-helm-charts-repo
 
   nightly:
     triggers:
