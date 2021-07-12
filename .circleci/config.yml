@@ -419,11 +419,6 @@ storeDryRunBenchImages: &storeDryRunBenchImages
     path: monitoring/grafana/captures
     destination: monitoring-images-dryrun-bench
 
-storeK8sLogs: &storeK8sLogs
-  store_artifacts:
-    path: /tmp/k8s-service-logs
-    destination: k8s-service-logs
-
 storeQALogs: &storeQALogs
   store_artifacts:
     path: /tmp/qa-tests-backend-logs
@@ -668,13 +663,6 @@ commands:
           elif [[ "<< parameters.run-on-tags >>" == "true" && -n "${CIRCLE_TAG}" ]]; then
             echo "Running tests because this is a tagged build"
             halt=0
-          elif [[ -n "<< parameters.changed-path >>" ]]; then
-            merge_base="$(git merge-base HEAD origin/master)"
-            { git diff --name-only "${merge_base}" || echo "???" ; } | egrep -q '<< parameters.changed-path >>'
-            if [[ $? -eq 0 ]]; then
-              echo "Running tests because path '<< parameters.changed-path >>' had changed."
-              halt=0
-            fi
           elif [[ -n "<< parameters.label >>" ]]; then
             # Split on commas
             IFS=', ' ;for label in `echo "<< parameters.label >>"`; do
@@ -684,6 +672,15 @@ commands:
                 halt=0
               fi
             done
+          fi
+
+          if [[ -n "<< parameters.changed-path >>" ]]; then
+            merge_base="$(git merge-base HEAD origin/master)"
+            { git diff --name-only "${merge_base}" || echo "???" ; } | egrep -q '<< parameters.changed-path >>'
+            if [[ $? -eq 0 ]]; then
+              echo "Running tests because path '<< parameters.changed-path >>' had changed."
+              halt=0
+            fi
           fi
 
           if [[ "${halt}" -eq 1 ]]; then
@@ -719,6 +716,19 @@ commands:
       - store_artifacts:
           path: << parameters.destination >>
           destination: << parameters.destination >>
+
+  store-k8s-logs:
+    parameters:
+      destination:
+        type: string
+        default: k8s-service-logs
+
+    description: Stores StackRox and cluster logs as artifacts
+
+    steps:
+    - store_artifacts:
+        path: /tmp/k8s-service-logs
+        destination: << parameters.destination >>
 
   check-stackrox-logs:
     parameters:
@@ -1436,7 +1446,7 @@ commands:
       - *storeCentralBackupArtifact
       - *restoreDB
       - check-stackrox-logs
-      - *storeK8sLogs
+      - store-k8s-logs
       - *storeQALogs
       - *connectToMonitoring
       - *collectMonitoringImages
@@ -1735,7 +1745,7 @@ commands:
       - get-central-data:
           destination: central-data-part2
       - check-stackrox-logs
-      - *storeK8sLogs
+      - store-k8s-logs
       - *storeQALogs
 
       - destroy-openshift-cluster:
@@ -2394,7 +2404,7 @@ jobs:
       - *backupCentral
       - *storeCentralBackupArtifact
       - check-stackrox-logs
-      - *storeK8sLogs
+      - store-k8s-logs
       - *storeQALogs
 
       # - teardown-gke
@@ -3519,7 +3529,7 @@ jobs:
       - get-central-data:
           destination: final-central-data
 
-      - *storeK8sLogs
+      - store-k8s-logs
       - teardown-gke
 
   gke-ui-e2e-tests:
@@ -3583,7 +3593,7 @@ jobs:
       - *storeCentralBackupArtifact
       - *restoreDB
       - check-stackrox-logs
-      - *storeK8sLogs
+      - store-k8s-logs
 
       - teardown-gke
 
@@ -4301,7 +4311,7 @@ jobs:
             ./scripts/ci/sensor-helm-upgrade-test.sh
 
       - *collectK8sLogs
-      - *storeK8sLogs
+      - store-k8s-logs
       - *storeQALogs
 
       - teardown-gke
@@ -4384,7 +4394,7 @@ jobs:
             fi
 
       - check-stackrox-logs
-      - *storeK8sLogs
+      - store-k8s-logs
 
       - teardown-gke
 
@@ -4533,7 +4543,7 @@ jobs:
       - *storeCentralBackupArtifact
       - *restoreDB
       - check-stackrox-logs
-      - *storeK8sLogs
+      - store-k8s-logs
       - *storeQALogs
 
       - *loginToGCR
@@ -4636,7 +4646,7 @@ jobs:
       - *storeCentralBackupArtifact
       - *restoreDB
       - check-stackrox-logs
-      - *storeK8sLogs
+      - store-k8s-logs
       - *storeQALogs
 
       - run:
@@ -4778,12 +4788,17 @@ jobs:
     - run:
         name: Run Operator e2e tests
         command: make -C operator test-e2e
+
     - store-test-results-and-artifacts:
         path: operator/build/kuttl-test-artifacts
 
     - run:
         name: Run Operator Bundle Scorecard tests
         command: make -C operator bundle-test-image
+
+    - *collectK8sLogs
+    - store-k8s-logs:
+        destination: operator-e2e-test-k8s-service-logs
 
     - destroy-openshift-4-cluster:
         when: always
@@ -5065,7 +5080,7 @@ jobs:
       - *backupCentral
       - *storeCentralBackupArtifact
       - check-stackrox-logs
-      - *storeK8sLogs
+      - store-k8s-logs
       - teardown-gke
 
   ###
