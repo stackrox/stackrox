@@ -26,8 +26,12 @@ testbin/*
 
 # Temp files created during build process
 build/
+
+# kuttl ignored files
 # Workaround for https://github.com/kudobuilder/kuttl/issues/297
 kubeconfig
+# ignore testing init-bundle which was generated for kuttl e2e tests
+tests/securedcluster/basic-sc/init-bundle.yaml
 
 # Python virtualenv directory for dependencies of bundle build helpers.
 bundle_helpers/.venv/
