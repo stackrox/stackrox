@@ -57,6 +57,11 @@ function getNewAuthProviderTitle(type) {
 
     return `Add new ${selectedType?.label as string} auth provider`;
 }
+
+function testModeSupported(provider) {
+    return provider.type === 'auth0' || provider.type === 'oidc' || provider.type === 'saml';
+}
+
 function AuthProviderForm({
     isActionable,
     action,
@@ -173,6 +178,21 @@ function AuthProviderForm({
         handleChange(event);
     }
 
+    function handleTest() {
+        const windowFeatures =
+            'location=no,menubar=no,scrollbars=yes,toolbar=no,width=768,height=512,left=0,top=0'; // browser not required to honor these attrs
+
+        const windowObjectReference = window.open(
+            `/sso/login/${selectedAuthProvider.id}?test=true`,
+            `Test Login for ${selectedAuthProvider.name}`,
+            windowFeatures
+        );
+
+        if (windowObjectReference) {
+            windowObjectReference.focus();
+        }
+    }
+
     function onClickSubmit() {
         const transformedValues = transformValuesBeforeSaving(values);
 
@@ -218,16 +238,32 @@ function AuthProviderForm({
                                     </ToolbarItem>
                                 </ToolbarGroup>
                             ) : (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="primary"
-                                        onClick={onClickEdit}
-                                        isDisabled={action === 'update'}
-                                        isSmall
-                                    >
-                                        Edit auth provider
-                                    </Button>
-                                </ToolbarItem>
+                                <ToolbarGroup variant="button-group">
+                                    {testModeSupported(selectedAuthProvider) &&
+                                        selectedAuthProvider.id &&
+                                        !selectedAuthProvider.active && (
+                                            <ToolbarItem>
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={handleTest}
+                                                    isDisabled={action === 'update'}
+                                                    isSmall
+                                                >
+                                                    Test login
+                                                </Button>
+                                            </ToolbarItem>
+                                        )}
+                                    <ToolbarItem>
+                                        <Button
+                                            variant="primary"
+                                            onClick={onClickEdit}
+                                            isDisabled={action === 'update'}
+                                            isSmall
+                                        >
+                                            Edit auth provider
+                                        </Button>
+                                    </ToolbarItem>
+                                </ToolbarGroup>
                             )}
                         </ToolbarGroup>
                     )}
@@ -237,6 +273,18 @@ function AuthProviderForm({
                 <Alert isInline variant="danger" title="Problem saving auth provider">
                     <p>{saveAuthProviderError?.message}</p>
                 </Alert>
+            )}
+            {testModeSupported(selectedAuthProvider) && !selectedAuthProvider.active && (
+                <Alert
+                    isInline
+                    variant="info"
+                    title={
+                        <span>
+                            Click <em>Test login</em> to check that your authentication provider is
+                            working properly.
+                        </span>
+                    }
+                />
             )}
             <FormikProvider value={formik}>
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
