@@ -58,7 +58,7 @@ func newManager(deploytimeDetector deploytime.Detector, runtimeDetector runtime.
 		indicatorRateLimiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
 		indicatorFlushTicker: time.NewTicker(indicatorFlushTickerDuration),
 
-		removedPolicies: set.NewStringSet(),
+		removedOrDisabledPolicies: set.NewStringSet(),
 	}
 
 	go m.flushQueuePeriodically()

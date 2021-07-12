@@ -63,8 +63,8 @@ type managerImpl struct {
 	indicatorRateLimiter *rate.Limiter
 	indicatorFlushTicker *time.Ticker
 
-	policyAlertsLock sync.RWMutex
-	removedPolicies  set.StringSet
+	policyAlertsLock          sync.RWMutex
+	removedOrDisabledPolicies set.StringSet
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
@@ -260,7 +260,7 @@ func (m *managerImpl) filterOutDisabledPolicies(alerts *[]*storage.Alert) {
 	m.policyAlertsLock.RLock()
 	defer m.policyAlertsLock.RUnlock()
 	for _, a := range *alerts {
-		if m.removedPolicies.Contains(a.GetPolicy().GetId()) {
+		if m.removedOrDisabledPolicies.Contains(a.GetPolicy().GetId()) {
 			continue
 		}
 		filteredAlerts = append(filteredAlerts, a)
@@ -303,8 +303,6 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 }
 
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
-	var presentAlerts []*storage.Alert
-
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()
 	// Add policy to set.
@@ -326,13 +324,18 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 
 	if policies.AppliesAtRunTime(policy) {
 		// Perform notifications and update DB.
-		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
+		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policy.GetId()))
 		if err != nil {
 			return err
 		}
 		if modifiedDeployments.Cardinality() > 0 {
 			defer m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
 		}
+	}
+	if policy.GetDisabled() {
+		m.removedOrDisabledPolicies.Add(policy.GetId())
+	} else {
+		m.removedOrDisabledPolicies.Remove(policy.GetId())
 	}
 	return nil
 }
@@ -352,7 +355,7 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 	m.runtimeDetector.PolicySet().RemovePolicy(policyID)
 	runtimeAlertRemoved := numRuntimeAlerts-len(m.runtimeDetector.PolicySet().GetCompiledPolicies()) > 0
 
-	m.removedPolicies.Add(policyID)
+	m.removedOrDisabledPolicies.Add(policyID)
 
 	// Runtime alerts need to be explicitly removed as their updates are not synced from sensors
 	if runtimeAlertRemoved {

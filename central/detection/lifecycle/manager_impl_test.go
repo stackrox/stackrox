@@ -209,7 +209,7 @@ func TestFilterOutDisabledPolicies(t *testing.T) {
 		var testAlerts []*storage.Alert
 		testAlerts = append(testAlerts, c.initialAlerts...)
 
-		manager := &managerImpl{removedPolicies: c.removedPolicies}
+		manager := &managerImpl{removedOrDisabledPolicies: c.removedPolicies}
 		manager.filterOutDisabledPolicies(&testAlerts)
 		assert.Equal(t, c.expectedAlerts, testAlerts)
 	}
