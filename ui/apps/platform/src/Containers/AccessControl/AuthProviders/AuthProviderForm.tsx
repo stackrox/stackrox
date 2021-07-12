@@ -274,18 +274,20 @@ function AuthProviderForm({
                     <p>{saveAuthProviderError?.message}</p>
                 </Alert>
             )}
-            {testModeSupported(selectedAuthProvider) && !selectedAuthProvider.active && (
-                <Alert
-                    isInline
-                    variant="info"
-                    title={
-                        <span>
-                            Click <em>Test login</em> to check that your authentication provider is
-                            working properly.
-                        </span>
-                    }
-                />
-            )}
+            {testModeSupported(selectedAuthProvider) &&
+                selectedAuthProvider.id &&
+                !selectedAuthProvider.active && (
+                    <Alert
+                        isInline
+                        variant="info"
+                        title={
+                            <span>
+                                Click <em>Test login</em> to check that your authentication provider
+                                is working properly.
+                            </span>
+                        }
+                    />
+                )}
             <FormikProvider value={formik}>
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>

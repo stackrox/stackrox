@@ -1,8 +1,13 @@
-import React, { ReactElement } from 'react';
+import React, { useState, ReactElement } from 'react';
 import pluralize from 'pluralize';
+import { useSelector, useDispatch } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+import { Button, Modal, ModalVariant } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { availableAuthProviders } from 'constants/accessControl';
+import { selectors } from 'reducers';
+import { actions as authActions } from 'reducers/auth';
 import { AuthProvider } from 'services/AuthService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
@@ -24,51 +29,107 @@ export type AuthProvidersListProps = {
     authProviders: AuthProvider[];
 };
 
-function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps): ReactElement {
-    return (
-        <TableComposable variant="compact">
-            <Thead>
-                <Tr>
-                    <Th width={20}>Name</Th>
-                    <Th width={20}>Type</Th>
-                    <Th width={20}>Minimum access role</Th>
-                    <Th width={40}>Assigned rules</Th>
-                </Tr>
-            </Thead>
-            <Tbody>
-                {authProviders.map(({ id, name, type, defaultRole, groups = [] }) => {
-                    const typeLabel = getAuthProviderTypeLabel(type);
-                    // TODO for minimumAccessRoleName see getDefaultRoleByAuthProviderId in classic code
+const authProviderState = createStructuredSelector({
+    currentUser: selectors.getCurrentUser,
+});
 
-                    return (
-                        <Tr
-                            key={id}
-                            style={id === entityId ? selectedRowStyle : unselectedRowStyle}
-                        >
-                            <Td dataLabel="Name">
-                                <AccessControlEntityLink
-                                    entityType={entityType}
-                                    entityId={id}
-                                    entityName={name}
+function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps): ReactElement {
+    const [authProviderToDelete, setAuthProviderToDelete] = useState('');
+    const [idToDelete, setIdToDelete] = useState('');
+    const dispatch = useDispatch();
+    const { currentUser } = useSelector(authProviderState);
+
+    function onClickDelete(name: string, id: string) {
+        setIdToDelete(id);
+        setAuthProviderToDelete(name);
+    }
+
+    function confirmDelete() {
+        dispatch(authActions.deleteAuthProvider(idToDelete));
+        clearPendingDelete();
+    }
+
+    function clearPendingDelete() {
+        setIdToDelete('');
+        setAuthProviderToDelete('');
+    }
+
+    return (
+        <>
+            <TableComposable variant="compact">
+                <Thead>
+                    <Tr>
+                        <Th width={20}>Name</Th>
+                        <Th width={15}>Type</Th>
+                        <Th width={20}>Minimum access role</Th>
+                        <Th width={35}>Assigned rules</Th>
+                        <Th width={10} aria-label="Row actions" />
+                    </Tr>
+                </Thead>
+                <Tbody>
+                    {authProviders.map(({ id, name, type, defaultRole, groups = [] }) => {
+                        const typeLabel = getAuthProviderTypeLabel(type);
+
+                        return (
+                            <Tr
+                                key={id}
+                                style={id === entityId ? selectedRowStyle : unselectedRowStyle}
+                            >
+                                <Td dataLabel="Name">
+                                    <AccessControlEntityLink
+                                        entityType={entityType}
+                                        entityId={id}
+                                        entityName={name}
+                                    />
+                                </Td>
+                                <Td dataLabel="Type">{typeLabel}</Td>
+                                <Td dataLabel="Minimum access role">
+                                    <AccessControlEntityLink
+                                        entityType="ROLE"
+                                        entityId={defaultRole || ''}
+                                        entityName={defaultRole || ''}
+                                    />
+                                </Td>
+                                <Td dataLabel="Assigned rules">
+                                    {`${groups.length} ${pluralize('rules', groups.length)}`}
+                                </Td>
+                                <Td
+                                    actions={{
+                                        disable:
+                                            !currentUser?.authProvider?.id ||
+                                            id === currentUser?.authProvider?.id,
+                                        items: [
+                                            {
+                                                title: 'Delete auth provider',
+                                                onClick: () => onClickDelete(name, id),
+                                            },
+                                        ],
+                                    }}
+                                    className="pf-u-text-align-right"
                                 />
-                            </Td>
-                            <Td dataLabel="Type">{typeLabel}</Td>
-                            <Td dataLabel="Minimum access role">
-                                <AccessControlEntityLink
-                                    entityType="ROLE"
-                                    entityId={defaultRole || ''}
-                                    entityName={defaultRole || ''}
-                                />
-                            </Td>
-                            <Td dataLabel="Assigned rules">{`${groups.length} ${pluralize(
-                                'rules',
-                                groups.length
-                            )}`}</Td>
-                        </Tr>
-                    );
-                })}
-            </Tbody>
-        </TableComposable>
+                            </Tr>
+                        );
+                    })}
+                </Tbody>
+            </TableComposable>
+            <Modal
+                variant={ModalVariant.small}
+                title="Permanently delete auth provider?"
+                isOpen={!!authProviderToDelete}
+                onClose={clearPendingDelete}
+                actions={[
+                    <Button key="confirm" variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>,
+                    <Button key="cancel" variant="link" onClick={clearPendingDelete}>
+                        Cancel
+                    </Button>,
+                ]}
+            >
+                If you delete <span>{authProviderToDelete}</span>, no user of this auth provider
+                will be able to use it to log in anymore.
+            </Modal>
+        </>
     );
 }
 

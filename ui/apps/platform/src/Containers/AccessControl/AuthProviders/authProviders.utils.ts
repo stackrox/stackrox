@@ -155,16 +155,18 @@ export function mergeGroupsWithAuthProviders(
 
         // comma operator is much faster than spread in a reduce loop
         // eslint-disable-next-line prettier/prettier, no-return-assign, no-param-reassign, no-sequences, @typescript-eslint/dot-notation
-            return (obj[item.id] = item), obj;
+        return (obj[item.id] = item), obj;
     }, {});
 
     if (authProviders.length) {
         groups.forEach((group) => {
-            if (group.props.key !== '') {
-                authProvidersWithGroupsDict[group.props.authProviderId].groups.push(group);
-            } else {
-                authProvidersWithGroupsDict[group.props.authProviderId].defaultRole =
-                    group.roleName;
+            if (authProvidersWithGroupsDict[group?.props?.authProviderId]) {
+                if (group.props.key !== '') {
+                    authProvidersWithGroupsDict[group.props.authProviderId].groups.push(group);
+                } else {
+                    authProvidersWithGroupsDict[group.props.authProviderId].defaultRole =
+                        group.roleName;
+                }
             }
         });
     }
