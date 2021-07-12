@@ -17,15 +17,6 @@ export function getIsDefaultRoleName(name: string): boolean {
     return Boolean(defaultRoles[name]);
 }
 
-// TODO Delete when backend returns descriptions for default roles and permission sets.
-export const defaultRoleDescriptions: Record<string, string> = {
-    Admin: 'For users: read and write access for all resources',
-    Analyst: 'For users: read-only access for all resources',
-    'Continuous Integration': 'For automation: permissions to enforce deployment policies',
-    None: 'For users: possible minimum access role in auth providers',
-    'Sensor Creator': 'For automation: permissions to create sensors in secured clusters',
-};
-
 /* constants specific to Auth Providers */
 export const availableAuthProviders = [
     {

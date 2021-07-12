@@ -10,7 +10,7 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
-import { defaultRoleDescriptions, getIsDefaultRoleName } from 'constants/accessControl';
+import { getIsDefaultRoleName } from 'constants/accessControl';
 import {
     PermissionSet,
     Role,
@@ -57,17 +57,7 @@ function PermissionSets(): ReactElement {
         setAlertPermissionSets(null);
         fetchPermissionSets()
             .then((permissionSetsFetched) => {
-                // Provide descriptions for default permission sets until backend returns them.
-                setPermissionSets(
-                    permissionSetsFetched.map((permissionSet) =>
-                        getIsDefaultRoleName(permissionSet.name)
-                            ? {
-                                  ...permissionSet,
-                                  description: defaultRoleDescriptions[permissionSet.name],
-                              }
-                            : permissionSet
-                    )
-                );
+                setPermissionSets(permissionSetsFetched);
             })
             .catch((error) => {
                 setAlertPermissionSets(

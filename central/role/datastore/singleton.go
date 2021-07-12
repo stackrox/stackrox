@@ -44,30 +44,36 @@ func Singleton() DataStore {
 
 type roleAttributes struct {
 	idSuffix           string
+	description        string
 	resourceWithAccess []permissions.ResourceWithAccess
 }
 
 var defaultRoles = map[string]roleAttributes{
 	rolePkg.Admin: {
 		idSuffix:           "admin",
+		description:        "For users: use it to provide read and write access to all the resources",
 		resourceWithAccess: resources.AllResourcesModifyPermissions(),
 	},
 	rolePkg.Analyst: {
 		idSuffix:           "analyst",
 		resourceWithAccess: resources.AllResourcesViewPermissions(),
+		description:        "For users: use it to give read-only access to all the resources",
 	},
 	rolePkg.ContinuousIntegration: {
-		idSuffix: "continuousintegration",
+		idSuffix:    "continuousintegration",
+		description: "For automation: it includes the permissions required to enforce deployment policies",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Detection),
 			permissions.Modify(resources.Image),
 		},
 	},
 	rolePkg.None: {
-		idSuffix: "none",
+		idSuffix:    "none",
+		description: "For users: use it to provide no read and write access to any resource",
 	},
 	rolePkg.SensorCreator: {
-		idSuffix: "sensorcreator",
+		idSuffix:    "sensorcreator",
+		description: "For automation: it consists of the permissions to create Sensors in secured clusters",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Cluster),
 			permissions.Modify(resources.Cluster),
@@ -82,6 +88,7 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet) {
 
 	for roleName, attributes := range defaultRoles {
 		role := permissions.NewRoleWithAccess(roleName, attributes.resourceWithAccess...)
+		role.Description = attributes.description
 
 		if features.ScopedAccessControl.Enabled() {
 			permissionSet := &storage.PermissionSet{

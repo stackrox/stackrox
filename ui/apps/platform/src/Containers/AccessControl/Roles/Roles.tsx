@@ -10,7 +10,7 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
-import { defaultRoleDescriptions, getIsDefaultRoleName } from 'constants/accessControl';
+import { getIsDefaultRoleName } from 'constants/accessControl';
 import { Group } from 'services/AuthService';
 import { fetchGroups } from 'services/GroupsService';
 import {
@@ -71,14 +71,7 @@ function Roles(): ReactElement {
         setAlertRoles(null);
         fetchRolesAsArray()
             .then((rolesFetched) => {
-                // Provide descriptions for default roles until backend returns them.
-                setRoles(
-                    rolesFetched.map((role) =>
-                        getIsDefaultRoleName(role.name)
-                            ? { ...role, description: defaultRoleDescriptions[role.name] }
-                            : role
-                    )
-                );
+                setRoles(rolesFetched);
             })
             .catch((error) => {
                 setAlertRoles(

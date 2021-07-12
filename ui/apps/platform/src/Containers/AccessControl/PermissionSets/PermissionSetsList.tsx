@@ -12,7 +12,6 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { defaultRoleDescriptions } from 'constants/accessControl';
 import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
@@ -95,9 +94,7 @@ function PermissionSetsList({
                                         entityName={name}
                                     />
                                 </Td>
-                                <Td dataLabel="Description">
-                                    {description || (defaultRoleDescriptions[name] ?? '')}
-                                </Td>
+                                <Td dataLabel="Description">{description}</Td>
                                 <Td dataLabel="Roles">
                                     <RolesLink
                                         roles={roles.filter(
