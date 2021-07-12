@@ -28,7 +28,7 @@ var (
 	seccompProfileTypeValueRegex             = createRegex(`(?i:UNCONFINED|RUNTIME_DEFAULT|LOCALHOST)`)
 	severityValueRegex                       = createRegex(`(<|>|<=|>=)?[[:space:]]*(?i:UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL)`)
 	kubernetesNameRegex                      = createRegex(`[[a-z0-9]([-a-z0-9]*[a-z0-9])?]]`)
-	auditEventAPIVerbValueRegex              = createRegex(`(?i:CREATE|DELETE|GET|LIST|PATCH|PROXY|UPDATE|WATCH)`)
+	auditEventAPIVerbValueRegex              = createRegex(`(?i:CREATE|DELETE|GET|PATCH|UPDATE)`)
 	auditEventResourceValueRegex             = createRegex(`(?i:SECRETS|CONFIGMAPS)`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 )

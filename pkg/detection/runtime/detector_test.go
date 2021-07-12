@@ -33,19 +33,19 @@ func (s *RuntimeDetectorTestSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s *RuntimeDetectorTestSuite) TestCreateSecrets() {
+func (s *RuntimeDetectorTestSuite) TestUpdateSecrets() {
 	if !features.K8sAuditLogDetection.Enabled() {
 		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
 	}
 
 	policySet := detection.NewPolicySet()
 
-	err := policySet.UpsertPolicy(s.getListSecretPolicy())
+	err := policySet.UpsertPolicy(s.getUpdateSecretPolicy())
 	s.NoError(err, "upsert policy should succeed")
 
 	d := NewDetector(policySet)
 
-	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_LIST, "cluster-id", "namespace", "secret-name", false)
+	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_UPDATE, "cluster-id", "namespace", "secret-name", false)
 	alerts, err := d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
 
 	s.NoError(err)
@@ -107,7 +107,7 @@ func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent
 	return event
 }
 
-func (s *RuntimeDetectorTestSuite) getListSecretPolicy() *storage.Policy {
+func (s *RuntimeDetectorTestSuite) getUpdateSecretPolicy() *storage.Policy {
 	return policyversion.MustEnsureConverted(&storage.Policy{
 		Id:            "9dc8b85e-7b35-4423-847b-165cd9b92fc7",
 		PolicyVersion: "1.1",
@@ -126,7 +126,7 @@ func (s *RuntimeDetectorTestSuite) getListSecretPolicy() *storage.Policy {
 					{
 						FieldName: "Kubernetes API Verb",
 						Negate:    false,
-						Values:    []*storage.PolicyValue{{Value: "LIST"}},
+						Values:    []*storage.PolicyValue{{Value: "UPDATE"}},
 					},
 					{
 						FieldName: "Is Impersonated User",

@@ -85,16 +85,10 @@ const capabilities = [
     'WAKE_ALARM',
 ].map((cap) => ({ label: cap, value: cap }));
 
-const APIVerbs = [
-    'CREATE',
-    'DELETE',
-    'GET',
-    'LIST',
-    'PATCH',
-    'PROXY',
-    'UPDATE',
-    'WATCH',
-].map((verb) => ({ label: verb, value: verb }));
+const APIVerbs = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDATE'].map((verb) => ({
+    label: verb,
+    value: verb,
+}));
 
 const memoryResource = (label) => ({
     label,
