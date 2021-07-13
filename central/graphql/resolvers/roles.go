@@ -17,8 +17,9 @@ func init() {
 	utils.Must(
 		schema.AddQuery("roles: [Role!]!"),
 		schema.AddQuery("role(id: ID): Role"),
-		schema.AddQuery("myPermissions: GetPermissionsResponse"),
 		schema.AddExtraResolver("Role", "resourceToAccess: [Label!]!"),
+		schema.AddQuery("myPermissions: GetPermissionsResponse"),
+		schema.AddExtraResolver("GetPermissionsResponse", "resourceToAccess: [Label!]!"),
 	)
 }
 
@@ -55,8 +56,22 @@ func (resolver *Resolver) MyPermissions(ctx context.Context) (*getPermissionsRes
 	return resolver.wrapGetPermissionsResponse(perms, perms != nil, err)
 }
 
-// Enable returning of the ResourceToAccess map.
+// Enable returning of the ResourceToAccess map for Role.
 func (resolver *roleResolver) ResourceToAccess() labels {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Roles, "ResourceToAccess")
+	rToA := resolver.data.GetResourceToAccess()
+	if rToA == nil {
+		return nil
+	}
+	rToS := make(map[string]string)
+	for resource, access := range rToA {
+		rToS[resource] = access.String()
+	}
+	return labelsResolver(rToS)
+}
+
+// Enable returning of the ResourceToAccess map for MyPermissions.
+func (resolver *getPermissionsResponseResolver) ResourceToAccess() labels {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Roles, "ResourceToAccess")
 	rToA := resolver.data.GetResourceToAccess()
 	if rToA == nil {
