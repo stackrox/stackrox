@@ -28,7 +28,7 @@ func init() {
 
 func checkNIST411(ctx framework.ComplianceContext) {
 	checkCVSS7PolicyEnforcedOnBuild(ctx)
-	checkCVSS7PolicyEnforcedOnDeploy(ctx)
+	checkCriticalVulnPolicyEnforcedOnDeploy(ctx)
 	common.CheckImageScannerInUseByCluster(ctx)
 	common.CheckAnyPolicyInLifecycleStageEnforced(ctx, storage.LifecycleStage_BUILD)
 }
@@ -38,7 +38,7 @@ func checkCVSS7PolicyEnforcedOnBuild(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	passed := 0
 	for _, p := range policies {
-		if !policyHasCVSS(p) || !pkg.AppliesAtBuildTime(p) {
+		if (!policyHasCVSS(p) && !policyHasSeverity(p)) || !pkg.AppliesAtBuildTime(p) {
 			continue
 		}
 		enabled := common.IsPolicyEnabled(p)
@@ -53,20 +53,20 @@ func checkCVSS7PolicyEnforcedOnBuild(ctx framework.ComplianceContext) {
 		}
 	}
 	if passed >= 1 {
-		framework.Pass(ctx, "At least one build-stage policy is enabled and enforced that disallows images with a critical CVSS score")
+		framework.Pass(ctx, "At least one build-stage policy is enabled and enforced that disallows images with a critical vulnerability")
 	} else if len(policiesEnabledNotEnforced) > 0 {
-		framework.Failf(ctx, "Enforcement is not set on any build-stage policies that disallow images with a critical CVSS score (%v)", policiesEnabledNotEnforced)
+		framework.Failf(ctx, "Enforcement is not set on any build-stage policies that disallow images with a critical vulnerability (%v)", policiesEnabledNotEnforced)
 	} else {
-		framework.Fail(ctx, "No build-stage policy that disallows images with a critical CVSS score was found")
+		framework.Fail(ctx, "No build-stage policy that disallows images with a critical vulnerability was found")
 	}
 }
 
-func checkCVSS7PolicyEnforcedOnDeploy(ctx framework.ComplianceContext) {
+func checkCriticalVulnPolicyEnforcedOnDeploy(ctx framework.ComplianceContext) {
 	policiesEnabledNotEnforced := []string{}
 	policies := ctx.Data().Policies()
 	passed := 0
 	for _, p := range policies {
-		if !policyHasCVSS(p) || !pkg.AppliesAtDeployTime(p) {
+		if (!policyHasCVSS(p) && !policyHasSeverity(p)) || !pkg.AppliesAtDeployTime(p) {
 			continue
 		}
 		enabled := common.IsPolicyEnabled(p)
@@ -81,14 +81,18 @@ func checkCVSS7PolicyEnforcedOnDeploy(ctx framework.ComplianceContext) {
 		}
 	}
 	if passed >= 1 {
-		framework.Pass(ctx, "Deploy time policies that disallows images with a critical CVSS score is enabled and enforced")
+		framework.Pass(ctx, "Deploy time policies that disallows images with a critical vulnerability is enabled and enforced")
 	} else if len(policiesEnabledNotEnforced) > 0 {
-		framework.Failf(ctx, "Enforcement is not set on the deploy time policies that disallows images with a critical CVSS score (%v)", policiesEnabledNotEnforced)
+		framework.Failf(ctx, "Enforcement is not set on the deploy time policies that disallows images with a critical vulnerability (%v)", policiesEnabledNotEnforced)
 	} else {
-		framework.Fail(ctx, "No deploy time policy that disallows images with a critical CVSS score was found")
+		framework.Fail(ctx, "No deploy time policy that disallows images with a critical vulnerability was found")
 	}
 }
 
 func policyHasCVSS(p *storage.Policy) bool {
 	return policyfields.ContainsCVSSField(p)
+}
+
+func policyHasSeverity(p *storage.Policy) bool {
+	return policyfields.ContainsSeverityField(p)
 }

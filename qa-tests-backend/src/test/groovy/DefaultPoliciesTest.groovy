@@ -55,7 +55,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
             "Fixable CVSS >= 6 and Privileged",
-            "Fixable CVSS >= 7",
+            "Fixable Severity at least Important",
             "Ubuntu Package Manager in Image",
             "Red Hat Package Manager in Image",
             "Curl in Image",

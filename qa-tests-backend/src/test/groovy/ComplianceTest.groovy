@@ -876,7 +876,7 @@ class ComplianceTest extends BaseSpecification {
                 new Control(
                         "NIST_800_190:4_1_1",
                         ["At least one build-stage policy is enabled and enforced that " +
-                                 "disallows images with a critical CVSS score",
+                                 "disallows images with a critical vulnerability",
                          "At least one policy in lifecycle stage \"BUILD\" is enabled and enforced",
                          "Cluster has an image scanner in use"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
@@ -910,7 +910,7 @@ class ComplianceTest extends BaseSpecification {
 
         ]
         def enforcementPolicies = [
-                "Fixable CVSS >= 7",
+                "Fixable Severity at least Important",
                 "Privileged Container",
                 "90-Day Image Age",
                 "Latest tag",
@@ -921,7 +921,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "update policies"
         Services.updatePolicyLifecycleStage(
-                "Fixable CVSS >= 7",
+                "Fixable Severity at least Important",
                 [PolicyOuterClass.LifecycleStage.BUILD, PolicyOuterClass.LifecycleStage.DEPLOY])
         for (String policyName : enforcementPolicies) {
             def enforcements = []

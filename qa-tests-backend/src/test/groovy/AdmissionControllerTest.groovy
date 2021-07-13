@@ -28,7 +28,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> latestTagEnforcements
     @Shared
-    private List<PolicyOuterClass.EnforcementAction> cvssEnforcements
+    private List<PolicyOuterClass.EnforcementAction> severityEnforcements
     @Shared
     private String gcrId
     @Shared
@@ -41,7 +41,7 @@ class AdmissionControllerTest extends BaseSpecification {
     static final private String BUSYBOX_BYPASS    = "busybox-bypass"
 
     private final static String LATEST_TAG = "Latest tag"
-    private final static String CVSS = "Fixable CVSS >= 7"
+    private final static String SEVERITY = "Fixable Severity at least Important"
 
     static final private String ADMISSION_CONTROLLER_APP_NAME = "admission-control"
 
@@ -75,8 +75,8 @@ class AdmissionControllerTest extends BaseSpecification {
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
-        cvssEnforcements = Services.updatePolicyEnforcement(
-                CVSS,
+        severityEnforcements = Services.updatePolicyEnforcement(
+                SEVERITY,
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
@@ -113,8 +113,8 @@ class AdmissionControllerTest extends BaseSpecification {
         )
 
         Services.updatePolicyEnforcement(
-                CVSS,
-                cvssEnforcements
+                SEVERITY,
+                severityEnforcements
         )
         assert ImageIntegrationService.deleteImageIntegration(gcrId)
         ImageIntegrationService.addStackroxScannerIntegration()
@@ -162,10 +162,10 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
         "Create policy looking for a specific CVE"
-        // We don't want to block on CVSS
+        // We don't want to block on SEVERITY
         Services.updatePolicyEnforcement(
-                CVSS,
-                cvssEnforcements
+                SEVERITY,
+                severityEnforcements
         )
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
@@ -248,7 +248,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         // Add back enforcement
         Services.updatePolicyEnforcement(
-                CVSS,
+                SEVERITY,
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 

@@ -4,6 +4,7 @@
   "description": "Alert on deployments with fixable vulnerabilities with a CVSS of at least 7",
   "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
   "remediation": "Use your package manager to update to a fixed version in future builds or speak with your security team to mitigate the vulnerabilities.",
+  "disabled": true,
   "categories": [
     "Vulnerability Management"
   ],

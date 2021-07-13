@@ -54,6 +54,11 @@ func ContainsCVSSField(p *storage.Policy) bool {
 	return p.GetFields().GetCvss() != nil
 }
 
+// ContainsSeverityField returns whether the given policy contains a Severity field.
+func ContainsSeverityField(p *storage.Policy) bool {
+	return booleanpolicy.ContainsValueWithFieldName(p, fieldnames.Severity)
+}
+
 // GetProcessNames gets any ProcessName fields from the policy.
 func GetProcessNames(p *storage.Policy) []string {
 	if policyversion.IsBooleanPolicy(p) {

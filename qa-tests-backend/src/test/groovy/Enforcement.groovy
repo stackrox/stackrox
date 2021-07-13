@@ -28,7 +28,8 @@ class Enforcement extends BaseSpecification {
     private final static String KILL_ENFORCEMENT = "kill-enforcement-only"
     private final static String SCALE_DOWN_ENFORCEMENT = "scale-down-enforcement-only"
     private final static String SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE = "scale-down-enforcement-build-deploy-image"
-    private final static String SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS = "scale-down-enforcement-build-deploy-cvss"
+    private final static String SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY =
+            "scale-down-enforcement-build-deploy-severity"
     private final static String NODE_CONSTRAINT_ENFORCEMENT = "node-constraint-enforcement"
     private final static String FAIL_BUILD_ENFORCEMENT = "fail-build-enforcement-only"
     private final static String FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO = "fail-build-enforcement-with-scale-to-zero"
@@ -80,10 +81,10 @@ class Enforcement extends BaseSpecification {
                         .build()
                 CreatePolicyService.createNewPolicy(policy)
             },
-            (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS) : {
+            (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) : {
                 duplicatePolicyForTest(
-                        CVSS,
-                        SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS,
+                        SEVERITY,
+                        SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY,
                         [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT, EnforcementAction.FAIL_BUILD_ENFORCEMENT],
                         [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
                 )
@@ -167,7 +168,7 @@ class Enforcement extends BaseSpecification {
                             .setImage("stackrox/qa:enforcement")
                             .addPort(22)
                             .setSkipReplicaWait(true),
-            (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS):
+            (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY):
                     new Deployment()
                             .setImage("us.gcr.io/stackrox-ci/nginx:1.9.1")
                             .addPort(22)
@@ -219,7 +220,7 @@ class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"
     private final static String APT_GET_POLICY = "Ubuntu Package Manager Execution"
     private final static String LATEST_TAG = "Latest tag"
-    private final static String CVSS = "Fixable CVSS >= 7"
+    private final static String SEVERITY = "Fixable Severity at least Important"
     private final static String SCAN_AGE = "30-Day Scan Age"
     private final static String BASELINEPROCESS_POLICY = "Unauthorized Process Execution"
 
@@ -365,20 +366,20 @@ class Enforcement extends BaseSpecification {
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
-    def "Test Scale-down Enforcement - Integration (build,deploy - cvss)"() {
-        // This test verifies enforcement by triggering a policy violation on a CVSS
+    def "Test Scale-down Enforcement - Integration (build,deploy - SEVERITY)"() {
+        // This test verifies enforcement by triggering a policy violation on a SEVERITY
         // based policy that is configured for scale-down enforcement with both BUILD and
         // DEPLOY Lifecycle Stages
 
         given:
         "policy and deployment already fabricated"
-        Deployment d = DEPLOYMENTS[SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS]
+        Deployment d = DEPLOYMENTS[SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY]
 
         expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS,
+                SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
@@ -397,7 +398,7 @@ class Enforcement extends BaseSpecification {
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 d.name,
-                SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS) == 1
+                SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) == 1
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
