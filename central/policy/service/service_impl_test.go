@@ -217,6 +217,7 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 				Privileged: true,
 			},
 		},
+		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
 	}
 	resp, err := s.tested.DryRunPolicy(ctx, runtimePolicy)
 	s.Nil(err)
@@ -243,6 +244,7 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 				Privileged: true,
 			},
 		},
+		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
 	}
 
 	ctx := context.Background()
@@ -292,6 +294,7 @@ func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
 				Privileged: true,
 			},
 		},
+		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
 	}
 	importRespPolicy := &storage.Policy{
 		Id:              mockID,
@@ -322,6 +325,7 @@ func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
 				},
 			},
 		},
+		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
 	}
 	ctx := context.Background()
 	mockImportResp := []*v1.ImportPolicyResponse{
@@ -669,6 +673,9 @@ func (s *PolicyServiceTestSuite) TestScopeClusterRegex() {
 
 func (s *PolicyServiceTestSuite) TestRuntimeLifecycle() {
 	s.testLifecycles("CVE:abcd+Process Name:123", storage.LifecycleStage_RUNTIME)
+	// Note that kube events/audit logs fields are simply dropped instead of being returned as unconvertableFields, since they are not searchable.
+	s.testLifecycles("CVE:abcd+Kubernetes Resource:PODS_EXEC", storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY)
+	s.testLifecycles("CVE:abcd+Kubernetes Resource:PODS_EXEC+Is Impersonated User:true", storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY)
 }
 
 func (s *PolicyServiceTestSuite) TestBuildAndDeployLifecycles() {

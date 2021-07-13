@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -907,9 +908,27 @@ func (s *serviceImpl) makePolicyFromFieldMap(ctx context.Context, fieldMap map[s
 
 	// We have to add and remove a policy name because the BPL validator requires a policy name for these checks
 	policy.Name = "Policy from Search"
-	policy.LifecycleStages = s.validator.getAllowedLifecyclesForPolicy(policy)
-	policy.Name = ""
 
+	if features.K8sAuditLogDetection.Enabled() {
+		var hasDeploymentEventFields bool
+		for _, group := range policyGroups {
+			// Only check for Deployment event fields since audit log fields are not searchable anyways.
+			if booleanpolicy.DeploymentEventFields.Contains(group.GetFieldName()) {
+				hasDeploymentEventFields = true
+				break
+			}
+		}
+
+		if hasDeploymentEventFields {
+			policy.EventSource = storage.EventSource_DEPLOYMENT_EVENT
+		}
+	}
+
+	if lifecycleStages := s.validator.getAllowedLifecyclesForPolicy(policy); len(lifecycleStages) > 0 {
+		policy.LifecycleStages = lifecycleStages
+	}
+
+	policy.Name = ""
 	return policy, unconvertableFields, nil
 }
 

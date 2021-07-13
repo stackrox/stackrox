@@ -1837,10 +1837,11 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 	}
 }
 
-func policyWithGroups(groups ...*storage.PolicyGroup) *storage.Policy {
+func policyWithGroups(eventSrc storage.EventSource, groups ...*storage.PolicyGroup) *storage.Policy {
 	return &storage.Policy{
 		PolicyVersion:  policyversion.CurrentVersion().String(),
 		Name:           uuid.NewV4().String(),
+		EventSource:    eventSrc,
 		PolicySections: []*storage.PolicySection{{PolicyGroups: groups}},
 	}
 }
@@ -1850,11 +1851,11 @@ func policyGroupWithSingleKeyValue(fieldName, value string, negate bool) *storag
 }
 
 func policyWithSingleKeyValue(fieldName, value string, negate bool) *storage.Policy {
-	return policyWithGroups(policyGroupWithSingleKeyValue(fieldName, value, negate))
+	return policyWithGroups(storage.EventSource_NOT_APPLICABLE, policyGroupWithSingleKeyValue(fieldName, value, negate))
 }
 
 func policyWithSingleFieldAndValues(fieldName string, values []string, negate bool, op storage.BooleanOperator) *storage.Policy {
-	return policyWithGroups(&storage.PolicyGroup{FieldName: fieldName, Values: sliceutils.Map(values, func(val *string) *storage.PolicyValue {
+	return policyWithGroups(storage.EventSource_NOT_APPLICABLE, &storage.PolicyGroup{FieldName: fieldName, Values: sliceutils.Map(values, func(val *string) *storage.PolicyValue {
 		return &storage.PolicyValue{Value: *val}
 	}).([]*storage.PolicyValue), Negate: negate, BooleanOperator: op})
 }
@@ -2448,7 +2449,13 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
-			m, err := BuildDeploymentWithProcessMatcher(policyWithGroups(c.groups...))
+			var policy *storage.Policy
+			if features.K8sAuditLogDetection.Enabled() {
+				policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
+			} else {
+				policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, c.groups...)
+			}
+			m, err := BuildDeploymentWithProcessMatcher(policy)
 			require.NoError(t, err)
 
 			actualMatches := make(map[string][]string)
@@ -2527,7 +2534,12 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 		},
 	} {
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
-			policy := policyWithGroups(c.groups...)
+			var policy *storage.Policy
+			if features.K8sAuditLogDetection.Enabled() {
+				policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
+			} else {
+				policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, c.groups...)
+			}
 			if c.withProcessSection {
 				policy.PolicySections = append(policy.PolicySections,
 					&storage.PolicySection{PolicyGroups: []*storage.PolicyGroup{aptGetGroup}})
@@ -2641,7 +2653,13 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	// Create a policy for triggering flows that are not in baseline
 	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedNetworkFlowDetected, "true", false)
 
-	m, err := BuildDeploymentWithNetworkFlowMatcher(policyWithGroups(whitelistGroup))
+	var policy *storage.Policy
+	if features.K8sAuditLogDetection.Enabled() {
+		policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, whitelistGroup)
+	} else {
+		policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, whitelistGroup)
+	}
+	m, err := BuildDeploymentWithNetworkFlowMatcher(policy)
 	suite.NoError(err)
 
 	srcName, dstName, port, protocol := "deployment-name", "ext-source-name", 1, storage.L4Protocol_L4_PROTOCOL_TCP
@@ -2815,7 +2833,13 @@ func BenchmarkProcessPolicies(b *testing.B) {
 	} {
 		c := testCase
 		b.Run(fmt.Sprintf("%+v", c.groups), func(b *testing.B) {
-			m, err := BuildDeploymentWithProcessMatcher(policyWithGroups(c.groups...))
+			var policy *storage.Policy
+			if features.K8sAuditLogDetection.Enabled() {
+				policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
+			} else {
+				policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, c.groups...)
+			}
+			m, err := BuildDeploymentWithProcessMatcher(policy)
 			require.NoError(b, err)
 
 			b.ResetTimer()
@@ -2829,8 +2853,13 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			}
 		})
 	}
-
-	m, err := BuildDeploymentWithProcessMatcher(policyWithGroups(aptGetGroup, privilegedGroup, baselineGroup))
+	var policy *storage.Policy
+	if features.K8sAuditLogDetection.Enabled() {
+		policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, aptGetGroup, privilegedGroup, baselineGroup)
+	} else {
+		policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, aptGetGroup, privilegedGroup, baselineGroup)
+	}
+	m, err := BuildDeploymentWithProcessMatcher(policy)
 	require.NoError(b, err)
 	for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 		for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
