@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/nxadm/tail"
@@ -26,6 +27,9 @@ var (
 
 	// resourceTypesAllowList is set of resources that will be sent.
 	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps")
+
+	// verbsDenyList is the set of verbs that will NOT be sent if encountered.
+	verbsDenyList = set.NewFrozenStringSet("WATCH", "LIST")
 )
 
 type auditLogReaderImpl struct {
@@ -139,7 +143,10 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.T
 	}
 
 	// Only send when both the stage and resource type are in their corresponding allow list
-	return stagesAllowList.Contains(event.Stage) && resourceTypesAllowList.Contains(event.ObjectRef.Resource)
+	// and when verb is not disallowed
+	return stagesAllowList.Contains(event.Stage) &&
+		resourceTypesAllowList.Contains(event.ObjectRef.Resource) &&
+		!verbsDenyList.Contains(strings.ToUpper(event.Verb))
 }
 
 func (s *auditLogReaderImpl) cleanupTailOnStop(tailer *tail.Tail) {

@@ -106,8 +106,12 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 	}
 
 	if features.K8sAuditLogDetection.Enabled() && eventSource == storage.EventSource_AUDIT_LOG_EVENT {
+		// For Audit Log source based policies, both the k8s resource and verb must be provided.
 		if !seenFields.Contains(fieldnames.KubeResource) {
 			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeResource)
+		}
+		if !seenFields.Contains(fieldnames.KubeAPIVerb) {
+			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeAPIVerb)
 		}
 	}
 	return errorList.ToError()

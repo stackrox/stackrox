@@ -224,6 +224,54 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForValidSta
 	}
 }
 
+func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForVerbsNotInDenyList() {
+	tempDir, err := ioutil.TempDir("", "")
+	s.NoError(err)
+	defer func() {
+		s.NoError(os.RemoveAll(tempDir))
+	}()
+	logPath := filepath.Join(tempDir, "testaudit_filter_verb.log")
+
+	sender, reader := s.getMocks(logPath)
+
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	s.NoError(err)
+	defer s.cleanupFile(f, logPath)
+
+	// Write a few log lines for verbs that won't be sent
+	unsupportedVerbs := []string{"WATCH", "watch", "LIST", "list", "Watch", "lIsT"}
+	for _, verb := range unsupportedVerbs {
+		line, _ := s.fakeAuditLogLineWithStage(verb, "secrets", "fake-token", "stackrox", types.TimestampString(types.TimestampNow()), "ResponseComplete")
+		_, err = f.Write([]byte(line))
+		s.NoError(err)
+		s.NoError(f.Sync())
+	}
+
+	// Then the ones that will be
+	supportedVerbs := []string{"GET", "get", "Create", "patCH", "DELETE"}
+	expectedEvents := make([]auditEvent, 0, 2)
+	for _, verb := range supportedVerbs {
+		line, expectedEvent := s.fakeAuditLogLineWithStage(verb, "secrets", "fake-token", "stackrox", types.TimestampString(types.TimestampNow()), "ResponseComplete")
+		_, err = f.Write([]byte(line))
+		s.NoError(err)
+		s.NoError(f.Sync())
+		expectedEvents = append(expectedEvents, expectedEvent)
+	}
+
+	started, err := reader.StartReader(context.Background())
+	s.True(started)
+	s.NoError(err)
+	defer reader.StopReader()
+
+	// Give it a sec to catch up
+	time.Sleep(1 * time.Second)
+
+	for _, expectedEvent := range expectedEvents {
+		event := s.getSentEvent(sender.sentC)
+		s.Equal(expectedEvent, *event) // First event received should match the one not filtered out
+	}
+}
+
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBeParsed() {
 	tempDir, err := ioutil.TempDir("", "")
 	s.NoError(err)

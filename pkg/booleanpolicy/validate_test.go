@@ -269,6 +269,14 @@ func (s *PolicyValueValidator) TestValidateKubeResourceSpecifiedForAuditEventSou
 							},
 						},
 					},
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "GET",
+							},
+						},
+					},
 				},
 			},
 		},
@@ -287,6 +295,62 @@ func (s *PolicyValueValidator) TestValidateKubeResourceSpecifiedForAuditEventSou
 						Values: []*storage.PolicyValue{
 							{
 								Value: "GET",
+							},
+						},
+					},
+				},
+			},
+		},
+	}, ValidateSourceIsAuditLogEvents()))
+}
+
+func (s *PolicyValueValidator) TestValidateKubeAPIVerbSpecifiedForAuditEventSource() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+	assert.NoError(s.T(), Validate(&storage.Policy{
+		Name:            "runtime-policy-valid",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "SECRETS",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "GET",
+							},
+						},
+					},
+				},
+			},
+		},
+	}, ValidateSourceIsAuditLogEvents()))
+
+	assert.Error(s.T(), Validate(&storage.Policy{
+		Name:            "runtime-policy-no-resource",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "SECRETS",
 							},
 						},
 					},

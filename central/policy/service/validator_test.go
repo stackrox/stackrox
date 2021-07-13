@@ -543,6 +543,14 @@ func (s *PolicyValidatorTestSuite) TestNoScopeLabelsForAuditEventSource() {
 							},
 						},
 					},
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "GET",
+							},
+						},
+					},
 				},
 			},
 		},
@@ -570,6 +578,14 @@ func (s *PolicyValidatorTestSuite) TestNoScopeLabelsForAuditEventSource() {
 						Values: []*storage.PolicyValue{
 							{
 								Value: "SECRETS",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "GET",
 							},
 						},
 					},
@@ -610,6 +626,14 @@ func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
 							},
 						},
 					},
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "GET",
+							},
+						},
+					},
 				},
 			},
 		},
@@ -628,6 +652,14 @@ func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
 						Values: []*storage.PolicyValue{
 							{
 								Value: "SECRETS",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "GET",
 							},
 						},
 					},
