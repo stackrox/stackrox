@@ -33,11 +33,12 @@ func Singleton() DataStore {
 		sacV2Enabled := features.ScopedAccessControl.Enabled()
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, sacV2Enabled)
 
-		// Both operations are upserts, the syntactic difference is due to the
+		// All operations are upserts, the syntactic difference is due to the
 		// distinct underlying stores, boltdb vs rocksdb.
-		roles, permissionSets := getDefaultObjects()
+		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(upsertDefaultRoles(roleStorage, roles))
 		utils.Must(permissionSetStorage.UpsertMany(permissionSets))
+		utils.Must(accessScopeStorage.UpsertMany(accessScopes))
 	})
 	return ds
 }
@@ -82,7 +83,16 @@ var defaultRoles = map[string]roleAttributes{
 	},
 }
 
-func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet) {
+var defaultAccessScopes = []*storage.SimpleAccessScope{
+	{
+		Id:          roleUtils.EnsureValidAccessScopeID("denyall"),
+		Name:        "Deny All",
+		Description: "No access to scoped resources",
+		Rules:       &storage.SimpleAccessScope_Rules{},
+	},
+}
+
+func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.SimpleAccessScope) {
 	roles := make([]*storage.Role, 0, len(defaultRoles))
 	permissionSets := make([]*storage.PermissionSet, 0, len(defaultRoles))
 
@@ -105,7 +115,7 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet) {
 		roles = append(roles, role)
 
 	}
-	return roles, permissionSets
+	return roles, permissionSets, defaultAccessScopes
 }
 
 func upsertDefaultRoles(store roleStore.Store, roles []*storage.Role) error {
