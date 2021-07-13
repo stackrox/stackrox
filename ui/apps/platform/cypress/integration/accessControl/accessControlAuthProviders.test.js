@@ -174,12 +174,15 @@ describe('Access Control Auth providers', () => {
             checkboxDoNotUseClientSecret,
         } = selectors.form.authProvider.oidc;
 
-        cy.get(inputClientSecret).should('be.disabled').should('have.value', ''); // TODO was ****** in classic test
-        // cy.get(checkboxDoNotUseClientSecret).should('be.disabled'); // TODO see above and should it be checked or not?
+        cy.get(inputClientSecret)
+            .should('be.disabled')
+            .should('have.value', '')
+            .should('have.attr', 'placeholder', '*****');
+        cy.get(checkboxDoNotUseClientSecret).should('be.disabled').should('not.be.checked');
 
         cy.get(selectors.form.editButton).click();
 
-        // cy.get(inputClientSecret).should('be.enabled');
+        cy.get(inputClientSecret).should('be.enabled');
         cy.get(checkboxDoNotUseClientSecret).should('be.enabled');
 
         cy.get(inputIssuer).clear().type('irrelevant-updated');
@@ -187,8 +190,8 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.form.saveButton).click(); // TODO disabled, because not valid?
         cy.wait('@PutAuthProvider');
 
-        cy.get(inputClientSecret).should('be.disabled').should('have.value', ''); // TODO was ****** in classic test
-        // cy.get(checkboxDoNotUseClientSecret).should('be.disabled'); // TODO see above and should it be checked or not?
+        cy.get(inputClientSecret).should('be.disabled').should('have.value', '').should('have.attr', 'placeholder', '*****');
+        cy.get(checkboxDoNotUseClientSecret).should('be.disabled').should('not.be.checked'); // TODO should it be checked or not?
         */
     });
 
