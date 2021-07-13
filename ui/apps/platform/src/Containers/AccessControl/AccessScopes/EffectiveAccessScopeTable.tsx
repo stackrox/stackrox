@@ -9,20 +9,6 @@ import { EffectiveAccessScopeCluster, SimpleAccessScopeNamespace } from 'service
 import EffectiveAccessScopeLabels from './EffectiveAccessScopeLabels';
 import EffectiveAccessScopeStateIcon from './EffectiveAccessScopeStateIcon';
 
-const infoName = {
-    ariaLabel: 'Name of cluster or namespace (indented in light gray row)',
-    tooltip: (
-        <div>
-            Name of <strong>cluster</strong>
-            <br />
-            or <strong>namespace</strong> (indented in light gray row)
-        </div>
-    ),
-    tooltipProps: {
-        isContentLeftAligned: true,
-    },
-};
-
 const infoLabels = {
     ariaLabel:
         'Cluster labels specified in Platform Configuration; Namespace labels specified in Kubernetes',
@@ -300,7 +286,7 @@ function EffectiveAccessScopeTable({
             >
                 <Thead>
                     <Tr>
-                        <Th info={infoName}>Cluster name</Th>
+                        <Th>Cluster name</Th>
                         <Th
                             modifier="fitContent"
                             className={counterComputing === 0 ? '' : '--pf-global--Color--200'}

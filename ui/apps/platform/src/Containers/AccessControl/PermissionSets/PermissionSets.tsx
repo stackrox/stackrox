@@ -22,6 +22,7 @@ import {
     updatePermissionSet,
 } from 'services/RolesService';
 
+import AccessControlDescription from '../AccessControlDescription';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -185,6 +186,10 @@ function PermissionSets(): ReactElement {
                 isDisabled={hasAction}
             />
             <AccessControlNav entityType={entityType} isDisabled={hasAction} />
+            <AccessControlDescription>
+                Add predefined sets of application level permissions that users have when
+                interacting with the platform
+            </AccessControlDescription>
             {alertPermissionSets}
             {alertResources}
             {alertRoles}

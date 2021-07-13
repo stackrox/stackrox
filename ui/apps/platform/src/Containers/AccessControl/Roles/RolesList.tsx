@@ -127,7 +127,7 @@ function RolesList({
                                             entityName={getAccessScopeName(accessScopeId)}
                                         />
                                     ) : (
-                                        'No access scope'
+                                        'Unrestricted'
                                     )}
                                 </Td>
                                 {getIsDefaultRoleName(name) || getHasRoleName(groups, name) ? (

@@ -31,6 +31,7 @@ import { mergeGroupsWithAuthProviders } from './authProviders.utils';
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 
+import AccessControlDescription from '../AccessControlDescription';
 import AccessControlHeading from '../AccessControlHeading';
 import AuthProviderForm from './AuthProviderForm';
 import AuthProvidersList from './AuthProvidersList';
@@ -125,6 +126,9 @@ function AuthProviders(): ReactElement {
                 isDisabled={hasAction}
             />
             <AccessControlNav entityType={entityType} />
+            <AccessControlDescription>
+                Configure authentication providers and rules to assign roles to users
+            </AccessControlDescription>
             {(isFetchingAuthProviders || isFetchingRoles) && (
                 <Bullseye>
                     <Spinner />

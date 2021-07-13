@@ -25,6 +25,7 @@ import {
     updateRole,
 } from 'services/RolesService';
 
+import AccessControlDescription from '../AccessControlDescription';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -90,7 +91,6 @@ function Roles(): ReactElement {
         setAlertGroups(null);
         fetchGroups()
             .then((dataFetched) => {
-                console.log(dataFetched.response.groups); // eslint-disable-line
                 setGroups(dataFetched.response.groups);
             })
             .catch((error) => {
@@ -213,6 +213,10 @@ function Roles(): ReactElement {
                 isDisabled={hasAction}
             />
             <AccessControlNav entityType={entityType} isDisabled={hasAction} />
+            <AccessControlDescription>
+                Add user roles by selecting the permission sets and access scopes required for
+                user&apos;s jobs
+            </AccessControlDescription>
             {alertRoles}
             {alertPermissionSets}
             {alertAccessScopes}

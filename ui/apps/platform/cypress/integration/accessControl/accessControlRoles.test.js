@@ -81,7 +81,7 @@ describe('Access Control Roles', () => {
                 const roleName = td.textContent;
                 if (defaultNames.includes(roleName)) {
                     cy.get(`${tdPermissionSetLink}:eq(${index})`).should('have.text', roleName);
-                    cy.get(`${tdAccessScope}:eq(${index})`).should('have.text', 'No access scope');
+                    cy.get(`${tdAccessScope}:eq(${index})`).should('have.text', 'Unrestricted');
                 }
             });
         });
@@ -109,7 +109,7 @@ describe('Access Control Roles', () => {
             cy.get(getRadioPermissionSetForName(defaultName)).should('be.disabled');
         });
 
-        cy.get(getRadioAccessScopeForName('No access scope')).should('be.disabled');
+        cy.get(getRadioAccessScopeForName('Unrestricted')).should('be.disabled');
     });
 
     describe('direct link to default role', () => {
@@ -127,7 +127,7 @@ describe('Access Control Roles', () => {
                     );
                 });
 
-                cy.get(getRadioAccessScopeForName('No access scope')).should('be.checked');
+                cy.get(getRadioAccessScopeForName('Unrestricted')).should('be.checked');
             });
         });
     });
@@ -149,7 +149,7 @@ describe('Access Control Roles', () => {
         const name = `Role-${new Date().getTime()}`;
         const description = 'New description';
         const permissionSetName = 'None';
-        const accessScopeName = 'No access scope';
+        const accessScopeName = 'Unrestricted';
 
         cy.get(selectors.form.inputName).type(name);
         cy.get(selectors.form.inputDescription).type(description);

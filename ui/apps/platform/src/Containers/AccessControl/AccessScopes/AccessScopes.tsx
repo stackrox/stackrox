@@ -20,6 +20,7 @@ import {
     updateAccessScope,
 } from 'services/RolesService';
 
+import AccessControlDescription from '../AccessControlDescription';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -168,6 +169,10 @@ function AccessScopes(): ReactElement {
                 isDisabled={hasAction}
             />
             <AccessControlNav entityType={entityType} isDisabled={hasAction} />
+            <AccessControlDescription>
+                Add predefined sets of authorized Kubernetes resources that users should be able to
+                access
+            </AccessControlDescription>
             {alertAccessScopes}
             {alertRoles}
             {counterFetching !== 0 ? (

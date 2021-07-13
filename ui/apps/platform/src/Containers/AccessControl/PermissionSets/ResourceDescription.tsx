@@ -2,16 +2,16 @@ import React, { ReactElement } from 'react';
 
 // First draft of description fields for possible future request from backend.
 const resourceDescriptions: Record<string, string> = {
-    APIToken: 'Read: List API tokens. Write: Add or revoke API tokens.',
+    APIToken: 'Read: View API tokens. Write: Add or revoke API tokens.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
     AllComments:
         'Read: N/A Write: Delete comments from other users. All users can edit and delete their own comments by default. To add and remove comments or tags, you need a role with write access for the resource you are modifying.',
     AuthPlugin:
         'Read: View authentication plugins. Write: Modify authentication plugins (local administrator only).',
     AuthProvider:
-        'Read: View configurations for single-sign-on. Write: Modify configurations forsingle-sign-on.',
+        'Read: View configuration for authentication services. Write: Modify configuration for authentication services.',
     BackupPlugins:
-        'Read: View integrations with automated backup systems like AWS S3. Write: Modify integrations with automated backup systems.',
+        'Read: View backup integrations and configurations. Write: Modify backup integrations and configurations.',
     CVE: 'Internal use only',
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
     Compliance: 'Read: View compliance standards and results. Write: N/A',
@@ -22,11 +22,11 @@ const resourceDescriptions: Record<string, string> = {
     Config:
         'Read: View options for data retention, security notices, and other related configurations. Write: Modify options for data retention, security notices, and other related configurations.',
     DebugLogs:
-        'Read: View the current logging verbosity level in Advanced Cluster Security components. Write: Modify the logging verbosity level.',
+        'Read: View the current logging verbosity level in Red Hat Advanced Cluster Security for Kubernetes components. Write: Modify the logging verbosity level.',
     Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A',
     Detection: 'Read: Check build-time policies against images or deployment YAMLs. Write: N/A',
     Group:
-        'Read: View the RBAC rules that match user metadata to Advanced Cluster Security roles. Write: Add, modify, or delete RBAC rules.',
+        'Read: View the RBAC rules that match user metadata to Red Hat Advanced Cluster Security for Kubernetes roles. Write: Add, modify, or delete RBAC rules.',
     Image: 'Read: View images, their components, and their vulnerabilities. Write: N/A',
     ImageComponent: 'Internal use only',
     ImageIntegration:
@@ -58,7 +58,7 @@ const resourceDescriptions: Record<string, string> = {
         'Read: View process baselines. Write: Add or remove processes from baselines.',
     Risk: 'Read: View Risk results. Write: N/A',
     Role:
-        'Read: View Advanced Cluster Security RBAC roles and permission sets. Write: Add, modify, or delete roles and permission sets.',
+        'Read: View Red Hat Advanced Cluster Security for Kubernetes RBAC roles and permission sets. Write: Add, modify, or delete roles and permission sets.',
     ScannerBundle: 'Read: Download the scanner bundle. Write: N/A',
     ScannerDefinitions:
         'Read: List image scanner integrations. Write: Add, modify, or delete image scanner integrations.',
@@ -67,9 +67,9 @@ const resourceDescriptions: Record<string, string> = {
         'Read: Check the status of automatic upgrades. Write: Disable or enable automatic upgrades for secured clusters.',
     ServiceAccount: 'Read: List Kubernetes service accounts in secured clusters. Write: N/A',
     ServiceIdentity:
-        'Read: View metadata about Advanced Cluster Security service-to-service authentication. Write: Revoke or reissue service-to-service authentication credentials.',
+        'Read: View metadata about Red Hat Advanced Cluster Security for Kubernetes service-to-service authentication. Write: Revoke or reissue service-to-service authentication credentials.',
     User:
-        'Read: View users that have accessed the Advanced Cluster Security instance, including the metadata that the authentication provider provides about them. Write: N/A',
+        'Read: View users that have accessed the Red Hat Advanced Cluster Security for Kubernetes instance, including the metadata that the authentication provider provides about them. Write: N/A',
     WatchedImage: '',
 };
 

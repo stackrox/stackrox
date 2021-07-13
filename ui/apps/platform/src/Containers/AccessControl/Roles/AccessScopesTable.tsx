@@ -35,15 +35,15 @@ function AccessScopesTable({
                             name={fieldId}
                             value=""
                             onChange={handleChange}
-                            aria-label="No access scope"
+                            aria-label="Unrestricted"
                             checked={accessScopeId.length === 0}
                             disabled={isDisabled}
                         />
                     </Td>
                     <Td dataLabel="Name" modifier="nowrap">
-                        No access scope
+                        Unrestricted
                     </Td>
-                    <Td dataLabel="Description">Role does not have an access scope</Td>
+                    <Td dataLabel="Description">Access to all clusters and namespaces</Td>
                 </Tr>
                 {accessScopes.map(({ id, name, description }) => (
                     <Tr key={id}>

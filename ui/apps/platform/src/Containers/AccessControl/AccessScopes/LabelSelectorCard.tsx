@@ -31,15 +31,9 @@ import { Activity, getRequirementActivity } from './accessScopes.utils';
 import RequirementRow from './RequirementRow';
 import RequirementRowAddKey from './RequirementRowAddKey';
 
-const labelIconLabelSelector = (
+const labelIconClusterLabelSelector = (
     <Tooltip
-        content={
-            <div>
-                A label selector card has <strong>requirement</strong> rows
-                <br />
-                All requirements must be satisfied (r1 and r2 and r3)
-            </div>
-        }
+        content={<div>Provide access to new and existing clusters using label selection rules</div>}
         isContentLeftAligned
         maxWidth="24rem"
     >
@@ -49,20 +43,19 @@ const labelIconLabelSelector = (
     </Tooltip>
 );
 
-const infoValues = {
-    ariaLabel: 'in: key has one of the values; not in: key does not have any of the values',
-    tooltip: (
-        <div>
-            <strong>in</strong>: key does have one of the values
-            <br />
-            <strong>not in</strong>: key does not have any of the values
+const labelIconNamespaceLabelSelector = (
+    <Tooltip
+        content={
+            <div>Provide access to new and existing namespaces using label selection rules</div>
+        }
+        isContentLeftAligned
+        maxWidth="24rem"
+    >
+        <div className="pf-c-button pf-m-plain pf-m-smallest pf-u-ml-sm">
+            <OutlinedQuestionCircleIcon />
         </div>
-    ),
-    tooltipProps: {
-        isContentLeftAligned: true,
-        maxWidth: '24rem',
-    },
-};
+    </Tooltip>
+);
 
 export type LabelSelectorCardProps = {
     requirements: LabelSelectorRequirement[];
@@ -98,6 +91,10 @@ function LabelSelectorCard({
         labelSelectorsKey === 'namespaceLabelSelectors'
             ? 'Namespace label selector'
             : 'Cluster label selector';
+    const labelIconLabelSelector =
+        labelSelectorsKey === 'namespaceLabelSelectors'
+            ? labelIconNamespaceLabelSelector
+            : labelIconClusterLabelSelector;
 
     const isLabelSelectorActive = activity === 'ACTIVE';
 
@@ -205,7 +202,7 @@ function LabelSelectorCard({
             <CardBody>
                 <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
                     <FlexItem>
-                        <strong>Requirements</strong>
+                        <strong>Rules</strong>
                     </FlexItem>
                     <FlexItem>
                         <Badge isRead>{requirements.length}</Badge>
@@ -217,9 +214,7 @@ function LabelSelectorCard({
                             <Tr>
                                 <Th modifier="breakWord">Key</Th>
                                 <Th modifier="fitContent">Operator</Th>
-                                <Th modifier="breakWord" info={infoValues}>
-                                    Values
-                                </Th>
+                                <Th modifier="breakWord">Values</Th>
                                 {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
                             </Tr>
                         </Thead>
@@ -274,14 +269,14 @@ function LabelSelectorCard({
                             <ToolbarContent>
                                 <ToolbarItem>
                                     <Button
-                                        key="Add requirement"
+                                        key="Add rule"
                                         variant="link"
                                         isInline
                                         icon={<PlusCircleIcon className="pf-u-mr-sm" />}
                                         onClick={onAddRequirement}
                                         isDisabled={indexRequirementActive !== -1}
                                     >
-                                        Add requirement
+                                        Add rule
                                     </Button>
                                 </ToolbarItem>
                                 <ToolbarGroup alignment={{ default: 'alignRight' }}>

@@ -37,19 +37,7 @@ import LabelInclusion from './LabelInclusion';
 
 const labelIconEffectiveAccessScope = (
     <Tooltip
-        content={
-            <div>
-                Computed <strong>state</strong> of clusters and namespaces
-                <br />
-                from <strong>manual</strong> inclusion, <strong>label</strong> inclusion,
-                <br />
-                or <strong>hierarchical</strong> inclusion:
-                <br />
-                included cluster: therefore all of its namespaces
-                <br />
-                included namespace: therefore its cluster
-            </div>
-        }
+        content="A list of the allowed clusters and namespaces in each cluster that a user role can access. Resources may be included manually or through label selector rules."
         isContentLeftAligned
         maxWidth="24em"
     >
@@ -63,9 +51,8 @@ const labelIconLabelInclusion = (
     <Tooltip
         content={
             <div>
-                A label inclusion tab has label <strong>selector</strong> cards
-                <br />
-                At least one selector must be satisfied (s1 or s2 or s3)
+                Configure label selection rules to provide access to clusters and namespaces based
+                on their labels
             </div>
         }
         isContentLeftAligned
@@ -320,7 +307,7 @@ function AccessScopeForm({
                 </FlexItem>
                 <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                     <FormGroup
-                        label="Label inclusion"
+                        label="Label selection rules"
                         fieldId="labelInclusion"
                         labelIcon={labelIconLabelInclusion}
                         className="pf-u-pb-lg"
