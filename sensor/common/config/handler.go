@@ -49,8 +49,7 @@ type configHandlerImpl struct {
 
 	admCtrlSettingsMgr        admissioncontroller.SettingsManager
 	auditLogCollectionManager *compliance.AuditLogCollectionManager
-
-	stopC concurrency.ErrorSignal
+	stopC                     concurrency.ErrorSignal
 }
 
 func (c *configHandlerImpl) Start() error {
@@ -90,18 +89,19 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 			if c.admCtrlSettingsMgr != nil {
 				c.admCtrlSettingsMgr.UpdateConfig(config.GetConfig())
 			}
+			if !features.K8sAuditLogDetection.Enabled() {
+				return
+			}
+			if c.config.DisableAuditLogs {
+				log.Infof("Stopping audit log collection")
+				c.auditLogCollectionManager.DisableCollection()
+			} else {
+				log.Infof("Starting audit log collection")
+				c.auditLogCollectionManager.EnableCollection()
+			}
 		})
 		if err != nil {
 			return err
-		}
-	}
-
-	// TODO: Handle the dynamic config changes to enable/disable audit log and call service.StartAuditLogCollection or StopAuditLogCollection appropriately
-	// for now start is called immediately as soon as the auditlogsync message is received (iff the feature flag is on)
-	if features.K8sAuditLogDetection.Enabled() {
-		if msg.GetAuditLogSync() != nil {
-			log.Infof("[TEMP] Starting audit log collection")
-			c.auditLogCollectionManager.EnableCollection()
 		}
 	}
 
