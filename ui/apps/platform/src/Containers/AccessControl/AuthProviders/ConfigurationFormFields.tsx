@@ -29,6 +29,7 @@ export type ConfigurationFormFieldsProps = {
     type: AuthProviderType;
     configErrors?: FormikErrors<Record<string, string>>;
     configTouched?: FormikTouched<Record<string, string>>;
+    disabled: boolean | undefined;
 };
 
 const baseURL = `${window.location.protocol}//${window.location.host}`;
@@ -36,6 +37,21 @@ const oidcFragmentCallbackURL = `${baseURL}/auth/response/oidc`;
 const oidcPostCallbackURL = `${baseURL}/sso/providers/oidc/callback`;
 const samlACSURL = `${baseURL}/sso/providers/saml/acs`;
 
+function getClientSecretHelperText(config, clientSecretSupported) {
+    // use client secret placeholder as an explanation text
+    let clientSecretHelperText = 'Client Secret provided by your IdP';
+    if (!clientSecretSupported) {
+        clientSecretHelperText = 'Client Secret is not supported with Fragment callback mode';
+    } else if (config?.clientOnly?.clientSecretStored) {
+        clientSecretHelperText = config?.do_not_use_client_secret
+            ? 'Disabled, the currently stored secret will be removed'
+            : 'Leave this field empty to keep the currently stored secret';
+    } else if (config?.do_not_use_client_secret) {
+        clientSecretHelperText = 'Disabled';
+    }
+
+    return clientSecretHelperText;
+}
 function ConfigurationFormFields({
     isViewing,
     onChange,
@@ -45,7 +61,15 @@ function ConfigurationFormFields({
     type,
     configErrors,
     configTouched,
+    disabled = false,
 }: ConfigurationFormFieldsProps): ReactElement {
+    const clientSecretSupported = config.mode !== 'fragment';
+    const clientSecretMandatory = config.mode === 'query';
+
+    const clientSecretHelperText = getClientSecretHelperText(config, clientSecretSupported);
+    const doNotUseClientSecretDisabled =
+        disabled || !clientSecretSupported || clientSecretMandatory;
+
     const showIssuerError = Boolean(configErrors?.issuer && configTouched?.issuer);
     const showClientIdError = Boolean(configErrors?.client_id && configTouched?.client_id);
     const showClientSecretError = Boolean(
@@ -92,7 +116,7 @@ function ConfigurationFormFields({
                                 id="config.issuer"
                                 value={(config.issuer as string) || ''}
                                 onChange={onChange}
-                                isDisabled={isViewing}
+                                isDisabled={isViewing || disabled}
                                 isRequired
                                 onBlur={onBlur}
                                 validated={showIssuerError ? ValidatedOptions.error : 'default'}
@@ -112,7 +136,7 @@ function ConfigurationFormFields({
                                 id="config.client_id"
                                 value={(config.client_id as string) || ''}
                                 onChange={onChange}
-                                isDisabled={isViewing}
+                                isDisabled={isViewing || disabled}
                                 isRequired
                                 onBlur={onBlur}
                                 validated={showClientIdError ? ValidatedOptions.error : 'default'}
@@ -142,7 +166,7 @@ function ConfigurationFormFields({
                                 id="config.mode"
                                 value={config.mode as string}
                                 handleSelect={updateClientSecretFlagOnChange}
-                                isDisabled={isViewing}
+                                isDisabled={isViewing || disabled}
                             >
                                 {oidcCallbackModes.map(({ value, label }) => (
                                     <SelectOption key={value} value={value}>
@@ -173,7 +197,7 @@ function ConfigurationFormFields({
                                 id="config.issuer"
                                 value={(config.issuer as string) || ''}
                                 onChange={onChange}
-                                isDisabled={isViewing}
+                                isDisabled={isViewing || disabled}
                                 isRequired
                                 onBlur={onBlur}
                                 validated={showIssuerError ? ValidatedOptions.error : 'default'}
@@ -193,7 +217,7 @@ function ConfigurationFormFields({
                                 id="config.client_id"
                                 value={(config.client_id as string) || ''}
                                 onChange={onChange}
-                                isDisabled={isViewing}
+                                isDisabled={isViewing || disabled}
                                 isRequired
                                 onBlur={onBlur}
                                 validated={showClientIdError ? ValidatedOptions.error : 'default'}
@@ -208,9 +232,7 @@ function ConfigurationFormFields({
                                 !(config.mode === 'fragment' || config.do_not_use_client_secret)
                             }
                             helperText={
-                                <span className="pf-u-font-size-sm">
-                                    Client Secret provided by your IdP
-                                </span>
+                                <span className="pf-u-font-size-sm">{clientSecretHelperText}</span>
                             }
                             helperTextInvalid={configErrors?.client_secret || ''}
                             validated={showClientSecretError ? ValidatedOptions.error : 'default'}
@@ -222,21 +244,18 @@ function ConfigurationFormFields({
                                 onChange={onChange}
                                 isDisabled={
                                     isViewing ||
+                                    disabled ||
                                     config.mode === 'fragment' ||
                                     !!config.do_not_use_client_secret
                                 }
                                 isRequired={
                                     !(config.mode === 'fragment' || config.do_not_use_client_secret)
                                 }
-                                placeholder={
-                                    config.mode === 'fragment'
-                                        ? 'Client Secret is not supported with Fragment callback mode.'
-                                        : ''
-                                }
                                 onBlur={onBlur}
                                 validated={
                                     showClientSecretError ? ValidatedOptions.error : 'default'
                                 }
+                                placeholder="*****"
                             />
                         </FormGroup>
                     </GridItem>
@@ -253,7 +272,7 @@ function ConfigurationFormFields({
                                 name="config.do_not_use_client_secret"
                                 aria-label="Do not use Client Secret (not recommended)"
                                 onChange={onChange}
-                                isDisabled={config.mode === 'query'}
+                                isDisabled={isViewing || doNotUseClientSecretDisabled}
                             />
                         </FormGroup>
                     </GridItem>
@@ -295,7 +314,7 @@ function ConfigurationFormFields({
                                 id="config.sp_issuer"
                                 value={(config.sp_issuer as string) || ''}
                                 onChange={onChange}
-                                isDisabled={isViewing}
+                                isDisabled={isViewing || disabled}
                                 isRequired
                                 onBlur={onBlur}
                                 validated={showSpIssuerError ? ValidatedOptions.error : 'default'}
@@ -312,7 +331,7 @@ function ConfigurationFormFields({
                                 id="config.configurationType"
                                 value={config.configurationType as string}
                                 handleSelect={setFieldValue}
-                                isDisabled={isViewing}
+                                isDisabled={isViewing || disabled}
                             >
                                 <SelectOption value="dynamic">
                                     Option 1: Dynamic configuration
@@ -348,7 +367,7 @@ function ConfigurationFormFields({
                                         id="config.idp_metadata_url"
                                         value={(config.idp_metadata_url as string) || ''}
                                         onChange={onChange}
-                                        isDisabled={isViewing}
+                                        isDisabled={isViewing || disabled}
                                         isRequired
                                         onBlur={onBlur}
                                         validated={
@@ -386,7 +405,7 @@ function ConfigurationFormFields({
                                         id="config.idp_issuer"
                                         value={(config.idp_issuer as string) || ''}
                                         onChange={onChange}
-                                        isDisabled={isViewing}
+                                        isDisabled={isViewing || disabled}
                                         isRequired={config.configurationType === 'static'}
                                         onBlur={onBlur}
                                         validated={
@@ -418,7 +437,7 @@ function ConfigurationFormFields({
                                         id="config.idp_sso_url"
                                         value={(config.idp_sso_url as string) || ''}
                                         onChange={onChange}
-                                        isDisabled={isViewing}
+                                        isDisabled={isViewing || disabled}
                                         isRequired={config.configurationType === 'static'}
                                         onBlur={onBlur}
                                         validated={
@@ -445,7 +464,7 @@ function ConfigurationFormFields({
                                         id="config.idp_nameid_format"
                                         value={(config.idp_nameid_format as string) || ''}
                                         onChange={onChange}
-                                        isDisabled={isViewing}
+                                        isDisabled={isViewing || disabled}
                                         onBlur={onBlur}
                                     />
                                 </FormGroup>
@@ -467,7 +486,7 @@ function ConfigurationFormFields({
                                         id="config.idp_cert_pem"
                                         value={(config.idp_cert_pem as string) || ''}
                                         onChange={onChange}
-                                        isDisabled={isViewing}
+                                        isDisabled={isViewing || disabled}
                                         isRequired={config.configurationType === 'static'}
                                         placeholder={
                                             '-----BEGIN CERTIFICATE-----\nYour certificate data\n-----END CERTIFICATE-----'
@@ -513,7 +532,7 @@ function ConfigurationFormFields({
                             id="config.idp_cert_pem"
                             value={(config.idp_cert_pem as string) || ''}
                             onChange={onChange}
-                            isDisabled={isViewing}
+                            isDisabled={isViewing || disabled}
                             isRequired
                             placeholder={
                                 '-----BEGIN CERTIFICATE-----\nAuthority certificate data\n-----END CERTIFICATE-----'
@@ -546,7 +565,7 @@ function ConfigurationFormFields({
                             id="config.audience"
                             value={(config.audience as string) || ''}
                             onChange={onChange}
-                            isDisabled={isViewing}
+                            isDisabled={isViewing || disabled}
                             isRequired
                             onBlur={onBlur}
                             validated={showAudienceError ? ValidatedOptions.error : 'default'}

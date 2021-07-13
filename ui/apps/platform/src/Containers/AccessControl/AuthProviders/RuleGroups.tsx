@@ -17,6 +17,7 @@ export type RuleGroupsProps = {
     roles: Role[];
     groups: Group[];
     setFieldValue: (name: string, value: string) => void;
+    disabled: boolean | undefined;
 };
 
 const ruleKeys = ['userid', 'name', 'email', 'super-groups'];
@@ -26,6 +27,7 @@ function RuleGroups({
     setFieldValue,
     groups = [],
     roles = [],
+    disabled = false,
 }: RuleGroupsProps): ReactElement {
     return (
         <FieldArray
@@ -43,7 +45,7 @@ function RuleGroups({
                                     <SelectSingle
                                         id={`groups[${index}].props.key`}
                                         value={groups[`${index}`].props.key}
-                                        isDisabled={false}
+                                        isDisabled={disabled}
                                         handleSelect={setFieldValue}
                                         direction="up"
                                     >
@@ -93,23 +95,25 @@ function RuleGroups({
                             </FlexItem>
                         </Flex>
                     ))}
-                    <Flex>
-                        <FlexItem>
-                            <Button
-                                variant="link"
-                                isInline
-                                icon={<PlusCircleIcon className="pf-u-mr-sm" />}
-                                onClick={() =>
-                                    arrayHelpers.push({
-                                        roleName: '',
-                                        props: { authProviderId: '', key: '', value: '' },
-                                    })
-                                }
-                            >
-                                Add new rule
-                            </Button>
-                        </FlexItem>
-                    </Flex>
+                    {!disabled && (
+                        <Flex>
+                            <FlexItem>
+                                <Button
+                                    variant="link"
+                                    isInline
+                                    icon={<PlusCircleIcon className="pf-u-mr-sm" />}
+                                    onClick={() =>
+                                        arrayHelpers.push({
+                                            roleName: '',
+                                            props: { authProviderId: '', key: '', value: '' },
+                                        })
+                                    }
+                                >
+                                    Add new rule
+                                </Button>
+                            </FlexItem>
+                        </Flex>
+                    )}
                 </>
             )}
         />

@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { useFormik, FormikProvider } from 'formik';
@@ -72,7 +73,9 @@ function AuthProviderForm({
     const { groups, roles, saveAuthProviderError } = useSelector(authProviderState);
     const dispatch = useDispatch();
 
-    const initialValues = getInitialAuthProviderValues(selectedAuthProvider);
+    const initialValues = !selectedAuthProvider.name
+        ? getInitialAuthProviderValues(selectedAuthProvider)
+        : { ...selectedAuthProvider };
     const filteredGroups = getGroupsByAuthProviderId(groups, selectedAuthProvider.id);
     const defaultRole = getDefaultRoleByAuthProviderId(groups, selectedAuthProvider.id);
 
@@ -239,9 +242,18 @@ function AuthProviderForm({
                                 </ToolbarGroup>
                             ) : (
                                 <ToolbarGroup variant="button-group">
+                                    <ToolbarItem>
+                                        <Button variant="link" isSmall>
+                                            <Link
+                                                to="/main/access-control/auth-providers"
+                                                aria-current="page"
+                                            >
+                                                Return to auth providers list
+                                            </Link>
+                                        </Button>
+                                    </ToolbarItem>
                                     {testModeSupported(selectedAuthProvider) &&
-                                        selectedAuthProvider.id &&
-                                        !selectedAuthProvider.active && (
+                                        selectedAuthProvider.id && (
                                             <ToolbarItem>
                                                 <Button
                                                     variant="secondary"
@@ -260,7 +272,9 @@ function AuthProviderForm({
                                             isDisabled={action === 'update'}
                                             isSmall
                                         >
-                                            Edit auth provider
+                                            {selectedAuthProvider.active
+                                                ? 'Edit minimum role and rules'
+                                                : 'Edit auth provider'}
                                         </Button>
                                     </ToolbarItem>
                                 </ToolbarGroup>
@@ -288,6 +302,19 @@ function AuthProviderForm({
                         }
                     />
                 )}
+            {selectedAuthProvider.active && (
+                <Alert
+                    isInline
+                    variant="warning"
+                    title={
+                        <span>
+                            For auth providers that have been logged into, you can only edit the
+                            minimum role and rules. If you need to change the configuration, please
+                            delete and recreate.
+                        </span>
+                    }
+                />
+            )}
             <FormikProvider value={formik}>
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>
@@ -342,6 +369,7 @@ function AuthProviderForm({
                             onBlur={handleBlur}
                             configErrors={errors.config}
                             configTouched={touched.config}
+                            disabled={values.active}
                         />
                     </Grid>
                 </FormSection>
@@ -388,6 +416,7 @@ function AuthProviderForm({
                             roles={roles}
                             onChange={onChange}
                             setFieldValue={setFieldValue}
+                            disabled={isViewing || values.active}
                         />
                     </FormSection>
                 </FormSection>
