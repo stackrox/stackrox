@@ -55,6 +55,13 @@ func (cs compositeGraph) ReferencedFromPrefix(to, prefix []byte) bool {
 	return s.ReferencedFromPrefix(to, prefix)
 }
 
+// ReferencesPrefix returns whether a reference from the current key
+// to a key with the specified prefix exists in the graph.
+func (cs compositeGraph) ReferencesPrefix(from, prefix []byte) bool {
+	s := cs.getFirstStateWithFrom(from)
+	return s.ReferencesPrefix(from, prefix)
+}
+
 // CountRefsFrom returns the number of children reference from the input parent key.
 func (cs compositeGraph) CountRefsFrom(from []byte) int {
 	s := cs.getFirstStateWithFrom(from)

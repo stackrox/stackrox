@@ -106,6 +106,13 @@ func (rm *RemoteGraph) ReferencedFromPrefix(to, prefix []byte) bool {
 	return rm.RWGraph.ReferencedFromPrefix(to, prefix)
 }
 
+// ReferencesPrefix returns whether a reference from the current key
+// to a key with the specified prefix exists in the graph.
+func (rm *RemoteGraph) ReferencesPrefix(from, prefix []byte) bool {
+	rm.ensureFrom(from)
+	return rm.RWGraph.ReferencesPrefix(from, prefix)
+}
+
 // SetRefs sets the children of 'from' to be the input list of keys 'to'.
 // All keys affected by the change (parent and existing and new children) will have their states read if not already read
 // so that the modification is consistent with the current remote state.

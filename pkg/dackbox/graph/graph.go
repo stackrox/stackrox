@@ -27,6 +27,7 @@ type RGraph interface {
 	CountRefsToPrefix(to, prefix []byte) int
 
 	ReferencedFromPrefix(to, prefix []byte) bool
+	ReferencesPrefix(from, prefix []byte) bool
 }
 
 // RWGraph is a read-write view of a Graph.
@@ -146,6 +147,15 @@ func (s *Graph) CountRefsToPrefix(to, prefix []byte) int {
 // with the specified prefix exists in the graph.
 func (s *Graph) ReferencedFromPrefix(to []byte, prefix []byte) bool {
 	if keys, exists := s.backward[string(to)]; exists {
+		return findFirstWithPrefix(prefix, keys) != -1
+	}
+	return false
+}
+
+// ReferencesPrefix returns whether a reference from the current key
+// to a key with the specified prefix exists in the graph.
+func (s *Graph) ReferencesPrefix(from, prefix []byte) bool {
+	if keys, exists := s.forward[string(from)]; exists {
 		return findFirstWithPrefix(prefix, keys) != -1
 	}
 	return false

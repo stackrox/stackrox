@@ -8,6 +8,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/graph/testutils"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	searchMocks "github.com/stackrox/rox/pkg/search/blevesearch/mocks"
@@ -26,6 +29,19 @@ var (
 	namespace1 = "ns1"
 	namespace2 = "ns2"
 	namespace3 = "ns3"
+
+	nsHandler  = &dbhelper.BucketHandler{BucketPrefix: []byte("ns:")}
+	objHandler = &dbhelper.BucketHandler{BucketPrefix: []byte("obj")}
+
+	objToNSPath = dackbox.BackwardsBucketPath(objHandler, nsHandler)
+
+	testGraph = testutils.GraphFromPaths(
+		objToNSPath.KeyPath(id1, namespace1),
+		objToNSPath.KeyPath(id2, namespace2),
+		objToNSPath.KeyPath(id3, namespace1),
+		objToNSPath.KeyPath(id3, namespace2),
+		objToNSPath.KeyPath(id4, namespace3),
+	)
 
 	globalResource = permissions.ResourceMetadata{
 		Resource: "resource",
@@ -87,23 +103,25 @@ func (s *filteredSearcherTestSuite) TestGlobalAllowed() {
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
-	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
-	results, err := searcher.Search(ctx, &v1.Query{})
-	s.NoError(err, "search should have succeeded")
-	s.Equal([]search.Result{
-		{
-			ID: id1,
-		},
-		{
-			ID: id2,
-		},
-		{
-			ID: id3,
-		},
-		{
-			ID: id4,
-		},
-	}, results)
+	testutils.DoWithGraph(ctx, testGraph, func(ctx context.Context) {
+		searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
+		results, err := searcher.Search(ctx, &v1.Query{})
+		s.NoError(err, "search should have succeeded")
+		s.Equal([]search.Result{
+			{
+				ID: id1,
+			},
+			{
+				ID: id2,
+			},
+			{
+				ID: id3,
+			},
+			{
+				ID: id4,
+			},
+		}, results)
+	})
 }
 
 func (s *filteredSearcherTestSuite) TestGlobalDenied() {
@@ -130,10 +148,12 @@ func (s *filteredSearcherTestSuite) TestGlobalDenied() {
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
-	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
-	results, err := searcher.Search(ctx, &v1.Query{})
-	s.NoError(err, "search should have succeeded")
-	s.Equal([]search.Result{}, results)
+	testutils.DoWithGraph(ctx, testGraph, func(ctx context.Context) {
+		searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
+		results, err := searcher.Search(ctx, &v1.Query{})
+		s.NoError(err, "search should have succeeded")
+		s.Equal([]search.Result{}, results)
+	})
 }
 
 func (s *filteredSearcherTestSuite) TestScoped() {
@@ -164,18 +184,20 @@ func (s *filteredSearcherTestSuite) TestScoped() {
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
-	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
-	results, err := searcher.Search(ctx, &v1.Query{})
-	s.NoError(err, "search should have succeeded")
-	s.Equal([]search.Result{
-		// id1 and id3 are the only ids in cluster1
-		{
-			ID: id1,
-		},
-		{
-			ID: id3,
-		},
-	}, results)
+	testutils.DoWithGraph(ctx, testGraph, func(ctx context.Context) {
+		searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
+		results, err := searcher.Search(ctx, &v1.Query{})
+		s.NoError(err, "search should have succeeded")
+		s.Equal([]search.Result{
+			// id1 and id3 are the only ids in cluster1
+			{
+				ID: id1,
+			},
+			{
+				ID: id3,
+			},
+		}, results)
+	})
 }
 
 func (s *filteredSearcherTestSuite) TestMultiScoped() {
@@ -208,50 +230,38 @@ func (s *filteredSearcherTestSuite) TestMultiScoped() {
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
-	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
-	results, err := searcher.Search(ctx, &v1.Query{})
-	s.NoError(err, "search should have succeeded")
-	s.Equal([]search.Result{
-		// Only id2 and id3 are allowed since they are the only ids in cluster2:namespace2
-		{
-			ID: id2,
-		},
-		{
-			ID: id3,
-		},
-	}, results)
+	testutils.DoWithGraph(ctx, testGraph, func(ctx context.Context) {
+		searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
+		results, err := searcher.Search(ctx, &v1.Query{})
+		s.NoError(err, "search should have succeeded")
+		s.Equal([]search.Result{
+			// Only id2 and id3 are allowed since they are the only ids in cluster2:namespace2
+			{
+				ID: id2,
+			},
+			{
+				ID: id3,
+			},
+		}, results)
+	})
+}
+
+func (s *filteredSearcherTestSuite) fakeScopeFunc(_ context.Context, id string) []sac.ScopeKey {
+	switch id {
+	case namespace1:
+		return []sac.ScopeKey{sac.ClusterScopeKey(cluster1), sac.NamespaceScopeKey(namespace1)}
+	case namespace2:
+		return []sac.ScopeKey{sac.ClusterScopeKey(cluster2), sac.NamespaceScopeKey(namespace2)}
+	case namespace3:
+		return []sac.ScopeKey{sac.ClusterScopeKey(cluster2), sac.NamespaceScopeKey(namespace3)}
+	}
+	s.Fail("unexpected namespace ID", id)
+	return nil
 }
 
 func (s *filteredSearcherTestSuite) fakeTransformer() ScopeTransform {
-	return func(_ context.Context, key []byte) [][]sac.ScopeKey {
-		sKey := string(key)
-		if sKey == id1 {
-			return [][]sac.ScopeKey{{sac.ClusterScopeKey(cluster1), sac.NamespaceScopeKey(namespace1)}}
-		}
-		if sKey == id2 {
-			return [][]sac.ScopeKey{{sac.ClusterScopeKey(cluster2), sac.NamespaceScopeKey(namespace2)}}
-		}
-		if sKey == id3 {
-			return [][]sac.ScopeKey{
-				{
-					sac.ClusterScopeKey(cluster1),
-					sac.NamespaceScopeKey(namespace1),
-				},
-				{
-					sac.ClusterScopeKey(cluster2),
-					sac.NamespaceScopeKey(namespace2),
-				},
-			}
-		}
-		if sKey == id4 {
-			return [][]sac.ScopeKey{
-				{
-					sac.ClusterScopeKey(cluster2),
-					sac.NamespaceScopeKey(namespace3),
-				},
-			}
-		}
-		s.Fail("unexpected id")
-		return nil
+	return ScopeTransform{
+		Path:      objToNSPath,
+		ScopeFunc: s.fakeScopeFunc,
 	}
 }

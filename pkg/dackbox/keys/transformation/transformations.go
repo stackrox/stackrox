@@ -28,14 +28,6 @@ func (oto OneToOne) ThenMapToMany(fn OneToMany) OneToMany {
 	}
 }
 
-// ThenMapToBool takes in a OneToBool and returns a function which
-// is a passed a context and key and determines if a key matches the check
-func (oto OneToOne) ThenMapToBool(fn OneToBool) OneToBool {
-	return func(ctx context.Context, key []byte) bool {
-		return fn(ctx, oto(ctx, key))
-	}
-}
-
 // MapEachToOne converts the input OneToOne function to a ManyToMany by applying it to all input keys one by one.
 func MapEachToOne(fn OneToOne) ManyToMany {
 	return func(ctx context.Context, keys [][]byte) [][]byte {
@@ -98,9 +90,6 @@ func Decode() OneToOne {
 	}
 }
 
-// OneToBool is a function that takes in a key and returns a bool
-type OneToBool func(ctx context.Context, key []byte) bool
-
 // OneToMany is a transformation that changes one key into many new keys
 type OneToMany func(ctx context.Context, key []byte) [][]byte
 
@@ -108,18 +97,6 @@ type OneToMany func(ctx context.Context, key []byte) [][]byte
 func (otm OneToMany) Then(fn ManyToMany) OneToMany {
 	return func(ctx context.Context, key []byte) [][]byte {
 		return fn(ctx, otm(ctx, key))
-	}
-}
-
-// ThenMapEachToBool takes in a OneToBool and returns a OneToBool based on the given input.
-func (otm OneToMany) ThenMapEachToBool(fn OneToBool) OneToBool {
-	return func(ctx context.Context, key []byte) bool {
-		for _, k := range otm(ctx, key) {
-			if fn(ctx, k) {
-				return true
-			}
-		}
-		return false
 	}
 }
 
@@ -211,17 +188,6 @@ func BackwardFromContext(prefix []byte) OneToMany {
 			return nil
 		}
 		return g.GetRefsToPrefix(key, prefix)
-	}
-}
-
-// BackwardExistence returns if any key with the specified prefix exists.
-func BackwardExistence(prefix []byte) func(ctx context.Context, key []byte) bool {
-	return func(ctx context.Context, key []byte) bool {
-		g := graph.GetGraph(ctx)
-		if g == nil {
-			return false
-		}
-		return g.ReferencedFromPrefix(key, prefix)
 	}
 }
 

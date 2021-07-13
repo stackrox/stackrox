@@ -5,6 +5,11 @@ type BucketHandler struct {
 	BucketPrefix []byte
 }
 
+// Name returns a human-readable name for this bucket handler.
+func (bh *BucketHandler) Name() string {
+	return string(bh.BucketPrefix)
+}
+
 // GetKey returns the prefixed key for the given id.
 func (bh *BucketHandler) GetKey(id string) []byte {
 	return GetBucketKey(bh.BucketPrefix, []byte(id))
@@ -40,6 +45,9 @@ type Graph interface {
 
 	CountRefsFromPrefix(from, prefix []byte) int
 	CountRefsToPrefix(to, prefix []byte) int
+
+	ReferencedFromPrefix(to, prefix []byte) bool
+	ReferencesPrefix(from, prefix []byte) bool
 }
 
 // GetFilteredRefsFrom retrieves the refs from `from` in `g`, filtered to keys with this bucket's prefix.
@@ -60,4 +68,14 @@ func (bh *BucketHandler) CountFilteredRefsFrom(g Graph, from []byte) int {
 // CountFilteredRefsTo counts the refs to `to` in `g`, filtered to keys with this bucket's prefix.
 func (bh *BucketHandler) CountFilteredRefsTo(g Graph, to []byte) int {
 	return g.CountRefsToPrefix(to, bh.BucketPrefix)
+}
+
+// HasFilteredRefsTo checks if there are any refs to `to` in `g`, filtered to keys with this bucket's prefix.
+func (bh *BucketHandler) HasFilteredRefsTo(g Graph, to []byte) bool {
+	return g.ReferencedFromPrefix(to, bh.BucketPrefix)
+}
+
+// HasFilteredRefsFrom checks if there are any refs from `from` in `g`, filtered to keys with this bucket's prefix.
+func (bh *BucketHandler) HasFilteredRefsFrom(g Graph, from []byte) bool {
+	return g.ReferencesPrefix(from, bh.BucketPrefix)
 }

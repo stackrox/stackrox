@@ -3,12 +3,14 @@ package dackbox
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
-	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	"github.com/stackrox/rox/central/idmap"
+	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/filtered"
 )
@@ -17,91 +19,80 @@ var log = logging.LoggerForModule()
 
 var (
 	// NamespaceSACTransform transforms namespace ids into their SAC scopes.
-	NamespaceSACTransform = namespaceScoped(NamespaceTransformations[v1.SearchCategory_NAMESPACES])
+	NamespaceSACTransform = namespaceScoped(NamespaceTransformationPaths[v1.SearchCategory_NAMESPACES])
 
 	// NodeSACTransform transforms node ids into their SAC scopes.
-	NodeSACTransform = clusterScoped(NodeTransformations[v1.SearchCategory_CLUSTERS])
+	NodeSACTransform = clusterScoped(NodeTransformationPaths[v1.SearchCategory_CLUSTERS])
 
 	// NodeComponentEdgeSACTransform transforms node:component edge ids into their SAC scopes.
-	NodeComponentEdgeSACTransform = clusterScoped(NodeComponentEdgeTransformations[v1.SearchCategory_CLUSTERS])
+	NodeComponentEdgeSACTransform = fromEdgeSource(clusterScoped(NodeTransformationPaths[v1.SearchCategory_CLUSTERS]))
 
 	// NodeCVEEdgeSACTransform transforms node:cve edge ids into their SAC scopes.
-	NodeCVEEdgeSACTransform = clusterScoped(NodeCVEEdgeTransformations[v1.SearchCategory_CLUSTERS])
+	NodeCVEEdgeSACTransform = fromEdgeSource(clusterScoped(NodeTransformationPaths[v1.SearchCategory_CLUSTERS]))
 
 	// DeploymentSACTransform transforms deployment ids into their SAC scopes.
-	DeploymentSACTransform = namespaceScoped(DeploymentTransformations[v1.SearchCategory_NAMESPACES])
+	DeploymentSACTransform = namespaceScoped(DeploymentTransformationPaths[v1.SearchCategory_NAMESPACES])
 
 	// ImageSACTransform transforms image ids into their SAC scopes.
-	ImageSACTransform = namespaceScoped(ImageTransformations[v1.SearchCategory_NAMESPACES])
+	ImageSACTransform = namespaceScoped(ImageTransformationPaths[v1.SearchCategory_NAMESPACES])
 
 	// ImageComponentEdgeSACTransform transforms image:component edge ids into their SAC scopes.
-	ImageComponentEdgeSACTransform = namespaceScoped(ImageComponentEdgeTransformations[v1.SearchCategory_NAMESPACES])
+	ImageComponentEdgeSACTransform = fromEdgeSource(namespaceScoped(ImageTransformationPaths[v1.SearchCategory_NAMESPACES]))
 
 	// ImageCVEEdgeSACTransform transforms image:cve edge ids into their SAC scopes.
-	ImageCVEEdgeSACTransform = namespaceScoped(ImageCVEEdgeTransformations[v1.SearchCategory_NAMESPACES])
-
-	// ImageComponentSACTransform transforms image component ids into their SAC scopes.
-	ImageComponentSACTransform = namespaceScoped(ComponentTransformations[v1.SearchCategory_NAMESPACES])
-
-	// NodeComponentSACTransform transforms node component ids into their SAC scopes.
-	NodeComponentSACTransform = clusterScoped(componentNodeClusterSACTransformation)
+	ImageCVEEdgeSACTransform = fromEdgeSource(namespaceScoped(ImageTransformationPaths[v1.SearchCategory_NAMESPACES]))
 
 	// ComponentVulnEdgeSACTransform transforms component:vulnerability edge ids into their SAC scopes.
-	ComponentVulnEdgeSACTransform = namespaceScoped(ComponentCVEEdgeTransformations[v1.SearchCategory_NAMESPACES])
-
-	// ImageVulnSACTransform transforms image component vulnerability ids into their SAC scopes.
-	ImageVulnSACTransform = namespaceScoped(CVETransformations[v1.SearchCategory_NAMESPACES])
-
-	// NodeVulnSACTransform transforms node component vulnerability ids into their SAC scopes.
-	NodeVulnSACTransform = clusterScoped(cveNodeClusterSACTransformation)
+	ComponentVulnEdgeSACTransform = fromEdgeSource(namespaceScoped(ComponentTransformationPaths[v1.SearchCategory_NAMESPACES]))
 
 	// ClusterVulnEdgeSACTransform transforms cluster:vulnerability edge ids into their SAC scopes.
-	ClusterVulnEdgeSACTransform = clusterScoped(cveToClustersWithoutDeploymentsNorNodes)
-
-	// ClusterVulnSACTransform transforms cluster vulnerability ids into their SAC scopes.
-	ClusterVulnSACTransform = clusterScoped(cveToClustersWithoutDeploymentsNorNodes)
+	ClusterVulnEdgeSACTransform = fromEdgeSource(clusterScoped(ClusterTransformationPaths[v1.SearchCategory_CLUSTERS]))
 )
 
-func clusterScoped(toClusterIDs transformation.OneToMany) filtered.ScopeTransform {
-	return func(ctx context.Context, keys []byte) [][]sac.ScopeKey {
-		clusterIDs := toClusterIDs(ctx, keys)
-		return clusterIDsToScopes(ctx, clusterIDs)
+func clusterScoped(toClusterIDsPath dackbox.BucketPath) filtered.ScopeTransform {
+	if _, err := dackbox.ConcatenatePaths(toClusterIDsPath, dackbox.BackwardsBucketPath(clusterDackBox.BucketHandler)); err != nil {
+		panic(errors.Wrap(err, "invalid path for cluster-scoped SAC transform, must end with cluster bucket"))
+	}
+	return filtered.ScopeTransform{
+		Path:      toClusterIDsPath,
+		ScopeFunc: clusterIDToScope,
 	}
 }
 
-func clusterIDsToScopes(_ context.Context, clusterIDs [][]byte) [][]sac.ScopeKey {
-	ret := make([][]sac.ScopeKey, 0, len(clusterIDs))
-	for _, clusterID := range clusterIDs {
-		ret = append(ret, []sac.ScopeKey{sac.ClusterScopeKey(clusterID)})
-	}
-	return ret
+func clusterIDToScope(_ context.Context, clusterID string) []sac.ScopeKey {
+	return []sac.ScopeKey{sac.ClusterScopeKey(clusterID)}
 }
 
-func namespaceScoped(toNamespaceIDs transformation.OneToMany) filtered.ScopeTransform {
-	return func(ctx context.Context, keys []byte) [][]sac.ScopeKey {
-		namespaceIDs := toNamespaceIDs(ctx, keys)
-		return namespaceIDsToScopes(ctx, namespaceIDs)
+func namespaceScoped(toNamespaceIDsPath dackbox.BucketPath) filtered.ScopeTransform {
+	if _, err := dackbox.ConcatenatePaths(toNamespaceIDsPath, dackbox.BackwardsBucketPath(nsDackBox.BucketHandler)); err != nil {
+		panic(errors.Wrap(err, "invalid path for namespace-scoped SAC transform, must end with namespace bucket"))
+	}
+	return filtered.ScopeTransform{
+		Path:      toNamespaceIDsPath,
+		ScopeFunc: namespaceIDToScope,
 	}
 }
 
-func namespaceIDsToScopes(ctx context.Context, namespaceIDs [][]byte) [][]sac.ScopeKey {
+// fromEdgeSource modifies the given ScopeTransform to treat the input ID as an edge key, and operate on the first
+// (source) component.
+func fromEdgeSource(transform filtered.ScopeTransform) filtered.ScopeTransform {
+	if transform.Path.Len() > 1 && !transform.Path.BackwardTraversal {
+		panic(errors.New("path in scope transform from edge source must be a backwards path"))
+	}
+	transformFromEdge := transform
+	transformFromEdge.EdgeIndex = pointers.Int(0)
+	return transformFromEdge
+}
+
+func namespaceIDToScope(ctx context.Context, namespaceID string) []sac.ScopeKey {
 	idMap := idmap.FromContext(ctx)
 
-	ret := make([][]sac.ScopeKey, 0, len(namespaceIDs))
-	for _, namespaceID := range namespaceIDs {
-		nsInfo := idMap.ByNamespaceID(string(namespaceID))
-		if nsInfo == nil {
-			// If we can't find the namespace info, conservatively check for any/any. This will prevent information
-			// leakage, while not impacted users with sufficient (global) privileges.
-			ret = append(ret, []sac.ScopeKey{sac.ClusterScopeKey(""), sac.NamespaceScopeKey("")})
-			continue
-		}
-
-		ret = append(ret, []sac.ScopeKey{sac.ClusterScopeKey(nsInfo.ClusterID), sac.NamespaceScopeKey(nsInfo.Name)})
+	nsInfo := idMap.ByNamespaceID(string(namespaceID))
+	if nsInfo == nil {
+		// If we can't find the namespace info, conservatively require any/any access. This will prevent information
+		// leakage, while not impacted users with sufficient (global) privileges.
+		return []sac.ScopeKey{sac.ClusterScopeKey(""), sac.NamespaceScopeKey("")}
 	}
-	return ret
-}
 
-var cveToClustersWithoutDeploymentsNorNodes = transformation.AddPrefix(cveDackBox.Bucket).
-	ThenMapToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
-	ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket))
+	return []sac.ScopeKey{sac.ClusterScopeKey(nsInfo.ClusterID), sac.NamespaceScopeKey(nsInfo.Name)}
+}

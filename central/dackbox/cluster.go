@@ -9,10 +9,18 @@ import (
 	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 )
 
 var (
+	// ClusterTransformationPaths holds the transformation paths to go from a cluster id to IDs of the given
+	// category.
+	ClusterTransformationPaths = map[v1.SearchCategory]dackbox.BucketPath{
+		v1.SearchCategory_CLUSTERS: dackbox.BackwardsBucketPath(
+			clusterDackBox.BucketHandler,
+		),
+	}
 	// ClusterTransformations holds the transformations to go from a cluster id to the ids of the given category.
 	ClusterTransformations = map[v1.SearchCategory]transformation.OneToMany{
 		// Cluster

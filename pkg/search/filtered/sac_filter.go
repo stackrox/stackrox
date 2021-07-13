@@ -5,11 +5,33 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ScopeTransform defines a transformation that turns a key into all of it's parent scopes.
-type ScopeTransform func(ctx context.Context, key []byte) [][]sac.ScopeKey
+type ScopeTransform struct {
+	Path      dackbox.BucketPath
+	ScopeFunc func(context.Context, string) []sac.ScopeKey
+	EdgeIndex *int
+}
+
+// NewCachedChecker creates a Searcher that performs the SAC checks corresponding to this scope transform.
+func (t *ScopeTransform) NewCachedChecker(ctx context.Context, resourceHelper *sac.ForResourceHelper, am storage.Access) dackbox.Searcher {
+	sc := resourceHelper.ScopeChecker(ctx, am)
+	lastBucket := t.Path.Elements[t.Path.Len()-1]
+	pred := func(key []byte) (bool, error) {
+		scopeKey := t.ScopeFunc(ctx, lastBucket.GetID(key))
+		return sc.Allowed(ctx, scopeKey...)
+	}
+	searcher := dackbox.NewCachedSearcher(graph.GetGraph(ctx), pred, t.Path)
+	if t.EdgeIndex != nil {
+		searcher = dackbox.EdgeSearcher(searcher, *t.EdgeIndex)
+	}
+	return searcher
+}
 
 // SACFilterOption represents an option when creating a SAC filter.
 type SACFilterOption func(*filterBuilder)
@@ -23,6 +45,13 @@ func NewSACFilter(opts ...SACFilterOption) (Filter, error) {
 	return compile(fb)
 }
 
+// MustCreateNewSACFilter is like NewSACFilter, but panics if the creation fails.
+func MustCreateNewSACFilter(opts ...SACFilterOption) Filter {
+	filter, err := NewSACFilter(opts...)
+	utils.CrashOnError(err)
+	return filter
+}
+
 // WithResourceHelper uses the input ForResourceHelper to do SAC checks on output results.
 func WithResourceHelper(resourceHelper sac.ForResourceHelper) SACFilterOption {
 	return func(filter *filterBuilder) {
@@ -33,7 +62,7 @@ func WithResourceHelper(resourceHelper sac.ForResourceHelper) SACFilterOption {
 // WithScopeTransform uses the input scope transform for getting the scopes of keys.
 func WithScopeTransform(scopeTransform ScopeTransform) SACFilterOption {
 	return func(filter *filterBuilder) {
-		filter.scopeTransform = scopeTransform
+		filter.scopeTransform = &scopeTransform
 	}
 }
 
@@ -46,7 +75,7 @@ func WithReadAccess() SACFilterOption {
 
 type filterBuilder struct {
 	resourceHelper *sac.ForResourceHelper
-	scopeTransform ScopeTransform
+	scopeTransform *ScopeTransform
 	access         storage.Access
 }
 
@@ -65,7 +94,7 @@ func compile(builder *filterBuilder) (Filter, error) {
 	}
 	return &scopedSACFilterImpl{
 		resourceHelper: *builder.resourceHelper,
-		scopeFunc:      builder.scopeTransform,
+		scopeTransform: *builder.scopeTransform,
 		access:         builder.access,
 	}, nil
 }

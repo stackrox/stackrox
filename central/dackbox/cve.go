@@ -9,10 +9,24 @@ import (
 	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 )
 
 var (
+	// CVETransformationPaths will hold the transformations to go from a CVE ID to the IDs of the given category.
+	// CAUTION: This is in the process of being migrated, and does not contain an entry for every applicable
+	// category yet.
+	CVETransformationPaths = map[v1.SearchCategory]dackbox.BucketPath{
+		v1.SearchCategory_NAMESPACES: dackbox.BackwardsBucketPath(
+			cveDackBox.BucketHandler,
+			componentDackBox.BucketHandler,
+			imageDackBox.BucketHandler,
+			deploymentDackBox.BucketHandler,
+			nsDackBox.BucketHandler,
+		),
+	}
+
 	// CVETransformations holds the transformations to go from a cve id to the ids of the given category.
 	CVETransformations = map[v1.SearchCategory]transformation.OneToMany{
 		// We want to surface clusters containing the vuln and clusters containing objects with the vuln.
@@ -164,27 +178,23 @@ var (
 		),
 	}
 
-	// This transformation specifically excludes images because we need to attribute the cluster IDs from
-	// the nodes which contain this cve
-	cveNodeClusterSACTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-					ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
-					ThenMapEachToMany(transformation.BackwardFromContext(nodeDackBox.Bucket)).
-					Then(transformation.Dedupe()).
-					ThenMapEachToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
-					ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)).
-					Then(transformation.Dedupe())
+	// CVEToImageBucketPath maps a cve to whether or not an image exists that contains that cve
+	CVEToImageBucketPath = dackbox.BackwardsBucketPath(
+		cveDackBox.BucketHandler,
+		componentDackBox.BucketHandler,
+		imageDackBox.BucketHandler,
+	)
 
-	// CVEToImageExistenceTransformation maps a cve to whether or not an image exists that contains that cve
-	CVEToImageExistenceTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-						ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
-						ThenMapEachToBool(transformation.BackwardExistence(imageDackBox.Bucket))
+	// CVEToNodeBucketPath maps a cve to whether or not a node exists that contains that cve
+	CVEToNodeBucketPath = dackbox.BackwardsBucketPath(
+		cveDackBox.BucketHandler,
+		componentDackBox.BucketHandler,
+		nodeDackBox.BucketHandler,
+	)
 
-	// CVEToNodeExistenceTransformation maps a cve to whether or not a node exists that contains that cve
-	CVEToNodeExistenceTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-						ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
-						ThenMapEachToBool(transformation.BackwardExistence(nodeDackBox.Bucket))
-
-	// CVEToClusterExistenceTransformation maps a cve to whether or not a cluster exists that contains that cve
-	CVEToClusterExistenceTransformation = transformation.AddPrefix(cveDackBox.Bucket).
-						ThenMapToBool(transformation.BackwardExistence(clusterDackBox.Bucket))
+	// CVEToClusterBucketPath maps a cve to whether or not a cluster exists that contains that cve
+	CVEToClusterBucketPath = dackbox.BackwardsBucketPath(
+		cveDackBox.BucketHandler,
+		clusterDackBox.BucketHandler,
+	)
 )

@@ -6,10 +6,20 @@ import (
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 )
 
 var (
+	// NodeTransformationPaths holds the paths to go from a node id to the ids of the given category.
+	// NOT A COMPLETE REPLACEMENT OF TRANSFORMATIONS BELOW.
+	NodeTransformationPaths = map[v1.SearchCategory]dackbox.BucketPath{
+		v1.SearchCategory_CLUSTERS: dackbox.BackwardsBucketPath(
+			nodeDackBox.BucketHandler,
+			clusterDackBox.BucketHandler,
+		),
+	}
+
 	// NodeTransformations holds the transformations to go from a node id to the ids of the given category.
 	NodeTransformations = map[v1.SearchCategory]transformation.OneToMany{
 		// Node (backwards) Clusters

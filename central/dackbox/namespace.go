@@ -8,10 +8,17 @@ import (
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 )
 
 var (
+	// NamespaceTransformationPaths holds the transformations to go from a namespace id to the ids of the given category.
+	// NOT A COMPLETE REPLACEMENT OF TRANSFORMATIONS BELOW.
+	NamespaceTransformationPaths = map[v1.SearchCategory]dackbox.BucketPath{
+		v1.SearchCategory_NAMESPACES: dackbox.BackwardsBucketPath(nsDackBox.BucketHandler),
+	}
+
 	// NamespaceTransformations holds the transformations to go from a namespace id to the ids of the given category.
 	NamespaceTransformations = map[v1.SearchCategory]transformation.OneToMany{
 		// Namespace (backwards) Clusters

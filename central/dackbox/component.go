@@ -9,10 +9,22 @@ import (
 	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 )
 
 var (
+	// ComponentTransformationPaths holds the paths to go from a component id to the ids of the given category.
+	// NOT A COMPLETE REPLACEMENT OF TRANSFORMATIONS BELOW
+	ComponentTransformationPaths = map[v1.SearchCategory]dackbox.BucketPath{
+		v1.SearchCategory_NAMESPACES: dackbox.BackwardsBucketPath(
+			componentDackBox.BucketHandler,
+			imageDackBox.BucketHandler,
+			deploymentDackBox.BucketHandler,
+			nsDackBox.BucketHandler,
+		),
+	}
+
 	// ComponentTransformations holds the transformations to go from a component id to the ids of the given category.
 	ComponentTransformations = map[v1.SearchCategory]transformation.OneToMany{
 		// Many(
@@ -136,20 +148,15 @@ var (
 		v1.SearchCategory_CLUSTER_VULN_EDGE: ReturnNothing,
 	}
 
-	// This transformation specifically excludes images because we need to attribute the cluster IDs from
-	// the nodes which contain this component
-	componentNodeClusterSACTransformation = transformation.AddPrefix(componentDackBox.Bucket).
-						ThenMapToMany(transformation.BackwardFromContext(nodeDackBox.Bucket).
-							Then(transformation.Dedupe()).
-							ThenMapEachToMany(transformation.BackwardFromContext(clusterDackBox.Bucket)).
-							ThenMapEachToOne(transformation.StripPrefixUnchecked(clusterDackBox.Bucket)).
-							Then(transformation.Dedupe()))
+	// ComponentToImageBucketPath maps a component to whether an image exists that contains that component.
+	ComponentToImageBucketPath = dackbox.BackwardsBucketPath(
+		componentDackBox.BucketHandler,
+		imageDackBox.BucketHandler,
+	)
 
-	// ComponentToImageExistenceTransformation maps a component to whether an image exists that contains that component.
-	ComponentToImageExistenceTransformation = transformation.AddPrefix(componentDackBox.Bucket).
-						ThenMapToBool(transformation.BackwardExistence(imageDackBox.Bucket))
-
-	// ComponentToNodeExistenceTransformation maps a component to whether a node exists that contains that component.
-	ComponentToNodeExistenceTransformation = transformation.AddPrefix(componentDackBox.Bucket).
-						ThenMapToBool(transformation.BackwardExistence(nodeDackBox.Bucket))
+	// ComponentToNodeBucketPath maps a component to whether a node exists that contains that component.
+	ComponentToNodeBucketPath = dackbox.BackwardsBucketPath(
+		componentDackBox.BucketHandler,
+		nodeDackBox.BucketHandler,
+	)
 )

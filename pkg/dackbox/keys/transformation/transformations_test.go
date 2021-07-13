@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	graph2 "github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/dackbox/graph/testutils"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/rox/pkg/dackbox/testutils"
 	"github.com/stretchr/testify/assert"
 )
 

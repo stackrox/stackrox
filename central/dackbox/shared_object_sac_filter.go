@@ -4,44 +4,68 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // SharedObjectSACFilterOption represents an option when creating a SAC filter.
 type SharedObjectSACFilterOption func(*combinedSAC)
 
 // WithNode sets the resource helper, scope transformation, and existence check for nodes.
-func WithNode(nodeResourceHelper sac.ForResourceHelper, nodeScopeTransform filtered.ScopeTransform, nodeExistenceCheck transformation.OneToBool) SharedObjectSACFilterOption {
+func WithNode(nodeResourceHelper sac.ForResourceHelper, pathToNode dackbox.BucketPath) SharedObjectSACFilterOption {
+	pathToCluster, err := dackbox.ConcatenatePaths(pathToNode, NodeTransformationPaths[v1.SearchCategory_CLUSTERS])
+	if err != nil {
+		panic(err)
+	}
+
+	scopeTransform := clusterScoped(pathToCluster)
 	return func(filter *combinedSAC) {
 		filter.nodeResourceHelper = &nodeResourceHelper
-		filter.nodeScopeTransform = nodeScopeTransform
-		filter.nodeExistenceCheck = nodeExistenceCheck
+		filter.nodeScopeTransform = &scopeTransform
+		filter.pathToNode = &pathToNode
 	}
 }
 
 // WithImage sets the resource helper, scope transformation, and existence check for images.
-func WithImage(imageResourceHelper sac.ForResourceHelper, imageScopeTransform filtered.ScopeTransform, imageExistenceCheck transformation.OneToBool) SharedObjectSACFilterOption {
+func WithImage(imageResourceHelper sac.ForResourceHelper, pathToImage dackbox.BucketPath) SharedObjectSACFilterOption {
+	pathToNamespace, err := dackbox.ConcatenatePaths(pathToImage, ImageTransformationPaths[v1.SearchCategory_NAMESPACES])
+	if err != nil {
+		panic(err)
+	}
+
+	scopeTransform := namespaceScoped(pathToNamespace)
 	return func(filter *combinedSAC) {
 		filter.imageResourceHelper = &imageResourceHelper
-		filter.imageScopeTransform = imageScopeTransform
-		filter.imageExistenceCheck = imageExistenceCheck
+		filter.imageScopeTransform = &scopeTransform
+		filter.pathToImage = &pathToImage
 	}
 }
 
 // WithCluster sets the resource helper, scope transformation, and existence check for clusters.
-func WithCluster(clusterResourceHelper sac.ForResourceHelper, clusterScopeTransform filtered.ScopeTransform, clusterExistenceCheck transformation.OneToBool) SharedObjectSACFilterOption {
+func WithCluster(clusterResourceHelper sac.ForResourceHelper, pathToCluster dackbox.BucketPath) SharedObjectSACFilterOption {
+	// This should be a no-op, but (a) it better aligns with the other `With...` functions, and (b) we ensure
+	// that the given path actually ends at the cluster bucket.
+	pathToCluster, err := dackbox.ConcatenatePaths(pathToCluster, dackbox.BackwardsBucketPath(clusterDackBox.BucketHandler))
+	if err != nil {
+		panic(err)
+	}
+
+	scopeTransform := clusterScoped(pathToCluster)
 	return func(filter *combinedSAC) {
 		filter.clusterResourceHelper = &clusterResourceHelper
-		filter.clusterScopeTransform = clusterScopeTransform
-		filter.clusterExistenceCheck = clusterExistenceCheck
+		filter.clusterScopeTransform = &scopeTransform
+		filter.pathToCluster = &pathToCluster
 	}
 }
 
@@ -62,10 +86,10 @@ func NewSharedObjectSACFilter(opts ...SharedObjectSACFilterOption) (filtered.Fil
 		opt(cs)
 	}
 
-	if cs.imageResourceHelper == nil || cs.imageScopeTransform == nil || cs.imageExistenceCheck == nil {
+	if cs.imageResourceHelper == nil || cs.imageScopeTransform == nil || cs.pathToImage == nil {
 		return nil, errors.New("cannot create a SAC filter without proper image entities")
 	}
-	if cs.nodeResourceHelper == nil || cs.nodeScopeTransform == nil || cs.nodeExistenceCheck == nil {
+	if cs.nodeResourceHelper == nil || cs.nodeScopeTransform == nil || cs.pathToNode == nil {
 		return nil, errors.New("cannot create a SAC filter without proper node entities")
 	}
 	if cs.access == storage.Access_NO_ACCESS {
@@ -75,18 +99,25 @@ func NewSharedObjectSACFilter(opts ...SharedObjectSACFilterOption) (filtered.Fil
 	return cs, nil
 }
 
+// MustCreateNewSharedObjectSACFilter is like NewSharedObjectSACFilter, but crashes in case an error occurs.
+func MustCreateNewSharedObjectSACFilter(opts ...SharedObjectSACFilterOption) filtered.Filter {
+	filter, err := NewSharedObjectSACFilter(opts...)
+	utils.CrashOnError(err)
+	return filter
+}
+
 type combinedSAC struct {
 	nodeResourceHelper    *sac.ForResourceHelper
 	imageResourceHelper   *sac.ForResourceHelper
 	clusterResourceHelper *sac.ForResourceHelper
 
-	nodeScopeTransform    filtered.ScopeTransform
-	imageScopeTransform   filtered.ScopeTransform
-	clusterScopeTransform filtered.ScopeTransform
+	nodeScopeTransform    *filtered.ScopeTransform
+	imageScopeTransform   *filtered.ScopeTransform
+	clusterScopeTransform *filtered.ScopeTransform
 
-	nodeExistenceCheck    transformation.OneToBool
-	imageExistenceCheck   transformation.OneToBool
-	clusterExistenceCheck transformation.OneToBool
+	pathToNode    *dackbox.BucketPath
+	pathToImage   *dackbox.BucketPath
+	pathToCluster *dackbox.BucketPath
 
 	access storage.Access
 }
@@ -127,20 +158,38 @@ func (f *combinedSAC) noSACApply(ctx context.Context, from ...string) ([]int, bo
 		return nil, false
 	}
 
+	var imageExistenceCheck dackbox.Searcher
+	if hasImageRead {
+		imageExistenceCheck = dackbox.NewCachedBucketReachabilityChecker(graph.GetGraph(ctx), *f.pathToImage)
+	}
+	var nodeExistenceCheck dackbox.Searcher
+	if hasNodeRead {
+		nodeExistenceCheck = dackbox.NewCachedBucketReachabilityChecker(graph.GetGraph(ctx), *f.pathToNode)
+	}
+	var clusterExistenceCheck dackbox.Searcher
+	if hasClusterRead {
+		clusterExistenceCheck = dackbox.NewCachedBucketReachabilityChecker(graph.GetGraph(ctx), *f.pathToCluster)
+	}
+
 	filteredIndices := make([]int, 0, len(from))
 	for idx, id := range from {
-		idBytes := []byte(id)
-		if hasImageRead && f.imageExistenceCheck(ctx, idBytes) {
-			filteredIndices = append(filteredIndices, idx)
-			continue
+		if imageExistenceCheck != nil {
+			if allowed, _ := imageExistenceCheck.Search(id); allowed {
+				filteredIndices = append(filteredIndices, idx)
+				continue
+			}
 		}
-		if hasNodeRead && f.nodeExistenceCheck(ctx, idBytes) {
-			filteredIndices = append(filteredIndices, idx)
-			continue
+		if nodeExistenceCheck != nil {
+			if allowed, _ := nodeExistenceCheck.Search(id); allowed {
+				filteredIndices = append(filteredIndices, idx)
+				continue
+			}
 		}
-		if hasClusterRead && f.clusterExistenceCheck(ctx, idBytes) {
-			filteredIndices = append(filteredIndices, idx)
-			continue
+		if clusterExistenceCheck != nil {
+			if allowed, _ := clusterExistenceCheck.Search(id); allowed {
+				filteredIndices = append(filteredIndices, idx)
+				continue
+			}
 		}
 	}
 	return filteredIndices, false
@@ -152,84 +201,69 @@ func (f *combinedSAC) Apply(ctx context.Context, from ...string) ([]int, bool, e
 		return filteredIndices, all, nil
 	}
 
-	nodeAccess, err := f.nodeResourceHelper.AccessAllowed(ctx, f.access)
-	if err != nil {
+	var imageChecker dackbox.Searcher
+	if imageAccess, err := f.imageResourceHelper.AccessAllowed(ctx, f.access); err != nil {
 		return nil, false, err
+	} else if imageAccess {
+		// Even if the user has global access to images, we need to ensure that this object (CVE or component)
+		// is actually referenced by an image.
+		imageChecker = dackbox.NewCachedBucketReachabilityChecker(graph.GetGraph(ctx), *f.pathToImage)
+	} else {
+		imageChecker = f.imageScopeTransform.NewCachedChecker(ctx, f.imageResourceHelper, f.access)
 	}
 
-	imageAccess, err := f.imageResourceHelper.AccessAllowed(ctx, f.access)
-	if err != nil {
+	var nodeChecker dackbox.Searcher
+	if nodeAccess, err := f.nodeResourceHelper.AccessAllowed(ctx, f.access); err != nil {
 		return nil, false, err
+	} else if nodeAccess {
+		// Even if the user has global access to node, we need to ensure that this object (CVE or component)
+		// is actually referenced by a node.
+		nodeChecker = dackbox.NewCachedBucketReachabilityChecker(graph.GetGraph(ctx), *f.pathToNode)
+	} else {
+		nodeChecker = f.nodeScopeTransform.NewCachedChecker(ctx, f.nodeResourceHelper, f.access)
 	}
 
-	nodeScopeChecker := f.nodeResourceHelper.ScopeChecker(ctx, f.access)
-	imageScopeChecker := f.imageResourceHelper.ScopeChecker(ctx, f.access)
-
-	var clusterAccess bool
-	var clusterScopeChecker sac.ScopeChecker
+	var clusterChecker dackbox.Searcher
 	if f.clusterResourceHelper != nil {
-		clusterAccess, err = f.clusterResourceHelper.AccessAllowed(ctx, f.access)
-		if err != nil {
+		if clusterAccess, err := f.clusterResourceHelper.AccessAllowed(ctx, f.access); err != nil {
 			return nil, false, err
+		} else if clusterAccess {
+			clusterChecker = dackbox.NewCachedBucketReachabilityChecker(graph.GetGraph(ctx), *f.pathToCluster)
+		} else {
+			clusterChecker = f.clusterScopeTransform.NewCachedChecker(ctx, f.clusterResourceHelper, f.access)
 		}
-		clusterScopeChecker = f.clusterResourceHelper.ScopeChecker(ctx, f.access)
 	}
 
 	errorList := errorhelpers.NewErrorList("errors during SAC filtering")
 	filteredIndices := make([]int, 0, len(from))
+
 	for idx, id := range from {
-		idBytes := []byte(id)
-
-		if imageAccess {
-			// If the image exists and we have image access, then allow
-			if exists := f.imageExistenceCheck(ctx, idBytes); exists {
-				filteredIndices = append(filteredIndices, idx)
-				continue
-			}
-		} else if scopes := f.imageScopeTransform(ctx, idBytes); len(scopes) != 0 {
-			ok, err := imageScopeChecker.AnyAllowed(ctx, scopes)
-			if err != nil {
-				errorList.AddError(err)
-				continue
-			}
-			if ok {
-				filteredIndices = append(filteredIndices, idx)
-				continue
-			}
+		if ok, err := imageChecker.Search(id); err != nil {
+			errorList.AddError(err)
+			continue
+		} else if ok {
+			filteredIndices = append(filteredIndices, idx)
+			continue
 		}
 
-		if scopes := f.nodeScopeTransform(ctx, idBytes); len(scopes) != 0 {
-			if nodeAccess {
-				filteredIndices = append(filteredIndices, idx)
-				continue
-			}
-			ok, err := nodeScopeChecker.AnyAllowed(ctx, scopes)
-			if err != nil {
-				errorList.AddError(err)
-				continue
-			}
-			if ok {
-				filteredIndices = append(filteredIndices, idx)
-				continue
-			}
+		if ok, err := nodeChecker.Search(id); err != nil {
+			errorList.AddError(err)
+			continue
+		} else if ok {
+			filteredIndices = append(filteredIndices, idx)
+			continue
 		}
 
-		if f.clusterResourceHelper != nil {
-			if scopes := f.clusterScopeTransform(ctx, idBytes); len(scopes) != 0 {
-				if clusterAccess {
-					filteredIndices = append(filteredIndices, idx)
-					continue
-				}
-				ok, err := clusterScopeChecker.AnyAllowed(ctx, scopes)
-				if err != nil {
-					errorList.AddError(err)
-					continue
-				}
-				if ok {
-					filteredIndices = append(filteredIndices, idx)
-					continue
-				}
-			}
+		if clusterChecker == nil {
+			continue
+		}
+
+		if ok, err := clusterChecker.Search(id); err != nil {
+			errorList.AddError(err)
+			continue
+		} else if ok {
+			filteredIndices = append(filteredIndices, idx)
+			continue
 		}
 	}
 	return filteredIndices, false, errorList.ToError()
