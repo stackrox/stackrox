@@ -129,7 +129,7 @@ class UpgradesTest extends BaseSpecification {
         Set<PolicyOuterClass.Exclusion> toRemove
         List<PolicyOuterClass.Exclusion> toAdd
         String clusterId = null
-        Boolean setDisabled = null
+        boolean setDisabled = false
         boolean clearEnforcement = false
         boolean clearLastUpdatedTs = false
 
@@ -176,11 +176,6 @@ class UpgradesTest extends BaseSpecification {
             this.setDisabled = true
             return this
         }
-
-        def setPolicyAsEnabled() {
-            this.setDisabled = false
-            return this
-        }
     }
 
     @Category(Upgrade)
@@ -224,8 +219,6 @@ class UpgradesTest extends BaseSpecification {
                         .clearLastUpdated(),
                 "1913283f-ce3c-4134-84ef-195c4cd687ae": new KnownPolicyDiffs().setPolicyAsDisabled(),
                 "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a": new KnownPolicyDiffs().setPolicyAsDisabled(),
-                "f09f8da1-6111-4ca0-8f49-294a76c65115": new KnownPolicyDiffs().setPolicyAsDisabled(),
-                "a919ccaf-6b43-4160-ac5d-a405e1440a41": new KnownPolicyDiffs().setPolicyAsEnabled(),
         ]
         and:
         "Skip over known differences due to differences in tests"
@@ -255,8 +248,8 @@ class UpgradesTest extends BaseSpecification {
                         builder.clearEnforcementActions()
                     }
                 }
-                if (diffs.setDisabled != null) {
-                    builder.setDisabled(diffs.setDisabled.booleanValue())
+                if (diffs.setDisabled) {
+                    builder.setDisabled(true)
                 }
             }
 
