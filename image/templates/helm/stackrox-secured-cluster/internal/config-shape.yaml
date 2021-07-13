@@ -89,6 +89,8 @@ collector:
     key: null # string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
+auditLogs:
+  disableCollection: null # bool
 customize:
   labels: {} # dict
   annotations: {} # dict

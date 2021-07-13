@@ -326,6 +326,9 @@ spec:
           (Collector and Compliance).
         displayName: Per Node Settings
         path: perNode
+      - description: Settings relating to the ingestion of Kubernetes audit logs.
+        displayName: Kubernetes Audit Logs Ingestion Settings
+        path: auditLogs
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls
@@ -369,6 +372,12 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: admissionControl.nodeSelector
+      - description: Whether collection of Kubernetes audit logs should be enabled
+          or disabled. Currently, this is only supported on OpenShift 4, and trying
+          to enable it on non-OpenShift 4 clusters will result in an error. Use the
+          'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+        displayName: Collection
+        path: auditLogs.collection
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels

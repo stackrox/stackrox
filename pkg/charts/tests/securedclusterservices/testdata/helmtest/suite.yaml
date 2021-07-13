@@ -11,6 +11,9 @@ defs: |
   def verifyNamespace(ns):
     [.objects[].metadata | select(.namespace and .namespace != ns)] | assertThat(length == 0);
 
+  def helmClusterConfig:
+    .secrets["helm-cluster-config"] | .stringData["config.yaml"] | fromyaml;
+
   def verifyCentralEndpoint(ep):
     [
       (envVars(.deployments.sensor; "sensor")["ROX_CENTRAL_ENDPOINT"] | assertThat(. == ep)),

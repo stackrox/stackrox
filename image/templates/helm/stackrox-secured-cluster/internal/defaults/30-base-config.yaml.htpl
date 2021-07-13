@@ -37,6 +37,8 @@ collector:
   collectionMethod: "KERNEL_MODULE"
   disableTaintTolerations: false
 
+auditLogs:
+  disableCollection: {{ ne ._rox.env.openshift 4 }}
 ---
 sensor:
   exposeMonitoring: {{ ._rox.exposeMonitoring }}

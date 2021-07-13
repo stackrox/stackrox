@@ -245,6 +245,9 @@ spec:
       - description: Set this to 'true' to enable preventive policy enforcement for object creations.
         displayName: Listen On Creates
         path: admissionControl.listenOnCreates
+      - description: Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error. Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+        displayName: Collection
+        path: auditLogs.collection
       - description: 'The unique name of this cluster, as it will be shown in the Red Hat Advanced Cluster Security UI. Note: Once a name is set here, you will not be able to change it again. You will need to delete and re-create this object in order to register a cluster with a new name.'
         displayName: Cluster Name
         path: clusterName
@@ -293,6 +296,9 @@ spec:
       - description: Settings for the components running on each node in the cluster (Collector and Compliance).
         displayName: Per Node Settings
         path: perNode
+      - description: Settings relating to the ingestion of Kubernetes audit logs.
+        displayName: Kubernetes Audit Logs Ingestion Settings
+        path: auditLogs
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls

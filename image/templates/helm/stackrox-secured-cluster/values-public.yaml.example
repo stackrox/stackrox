@@ -253,6 +253,12 @@
 #    cert: null
 #    key: null
 #
+# # Settings configuring the ingestion of audit logs:
+# auditLogs:
+#  # Disable audit log collection. This setting defaults to false on OpenShift 4 clusters. On all other cluster types,
+#  # it defaults to true, and setting it to false will result in an error.
+#  disableCollection: false
+#
 # # Customization Settings.
 # # The following allows specifying custom Kubernetes metadata (labels and annotations)
 # # for all objects instantiated by this Helm chart, as well as additional pod labels,

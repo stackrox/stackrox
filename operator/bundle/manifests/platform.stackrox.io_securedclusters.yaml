@@ -73,6 +73,18 @@ spec:
                         type: object
                     type: object
                 type: object
+              auditLogs:
+                description: Settings relating to the ingestion of Kubernetes audit logs.
+                properties:
+                  collection:
+                    default: Auto
+                    description: Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error. Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+                    enum:
+                    - Auto
+                    - Disabled
+                    - Enabled
+                    type: string
+                type: object
               centralEndpoint:
                 description: 'The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to, including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by prefixing the endpoint address with wss://. Note: when leaving this blank, Sensor will attempt to connect to a Central instance running in the same namespace.'
                 type: string

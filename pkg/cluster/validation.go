@@ -46,7 +46,11 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	if cluster.GetAdmissionControllerEvents() && cluster.Type == storage.ClusterType_OPENSHIFT_CLUSTER {
 		errorList.AddString("OpenShift 3.x compatibility mode does not support admission controller webhooks on port-forward and exec.")
 	}
-
+	if !cluster.GetDynamicConfig().GetDisableAuditLogs() && cluster.Type != storage.ClusterType_OPENSHIFT4_CLUSTER {
+		// Note: this will not fail server-side validation, because on those paths, normalization (which forces it to
+		// true for incompatible clusters) happens prior to validation.
+		errorList.AddString("Audit log collection is only supported on OpenShift 4.x clusters")
+	}
 	centralEndpoint := urlfmt.FormatURL(cluster.GetCentralApiEndpoint(), urlfmt.NONE, urlfmt.NoTrailingSlash)
 	_, _, _, err := netutil.ParseEndpoint(centralEndpoint)
 	if err != nil {

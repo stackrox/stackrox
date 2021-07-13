@@ -95,6 +95,10 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
 	}
 
+	if sc.Spec.AuditLogs != nil {
+		v.AddChild("auditLogs", t.getAuditLogsValues(sc.Spec.AuditLogs))
+	}
+
 	if sc.Spec.PerNode != nil {
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
@@ -169,6 +173,23 @@ func (t Translator) getAdmissionControlValues(admissionControl *securedcluster.A
 	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
 
 	return &acv
+}
+
+func (t Translator) getAuditLogsValues(auditLogs *securedcluster.AuditLogsSpec) *translation.ValuesBuilder {
+	if auditLogs.Collection == nil || *auditLogs.Collection == securedcluster.AuditLogsCollectionAuto {
+		return nil
+	}
+
+	cv := translation.NewValuesBuilder()
+	switch *auditLogs.Collection {
+	case securedcluster.AuditLogsCollectionEnabled:
+		cv.SetBoolValue("disableCollection", false)
+	case securedcluster.AuditLogsCollectionDisabled:
+		cv.SetBoolValue("disableCollection", true)
+	default:
+		return cv.SetError(errors.Errorf("invalid spec.auditLogs.collection setting %q", *auditLogs.Collection))
+	}
+	return &cv
 }
 
 func (t Translator) getCollectorValues(perNode *securedcluster.PerNodeSpec) *translation.ValuesBuilder {

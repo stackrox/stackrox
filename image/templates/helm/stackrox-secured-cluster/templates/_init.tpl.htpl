@@ -67,6 +67,35 @@
 {{ $apiServer := dict "apiResources" $apiResources "version" $apiServerVersion }}
 {{ $_ = set $._rox "_apiServer" $apiServer }}
 
+{{/*
+   Environment setup
+*/}}
+
+{{/* Infer openshift version */}}
+{{ if kindIs "invalid" $._rox.env.openshift }}
+  {{ $_ := set $._rox.env "openshift" (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
+{{ end }}
+{{ if and $._rox.env.openshift (kindIs "bool" $._rox.env.openshift) }}
+  {{/* Parse and add KubeVersion as semver from built-in resources. This is necessary to compare valid integer numbers. */}}
+  {{ $kubeVersion := semver .Capabilities.KubeVersion.Version }}
+
+  {{/* Default to OpenShift 3 if no openshift resources are available, i.e. in helm tempalte commands */}}
+  {{ if not (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
+    {{ $_ := set $._rox.env "openshift" 3 }}
+  {{ else if gt $kubeVersion.Minor 11 }}
+    {{ $_ := set $._rox.env "openshift" 4 }}
+  {{ else }}
+    {{ $_ := set $._rox.env "openshift" 3 }}
+  {{ end }}
+
+  {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $._rox.env.openshift)) }}
+{{ end }}
+{{ if not (kindIs "bool" $._rox.env.openshift) }}
+  {{ $_ := set $._rox.env "openshift" (int $._rox.env.openshift) }}
+{{ else if not $._rox.env.openshift }}
+  {{ $_ := set $._rox.env "openshift" 0 }}
+{{ end }}
+
 {{ include "srox.applyDefaults" $ }}
 
 {{/* Expand applicable config values */}}
@@ -105,31 +134,12 @@
 
 [< end >]
 
-{{/*
-   Environment setup
-*/}}
-
-{{/* Infer openshift version */}}
-{{ if and $._rox.env.openshift (kindIs "bool" $._rox.env.openshift) }}
-  {{/* Parse and add KubeVersion as semver from built-in resources. This is necessary to compare valid integer numbers. */}}
-  {{ $kubeVersion := semver .Capabilities.KubeVersion.Version }}
-
-  {{/* Default to OpenShift 3 if no openshift resources are available, i.e. in helm tempalte commands */}}
-  {{ if not (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-    {{ $_ := set $._rox.env "openshift" 3 }}
-  {{ else if gt $kubeVersion.Minor 11 }}
-    {{ $_ := set $._rox.env "openshift" 4 }}
-  {{ else }}
-    {{ $_ := set $._rox.env "openshift" 3 }}
-  {{ end }}
-
-  {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $._rox.env.openshift)) }}
+[</* In legacy mode, the audit logs setting doesn't matter, since dynamic config isn't part of the legacy chart. */>]
+[< if not .RenderAsLegacyChart >]
+{{ if and (not $._rox.auditLogs.disableCollection) (ne $._rox.env.openshift 4) }}
+  {{ include "srox.fail" "'auditLogs.disableCollection' is set to false, but the chart is not being deployed in OpenShift 4 mode. Set 'env.openshift' to '4' in order to enable OpenShift 4 features." }}
 {{ end }}
-{{ if not (kindIs "bool" $._rox.env.openshift) }}
-  {{ $_ := set $._rox.env "openshift" (int $._rox.env.openshift) }}
-{{ else if not $._rox.env.openshift }}
-  {{ $_ := set $._rox.env "openshift" 0 }}
-{{ end }}
+[< end >]
 
 {{ if and $._rox.admissionControl.dynamic.enforceOnCreates (not $._rox.admissionControl.listenOnCreates) }}
   {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnCreates' is set to true, while `admissionControl.listenOnCreates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}

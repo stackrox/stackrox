@@ -1000,7 +1000,11 @@ func (suite *ClusterDataStoreTestSuite) TestValidateCluster() {
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			err := validateInput(c.cluster)
+			cluster := c.cluster.Clone()
+			cluster.DynamicConfig = &storage.DynamicClusterConfig{
+				DisableAuditLogs: true,
+			}
+			err := validateInput(cluster)
 			if c.expectedError {
 				suite.Error(err)
 			} else {

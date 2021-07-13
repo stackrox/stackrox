@@ -843,6 +843,10 @@ func addDefaults(cluster *storage.Cluster) error {
 	if cluster.GetDynamicConfig() == nil {
 		cluster.DynamicConfig = &storage.DynamicClusterConfig{}
 	}
+	if cluster.GetType() != storage.ClusterType_OPENSHIFT4_CLUSTER {
+		cluster.DynamicConfig.DisableAuditLogs = true
+	}
+
 	acConfig := cluster.DynamicConfig.GetAdmissionControllerConfig()
 	if acConfig == nil {
 		acConfig = &storage.AdmissionControllerConfig{

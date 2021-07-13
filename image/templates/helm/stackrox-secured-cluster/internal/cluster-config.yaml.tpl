@@ -20,6 +20,7 @@ clusterConfig:
       disabled: {{ ._rox.collector.disableTaintTolerations }}
     slimCollector: {{ ._rox.collector.slimMode }}
   dynamicConfig:
+    disableAuditLogs: {{ ._rox.auditLogs.disableCollection | not | not }}
     admissionControllerConfig:
       enabled: {{ ._rox.admissionControl.dynamic.enforceOnCreates }}
       timeoutSeconds: {{ ._rox.admissionControl.dynamic.timeout }}

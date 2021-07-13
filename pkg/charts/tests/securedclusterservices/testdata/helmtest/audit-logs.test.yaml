@@ -1,0 +1,94 @@
+server:
+  availableSchemas:
+  - openshift-4.1.0
+tests:
+- name: "Collection should be disabled"
+  expect: |
+    helmClusterConfig | .clusterConfig.dynamicConfig.disableAuditLogs | assertThat(. == true)
+  tests:
+  - name: "with an explicit config setting"
+    set:
+      auditLogs.disableCollection: true
+    tests:
+    - name: "on the default environment"
+    - name: "on an explicit non-OpenShift environment"
+      set:
+        env.openshift: false
+    - name: "on an explicit OpenShift 3 environment"
+      set:
+        env.openshift: 3
+    - name: "on an explicit OpenShift 4 environment"
+      set:
+        env.openshift: 4
+    - name: "on an auto-detected OpenShift 3 environment"
+      server:
+        visibleSchemas:
+        - openshift-3.11.0
+      capabilities:
+        kubeVersion:
+          version: "v1.11.0"
+    - name: "on an auto-detected OpenShift 4 environment"
+      server:
+        visibleSchemas:
+        - openshift-4.1.0
+  - name: "by default"
+    tests:
+    - name: "on the default environment"
+    - name: "on an explicit non-OpenShift environment"
+      set:
+        env.openshift: false
+    - name: "on an explicit OpenShift 3 environment"
+      set:
+        env.openshift: 3
+    - name: "on an auto-detected OpenShift 3 environment"
+      server:
+        visibleSchemas:
+        - openshift-3.11.0
+      capabilities:
+        kubeVersion:
+          version: "v1.11.0"
+- name: "Collection should be enabled"
+  expect: |
+    helmClusterConfig | .clusterConfig.dynamicConfig.disableAuditLogs | assertThat(. == false)
+  tests:
+  - name: "with an explicit config setting"
+    set:
+      auditLogs.disableCollection: false
+    tests:
+    - name: "on an explicit OpenShift 4 environment"
+      set:
+        env.openshift: 4
+    - name: "on an auto-detected OpenShift 4 environment"
+      server:
+        visibleSchemas:
+        - openshift-4.1.0
+  - name: "by default"
+    tests:
+    - name: "on an explicit OpenShift 4 environment"
+      set:
+        env.openshift: 4
+    - name: "on an auto-detected OpenShift 4 environment"
+      server:
+        visibleSchemas:
+        - openshift-4.1.0
+- name: "An error should be raised with an explicit false setting"
+  set:
+    auditLogs.disableCollection: false
+  expectError: true
+  expect: |
+    .error | assertThat(contains("auditLogs.disableCollection") and contains("but the chart is not being deployed in OpenShift 4 mode"))
+  tests:
+  - name: "on the default environment"
+  - name: "on an explicit non-OpenShift environment"
+    set:
+      env.openshift: false
+  - name: "on an explicit OpenShift 3 environment"
+    set:
+      env.openshift: 3
+  - name: "on an auto-detected OpenShift 3 environment"
+    server:
+      visibleSchemas:
+      - openshift-3.11.0
+    capabilities:
+      kubeVersion:
+        version: "v1.11.0"

@@ -57,20 +57,24 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Per Node Settings"
 	PerNode *PerNodeSpec `json:"perNode,omitempty"`
 
+	// Settings relating to the ingestion of Kubernetes audit logs.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Kubernetes Audit Logs Ingestion Settings"
+	AuditLogs *AuditLogsSpec `json:"auditLogs,omitempty"`
+
 	// Allows you to specify additional trusted Root CAs.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
 	TLS *common.TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []common.LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *common.CustomizeSpec `json:"customize,omitempty"`
 
 	// Miscellaneous settings.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Misc *common.MiscSpec `json:"misc,omitempty"`
 }
 
@@ -138,6 +142,36 @@ const (
 	// CollectionNone means: NO_COLLECTION.
 	CollectionNone CollectionMethod = "NoCollection"
 )
+
+// AuditLogsSpec configures settings related to audit log ingestion.
+type AuditLogsSpec struct {
+	// Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only
+	// supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error.
+	// Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+	//+kubebuilder:validation:Default=Auto
+	//+kubebuilder:default=Auto
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Collection *AuditLogsCollectionSetting `json:"collection,omitempty"`
+}
+
+// AuditLogsCollectionSetting determines if audit log collection is enabled.
+//+kubebuilder:validation:Enum=Auto;Disabled;Enabled
+type AuditLogsCollectionSetting string
+
+const (
+	// AuditLogsCollectionAuto means to configure audit logs collection according to the environment (enable on
+	// OpenShift 4.x, disable on all other environments).
+	AuditLogsCollectionAuto AuditLogsCollectionSetting = "Auto"
+	// AuditLogsCollectionDisabled means to disable audit logs collection.
+	AuditLogsCollectionDisabled AuditLogsCollectionSetting = "Disabled"
+	// AuditLogsCollectionEnabled means to enable audit logs collection.
+	AuditLogsCollectionEnabled AuditLogsCollectionSetting = "Enabled"
+)
+
+// Pointer returns a pointer with the given value.
+func (s AuditLogsCollectionSetting) Pointer() *AuditLogsCollectionSetting {
+	return &s
+}
 
 // Pointer returns the given CollectionMethod as a pointer, needed in k8s resource structs.
 func (c CollectionMethod) Pointer() *CollectionMethod {

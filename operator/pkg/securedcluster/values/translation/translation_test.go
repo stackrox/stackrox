@@ -82,6 +82,9 @@ func TestTranslateComplete(t *testing.T) {
 								{Name: "ca2-name", Content: "ca2-content"},
 							},
 						},
+						AuditLogs: &v1alpha1.AuditLogsSpec{
+							Collection: v1alpha1.AuditLogsCollectionEnabled.Pointer(),
+						},
 						PerNode: &v1alpha1.PerNodeSpec{
 							Collector: &v1alpha1.CollectorContainerSpec{
 								ImageFlavor: v1alpha1.ImageFlavorRegular.Pointer(),
@@ -139,6 +142,9 @@ func TestTranslateComplete(t *testing.T) {
 				"additionalCAs": map[string]interface{}{
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
+				},
+				"auditLogs": map[string]interface{}{
+					"disableCollection": false,
 				},
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,

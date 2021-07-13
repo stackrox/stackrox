@@ -13,6 +13,7 @@ func k8s() *cobra.Command {
 		Use: "k8s",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cluster.Type = storage.ClusterType_KUBERNETES_CLUSTER
+			cluster.DynamicConfig.DisableAuditLogs = true
 			if err := clusterValidation.Validate(&cluster); err.ToError() != nil {
 				return err.ToError()
 			}
