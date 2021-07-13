@@ -304,15 +304,17 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 			return
 		case auditEvents := <-d.auditEventsChan:
 			alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
+			if len(alerts) == 0 {
+				// No need to process runtime alerts that have no violations
+				continue
+			}
 
-			// If alerts are detected force update the audit log status
+			// Force update the audit log status since alerts were detected
 			// This is required because if sensor were to restart right after this alert, it's possible that
 			// the saved state is prior to this the event that generated this alert (because the updater updates on a timer)
 			// To avoid duplicate alerts force the state to be updated
-			if len(alerts) > 0 {
-				// This is non-blocking as the updates happen on another goroutine
-				d.auditLogUpdater.ForceUpdate()
-			}
+			// This is non-blocking as the updates happen on another goroutine
+			d.auditLogUpdater.ForceUpdate()
 
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
