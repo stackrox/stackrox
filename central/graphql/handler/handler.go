@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -51,6 +52,13 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Adds the params for the framework.
 	ctx := context.WithValue(r.Context(), paramsContextKey{}, params)
+
+	if !buildinfo.ReleaseBuild {
+		if validationErrs := h.Schema.ValidateWithVariables(params.Query, params.Variables); len(validationErrs) > 0 {
+			log.Errorf("UNEXPECTED: GraphQL operation %s: received a query failing schema validation: %v", params.OperationName, validationErrs)
+			log.Errorf("Full query:\n%s\nVariables:\n%+v\n", params.Query, params.Variables)
+		}
+	}
 
 	// Adds the data loader intermediates so that we can stop ourselves from loading the same data from the store
 	// many time.
