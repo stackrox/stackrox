@@ -60,4 +60,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_71_to_m_72_delete_namespacesac_bucket"
 	_ "github.com/stackrox/rox/migrator/migrations/m_72_to_m_73_change_roles_to_sac_v2"
 	_ "github.com/stackrox/rox/migrator/migrations/m_73_to_m_74_runtime_policy_event_source"
+	_ "github.com/stackrox/rox/migrator/migrations/m_74_to_m_75_severity_policy"
 )
