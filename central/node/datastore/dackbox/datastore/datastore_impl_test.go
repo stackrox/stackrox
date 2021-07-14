@@ -187,6 +187,8 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 	nodes, err := suite.datastore.GetNodesBatch(ctx, []string{"id1", "id2"})
 	suite.NoError(err)
 	suite.Len(nodes, 2)
+	node.Priority = 1
+	newNode.Priority = 2
 	suite.ElementsMatch([]*storage.Node{node, newNode}, nodes)
 
 	// Delete both nodes.

@@ -64,7 +64,7 @@ func (d *datastoreImpl) ListNodes() ([]*storage.Node, error) {
 		return nil, err
 	}
 
-	d.updateNodePriority(nodes...)
+	d.updateNodesPriority(nodes, 0)
 
 	return nodes, nil
 }
@@ -80,7 +80,7 @@ func (d *datastoreImpl) GetNode(id string) (*storage.Node, error) {
 		return nil, nil
 	}
 
-	d.updateNodePriority(node)
+	d.updateNodeRank(node)
 
 	return node, nil
 }
@@ -140,8 +140,11 @@ func (d *datastoreImpl) updateComponentRisk(node *storage.Node) {
 	}
 }
 
-func (d *datastoreImpl) updateNodePriority(nodes ...*storage.Node) {
-	for _, node := range nodes {
-		node.Priority = d.nodeRanker.GetRankForID(node.GetId())
-	}
+func (d *datastoreImpl) updateNodesPriority(nodes []*storage.Node, offset int32) {
+	ranking.SetNodesPriorities(d.nodeRanker, nodes, int64(offset))
+}
+
+func (d *datastoreImpl) updateNodeRank(node *storage.Node) {
+	// TODO(ROX-7565): Create rank field to distinguish it from priority.
+	node.Priority = d.nodeRanker.GetRankForID(node.GetId())
 }

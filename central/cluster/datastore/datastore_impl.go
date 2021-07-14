@@ -209,7 +209,7 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 	}
 
 	ds.populateHealthInfos(clusters...)
-	ds.updateClusterPriority(clusters...)
+	ds.updateClustersPriority(clusters, q.GetPagination().GetOffset())
 	return clusters, nil
 }
 
@@ -223,7 +223,7 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 	}
 
 	ds.populateHealthInfos(cluster)
-	ds.updateClusterPriority(cluster)
+	ds.updateClusterRank(cluster)
 	return cluster, true, nil
 }
 
@@ -242,7 +242,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 		}
 
 		ds.populateHealthInfos(clusters...)
-		ds.updateClusterPriority(clusters...)
+		ds.updateClustersPriority(clusters, 0)
 		return clusters, nil
 	}
 
@@ -656,10 +656,13 @@ func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
 	return ds.nodeDataStore.RemoveClusterNodeStores(ctx, orphanedClusterIDsInNodeStore.AsSlice()...)
 }
 
-func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {
-	for _, cluster := range clusters {
-		cluster.Priority = ds.clusterRanker.GetRankForID(cluster.GetId())
-	}
+func (ds *datastoreImpl) updateClustersPriority(clusters []*storage.Cluster, offset int32) {
+	ranking.SetClustersPriorities(ds.clusterRanker, clusters, int64(offset))
+}
+
+func (ds *datastoreImpl) updateClusterRank(cluster *storage.Cluster) {
+	// TODO(ROX-7565): Create rank field to distinguish it from priority.
+	cluster.Priority = ds.clusterRanker.GetRankForID(cluster.GetId())
 }
 
 func (ds *datastoreImpl) getClusterOnly(id string) (*storage.Cluster, error) {

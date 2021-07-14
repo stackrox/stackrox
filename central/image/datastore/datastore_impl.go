@@ -88,7 +88,7 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 		return nil, err
 	}
 
-	ds.updateImagePriority(imgs...)
+	ds.updateImagesPriority(imgs, q.GetPagination().GetOffset())
 
 	return imgs, nil
 }
@@ -101,7 +101,7 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 		return nil, err
 	}
 
-	ds.updateListImagePriority(imgs...)
+	ds.updateListImagesPriority(imgs, q.GetPagination().GetOffset())
 
 	return imgs, nil
 }
@@ -116,7 +116,7 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 		return nil, false, err
 	}
 
-	ds.updateListImagePriority(img)
+	ds.updateListImageRank(img)
 
 	return img, true, nil
 }
@@ -158,7 +158,7 @@ func (ds *datastoreImpl) GetImageMetadata(ctx context.Context, id string) (*stor
 	if ok, err := ds.canReadImage(ctx, id); err != nil || !ok {
 		return nil, false, err
 	}
-	ds.updateImagePriority(img)
+	ds.updateImageRank(img)
 
 	return img, true, nil
 }
@@ -173,7 +173,7 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 		return nil, false, err
 	}
 
-	ds.updateImagePriority(img)
+	ds.updateImageRank(img)
 
 	return img, true, nil
 }
@@ -196,7 +196,7 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 		}
 	}
 
-	ds.updateImagePriority(imgs...)
+	ds.updateImagesPriority(imgs, 0)
 
 	return imgs, nil
 }
@@ -288,16 +288,22 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 }
 
-func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {
-	for _, image := range images {
-		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
-	}
+func (ds *datastoreImpl) updateListImagesPriority(images []*storage.ListImage, offset int32) {
+	ranking.SetListImagesPriorities(ds.imageRanker, images, int64(offset))
 }
 
-func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
-	for _, image := range images {
-		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
-	}
+func (ds *datastoreImpl) updateListImageRank(image *storage.ListImage) {
+	// TODO(ROX-7565): Create rank field to distinguish it from priority.
+	image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+}
+
+func (ds *datastoreImpl) updateImagesPriority(images []*storage.Image, offset int32) {
+	ranking.SetImagesPriorities(ds.imageRanker, images, int64(offset))
+}
+
+func (ds *datastoreImpl) updateImageRank(image *storage.Image) {
+	// TODO(ROX-7565): Create rank field to distinguish it from priority.
+	image.Priority = ds.imageRanker.GetRankForID(image.GetId())
 }
 
 func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {

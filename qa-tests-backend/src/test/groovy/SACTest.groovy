@@ -129,6 +129,7 @@ class SACTest extends BaseSpecification {
         def result = DeploymentService.listDeployments()
         println result.toString()
         assert result.size() == 1
+        assert result.first().priority == 1
         assert DeploymentService.getDeploymentWithRisk(result.first().id).hasRisk()
         def resourceNotAllowed = result.find { it.namespace != sacResource }
         assert resourceNotAllowed == null

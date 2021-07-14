@@ -118,7 +118,7 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 		Allowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
-	b.updateNamespacePriority(namespace)
+	b.updateNamespaceRank(namespace)
 	return namespace, true, err
 }
 
@@ -137,7 +137,7 @@ func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.Namespace
 	if err != nil {
 		return nil, err
 	}
-	b.updateNamespacePriority(allowedNamespaces...)
+	b.updateNamespacesPriority(allowedNamespaces, 0)
 	return allowedNamespaces, nil
 }
 
@@ -250,14 +250,17 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 
 func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error) {
 	namespaces, _, err := b.searchNamespaces(ctx, q)
-	b.updateNamespacePriority(namespaces...)
+	b.updateNamespacesPriority(namespaces, q.GetPagination().GetOffset())
 	return namespaces, err
 }
 
-func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadata) {
-	for _, ns := range nss {
-		ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
-	}
+func (b *datastoreImpl) updateNamespacesPriority(nss []*storage.NamespaceMetadata, offset int32) {
+	ranking.SetNamespacesPriorities(b.namespaceRanker, nss, int64(offset))
+}
+
+func (b *datastoreImpl) updateNamespaceRank(ns *storage.NamespaceMetadata) {
+	// TODO(ROX-7565): Create rank field to distinguish it from priority.
+	ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
 }
 
 // Helper functions which format our searching.

@@ -145,7 +145,7 @@ func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storag
 	if ok, err := deploymentsSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !ok {
 		return nil, false, err
 	}
-	ds.updateListDeploymentPriority(deployment)
+	ds.updateListDeploymentRank(deployment)
 	return deployment, true, nil
 }
 
@@ -156,7 +156,7 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 	if err != nil {
 		return nil, err
 	}
-	ds.updateListDeploymentPriority(listDeployments...)
+	ds.updateListDeploymentsPriority(listDeployments, q.GetPagination().GetOffset())
 	return listDeployments, nil
 }
 
@@ -175,7 +175,7 @@ func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) 
 	if err != nil {
 		return nil, err
 	}
-	ds.updateDeploymentPriority(deployments...)
+	ds.updateDeploymentsPriority(deployments, q.GetPagination().GetOffset())
 	return deployments, nil
 }
 
@@ -189,7 +189,7 @@ func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage
 	if ok, err := deploymentsSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !ok {
 		return nil, false, err
 	}
-	ds.updateDeploymentPriority(deployment)
+	ds.updateDeploymentRank(deployment)
 	return deployment, true, nil
 }
 
@@ -207,7 +207,7 @@ func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*s
 	if err != nil {
 		return nil, err
 	}
-	ds.updateDeploymentPriority(deployments...)
+	ds.updateDeploymentsPriority(deployments, 0)
 	return deployments, nil
 }
 
@@ -340,16 +340,22 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 	return images, nil
 }
 
-func (ds *datastoreImpl) updateListDeploymentPriority(deployments ...*storage.ListDeployment) {
-	for _, deployment := range deployments {
-		deployment.Priority = ds.deploymentRanker.GetRankForID(deployment.GetId())
-	}
+func (ds *datastoreImpl) updateListDeploymentsPriority(deployments []*storage.ListDeployment, offset int32) {
+	ranking.SetListDeploymentsPriorities(ds.deploymentRanker, deployments, int64(offset))
 }
 
-func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deployment) {
-	for _, deployment := range deployments {
-		deployment.Priority = ds.deploymentRanker.GetRankForID(deployment.GetId())
-	}
+func (ds *datastoreImpl) updateListDeploymentRank(deployment *storage.ListDeployment) {
+	// TODO(ROX-7565): Create rank field to distinguish it from priority.
+	deployment.Priority = ds.deploymentRanker.GetRankForID(deployment.GetId())
+}
+
+func (ds *datastoreImpl) updateDeploymentsPriority(deployments []*storage.Deployment, offset int32) {
+	ranking.SetDeploymentsPriorities(ds.deploymentRanker, deployments, int64(offset))
+}
+
+func (ds *datastoreImpl) updateDeploymentRank(deployment *storage.Deployment) {
+	// TODO(ROX-7565): Create rank field to distinguish it from priority.
+	deployment.Priority = ds.deploymentRanker.GetRankForID(deployment.GetId())
 }
 
 func (ds *datastoreImpl) GetDeploymentIDs() ([]string, error) {
