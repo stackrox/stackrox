@@ -681,15 +681,21 @@ commands:
 
           if [[ -n "<< parameters.changed-path >>" || -n "<< parameters.changed-path-ignore>>" ]]; then
             if [[ "$CIRCLE_BRANCH" == "master" ]]; then
+              echo "On master"
               diff_base="HEAD^"
             else
+              echo "Not on master"
               diff_base="$(git merge-base HEAD origin/master)"
             fi
+            echo "Determined diff-base as ${diff_base}"
+            echo "Master SHA: $(git rev-parse origin/master)"
+            echo "Diffbase diff:"
+            { git diff --name-only "${diff_base}" | cat ; } || true
             ignored_regex='<< parameters.changed-path-ignore >>'
             [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
             match_regex='<< parameters.changed-path >>'
             [[ -n "$match_regex" ]] || match_regex='^.*$' # egrep -q '' returns 0 even on empty input, so we have to specify some pattern
-            if { git diff --name-only "${diff_base}" || echo "???" ; } | egrep -v "$ignored_regex" | egrep -q "$match_regex"; then
+            if egrep -q "$match_regex" < <({ git diff --name-only "${diff_base}" || echo "???" ; } | egrep -v "$ignored_regex"); then
               echo "Running tests because paths matching $match_regex (and not matching ${ignored_regex}) had changed."
               exit 0
             fi
