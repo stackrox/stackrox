@@ -105,23 +105,12 @@ func ValidateSimpleAccessScopeRules(scopeRules *storage.SimpleAccessScope_Rules)
 		}
 	}
 	for _, labelSelector := range scopeRules.GetClusterLabelSelectors() {
-		if len(labelSelector.GetRequirements()) == 0 {
-			multiErr = multierror.Append(multiErr, errors.New(
-				"requirements field must be set in every cluster label selector"))
-			break
-		}
-
 		err := validateSelectorRequirement(labelSelector)
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}
 	for _, labelSelector := range scopeRules.GetNamespaceLabelSelectors() {
-		if len(labelSelector.GetRequirements()) == 0 {
-			multiErr = multierror.Append(multiErr, errors.New(
-				"requirements field must be set in every namespace label selector"))
-			break
-		}
 		err := validateSelectorRequirement(labelSelector)
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)

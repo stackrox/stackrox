@@ -81,11 +81,8 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		},
 	}
 	mockBadRules := &storage.SimpleAccessScope_Rules{
-		NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
-			{
-				Requirements: nil,
-			},
-		},
+		IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+			{NamespaceName: "Advanced Tea Substitute"}},
 	}
 
 	testCasesGood := map[string]*storage.SimpleAccessScope{
@@ -103,6 +100,18 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 			Name:        mockName,
 			Description: mockDescription,
 			Rules:       mockGoodRules,
+		},
+		"label selector with empty rules": {
+			Id:    mockGoodID,
+			Name:  mockName,
+			Rules: &storage.SimpleAccessScope_Rules{},
+		},
+		"label selector with empty requirements": {
+			Id:   mockGoodID,
+			Name: mockName,
+			Rules: &storage.SimpleAccessScope_Rules{
+				ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
+					{Requirements: nil}}},
 		},
 	}
 
@@ -160,15 +169,6 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 						{NamespaceName: "Advanced Tea Substitute"}}}},
 			expectedNumberOfErrors: 1,
 		}, {
-			name: "missing label selector",
-			scope: &storage.SimpleAccessScope{
-				Id:   mockGoodID,
-				Name: mockName,
-				Rules: &storage.SimpleAccessScope_Rules{
-					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
-						{Requirements: nil}}}},
-			expectedNumberOfErrors: 1,
-		}, {
 			name: "multiple errors",
 			scope: &storage.SimpleAccessScope{
 				Id:   mockGoodID,
@@ -177,7 +177,9 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
 						{NamespaceName: "Advanced Tea Substitute"}},
 					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
-						{Requirements: nil}}}},
+						{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							{Key: "valid", Op: 42, Values: []string{"value"}},
+						}}}}},
 			expectedNumberOfErrors: 2,
 		}, {
 			name: "invalid selectors",
@@ -235,7 +237,9 @@ func TestValidateSimpleAccessScopeRules(t *testing.T) {
 	}
 	mockGoodSelector := labelUtils.LabelSelector("fleet", storage.SetBasedLabelSelector_NOT_IN, []string{"vogon"})
 	mockBadSelector := &storage.SetBasedLabelSelector{
-		Requirements: nil,
+		Requirements: []*storage.SetBasedLabelSelector_Requirement{
+			{Key: "valid", Op: 42, Values: []string{"value"}},
+		},
 	}
 
 	testCasesGood := map[string]*storage.SimpleAccessScope_Rules{

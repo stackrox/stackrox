@@ -271,6 +271,49 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			hasError: false,
 		},
 		{
+			desc:      "selector with empty requirements includes nothing",
+			scopeDesc: `cluster.labels: ∅ => { }`,
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusters: []string{},
+					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
+						{},
+					},
+				},
+			},
+			expected: &EffectiveAccessScopeTree{
+				Excluded,
+				map[string]*ClustersScopeSubTree{
+					"Earth": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(skunkWorks),
+							excluded(fraunhofer),
+							excluded(cern),
+							excluded(jpl),
+						),
+						Extras: earthExtras,
+					},
+					"Arrakis": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(atreides),
+							excluded(harkonnen),
+							excluded(spacingGuild),
+							excluded(bene),
+							excluded(fremen),
+						),
+						Extras: arrakisExtras,
+					},
+					"Not Found": notFoundCluster,
+				},
+			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			hasError: false,
+		},
+		{
 			desc:      "cluster included by name includes all its namespaces",
 			scopeDesc: `cluster: "Arrakis" => { "Arrakis::*" }`,
 			scope: &storage.SimpleAccessScope{

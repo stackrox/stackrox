@@ -264,6 +264,11 @@ func convertEachSetBasedLabelSelectorToK8sLabelSelector(selectors []*storage.Set
 // convertSetBasedLabelSelectorToK8sLabelSelector converts SetBasedLabelSelector
 // protobuf to the standard labels.Selector type that supports matching.
 func convertSetBasedLabelSelectorToK8sLabelSelector(selector *storage.SetBasedLabelSelector) (labels.Selector, error) {
+	// We want empty requirements map to nothing and not every label.
+	if len(selector.GetRequirements()) == 0 {
+		return labels.Nothing(), nil
+	}
+
 	compiled := labels.NewSelector()
 	for _, elem := range selector.GetRequirements() {
 		req, err := labels.NewRequirement(elem.GetKey(), ConvertLabelSelectorOperatorToSelectionOperator(elem.GetOp()), elem.GetValues())
