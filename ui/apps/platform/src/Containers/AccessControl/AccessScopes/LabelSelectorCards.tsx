@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-bind */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { Button, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Button, Label, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
 import { LabelSelector, LabelSelectorRequirement, LabelSelectorsKey } from 'services/RolesService';
 
@@ -94,6 +94,13 @@ function LabelSelectorCards({
         <ul>
             {labelSelectors.map((labelSelector, indexLabelSelector) => (
                 <li key={indexLabelSelector} className="pf-u-pt-md">
+                    {indexLabelSelector !== 0 && (
+                        <div className="pf-u-mb-md pf-u-text-align-center">
+                            <Label variant="outline" className="pf-u-px-md">
+                                or
+                            </Label>
+                        </div>
+                    )}
                     <LabelSelectorCard
                         requirements={labelSelector.requirements}
                         labelSelectorsKey={labelSelectorsKey}

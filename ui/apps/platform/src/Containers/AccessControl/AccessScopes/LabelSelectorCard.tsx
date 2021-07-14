@@ -21,7 +21,6 @@ import { OutlinedQuestionCircleIcon, PlusCircleIcon } from '@patternfly/react-ic
 import { TableComposable, Tbody, Th, Thead, Tr } from '@patternfly/react-table';
 
 import {
-    LabelSelectorOperator,
     LabelSelectorRequirement,
     LabelSelectorsKey,
     getIsValidRequirements,
@@ -152,15 +151,6 @@ function LabelSelectorCard({
         setIndexRequirementActive(-1);
     }
 
-    function handleOperatorSelect(indexRequirement: number, op: LabelSelectorOperator) {
-        const { key, values } = requirements[indexRequirement];
-        handleRequirementChange(indexRequirement, {
-            key,
-            op,
-            values,
-        });
-    }
-
     function handleValueAdd(indexRequirement: number, value: string) {
         const { key, op, values } = requirements[indexRequirement];
         handleRequirementChange(indexRequirement, {
@@ -199,7 +189,7 @@ function LabelSelectorCard({
                     </CardActions>
                 )}
             </CardHeader>
-            <CardBody>
+            <CardBody className="pf-u-pb-0">
                 <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
                     <FlexItem>
                         <strong>Rules</strong>
@@ -212,9 +202,9 @@ function LabelSelectorCard({
                     <TableComposable variant="compact">
                         <Thead>
                             <Tr>
-                                <Th modifier="breakWord">Key</Th>
-                                <Th modifier="fitContent">Operator</Th>
-                                <Th modifier="breakWord">Values</Th>
+                                <Th width={40}>Key</Th>
+                                <Th />
+                                <Th width={40}>Values</Th>
                                 {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
                             </Tr>
                         </Thead>
@@ -243,9 +233,6 @@ function LabelSelectorCard({
                                     }
                                     handleRequirementOK={handleRequirementOK}
                                     handleRequirementCancel={handleRequirementCancel}
-                                    handleOperatorSelect={(op: LabelSelectorOperator) =>
-                                        handleOperatorSelect(indexRequirement, op)
-                                    }
                                     handleValueAdd={(value: string) =>
                                         handleValueAdd(indexRequirement, value)
                                     }

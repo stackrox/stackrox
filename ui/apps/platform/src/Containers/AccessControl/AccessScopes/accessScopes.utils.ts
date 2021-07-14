@@ -62,12 +62,12 @@ export function getRequirementActivity(index: number, indexActive: number): Acti
     return indexActive === -1 ? 'ENABLED' : 'DISABLED';
 }
 
-export function getOpText(op: LabelSelectorOperator): string {
+export function getOpText(op: LabelSelectorOperator, values: string[]): string {
     switch (op) {
         case 'IN':
-            return 'in';
+            return values.length > 1 ? 'in' : '=';
         case 'NOT_IN':
-            return 'not in';
+            return values.length > 1 ? 'not in' : '!=';
         case 'EXISTS':
             return 'exists';
         case 'NOT_EXISTS':

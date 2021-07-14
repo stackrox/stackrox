@@ -9,22 +9,6 @@ import { EffectiveAccessScopeCluster, SimpleAccessScopeNamespace } from 'service
 import EffectiveAccessScopeLabels from './EffectiveAccessScopeLabels';
 import EffectiveAccessScopeStateIcon from './EffectiveAccessScopeStateIcon';
 
-const infoLabels = {
-    ariaLabel:
-        'Cluster labels specified in Platform Configuration; Namespace labels specified in Kubernetes',
-    tooltip: (
-        <div>
-            <strong>Cluster</strong> labels specified in Platform Configuration
-            <br />
-            <strong>Namespace</strong> labels specified in Kubernetes
-        </div>
-    ),
-    tooltipProps: {
-        isContentLeftAligned: true,
-        maxWidth: '24rem',
-    },
-};
-
 // In 24px padding right of last cell in row.
 const styleExpandCollapseButton = {
     position: 'absolute',
@@ -112,6 +96,7 @@ function EffectiveAccessScopeTable({
             <TreeRowWrapper key={clusterId} row={{ props: clusterProps }}>
                 <Td
                     dataLabel="Cluster name"
+                    modifier="breakWord"
                     treeRow={{
                         onCollapse: () => {
                             setIsExpandedCluster({
@@ -138,7 +123,7 @@ function EffectiveAccessScopeTable({
                         }
                     />
                 </Td>
-                <Td dataLabel="Cluster labels">
+                <Td dataLabel="Cluster labels" modifier="breakWord">
                     <EffectiveAccessScopeLabels
                         labels={clusterLabels}
                         isExpanded={Boolean(isExpandedLabels[clusterId])}
@@ -191,6 +176,7 @@ function EffectiveAccessScopeTable({
                 >
                     <Td
                         dataLabel="Namespace name"
+                        modifier="breakWord"
                         treeRow={{
                             onCollapse: onCollapseNamespace,
                             props: namespaceProps,
@@ -220,7 +206,7 @@ function EffectiveAccessScopeTable({
                             }
                         />
                     </Td>
-                    <Td dataLabel="Namespace labels">
+                    <Td dataLabel="Namespace labels" modifier="breakWord">
                         <EffectiveAccessScopeLabels
                             labels={namespaceLabels}
                             isExpanded={Boolean(isExpandedLabels[namespaceId])}
@@ -253,25 +239,33 @@ function EffectiveAccessScopeTable({
     return (
         <>
             <Flex className="pf-u-pt-sm pf-u-pb-sm pf-u-pl-lg">
-                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
                     <FlexItem>
                         <span className="pf-u-font-size-sm pf-u-text-nowrap">Cluster filter:</span>
                     </FlexItem>
                     <FlexItem>
-                        <TextInput value={clusterNameFilter} onChange={setClusterNameFilter} />
+                        <TextInput
+                            value={clusterNameFilter}
+                            onChange={setClusterNameFilter}
+                            className="pf-m-small"
+                        />
                     </FlexItem>
                     <FlexItem>
                         <Badge isRead>{`${clusterFilterCount} / ${clusters.length}`}</Badge>
                     </FlexItem>
                 </Flex>
-                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
                     <FlexItem>
                         <span className="pf-u-font-size-sm pf-u-text-nowrap">
                             Namespace filter:
                         </span>
                     </FlexItem>
                     <FlexItem>
-                        <TextInput value={namespaceNameFilter} onChange={setNamespaceNameFilter} />
+                        <TextInput
+                            value={namespaceNameFilter}
+                            onChange={setNamespaceNameFilter}
+                            className="pf-m-small"
+                        />
                     </FlexItem>
                     <FlexItem>
                         <Badge isRead>{`${namespaceFilterCount} / ${namespaceTotalCount}`}</Badge>
@@ -286,7 +280,7 @@ function EffectiveAccessScopeTable({
             >
                 <Thead>
                     <Tr>
-                        <Th>Cluster name</Th>
+                        <Th width={40}>Cluster name</Th>
                         <Th
                             modifier="fitContent"
                             className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
@@ -294,7 +288,7 @@ function EffectiveAccessScopeTable({
                             State
                         </Th>
                         <Th modifier="fitContent">Manual inclusion</Th>
-                        <Th info={infoLabels}>Labels</Th>
+                        <Th>Labels</Th>
                     </Tr>
                 </Thead>
                 <Tbody>{rows}</Tbody>

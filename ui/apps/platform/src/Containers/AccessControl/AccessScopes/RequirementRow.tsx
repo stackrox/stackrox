@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useRef, useState } from 'react';
-import { Button, SelectOption, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
+import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import {
     CheckCircleIcon,
     MinusCircleIcon,
@@ -10,22 +10,10 @@ import {
 } from '@patternfly/react-icons';
 import { Td, Tr } from '@patternfly/react-table';
 
-import SelectSingle from 'Components/SelectSingle';
-import {
-    LabelSelectorOperator,
-    LabelSelectorRequirement,
-    getIsKeyInSetOperator,
-} from 'services/RolesService';
+import { LabelSelectorRequirement, getIsKeyInSetOperator } from 'services/RolesService';
 import { getIsValidLabelValue } from 'utils/labels';
 
-import {
-    Activity,
-    // getIsOverlappingRequirement,
-    getOpText,
-    getValueText,
-} from './accessScopes.utils';
-
-const operatorOptions: LabelSelectorOperator[] = ['IN', 'NOT_IN'];
+import { Activity, getOpText, getValueText } from './accessScopes.utils';
 
 /*
  * Render a requirement with editing interaction if hasAction.
@@ -40,7 +28,6 @@ export type RequirementRowProps = {
     handleRequirementEdit: () => void;
     handleRequirementOK: () => void;
     handleRequirementCancel: () => void;
-    handleOperatorSelect: (op: LabelSelectorOperator) => void;
     handleValueAdd: (value: string) => void;
     handleValueDelete: (indexValue: number) => void;
 };
@@ -54,7 +41,6 @@ function RequirementRow({
     handleRequirementEdit,
     handleRequirementOK,
     handleRequirementCancel,
-    handleOperatorSelect,
     handleValueAdd,
     handleValueDelete,
 }: RequirementRowProps): ReactElement {
@@ -63,6 +49,7 @@ function RequirementRow({
 
     const { key, op, values } = requirement;
     const isKeyInSet = getIsKeyInSetOperator(op);
+    const isEditableOperator = op === 'IN';
     const isRequirementActive = activity === 'ACTIVE';
 
     const isInvalidValue = !getIsValidLabelValue(valueInput);
@@ -91,24 +78,11 @@ function RequirementRow({
 
     return (
         <Tr>
-            <Td dataLabel="Key">{key}</Td>
-            <Td dataLabel="Operator">
-                <SelectSingle
-                    id=""
-                    value={op}
-                    handleSelect={(_id, opSelected) =>
-                        handleOperatorSelect(opSelected as LabelSelectorOperator)
-                    }
-                    isDisabled={!hasAction}
-                >
-                    {operatorOptions.map((operatorOption) => (
-                        <SelectOption value={operatorOption}>
-                            {getOpText(operatorOption)}
-                        </SelectOption>
-                    ))}
-                </SelectSingle>
+            <Td dataLabel="Key" modifier="breakWord">
+                {key}
             </Td>
-            <Td dataLabel="Values">
+            <Td dataLabel="Operator">{getOpText(op, values)}</Td>
+            <Td dataLabel="Values" modifier="breakWord">
                 {isKeyInSet &&
                     values.map((value, indexValue) => (
                         <div key={value} className="pf-u-display-flex">
@@ -116,7 +90,7 @@ function RequirementRow({
                                 {getValueText(value)}
                             </span>
                             <span className="pf-u-flex-shrink-0 pf-u-pl-sm">
-                                {isRequirementActive && (
+                                {isRequirementActive && isEditableOperator && (
                                     <Tooltip content="Delete value">
                                         <Button
                                             aria-label="Delete value"
@@ -203,7 +177,7 @@ function RequirementRow({
                         </>
                     ) : (
                         <>
-                            {isKeyInSet && (
+                            {isEditableOperator && (
                                 <Tooltip key="Edit requirement" content="Edit requirement">
                                     <Button
                                         aria-label="Edit requirement"
