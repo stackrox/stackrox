@@ -423,3 +423,203 @@ func (s *PolicyValueValidator) TestValidatePolicyCriteriaForAuditEventSource() {
 		},
 	}, ValidateSourceIsAuditLogEvents()))
 }
+
+func (s *PolicyValueValidator) TestValidatePolicyValueRegexForAuditEventSource() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+
+	cases := []struct {
+		name         string
+		resourceType string
+		verb         string
+		fieldName    string
+		fieldValue   string
+		errExpected  bool
+	}{
+		{
+			name:         "Valid resource name and verb should not error",
+			resourceType: "CONFIGMAPS",
+			verb:         "GET",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid resource name and verb regex are case insensitive",
+			resourceType: "secrets",
+			verb:         "patch",
+			errExpected:  false,
+		},
+		{
+			name:         "Invalid resource name should be an error",
+			resourceType: "RBAC",
+			verb:         "GET",
+			errExpected:  true,
+		},
+		{
+			name:         "Invalid verb should be an error",
+			resourceType: "secrets",
+			verb:         "WATCH",
+			errExpected:  true,
+		},
+		{
+			name:         "Valid resource name should not be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.KubeResourceName,
+			fieldValue:   "central-htpasswd",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid user name should not be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.KubeUserName,
+			fieldValue:   "system:serviceaccount:openshift-kube-apiserver:localhost-recovery-client",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid user group name should not be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.KubeUserGroups,
+			fieldValue:   "system:serviceaccounts:openshift-kube-apiserver",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid IPV4 source address should not be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.SourceIPAddress,
+			fieldValue:   "10.0.0.2",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid IPV6 source address should not be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.SourceIPAddress,
+			fieldValue:   "2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid user agent should not be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.UserAgent,
+			fieldValue:   "cluster-kube-apiserver-operator/v0.0.0 (linux/amd64) kubernetes/$Format",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid user agent from oc should not be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.UserAgent,
+			fieldValue:   "oc/4.7.0 (darwin/amd64) kubernetes/c66c03f",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid IsImpersonatedUser should not be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.IsImpersonatedUser,
+			fieldValue:   "true",
+			errExpected:  false,
+		},
+		{
+			name:         "Resource name should be case insensitive",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.KubeResourceName,
+			fieldValue:   "central-HTPASSWD",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid user name should be case insensitive",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.KubeUserName,
+			fieldValue:   "system:SERVICEACCOUNT:openshift-kube-apiserver:localhost-recovery-client",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid user group name should be case insensitive",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.KubeUserGroups,
+			fieldValue:   "System:serviceaccounts:openshift-kube-apiserver",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid user agent should be case insensitive",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.UserAgent,
+			fieldValue:   "cluster-KUBE-apiserver-operator/v0.0.0 (linux/amd64) kubernetes/$Format",
+			errExpected:  false,
+		},
+		{
+			name:         "Valid IsImpersonatedUser should be case insensitive",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.IsImpersonatedUser,
+			fieldValue:   "FALSE",
+			errExpected:  false,
+		},
+		{
+			name:         "If IsImpersonatedUser is not boolean it should be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.IsImpersonatedUser,
+			fieldValue:   "yea",
+			errExpected:  true,
+		},
+		{
+			name:         "Invalid source address should be an error",
+			resourceType: "secrets",
+			verb:         "GET",
+			fieldName:    fieldnames.SourceIPAddress,
+			fieldValue:   "999:999.999.222",
+			errExpected:  true,
+		},
+	}
+
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			policy := &storage.Policy{
+				Name:            "audit-policy-should-pass-regex-checks",
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+				PolicyVersion:   policyversion.CurrentVersion().String(),
+				PolicySections: []*storage.PolicySection{
+					{
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.KubeResource,
+								Values:    []*storage.PolicyValue{{Value: c.resourceType}},
+							},
+							{
+								FieldName: fieldnames.KubeAPIVerb,
+								Values:    []*storage.PolicyValue{{Value: c.verb}},
+							},
+						},
+					},
+				},
+			}
+
+			if c.fieldName != "" {
+				group := &storage.PolicyGroup{
+					FieldName: c.fieldName,
+					Values:    []*storage.PolicyValue{{Value: c.fieldValue}},
+				}
+				policy.PolicySections[0].PolicyGroups = append(policy.PolicySections[0].PolicyGroups, group)
+			}
+
+			if c.errExpected {
+				s.Error(Validate(policy, ValidateSourceIsAuditLogEvents()))
+			} else {
+				s.NoError(Validate(policy, ValidateSourceIsAuditLogEvents()))
+			}
+		})
+	}
+}

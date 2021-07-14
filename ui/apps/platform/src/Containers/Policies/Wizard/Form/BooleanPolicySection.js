@@ -35,27 +35,33 @@ function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource }) {
     if (readOnly) {
         return (
             <div className="w-full flex">
-                <FieldArray
-                    name="policySections"
-                    component={PolicySections}
-                    hasHeader={hasHeader}
-                    readOnly
-                    className="w-full"
-                    descriptor={descriptor}
-                />
+                {descriptor.length > 0 && (
+                    <FieldArray
+                        name="policySections"
+                        component={PolicySections}
+                        hasHeader={hasHeader}
+                        readOnly
+                        className="w-full"
+                        descriptor={descriptor}
+                    />
+                )}
             </div>
         );
     }
     return (
         <DndProvider backend={HTML5Backend}>
             <div className="w-full h-full flex">
-                <FieldArray
-                    name="policySections"
-                    component={PolicySections}
-                    descriptor={descriptor}
-                    hasAuditLogEventSource={hasAuditLogEventSource}
-                />
-                <PolicyBuilderKeys keys={descriptor} />
+                {descriptor.length > 0 && (
+                    <>
+                        <FieldArray
+                            name="policySections"
+                            component={PolicySections}
+                            descriptor={descriptor}
+                            hasAuditLogEventSource={hasAuditLogEventSource}
+                        />
+                        <PolicyBuilderKeys keys={descriptor} />
+                    </>
+                )}
             </div>
         </DndProvider>
     );

@@ -29,7 +29,7 @@ var (
 	severityValueRegex                       = createRegex(`(<|>|<=|>=)?[[:space:]]*(?i:UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL)`)
 	auditEventAPIVerbValueRegex              = createRegex(`(?i:CREATE|DELETE|GET|PATCH|UPDATE)`)
 	auditEventResourceValueRegex             = createRegex(`(?i:SECRETS|CONFIGMAPS)`)
-	kubernetesNameRegex                      = createRegex(`[a-z0-9]([-a-z0-9]*[a-z0-9])?`)
+	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 )
 
