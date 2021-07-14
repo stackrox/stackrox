@@ -38,8 +38,9 @@ export function RolesLink({ roles, entityType, entityId }: RolesLinkProps): Reac
     }
 
     if (roles.length === 1) {
-        const { id, name } = roles[0];
-        return <AccessControlEntityLink entityType="ROLE" entityId={id} entityName={name} />;
+        const { name } = roles[0];
+        // The name is the id for a role.
+        return <AccessControlEntityLink entityType="ROLE" entityId={name} entityName={name} />;
     }
 
     const count = roles.length;

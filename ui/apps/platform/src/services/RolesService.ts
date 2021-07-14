@@ -30,7 +30,6 @@ export type Role = {
     name: string;
     // globalAccess is deprecated
     resourceToAccess: PermissionsMap; // deprecated: use only for classic UI
-    id: string;
     description: string;
     permissionSetId: string;
     accessScopeId: string;

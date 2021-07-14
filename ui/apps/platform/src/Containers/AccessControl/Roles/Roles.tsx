@@ -38,7 +38,6 @@ const entityType = 'ROLE';
 const roleNew: Role = {
     name: '',
     resourceToAccess: {},
-    id: '',
     description: '',
     permissionSetId: '',
     accessScopeId: '',
