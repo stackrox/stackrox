@@ -20,13 +20,9 @@ import {
 import { OutlinedQuestionCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Th, Thead, Tr } from '@patternfly/react-table';
 
-import {
-    LabelSelectorRequirement,
-    LabelSelectorsKey,
-    getIsValidRequirements,
-} from 'services/RolesService';
+import { LabelSelectorRequirement, LabelSelectorsKey } from 'services/AccessScopesService';
 
-import { Activity, getRequirementActivity } from './accessScopes.utils';
+import { Activity, getIsValidRequirements, getRequirementActivity } from './accessScopes.utils';
 import RequirementRow from './RequirementRow';
 import RequirementRowAddKey from './RequirementRowAddKey';
 

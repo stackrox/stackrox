@@ -12,13 +12,13 @@ import {
 
 import {
     AccessScope,
-    Role,
     createAccessScope,
     deleteAccessScope,
+    getIsDefaultAccessScopeId,
     fetchAccessScopes,
-    fetchRolesAsArray,
     updateAccessScope,
-} from 'services/RolesService';
+} from 'services/AccessScopesService';
+import { Role, fetchRolesAsArray } from 'services/RolesService';
 
 import AccessControlDescription from '../AccessControlDescription';
 import AccessControlHeading from '../AccessControlHeading';
@@ -154,7 +154,7 @@ function AccessScopes(): ReactElement {
     }
 
     const accessScope = accessScopes.find(({ id }) => id === entityId) || accessScopeNew;
-    const isActionable = true; // TODO does it depend on user role?
+    const isActionable = !getIsDefaultAccessScopeId(entityId);
     const hasAction = Boolean(action);
     const isEntity = hasAction || Boolean(entityId);
 

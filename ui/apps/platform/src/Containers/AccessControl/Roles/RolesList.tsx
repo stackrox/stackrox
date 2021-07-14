@@ -13,8 +13,9 @@ import {
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { getIsDefaultRoleName } from 'constants/accessControl';
+import { AccessScope } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';
-import { AccessScope, PermissionSet, Role } from 'services/RolesService';
+import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 
@@ -130,22 +131,21 @@ function RolesList({
                                         'Unrestricted'
                                     )}
                                 </Td>
-                                {getIsDefaultRoleName(name) || getHasRoleName(groups, name) ? (
-                                    <Td />
-                                ) : (
-                                    <Td
-                                        actions={{
-                                            disable: nameDeleting === name,
-                                            items: [
-                                                {
-                                                    title: 'Delete role',
-                                                    onClick: () => onClickDelete(name),
-                                                },
-                                            ],
-                                        }}
-                                        className="pf-u-text-align-right"
-                                    />
-                                )}
+                                <Td
+                                    actions={{
+                                        disable:
+                                            nameDeleting === name ||
+                                            getIsDefaultRoleName(name) ||
+                                            getHasRoleName(groups, name),
+                                        items: [
+                                            {
+                                                title: 'Delete role',
+                                                onClick: () => onClickDelete(name),
+                                            },
+                                        ],
+                                    }}
+                                    className="pf-u-text-align-right"
+                                />
                             </Tr>
                         ))}
                     </Tbody>

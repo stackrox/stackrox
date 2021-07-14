@@ -104,22 +104,22 @@ function PermissionSetsList({
                                         entityId={id}
                                     />
                                 </Td>
-                                {roles.some(({ permissionSetId }) => permissionSetId === id) ? (
-                                    <Td />
-                                ) : (
-                                    <Td
-                                        actions={{
-                                            disable: idDeleting === id,
-                                            items: [
-                                                {
-                                                    title: 'Delete permission set',
-                                                    onClick: () => onClickDelete(id),
-                                                },
-                                            ],
-                                        }}
-                                        className="pf-u-text-align-right"
-                                    />
-                                )}
+                                <Td
+                                    actions={{
+                                        disable:
+                                            idDeleting === id ||
+                                            roles.some(
+                                                ({ permissionSetId }) => permissionSetId === id
+                                            ),
+                                        items: [
+                                            {
+                                                title: 'Delete permission set',
+                                                onClick: () => onClickDelete(id),
+                                            },
+                                        ],
+                                    }}
+                                    className="pf-u-text-align-right"
+                                />
                             </Tr>
                         ))}
                     </Tbody>

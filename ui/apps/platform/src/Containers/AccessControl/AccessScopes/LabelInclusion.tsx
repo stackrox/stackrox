@@ -2,7 +2,7 @@
 import React, { ReactElement, useState } from 'react';
 import { Badge, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
 
-import { LabelSelector, LabelSelectorsKey } from 'services/RolesService';
+import { LabelSelector, LabelSelectorsKey } from 'services/AccessScopesService';
 
 import { LabelSelectorsEditingState } from './accessScopes.utils';
 import LabelSelectorCards from './LabelSelectorCards';

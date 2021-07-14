@@ -11,15 +11,14 @@ import {
 } from '@patternfly/react-core';
 
 import { getIsDefaultRoleName } from 'constants/accessControl';
+import { AccessScope, fetchAccessScopes } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';
 import { fetchGroups } from 'services/GroupsService';
 import {
-    AccessScope,
     PermissionSet,
     Role,
     createRole,
     deleteRole,
-    fetchAccessScopes,
     fetchPermissionSets,
     fetchRolesAsArray,
     updateRole,

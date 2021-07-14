@@ -4,7 +4,10 @@ import { Badge, Button, Flex, FlexItem, Switch, TextInput } from '@patternfly/re
 import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
 
-import { EffectiveAccessScopeCluster, SimpleAccessScopeNamespace } from 'services/RolesService';
+import {
+    EffectiveAccessScopeCluster,
+    SimpleAccessScopeNamespace,
+} from 'services/AccessScopesService';
 
 import EffectiveAccessScopeLabels from './EffectiveAccessScopeLabels';
 import EffectiveAccessScopeStateIcon from './EffectiveAccessScopeStateIcon';

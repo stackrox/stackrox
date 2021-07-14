@@ -12,7 +12,8 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { AccessScope, Role } from 'services/RolesService';
+import { AccessScope, getIsDefaultAccessScopeId } from 'services/AccessScopesService';
+import { Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 
@@ -104,22 +105,21 @@ function AccessScopesList({
                                         entityId={id}
                                     />
                                 </Td>
-                                {roles.some(({ accessScopeId }) => accessScopeId === id) ? (
-                                    <Td />
-                                ) : (
-                                    <Td
-                                        actions={{
-                                            disable: idDeleting === id,
-                                            items: [
-                                                {
-                                                    title: 'Delete access scope',
-                                                    onClick: () => onClickDelete(id),
-                                                },
-                                            ],
-                                        }}
-                                        className="pf-u-text-align-right"
-                                    />
-                                )}
+                                <Td
+                                    actions={{
+                                        disable:
+                                            idDeleting === id ||
+                                            getIsDefaultAccessScopeId(id) ||
+                                            roles.some(({ accessScopeId }) => accessScopeId === id),
+                                        items: [
+                                            {
+                                                title: 'Delete access scope',
+                                                onClick: () => onClickDelete(id),
+                                            },
+                                        ],
+                                    }}
+                                    className="pf-u-text-align-right"
+                                />
                             </Tr>
                         ))}
                     </Tbody>

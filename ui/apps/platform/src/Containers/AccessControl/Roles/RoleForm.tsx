@@ -16,7 +16,8 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessScope, PermissionSet, Role } from 'services/RolesService';
+import { AccessScope } from 'services/AccessScopesService';
+import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 

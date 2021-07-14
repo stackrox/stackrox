@@ -9,6 +9,7 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    Label,
     TextInput,
     Title,
     Toolbar,
@@ -25,13 +26,16 @@ import {
     LabelSelector,
     LabelSelectorsKey,
     computeEffectiveAccessScopeClusters,
-    getIsValidRules,
-    getTemporarilyValidRules,
-} from 'services/RolesService';
+} from 'services/AccessScopesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
 
-import { LabelSelectorsEditingState, getIsEditingLabelSelectors } from './accessScopes.utils';
+import {
+    LabelSelectorsEditingState,
+    getIsEditingLabelSelectors,
+    getIsValidRules,
+    getTemporarilyValidRules,
+} from './accessScopes.utils';
 import EffectiveAccessScopeTable from './EffectiveAccessScopeTable';
 import LabelInclusion from './LabelInclusion';
 
@@ -236,17 +240,21 @@ function AccessScopeForm({
                             {action === 'create' ? 'Add access scope' : accessScope.name}
                         </Title>
                     </ToolbarItem>
-                    {isActionable && action !== 'create' && (
+                    {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>
-                                <Button
-                                    variant="primary"
-                                    onClick={handleEdit}
-                                    isDisabled={action === 'update'}
-                                    isSmall
-                                >
-                                    Edit access scope
-                                </Button>
+                                {isActionable ? (
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleEdit}
+                                        isDisabled={action === 'update'}
+                                        isSmall
+                                    >
+                                        Edit access scope
+                                    </Button>
+                                ) : (
+                                    <Label>Not editable</Label>
+                                )}
                             </ToolbarItem>
                         </ToolbarGroup>
                     )}

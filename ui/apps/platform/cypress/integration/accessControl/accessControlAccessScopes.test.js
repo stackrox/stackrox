@@ -10,6 +10,8 @@ import { hasFeatureFlag } from '../../helpers/features';
 const h1 = 'Access Control';
 const h2 = 'Access scopes';
 
+const defaultNames = ['Deny All'];
+
 describe('Access Control Access scopes', () => {
     withAuth();
 
@@ -43,7 +45,7 @@ describe('Access Control Access scopes', () => {
         );
     });
 
-    it('list has breadcrumbs, headings, link, and button', () => {
+    it('list has breadcrumbs, headings, link, button, and table head cells', () => {
         visitAccessScopes();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
@@ -55,6 +57,37 @@ describe('Access Control Access scopes', () => {
         cy.get(selectors.h2).should('have.text', h2);
         cy.get(selectors.list.addButton).should('have.text', 'Add access scope');
 
-        // Although no default access scopes, do not assume whether or not table exists.
+        cy.get(`${selectors.list.th}:contains("Name")`);
+        cy.get(`${selectors.list.th}:contains("Description")`);
+        cy.get(`${selectors.list.th}:contains("Roles")`);
+    });
+
+    it('list has default names', () => {
+        visitAccessScopes();
+
+        defaultNames.forEach((name) => {
+            cy.get(`${selectors.list.tdNameLink}:contains("${name}")`);
+        });
+    });
+
+    it('list link for default Deny All goes to form which has label instead of button and disabled input values', () => {
+        visitAccessScopes();
+
+        const name = defaultNames[0];
+        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("${name}")`);
+
+        cy.get(selectors.h1).should('have.text', h1);
+        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+
+        cy.get(selectors.h2).should('have.text', name);
+        cy.get(selectors.form.notEditableLabel).should('exist');
+        cy.get(selectors.form.editButton).should('not.exist');
+
+        cy.get(selectors.form.inputName).should('be.disabled');
+        cy.get(selectors.form.inputDescription).should('be.disabled');
     });
 });

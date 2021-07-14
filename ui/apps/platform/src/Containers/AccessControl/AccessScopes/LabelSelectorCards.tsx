@@ -3,7 +3,11 @@
 import React, { ReactElement, useState } from 'react';
 import { Button, Label, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
-import { LabelSelector, LabelSelectorRequirement, LabelSelectorsKey } from 'services/RolesService';
+import {
+    LabelSelector,
+    LabelSelectorRequirement,
+    LabelSelectorsKey,
+} from 'services/AccessScopesService';
 
 import {
     LabelSelectorsEditingState,

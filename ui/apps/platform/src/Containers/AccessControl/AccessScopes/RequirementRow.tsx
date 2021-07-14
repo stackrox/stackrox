@@ -10,10 +10,10 @@ import {
 } from '@patternfly/react-icons';
 import { Td, Tr } from '@patternfly/react-table';
 
-import { LabelSelectorRequirement, getIsKeyInSetOperator } from 'services/RolesService';
+import { LabelSelectorRequirement } from 'services/AccessScopesService';
 import { getIsValidLabelValue } from 'utils/labels';
 
-import { Activity, getOpText, getValueText } from './accessScopes.utils';
+import { Activity, getIsKeyInSetOperator, getOpText, getValueText } from './accessScopes.utils';
 
 /*
  * Render a requirement with editing interaction if hasAction.

@@ -8,7 +8,7 @@ import {
     LongArrowAltUpIcon,
 } from '@patternfly/react-icons';
 
-import { EffectiveAccessScopeState } from 'services/RolesService';
+import { EffectiveAccessScopeState } from 'services/AccessScopesService';
 
 const excludedColor = 'var(--pf-global--danger-color--100)';
 const includedColor = 'var(--pf-global--success-color--100)';

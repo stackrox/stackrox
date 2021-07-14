@@ -1,9 +1,81 @@
 import {
+    LabelSelector,
     LabelSelectorsKey,
     LabelSelectorOperator,
     LabelSelectorRequirement,
-    getIsKeyExistsOperator,
-} from 'services/RolesService';
+    SimpleAccessScopeRules,
+} from 'services/AccessScopesService';
+
+/*
+ * Validation for simple access scopes.
+ */
+
+export function getIsKeyExistsOperator(op: LabelSelectorOperator): boolean {
+    return op === 'EXISTS' || op === 'NOT_EXISTS';
+}
+
+export function getIsKeyInSetOperator(op: LabelSelectorOperator): boolean {
+    return op === 'IN' || op === 'NOT_IN';
+}
+
+/*
+ * A valid "key in set" requirement has at least one value.
+ */
+export function getIsValidRequirement({ op, values }: LabelSelectorRequirement): boolean {
+    return !getIsKeyInSetOperator(op) || values.length !== 0;
+}
+
+/*
+ * A valid label selector has at least one requirement.
+ */
+export function getIsValidRequirements(requirements: LabelSelectorRequirement[]): boolean {
+    return requirements.length !== 0 && requirements.every(getIsValidRequirement);
+}
+
+export function getIsValidLabelSelectors(labelSelectors: LabelSelector[]): boolean {
+    return labelSelectors.every(({ requirements }) => getIsValidRequirements(requirements));
+}
+
+export function getIsValidRules({
+    clusterLabelSelectors,
+    namespaceLabelSelectors,
+}: SimpleAccessScopeRules): boolean {
+    return (
+        getIsValidLabelSelectors(clusterLabelSelectors) &&
+        getIsValidLabelSelectors(namespaceLabelSelectors)
+    );
+}
+
+function getTemporarilyValidLabelSelectors(labelSelectors: LabelSelector[]): LabelSelector[] {
+    const temporarilyValidLabelSelectors: LabelSelector[] = [];
+
+    labelSelectors.forEach((labelSelector) => {
+        if (getIsValidRequirements(labelSelector.requirements)) {
+            temporarilyValidLabelSelectors.push(labelSelector);
+        } else {
+            const requirements = labelSelector.requirements.filter(getIsValidRequirement);
+            if (requirements.length !== 0) {
+                temporarilyValidLabelSelectors.push({ requirements });
+            }
+        }
+    });
+
+    return temporarilyValidLabelSelectors;
+}
+
+/*
+ * If rules are temporarily invalid while adding or editing label selectors,
+ * return rules that are valid for computeeffectiveaccessscope request.
+ */
+export function getTemporarilyValidRules(rules: SimpleAccessScopeRules): SimpleAccessScopeRules {
+    const { clusterLabelSelectors, namespaceLabelSelectors } = rules;
+
+    return {
+        ...rules,
+        clusterLabelSelectors: getTemporarilyValidLabelSelectors(clusterLabelSelectors),
+        namespaceLabelSelectors: getTemporarilyValidLabelSelectors(namespaceLabelSelectors),
+    };
+}
 
 /*
  * Each tab key has value either index of a label selector while (adding or) editing;
