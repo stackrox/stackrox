@@ -244,8 +244,8 @@ class DefaultPoliciesTest extends BaseSpecification {
         def unexpectedViolations = violations.findAll {
             def deploymentName = it.deployment.name
             def policyName = it.policy.name
-            !Constants.VIOLATIONS_WHITELIST.containsKey(deploymentName) ||
-                    !Constants.VIOLATIONS_WHITELIST.get(deploymentName).contains(policyName)
+            !Constants.VIOLATIONS_ALLOWLIST.containsKey(deploymentName) ||
+                    !Constants.VIOLATIONS_ALLOWLIST.get(deploymentName).contains(policyName)
         }
         if (!unexpectedViolations.isEmpty()) {
             String slackPayload = ":rotating_light: " +
