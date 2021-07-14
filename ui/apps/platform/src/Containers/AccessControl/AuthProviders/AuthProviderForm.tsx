@@ -416,7 +416,7 @@ function AuthProviderForm({
                             roles={roles}
                             onChange={onChange}
                             setFieldValue={setFieldValue}
-                            disabled={isViewing || values.active}
+                            disabled={isViewing}
                         />
                     </FormSection>
                 </FormSection>

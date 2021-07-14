@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/jsx-no-bind */
 import React, { ReactElement } from 'react';
@@ -34,67 +35,69 @@ function RuleGroups({
             name="groups"
             render={(arrayHelpers) => (
                 <>
-                    {groups.map((group, index: number) => (
-                        <Flex
-                            key={`${group.props.authProviderId}_${group.props.key || ''}_${
-                                group.props.value || ''
-                            }_${index}`}
-                        >
-                            <FlexItem>
-                                <FormGroup label="Key" fieldId={`groups[${index}].props.key`}>
-                                    <SelectSingle
-                                        id={`groups[${index}].props.key`}
-                                        value={groups[`${index}`].props.key}
-                                        isDisabled={disabled}
-                                        handleSelect={setFieldValue}
-                                        direction="up"
+                    {groups.length === 0 && <p>No custom rules defined</p>}
+                    {groups.length > 0 &&
+                        groups.map((group, index: number) => (
+                            <Flex key={`${group.props.authProviderId}_custom_rule_${index}`}>
+                                <FlexItem>
+                                    <FormGroup label="Key" fieldId={`groups[${index}].props.key`}>
+                                        <SelectSingle
+                                            id={`groups[${index}].props.key`}
+                                            value={groups[`${index}`].props.key}
+                                            isDisabled={disabled}
+                                            handleSelect={setFieldValue}
+                                            direction="up"
+                                        >
+                                            {ruleKeys.map((ruleKey) => (
+                                                <SelectOption key={ruleKey} value={ruleKey} />
+                                            ))}
+                                        </SelectSingle>
+                                    </FormGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <FormGroup
+                                        label="Value"
+                                        fieldId={`groups[${index}].props.value`}
                                     >
-                                        {ruleKeys.map((ruleKey) => (
-                                            <SelectOption key={ruleKey} value={ruleKey} />
-                                        ))}
-                                    </SelectSingle>
-                                </FormGroup>
-                            </FlexItem>
-                            <FlexItem>
-                                <FormGroup label="Value" fieldId={`groups[${index}].props.value`}>
-                                    <TextInput
-                                        type="text"
-                                        id={`groups[${index}].props.value`}
-                                        value={groups[`${index}`].props.value}
-                                        onChange={onChange}
-                                    />
-                                </FormGroup>
-                            </FlexItem>
-                            <FlexItem>
-                                <ArrowRightIcon style={{ transform: 'translate(0, 42px)' }} />
-                            </FlexItem>
-                            <FlexItem>
-                                <FormGroup label="Role" fieldId={`groups[${index}].roleName`}>
-                                    <SelectSingle
-                                        id={`groups[${index}].roleName`}
-                                        value={groups[`${index}`].roleName}
-                                        isDisabled={false}
-                                        handleSelect={setFieldValue}
-                                        direction="up"
+                                        <TextInput
+                                            type="text"
+                                            id={`groups[${index}].props.value`}
+                                            value={groups[`${index}`].props.value}
+                                            onChange={onChange}
+                                            isDisabled={disabled}
+                                        />
+                                    </FormGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <ArrowRightIcon style={{ transform: 'translate(0, 42px)' }} />
+                                </FlexItem>
+                                <FlexItem>
+                                    <FormGroup label="Role" fieldId={`groups[${index}].roleName`}>
+                                        <SelectSingle
+                                            id={`groups[${index}].roleName`}
+                                            value={groups[`${index}`].roleName}
+                                            isDisabled={disabled}
+                                            handleSelect={setFieldValue}
+                                            direction="up"
+                                        >
+                                            {roles.map(({ name }) => (
+                                                <SelectOption key={name} value={name} />
+                                            ))}
+                                        </SelectSingle>
+                                    </FormGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <Button
+                                        variant="plain"
+                                        aria-label="Delete rule"
+                                        style={{ transform: 'translate(0, 42px)' }}
+                                        onClick={() => arrayHelpers.remove(index)}
                                     >
-                                        {roles.map(({ name }) => (
-                                            <SelectOption key={name} value={name} />
-                                        ))}
-                                    </SelectSingle>
-                                </FormGroup>
-                            </FlexItem>
-                            <FlexItem>
-                                <Button
-                                    variant="plain"
-                                    aria-label="Delete rule"
-                                    style={{ transform: 'translate(0, 42px)' }}
-                                    onClick={() => arrayHelpers.remove(index)}
-                                >
-                                    <TrashIcon />
-                                </Button>
-                            </FlexItem>
-                        </Flex>
-                    ))}
+                                        <TrashIcon />
+                                    </Button>
+                                </FlexItem>
+                            </Flex>
+                        ))}
                     {!disabled && (
                         <Flex>
                             <FlexItem>
@@ -104,8 +107,12 @@ function RuleGroups({
                                     icon={<PlusCircleIcon className="pf-u-mr-sm" />}
                                     onClick={() =>
                                         arrayHelpers.push({
-                                            roleName: '',
-                                            props: { authProviderId: '', key: '', value: '' },
+                                            roleName: roles[0]?.name || '',
+                                            props: {
+                                                authProviderId: '',
+                                                key: ruleKeys[0],
+                                                value: '',
+                                            },
                                         })
                                     }
                                 >
