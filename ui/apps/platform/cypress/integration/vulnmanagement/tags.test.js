@@ -18,7 +18,7 @@ describe('Vuln Management Violation Tags', () => {
             'tagsAutocomplete'
         );
 
-        cy.visit(`${url.list.policies}?s[Policy]=Fixable CVSS >= 7`);
+        cy.visit(`${url.list.policies}?s[Policy]=Fixable Severity at least Important`);
         cy.wait('@getPolicies');
 
         cy.get(`${selectors.mainTable.rows}:first`).click({ force: true });
