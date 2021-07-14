@@ -263,6 +263,9 @@ func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.Simp
 	if err := utils.ValidateSimpleAccessScope(scope); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
+	if err := verifyNotDefaultAccessScope(scope.GetName()); err != nil {
+		return err
+	}
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
@@ -287,6 +290,9 @@ func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, scope *storage.S
 	}
 	if err := utils.ValidateSimpleAccessScope(scope); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+	}
+	if err := verifyNotDefaultAccessScope(scope.GetName()); err != nil {
+		return err
 	}
 
 	ds.lock.Lock()
@@ -315,7 +321,14 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	defer ds.lock.Unlock()
 
 	// Verify storage constraints.
-	if err := ds.verifyAccessScopeIDExists(id); err != nil {
+	accessScope, found, err := ds.accessScopeStorage.Get(id)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.Wrapf(errorhelpers.ErrNotFound, "id = %s", id)
+	}
+	if err := verifyNotDefaultAccessScope(accessScope.GetName()); err != nil {
 		return err
 	}
 
@@ -468,6 +481,14 @@ func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(id string) error {
 	return nil
 }
 
+// Returns errorhelpers.ErrInvalidArgs if the given scope is a default one.
+func verifyNotDefaultAccessScope(name string) error {
+	if isDefaultAccessScope(name) {
+		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "default access scope %q cannot be modified or deleted", name)
+	}
+	return nil
+}
+
 // ValidateRole checks whether the supplied protobuf message is a valid role.
 //
 // Note: Move to other validators in the "role/utils" package once
@@ -520,6 +541,15 @@ func (ds *dataStoreImpl) validateRole(role *storage.Role) error {
 // Checks if a given role name corresponds to a pre-loaded role.
 func isDefaultRoleName(name string) bool {
 	return rolePkg.DefaultRoleNames.Contains(name)
+}
+
+func isDefaultAccessScope(name string) bool {
+	for _, elem := range defaultAccessScopes {
+		if elem.GetName() == name {
+			return true
+		}
+	}
+	return false
 }
 
 // Finds the permission set associated with the given role. Every stored role

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/central/role"
 	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
@@ -16,9 +17,17 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )
+
+func TestAllDefaultRolesAreCovered(t *testing.T) {
+	assert.Len(t, defaultRoles, len(role.DefaultRoleNames))
+	for r := range defaultRoles {
+		assert.Contains(t, role.DefaultRoleNames, r)
+	}
+}
 
 func TestRoleDataStore(t *testing.T) {
 	t.Parallel()
@@ -258,6 +267,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	badPermissionSet := getInvalidPermissionSet("permissionset.new", "new invalid permissionset")
 	mimicPermissionSet := getValidPermissionSet("permissionset.new", "existing permissionset")
 	clonePermissionSet := getValidPermissionSet("permissionset.existing", "new existing permissionset")
+	updatedAdminPermissionSet := getValidPermissionSet(utils.EnsureValidAccessScopeID("admin"), role.Admin)
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, badPermissionSet)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid permission set for Add*() yields an error")
@@ -270,6 +280,9 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing permission set yields an error")
+
+	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, updatedAdminPermissionSet)
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "updating a default permission set yields an error")
 
 	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId())
 	s.ErrorIs(err, errorhelpers.ErrNotFound, "removing non-existing permission set yields an error")
@@ -393,6 +406,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	badScope := getInvalidAccessScope("scope.new", "new invalid scope")
 	mimicScope := getValidAccessScope("scope.new", "existing scope")
 	cloneScope := getValidAccessScope("scope.existing", "new existing scope")
+	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall", defaultAccessScopes[0].GetName())
 
 	err := s.dataStore.AddAccessScope(s.hasWriteCtx, badScope)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid scope for Add*() yields an error")
@@ -405,6 +419,9 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, goodScope)
 	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing scope yields an error")
+
+	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, updatedDefaultScope)
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "updating a default scope yields an error")
 
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, goodScope.GetId())
 	s.ErrorIs(err, errorhelpers.ErrNotFound, "removing non-existing scope yields an error")
@@ -526,6 +543,10 @@ func (s *roleDataStoreTestSuite) TestValidateRoleNewFormat() {
 	noPermsRole := getValidRole("role with no permission set", "", "")
 	err = s.dataStore.AddRole(s.hasWriteCtx, noPermsRole)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "role must reference an existing permission set")
+
+	updatedAdminRole := getValidRole(role.Admin, s.existingPermissionSet.GetId(), "")
+	err = s.dataStore.UpdateRole(s.hasWriteCtx, updatedAdminRole)
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "updating a default role yields an error")
 
 	noScopeRole := getValidRole("role with no access scope", s.existingPermissionSet.GetId(), "")
 	err = s.dataStore.AddRole(s.hasWriteCtx, noScopeRole)
