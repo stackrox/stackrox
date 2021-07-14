@@ -22,6 +22,7 @@ export const selectors = scopeSelectors('#access-control', {
     list: {
         addButton: 'button:contains("Add")',
         th: 'th',
+        tdName: 'td[data-label="Name"]',
         tdNameLink: 'td[data-label="Name"] button',
         tdDescription: 'td[data-label="Description"]',
 

@@ -75,56 +75,68 @@ function AccessScopesList({
                 </ToolbarContent>
             </Toolbar>
             {alertDelete}
-            {accessScopes.length !== 0 && (
-                <TableComposable variant="compact">
-                    <Thead>
-                        <Tr>
-                            <Th width={20}>Name</Th>
-                            <Th width={30}>Description</Th>
-                            <Th width={40}>Roles</Th>
-                            <Th width={10} aria-label="Row actions" />
-                        </Tr>
-                    </Thead>
-                    <Tbody>
-                        {accessScopes.map(({ id, name, description }) => (
-                            <Tr key={id}>
-                                <Td dataLabel="Name">
-                                    <AccessControlEntityLink
-                                        entityType={entityType}
-                                        entityId={id}
-                                        entityName={name}
-                                    />
-                                </Td>
-                                <Td dataLabel="Description">{description}</Td>
-                                <Td dataLabel="Roles">
-                                    <RolesLink
-                                        roles={roles.filter(
-                                            ({ accessScopeId }) => accessScopeId === id
-                                        )}
-                                        entityType={entityType}
-                                        entityId={id}
-                                    />
-                                </Td>
-                                <Td
-                                    actions={{
-                                        disable:
-                                            idDeleting === id ||
-                                            getIsDefaultAccessScopeId(id) ||
-                                            roles.some(({ accessScopeId }) => accessScopeId === id),
-                                        items: [
-                                            {
-                                                title: 'Delete access scope',
-                                                onClick: () => onClickDelete(id),
-                                            },
-                                        ],
-                                    }}
-                                    className="pf-u-text-align-right"
+            <TableComposable variant="compact">
+                <Thead>
+                    <Tr>
+                        <Th width={20}>Name</Th>
+                        <Th width={30}>Description</Th>
+                        <Th width={40}>Roles</Th>
+                        <Th width={10} aria-label="Row actions" />
+                    </Tr>
+                </Thead>
+                <Tbody>
+                    <Tr className="pf-u-background-color-200">
+                        <Td dataLabel="Name">Unrestricted</Td>
+                        <Td dataLabel="Description">Access to all clusters and namespaces</Td>
+                        <Td dataLabel="Roles">
+                            <RolesLink
+                                roles={roles.filter(
+                                    ({ accessScopeId }) => accessScopeId.length === 0
+                                )}
+                                entityType={entityType}
+                                entityId=""
+                            />
+                        </Td>
+                        <Td />
+                    </Tr>
+                    {accessScopes.map(({ id, name, description }) => (
+                        <Tr key={id}>
+                            <Td dataLabel="Name">
+                                <AccessControlEntityLink
+                                    entityType={entityType}
+                                    entityId={id}
+                                    entityName={name}
                                 />
-                            </Tr>
-                        ))}
-                    </Tbody>
-                </TableComposable>
-            )}
+                            </Td>
+                            <Td dataLabel="Description">{description}</Td>
+                            <Td dataLabel="Roles">
+                                <RolesLink
+                                    roles={roles.filter(
+                                        ({ accessScopeId }) => accessScopeId === id
+                                    )}
+                                    entityType={entityType}
+                                    entityId={id}
+                                />
+                            </Td>
+                            <Td
+                                actions={{
+                                    disable:
+                                        idDeleting === id ||
+                                        getIsDefaultAccessScopeId(id) ||
+                                        roles.some(({ accessScopeId }) => accessScopeId === id),
+                                    items: [
+                                        {
+                                            title: 'Delete access scope',
+                                            onClick: () => onClickDelete(id),
+                                        },
+                                    ],
+                                }}
+                                className="pf-u-text-align-right"
+                            />
+                        </Tr>
+                    ))}
+                </Tbody>
+            </TableComposable>
         </>
     );
 }
