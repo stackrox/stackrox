@@ -38,10 +38,10 @@ func (a *AuditLogCollectionManager) AddEligibleComplianceNode(node string, conne
 	a.eligibleComplianceNodes[node] = connection
 	a.connectionLock.Unlock()
 
-	a.lock.RLock() // locked because we will need to read state when enabling collection
+	a.lock.RLock() // locked to to check a.enabled and because we will need to read state when enabling collection
 	defer a.lock.RUnlock()
 	if a.enabled {
-		a.startCollectionOnNode(node, connection)
+		a.startCollectionOnNodeNoLock(node, connection)
 	}
 }
 
@@ -65,28 +65,42 @@ func (a *AuditLogCollectionManager) forEachNode(fn func(node string, server sens
 	}
 }
 
+// setAuditCollectionFlag sets is `enabled` to true or false depending on `val` and returns true if the state changed
+func (a *AuditLogCollectionManager) setAuditCollectionFlag(val bool) bool {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	if a.enabled == val {
+		return false
+	}
+
+	a.enabled = val
+	return true
+}
+
 // EnableCollection enables audit log collection on all the nodes who are eligible
 func (a *AuditLogCollectionManager) EnableCollection() {
 	if !features.K8sAuditLogDetection.Enabled() {
 		log.Error("Request to enable audit log collection when feature is disabled!")
 		return
 	}
-	a.lock.Lock()
-	a.enabled = true
-	a.lock.Unlock()
 
-	a.lock.RLock() // locked because we will need to read state when enabling collection
-	defer a.lock.RUnlock()
-	a.startAuditLogCollectionOnAllNodes()
+	if shouldEnable := a.setAuditCollectionFlag(true); shouldEnable {
+		a.lock.RLock() // locked because we will need to read state when enabling collection
+		defer a.lock.RUnlock()
+		a.startAuditLogCollectionOnAllNodesNoLock()
+	}
 }
 
-func (a *AuditLogCollectionManager) startAuditLogCollectionOnAllNodes() {
+// the lock must be acquired (in read mode) before calling this
+func (a *AuditLogCollectionManager) startAuditLogCollectionOnAllNodesNoLock() {
 	a.forEachNode(func(node string, server sensor.ComplianceService_CommunicateServer) {
-		a.startCollectionOnNode(node, server)
+		a.startCollectionOnNodeNoLock(node, server)
 	})
 }
 
-func (a *AuditLogCollectionManager) startCollectionOnNode(node string, server sensor.ComplianceService_CommunicateServer) {
+// the lock must be acquired (in read mode) before calling this
+func (a *AuditLogCollectionManager) startCollectionOnNodeNoLock(node string, server sensor.ComplianceService_CommunicateServer) {
 	log.Infof("Sending start audit log collection message to node %s", node)
 	msg := &sensor.MsgToCompliance{
 		Msg: &sensor.MsgToCompliance_AuditLogCollectionRequest_{
@@ -116,11 +130,10 @@ func (a *AuditLogCollectionManager) DisableCollection() {
 		log.Error("Request to enable audit log collection when feature is disabled!")
 		return
 	}
-	a.lock.Lock()
-	a.enabled = false
-	a.lock.Unlock()
 
-	a.stopAuditLogCollectionOnAllNodes()
+	if shouldDisable := a.setAuditCollectionFlag(false); shouldDisable {
+		a.stopAuditLogCollectionOnAllNodes()
+	}
 }
 
 func (a *AuditLogCollectionManager) stopAuditLogCollectionOnAllNodes() {
@@ -160,10 +173,10 @@ func (a *AuditLogCollectionManager) UpdateAuditLogFileState(fileStates map[strin
 	a.fileStates = fileStates
 	a.lock.Unlock()
 
-	a.lock.RLock() // locked because we will need to read state when enabling collection
+	a.lock.RLock() // locked to to check a.enabled and because we will need to read state when enabling collection
 	defer a.lock.RUnlock()
 	if a.enabled {
 		// No point in sending start if it's not even enabled
-		a.startAuditLogCollectionOnAllNodes()
+		a.startAuditLogCollectionOnAllNodesNoLock()
 	}
 }

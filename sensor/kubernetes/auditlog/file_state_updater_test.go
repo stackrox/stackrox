@@ -78,6 +78,28 @@ func (s *UpdaterTestSuite) TestUpdater() {
 	s.Equal(expectedStatus, status.GetNodeAuditLogFileStates())
 }
 
+func (s *UpdaterTestSuite) TestUpdaterDoesNotSendWhenNoFileStates() {
+	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
+	if !features.K8sAuditLogDetection.Enabled() {
+		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
+	}
+
+	updater := NewUpdater(updateInterval, make(chan *sensor.MsgFromCompliance, 5))
+
+	err := updater.Start()
+	s.Require().NoError(err)
+	defer updater.Stop(nil)
+
+	timer := time.NewTimer(updateTimeout + (500 * time.Millisecond)) // wait an extra 1/2 second
+
+	select {
+	case <-updater.ResponsesC():
+		s.Fail("Received message when updater should not have sent one!")
+	case <-timer.C:
+		return // successful
+	}
+}
+
 func (s *UpdaterTestSuite) getUpdaterStatusMsg(times int, auditEventMsgs <-chan *sensor.MsgFromCompliance) *central.AuditLogStatusInfo {
 	timer := time.NewTimer(updateTimeout)
 	updater := NewUpdater(updateInterval, auditEventMsgs)

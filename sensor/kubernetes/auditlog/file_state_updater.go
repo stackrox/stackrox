@@ -127,18 +127,24 @@ func (u *updaterImpl) runUpdater() {
 }
 
 func (u *updaterImpl) sendUpdate() bool {
+	u.fileStateLock.RLock()
+	defer u.fileStateLock.RUnlock()
+
+	// No point in updating if there's no states
+	if len(u.fileStates) == 0 {
+		return false
+	}
+
 	select {
-	case u.updates <- u.getUpdateMsg():
+	case u.updates <- u.getUpdateMsgNoLock():
 		return false
 	case <-u.stopSig.Done():
 		return true
 	}
 }
 
-func (u *updaterImpl) getUpdateMsg() *central.MsgFromSensor {
-	u.fileStateLock.RLock()
-	defer u.fileStateLock.RUnlock()
-
+// fileStateLock must be acquired (at least for read) before calling!
+func (u *updaterImpl) getUpdateMsgNoLock() *central.MsgFromSensor {
 	nodeStates := make(map[string]*storage.AuditLogFileState, len(u.fileStates))
 	for k, v := range u.fileStates {
 		nodeStates[k] = v // no need to clone this because when the map is updated a new storage.AuditLogFileState is always created (see updateFileState)

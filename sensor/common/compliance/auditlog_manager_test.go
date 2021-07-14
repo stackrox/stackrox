@@ -77,6 +77,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionEnablesOnAllAva
 	manager := &AuditLogCollectionManager{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
+		enabled:                 false,
 	}
 
 	manager.EnableCollection()
@@ -98,6 +99,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionSendsFileStateI
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
 		fileStates:              fileStates,
+		enabled:                 false,
 	}
 
 	manager.EnableCollection()
@@ -108,11 +110,30 @@ func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionSendsFileStateI
 	s.Nil(servers["node-b"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
 }
 
+func (s *AuditLogCollectionManagerTestSuite) TestEnabledDoesntSendMessageIfAlreadyEnabled() {
+	servers, _ := s.getFakeServersAndStates()
+	manager := &AuditLogCollectionManager{
+		clusterIDGetter:         s.getClusterID,
+		eligibleComplianceNodes: servers,
+		enabled:                 true,
+	}
+
+	manager.EnableCollection()
+
+	s.True(manager.enabled, "Collection should be in an enabled state if EnableCollection() is called")
+
+	for node, server := range servers {
+		sentMsgs := server.(*mockServer).sentList
+		s.Lenf(sentMsgs, 0, "No message should have been sent because it was already enabled", node)
+	}
+}
+
 func (s *AuditLogCollectionManagerTestSuite) TestDisableCollectionDisablesOnAllAvailableNodes() {
 	servers, _ := s.getFakeServersAndStates()
 	manager := &AuditLogCollectionManager{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
+		enabled:                 true,
 	}
 
 	manager.DisableCollection()
@@ -125,6 +146,24 @@ func (s *AuditLogCollectionManagerTestSuite) TestDisableCollectionDisablesOnAllA
 
 		startReq := sentMsgs[0].GetAuditLogCollectionRequest().GetStopReq()
 		s.NotNil(startReq, "The message sent should have been a stop message")
+	}
+}
+
+func (s *AuditLogCollectionManagerTestSuite) TestDisableDoesntSendMessageIfAlreadyDisabled() {
+	servers, _ := s.getFakeServersAndStates()
+	manager := &AuditLogCollectionManager{
+		clusterIDGetter:         s.getClusterID,
+		eligibleComplianceNodes: servers,
+		enabled:                 false,
+	}
+
+	manager.DisableCollection()
+
+	s.False(manager.enabled, "Collection should be in a disabled state if DisableCollection() is called")
+
+	for node, server := range servers {
+		sentMsgs := server.(*mockServer).sentList
+		s.Lenf(sentMsgs, 0, "No message should have been sent because it was already disabled", node)
 	}
 }
 
