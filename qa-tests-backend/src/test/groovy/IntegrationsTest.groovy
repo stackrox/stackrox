@@ -18,7 +18,6 @@ import objects.JiraNotifier
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Notifier
-import objects.PagerDutyNotifier
 import objects.QuayImageIntegration
 import objects.SlackNotifier
 import objects.SplunkNotifier
@@ -329,12 +328,14 @@ class IntegrationsTest extends BaseSpecification {
                         .addLabel("app", "policy-violation-email-notification")
                         .setImage("nginx:latest")
 
+        /*
+        TODO(ROX-7589)
         "PAGERDUTY" | [new PagerDutyNotifier()]   |
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
                         .setImage("nginx:latest")
-
+        */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
@@ -433,13 +434,14 @@ class IntegrationsTest extends BaseSpecification {
                         .setName("policy-violation-email-notification")
                         .addLabel("app", "policy-violation-email-notification")
                         .setImage("nginx:latest")
-
+         /*
+         TODO(ROX-7589)
         "PAGERDUTY" | [new PagerDutyNotifier()]   |
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
                         .setImage("nginx:latest")
-
+        */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
