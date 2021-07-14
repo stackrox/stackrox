@@ -30,10 +30,8 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 	}
 	id := mocks.NewMockIdentity(gomock.NewController(t))
 	ctx := authn.ContextWithIdentity(context.Background(), id, t)
-	id.EXPECT().Permissions().Return(&storage.ResourceToAccess{
-		ResourceToAccess: map[string]storage.Access{
-			string(clusterScopedResource.Resource): storage.Access_READ_WRITE_ACCESS,
-		},
+	id.EXPECT().Permissions().Return(map[string]storage.Access{
+		string(clusterScopedResource.Resource): storage.Access_READ_WRITE_ACCESS,
 	}).AnyTimes()
 
 	idWithNoPermissions := mocks.NewMockIdentity(gomock.NewController(t))
@@ -155,11 +153,10 @@ func TestEvaluateAgainstPermissions(t *testing.T) {
 		Resource: permissions.Resource("forbidden"),
 	}
 
-	perms := &storage.ResourceToAccess{
-		ResourceToAccess: utils.FromResourcesWithAccess(
-			permissions.Modify(writeAccessibleResource),
-			permissions.View(readAccessibleResource)),
-	}
+	perms := utils.FromResourcesWithAccess(
+		permissions.Modify(writeAccessibleResource),
+		permissions.View(readAccessibleResource),
+	)
 
 	expectations := map[permissions.ResourceMetadata]expectation{
 		writeAccessibleResource: {view: true, modify: true},

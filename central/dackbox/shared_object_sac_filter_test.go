@@ -82,9 +82,7 @@ func identity(readResources ...string) func(mockCtrl *gomock.Controller, t *test
 			resourceToAccess[resource] = storage.Access_READ_ACCESS
 		}
 
-		identity.EXPECT().Permissions().AnyTimes().Return(&storage.ResourceToAccess{
-			ResourceToAccess: resourceToAccess,
-		})
+		identity.EXPECT().Permissions().AnyTimes().Return(resourceToAccess)
 		return authn.ContextWithIdentity(context.Background(), identity, t)
 	}
 }

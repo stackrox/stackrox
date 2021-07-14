@@ -35,12 +35,12 @@ func (i *identity) FullName() string {
 func (i *identity) User() *storage.UserInfo {
 	return &storage.UserInfo{
 		FriendlyName: i.info.Subject.CommonName,
-		Permissions:  i.Permissions(),
+		Permissions:  &storage.UserInfo_ResourceToAccess{ResourceToAccess: i.Permissions()},
 		Roles:        utils.ExtractRolesForUserInfo(i.resolvedRoles),
 	}
 }
 
-func (i *identity) Permissions() *storage.ResourceToAccess {
+func (i *identity) Permissions() map[string]storage.Access {
 	return utils.NewUnionPermissions(i.resolvedRoles)
 }
 

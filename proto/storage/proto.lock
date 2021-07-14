@@ -11375,23 +11375,6 @@
             ]
           },
           {
-            "name": "ResourceToAccess",
-            "maps": [
-              {
-                "key_type": "string",
-                "field": {
-                  "id": 3,
-                  "name": "resource_to_access",
-                  "type": "Access"
-                }
-              }
-            ],
-            "reserved_ids": [
-              1,
-              2
-            ]
-          },
-          {
             "name": "EffectiveAccessScope",
             "fields": [
               {
@@ -12474,7 +12457,7 @@
               {
                 "id": 4,
                 "name": "permissions",
-                "type": "storage.ResourceToAccess"
+                "type": "ResourceToAccess"
               },
               {
                 "id": 5,
@@ -12507,6 +12490,23 @@
                   }
                 ],
                 "reserved_ids": [
+                  2
+                ]
+              },
+              {
+                "name": "ResourceToAccess",
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 3,
+                      "name": "resource_to_access",
+                      "type": "Access"
+                    }
+                  }
+                ],
+                "reserved_ids": [
+                  1,
                   2
                 ]
               }

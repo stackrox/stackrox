@@ -80,17 +80,6 @@ message SimpleAccessScope {
     Rules  rules       = 4;
 }
 
-// This message is created to represent a collection of permissions. It is
-// wire-compatible with the old format of the Role message and aims to replace
-// it in places where only aggregated permissions are required. Note the
-// similarity to PermissionsSet which in contrast to ResourceToAccess can be
-// created and modified by users.
-message ResourceToAccess {
-    reserved 1; // name, likely not used in permission checking
-    reserved 2; // global_access, likely not used outside system roles
-    map<string, Access> resource_to_access = 3;
-}
-
 // EffectiveAccessScope describes which clusters and namespaces are "in scope"
 // given current state. Basically, if AccessScope is applied to the currently
 // known clusters and namespaces, the result is EffectiveAccessScope.

@@ -312,9 +312,7 @@ func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID 
 	identity.EXPECT().FullName().AnyTimes().Return(userID)
 	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
 	identity.EXPECT().User().AnyTimes().Return(nil)
-	identity.EXPECT().Permissions().AnyTimes().Return(&storage.ResourceToAccess{
-		ResourceToAccess: utils.FromResourcesWithAccess(resourceWithAccess...),
-	})
+	identity.EXPECT().Permissions().AnyTimes().Return(utils.FromResourcesWithAccess(resourceWithAccess...))
 
 	return authn.ContextWithIdentity(ctx, identity, s.T())
 }

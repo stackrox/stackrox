@@ -24,17 +24,13 @@ func TestRoleNewUnionPermissions(t *testing.T) {
 
 	// For single role we just return role's resourceToAccess.
 	union1 := NewUnionPermissions([]permissions.ResolvedRole{resolvedRole1})
-	expected1 := &storage.ResourceToAccess{
-		ResourceToAccess: resolvedRole1.GetPermissions(),
-	}
+	expected1 := resolvedRole1.GetPermissions()
 	assert.Equal(t, expected1, union1)
 
 	union2 := NewUnionPermissions([]permissions.ResolvedRole{resolvedRole1, resolvedRole2})
-	expected2 := &storage.ResourceToAccess{
-		ResourceToAccess: map[string]storage.Access{
-			"A": storage.Access_READ_ACCESS,
-			"B": storage.Access_READ_WRITE_ACCESS,
-		},
+	expected2 := map[string]storage.Access{
+		"A": storage.Access_READ_ACCESS,
+		"B": storage.Access_READ_WRITE_ACCESS,
 	}
 	assert.Equal(t, expected2, union2)
 }

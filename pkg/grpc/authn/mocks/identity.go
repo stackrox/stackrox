@@ -93,10 +93,10 @@ func (mr *MockIdentityMockRecorder) User() *gomock.Call {
 }
 
 // Permissions mocks base method
-func (m *MockIdentity) Permissions() *storage.ResourceToAccess {
+func (m *MockIdentity) Permissions() map[string]storage.Access {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Permissions")
-	ret0, _ := ret[0].(*storage.ResourceToAccess)
+	ret0, _ := ret[0].(map[string]storage.Access)
 	return ret0
 }
 

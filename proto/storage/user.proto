@@ -31,10 +31,19 @@ message UserInfo {
         reserved 2; // global_access, not in use any more, treat as NO_ACCESS
     }
 
-    string                   username      = 1;
-    string                   friendly_name = 2;
-    storage.ResourceToAccess permissions   = 4;
-    repeated Role            roles         = 5;
+    // ResourceToAccess represents a collection of permissions. It is wire
+    // compatible with the old format of storage.Role and replaces it in
+    // places where only aggregated permissions are required.
+    message ResourceToAccess {
+        reserved 1; // name, likely not used in permission checking
+        reserved 2; // global_access, phased out
+        map<string, Access> resource_to_access = 3;
+    }
+
+    string           username      = 1;
+    string           friendly_name = 2;
+    ResourceToAccess permissions   = 4;
+    repeated Role    roles         = 5;
 
     reserved 3; // used to be role; use permissions instead
 }

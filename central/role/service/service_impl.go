@@ -172,7 +172,7 @@ func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
 		return nil, errors.New("unable to retrieve user identity")
 	}
 	return &v1.GetPermissionsResponse{
-		ResourceToAccess: id.Permissions().Clone().GetResourceToAccess(),
+		ResourceToAccess: id.Permissions(),
 	}, nil
 }
 

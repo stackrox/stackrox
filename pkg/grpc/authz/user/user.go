@@ -76,7 +76,7 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootS
 	return nil
 }
 
-func (p *permissionChecker) checkPermissions(perms *storage.ResourceToAccess) error {
+func (p *permissionChecker) checkPermissions(perms map[string]storage.Access) error {
 	if perms == nil {
 		return authz.ErrNoCredentials
 	}
@@ -88,6 +88,6 @@ func (p *permissionChecker) checkPermissions(perms *storage.ResourceToAccess) er
 	return nil
 }
 
-func evaluateAgainstPermissions(permissions *storage.ResourceToAccess, perm permissions.ResourceWithAccess) bool {
-	return permissions.GetResourceToAccess()[string(perm.Resource.GetResource())] >= perm.Access
+func evaluateAgainstPermissions(permissions map[string]storage.Access, perm permissions.ResourceWithAccess) bool {
+	return permissions[string(perm.Resource.GetResource())] >= perm.Access
 }

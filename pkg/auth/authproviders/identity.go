@@ -58,7 +58,7 @@ func getUserInfo(externalUserClaim *tokens.ExternalUserClaim, resolvedRoles []pe
 	userInfo := &storage.UserInfo{
 		Username:     externalUserClaim.UserID,
 		FriendlyName: externalUserClaim.FullName,
-		Permissions:  utils.NewUnionPermissions(resolvedRoles),
+		Permissions:  &storage.UserInfo_ResourceToAccess{ResourceToAccess: utils.NewUnionPermissions(resolvedRoles)},
 		Roles:        utils.ExtractRolesForUserInfo(resolvedRoles),
 	}
 	return userInfo

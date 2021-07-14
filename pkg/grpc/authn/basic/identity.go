@@ -39,7 +39,7 @@ func (i identity) FullName() string {
 	return i.username
 }
 
-func (i identity) Permissions() *storage.ResourceToAccess {
+func (i identity) Permissions() map[string]storage.Access {
 	return utils.NewUnionPermissions(i.resolvedRoles)
 }
 
@@ -54,7 +54,7 @@ func (i identity) Service() *storage.ServiceIdentity {
 func (i identity) User() *storage.UserInfo {
 	return &storage.UserInfo{
 		Username:    i.username,
-		Permissions: i.Permissions(),
+		Permissions: &storage.UserInfo_ResourceToAccess{ResourceToAccess: i.Permissions()},
 		Roles:       utils.ExtractRolesForUserInfo(i.resolvedRoles),
 	}
 }
