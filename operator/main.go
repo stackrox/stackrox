@@ -23,12 +23,12 @@ import (
 	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
 	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
+	"github.com/stackrox/rox/operator/pkg/client"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -40,24 +40,23 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+	scheme   = runtime.NewScheme()
 )
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	err := centralv1Alpha1.AddToScheme(clientgoscheme.Scheme)
+	err := centralv1Alpha1.AddToScheme(scheme)
 	if err != nil {
 		setupLog.Error(err, "could not register central scheme")
 		os.Exit(1)
 	}
-	err = securedClusterv1Alpha1.AddToScheme(clientgoscheme.Scheme)
+	err = securedClusterv1Alpha1.AddToScheme(scheme)
 	if err != nil {
 		setupLog.Error(err, "could not register secured cluster scheme")
 		os.Exit(1)
 	}
-	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -93,8 +92,7 @@ func main() {
 	}
 
 	// TODO(ROX-7251): make sure that the client we create here is kosher
-	k8sClient := kubernetes.NewForConfigOrDie(mgr.GetConfig())
-
+	k8sClient := client.NewForConfigOrDie(mgr.GetConfig())
 	if err := centralReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
 		setupLog.Error(err, "unable to setup central reconciler")
 		os.Exit(1)

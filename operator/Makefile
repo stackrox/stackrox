@@ -106,6 +106,10 @@ CONTROLLER_GEN = $(PROJECT_DIR)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
+CLIENT_GEN=$(PROJECT_DIR)/bin/client-gen
+client-gen: ## Download client-gen locally if necessary
+	$(call go-get-tool,$(CLIENT_GEN),k8s.io/code-generator/cmd/client-gen@v0.20.4)
+
 KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
@@ -180,8 +184,9 @@ parent-proto-generate: ## Make sure ../generated directory has up-to-date conten
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: parent-proto-generate controller-gen client-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations, as well as the client code.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CLIENT_GEN) --input-base="github.com/stackrox/rox/operator" --input="api/central/v1alpha1" --clientset-name="central" --output-package="github.com/stackrox/rox/operator/pkg/central/clientset" --fake-clientset --go-header-file="hack/boilerplate.go.txt"
 
 fmt: ## Run go fmt against code.
 	go fmt ./...
