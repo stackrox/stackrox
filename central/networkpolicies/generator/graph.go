@@ -284,13 +284,6 @@ func (g *generator) generateNodeFromBaselineForDeployment(
 		return nil, errors.New("cannot generate policy for a protected deployment")
 	}
 
-	// Temporarily elevate permissions to obtain all deployments in cluster.
-	nodeGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph),
-			sac.ClusterScopeKeys(deployment.GetClusterId())))
-
 	// We get the baseline for deployment, and construct a node object for this deployment with info of its baseline
 	baseline, ok, err := g.networkBaselines.GetNetworkBaseline(ctx, deployment.GetId())
 	if err != nil {
@@ -302,9 +295,11 @@ func (g *generator) generateNodeFromBaselineForDeployment(
 	deploymentNode := createNode(networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: deployment.GetId()})
 	deploymentNode.deployment = deployment
 
+	// Temporarily elevate permissions to obtain all deployments in cluster.
+	elevatedCtx := sac.WithAllAccess(ctx)
 	// Since we only generate ingress flows, we only look at ingress peers for policy generation
 	for _, peer := range baseline.GetPeers() {
-		peerNode := g.populateNode(nodeGenElevatedCtx, peer.GetEntity().GetInfo().GetId(), peer.GetEntity().GetInfo().GetType())
+		peerNode := g.populateNode(elevatedCtx, peer.GetEntity().GetInfo().GetId(), peer.GetEntity().GetInfo().GetType())
 		if peerNode == nil {
 			// Peer deployment probably has been deleted.
 			continue

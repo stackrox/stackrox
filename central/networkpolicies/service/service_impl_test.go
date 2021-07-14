@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	cDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineDSMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	graphConfigMocks "github.com/stackrox/rox/central/networkgraph/config/datastore/mocks"
 	netEntityDSMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
@@ -89,6 +90,7 @@ type ServiceTestSuite struct {
 	requestContext   context.Context
 	clusters         *cDataStoreMocks.MockDataStore
 	deployments      *dDataStoreMocks.MockDataStore
+	namespaces       *namespaceMocks.MockDataStore
 	externalSrcs     *netEntityDSMocks.MockEntityDataStore
 	graphConfig      *graphConfigMocks.MockDataStore
 	networkBaselines *networkBaselineDSMocks.MockDataStore
@@ -107,6 +109,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkPolicies = npMocks.NewMockDataStore(suite.mockCtrl)
+	suite.namespaces = namespaceMocks.NewMockDataStore(suite.mockCtrl)
 	suite.evaluator = npGraphMocks.NewMockEvaluator(suite.mockCtrl)
 	suite.clusters = cDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
@@ -119,7 +122,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.envIsolator.Setenv(features.NetworkDetectionBaselineSimulation.EnvVar(), "true")
 
 	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.networkBaselines, suite.netTreeMgr,
-		suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil)
+		suite.evaluator, suite.namespaces, suite.clusters, suite.notifiers, nil, nil)
 }
 
 func (suite *ServiceTestSuite) TearDownTest() {
@@ -707,161 +710,6 @@ func (suite *ServiceTestSuite) TestGetUndoDeploymentRecord() {
 	suite.Equal(
 		&v1.GetUndoModificationForDeploymentResponse{UndoRecord: &storage.NetworkPolicyApplicationUndoRecord{}},
 		resp)
-}
-
-func (suite *ServiceTestSuite) TestGetDiffFlows() {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return
-	}
-	// Prepare deployment001 - deployment004
-	numDeployments := 4
-	deps := make([]*storage.Deployment, 0, numDeployments)
-	for i := 0; i < numDeployments; i++ {
-		deps = append(deps, &storage.Deployment{
-			Id:        fmt.Sprintf("deployment%03d", i),
-			Name:      fmt.Sprintf("deployment%03d", i),
-			Namespace: "namespace",
-			ClusterId: fakeClusterID,
-			PodLabels: map[string]string{"app": fmt.Sprintf("deployment%03d", i)},
-		})
-	}
-	suite.deployments.EXPECT().GetDeployment(gomock.Any(), "deployment000").Return(deps[1], true, nil)
-	suite.deployments.EXPECT().SearchRawDeployments(
-		gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).Return(deps, nil)
-
-	var pols []*storage.NetworkPolicy
-	suite.evaluator.EXPECT().GetAppliedPolicies(gomock.Any(), gomock.Any(), pols).Return(pols)
-	graph := suite.getSampleNetworkGraph(deps...)
-	graph.Nodes[0].QueryMatch = true
-	suite.evaluator.EXPECT().GetGraph(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(graph)
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").Return(pols, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
-	suite.networkBaselines.EXPECT().GetNetworkBaseline(gomock.Any(), "deployment000").Return(
-		&storage.NetworkBaseline{
-			DeploymentId: "deployment000",
-			Peers: []*storage.NetworkBaselinePeer{
-				{
-					Entity: &storage.NetworkEntity{
-						Info: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "deployment002",
-							Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
-								Name:      "deployment002",
-								Namespace: "namespace",
-							}},
-						},
-					},
-					Properties: []*storage.NetworkBaselineConnectionProperties{
-						{
-							Ingress:  false,
-							Port:     443,
-							Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-						},
-						{
-							Ingress:  true,
-							Port:     22,
-							Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
-						},
-					},
-				},
-				{
-					Entity: &storage.NetworkEntity{
-						Info: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "deployment003",
-							Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
-								Name:      "deployment003",
-								Namespace: "namespace",
-							}},
-						},
-					},
-					Properties: []*storage.NetworkBaselineConnectionProperties{
-						{
-							Ingress:  false,
-							Port:     443,
-							Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-						},
-					},
-				},
-			},
-		}, true, nil)
-	rsp, err :=
-		suite.tested.GetDiffFlowsBetweenPolicyAndBaselineForDeployment(suite.requestContext, &v1.ResourceByID{Id: "deployment000"})
-	suite.NoError(err)
-	suite.Equal(&v1.GetDiffFlowsResponse{
-		Added: []*v1.GetDiffFlowsGroupedFlow{
-			{
-				Entity: &storage.NetworkEntityInfo{
-					Id:   "deployment003",
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
-						Name:      "deployment003",
-						Namespace: "namespace",
-					}},
-				},
-				Properties: []*storage.NetworkBaselineConnectionProperties{
-					{
-						Ingress:  false,
-						Port:     443,
-						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-					},
-				},
-			},
-		},
-		Removed: []*v1.GetDiffFlowsGroupedFlow{
-			{
-				Entity: &storage.NetworkEntityInfo{
-					Id:   "deployment001",
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
-						Name:      "deployment001",
-						Namespace: "namespace",
-					}},
-				},
-				Properties: []*storage.NetworkBaselineConnectionProperties{
-					{
-						Ingress:  true,
-						Port:     80,
-						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-					},
-				},
-			},
-		},
-		Reconciled: []*v1.GetDiffFlowsReconciledFlow{
-			{
-				Entity: &storage.NetworkEntityInfo{
-					Id:   "deployment002",
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
-						Name:      "deployment002",
-						Namespace: "namespace",
-					}},
-				},
-				Added: []*storage.NetworkBaselineConnectionProperties{
-					{
-						Ingress:  true,
-						Port:     22,
-						Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
-					},
-				},
-				Removed: []*storage.NetworkBaselineConnectionProperties{
-					{
-						Ingress:  false,
-						Port:     80,
-						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-					},
-				},
-				Unchanged: []*storage.NetworkBaselineConnectionProperties{
-					{
-						Ingress:  false,
-						Port:     443,
-						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-					},
-				},
-			},
-		},
-	}, rsp)
 }
 
 func depToInfo(dep *storage.Deployment) *storage.NetworkEntityInfo {

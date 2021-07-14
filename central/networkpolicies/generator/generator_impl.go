@@ -302,7 +302,7 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 func (g *generator) GenerateFromBaselineForDeployment(
 	ctx context.Context,
 	req *v1.GetBaselineGeneratedPolicyForDeploymentRequest,
-) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
+) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference, error) {
 	deployment, ok, err := g.deploymentStore.GetDeployment(ctx, req.GetDeploymentId())
 	if err != nil {
 		return nil, nil, err
@@ -323,7 +323,12 @@ func (g *generator) GenerateFromBaselineForDeployment(
 	}
 
 	// Generate network policy for this deployment
-	generated = []*storage.NetworkPolicy{g.getBaselineGeneratedPolicy(node, namespacesByName)}
+	policy := g.getBaselineGeneratedPolicy(node, namespacesByName)
 
-	return generated, toDelete, nil
+	// We mark the policy as `toDelete` to signal to sensor that it should replace the policy if it exists already.
+	// If it doesn't exist, sensor will create the policy.
+	// This is because we keep exactly one baseline-generated network policy per deployment, and we make it comprehensive.
+	// This allows us to ensure, e.g, that deletions from a baseline reflect in the network policy.
+	// It also makes the end state idempotent and not path-dependent.
+	return []*storage.NetworkPolicy{policy}, []*storage.NetworkPolicyReference{{Name: policy.GetName(), Namespace: policy.GetNamespace()}}, nil
 }

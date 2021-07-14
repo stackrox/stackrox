@@ -170,6 +170,10 @@ func (t *applyTx) replaceNetworkPolicy(ctx context.Context, policy *networkingV1
 		old, err := nsClient.Get(ctx, policy.Name, metav1.GetOptions{})
 
 		if err != nil {
+			if k8sErrors.IsNotFound(err) {
+				// The policy has possibly been deleted. Either way, doesn't matter for us.
+				return t.createNetworkPolicy(ctx, policy)
+			}
 			return errors.Wrap(err, "retrieving network policy")
 		}
 

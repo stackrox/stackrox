@@ -771,60 +771,43 @@ func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx cont
 	if err != nil {
 		return nil, err
 	}
-	allowedPeers, err := s.getAllowedPeersForDeployment(ctx, dep, networkTree, deploymentsInCluster)
+	currentAllowedPeers, err := s.getAllowedPeersForDeployment(ctx, dep, networkTree, deploymentsInCluster)
 	if err != nil {
 		return nil, err
 	}
-	// Get allowed peers from the deployment's NetworkBaseline
-	baseline, found, err := s.networkBaselines.GetNetworkBaseline(ctx, request.GetId())
+
+	generated, toDelete, err := s.policyGenerator.GenerateFromBaselineForDeployment(ctx,
+		&v1.GetBaselineGeneratedPolicyForDeploymentRequest{DeploymentId: request.GetId(), IncludePorts: true})
+	if err != nil {
+		return nil, errors.Errorf("error generating network policies: %v", err)
+	}
+
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, dep.GetClusterId(), "")
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	conflictingNetPols := make(map[nameNSPair]struct{})
+	for _, toDel := range toDelete {
+		conflictingNetPols[nameNSPair{name: toDel.GetName(), namespace: toDel.GetNamespace()}] = struct{}{}
+	}
+
+	for _, p := range generated {
+		conflictingNetPols[nameNSPair{name: p.GetName(), namespace: p.GetName()}] = struct{}{}
+	}
+
+	networkPoliciesPostGeneration := generated
+	for _, netPol := range networkPolicies {
+		if _, isConflicting := conflictingNetPols[nameNSPair{name: netPol.GetName(), namespace: netPol.GetNamespace()}]; !isConflicting {
+			networkPoliciesPostGeneration = append(networkPoliciesPostGeneration, netPol)
+		}
+	}
+
+	allowedPeersPostGeneration, err := s.getAllowedPeersForDeploymentWithNetPols(dep, networkTree, deploymentsInCluster, networkPoliciesPostGeneration)
 	if err != nil {
 		return nil, err
-	} else if !found {
-		return nil, errors.Wrap(errorhelpers.ErrNotFound, "requested deployment's baseline not found")
 	}
-
-	// Populate a map of peer deployments by ID.
-	// To do this efficiently, first populate the map with just the IDs of the peers (and `nil` values)
-	// to mark which IDs we care about
-	// and then iterate over the deploymentsInCluster slice and populate the value in the map.
-	peerDeploymentsByID := make(map[string]*storage.Deployment)
-	for _, p := range baseline.GetPeers() {
-		if p.GetEntity().GetInfo().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
-			peerDeploymentsByID[p.GetEntity().GetInfo().GetId()] = nil
-		}
-	}
-
-	for _, dep := range deploymentsInCluster {
-		if _, ok := peerDeploymentsByID[dep.GetId()]; !ok {
-			continue
-		}
-		peerDeploymentsByID[dep.GetId()] = dep
-	}
-
-	baselinePeers := make(groupedEntitiesWithProperties)
-	for _, p := range baseline.GetPeers() {
-		entity := p.GetEntity().GetInfo()
-		switch entity.GetType() {
-		case storage.NetworkEntityInfo_DEPLOYMENT:
-			entity.Desc = &storage.NetworkEntityInfo_Deployment_{
-				Deployment: &storage.NetworkEntityInfo_Deployment{
-					// Note that the two below lines are nil-safe, and will correctly return an empty string
-					// if we couldn't find this deployment in the clusterDeployments for whatever reason.
-					Name:      peerDeploymentsByID[entity.GetId()].GetName(),
-					Namespace: peerDeploymentsByID[entity.GetId()].GetNamespace(),
-				},
-			}
-		case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
-			entity.Desc = networkTree.Get(entity.GetId()).GetDesc()
-		}
-		baselinePeers[entity.GetId()] = &entityWithProperties{
-			entity:     entity,
-			properties: p.GetProperties(),
-		}
-	}
-
-	rsp := s.computeDiffBetweenPeerGroups(allowedPeers, baselinePeers)
-	return rsp, nil
+	return s.computeDiffBetweenPeerGroups(currentAllowedPeers, allowedPeersPostGeneration), nil
 }
 
 func (s *serviceImpl) computeDiffBetweenPeerGroups(
