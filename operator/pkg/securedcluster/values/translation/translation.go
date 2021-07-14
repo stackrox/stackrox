@@ -83,8 +83,6 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 
 	v.AddAllFrom(translation.GetImagePullSecrets(sc.Spec.ImagePullSecrets))
 
-	// TODO(ROX-7178): support explicit env.openshift and env.istio setting
-
 	customize := translation.NewValuesBuilder()
 
 	if sc.Spec.Sensor != nil {

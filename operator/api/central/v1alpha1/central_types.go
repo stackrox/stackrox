@@ -105,10 +105,6 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Persistence *Persistence `json:"persistence,omitempty"`
 
-	// TODO(ROX-7123): determine whether we want to make `extraMounts` available in the operator
-	// TODO(ROX-7112): should we expose central.config? It's exposed in helm charts but not documented in help.stackrox.com.
-	// TODO(ROX-7147): design central endpoint
-
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	common.DeploymentSpec `json:",inline"`
 }
