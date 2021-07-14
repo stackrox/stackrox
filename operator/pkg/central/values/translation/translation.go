@@ -58,7 +58,7 @@ func translate(c central.Central) (chartutil.Values, error) {
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
 	v.AddAllFrom(getEnv(c.Spec.Egress))
-	v.AddAllFrom(translation.GetTLSValues(c.Spec.TLS))
+	v.AddAllFrom(translation.GetTLSConfigValues(c.Spec.TLS))
 
 	customize := translation.NewValuesBuilder()
 	customize.AddAllFrom(translation.GetCustomize(c.Spec.Customize))

@@ -90,12 +90,9 @@ func GetImagePullSecrets(imagePullSecrets []common.LocalSecretReference) *Values
 	return &res
 }
 
-// GetTLSValues converts common.TLSConfig to a *ValuesBuilder with an "additionalCAs" field.
-func GetTLSValues(tls *common.TLSConfig) *ValuesBuilder {
-	if tls == nil {
-		return nil
-	}
-	if len(tls.AdditionalCAs) == 0 {
+// GetTLSConfigValues converts common.TLSConfig to a *ValuesBuilder with an "additionalCAs" field.
+func GetTLSConfigValues(tls *common.TLSConfig) *ValuesBuilder {
+	if tls == nil || len(tls.AdditionalCAs) == 0 {
 		return nil
 	}
 	cas := NewValuesBuilder()

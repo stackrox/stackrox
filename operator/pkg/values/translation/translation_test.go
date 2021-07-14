@@ -122,3 +122,61 @@ func TestGetResources(t *testing.T) {
 		})
 	}
 }
+
+func TestGetTLSConfigValues(t *testing.T) {
+	tests := map[string]struct {
+		tls  *common.TLSConfig
+		want chartutil.Values
+	}{
+		"nil": {
+			tls:  nil,
+			want: chartutil.Values{},
+		},
+		"empty": {
+			tls:  &common.TLSConfig{AdditionalCAs: []common.AdditionalCA{}},
+			want: chartutil.Values{},
+		},
+		"single-ca": {
+			tls: &common.TLSConfig{
+				AdditionalCAs: []common.AdditionalCA{
+					{
+						Name:    "ca-name",
+						Content: "ca-content",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"additionalCAs": map[string]interface{}{
+					"ca-name": "ca-content",
+				},
+			},
+		},
+		"many-cas": {
+			tls: &common.TLSConfig{
+				AdditionalCAs: []common.AdditionalCA{
+					{
+						Name:    "ca1-name",
+						Content: "ca1-content",
+					},
+					{
+						Name:    "ca2-name",
+						Content: "ca2-content",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"additionalCAs": map[string]interface{}{
+					"ca1-name": "ca1-content",
+					"ca2-name": "ca2-content",
+				},
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			values, err := GetTLSConfigValues(tt.tls).Build()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, values)
+		})
+	}
+}
