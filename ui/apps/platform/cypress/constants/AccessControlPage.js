@@ -26,10 +26,14 @@ export const selectors = scopeSelectors('#access-control', {
         tdDescription: 'td[data-label="Description"]',
 
         authProviders: {
+            dataRows: 'tbody tr',
             addDropdownItem: 'button:contains("Add auth provider") + ul button',
             tdType: 'td[data-label="Type"]',
             tdMinimumAccessRole: 'td[data-label="Minimum access role',
             tdRules: 'td[data-label="Rules"]',
+            tdActions: 'td.pf-c-table__action .pf-c-dropdown__toggle',
+            deleteActionItem: 'td.pf-c-table__action button:contains("Delete auth provider")',
+            emptyState: '.pf-c-empty-state__content:contains("No auth providers")',
         },
 
         roles: {
@@ -124,3 +128,10 @@ export const selectors = scopeSelectors('#access-control', {
         accessScope: scopeSelectors('#access-scope-form', {}),
     },
 });
+
+export const accessModalSelectors = {
+    title: '.pf-c-modal-box__title-text',
+    body: '.pf-c-modal-box__body',
+    cancel: '.pf-c-modal-box__footer button:contains("Cancel")',
+    delete: '.pf-c-modal-box__footer button:contains("Delete")',
+};

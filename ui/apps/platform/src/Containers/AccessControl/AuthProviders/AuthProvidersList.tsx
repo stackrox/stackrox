@@ -95,9 +95,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                 </Td>
                                 <Td
                                     actions={{
-                                        disable:
-                                            !currentUser?.authProvider?.id ||
-                                            id === currentUser?.authProvider?.id,
+                                        disable: id === currentUser?.authProvider?.id,
                                         items: [
                                             {
                                                 title: 'Delete auth provider',

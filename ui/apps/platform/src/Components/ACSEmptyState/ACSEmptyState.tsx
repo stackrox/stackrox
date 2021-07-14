@@ -8,16 +8,17 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
-type EmptyGlobalSearchProps = {
+type ACSEmptyStateProps = {
     children: ReactNode;
     title: string;
+    headingLevel?: 'h1' | 'h2' | 'h3';
 };
 
-function EmptyGlobalSearch({ children, title }: EmptyGlobalSearchProps): ReactElement {
+function ACSEmptyState({ children, title, headingLevel = 'h1' }: ACSEmptyStateProps): ReactElement {
     return (
         <EmptyState variant={EmptyStateVariant.large}>
             <EmptyStateIcon icon={CubesIcon} />
-            <Title headingLevel="h1" size="lg">
+            <Title headingLevel={headingLevel} size="lg">
                 {title}
             </Title>
             <EmptyStateBody>{children}</EmptyStateBody>
@@ -25,4 +26,4 @@ function EmptyGlobalSearch({ children, title }: EmptyGlobalSearchProps): ReactEl
     );
 }
 
-export default EmptyGlobalSearch;
+export default ACSEmptyState;

@@ -1,4 +1,8 @@
-import { authProvidersUrl, selectors } from '../../constants/AccessControlPage';
+import {
+    authProvidersUrl,
+    selectors,
+    accessModalSelectors,
+} from '../../constants/AccessControlPage';
 import { permissions as permissionsApi } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
@@ -289,5 +293,51 @@ describe('Access Control Auth providers', () => {
 
         cy.get(selectors.form.saveButton).should('be.disabled');
         cy.get(selectors.form.cancelButton).should('be.enabled');
+    });
+
+    describe('empty state', () => {
+        function gotoAuthProvidersWithMock(fixture = 'auth/authProviders-id1-id2-id3.json') {
+            cy.intercept('GET', authProvidersApi.list, { fixture }).as('GetAuthProviders');
+
+            cy.visit(authProvidersUrl);
+            cy.wait('@GetAuthProviders');
+        }
+
+        it('should show a confirmation before deleting a provider', () => {
+            gotoAuthProvidersWithMock('auth/authProviders-id1.json');
+            cy.log(selectors.list);
+            cy.get(selectors.list.authProviders.tdActions).click();
+
+            cy.get(selectors.list.authProviders.deleteActionItem).click();
+
+            cy.get(accessModalSelectors.title);
+            cy.get(accessModalSelectors.body);
+            cy.get(accessModalSelectors.delete);
+            cy.get(accessModalSelectors.cancel).click();
+
+            cy.get(selectors.list.authProviders.dataRows);
+        });
+
+        it('should show empty state after deleting the last provider', () => {
+            gotoAuthProvidersWithMock('auth/authProviders-id1.json');
+            cy.log(selectors.list);
+            cy.get(selectors.list.authProviders.tdActions).click();
+
+            cy.get(selectors.list.authProviders.deleteActionItem).click();
+
+            // mock now with empty list of providers like nothing is left
+            cy.intercept('GET', authProvidersApi.list, { authProviders: [] }).as(
+                'GetAuthProviders'
+            );
+            cy.get(accessModalSelectors.delete).click();
+
+            cy.wait('@GetAuthProviders');
+
+            // TODO: uncomment out this last check,
+            //       after we are able to upgrade to Cypress 7.0.0+
+            //       See this GitHub issue: https://github.com/cypress-io/cypress/issues/9302#issuecomment-813691003
+            // should show empty state
+            // cy.get(selectors.list.authProviders.emptyState);
+        });
     });
 });

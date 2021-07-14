@@ -19,6 +19,7 @@ import {
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
+import ACSEmptyState from 'Components/ACSEmptyState';
 import { availableAuthProviders } from 'constants/accessControl';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
@@ -173,7 +174,17 @@ function AuthProviders(): ReactElement {
                             </ToolbarItem>
                         </ToolbarContent>
                     </Toolbar>
-                    <AuthProvidersList entityId={entityId} authProviders={authProvidersWithRules} />
+                    {authProvidersWithRules.length === 0 && (
+                        <ACSEmptyState title="No auth providers" headingLevel="h3">
+                            Please add one.
+                        </ACSEmptyState>
+                    )}
+                    {authProvidersWithRules.length > 0 && (
+                        <AuthProvidersList
+                            entityId={entityId}
+                            authProviders={authProvidersWithRules}
+                        />
+                    )}
                 </>
             )}
         </>
