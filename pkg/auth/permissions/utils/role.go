@@ -87,11 +87,10 @@ func RoleNames(roles []permissions.ResolvedRole) []string {
 }
 
 // ExtractRolesForUserInfo converts each ResolvedRole to *storage.Role.
-// FIXME: Use a new compatible type instead of storage.Role.
-func ExtractRolesForUserInfo(roles []permissions.ResolvedRole) []*storage.Role {
-	result := make([]*storage.Role, 0, len(roles))
+func ExtractRolesForUserInfo(roles []permissions.ResolvedRole) []*storage.UserInfo_Role {
+	result := make([]*storage.UserInfo_Role, 0, len(roles))
 	for _, role := range roles {
-		role := &storage.Role{
+		role := &storage.UserInfo_Role{
 			Name:             role.GetRoleName(),
 			ResourceToAccess: role.GetPermissions(),
 		}

@@ -141,7 +141,7 @@ func auditLogToCEF(auditLog *v1.Audit_Message) string {
 	return getCEFHeaderWithExtension("AuditLog", "AuditLog", 3, makeExtensionFromPairs(extensionList))
 }
 
-func joinRoleNames(roles []*storage.Role) string {
+func joinRoleNames(roles []*storage.UserInfo_Role) string {
 	roleNames := make([]string, 0, len(roles))
 	for _, r := range roles {
 		roleNames = append(roleNames, r.GetName())

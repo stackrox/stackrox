@@ -22,10 +22,19 @@ message UserAttribute {
 }
 
 message UserInfo {
+    // Role is wire compatible with the old format of storage.Role and
+    // hence only includes role name and associated permissions.
+    message Role {
+        string name                            = 1;
+        map<string, Access> resource_to_access = 3;
+
+        reserved 2; // global_access, not in use any more, treat as NO_ACCESS
+    }
+
     string                   username      = 1;
     string                   friendly_name = 2;
     storage.ResourceToAccess permissions   = 4;
-    repeated storage.Role    roles         = 5;
+    repeated Role            roles         = 5;
 
     reserved 3; // used to be role; use permissions instead
 }
