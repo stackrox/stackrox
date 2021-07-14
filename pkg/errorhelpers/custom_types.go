@@ -15,4 +15,8 @@ var (
 	// ErrReferencedByAnotherObject indicates that the requested object cannot
 	// be removed because it is referred to / in use by another object.
 	ErrReferencedByAnotherObject = errors.New("referenced by another object")
+
+	// ErrInvariantViolation indicates that some internal invariant has been
+	// violated and the underlying component is in an inconsistent state.
+	ErrInvariantViolation = errors.New("invariant violation")
 )

@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -36,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -193,15 +195,15 @@ func (suite *IndicatorDataStoreTestSuite) mustGetCommentsAndValidateCount(ctx co
 	return comments
 }
 
-func (suite *IndicatorDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID string, role *storage.Role) context.Context {
+func (suite *IndicatorDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID string, role permissions.ResolvedRole) context.Context {
 	identity := mocks.NewMockIdentity(suite.mockCtrl)
 	identity.EXPECT().UID().AnyTimes().Return(userID)
 	identity.EXPECT().FullName().AnyTimes().Return(userID)
 	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
 	identity.EXPECT().User().AnyTimes().Return(nil)
-	identity.EXPECT().Roles().AnyTimes().Return([]*storage.Role{role})
+	identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{role})
 	identity.EXPECT().Permissions().AnyTimes().Return(&storage.ResourceToAccess{
-		ResourceToAccess: role.GetResourceToAccess(),
+		ResourceToAccess: role.GetPermissions(),
 	})
 
 	return authn.ContextWithIdentity(ctx, identity, suite.T())
@@ -210,8 +212,9 @@ func (suite *IndicatorDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context,
 func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.setupDataStoreNoPruning()
 
-	roleNone := permissions.NewRoleWithAccess(role.None)
-	roleAdmin := permissions.NewRoleWithAccess(role.Admin, resources.AllResourcesModifyPermissions()...)
+	roleNone := roletest.NewResolvedRoleWithGlobalScope(role.None, nil)
+	roleAdmin := roletest.NewResolvedRoleWithGlobalScope(role.Admin, utils.FromResourcesWithAccess(resources.AllResourcesModifyPermissions()...))
+
 	uid1Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "1", roleNone)
 	uid2Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "2", roleNone)
 	uid2ButAdminCtx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "2", roleAdmin)

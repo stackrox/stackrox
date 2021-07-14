@@ -8,6 +8,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	authproviders "github.com/stackrox/rox/pkg/auth/authproviders"
+	permissions "github.com/stackrox/rox/pkg/auth/permissions"
 	reflect "reflect"
 	time "time"
 )
@@ -106,10 +107,10 @@ func (mr *MockIdentityMockRecorder) Permissions() *gomock.Call {
 }
 
 // Roles mocks base method
-func (m *MockIdentity) Roles() []*storage.Role {
+func (m *MockIdentity) Roles() []permissions.ResolvedRole {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Roles")
-	ret0, _ := ret[0].([]*storage.Role)
+	ret0, _ := ret[0].([]permissions.ResolvedRole)
 	return ret0
 }
 

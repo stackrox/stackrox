@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/client"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -97,7 +98,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
 				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesEdit),
+					allResourcesEdit,
 					&storage.SimpleAccessScope{
 						Id: "2",
 						Rules: &storage.SimpleAccessScope_Rules{
@@ -118,10 +119,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(nil),
-					withAccessTo1Cluster()),
-				)
+				withRoles(roleStore, role(nil, withAccessTo1Cluster()))
 			},
 			principal: adminRolePrincipal,
 			scopes: []payload.AccessScope{
@@ -139,7 +137,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
 				withRoles(roleStore, role(
-					withResourceToAccess(map[string]storage.Access{cluster: storage.Access_NO_ACCESS}),
+					map[string]storage.Access{cluster: storage.Access_NO_ACCESS},
 					withAccessTo1Cluster(),
 				))
 			},
@@ -159,7 +157,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
 				withRoles(roleStore, role(
-					withResourceToAccess(map[string]storage.Access{globalResource: storage.Access_READ_ACCESS}),
+					map[string]storage.Access{globalResource: storage.Access_READ_ACCESS},
 					withAccessTo1Cluster()))
 			},
 			principal: adminRolePrincipal,
@@ -175,9 +173,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesEdit),
-					withAccessTo1Cluster()))
+				withRoles(roleStore, role(allResourcesEdit, withAccessTo1Cluster()))
 			},
 			principal: adminRolePrincipal,
 			scopes: []payload.AccessScope{
@@ -195,9 +191,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withTwoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesEdit),
-					withAccessTo1Namespace()))
+				withRoles(roleStore, role(allResourcesEdit, withAccessTo1Namespace()))
 			},
 			principal: adminRolePrincipal,
 			scopes: []payload.AccessScope{
@@ -216,7 +210,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(withResourceToAccess(nil), nil))
+				withRoles(roleStore, role(nil, nil))
 			},
 			principal: adminRolePrincipal,
 			scopes: []payload.AccessScope{
@@ -235,9 +229,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesEdit),
-					withAccessTo1Cluster()))
+				withRoles(roleStore, role(allResourcesEdit, withAccessTo1Cluster()))
 			},
 			principal: adminRolePrincipal,
 			scopes:    []payload.AccessScope{{Verb: view}},
@@ -248,9 +240,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesEdit),
-					withAccessTo1Cluster()))
+				withRoles(roleStore, role(allResourcesEdit, withAccessTo1Cluster()))
 			},
 			principal: adminRolePrincipal,
 			scopes:    []payload.AccessScope{{}},
@@ -261,9 +251,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesView),
-					withAccessTo1Cluster()))
+				withRoles(roleStore, role(allResourcesView, withAccessTo1Cluster()))
 			},
 			principal: adminRolePrincipal,
 			scopes:    []payload.AccessScope{{}},
@@ -274,9 +262,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesView),
-					nil))
+				withRoles(roleStore, role(allResourcesView, nil))
 			},
 			principal: adminRolePrincipal,
 			scopes: []payload.AccessScope{{
@@ -299,9 +285,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withTwoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesView),
-					withAccessTo1Namespace()))
+				withRoles(roleStore, role(allResourcesView, withAccessTo1Namespace()))
 			},
 			principal: adminRolePrincipal,
 			scopes:    []payload.AccessScope{firstClusterScope},
@@ -322,9 +306,7 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
 				withTwoClusters(clusterStore)
 				withTwoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					withResourceToAccess(allResourcesView),
-					withAccessTo1Namespace()))
+				withRoles(roleStore, role(allResourcesView, withAccessTo1Namespace()))
 			},
 			principal: adminRolePrincipal,
 			scopes: []payload.AccessScope{{
@@ -350,10 +332,10 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 				withTwoNamespaces(nsStore)
 				withRoles(roleStore,
 					roleWithName("firstRole",
-						withResourceToAccess(allResourcesView),
+						allResourcesView,
 						withAccessTo1Namespace()),
 					roleWithName("secondRole",
-						withResourceToAccess(allResourcesView),
+						allResourcesView,
 						&storage.SimpleAccessScope{
 							Rules: &storage.SimpleAccessScope_Rules{
 								IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{
@@ -391,9 +373,9 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 	}
 }
 
-func withRoles(roleStore *roleMocks.MockDataStore, roles ...*permissions.ResolvedRole) {
+func withRoles(roleStore *roleMocks.MockDataStore, roles ...permissions.ResolvedRole) {
 	for _, role := range roles {
-		roleStore.EXPECT().GetAndResolveRole(gomock.Any(), role.Role.GetName()).Return(role, nil)
+		roleStore.EXPECT().GetAndResolveRole(gomock.Any(), role.GetRoleName()).Return(role, nil)
 	}
 }
 
@@ -418,13 +400,6 @@ func withAccessTo1Namespace() *storage.SimpleAccessScope {
 	}
 }
 
-func withResourceToAccess(resourceToAccess map[string]storage.Access) *storage.PermissionSet {
-	return &storage.PermissionSet{
-		Id:               "1",
-		ResourceToAccess: resourceToAccess,
-	}
-}
-
 func withTwoNamespaces(nsStore *namespaceMocks.MockDataStore) *gomock.Call {
 	return nsStore.EXPECT().GetNamespaces(gomock.Any()).Return([]*storage.NamespaceMetadata{{
 		Id:          "namespace-1",
@@ -439,20 +414,12 @@ func withTwoNamespaces(nsStore *namespaceMocks.MockDataStore) *gomock.Call {
 	}}, nil).Times(1)
 }
 
-func role(ps *storage.PermissionSet, as *storage.SimpleAccessScope) *permissions.ResolvedRole {
-	return roleWithName(testRole, ps, as)
+func role(perms map[string]storage.Access, as *storage.SimpleAccessScope) permissions.ResolvedRole {
+	return roleWithName(testRole, perms, as)
 }
 
-func roleWithName(name string, ps *storage.PermissionSet, as *storage.SimpleAccessScope) *permissions.ResolvedRole {
-	return &permissions.ResolvedRole{
-		Role: &storage.Role{
-			Name:            name,
-			PermissionSetId: ps.GetId(),
-			AccessScopeId:   as.GetId(),
-		},
-		PermissionSet: ps,
-		AccessScope:   as,
-	}
+func roleWithName(name string, perms map[string]storage.Access, as *storage.SimpleAccessScope) permissions.ResolvedRole {
+	return roletest.NewResolvedRole(name, perms, as)
 }
 
 func withNoNamespaces(nsStore *namespaceMocks.MockDataStore) *gomock.Call {

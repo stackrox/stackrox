@@ -25,15 +25,9 @@ type storeBasedMapperImpl struct {
 	users          userDataStore.DataStore
 }
 
-func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]*permissions.ResolvedRole, error) {
-	// Record the user we are creating a role for.
+func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
 	rm.recordUser(ctx, user)
-	// Determine the role.
-	roles, err := rm.getRoles(ctx, user)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get roles for user descriptor with id: %s", user.UserID)
-	}
-	return rm.roles.ResolveRoles(ctx, roles)
+	return rm.getRoles(ctx, user)
 }
 
 func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *permissions.UserDescriptor) {
@@ -44,7 +38,7 @@ func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *perm
 	}
 }
 
-func (rm *storeBasedMapperImpl) getRoles(ctx context.Context, user *permissions.UserDescriptor) ([]*storage.Role, error) {
+func (rm *storeBasedMapperImpl) getRoles(ctx context.Context, user *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
 	// Get the groups for the user.
 	groups, err := rm.groups.Walk(ctx, rm.authProviderID, user.Attributes)
 	if err != nil {
@@ -57,13 +51,13 @@ func (rm *storeBasedMapperImpl) getRoles(ctx context.Context, user *permissions.
 	// Load the roles that apply to the user based on their groups.
 	roles, err := rm.rolesForGroups(ctx, groups)
 	if err != nil {
-		return nil, errors.Wrap(err, "failure to load roles")
+		return nil, errors.Wrapf(err, "failed to load roles for user with id: %q", user.UserID)
 	}
 
 	return roles, nil
 }
 
-func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*storage.Group) ([]*storage.Role, error) {
+func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*storage.Group) ([]permissions.ResolvedRole, error) {
 	// Get the role names in all of the groups.
 	roleNameSet := set.NewStringSet()
 	for _, group := range groups {
@@ -73,18 +67,18 @@ func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*st
 		return nil, errors.New("no roles can be found for user")
 	}
 
-	// Load the roles (need to load individually because we want to ignore missing roles)
-	var roles = make([]*storage.Role, 0, roleNameSet.Cardinality())
+	// Load the roles individually because we want to ignore missing roles.
+	var resolvedRoles = make([]permissions.ResolvedRole, 0, roleNameSet.Cardinality())
 	for roleName := range roleNameSet {
-		role, err := rm.roles.GetRole(ctx, roleName)
+		role, err := rm.roles.GetAndResolveRole(ctx, roleName)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "resolving role %q", roleName)
 		}
 		if role != nil {
-			roles = append(roles, role)
+			resolvedRoles = append(resolvedRoles, role)
 		}
 	}
-	return roles, nil
+	return resolvedRoles, nil
 }
 
 // Helpers

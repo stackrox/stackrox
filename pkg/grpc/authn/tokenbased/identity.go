@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
@@ -16,7 +17,7 @@ type roleBasedIdentity struct {
 	username      string
 	friendlyName  string
 	fullName      string
-	resolvedRoles []*permissions.ResolvedRole
+	resolvedRoles []permissions.ResolvedRole
 	expiry        time.Time
 	attributes    map[string][]string
 	authProvider  authproviders.Provider
@@ -35,11 +36,11 @@ func (i *roleBasedIdentity) FullName() string {
 }
 
 func (i *roleBasedIdentity) Permissions() *storage.ResourceToAccess {
-	return permissions.NewUnionPermissions(i.resolvedRoles)
+	return utils.NewUnionPermissions(i.resolvedRoles)
 }
 
-func (i *roleBasedIdentity) Roles() []*storage.Role {
-	return permissions.ExtractRoles(i.resolvedRoles)
+func (i *roleBasedIdentity) Roles() []permissions.ResolvedRole {
+	return i.resolvedRoles
 }
 
 func (i *roleBasedIdentity) Service() *storage.ServiceIdentity {
@@ -51,7 +52,7 @@ func (i *roleBasedIdentity) User() *storage.UserInfo {
 		Username:     i.username,
 		FriendlyName: i.friendlyName,
 		Permissions:  i.Permissions(),
-		Roles:        i.Roles(),
+		Roles:        utils.ExtractRolesForUserInfo(i.resolvedRoles),
 	}
 }
 

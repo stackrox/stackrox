@@ -11,12 +11,12 @@ import (
 )
 
 type alwaysAdminMapperImpl struct {
-	adminRole *permissions.ResolvedRole
+	adminRole permissions.ResolvedRole
 }
 
 // FromUserDescriptor always returns admin.
-func (rm *alwaysAdminMapperImpl) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]*permissions.ResolvedRole, error) {
-	return []*permissions.ResolvedRole{rm.adminRole}, nil
+func (rm *alwaysAdminMapperImpl) FromUserDescriptor(_ context.Context, _ *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
+	return []permissions.ResolvedRole{rm.adminRole}, nil
 }
 
 // AlwaysAdminRoleMapper returns an implementation of RoleMapper that always returns the admin role.

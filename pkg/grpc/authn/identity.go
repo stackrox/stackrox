@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 //go:generate mockgen-wrapper
@@ -18,7 +19,7 @@ type Identity interface {
 
 	User() *storage.UserInfo
 	Permissions() *storage.ResourceToAccess
-	Roles() []*storage.Role
+	Roles() []permissions.ResolvedRole
 
 	Service() *storage.ServiceIdentity
 	Attributes() map[string][]string

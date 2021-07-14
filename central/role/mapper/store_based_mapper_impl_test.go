@@ -8,9 +8,12 @@ import (
 	"github.com/pkg/errors"
 	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	userMocks "github.com/stackrox/rox/central/user/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -91,26 +94,14 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 		Return([]*storage.Group{expectedGroup}, nil)
 
 	// Expect the role to be fetched.
-	expectedRole := &storage.Role{
-		Name:         "TeamAwesome",
-		GlobalAccess: storage.Access_READ_ACCESS,
-	}
-	resolvedRole := &permissions.ResolvedRole{
-		Role: expectedRole,
-		PermissionSet: &storage.PermissionSet{
-			ResourceToAccess: expectedRole.ResourceToAccess,
-		},
-	}
+	expectedResolvedRole := roletest.NewResolvedRoleWithGlobalScope(
+		"TeamAwesome",
+		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
 	s.mockRoles.
 		EXPECT().
-		GetRole(s.requestContext, "TeamAwesome").
+		GetAndResolveRole(s.requestContext, "TeamAwesome").
 		Times(1).
-		Return(expectedRole, nil)
-	s.mockRoles.
-		EXPECT().
-		ResolveRoles(s.requestContext, []*storage.Role{expectedRole}).
-		Times(1).
-		Return([]*permissions.ResolvedRole{resolvedRole}, nil)
+		Return(expectedResolvedRole, nil)
 
 	userDescriptor := &permissions.UserDescriptor{
 		UserID: "coolguysid",
@@ -120,7 +111,7 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 	}
 	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
-	s.ElementsMatch([]*permissions.ResolvedRole{resolvedRole}, roles, "since a single role was mapped, that role should be returned")
+	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole}, roles, "since a single role was mapped, that role should be returned")
 }
 
 func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
@@ -164,41 +155,22 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 		Return([]*storage.Group{expectedGroup1, expectedGroup2}, nil)
 
 	// Expect the roles to be fetched, and make the second a superset of the first.
-	expectedRole1 := &storage.Role{
-		Name:         "TeamAwesome",
-		GlobalAccess: storage.Access_READ_ACCESS,
-	}
-	expectedRole2 := &storage.Role{
-		Name:         "TeamAwesome",
-		GlobalAccess: storage.Access_READ_WRITE_ACCESS,
-	}
-	resolvedRole1 := &permissions.ResolvedRole{
-		Role: expectedRole1,
-		PermissionSet: &storage.PermissionSet{
-			ResourceToAccess: expectedRole1.GetResourceToAccess(),
-		},
-	}
-	resolvedRole2 := &permissions.ResolvedRole{
-		Role: expectedRole2,
-		PermissionSet: &storage.PermissionSet{
-			ResourceToAccess: expectedRole2.GetResourceToAccess(),
-		},
-	}
+	expectedResolvedRole1 := roletest.NewResolvedRoleWithGlobalScope(
+		"TeamAwesome",
+		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
+	expectedResolvedRole2 := roletest.NewResolvedRoleWithGlobalScope(
+		"TeamAwesome",
+		utils.FromResourcesWithAccess(resources.AllResourcesModifyPermissions()...))
 	s.mockRoles.
 		EXPECT().
-		GetRole(s.requestContext, "TeamAwesome").
+		GetAndResolveRole(s.requestContext, "TeamAwesome").
 		Times(1).
-		Return(expectedRole1, nil)
+		Return(expectedResolvedRole1, nil)
 	s.mockRoles.
 		EXPECT().
-		GetRole(s.requestContext, "TeamEvenAwesomer").
+		GetAndResolveRole(s.requestContext, "TeamEvenAwesomer").
 		Times(1).
-		Return(expectedRole2, nil)
-	s.mockRoles.
-		EXPECT().
-		ResolveRoles(s.requestContext, gomock.Any()).
-		Times(1).
-		Return([]*permissions.ResolvedRole{resolvedRole1, resolvedRole2}, nil)
+		Return(expectedResolvedRole2, nil)
 
 	// Call the mapper for a user.
 	userDescriptor := &permissions.UserDescriptor{
@@ -210,7 +182,7 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.Require().NoError(err, "mapping should have succeeded")
 
-	s.ElementsMatch([]*permissions.ResolvedRole{resolvedRole1, resolvedRole2}, roles, "expected both roles to be present")
+	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole1, expectedResolvedRole2}, roles, "expected both roles to be present")
 }
 
 func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
@@ -246,26 +218,14 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 		Return([]*storage.Group{expectedGroup}, nil)
 
 	// Expect the role to be fetched.
-	expectedRole := &storage.Role{
-		Name:         "TeamAwesome",
-		GlobalAccess: storage.Access_READ_ACCESS,
-	}
-	resolvedRole := &permissions.ResolvedRole{
-		Role: expectedRole,
-		PermissionSet: &storage.PermissionSet{
-			ResourceToAccess: expectedRole.GetResourceToAccess(),
-		},
-	}
+	expectedResolvedRole := roletest.NewResolvedRoleWithGlobalScope(
+		"TeamAwesome",
+		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
 	s.mockRoles.
 		EXPECT().
-		GetRole(s.requestContext, "TeamAwesome").
+		GetAndResolveRole(s.requestContext, "TeamAwesome").
 		Times(1).
-		Return(expectedRole, nil)
-	s.mockRoles.
-		EXPECT().
-		ResolveRoles(s.requestContext, []*storage.Role{expectedRole}).
-		Times(1).
-		Return([]*permissions.ResolvedRole{resolvedRole}, nil)
+		Return(expectedResolvedRole, nil)
 
 	// Call the mapper for a user.
 	userDescriptor := &permissions.UserDescriptor{
@@ -276,7 +236,7 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 	}
 	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
-	s.ElementsMatch([]*permissions.ResolvedRole{resolvedRole}, roles, "since a single role was mapped, that role should be returned")
+	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole}, roles, "since a single role was mapped, that role should be returned")
 }
 
 func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
@@ -349,7 +309,7 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 	// Expect the role to be fetched.
 	s.mockRoles.
 		EXPECT().
-		GetRole(s.requestContext, "TeamAwesome").
+		GetAndResolveRole(s.requestContext, "TeamAwesome").
 		Times(1).
 		Return(nil, errors.New("error should be returned"))
 

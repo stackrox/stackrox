@@ -106,7 +106,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storag
 		return nil, err
 	}
 	if role == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role %s not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role %q not found", id.GetId())
 	}
 	return role, nil
 }
@@ -142,7 +142,7 @@ func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.
 	if err != nil {
 		return nil, err
 	} else if role == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role '%s' not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role %q not found", id.GetId())
 	}
 
 	err = s.roleDataStore.RemoveRole(ctx, id.GetId())
@@ -186,10 +186,10 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 	}
 	permissionSet, found, err := s.roleDataStore.GetPermissionSet(ctx, id.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve permission set %q", id.GetId())
+		return nil, errors.Wrapf(err, "failed to retrieve permission set %s", id.GetId())
 	}
 	if !found {
-		return nil, status.Errorf(codes.NotFound, "failed to retrieve permission set %q: not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve permission set %s: not found", id.GetId())
 	}
 
 	return permissionSet, nil
@@ -217,7 +217,7 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 		return nil, status.Error(codes.Unimplemented, "feature not enabled")
 	}
 	if permissionSet.GetId() != "" {
-		return nil, status.Error(codes.InvalidArgument, "setting id field is not allowed")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "setting id field is not allowed")
 	}
 	permissionSet.Id = utils.GeneratePermissionSetID()
 
@@ -239,7 +239,7 @@ func (s *serviceImpl) PutPermissionSet(ctx context.Context, permissionSet *stora
 	}
 	err := s.roleDataStore.UpdatePermissionSet(ctx, permissionSet)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update permission set %q", permissionSet.GetId())
+		return nil, errors.Wrapf(err, "failed to update permission set %s", permissionSet.GetId())
 	}
 
 	return &v1.Empty{}, nil
@@ -251,7 +251,7 @@ func (s *serviceImpl) DeletePermissionSet(ctx context.Context, id *v1.ResourceBy
 	}
 	err := s.roleDataStore.RemovePermissionSet(ctx, id.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to delete permission set %q", id.GetId())
+		return nil, errors.Wrapf(err, "failed to delete permission set %s", id.GetId())
 	}
 
 	return &v1.Empty{}, nil
@@ -268,10 +268,10 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 
 	scope, found, err := s.roleDataStore.GetAccessScope(ctx, id.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve access scope %q", id.GetId())
+		return nil, errors.Wrapf(err, "failed to retrieve access scope %s", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve access scope %q: not found", id.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve access scope %s: not found", id.GetId())
 	}
 
 	return scope, nil
@@ -323,7 +323,7 @@ func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.S
 
 	err := s.roleDataStore.UpdateAccessScope(ctx, scope)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update access scope %q", scope.GetId())
+		return nil, errors.Wrapf(err, "failed to update access scope %s", scope.GetId())
 	}
 
 	return &v1.Empty{}, nil
@@ -336,7 +336,7 @@ func (s *serviceImpl) DeleteSimpleAccessScope(ctx context.Context, id *v1.Resour
 
 	err := s.roleDataStore.RemoveAccessScope(ctx, id.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to delete access scope %q", id.GetId())
+		return nil, errors.Wrapf(err, "failed to delete access scope %s", id.GetId())
 	}
 
 	return &v1.Empty{}, nil

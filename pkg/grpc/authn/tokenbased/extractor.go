@@ -6,19 +6,14 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // NewExtractor returns a new token-based identity extractor.
@@ -93,23 +88,16 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 func (e *extractor) withPermissions(token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
 	attributes := map[string][]string{"name": {token.Name}}
 
-	pseudoRole := permissions.NewRoleWithPermissions("", token.Permissions...)
+	pseudoRole := &resolvedPseudoRoleImpl{permissionsUtils.FromProtos(token.Permissions...)}
 	id := &roleBasedIdentity{
-		uid:          fmt.Sprintf("auth-token:%s", token.ID),
-		username:     token.ExternalUser.Email,
-		friendlyName: token.Subject,
-		fullName:     token.ExternalUser.FullName,
-		resolvedRoles: []*permissions.ResolvedRole{
-			{
-				Role: pseudoRole,
-				PermissionSet: &storage.PermissionSet{
-					ResourceToAccess: pseudoRole.GetResourceToAccess(),
-				},
-			},
-		},
-		expiry:       token.Expiry(),
-		authProvider: authProvider,
-		attributes:   attributes,
+		uid:           fmt.Sprintf("auth-token:%s", token.ID),
+		username:      token.ExternalUser.Email,
+		friendlyName:  token.Subject,
+		fullName:      token.ExternalUser.FullName,
+		resolvedRoles: []permissions.ResolvedRole{pseudoRole},
+		expiry:        token.Expiry(),
+		attributes:    attributes,
+		authProvider:  authProvider,
 	}
 	if id.friendlyName == "" {
 		id.friendlyName = fmt.Sprintf("anonymous bearer token (expires %v)", token.Expiry())
@@ -118,11 +106,11 @@ func (e *extractor) withPermissions(token *tokens.TokenInfo, authProvider authpr
 }
 
 func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, roleNames []string, authProvider authproviders.Provider) (authn.Identity, error) {
-	roles, _, err := permissions.GetRolesFromStore(ctx, e.roleStore, roleNames)
+	resolvedRoles, _, err := permissions.GetResolvedRolesFromStore(ctx, e.roleStore, roleNames)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read roles")
 	}
-	if len(roles) == 0 {
+	if len(resolvedRoles) == 0 {
 		return nil, utils.Should(errors.New("none of the roles referenced by the token were found"))
 	}
 
@@ -131,17 +119,13 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 		email = token.ExternalUser.Email
 	}
 
-	attributes := map[string][]string{"role": permissions.RoleNames(roles), "name": {token.Name}}
-	resolveRoles, err := e.roleStore.ResolveRoles(ctx, roles)
-	if err != nil {
-		return nil, err
-	}
+	attributes := map[string][]string{"role": permissionsUtils.RoleNames(resolvedRoles), "name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("auth-token:%s", token.ID),
 		username:      email,
 		friendlyName:  token.Subject,
 		fullName:      token.Name,
-		resolvedRoles: resolveRoles,
+		resolvedRoles: resolvedRoles,
 		expiry:        token.Expiry(),
 		attributes:    attributes,
 		authProvider:  authProvider,
@@ -181,7 +165,7 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	return id, nil
 }
 
-func createRoleBasedIdentity(roles []*permissions.ResolvedRole, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
+func createRoleBasedIdentity(roles []permissions.ResolvedRole, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
 		username:      token.ExternalUser.Email,

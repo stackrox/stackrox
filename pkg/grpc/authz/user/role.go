@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
@@ -25,16 +25,16 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 		return authz.ErrNoCredentials
 	}
 
-	return p.checkRole(id.Roles())
+	return p.checkRole(utils.RoleNames(id.Roles()))
 }
 
-func (p *roleChecker) checkRole(roles []*storage.Role) error {
-	if len(roles) == 0 {
+func (p *roleChecker) checkRole(roleNames []string) error {
+	if len(roleNames) == 0 {
 		return authz.ErrNoCredentials
 	}
 
-	for _, role := range roles {
-		if role.GetName() == p.roleName {
+	for _, roleName := range roleNames {
+		if roleName == p.roleName {
 			return nil
 		}
 	}

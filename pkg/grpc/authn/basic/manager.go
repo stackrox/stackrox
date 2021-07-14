@@ -32,17 +32,20 @@ func (m *Manager) IdentityForCreds(ctx context.Context, username, password strin
 		return nil, errors.New("invalid username and/or password")
 	}
 
-	resolved, err := m.mapper.FromUserDescriptor(ctx, &permissions.UserDescriptor{
+	resolvedRoles, err := m.mapper.FromUserDescriptor(ctx, &permissions.UserDescriptor{
 		UserID:     username,
 		Attributes: map[string][]string{},
 	})
 	if err != nil {
-		panic(errors.Wrap(err, "Wrong mapper: always_admin_mapper should not return error"))
+		return nil, errors.Wrapf(err, "unable to load roles for user %q", username)
+	}
+	if len(resolvedRoles) == 0 {
+		return nil, errors.Wrapf(err, "user %q has no assigned roles", username)
 	}
 	return identity{
-		username:     username,
-		resolvedRole: resolved[0],
-		authProvider: authProvider,
+		username:      username,
+		resolvedRoles: resolvedRoles,
+		authProvider:  authProvider,
 	}, nil
 }
 

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -311,10 +312,8 @@ func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID 
 	identity.EXPECT().FullName().AnyTimes().Return(userID)
 	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
 	identity.EXPECT().User().AnyTimes().Return(nil)
-
-	role := permissions.NewRoleWithAccess("roleNameNotUsed", resourceWithAccess...)
 	identity.EXPECT().Permissions().AnyTimes().Return(&storage.ResourceToAccess{
-		ResourceToAccess: role.GetResourceToAccess(),
+		ResourceToAccess: utils.FromResourcesWithAccess(resourceWithAccess...),
 	})
 
 	return authn.ContextWithIdentity(ctx, identity, s.T())

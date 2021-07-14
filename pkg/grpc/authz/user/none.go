@@ -25,7 +25,7 @@ func (p *anyRoleChecker) Authorized(ctx context.Context, _ string) error {
 		return authz.ErrNoCredentials
 	}
 	for _, r := range id.Roles() {
-		if r.Name != NoneRole {
+		if r.GetRoleName() != NoneRole {
 			return nil
 		}
 	}

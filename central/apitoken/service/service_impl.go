@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -86,15 +87,15 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		req.Role = ""
 	}
 
-	roles, missingIndices, err := permissions.GetRolesFromStore(ctx, s.roles, req.GetRoles())
+	roles, missingIndices, err := permissions.GetResolvedRolesFromStore(ctx, s.roles, req.GetRoles())
 	if err != nil {
-		return nil, errors.Errorf("unable to fetch roles: %v", err)
+		return nil, errors.Wrap(err, "unable to fetch roles")
 	}
 	if len(missingIndices) > 0 {
 		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "role(s) %s don't exist", strings.Join(sliceutils.StringSelect(req.GetRoles(), missingIndices...), ","))
 	}
 
-	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), roles)
+	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), utils.RoleNames(roles))
 	if err != nil {
 		return nil, err
 	}

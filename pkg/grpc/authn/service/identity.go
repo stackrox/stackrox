@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 )
@@ -36,7 +37,7 @@ func (i identity) Permissions() *storage.ResourceToAccess {
 	return nil
 }
 
-func (i identity) Roles() []*storage.Role {
+func (i identity) Roles() []permissions.ResolvedRole {
 	return nil // services do not have roles
 }
 

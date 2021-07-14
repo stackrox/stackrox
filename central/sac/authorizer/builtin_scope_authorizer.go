@@ -98,8 +98,8 @@ SCOPE:
 	return allowed, denied, nil
 }
 
-func (a *builtInScopeAuthorizer) resolveRoles(ctx context.Context, roleNames ...string) (map[string]*permissions.ResolvedRole, error) {
-	roles := make(map[string]*permissions.ResolvedRole, len(roleNames))
+func (a *builtInScopeAuthorizer) resolveRoles(ctx context.Context, roleNames ...string) (map[string]permissions.ResolvedRole, error) {
+	roles := make(map[string]permissions.ResolvedRole, len(roleNames))
 	for _, roleName := range roleNames {
 		if _, ok := roles[roleName]; ok {
 			continue
@@ -138,21 +138,21 @@ func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.S
 	return eas, nil
 }
 
-func roleHasPermissions(r *permissions.ResolvedRole, cache *authorizerDataCache, scope payload.AccessScope) (bool, error) {
-	if !permissionsSetAllows(r.PermissionSet, scope) {
+func roleHasPermissions(r permissions.ResolvedRole, cache *authorizerDataCache, scope payload.AccessScope) (bool, error) {
+	if !permissionsSetAllows(r.GetPermissions(), scope) {
 		return false, nil
 	}
 
-	effectiveAccessScope, err := cache.getEffectiveAccessScope(r.AccessScope)
+	effectiveAccessScope, err := cache.getEffectiveAccessScope(r.GetAccessScope())
 	if err != nil {
-		return false, errors.Wrapf(err, "could not get effective access scope with id %q for role %q", r.AccessScope.GetId(), r.Role.GetName())
+		return false, errors.Wrapf(err, "could not get effective access scope for role %q", r.GetRoleName())
 	}
 
 	return effectiveAccessScopeAllows(effectiveAccessScope, scope), nil
 
 }
 
-func permissionsSetAllows(rolePermissionSet *storage.PermissionSet, scope payload.AccessScope) bool {
+func permissionsSetAllows(rolePermissions map[string]storage.Access, scope payload.AccessScope) bool {
 	queriedAccessScope := storage.Access_NO_ACCESS
 	switch scope.Verb {
 	case view:
@@ -162,12 +162,12 @@ func permissionsSetAllows(rolePermissionSet *storage.PermissionSet, scope payloa
 	}
 
 	if scope.Noun != "" {
-		return rolePermissionSet.ResourceToAccess[scope.Noun] >= queriedAccessScope
+		return rolePermissions[scope.Noun] >= queriedAccessScope
 	}
 
 	// If there is no noun let's assume query applies for all resources
 	for _, rwa := range resources.ListAll() {
-		if rolePermissionSet.ResourceToAccess[string(rwa)] < queriedAccessScope {
+		if rolePermissions[string(rwa)] < queriedAccessScope {
 			return false
 		}
 	}

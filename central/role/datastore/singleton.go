@@ -11,6 +11,7 @@ import (
 	roleUtils "github.com/stackrox/rox/central/role/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -30,8 +31,9 @@ func Singleton() DataStore {
 		accessScopeStorage, err := simpleAccessScopeStore.New(globaldb.GetRocksDB())
 		utils.CrashOnError(err)
 
-		sacV2Enabled := features.ScopedAccessControl.Enabled()
-		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, sacV2Enabled)
+		// Which role format is used is determined solely by the feature flag.
+		useRolesWithPermissionSets := features.ScopedAccessControl.Enabled()
+		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, useRolesWithPermissionSets)
 
 		// All operations are upserts, the syntactic difference is due to the
 		// distinct underlying stores, boltdb vs rocksdb.
@@ -97,19 +99,24 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 	permissionSets := make([]*storage.PermissionSet, 0, len(defaultRoles))
 
 	for roleName, attributes := range defaultRoles {
-		role := permissions.NewRoleWithAccess(roleName, attributes.resourceWithAccess...)
-		role.Description = attributes.description
+		resourceToAccess := permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...)
+
+		role := &storage.Role{
+			Name:        roleName,
+			Description: attributes.description,
+		}
 
 		if features.ScopedAccessControl.Enabled() {
 			permissionSet := &storage.PermissionSet{
 				Id:               roleUtils.EnsureValidPermissionSetID(attributes.idSuffix),
 				Name:             role.Name,
 				Description:      role.Description,
-				ResourceToAccess: role.ResourceToAccess,
+				ResourceToAccess: resourceToAccess,
 			}
-			role.ResourceToAccess = nil
 			role.PermissionSetId = permissionSet.Id
 			permissionSets = append(permissionSets, permissionSet)
+		} else {
+			role.ResourceToAccess = resourceToAccess
 		}
 
 		roles = append(roles, role)

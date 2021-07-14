@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -53,12 +54,12 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 	}, nil
 }
 
-func getUserInfo(externalUserClaim *tokens.ExternalUserClaim, resolvedRoles []*permissions.ResolvedRole) *storage.UserInfo {
+func getUserInfo(externalUserClaim *tokens.ExternalUserClaim, resolvedRoles []permissions.ResolvedRole) *storage.UserInfo {
 	userInfo := &storage.UserInfo{
 		Username:     externalUserClaim.UserID,
 		FriendlyName: externalUserClaim.FullName,
-		Permissions:  permissions.NewUnionPermissions(resolvedRoles),
-		Roles:        permissions.ExtractRoles(resolvedRoles),
+		Permissions:  utils.NewUnionPermissions(resolvedRoles),
+		Roles:        utils.ExtractRolesForUserInfo(resolvedRoles),
 	}
 	return userInfo
 }

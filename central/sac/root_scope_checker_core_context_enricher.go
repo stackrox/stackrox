@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sac/authorizer"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -145,12 +146,10 @@ func idToPrincipal(id authn.Identity) *payload.Principal {
 		attributes[k] = v
 	}
 
-	roleNames := make([]string, 0, len(id.Roles()))
-	for _, role := range id.Roles() {
-		roleNames = append(roleNames, role.GetName())
-	}
-
-	return &payload.Principal{AuthProvider: authProvider, Attributes: attributes, Roles: roleNames}
+	// TODO(ROX-7392): Consider including complete resolved roles instead of
+	//   just role names to avoid another subsequent (and likely with a
+	//   different outcome) role resolution later on.
+	return &payload.Principal{AuthProvider: authProvider, Attributes: attributes, Roles: utils.RoleNames(id.Roles())}
 }
 
 func newConfiguredCache() expiringcache.Cache {

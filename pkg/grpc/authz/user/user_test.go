@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -155,7 +156,7 @@ func TestEvaluateAgainstPermissions(t *testing.T) {
 	}
 
 	perms := &storage.ResourceToAccess{
-		ResourceToAccess: permissions.ResourcesWithAccessToResourceToAccess(
+		ResourceToAccess: utils.FromResourcesWithAccess(
 			permissions.Modify(writeAccessibleResource),
 			permissions.View(readAccessibleResource)),
 	}
