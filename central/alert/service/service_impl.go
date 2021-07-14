@@ -272,7 +272,7 @@ func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRe
 
 func (s *serviceImpl) checkAlertSAC(ctx context.Context, alert *storage.Alert, c chan error, waitGroup *sync.WaitGroup) {
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		c <- fmt.Errorf("sac permission denied for alert id %q", alert.GetId())
+		c <- errors.Wrapf(sac.ErrResourceAccessDenied, "alert id %q", alert.GetId())
 	}
 	waitGroup.Done()
 }

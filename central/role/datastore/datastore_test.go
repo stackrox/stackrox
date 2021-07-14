@@ -141,31 +141,31 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 	s.Empty(roles)
 
 	err = s.dataStore.AddRole(s.hasNoneCtx, goodRole)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Add*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Add*() yields a permission error")
 
 	err = s.dataStore.AddRole(s.hasReadCtx, goodRole)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Add*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Add*() yields a permission error")
 
 	err = s.dataStore.AddRole(s.hasReadCtx, badRole)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error for invalid Role")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error for invalid Role")
 
 	err = s.dataStore.UpdateRole(s.hasNoneCtx, s.existingRole)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Update*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Update*() yields a permission error")
 
 	err = s.dataStore.UpdateRole(s.hasReadCtx, s.existingRole)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Update*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Update*() yields a permission error")
 
 	err = s.dataStore.UpdateRole(s.hasReadCtx, goodRole)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 
 	err = s.dataStore.RemoveRole(s.hasNoneCtx, s.existingRole.GetName())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Remove*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Remove*() yields a permission error")
 
 	err = s.dataStore.RemoveRole(s.hasReadCtx, s.existingRole.GetName())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Remove*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Remove*() yields a permission error")
 
 	err = s.dataStore.RemoveRole(s.hasReadCtx, goodRole.GetName())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -208,31 +208,31 @@ func (s *roleDataStoreTestSuite) TestPermissionSetPermissions() {
 	s.Empty(permissionSets)
 
 	err = s.dataStore.AddPermissionSet(s.hasNoneCtx, goodPermissionSet)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Add*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Add*() yields a permission error")
 
 	err = s.dataStore.AddPermissionSet(s.hasReadCtx, goodPermissionSet)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Add*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Add*() yields a permission error")
 
 	err = s.dataStore.AddPermissionSet(s.hasReadCtx, badPermissionSet)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error for invalid permissionSet")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error for invalid permissionSet")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasNoneCtx, s.existingPermissionSet)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Update*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Update*() yields a permission error")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasReadCtx, s.existingPermissionSet)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Update*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Update*() yields a permission error")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasReadCtx, goodPermissionSet)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 
 	err = s.dataStore.RemovePermissionSet(s.hasNoneCtx, s.existingPermissionSet.GetId())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Remove*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Remove*() yields a permission error")
 
 	err = s.dataStore.RemovePermissionSet(s.hasReadCtx, s.existingPermissionSet.GetId())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Remove*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Remove*() yields a permission error")
 
 	err = s.dataStore.RemovePermissionSet(s.hasReadCtx, goodPermissionSet.GetId())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 }
 
 func (s *roleDataStoreTestSuite) TestPermissionSetReadOperations() {
@@ -343,31 +343,31 @@ func (s *roleDataStoreTestSuite) TestAccessScopePermissions() {
 	s.Empty(scopes)
 
 	err = s.dataStore.AddAccessScope(s.hasNoneCtx, goodScope)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Add*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Add*() yields a permission error")
 
 	err = s.dataStore.AddAccessScope(s.hasReadCtx, goodScope)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Add*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Add*() yields a permission error")
 
 	err = s.dataStore.AddAccessScope(s.hasReadCtx, badScope)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error for invalid scope")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error for invalid scope")
 
 	err = s.dataStore.UpdateAccessScope(s.hasNoneCtx, s.existingScope)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Update*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Update*() yields a permission error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasReadCtx, s.existingScope)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Update*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Update*() yields a permission error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasReadCtx, goodScope)
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 
 	err = s.dataStore.RemoveAccessScope(s.hasNoneCtx, s.existingScope.GetId())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "no access for Remove*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "no access for Remove*() yields a permission error")
 
 	err = s.dataStore.RemoveAccessScope(s.hasReadCtx, s.existingScope.GetId())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "READ access for Remove*() yields a permission error")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "READ access for Remove*() yields a permission error")
 
 	err = s.dataStore.RemoveAccessScope(s.hasReadCtx, goodScope.GetId())
-	s.ErrorIs(err, sac.ErrPermissionDenied, "still a permission error if the object does not exist")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 }
 
 func (s *roleDataStoreTestSuite) TestAccessScopeReadOperations() {

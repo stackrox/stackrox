@@ -59,7 +59,7 @@ func (d *datastoreImpl) GetNetworkGraphConfig(ctx context.Context) (*storage.Net
 	if ok, err := graphConfigSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	config, found, err := d.store.Get(networkGraphConfigKey)
@@ -76,7 +76,7 @@ func (d *datastoreImpl) UpdateNetworkGraphConfig(ctx context.Context, config *st
 	if ok, err := graphConfigSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return d.store.UpsertWithID(networkGraphConfigKey, config)

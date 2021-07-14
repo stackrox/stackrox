@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -26,7 +25,7 @@ func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetada
 	if ok, err := apiTokenSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	b.Lock()
@@ -83,7 +82,7 @@ func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error
 	if ok, err := apiTokenSAC.WriteAllowed(ctx); err != nil {
 		return false, err
 	} else if !ok {
-		return false, errors.New("permission denied")
+		return false, sac.ErrResourceAccessDenied
 	}
 
 	b.Lock()

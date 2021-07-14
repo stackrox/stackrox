@@ -146,7 +146,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := b.store.Upsert(namespace); err != nil {
@@ -163,7 +163,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := b.store.Upsert(namespace); err != nil {
@@ -177,7 +177,7 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := b.store.Delete(id); err != nil {

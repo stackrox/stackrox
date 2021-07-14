@@ -74,7 +74,7 @@ func (ds *datastoreImpl) AddNetworkPolicy(ctx context.Context, np *storage.Netwo
 	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.AddNetworkPolicy(np)
@@ -84,7 +84,7 @@ func (ds *datastoreImpl) UpdateNetworkPolicy(ctx context.Context, np *storage.Ne
 	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.UpdateNetworkPolicy(np)
@@ -99,7 +99,7 @@ func (ds *datastoreImpl) RemoveNetworkPolicy(ctx context.Context, id string) err
 	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.RemoveNetworkPolicy(id)
@@ -125,7 +125,7 @@ func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, clusterID string,
 	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS, sac.ClusterScopeKey(clusterID)).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.undoStorage.UpsertUndoRecord(clusterID, undoRecord)
@@ -150,7 +150,7 @@ func (ds *datastoreImpl) UpsertUndoDeploymentRecord(ctx context.Context, undoRec
 	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(undoRecord).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.undoDeploymentStorage.Upsert(undoRecord)

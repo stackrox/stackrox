@@ -195,7 +195,7 @@ func (m *manager) GetExistingProbeFiles(ctx context.Context, files []string) ([]
 	if ok, err := probeUploadSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	var result []*v1.ProbeUploadManifest_File
@@ -215,7 +215,7 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 	if ok, err := probeUploadSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if !probeupload.IsValidFilePath(file) {

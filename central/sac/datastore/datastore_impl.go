@@ -81,7 +81,7 @@ func (ds *datastoreImpl) ListAuthzPluginConfigs(ctx context.Context) ([]*storage
 	if ok, err := authPluginSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	ds.mutex.Lock()
@@ -94,7 +94,7 @@ func (ds *datastoreImpl) GetAuthzPluginConfig(ctx context.Context, id string) (*
 	if ok, err := authPluginSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	ds.mutex.Lock()
@@ -107,7 +107,7 @@ func (ds *datastoreImpl) UpsertAuthzPluginConfig(ctx context.Context, config *st
 	if ok, err := authPluginSAC.WriteAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	ds.mutex.Lock()
@@ -160,7 +160,7 @@ func (ds *datastoreImpl) DeleteAuthzPluginConfig(ctx context.Context, id string)
 	if ok, err := authPluginSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := checkCanSetEnabledAuthzPlugin(ctx); err != nil {

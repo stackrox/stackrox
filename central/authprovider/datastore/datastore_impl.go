@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/central/authprovider/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -29,7 +28,7 @@ func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *stora
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return b.storage.AddAuthProvider(authProvider)
@@ -40,7 +39,7 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return b.storage.UpdateAuthProvider(authProvider)
@@ -51,7 +50,7 @@ func (b *datastoreImpl) RemoveAuthProvider(ctx context.Context, id string) error
 	if ok, err := authProviderSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return b.storage.RemoveAuthProvider(id)

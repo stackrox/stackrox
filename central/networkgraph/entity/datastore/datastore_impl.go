@@ -199,7 +199,7 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 	if ok, err := ds.writeAllowed(ctx, entity.GetInfo().GetId()); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := ds.create(ctx, entity); err != nil {
@@ -302,7 +302,7 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 	if ok, err := ds.writeAllowed(ctx, entity.GetInfo().GetId()); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.netEntityLock.Lock()
@@ -330,7 +330,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 	if ok, err := ds.writeAllowed(ctx, id); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.netEntityLock.Lock()
@@ -371,7 +371,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	if ok, err := networkGraphSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.netEntityLock.Lock()

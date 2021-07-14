@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
+	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/rules/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,7 +51,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(rule *storage.Complian
 	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("read access denied for compliance operator rules")
+		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules read")
 	}
 	return d.store.Walk(fn)
 }
@@ -69,7 +69,7 @@ func (d *datastoreImpl) Upsert(ctx context.Context, rule *storage.ComplianceOper
 	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("write access denied for compliance operator rules")
+		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules write")
 	}
 	d.ruleLock.Lock()
 	defer d.ruleLock.Unlock()
@@ -85,7 +85,7 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("write access denied for compliance operator rules")
+		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules write")
 	}
 
 	d.ruleLock.Lock()
@@ -107,7 +107,7 @@ func (d *datastoreImpl) GetRulesByName(ctx context.Context, name string) ([]*sto
 	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("read access denied for compliance operator rules")
+		return nil, errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules read")
 	}
 	d.ruleLock.RLock()
 	defer d.ruleLock.RUnlock()
@@ -122,7 +122,7 @@ func (d *datastoreImpl) ExistsByName(ctx context.Context, name string) (bool, er
 	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
 		return false, err
 	} else if !ok {
-		return false, errors.New("read access denied for compliance operator rules")
+		return false, errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules read")
 	}
 	d.ruleLock.RLock()
 	defer d.ruleLock.RUnlock()

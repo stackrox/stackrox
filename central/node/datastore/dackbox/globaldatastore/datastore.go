@@ -93,7 +93,7 @@ func (s *globalDataStore) GetClusterNodeStore(ctx context.Context, clusterID str
 	if ok, err := nodesSAC.AccessAllowed(ctx, accessMode, sac.ClusterScopeKey(clusterID)); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 	return newDatastoreShim(clusterID, s.datastore), nil
 }
@@ -107,7 +107,7 @@ func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterID
 	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDs...).ProtoQuery()

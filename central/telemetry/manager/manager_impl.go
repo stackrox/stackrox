@@ -117,7 +117,7 @@ func (m *manager) UpdateTelemetryConfig(ctx context.Context, config *v1.Configur
 	if ok, err := telemetrySAC.WriteAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	retC := make(chan *updateResult, 1)
@@ -148,7 +148,7 @@ func (m *manager) GetTelemetryConfig(ctx context.Context) (*storage.TelemetryCon
 	if ok, err := telemetrySAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	return m.getActiveConfig(), nil

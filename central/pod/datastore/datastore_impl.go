@@ -175,7 +175,7 @@ func (ds *datastoreImpl) GetPods(ctx context.Context, ids []string) ([]*storage.
 	if ok, err := podsSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, sac.ErrPermissionDenied
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	pods, _, err := ds.podStore.GetMany(ids)
@@ -192,7 +192,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.processFilter.UpdateByPod(pod)
@@ -276,7 +276,7 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	pod, found, err := ds.podStore.Get(id)
@@ -316,7 +316,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pod *storage.Pod) 
 	if ok, err := podsSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.podStore.Walk(fn)

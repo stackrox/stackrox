@@ -21,7 +21,7 @@ func (d *dataStore) UnwatchImage(ctx context.Context, name string) error {
 	if ok, err := watchedImageSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 	return d.storage.Delete(name)
 }
@@ -37,7 +37,7 @@ func (d *dataStore) UpsertWatchedImage(ctx context.Context, name string) error {
 	if ok, err := watchedImageSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 	return d.storage.Upsert(&storage.WatchedImage{Name: name})
 }

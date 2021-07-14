@@ -57,7 +57,7 @@ func (ds *dataStoreImpl) UpsertNetworkBaselines(ctx context.Context, baselines [
 		if ok, err := ds.writeAllowed(ctx, baseline); err != nil {
 			return err
 		} else if !ok {
-			return sac.ErrPermissionDenied
+			return sac.ErrResourceAccessDenied
 		}
 		allowedScopes[pair] = struct{}{}
 	}
@@ -69,7 +69,7 @@ func (ds *dataStoreImpl) UpdateNetworkBaseline(ctx context.Context, baseline *st
 	if ok, err := ds.writeAllowed(ctx, baseline); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	found, err := ds.validateClusterAndNamespaceAgainstExistingBaseline(baseline)
@@ -123,7 +123,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentI
 		if ok, err := ds.writeAllowed(ctx, baseline); err != nil {
 			return err
 		} else if !ok {
-			return sac.ErrPermissionDenied
+			return sac.ErrResourceAccessDenied
 		}
 	}
 

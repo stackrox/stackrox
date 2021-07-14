@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -47,7 +48,7 @@ func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, s
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err
 	} else if !ok {
-		return types.ResultsWithStatus{}, errors.New("not found")
+		return types.ResultsWithStatus{}, errorhelpers.ErrNotFound
 	}
 
 	res, err := ds.storage.GetSpecificRunResults(clusterID, standardID, runID, flags)
@@ -71,7 +72,7 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err
 	} else if !ok {
-		return types.ResultsWithStatus{}, errors.New("not found")
+		return types.ResultsWithStatus{}, errorhelpers.ErrNotFound
 	}
 
 	res, err := ds.storage.GetLatestRunResults(clusterID, standardID, flags)
@@ -125,7 +126,7 @@ func (ds *datastoreImpl) GetLatestRunMetadataBatch(ctx context.Context, clusterI
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.Wrapf(errors.New("operation not allowed"), "read permission denied for ClusterID: %s ", clusterID)
+		return nil, errors.Wrapf(sac.ErrResourceAccessDenied, "ClusterID %s read", clusterID)
 	}
 	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
 	if err != nil {
@@ -143,7 +144,7 @@ func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context,
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return false, err
 	} else if !ok {
-		return false, errors.Wrapf(errors.New("operation not allowed"), "read permission denied for ClusterID: %s ", clusterID)
+		return false, errors.Wrapf(sac.ErrResourceAccessDenied, "ClusterID %s read", clusterID)
 	}
 	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
 	if err != nil || len(results) == 0 {
@@ -161,7 +162,7 @@ func (ds *datastoreImpl) StoreRunResults(ctx context.Context, results *storage.C
 	if ok, err := complianceSAC.WriteAllowed(ctx, sac.ClusterScopeKey(results.GetDomain().GetCluster().GetId())); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.storedAggregationMutex.Lock()
@@ -183,7 +184,7 @@ func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.Com
 	if ok, err := complianceSAC.WriteAllowed(ctx, sac.ClusterScopeKey(metadata.GetClusterId())); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 	return ds.storage.StoreFailure(metadata)
 }
@@ -192,7 +193,7 @@ func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *stor
 	if ok, err := complianceSAC.WriteAllowed(ctx, sac.ClusterScopeKey(domain.GetCluster().GetId())); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 	return ds.storage.StoreComplianceDomain(domain)
 }
@@ -247,7 +248,7 @@ func (ds *datastoreImpl) ClearAggregationResults(ctx context.Context) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("write permission needed to clear aggregation results")
+		return sac.ErrResourceAccessDenied
 	}
 	return ds.storage.ClearAggregationResults()
 }

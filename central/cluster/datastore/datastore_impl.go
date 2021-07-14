@@ -290,7 +290,7 @@ func checkWriteSac(ctx context.Context, clusterID string) error {
 	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 	return nil
 }

@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +21,7 @@ func (d *datastoreImpl) UpsertBaselineResults(ctx context.Context, results *stor
 	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(results).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return d.storage.Upsert(results)

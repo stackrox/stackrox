@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/user/datastore/internal/store"
@@ -42,7 +41,7 @@ func (ds *dataStoreImpl) Upsert(ctx context.Context, user *storage.User) error {
 	if ok, err := userSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Upsert(user)

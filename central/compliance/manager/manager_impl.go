@@ -330,7 +330,7 @@ func (m *manager) DeleteSchedule(ctx context.Context, id string) error {
 	if ok, err := complianceRunScheduleSAC.WriteAllowed(ctx, sac.ClusterScopeKey(scheduleProto.GetSchedule().GetClusterId())); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	// No need to interrupt - the next run time can only shift further into the future.
@@ -352,7 +352,7 @@ func (m *manager) AddSchedule(ctx context.Context, spec *storage.ComplianceRunSc
 	if ok, err := complianceRunScheduleSAC.WriteAllowed(ctx, sac.ClusterScopeKey(spec.GetClusterId())); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	if ok, err := m.clusterStore.Exists(ctx, spec.GetClusterId()); !ok || err != nil {
@@ -390,7 +390,7 @@ func (m *manager) UpdateSchedule(ctx context.Context, spec *storage.ComplianceRu
 	if ok, err := complianceRunScheduleSAC.WriteAllowed(ctx, sac.ClusterScopeKey(spec.GetClusterId())); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	if ok, err := m.clusterStore.Exists(ctx, spec.GetClusterId()); !ok || err != nil {
@@ -474,7 +474,7 @@ func (m *manager) GetSchedule(ctx context.Context, id string) (*v1.ComplianceRun
 	if ok, err := complianceRunScheduleSAC.ReadAllowed(ctx, sac.ClusterScopeKey(schedule.Schedule.ClusterId)); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	return schedule, nil
@@ -545,7 +545,7 @@ func (m *manager) GetRecentRun(ctx context.Context, id string) (*v1.ComplianceRu
 	if ok, err := complianceRunSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.ClusterId)); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	return run, nil
@@ -639,7 +639,7 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 	if ok, err := complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(ctx, clusterScopes.get()); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	// If successful, elevate privileges to read all data needed.
@@ -713,7 +713,7 @@ func (m *manager) GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.Comp
 	if ok, err := complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(ctx, clusterScopes.get()); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	return runStatuses, nil

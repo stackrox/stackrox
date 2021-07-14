@@ -42,7 +42,7 @@ func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgrade
 	if ok, err := sacHelper.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := d.store.UpsertSensorUpgradeConfig(sensorUpgradeConfig); err != nil {

@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -63,7 +62,7 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
-		return "", errors.New("permission denied")
+		return "", sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.AddImageIntegration(integration)
@@ -74,7 +73,7 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.UpdateImageIntegration(integration)
@@ -85,7 +84,7 @@ func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) 
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.RemoveImageIntegration(id)

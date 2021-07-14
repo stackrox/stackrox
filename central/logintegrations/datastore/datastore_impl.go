@@ -51,7 +51,7 @@ func (ds *datastoreImpl) CreateLogIntegration(ctx context.Context, integration *
 	if ok, err := logIntegrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	integration.CreatedAt = types.TimestampNow()
@@ -65,7 +65,7 @@ func (ds *datastoreImpl) UpdateLogIntegration(ctx context.Context, integration *
 	if ok, err := logIntegrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := validateLogIntegration(integration); err != nil {
@@ -78,7 +78,7 @@ func (ds *datastoreImpl) DeleteLogIntegration(ctx context.Context, id string) er
 	if ok, err := logIntegrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Delete(id)

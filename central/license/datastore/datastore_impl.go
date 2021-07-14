@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/license/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,7 +31,7 @@ func (ds *dataStoreImpl) UpsertLicenseKeys(ctx context.Context, keys []*storage.
 	if ok, err := licenseSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.UpsertLicenseKeys(keys)
@@ -42,7 +41,7 @@ func (ds *dataStoreImpl) DeleteLicenseKey(ctx context.Context, licenseID string)
 	if ok, err := licenseSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.DeleteLicenseKey(licenseID)

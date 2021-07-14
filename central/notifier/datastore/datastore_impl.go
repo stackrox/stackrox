@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/central/notifier/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -43,7 +42,7 @@ func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notif
 	if ok, err := notifierSAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
-		return "", errors.New("permission denied")
+		return "", sac.ErrResourceAccessDenied
 	}
 
 	return b.storage.AddNotifier(notifier)
@@ -53,7 +52,7 @@ func (b *datastoreImpl) UpdateNotifier(ctx context.Context, notifier *storage.No
 	if ok, err := notifierSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return b.storage.UpdateNotifier(notifier)
@@ -63,7 +62,7 @@ func (b *datastoreImpl) RemoveNotifier(ctx context.Context, id string) error {
 	if ok, err := notifierSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return b.storage.RemoveNotifier(id)

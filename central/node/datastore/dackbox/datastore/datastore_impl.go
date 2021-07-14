@@ -175,7 +175,7 @@ func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) err
 	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.keyedMutex.Lock(node.GetId())
@@ -198,7 +198,7 @@ func (ds *datastoreImpl) DeleteNodes(ctx context.Context, ids ...string) error {
 	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting nodes")

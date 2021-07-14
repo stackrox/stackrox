@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceidentities/internal/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,7 +31,7 @@ func (ds *dataStoreImpl) AddServiceIdentity(ctx context.Context, identity *stora
 	if ok, err := serviceIdentitiesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.AddServiceIdentity(identity)

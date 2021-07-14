@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
+	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/profiles/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,7 +34,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(result *storage.Compli
 	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("read access denied for compliance operator profiles")
+		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles read")
 	}
 	return d.store.Walk(fn)
 }
@@ -43,7 +43,7 @@ func (d *datastoreImpl) Upsert(ctx context.Context, result *storage.ComplianceOp
 	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("write access denied for compliance operator profiles")
+		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles write")
 	}
 	return d.store.Upsert(result)
 }
@@ -52,7 +52,7 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("write access denied for compliance operator profiles")
+		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles write")
 	}
 	return d.store.Delete(id)
 }

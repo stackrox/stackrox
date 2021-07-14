@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -62,7 +61,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, group *storage.Group) error {
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Add(group)
@@ -72,7 +71,7 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group) error
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Update(group)
@@ -82,7 +81,7 @@ func (ds *dataStoreImpl) Upsert(ctx context.Context, group *storage.Group) error
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Upsert(group)
@@ -92,7 +91,7 @@ func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*stor
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Mutate(remove, update, add)
@@ -102,7 +101,7 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Remove(props)

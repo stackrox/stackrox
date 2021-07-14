@@ -240,7 +240,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
 
 	err := s.dataStore.UpsertAlert(s.hasReadCtx, alerttest.NewFakeAlert())
 
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
@@ -251,7 +251,7 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Times(0)
 
 	err := s.dataStore.MarkAlertStale(s.hasReadCtx, alerttest.FakeAlertID)
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
 }
@@ -292,7 +292,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertCommentEnforced() {
 	s.commentsStorage.EXPECT().AddAlertComment(alerttest.NewFakeAlertComment())
 
 	_, err := s.dataStore.AddAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestUpdateCommentAllowed() {
@@ -352,7 +352,7 @@ func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertCommentEnforced() {
 	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
 
 	err := s.dataStore.UpdateAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
@@ -372,7 +372,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertCommentEnforced() {
 	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
 
 	err := s.dataStore.RemoveAlertComment(s.hasReadCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed() {
@@ -408,7 +408,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsEnforced() {
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 
 	_, err := s.dataStore.AddAlertTags(s.hasReadCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed() {
@@ -440,7 +440,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsEnforced() {
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
 
 	err := s.dataStore.RemoveAlertTags(s.hasReadCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func TestAlertReindexSuite(t *testing.T) {

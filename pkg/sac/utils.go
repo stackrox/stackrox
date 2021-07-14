@@ -1,12 +1,12 @@
 package sac
 
-// VerifyAuthzOK converts no access to ErrPermissionDenied.
+// VerifyAuthzOK converts no access to ErrResourceAccessDenied.
 func VerifyAuthzOK(ok bool, err error) error {
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return ErrPermissionDenied
+		return ErrResourceAccessDenied
 	}
 	return nil
 }

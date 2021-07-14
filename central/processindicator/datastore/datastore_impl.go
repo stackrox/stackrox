@@ -53,7 +53,7 @@ func (ds *datastoreImpl) AddProcessComment(ctx context.Context, processKey *anal
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
-		return "", sac.ErrPermissionDenied
+		return "", sac.ErrResourceAccessDenied
 	}
 	comment.User = analystnotes.UserFromContext(ctx)
 	return ds.commentsStorage.AddProcessComment(processKey, comment)
@@ -71,7 +71,7 @@ func (ds *datastoreImpl) UpdateProcessComment(ctx context.Context, processKey *a
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 	user := analystnotes.UserFromContext(ctx)
 
@@ -109,7 +109,7 @@ func (ds *datastoreImpl) RemoveProcessComment(ctx context.Context, processKey *a
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	existingComment, err := ds.getExistingComment(processKey, commentID)
@@ -153,7 +153,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	err := ds.storage.UpsertMany(indicators)
@@ -179,7 +179,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.Proces
 	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Walk(fn)
@@ -189,7 +189,7 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.removeIndicators(ids)
@@ -219,7 +219,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
 	results, err := ds.Search(ctx, q)
@@ -233,7 +233,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainersByPod(ctx conte
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 
 	mustConjunction := &v1.ConjunctionQuery{

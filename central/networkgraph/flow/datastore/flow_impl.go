@@ -79,7 +79,7 @@ func (fds *flowDataStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	filtered := flows[:0]
@@ -102,7 +102,7 @@ func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id s
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return fds.storage.RemoveFlowsForDeployment(id)
@@ -112,7 +112,7 @@ func (fds *flowDataStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchF
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 	return fds.storage.RemoveMatchingFlows(keyMatchFn, valueMatchFn)
 }

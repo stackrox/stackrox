@@ -212,7 +212,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.keyedMutex.Lock(image.GetId())
@@ -235,7 +235,7 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting images")

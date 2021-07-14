@@ -129,7 +129,7 @@ func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) 
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpsertAlert")
 
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.keyedMutex.Lock(alert.GetId())
@@ -206,7 +206,7 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 	}
 
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 	alert.State = storage.ViolationState_RESOLVED
 	alert.ResolvedAt = types.TimestampNow()
@@ -219,7 +219,7 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	if ok, err := alertSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting alert")
@@ -261,7 +261,7 @@ func (ds *datastoreImpl) AddAlertComment(ctx context.Context, request *storage.C
 		return "", err
 	}
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		return "", errors.New("permission denied")
+		return "", sac.ErrResourceAccessDenied
 	}
 
 	request.User = analystnotes.UserFromContext(ctx)
@@ -275,7 +275,7 @@ func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storag
 		return err
 	}
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	user := analystnotes.UserFromContext(ctx)
@@ -300,7 +300,7 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, alertID, commen
 		return err
 	}
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	existingComment, err := ds.commentsStorage.GetComment(alertID, commentID)
@@ -332,7 +332,7 @@ func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, ta
 		return nil, fmt.Errorf("cannot add tags to alert %q that no longer exists", resourceID)
 	}
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	allTags := sliceutils.StringUnion(alert.GetTags(), tags)
@@ -359,7 +359,7 @@ func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string,
 		return fmt.Errorf("cannot add tags to alert %q that no longer exists", resourceID)
 	}
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	remainingTags := sliceutils.StringDifference(alert.GetTags(), tags)
@@ -488,7 +488,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 	if ok, err := alertSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.Walk(fn)

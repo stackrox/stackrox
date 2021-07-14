@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -42,7 +41,7 @@ func (ds *datastoreImpl) UpsertBackup(ctx context.Context, backup *storage.Exter
 	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.store.UpsertBackup(backup)
@@ -52,7 +51,7 @@ func (ds *datastoreImpl) RemoveBackup(ctx context.Context, id string) error {
 	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.store.RemoveBackup(id)

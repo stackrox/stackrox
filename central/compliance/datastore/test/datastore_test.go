@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -214,7 +215,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceGetLatestRunResults() {
 	_, err := s.dataStore.GetLatestRunResults(s.hasNoneCtx, clusterID, standardID, types.WithMessageStrings)
 
 	// Check results match.
-	s.EqualError(err, "not found")
+	s.ErrorIs(err, errorhelpers.ErrNotFound)
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreRunResults() {
@@ -222,7 +223,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreRunResults() {
 
 	err := s.dataStore.StoreRunResults(s.hasReadCtx, &storage.ComplianceRunResults{})
 
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreFailure() {
@@ -230,7 +231,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreFailure() {
 
 	err := s.dataStore.StoreFailure(s.hasReadCtx, &storage.ComplianceRunMetadata{})
 
-	s.EqualError(err, "permission denied")
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestDoesNotUseStoredAggregationsWithSAC() {

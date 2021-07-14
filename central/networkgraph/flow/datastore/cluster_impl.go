@@ -41,7 +41,7 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	underlying, err := cds.storage.CreateFlowStore(clusterID)

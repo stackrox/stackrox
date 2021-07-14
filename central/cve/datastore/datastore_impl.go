@@ -135,7 +135,7 @@ func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...convert
 	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	// Store the new CVE data.
@@ -148,7 +148,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	expiry, err := getSuppressExpiry(start, duration)
@@ -188,7 +188,7 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	cves, _, err := ds.storage.GetBatch(ids)
@@ -244,7 +244,7 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := ds.storage.Delete(ids...); err != nil {

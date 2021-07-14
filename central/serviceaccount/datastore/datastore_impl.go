@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
@@ -66,7 +65,7 @@ func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *stora
 	if ok, err := serviceAccountsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := d.storage.Upsert(request); err != nil {
@@ -79,7 +78,7 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 	if ok, err := serviceAccountsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := d.storage.Delete(id); err != nil {

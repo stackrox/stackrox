@@ -234,7 +234,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	// Update deployment with latest risk score
@@ -262,7 +262,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 	// Dedupe the removed deployments. This can happen because Pods have many completion states
 	// and we may receive multiple Remove calls
@@ -366,7 +366,7 @@ func checkIndicatorWriteSAC(ctx context.Context) error {
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrPermissionDenied
+		return sac.ErrResourceAccessDenied
 	}
 	return nil
 }

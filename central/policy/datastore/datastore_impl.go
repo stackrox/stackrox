@@ -123,7 +123,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
-		return "", errors.New("permission denied")
+		return "", sac.ErrResourceAccessDenied
 	}
 
 	store.FillSortHelperFields(policy)
@@ -142,7 +142,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	store.FillSortHelperFields(policy)
@@ -160,7 +160,7 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	ds.policyMutex.Lock()
@@ -175,7 +175,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, request *v1.R
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.RenamePolicyCategory(request)
@@ -185,7 +185,7 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, request *v1.D
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.DeletePolicyCategory(request)
@@ -195,7 +195,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
-		return nil, false, sac.ErrPermissionDenied
+		return nil, false, sac.ErrResourceAccessDenied
 	}
 
 	// Remove all cluster scopes and notifiers that can't be applied to this installation

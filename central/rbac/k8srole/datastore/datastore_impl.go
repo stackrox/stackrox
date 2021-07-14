@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
@@ -69,7 +68,7 @@ func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole
 	if ok, err := k8sRolesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := d.storage.Upsert(request); err != nil {
@@ -82,7 +81,7 @@ func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
 	if ok, err := k8sRolesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := d.storage.Delete(id); err != nil {

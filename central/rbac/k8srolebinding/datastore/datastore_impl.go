@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/search"
@@ -69,7 +68,7 @@ func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.
 	if ok, err := k8sRoleBindingsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := d.storage.Upsert(request); err != nil {
@@ -82,7 +81,7 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 	if ok, err := k8sRoleBindingsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if err := d.storage.Delete(id); err != nil {

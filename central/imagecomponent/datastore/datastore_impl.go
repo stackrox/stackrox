@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imagecomponent/index"
 	sacFilters "github.com/stackrox/rox/central/imagecomponent/sac"
 	"github.com/stackrox/rox/central/imagecomponent/search"
@@ -113,7 +112,7 @@ func (ds *datastoreImpl) Upsert(ctx context.Context, imagecomponents ...*storage
 		if ok, err := nodesSac.WriteAllowed(ctx); err != nil {
 			return err
 		} else if !ok {
-			return errors.New("permission denied")
+			return sac.ErrResourceAccessDenied
 		}
 	}
 
@@ -132,7 +131,7 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 		if ok, err := nodesSac.WriteAllowed(ctx); err != nil {
 			return err
 		} else if !ok {
-			return errors.New("permission denied")
+			return sac.ErrResourceAccessDenied
 		}
 	}
 

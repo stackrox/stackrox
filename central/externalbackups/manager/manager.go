@@ -74,7 +74,7 @@ func (m *managerImpl) Upsert(ctx context.Context, backup *storage.ExternalBackup
 	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	backupInterface, err := renderExternalBackupFromProto(backup)
@@ -101,7 +101,7 @@ func (m *managerImpl) Test(ctx context.Context, backup *storage.ExternalBackup) 
 	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	backupInterface, err := renderExternalBackupFromProto(backup)
@@ -126,7 +126,7 @@ func (m *managerImpl) Backup(ctx context.Context, id string) error {
 	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	if m.inProgress.TestAndSet(true) {

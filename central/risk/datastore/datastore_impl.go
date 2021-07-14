@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
@@ -114,7 +113,7 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 	if allowed, err := riskSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !allowed {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	id, err := GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
@@ -134,7 +133,7 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 	if allowed, err := riskSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !allowed {
-		return errors.New("permission denied")
+		return sac.ErrResourceAccessDenied
 	}
 
 	id, err := GetID(subjectID, subjectType)

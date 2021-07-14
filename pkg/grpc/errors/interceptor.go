@@ -45,7 +45,7 @@ func errorTypeToGrpcCode(err error) codes.Code {
 		return codes.FailedPrecondition
 	case errors.Is(err, errorhelpers.ErrInvariantViolation):
 		return codes.Internal
-	case errors.Is(err, sac.ErrPermissionDenied):
+	case errors.Is(err, sac.ErrResourceAccessDenied):
 		return codes.PermissionDenied
 	default:
 		return codes.Internal
