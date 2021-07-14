@@ -6,6 +6,21 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- Clusters now can have labels.
+- Role is now a combination of a permission set and an optional access scope.
+- Risk priority for relevant resources (Cluster, Node, Namespace, Deployment, Image, ImageComponent) is now continuous
+  and is adjusted to scope and query. Individual resource objects display their global risk rank.     
+- API changes/deprecations:
+  - `AuthService(/v1/auth/status)`: `user_info.permissions.name` and `user_info.permissions.global_access` are
+    deprecated, use `user_info.roles` instead.
+  - `CreateRole(POST /v1/roles/{name})`, `UpdateRole(PUT /v1/roles/{name})`: specifying `resource_to_access` is
+    disallowed, `permission_set_id` must be provided instead.
+  - `GetRoles(GET /v1/roles)`, `GetRole(GET /v1/roles/{name})`: `resource_to_access` is never set, use
+    `permission_set_id` instead.
+  - In the GraphQL API, `Role { resourceToAccess: [Label!]! }` is deprecated, use
+    `PermissionSet { resourceToAccess: [Label!]! }` instead.
+  - In the GraphQL API, `Role { globalAccess: Access! }` is deprecated with no replacement intended.
+
 ## [62.0]
 
 - Scanner now supports alpine:edge and alpine:3.14.
