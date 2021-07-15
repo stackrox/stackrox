@@ -4,6 +4,8 @@ package central
 //+kubebuilder:rbac:groups=platform.stackrox.io,resources=centrals/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=platform.stackrox.io,resources=centrals/finalizers,verbs=update
 
-// SecuredCluster RBAC makes access for the entire operator effectively */*/*. Therefore we use it for Central too.
-//TODO(ROX-7373): Review and reduce this access.
+// SecuredCluster RBAC is */*/* (see `../securecluster/rbac.go`), and, since both controllers are packaged in the single
+// operator, it does not make practical sense to configure more narrow RBAC for Central.
+// Therefore, Central RBAC is configured the same as for SecuredCluster.
+// This is not optimal from security point of view; see notes for SecuredCluster how this could be improved.
 //+kubebuilder:rbac:groups=*,resources=*,verbs=*

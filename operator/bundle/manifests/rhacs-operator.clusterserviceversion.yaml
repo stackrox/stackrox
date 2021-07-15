@@ -514,7 +514,7 @@ spec:
     \ For all customization options, please visit the RHACS documentation.\n\n###\
     \ SecuredCluster Custom Resource\n\nSecuredCluster is the configuration template\
     \ for the RHACS Secured Cluster services.\n\n#### Installation Prerequisites\n\
-    \nBefore deploying a SecuredCluster resource, you need to create an cluster init\
+    \nBefore deploying a SecuredCluster resource, you need to create a cluster init\
     \ bundle secret.\n\n- **Through the RHACS UI:** To create a cluster init bundle\
     \ secret through the RHACS UI, navigate to `Platform Configuration > Clusters`,\
     \ and then click `Manage Tokens` in the top-right corner. Select `Cluster Init\
