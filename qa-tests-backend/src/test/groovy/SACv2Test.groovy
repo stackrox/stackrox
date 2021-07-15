@@ -1,3 +1,4 @@
+import static io.stackrox.proto.storage.RoleOuterClass.Access.NO_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.Rules
@@ -5,6 +6,7 @@ import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuil
 import static services.ApiTokenService.generateToken
 
 import services.BaseService
+import services.DeploymentService
 import services.FeatureFlagService
 import services.RoleService
 
@@ -34,14 +36,15 @@ class SACv2Test extends SACTest {
         def noaccessScope = RoleService.createAccessScope(newBuilder()
                 .setName("no-access-scope").build())
         def remoteQaTest1 = createAccessScope("remote", "qa-test1")
+        def remoteQaTest2 = createAccessScope("remote", "qa-test2")
 
         def noaccess = createRole(noaccessScope.id, allResourcesAccess)
 
         tokenToRoles = [
                 (NOACCESSTOKEN)           : [noaccess],
                 (ALLACCESSTOKEN)          : [createRole("", allResourcesAccess)],
-                "deployments-access-token": [createRole(createAccessScope(
-                        "remote", "qa-test2").id, ["Deployment": READ_ACCESS, "Risk": READ_ACCESS])],
+                "deployments-access-token": [createRole(remoteQaTest2.id,
+                        ["Deployment": READ_ACCESS, "Risk": READ_ACCESS])],
                 "getSummaryCountsToken"   : [createRole(remoteQaTest1.id, allResourcesAccess)],
                 "listSecretsToken"        : [createRole("", ["Secret": READ_ACCESS])],
                 "searchDeploymentsToken"  : [createRole(remoteQaTest1.id, ["Deployment": READ_ACCESS]), noaccess],
@@ -53,6 +56,9 @@ class SACv2Test extends SACTest {
                                              createRole("", ["Cluster": READ_ACCESS]), noaccess],
                 "kubeSystemImagesToken"   : [createRole(createAccessScope(
                         "remote", "kube-system").id, ["Image": READ_ACCESS]), noaccess],
+                "aggregatedToken"         : [createRole(remoteQaTest2.id, ["Deployment": READ_ACCESS]),
+                                             createRole(remoteQaTest1.id, ["Deployment": NO_ACCESS]),
+                                             noaccess]
         ]
     }
 
@@ -99,6 +105,19 @@ class SACv2Test extends SACTest {
                                 .setClusterName(clusterName)
                                 .setNamespaceName(namespaceName)))
                 .build())
+    }
+
+    def "test role aggregation should not combine permissions sets"() {
+        when:
+        useToken("aggregatedToken")
+
+        then:
+        def result = DeploymentService.listDeployments()
+        assert result.find { it.name == DEPLOYMENT_QA2.name }
+        assert !result.find { it.name == DEPLOYMENT_QA1.name }
+
+        cleanup:
+        BaseService.useBasicAuth()
     }
 
 }

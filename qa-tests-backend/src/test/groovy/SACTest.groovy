@@ -33,7 +33,7 @@ class SACTest extends BaseSpecification {
     static final private String SECRETNAME = "sac-secret"
     static final protected String ALLACCESSTOKEN = "allAccessToken"
     static final protected String NOACCESSTOKEN = "noAccess"
-    static final private Deployment DEPLOYMENT_QA1 = new Deployment()
+    static final protected Deployment DEPLOYMENT_QA1 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA1)
             .setImage("nginx:1.7.9")
             .addPort(22, "TCP")
@@ -41,7 +41,7 @@ class SACTest extends BaseSpecification {
             .setEnv(["CLUSTER_NAME": "main"])
             .setNamespace("qa-test1")
             .addLabel("app", "test")
-    static final private Deployment DEPLOYMENT_QA2 = new Deployment()
+    static final protected Deployment DEPLOYMENT_QA2 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA2)
             .setImage("nginx:1.7.9")
             .addPort(22, "TCP")
