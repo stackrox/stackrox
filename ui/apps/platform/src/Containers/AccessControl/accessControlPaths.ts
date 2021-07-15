@@ -9,9 +9,11 @@ export const accessControlPath = accessControlPathV2; // export { accessControlP
 
 export type AccessControlQueryAction = 'create' | 'update';
 
+export type AccessControlQueryFilter = Partial<Record<AccessControlEntityType, string>>;
+
 export type AccessControlQueryObject = {
     action?: AccessControlQueryAction;
-    s?: Partial<Record<AccessControlEntityType, string>>;
+    s?: AccessControlQueryFilter;
     type?: 'auth0' | 'odic' | 'saml' | 'userpki' | 'iap';
 };
 

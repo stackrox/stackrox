@@ -18,6 +18,7 @@ import { Group } from 'services/AuthService';
 import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
+import { AccessControlQueryFilter } from '../accessControlPaths';
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.
@@ -29,6 +30,7 @@ const entityType = 'ROLE';
 
 export type RolesListProps = {
     roles: Role[];
+    s?: AccessControlQueryFilter;
     groups: Group[];
     permissionSets: PermissionSet[];
     accessScopes: AccessScope[];
@@ -38,6 +40,7 @@ export type RolesListProps = {
 
 function RolesList({
     roles,
+    s,
     groups,
     permissionSets,
     accessScopes,
@@ -71,6 +74,18 @@ function RolesList({
         return accessScopes.find(({ id }) => id === accessScopeId)?.name ?? '';
     }
 
+    const rolesFiltered = s
+        ? roles.filter((role) => {
+              if ('PERMISSION_SET' in s && role.permissionSetId !== s.PERMISSION_SET) {
+                  return false;
+              }
+              if ('ACCESS_SCOPE' in s && role.accessScopeId !== s.ACCESS_SCOPE) {
+                  return false;
+              }
+              return true;
+          })
+        : roles;
+
     return (
         <>
             <Toolbar inset={{ default: 'insetNone' }}>
@@ -80,7 +95,9 @@ function RolesList({
                             <Title headingLevel="h2">Roles</Title>
                         </ToolbarItem>
                         <ToolbarItem>
-                            <Badge isRead>{roles.length}</Badge>
+                            <Badge isRead>
+                                {s ? `${rolesFiltered.length} / ${roles.length}` : roles.length}
+                            </Badge>
                         </ToolbarItem>
                     </ToolbarGroup>
                     <ToolbarItem alignment={{ default: 'alignRight' }}>
@@ -91,7 +108,7 @@ function RolesList({
                 </ToolbarContent>
             </Toolbar>
             {alertDelete}
-            {roles.length !== 0 && (
+            {rolesFiltered.length !== 0 && (
                 <TableComposable variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
@@ -103,51 +120,53 @@ function RolesList({
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {roles.map(({ name, description, permissionSetId, accessScopeId }) => (
-                            <Tr key={name}>
-                                <Td dataLabel="Name">
-                                    <AccessControlEntityLink
-                                        entityType={entityType}
-                                        entityId={name}
-                                        entityName={name}
-                                    />
-                                </Td>
-                                <Td dataLabel="Description">{description}</Td>
-                                <Td dataLabel="Permission set">
-                                    <AccessControlEntityLink
-                                        entityType="PERMISSION_SET"
-                                        entityId={permissionSetId}
-                                        entityName={getPermissionSetName(permissionSetId)}
-                                    />
-                                </Td>
-                                <Td dataLabel="Access scope">
-                                    {accessScopeId ? (
+                        {rolesFiltered.map(
+                            ({ name, description, permissionSetId, accessScopeId }) => (
+                                <Tr key={name}>
+                                    <Td dataLabel="Name">
                                         <AccessControlEntityLink
-                                            entityType="ACCESS_SCOPE"
-                                            entityId={accessScopeId}
-                                            entityName={getAccessScopeName(accessScopeId)}
+                                            entityType={entityType}
+                                            entityId={name}
+                                            entityName={name}
                                         />
-                                    ) : (
-                                        'Unrestricted'
-                                    )}
-                                </Td>
-                                <Td
-                                    actions={{
-                                        disable:
-                                            nameDeleting === name ||
-                                            getIsDefaultRoleName(name) ||
-                                            getHasRoleName(groups, name),
-                                        items: [
-                                            {
-                                                title: 'Delete role',
-                                                onClick: () => onClickDelete(name),
-                                            },
-                                        ],
-                                    }}
-                                    className="pf-u-text-align-right"
-                                />
-                            </Tr>
-                        ))}
+                                    </Td>
+                                    <Td dataLabel="Description">{description}</Td>
+                                    <Td dataLabel="Permission set">
+                                        <AccessControlEntityLink
+                                            entityType="PERMISSION_SET"
+                                            entityId={permissionSetId}
+                                            entityName={getPermissionSetName(permissionSetId)}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Access scope">
+                                        {accessScopeId ? (
+                                            <AccessControlEntityLink
+                                                entityType="ACCESS_SCOPE"
+                                                entityId={accessScopeId}
+                                                entityName={getAccessScopeName(accessScopeId)}
+                                            />
+                                        ) : (
+                                            'Unrestricted'
+                                        )}
+                                    </Td>
+                                    <Td
+                                        actions={{
+                                            disable:
+                                                nameDeleting === name ||
+                                                getIsDefaultRoleName(name) ||
+                                                getHasRoleName(groups, name),
+                                            items: [
+                                                {
+                                                    title: 'Delete role',
+                                                    onClick: () => onClickDelete(name),
+                                                },
+                                            ],
+                                        }}
+                                        className="pf-u-text-align-right"
+                                    />
+                                </Tr>
+                            )
+                        )}
                     </Tbody>
                 </TableComposable>
             )}

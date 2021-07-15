@@ -47,7 +47,7 @@ function Roles(): ReactElement {
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
-    const { action } = queryObject;
+    const { action, s } = queryObject;
     const { entityId: entityName } = useParams(); // identify role by name in routes
 
     const [counterFetching, setCounterFetching] = useState(0);
@@ -238,6 +238,7 @@ function Roles(): ReactElement {
             ) : (
                 <RolesList
                     roles={roles}
+                    s={s}
                     groups={groups}
                     permissionSets={permissionSets}
                     accessScopes={accessScopes}
