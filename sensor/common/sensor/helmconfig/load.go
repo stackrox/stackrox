@@ -22,8 +22,11 @@ func Load() (*central.HelmManagedConfigInit, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "loading cluster config file")
 	}
+	return load(contents)
+}
 
-	contentsJSON, err := yaml.YAMLToJSON(contents)
+func load(data []byte) (*central.HelmManagedConfigInit, error) {
+	contentsJSON, err := yaml.YAMLToJSON(data)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting cluster config YAML to JSON")
 	}

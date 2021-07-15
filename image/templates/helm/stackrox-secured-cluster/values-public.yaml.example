@@ -26,6 +26,10 @@
 ## creating a new cluster with a different name.
 #confirmNewClusterName: null
 #
+## Cluster labels are used to identify clusters for applying scoped-access scope rules in Centrals frontend.
+## in particular these are used to configure access rights for specific users.
+#clusterLabels: {}
+#
 ## The gRPC endpoint for accessing StackRox Central.
 #centralEndpoint: central.{{ .Release.Namespace }}:443
 #

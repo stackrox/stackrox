@@ -298,6 +298,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
 	utils.Must(builder.AddType("CompleteClusterConfig", []string{
+		"clusterLabels: [Label!]!",
 		"configFingerprint: String!",
 		"dynamicConfig: DynamicClusterConfig",
 		"staticConfig: StaticClusterConfig",
@@ -3576,6 +3577,11 @@ func (resolver *Resolver) wrapCompleteClusterConfigs(values []*storage.CompleteC
 		output[i] = &completeClusterConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *completeClusterConfigResolver) ClusterLabels(ctx context.Context) labels {
+	value := resolver.data.GetClusterLabels()
+	return labelsResolver(value)
 }
 
 func (resolver *completeClusterConfigResolver) ConfigFingerprint(ctx context.Context) string {

@@ -870,6 +870,7 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.DynamicConfig = helmConfig.GetDynamicConfig().Clone()
 
 	staticConfig := helmConfig.GetStaticConfig()
+	cluster.Labels = helmConfig.GetClusterLabels()
 	cluster.Type = staticConfig.GetType()
 	cluster.MainImage = staticConfig.GetMainImage()
 	cluster.CentralApiEndpoint = staticConfig.GetCentralApiEndpoint()

@@ -1,4 +1,5 @@
 clusterName: null # string
+clusterLabels: null # dict
 confirmNewClusterName: null # string
 centralEndpoint: null # string
 registryOverride: null # string

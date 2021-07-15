@@ -97,6 +97,7 @@ message CompleteClusterConfig {
     DynamicClusterConfig  dynamic_config               = 1;
     StaticClusterConfig   static_config                = 2;
     string                config_fingerprint           = 3;
+    map<string, string>   cluster_labels               = 4;
 }
 
 // StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine

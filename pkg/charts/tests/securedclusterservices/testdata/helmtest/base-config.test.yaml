@@ -44,3 +44,11 @@ tests:
   - name: succeeds with explicit allow
     set:
       allowNonstandardReleaseName: true
+
+- name: with cluster labels
+  values:
+    clusterLabels:
+      my-label1: my value 1
+      my-label2: my value 2
+  expect: |
+    helmClusterConfig | .clusterConfig.clusterLabels | assertThat(length == 2)
