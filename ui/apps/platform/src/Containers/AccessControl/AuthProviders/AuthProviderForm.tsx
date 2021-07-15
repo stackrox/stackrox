@@ -103,10 +103,15 @@ function AuthProviderForm({
                     client_id: yup.string().required('A client ID is required.'),
                     issuer: yup.string().required('An issuer is required.'),
                     mode: yup.string().required(), // selected from a list where one is always selected
-                    client_secret: yup.string().when('mode', {
-                        is: (value) => value === 'auto' || value === 'post' || value === 'query',
-                        then: yup.string().required('A client secret is required.'),
-                    }),
+                    client_secret: yup
+                        .string()
+                        .when(['mode', 'do_not_use_client_secret', 'clientOnly'], {
+                            is: (mode, do_not_use_client_secret, clientOnly) =>
+                                (mode === 'auto' || mode === 'post' || mode === 'query') &&
+                                !do_not_use_client_secret &&
+                                !clientOnly?.clientSecretStored,
+                            then: yup.string().required('A client secret is required.'),
+                        }),
                 }),
             })
             .when('type', {
@@ -333,7 +338,7 @@ function AuthProviderForm({
                                     id="name"
                                     value={values.name}
                                     onChange={onChange}
-                                    isDisabled={isViewing}
+                                    isDisabled={isViewing || values.active}
                                     isRequired
                                     onBlur={handleBlur}
                                     validated={

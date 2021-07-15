@@ -59,7 +59,7 @@ export type AuthProvider = {
     type: AuthProviderType;
     uiEndpoint?: string;
     enabled?: boolean;
-    config: Record<string, string>;
+    config: AuthProviderConfig;
     loginUrl?: string;
     extraUiEndpoints?: string[];
     active?: boolean;

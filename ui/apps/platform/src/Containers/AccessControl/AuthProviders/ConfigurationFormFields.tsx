@@ -93,6 +93,8 @@ function ConfigurationFormFields({
         }
     }
 
+    const clientOnly = config.clientOnly as Record<string, boolean>;
+
     return (
         <>
             {type === 'auth0' && (
@@ -229,7 +231,11 @@ function ConfigurationFormFields({
                             label="Client Secret"
                             fieldId="config.client_secret"
                             isRequired={
-                                !(config.mode === 'fragment' || config.do_not_use_client_secret)
+                                !(
+                                    config.mode === 'fragment' ||
+                                    config.do_not_use_client_secret ||
+                                    clientOnly?.clientSecretStored
+                                )
                             }
                             helperText={
                                 <span className="pf-u-font-size-sm">{clientSecretHelperText}</span>
@@ -255,7 +261,7 @@ function ConfigurationFormFields({
                                 validated={
                                     showClientSecretError ? ValidatedOptions.error : 'default'
                                 }
-                                placeholder="*****"
+                                placeholder={isViewing ? '*****' : ''}
                             />
                         </FormGroup>
                     </GridItem>
