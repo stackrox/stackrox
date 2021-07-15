@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { useFormik, FormikProvider } from 'formik';
@@ -50,7 +50,7 @@ export type AuthProviderFormProps = {
 const authProviderState = createStructuredSelector({
     roles: selectors.getRoles,
     groups: selectors.getRuleGroups,
-    saveAuthProviderError: selectors.getSaveAuthProviderError,
+    saveAuthProviderStatus: selectors.getSaveAuthProviderStatus,
 });
 
 function getNewAuthProviderTitle(type) {
@@ -70,7 +70,8 @@ function AuthProviderForm({
     onClickCancel,
     onClickEdit,
 }: AuthProviderFormProps): ReactElement {
-    const { groups, roles, saveAuthProviderError } = useSelector(authProviderState);
+    const history = useHistory();
+    const { groups, roles, saveAuthProviderStatus } = useSelector(authProviderState);
     const dispatch = useDispatch();
 
     const initialValues = !selectedAuthProvider.name
@@ -202,11 +203,22 @@ function AuthProviderForm({
     }
 
     function onClickSubmit() {
+        dispatch(authActions.setSaveAuthProviderStatus(null));
+
         const transformedValues = transformValuesBeforeSaving(values);
 
         // Still submitting via Redux for MVP of Scoped Access feature
         dispatch(authActions.saveAuthProvider(transformedValues));
     }
+
+    // handle relevant saving statuses
+    if (saveAuthProviderStatus?.status === 'success') {
+        dispatch(authActions.setSaveAuthProviderStatus(null));
+
+        // Go back from action=create to list.
+        history.goBack();
+    }
+    const isSaving = saveAuthProviderStatus?.status === 'saving';
 
     const hasAction = Boolean(action);
     const isViewing = !hasAction;
@@ -235,8 +247,10 @@ function AuthProviderForm({
                                             onClick={onClickSubmit}
                                             isDisabled={!dirty || !isValid}
                                             isSmall
+                                            isLoading={isSaving}
+                                            spinnerAriaValueText={isSaving ? 'Saving' : undefined}
                                         >
-                                            Save
+                                            {isSaving ? 'Saving...' : 'Save'}
                                         </Button>
                                     </ToolbarItem>
                                     <ToolbarItem>
@@ -288,9 +302,9 @@ function AuthProviderForm({
                     )}
                 </ToolbarContent>
             </Toolbar>
-            {!!saveAuthProviderError && (
+            {saveAuthProviderStatus?.status === 'error' && (
                 <Alert isInline variant="danger" title="Problem saving auth provider">
-                    <p>{saveAuthProviderError?.message}</p>
+                    <p>{saveAuthProviderStatus?.message}</p>
                 </Alert>
             )}
             {testModeSupported(selectedAuthProvider) &&

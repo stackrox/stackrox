@@ -27,7 +27,7 @@ export const types = {
     AUTH_HTTP_ERROR: 'auth/AUTH_HTTP_ERROR',
     AUTH_IDP_ERROR: 'auth/AUTH_IDP_ERROR',
     SET_AUTH_PROVIDER_EDITING_STATE: 'auth/SET_AUTH_PROVIDER_EDITING_STATE',
-    SET_SAVE_AUTH_PROVIDER_ERROR: 'auth/SET_AUTH_PROVIDER_ERROR',
+    SET_SAVE_AUTH_PROVIDER_STATUS: 'auth/SET_AUTH_PROVIDER_ERROR',
     SET_AUTH_PROVIDER_TEST_RESULTS: 'auth/SET_AUTH_PROVIDER_TEST_RESULTS',
 };
 
@@ -52,9 +52,9 @@ export const actions = {
         type: types.SET_AUTH_PROVIDER_EDITING_STATE,
         value,
     }),
-    setSaveAuthProviderError: (error) => ({
-        type: types.SET_SAVE_AUTH_PROVIDER_ERROR,
-        error,
+    setSaveAuthProviderStatus: (status) => ({
+        type: types.SET_SAVE_AUTH_PROVIDER_STATUS,
+        status,
     }),
     setAuthProviderTestResults: (value) => ({
         type: types.SET_AUTH_PROVIDER_TEST_RESULTS,
@@ -160,10 +160,10 @@ const authProviderResponse = (state = {}, action) => {
     return state;
 };
 
-const saveAuthProviderError = (state = null, action) => {
-    if (action.type === types.SET_SAVE_AUTH_PROVIDER_ERROR) {
-        if (action.error && action.error.message) {
-            return action.error;
+const saveAuthProviderStatus = (state = null, action) => {
+    if (action.type === types.SET_SAVE_AUTH_PROVIDER_STATUS) {
+        if (action.status && (action.status.message || action.status.status)) {
+            return action.status;
         }
         return null;
     }
@@ -178,7 +178,7 @@ const reducer = combineReducers({
     authStatus,
     authProviderResponse,
     isEditingAuthProvider,
-    saveAuthProviderError,
+    saveAuthProviderStatus,
     currentUser,
 });
 
@@ -194,7 +194,7 @@ const getSelectedAuthProvider = (state) => state.selectedAuthProvider;
 const getAuthStatus = (state) => state.authStatus;
 const getAuthProviderError = (state) => state.authProviderResponse;
 const getAuthProviderEditingState = (state) => state.isEditingAuthProvider;
-const getSaveAuthProviderError = (state) => state.saveAuthProviderError;
+const getSaveAuthProviderStatus = (state) => state.saveAuthProviderStatus;
 const getCurrentUser = (state) => state.currentUser;
 
 export const selectors = {
@@ -206,6 +206,6 @@ export const selectors = {
     getAuthStatus,
     getAuthProviderError,
     getAuthProviderEditingState,
-    getSaveAuthProviderError,
+    getSaveAuthProviderStatus,
     getCurrentUser,
 };

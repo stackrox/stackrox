@@ -252,6 +252,14 @@ function* saveAuthProvider(action) {
                 group.roleName &&
                 group.roleName !== ''
         );
+
+        yield put(
+            actions.setSaveAuthProviderStatus({
+                status: 'saving',
+                message: '',
+            })
+        );
+
         const isNewAuthProvider = !authProviders.filter(
             (currAuthProvider) => currAuthProvider.name === remaining.name
         ).length;
@@ -278,14 +286,20 @@ function* saveAuthProvider(action) {
             yield put(actions.selectAuthProvider(updatedSelectedAuthProvider));
         }
         yield put(actions.setAuthProviderEditingState(false));
-        yield put(actions.setSaveAuthProviderError(null));
+        yield put(
+            actions.setSaveAuthProviderStatus({
+                status: 'success',
+                message: '',
+            })
+        );
     } catch (error) {
         yield put(actions.setAuthProviderEditingState(true));
         const message =
             (error.response && error.response.data && error.response.data.error) ||
             'AuthProvider request timed out';
         yield put(
-            actions.setSaveAuthProviderError({
+            actions.setSaveAuthProviderStatus({
+                status: 'error',
                 message,
             })
         );

@@ -99,6 +99,8 @@ function AuthProviders(): ReactElement {
     }
 
     function onClickCancel() {
+        dispatch(authActions.setSaveAuthProviderStatus(null));
+
         // The entityId is undefined for create and defined for update.
         history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
     }

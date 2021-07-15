@@ -147,6 +147,7 @@ AuthProviders.propTypes = {
     setAuthProviderEditingState: PropTypes.func.isRequired,
     isEditing: PropTypes.bool,
     responseError: PropTypes.shape({
+        status: PropTypes.string,
         message: PropTypes.string,
     }),
 };
@@ -163,7 +164,7 @@ const mapStateToProps = createStructuredSelector({
     selectedAuthProvider: selectors.getSelectedAuthProvider,
     groups: selectors.getRuleGroups,
     isEditing: selectors.getAuthProviderEditingState,
-    responseError: selectors.getSaveAuthProviderError,
+    responseError: selectors.getSaveAuthProviderStatus,
 });
 
 const mapDispatchToProps = {

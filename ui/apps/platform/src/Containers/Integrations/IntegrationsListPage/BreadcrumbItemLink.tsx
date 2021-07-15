@@ -14,7 +14,7 @@ function BreadcrumbItemLink({
 }: BreadcrumbItemLinkProps): React.ReactElement {
     function render({ className, ariaCurrent }) {
         return (
-            <Link className={className} ariaCurrent={ariaCurrent} to={to}>
+            <Link className={className} aria-current={ariaCurrent} to={to}>
                 {children}
             </Link>
         );
