@@ -50,13 +50,16 @@ function getTemporarilyValidLabelSelectors(labelSelectors: LabelSelector[]): Lab
     const temporarilyValidLabelSelectors: LabelSelector[] = [];
 
     labelSelectors.forEach((labelSelector) => {
-        if (getIsValidRequirements(labelSelector.requirements)) {
+        const { requirements } = labelSelector;
+        if (requirements.length === 0 || getIsValidRequirements(requirements)) {
+            // Although a label selector which has no requirements is not valid to save,
+            // do not filter it out from temporarily valid state while adding or editing.
             temporarilyValidLabelSelectors.push(labelSelector);
         } else {
-            const requirements = labelSelector.requirements.filter(getIsValidRequirement);
-            if (requirements.length !== 0) {
-                temporarilyValidLabelSelectors.push({ requirements });
-            }
+            // However, do filter out any set requirements which have no values.
+            temporarilyValidLabelSelectors.push({
+                requirements: requirements.filter(getIsValidRequirement),
+            });
         }
     });
 

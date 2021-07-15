@@ -21,7 +21,6 @@ import { Activity, getIsKeyInSetOperator, getOpText, getValueText } from './acce
 
 export type RequirementRowProps = {
     requirement: LabelSelectorRequirement;
-    requirements: LabelSelectorRequirement[];
     hasAction: boolean;
     activity: Activity;
     handleRequirementDelete: () => void;
@@ -34,7 +33,6 @@ export type RequirementRowProps = {
 
 function RequirementRow({
     requirement,
-    requirements,
     hasAction,
     activity,
     handleRequirementDelete,
@@ -178,9 +176,9 @@ function RequirementRow({
                     ) : (
                         <>
                             {isEditableOperator && (
-                                <Tooltip key="Edit requirement" content="Edit requirement">
+                                <Tooltip key="Edit rule" content="Edit rule">
                                     <Button
-                                        aria-label="Edit requirement"
+                                        aria-label="Edit rule"
                                         variant="plain"
                                         className="pf-m-smallest pf-u-mr-sm"
                                         isDisabled={activity === 'DISABLED'}
@@ -190,14 +188,12 @@ function RequirementRow({
                                     </Button>
                                 </Tooltip>
                             )}
-                            <Tooltip key="Delete requirement" content="Delete requirement">
+                            <Tooltip key="Delete rule" content="Delete rule">
                                 <Button
-                                    aria-label="Delete requirement"
+                                    aria-label="Delete rule"
                                     variant="plain"
                                     className="pf-m-smallest"
-                                    isDisabled={
-                                        activity === 'DISABLED' || requirements.length === 1
-                                    }
+                                    isDisabled={activity === 'DISABLED'}
                                     onClick={handleRequirementDelete}
                                 >
                                     <MinusCircleIcon color="var(--pf-global--danger-color--100)" />

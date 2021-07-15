@@ -215,7 +215,6 @@ function LabelSelectorCard({
                                 <RequirementRow
                                     key={`${requirement.key} ${requirement.op}`}
                                     requirement={requirement}
-                                    requirements={requirements}
                                     hasAction={isLabelSelectorActive}
                                     activity={getRequirementActivity(
                                         indexRequirement,
