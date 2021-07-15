@@ -95,11 +95,15 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                 </Td>
                                 <Td
                                     actions={{
-                                        disable: id === currentUser?.authProvider?.id,
                                         items: [
                                             {
                                                 title: 'Delete auth provider',
                                                 onClick: () => onClickDelete(name, id),
+                                                isDisabled: id === currentUser?.authProvider?.id,
+                                                description:
+                                                    id === currentUser?.authProvider?.id
+                                                        ? 'Cannot delete current auth provider'
+                                                        : '',
                                             },
                                         ],
                                     }}
