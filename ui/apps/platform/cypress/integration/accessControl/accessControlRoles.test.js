@@ -132,7 +132,7 @@ describe('Access Control Roles', () => {
         });
     });
 
-    it('creates a new role and form disables name input when editing an existing role', () => {
+    it('adds a new role and form disables name input when editing an existing role', () => {
         visitRoles();
 
         cy.get(selectors.list.addButton).click();
@@ -161,6 +161,9 @@ describe('Access Control Roles', () => {
         cy.intercept('POST', rolesApi.list).as('PostRoles');
         cy.get(selectors.form.saveButton).click();
         cy.wait('@PostRoles');
+
+        cy.get(selectors.h2).should('have.text', h2);
+        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
 
         cy.get(selectors.h2).should('have.text', name);
         cy.get(selectors.form.inputName).should('be.disabled').should('have.value', name);

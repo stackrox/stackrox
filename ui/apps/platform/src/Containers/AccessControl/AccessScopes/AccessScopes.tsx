@@ -135,8 +135,8 @@ function AccessScopes(): ReactElement {
                   // Append the created entity.
                   setAccessScopes([...accessScopes, entityCreated]);
 
-                  // Replace path which had action=create with plain entity path.
-                  history.replace(getEntityPath(entityType, entityCreated.id));
+                  // Go back from action=create to list.
+                  history.goBack();
 
                   return null; // because the form has only catch and finally
               })

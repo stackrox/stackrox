@@ -181,8 +181,8 @@ function Roles(): ReactElement {
                   // Append the values, because backend does not assign an id to the role.
                   setRoles([...roles, values]);
 
-                  // Replace path which had action=create with plain entity path.
-                  history.replace(getEntityPath(entityType, values.name));
+                  // Go back from action=create to list.
+                  history.goBack();
 
                   return null; // because the form has only catch and finally
               })
