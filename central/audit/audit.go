@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifier/processor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
 )
@@ -123,15 +125,7 @@ func newAuditMessage(ctx context.Context, req interface{}, grpcFullMethod string
 		Payload:  requestToAny(req),
 	}
 
-	if authError.Error != nil {
-		msg.Status = v1.Audit_AUTH_FAILED
-		msg.StatusReason = authError.String()
-	} else if requestError != nil {
-		msg.Status = v1.Audit_REQUEST_FAILED
-		msg.StatusReason = requestError.Error()
-	} else {
-		msg.Status = v1.Audit_REQUEST_SUCCEEDED
-	}
+	msg.Status, msg.StatusReason = calculateAuditStatus(authError, requestError)
 	return msg
 }
 
@@ -141,5 +135,18 @@ func (a *audit) UnaryServerInterceptor() func(ctx context.Context, req interface
 		resp, err := handler(ctx, req)
 		go a.sendAuditMessage(ctx, req, info.FullMethod, interceptor.GetAuthErrorFromContext(ctx), err)
 		return resp, err
+	}
+}
+
+func calculateAuditStatus(authError interceptor.AuthStatus, requestError error) (v1.Audit_RequestStatus, string) {
+	switch {
+	case authError.Error != nil:
+		return v1.Audit_AUTH_FAILED, authError.String()
+	case requestError != nil && errors.Is(requestError, sac.ErrResourceAccessDenied):
+		return v1.Audit_AUTH_FAILED, requestError.Error()
+	case requestError != nil:
+		return v1.Audit_REQUEST_FAILED, requestError.Error()
+	default:
+		return v1.Audit_REQUEST_SUCCEEDED, ""
 	}
 }

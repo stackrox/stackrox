@@ -34,9 +34,14 @@ func AuthContextUpdaterInterceptor() grpc.UnaryServerInterceptor {
 		} else {
 			newCtx, err = deny.AuthFunc(ctx)
 		}
-		newCtx = context.WithValue(newCtx, authContextKey{}, AuthStatus{Error: err})
+		newCtx = ContextWithAuthStatus(newCtx, err)
 		return handler(newCtx, req)
 	}
+}
+
+// ContextWithAuthStatus produces context with AuthStatus assigned.
+func ContextWithAuthStatus(newCtx context.Context, err error) context.Context {
+	return context.WithValue(newCtx, authContextKey{}, AuthStatus{Error: err})
 }
 
 // GetAuthErrorFromContext returns the auth error from the context
