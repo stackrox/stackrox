@@ -68,7 +68,6 @@ import (
 	licenseService "github.com/stackrox/rox/central/license/service"
 	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
-	logintegrationService "github.com/stackrox/rox/central/logintegrations/service"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -329,10 +328,6 @@ func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 
 	if features.SensorInstallationExperience.Enabled() {
 		servicesToRegister = append(servicesToRegister, clusterInitService.Singleton(), helmcharts.NewService())
-	}
-
-	if features.K8sAuditLogDetection.Enabled() {
-		servicesToRegister = append(servicesToRegister, logintegrationService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
