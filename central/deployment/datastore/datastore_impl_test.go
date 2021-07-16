@@ -170,11 +170,11 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 		},
 		{
 			Id:       "4",
-			Priority: 4,
+			Priority: 3,
 		},
 		{
 			Id:       "5",
-			Priority: 5,
+			Priority: 3,
 		},
 	}
 	suite.EqualValues(expected, actual)

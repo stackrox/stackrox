@@ -70,8 +70,9 @@ func SetListDeploymentsPriorities(ranker *Ranker, elements []*storage.ListDeploy
 
 // setPriorities sets priorities based on ranker response for Id under index.
 // It iterates from 0 to length and uses setPriority to update priority under index.
-// Priorities are strictly monotonic and fit in range [offset+1,offset+len(ids)].
-// There is no guarantee for any particular order for elements with the same rank.
+// Priorities are monotonic and fit in range [offset+1,offset+len(ids)].
+// Elements with the same rank will have equal priority and the next element priority will be greater
+// by the number of elements with same priority.
 func setPriorities(ranker *Ranker, length int, offset int64, getID getID, setPriority setPriority) {
 	type rankWithIndex struct {
 		rank  int64
@@ -90,7 +91,14 @@ func setPriorities(ranker *Ranker, length int, offset int64, getID getID, setPri
 		return ranks[i].rank < ranks[j].rank
 	})
 
-	for priority, rank := range ranks {
-		setPriority(rank.index, int64(priority)+offset+1)
+	var priority int64
+	var previousRank int64
+	basePriority := offset + 1
+	for index, rank := range ranks {
+		if rank.rank != previousRank {
+			priority = basePriority + int64(index)
+		}
+		setPriority(rank.index, priority)
+		previousRank = rank.rank
 	}
 }
