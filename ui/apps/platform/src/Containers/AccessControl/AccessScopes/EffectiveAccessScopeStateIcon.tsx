@@ -10,43 +10,43 @@ import {
 
 import { EffectiveAccessScopeState } from 'services/AccessScopesService';
 
-const excludedColor = 'var(--pf-global--danger-color--100)';
-const includedColor = 'var(--pf-global--success-color--100)';
+const notAllowedColor = 'var(--pf-global--danger-color--100)';
+const allowedColor = 'var(--pf-global--success-color--100)';
 const unknownColor = 'var(--pf-global--warning-color--100)';
 
 /*
  * Tooltip has key prop to replace the previous tooltip if status changes.
  */
 
-const excludedIcon = <BanIcon color={excludedColor} />;
-const excludedCluster = (
+const notAllowedIcon = <BanIcon color={notAllowedColor} />;
+const notAllowedCluster = (
     <Tooltip
-        key="excludedCluster"
+        key="notAllowedCluster"
         content={
             <div>
-                Not included: cluster
+                Not allowed: cluster
                 <br />
                 nor any of its namespaces
             </div>
         }
         isContentLeftAligned
     >
-        {excludedIcon}
+        {notAllowedIcon}
     </Tooltip>
 );
-const excludedNamespace = (
-    <Tooltip key="excludedNamespace" content="Not included: namespace">
-        {excludedIcon}
+const notAllowedNamespace = (
+    <Tooltip key="notAllowedNamespace" content="Not allowed: namespace">
+        {notAllowedIcon}
     </Tooltip>
 );
 
-const includedIcon = <CheckIcon color={includedColor} />;
-const includedCluster = (
+const allowedIcon = <CheckIcon color={allowedColor} />;
+const allowedCluster = (
     <Tooltip
-        key="includedCluster"
+        key="allowedCluster"
         content={
             <div>
-                Included: cluster
+                Allowed: cluster
                 <br />
                 and therefore all of its namespaces
             </div>
@@ -54,14 +54,14 @@ const includedCluster = (
         isContentLeftAligned
     >
         <span>
-            {includedIcon}
-            <LongArrowAltDownIcon color={includedColor} style={{ transform: 'rotate(-45deg)' }} />
+            {allowedIcon}
+            <LongArrowAltDownIcon color={allowedColor} style={{ transform: 'rotate(-45deg)' }} />
         </span>
     </Tooltip>
 );
-const includedNamespace = (
-    <Tooltip key="includeNamespace" content="Included: namespace">
-        {includedIcon}
+const allowedNamespace = (
+    <Tooltip key="allowedNamespace" content="Allowed: namespace">
+        {allowedIcon}
     </Tooltip>
 );
 
@@ -70,7 +70,7 @@ const partialCluster = (
         key="partialCluster"
         content={
             <div>
-                Hierarchically included: cluster
+                Conditionally allowed: cluster
                 <br />
                 because at least one of its namespaces
             </div>
@@ -78,8 +78,8 @@ const partialCluster = (
         isContentLeftAligned
     >
         <span>
-            {includedIcon}
-            <LongArrowAltUpIcon color={includedColor} style={{ transform: 'rotate(-45deg)' }} />
+            {allowedIcon}
+            <LongArrowAltUpIcon color={allowedColor} style={{ transform: 'rotate(-45deg)' }} />
         </span>
     </Tooltip>
 );
@@ -101,10 +101,10 @@ function EffectiveAccessScopeStateIcon({
 }: EffectiveAccessScopeStateProps): ReactElement {
     switch (state) {
         case 'EXCLUDED':
-            return isCluster ? excludedCluster : excludedNamespace;
+            return isCluster ? notAllowedCluster : notAllowedNamespace;
 
         case 'INCLUDED':
-            return isCluster ? includedCluster : includedNamespace;
+            return isCluster ? allowedCluster : allowedNamespace;
 
         case 'PARTIAL':
             return partialCluster;

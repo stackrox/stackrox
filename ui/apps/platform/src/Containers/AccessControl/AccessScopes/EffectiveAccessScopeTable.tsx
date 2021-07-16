@@ -112,12 +112,12 @@ function EffectiveAccessScopeTable({
                 >
                     {clusterName}
                 </Td>
-                <Td dataLabel="Cluster state">
+                <Td dataLabel="Cluster allowed">
                     <EffectiveAccessScopeStateIcon state={clusterState} isCluster />
                 </Td>
-                <Td dataLabel="Manual inclusion">
+                <Td dataLabel="Manual selection">
                     <Switch
-                        aria-label="Included: cluster"
+                        aria-label="Selected cluster"
                         className="acs-m-manual-inclusion"
                         isChecked={includedClusters.includes(clusterName)}
                         isDisabled={isDisabled}
@@ -187,12 +187,12 @@ function EffectiveAccessScopeTable({
                     >
                         {namespaceName}
                     </Td>
-                    <Td dataLabel="Namespace state">
+                    <Td dataLabel="Namespace allowed">
                         <EffectiveAccessScopeStateIcon state={namespaceState} isCluster={false} />
                     </Td>
-                    <Td dataLabel="Manual inclusion">
+                    <Td dataLabel="Manual selection">
                         <Switch
-                            aria-label="Included: namespace"
+                            aria-label="Selected namespace"
                             className="acs-m-manual-inclusion"
                             isChecked={includedNamespaces.some(
                                 (includedNamespace) =>
@@ -288,9 +288,9 @@ function EffectiveAccessScopeTable({
                             modifier="fitContent"
                             className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
                         >
-                            State
+                            Allowed
                         </Th>
-                        <Th modifier="fitContent">Manual inclusion</Th>
+                        <Th modifier="fitContent">Manual selection</Th>
                         <Th>Labels</Th>
                     </Tr>
                 </Thead>
