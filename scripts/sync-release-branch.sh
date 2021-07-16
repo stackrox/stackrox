@@ -66,7 +66,7 @@ fi
 
 # Compile list of milestones
 
-short_release_family="$(awk -F. '{print $(NF-1)}' <<<"$current_release_family")"
+short_release_family="$(awk -F. '{print $(NF)}' <<<"$current_release_family")"
 echo "Release family names: ${current_release_family}.x, ${short_release_family}.x"
 
 echo "Searching GitHub milestones ..."
