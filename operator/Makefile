@@ -36,7 +36,7 @@ IMAGE_TAG_BASE ?= docker.io/stackrox/stackrox-operator
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
-ALL_BUNDLE_IMGS ?= $(BUNDLE_IMG)
+ALL_BUNDLE_IMGS ?= $(BUNDLE_IMG),$(IMAGE_TAG_BASE)-bundle:v3.62.0
 
 # INDEX_IMG defines the image:tag used for the index (a.k.a. catalog) image, containing the single operator bundle image.
 INDEX_IMG ?= $(IMAGE_TAG_BASE)-index:v$(VERSION)
