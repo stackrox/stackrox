@@ -1,17 +1,18 @@
-import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
-import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
-import io.stackrox.proto.storage.ProcessBaselineOuterClass
+import services.ClusterService
+import services.DeploymentService
+import services.ProcessBaselineService
+import services.ProcessService
+
 import objects.Deployment
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
-import services.ClusterService
-import services.DeploymentService
-import services.ProcessService
-import services.ProcessBaselineService
 import spock.lang.Shared
 import spock.lang.Stepwise
 import util.Env
 import util.Timer
+
+import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
 
 // RiskTest - Test coverage for functionality used on the Risk page and not covered elsewhere.
 // i.e.
@@ -78,15 +79,13 @@ class RiskTest extends BaseSpecification {
         "waiting for SR to get to an initial priority and process baseline for each deployment"
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
-            def response = DeploymentService.listDeploymentsWithProcessInfo(
-                    RawQuery.newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
-            )
-            if (!response || response.deploymentsList.size() < DEPLOYMENTS.size()) {
+            def response = listDeployments()
+            if (!response || response.size() < DEPLOYMENTS.size()) {
                 println "not yet ready to test - no deployments found"
                 continue
             }
-            if (response.deploymentsList.get(0).baselineStatusesList.size() == 0 ||
-                    response.deploymentsList.get(1).baselineStatusesList.size() == 0) {
+            if (response.get(0).baselineStatusesList.size() == 0 ||
+                    response.get(1).baselineStatusesList.size() == 0) {
                 println "not yet ready to test - container summary status are not set"
                 continue
             }
@@ -112,7 +111,7 @@ class RiskTest extends BaseSpecification {
             }
 
             println "ready to test"
-            whenEquivalent = response.deploymentsList
+            whenEquivalent = response
             break
         }
 
@@ -143,9 +142,7 @@ class RiskTest extends BaseSpecification {
 
     def "Deployment count == 2"() {
         expect:
-        DeploymentService.getDeploymentCount(
-                RawQuery.newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
-        ) == DEPLOYMENTS.size()
+        listDeployments().size() == DEPLOYMENTS.size()
     }
 
     def "Processes grouped by deployment (GetGroupedProcessByDeploymentAndContainer)"() {
@@ -201,9 +198,7 @@ class RiskTest extends BaseSpecification {
         def after = null
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
-            after = DeploymentService.listDeploymentsWithProcessInfo(
-                    RawQuery.newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
-            ).deploymentsList
+            after = listDeployments()
             if (before.get(0).deployment.id != after.get(0).deployment.id) {
                 after = after.reverse()
             }
@@ -277,9 +272,7 @@ class RiskTest extends BaseSpecification {
         def after = null
         t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
-            after = DeploymentService.listDeploymentsWithProcessInfo(
-                    RawQuery.newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
-            ).deploymentsList
+            after = listDeployments()
             if (before.get(0).deployment.id != after.get(0).deployment.id) {
                 after = after.reverse()
             }
@@ -343,5 +336,14 @@ class RiskTest extends BaseSpecification {
             return "no processes"
         }
         return processes*.name.join(", ")
+    }
+
+    private static List<DeploymentWithProcessInfo> listDeployments() {
+        // This test is based on global priority (rank) to make it working we need to query for all deployments
+        // and then filter by namespace to preserve priority.
+        // TODO(tj): Fix this test to not relay on global setup but only on deployments created in this test.
+        DeploymentService.listDeploymentsWithProcessInfo()?.deploymentsList?.findAll {
+            it.deployment.namespace == TEST_NAMESPACE
+        }
     }
 }

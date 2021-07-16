@@ -391,11 +391,11 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
 			},
-			Priority: 2,
+			Priority: 1,
 		},
 		{
 			Id:       "3",
-			Priority: 3,
+			Priority: 1,
 		},
 		{
 			Id: "4",
@@ -403,7 +403,7 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 				SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
 				LastContact:        ts,
 			},
-			Priority: 4,
+			Priority: 1,
 		},
 		{
 			Id: "5",
@@ -411,11 +411,11 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 				LastContact:        ts,
 			},
-			Priority: 5,
+			Priority: 1,
 		},
 		{
 			Id:       "6",
-			Priority: 6,
+			Priority: 1,
 		},
 	}
 
@@ -469,7 +469,7 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
 			},
-			Priority: 2,
+			Priority: 1,
 		},
 		{
 			Id: "3",
@@ -477,7 +477,7 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
 			},
-			Priority: 3,
+			Priority: 1,
 		},
 		{
 			Id: "4",
@@ -485,7 +485,7 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
 			},
-			Priority: 4,
+			Priority: 1,
 		},
 		{
 			Id: "5",
@@ -493,7 +493,7 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 				SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
 				LastContact:        ts,
 			},
-			Priority: 5,
+			Priority: 1,
 		},
 		{
 			Id: "6",
@@ -501,7 +501,7 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 				LastContact:        ts,
 			},
-			Priority: 6,
+			Priority: 1,
 		},
 	}
 

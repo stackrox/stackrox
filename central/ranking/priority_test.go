@@ -22,7 +22,7 @@ func TestMapPriorities(t *testing.T) {
 		}, func(index int, priority int64) {
 			priorities[index] = priority
 		})
-	expected := []int64{8, 6, 7, 10, 9}
+	expected := []int64{8, 6, 7, 10, 8}
 	assert.Equal(t, expected, priorities)
 }
 
