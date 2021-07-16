@@ -87,13 +87,6 @@ message QueryPagination {
     repeated QuerySortOption sort_options = 3;
 }
 
-message SearchOptions {
-    message IDSlice {
-        repeated string ids = 1;
-    }
-    map<int32, IDSlice> category_to_ids = 1;
-}
-
 message BooleanQuery {
     ConjunctionQuery must     = 1;
     DisjunctionQuery must_not = 2;
@@ -107,7 +100,7 @@ message Query {
         BooleanQuery     boolean_query = 6;
     }
     QueryPagination pagination       = 4;
-    SearchOptions options            = 5;
+    reserved 5; // previously SearchOptions
 }
 
 // StringQuery represents a query that matches documents that contain the

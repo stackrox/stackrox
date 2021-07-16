@@ -42,8 +42,7 @@ type bleveContext struct {
 	renderedSortOrder search.SortOrder
 	searchAfter       []string
 
-	filters map[v1.SearchCategory]query.Query
-	hook    *Hook
+	hook *Hook
 }
 
 func newRelationship(src v1.SearchCategory, dst v1.SearchCategory) relationship {
@@ -167,7 +166,6 @@ func GetValuesFromFields(field string, m map[string]interface{}) []string {
 
 func getSubQueryContext(parent bleveContext, category v1.SearchCategory) bleveContext {
 	newCtx := defaultSubQueryContext
-	newCtx.filters = parent.filters
 	if parent.hook != nil && parent.hook.SubQueryHooks != nil {
 		newCtx.hook = parent.hook.SubQueryHooks(category)
 	}
@@ -267,7 +265,6 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 		pagination:        q.GetPagination(),
 		renderedSortOrder: sortOrder,
 		searchAfter:       searchAfter,
-		filters:           make(map[v1.SearchCategory]query.Query),
 	}
 
 	opts := opts{}
@@ -281,10 +278,6 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 		ctx.hook = opts.hook(category)
 	}
 
-	for k, v := range q.GetOptions().GetCategoryToIds() {
-		ctx.filters[v1.SearchCategory(k)] = bleve.NewDocIDQuery(v.GetIds())
-	}
-
 	bleveQuery, highlightContext, err := buildQuery(ctx, index, category, q, optionsMap)
 	if err != nil {
 		return nil, err
@@ -294,10 +287,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 
 // RunCountRequest builds a query and runs it to get the count of matches against the index.
 func RunCountRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap, searchOpts ...SearchOption) (int, error) {
-	ctx := bleveContext{
-		filters: make(map[v1.SearchCategory]query.Query),
-	}
-
+	var ctx bleveContext
 	var opts opts
 	for _, opt := range searchOpts {
 		if err := opt(&opts); err != nil {
@@ -307,10 +297,6 @@ func RunCountRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index,
 
 	if opts.hook != nil {
 		ctx.hook = opts.hook(category)
-	}
-
-	for k, v := range q.GetOptions().GetCategoryToIds() {
-		ctx.filters[v1.SearchCategory(k)] = bleve.NewDocIDQuery(v.GetIds())
 	}
 
 	bleveQuery, _, err := buildQuery(ctx, index, category, q, optionsMap)
