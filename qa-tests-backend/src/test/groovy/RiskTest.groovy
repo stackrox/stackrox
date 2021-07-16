@@ -8,6 +8,7 @@ import services.ClusterService
 import services.DeploymentService
 import services.ProcessService
 import services.ProcessBaselineService
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Stepwise
 import util.Env
@@ -20,6 +21,7 @@ import util.Timer
 // - GetGroupedProcessByDeploymentAndContainer
 
 @Stepwise // tests are ordered and dependent
+@Ignore("ROX-7596")
 class RiskTest extends BaseSpecification {
     @Shared
     private String clusterId
