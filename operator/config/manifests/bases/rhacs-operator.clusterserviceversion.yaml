@@ -227,7 +227,7 @@ spec:
       - displayName: Central
         path: central
       version: v1alpha1
-    - description: SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is responsible for the connection to Central, and Collector, which performs host-level collection of process and network events.<p> **Important:** Please see the _Installation Prerequisites_ on the main page before deploying, or consult the RHACS documentation on creating cluster init bundles.
+    - description: SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is responsible for the connection to Central, and Collector, which performs host-level collection of process and network events.<p> **Important:** Please see the _Installation Prerequisites_ on the main RHACS operator page before deploying, or consult the RHACS documentation on creating cluster init bundles.
       displayName: Secured Cluster
       kind: SecuredCluster
       name: securedclusters.platform.stackrox.io
@@ -417,7 +417,8 @@ spec:
     - **Through the RHACS UI:** To create a cluster init bundle secret through the RHACS UI, navigate to `Platform Configuration > Clusters`, and then click `Manage Tokens` in the top-right corner. Select `Cluster Init Bundle`, and click `Generate Bundle`. Select `Download Kubernetes secrets file`, and store the file under a name of your choice (for example, `cluster-init-secrets.yaml`).
     - **Through the `roxctl` CLI:** To create a cluster init bundle secret through the `roxctl` command-line interface, run `roxctl central init-bundles generate <name> --output-secrets <file name>`. Choose any `name` and `file name` that you like.
 
-    Then, run `oc create -f init-bundle.yaml`. If you have chosen a name other than `init-bundle.yaml`, specify that file name instead. If you want to deploy Secured Cluster Service in another namespace, additionally pass the `-n <namespace>` flag.
+    Run `oc project` and check that it reports the correct namespace where you intend to deploy SecuredCluster. In case you want to install SecuredCluster to a different namespace, select it by running `oc project <namespace>`.
+    Then, run `oc create -f init-bundle.yaml`. If you have chosen a name other than `init-bundle.yaml`, specify that file name instead.
 
     #### Required Fields
 

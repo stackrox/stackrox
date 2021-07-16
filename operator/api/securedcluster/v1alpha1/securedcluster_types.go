@@ -266,8 +266,8 @@ type SecuredClusterStatus struct {
 // SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is
 // responsible for the connection to Central, and Collector, which performs host-level collection of process and
 // network events.<p>
-// **Important:** Please see the _Installation Prerequisites_ on the main page before deploying, or consult the RHACS
-// documentation on creating cluster init bundles.
+// **Important:** Please see the _Installation Prerequisites_ on the main RHACS operator page before deploying, or
+// consult the RHACS documentation on creating cluster init bundles.
 type SecuredCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
