@@ -2,7 +2,8 @@
 
 set -eu
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+GITROOT="$(git rev-parse --show-toplevel)"
+[[ -n "${GITROOT}" ]] || { echo >&2 "Could not determine git root!"; exit 1; }
 
 # Pull all the required images and push them to Quay to be scanned
 
@@ -35,18 +36,18 @@ function retag_with_rhel {
 }
 
 # Main images
-RELEASE_TAG=$(make --no-print-directory --quiet -C "${DIR}/.." tag)
+RELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" tag)
 retag_with_rhel stackrox/main "$RELEASE_TAG"
 
 # Docs image
-DOCS_PRERELEASE_TAG=$(cat "$DIR/../../DOCS_VERSION")
+DOCS_PRERELEASE_TAG=$(cat "${GITROOT}/DOCS_VERSION")
 retag_without_rhel stackrox/docs "$DOCS_PRERELEASE_TAG"
 
 # Collector images
-COLLECTOR_TAG=$(cat "$DIR/../../COLLECTOR_VERSION")
+COLLECTOR_TAG=$(cat "${GITROOT}/COLLECTOR_VERSION")
 retag_with_rhel "stackrox/collector" "$COLLECTOR_TAG"
 
 # Legacy scanner images
-SCANNER_TAG=$(cat "$DIR/../../SCANNER_VERSION")
+SCANNER_TAG=$(cat "${GITROOT}/SCANNER_VERSION")
 retag_with_rhel stackrox/scanner "$SCANNER_TAG"
 retag_with_rhel "stackrox/scanner-db" "$SCANNER_TAG"
