@@ -2,12 +2,12 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Mutation } from '@apollo/client/react/components';
+import { useQuery } from '@apollo/client';
+import * as Icon from 'react-feather';
+
 import { actions as notificationActions } from 'reducers/notifications';
 import { TRIGGER_SCAN, RUN_STATUSES } from 'queries/standard';
-
 import Button from 'Components/Button';
-import * as Icon from 'react-feather';
-import Query from 'Components/ThrowingQuery';
 
 const getTriggerRunIds = (data) => {
     if (data && data.complianceTriggerRuns.length) {
@@ -61,41 +61,58 @@ class ScanButton extends React.Component {
             <Mutation mutation={TRIGGER_SCAN}>
                 {(triggerScan, { client }) => {
                     const variables = { ids: this.state.pendingRunIds };
-                    return (
-                        <Query
-                            query={RUN_STATUSES}
-                            variables={variables}
-                            notifyOnNetworkStatusChange // w/o it onCompleted won't be called: https://github.com/apollographql/apollo-client/issues/5531
-                            onCompleted={this.queryCompleted(client)}
-                        >
-                            {({ startPolling, stopPolling }) => {
-                                const polling = !!this.state.pendingRunIds.length;
-                                if (polling) {
-                                    startPolling(5000);
-                                } else {
-                                    stopPolling();
-                                }
-                                return (
-                                    <Button
-                                        dataTestId="scan-button"
-                                        className={className}
-                                        text={text}
-                                        textCondensed={textCondensed}
-                                        textClass={textClass}
-                                        icon={
-                                            <Icon.RefreshCcw
-                                                size="14"
-                                                className="bg-base-100 mx-1 lg:ml-1 lg:mr-3"
-                                            />
-                                        }
-                                        onClick={this.onClick(triggerScan)}
-                                        isLoading={polling}
-                                        disabled={polling}
-                                        loaderSize={loaderSize}
+                    const { startPolling, stopPolling, error } = useQuery(RUN_STATUSES, {
+                        variables,
+                        errorPolicy: 'all',
+                        notifyOnNetworkStatusChange: true,
+                        onCompleted: this.queryCompleted(client),
+                    });
+                    if (error) {
+                        return (
+                            <Button
+                                dataTestId="scan-button"
+                                className={className}
+                                text={text}
+                                textCondensed={textCondensed}
+                                textClass={textClass}
+                                icon={
+                                    <Icon.RefreshCcw
+                                        size="14"
+                                        className="bg-base-100 mx-1 lg:ml-1 lg:mr-3"
                                     />
-                                );
-                            }}
-                        </Query>
+                                }
+                                onClick={null}
+                                isLoading={null}
+                                disabled
+                                loaderSize={loaderSize}
+                            />
+                        );
+                    }
+
+                    const polling = !!this.state.pendingRunIds.length;
+                    if (polling) {
+                        startPolling(5000);
+                    } else {
+                        stopPolling();
+                    }
+                    return (
+                        <Button
+                            dataTestId="scan-button"
+                            className={className}
+                            text={text}
+                            textCondensed={textCondensed}
+                            textClass={textClass}
+                            icon={
+                                <Icon.RefreshCcw
+                                    size="14"
+                                    className="bg-base-100 mx-1 lg:ml-1 lg:mr-3"
+                                />
+                            }
+                            onClick={this.onClick(triggerScan)}
+                            isLoading={polling}
+                            disabled={polling}
+                            loaderSize={loaderSize}
+                        />
                     );
                 }}
             </Mutation>

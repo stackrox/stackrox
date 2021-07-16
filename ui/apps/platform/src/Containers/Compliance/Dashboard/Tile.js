@@ -1,12 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { gql, useQuery } from '@apollo/client';
+
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
-import Query from 'Components/CacheFirstQuery';
 import EntityTileLink from 'Components/EntityTileLink';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { gql } from '@apollo/client';
 
 const CLUSTERS_COUNT = gql`
     query clustersCount {
@@ -77,22 +77,31 @@ const DashboardTile = ({ match, location, entityType, position }) => {
     const QUERY = getQuery(entityType);
     const url = URLService.getURL(match, location).base(entityType).url();
 
+    const { loading, data, error } = useQuery(QUERY);
+
+    if (error) {
+        return (
+            <EntityTileLink
+                count={0}
+                entityType={entityType}
+                subText="(Not Scanned)"
+                url="#"
+                loading={loading}
+                position={position}
+            />
+        );
+    }
+
+    const value = processNumValue(data, entityType);
     return (
-        <Query query={QUERY} action="list">
-            {({ loading, data }) => {
-                const value = processNumValue(data, entityType);
-                return (
-                    <EntityTileLink
-                        count={value}
-                        entityType={entityType}
-                        subText="(Scanned)"
-                        url={url}
-                        loading={loading}
-                        position={position}
-                    />
-                );
-            }}
-        </Query>
+        <EntityTileLink
+            count={value}
+            entityType={entityType}
+            subText="(Scanned)"
+            url={url}
+            loading={loading}
+            position={position}
+        />
     );
 };
 

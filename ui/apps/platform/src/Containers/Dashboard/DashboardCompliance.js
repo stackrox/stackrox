@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link, withRouter } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
+
 import { AGGREGATED_RESULTS_ACROSS_ENTITIES } from 'queries/controls';
 import URLService from 'utils/URLService';
 import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import Loader from 'Components/Loader';
-import Query from 'Components/ThrowingQuery';
 import { standardLabels } from 'messages/standards';
 import isGQLLoading from 'utils/gqlLoading';
 import { searchParams } from 'constants/searchParams';
@@ -115,6 +116,14 @@ const DashboardCompliance = ({ match, location }) => {
         );
     }
 
+    const variables = {
+        groupBy: [entityTypes.STANDARD],
+    };
+    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_ACROSS_ENTITIES, {
+        variables,
+    });
+    const results = processData(data);
+
     return (
         <div className="w-full">
             <h2
@@ -130,33 +139,26 @@ const DashboardCompliance = ({ match, location }) => {
                 </Link>
             </h2>
             <div className="flex">
-                <Query
-                    query={AGGREGATED_RESULTS_ACROSS_ENTITIES}
-                    variables={{
-                        groupBy: [entityTypes.STANDARD],
-                    }}
-                >
-                    {({ loading, data }) => {
-                        if (isGQLLoading(loading, data)) {
-                            return <Loader />;
-                        }
-
-                        const results = processData(data);
-                        if (!results.length) {
-                            return renderScanButton();
-                        }
-                        return (
-                            <div className="flex w-full">
-                                <div className="pr-6 flex flex-1 flex-col">
-                                    {renderStandardsData(results)}
-                                </div>
-                                <div className="flex items-start">
-                                    <div className="flex flex-col">{renderLegend()}</div>
-                                </div>
-                            </div>
-                        );
-                    }}
-                </Query>
+                {isGQLLoading(loading, data) && <Loader />}
+                {!!error && (
+                    <div className="flex w-full">
+                        <div className="pr-6 flex flex-1 flex-col">
+                            A database error has occurred. Please check that you have the correct
+                            permissions to view this information.
+                        </div>
+                    </div>
+                )}
+                {!error && !results.length && renderScanButton()}
+                {!error && results.length > 0 && (
+                    <div className="flex w-full">
+                        <div className="pr-6 flex flex-1 flex-col">
+                            {renderStandardsData(results)}
+                        </div>
+                        <div className="flex items-start">
+                            <div className="flex flex-col">{renderLegend()}</div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

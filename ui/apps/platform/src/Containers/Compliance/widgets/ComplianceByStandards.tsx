@@ -11,12 +11,22 @@ type ComplianceByStandardsProps = {
 };
 
 function ComplianceByStandards({ entityType }: ComplianceByStandardsProps): ReactElement {
-    const { loading, data } = useQuery(STANDARDS_QUERY);
+    const { loading, data, error } = useQuery(STANDARDS_QUERY);
     if (loading) {
         return <Loader />;
     }
-    let standards = data.results;
-    if (entityType) {
+
+    if (error) {
+        return (
+            <div>
+                A database error has occurred. Please check that you have the correct permissions to
+                view this information.
+            </div>
+        );
+    }
+
+    let standards = data?.results || [];
+    if (entityType && Array.isArray(data?.results)) {
         standards = data.results.filter(
             ({ scopes }): boolean => scopes.includes(entityType) as boolean
         );
