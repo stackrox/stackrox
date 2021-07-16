@@ -40,12 +40,12 @@ const resourceDescriptions: Record<string, string> = {
         'Read: View users and groups for Kubernetes role-based access control in secured clusters. Write: N/A',
     Licenses:
         'Read: View the status of the license for the StackRox Kubernetes Security Platform. Write: Upload a new license key.',
-    LogIntegration: '',
     Namespace: 'Read: View Kubernetes namespaces in secured clusters. Write: N/A',
-    NetworkBaseline: '',
+    NetworkBaseline: 'Read: View network baseline results. Write: Modify network baselines.',
     NetworkGraph:
         'Read: View active and allowed network connections in secured clusters. Write: N/A',
-    NetworkGraphConfig: '',
+    NetworkGraphConfig:
+        'Read: View network graph configuration. Write: Modify network graph configuration.',
     NetworkPolicy:
         'Read: View network policies in secured clusters and simulate changes. Write: Apply network policy changes in secured clusters.',
     Node: 'Read: View Kubernetes nodes in secured clusters. Write: N/A',
@@ -70,7 +70,8 @@ const resourceDescriptions: Record<string, string> = {
         'Read: View metadata about Red Hat Advanced Cluster Security for Kubernetes service-to-service authentication. Write: Revoke or reissue service-to-service authentication credentials.',
     User:
         'Read: View users that have accessed the Red Hat Advanced Cluster Security for Kubernetes instance, including the metadata that the authentication provider provides about them. Write: N/A',
-    WatchedImage: '',
+    WatchedImage:
+        'Read: View undeployed watched images monitored. Write: Configure watched images.',
 };
 
 export type ResourceDescriptionProps = {
