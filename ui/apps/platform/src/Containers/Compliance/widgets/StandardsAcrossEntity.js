@@ -1,21 +1,21 @@
 import React, { useContext } from 'react';
+import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
+import pluralize from 'pluralize';
+import toLower from 'lodash/toLower';
+import merge from 'lodash/merge';
+
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import { standardLabels } from 'messages/standards';
 import URLService from 'utils/URLService';
-import pluralize from 'pluralize';
-import toLower from 'lodash/toLower';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import merge from 'lodash/merge';
-
 import Widget from 'Components/Widget';
-import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
-import PropTypes from 'prop-types';
 import HorizontalBarChart from 'Components/visuals/HorizontalBarChart';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import { withRouter } from 'react-router-dom';
-import { AGGREGATED_RESULTS_ACROSS_ENTITY as QUERY } from 'queries/controls';
+import { AGGREGATED_RESULTS_ACROSS_ENTITY } from 'queries/controls';
 import searchContext from 'Containers/searchContext';
 
 function formatAsPercent(x) {
@@ -50,6 +50,7 @@ function setStandardsMapping(data, type) {
 
 const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
+    const headerText = `Passing standards across ${entityType}s`;
 
     function processData(data, type) {
         if (!data || !data.results || !data.results.results.length) {
@@ -97,37 +98,46 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
         groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CHECK,
     };
+    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_ACROSS_ENTITY, {
+        variables,
+    });
+
+    if (error) {
+        return (
+            <Widget
+                className={`s-2 ${className}`}
+                header={headerText}
+                id={`standards-across-${toLower(entityType)}`}
+                bodyClassName={`graph-bottom-border ${bodyClassName}`}
+            >
+                <div>
+                    A database error has occurred. Please check that you have the correct
+                    permissions to view this information.
+                </div>
+            </Widget>
+        );
+    }
+
+    let contents;
+    if (!loading && data && data.complianceStandards) {
+        const results = processData(data, entityType);
+        if (!results.length) {
+            contents = <NoResultsMessage message="No data available. Please run a scan." />;
+        } else {
+            contents = <HorizontalBarChart data={results} valueFormat={formatAsPercent} />;
+        }
+    } else {
+        contents = <Loader />;
+    }
     return (
-        <Query query={QUERY} variables={variables}>
-            {({ loading, data }) => {
-                let contents;
-                const headerText = `Passing standards across ${entityType}s`;
-                if (!loading && data && data.complianceStandards) {
-                    const results = processData(data, entityType);
-                    if (!results.length) {
-                        contents = (
-                            <NoResultsMessage message="No data available. Please run a scan." />
-                        );
-                    } else {
-                        contents = (
-                            <HorizontalBarChart data={results} valueFormat={formatAsPercent} />
-                        );
-                    }
-                } else {
-                    contents = <Loader />;
-                }
-                return (
-                    <Widget
-                        className={`s-2 ${className}`}
-                        header={headerText}
-                        id={`standards-across-${toLower(entityType)}`}
-                        bodyClassName={`graph-bottom-border ${bodyClassName}`}
-                    >
-                        {contents}
-                    </Widget>
-                );
-            }}
-        </Query>
+        <Widget
+            className={`s-2 ${className}`}
+            header={headerText}
+            id={`standards-across-${toLower(entityType)}`}
+            bodyClassName={`graph-bottom-border ${bodyClassName}`}
+        >
+            {contents}
+        </Widget>
     );
 };
 
