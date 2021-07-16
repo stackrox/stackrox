@@ -4,6 +4,8 @@ import {
     AlertVariant,
     Badge,
     Button,
+    Modal,
+    ModalVariant,
     Title,
     Toolbar,
     ToolbarContent,
@@ -33,12 +35,20 @@ function AccessScopesList({
     handleDelete,
 }: AccessScopesListProps): ReactElement {
     const [idDeleting, setIdDeleting] = useState('');
+    const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
 
     function onClickDelete(id: string) {
         setIdDeleting(id);
+        setNameConfirmingDelete(
+            accessScopes.find((accessScope) => accessScope.id === id)?.name ?? ''
+        );
+    }
+
+    function onConfirmDelete() {
+        setNameConfirmingDelete(null);
         setAlertDelete(null);
-        handleDelete(id)
+        handleDelete(idDeleting)
             .catch((error) => {
                 setAlertDelete(
                     <Alert
@@ -53,6 +63,11 @@ function AccessScopesList({
             .finally(() => {
                 setIdDeleting('');
             });
+    }
+
+    function onCancelDelete() {
+        setNameConfirmingDelete(null);
+        setIdDeleting('');
     }
 
     return (
@@ -137,6 +152,28 @@ function AccessScopesList({
                     ))}
                 </Tbody>
             </TableComposable>
+            <Modal
+                variant={ModalVariant.small}
+                title="Permanently delete access scope?"
+                isOpen={typeof nameConfirmingDelete === 'string'}
+                onClose={onCancelDelete}
+                actions={[
+                    <Button key="confirm" variant="danger" onClick={onConfirmDelete}>
+                        Delete
+                    </Button>,
+                    <Button key="cancel" variant="link" onClick={onCancelDelete}>
+                        Cancel
+                    </Button>,
+                ]}
+            >
+                {nameConfirmingDelete ? (
+                    <div>
+                        Access scope name: <strong>{nameConfirmingDelete}</strong>
+                    </div>
+                ) : (
+                    ''
+                )}
+            </Modal>
         </>
     );
 }

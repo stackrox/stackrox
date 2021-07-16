@@ -4,6 +4,8 @@ import {
     AlertVariant,
     Badge,
     Button,
+    Modal,
+    ModalVariant,
     Title,
     Toolbar,
     ToolbarContent,
@@ -48,12 +50,18 @@ function RolesList({
     handleDelete,
 }: RolesListProps): ReactElement {
     const [nameDeleting, setNameDeleting] = useState('');
+    const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
 
     function onClickDelete(name: string) {
         setNameDeleting(name);
+        setNameConfirmingDelete(name);
+    }
+
+    function onConfirmDelete() {
+        setNameConfirmingDelete(null);
         setAlertDelete(null);
-        handleDelete(name)
+        handleDelete(nameDeleting)
             .catch((error) => {
                 setAlertDelete(
                     <Alert title="Delete role failed" variant={AlertVariant.danger} isInline>
@@ -64,6 +72,11 @@ function RolesList({
             .finally(() => {
                 setNameDeleting('');
             });
+    }
+
+    function onCancelDelete() {
+        setNameConfirmingDelete(null);
+        setNameDeleting('');
     }
 
     function getPermissionSetName(permissionSetId: string): string {
@@ -170,6 +183,28 @@ function RolesList({
                     </Tbody>
                 </TableComposable>
             )}
+            <Modal
+                variant={ModalVariant.small}
+                title="Permanently delete role?"
+                isOpen={typeof nameConfirmingDelete === 'string'}
+                onClose={onCancelDelete}
+                actions={[
+                    <Button key="confirm" variant="danger" onClick={onConfirmDelete}>
+                        Delete
+                    </Button>,
+                    <Button key="cancel" variant="link" onClick={onCancelDelete}>
+                        Cancel
+                    </Button>,
+                ]}
+            >
+                {nameConfirmingDelete ? (
+                    <div>
+                        Role name: <strong>{nameConfirmingDelete}</strong>
+                    </div>
+                ) : (
+                    ''
+                )}
+            </Modal>
         </>
     );
 }
