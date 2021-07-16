@@ -12,7 +12,7 @@ import {
 
 import { getIsDefaultRoleName } from 'constants/accessControl';
 import { AccessScope, fetchAccessScopes } from 'services/AccessScopesService';
-import { Group } from 'services/AuthService';
+import { Group, fetchAuthProviders } from 'services/AuthService';
 import { fetchGroups } from 'services/GroupsService';
 import {
     PermissionSet,
@@ -87,15 +87,26 @@ function Roles(): ReactElement {
 
         setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertGroups(null);
-        fetchGroups()
-            .then((dataFetched) => {
-                setGroups(dataFetched.response.groups);
+        Promise.all([fetchGroups(), fetchAuthProviders()])
+            .then(([dataFetchedGroups, dataFetchedAuthProviders]) => {
+                const groupsFetched = dataFetchedGroups.response.groups;
+                const authProvidersFetched = dataFetchedAuthProviders.response;
+
+                // Filter out any groups which refer to obsolete auth providers,
+                // so role is deletable if not referenced by any current auth provider
+                // as either its minimum access role or as a role in assigned rules.
+                const groupsFiltered = groupsFetched.filter((group) => {
+                    const { authProviderId } = group.props;
+                    return authProvidersFetched.some(({ id }) => id === authProviderId);
+                });
+
+                setGroups(groupsFiltered);
             })
             .catch((error) => {
                 const actionClose = <AlertActionCloseButton onClose={() => setAlertGroups(null)} />;
                 setAlertGroups(
                     <Alert
-                        title="Fetch groups failed"
+                        title="Fetch auth providers or groups failed"
                         variant={AlertVariant.warning}
                         isInline
                         actionClose={actionClose}
