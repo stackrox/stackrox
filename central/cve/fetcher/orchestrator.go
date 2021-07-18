@@ -25,6 +25,8 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster),
 		))
+
+	clustersSAC = sac.ForResource(resources.Cluster)
 )
 
 type orchestratorCVEManager struct {
@@ -219,10 +221,16 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 	return nil
 }
 
-func (m *orchestratorCVEManager) getAffectedClusters(cveID string, cveType converter.CVEType) ([]*storage.Cluster, error) {
+func (m *orchestratorCVEManager) getAffectedClusters(ctx context.Context, cveID string, cveType converter.CVEType) ([]*storage.Cluster, error) {
 	if cveToClusters, ok := m.embeddedCVEIdToClusters[cveType]; ok {
 		if clusters, ok := cveToClusters[cveID]; ok {
-			return clusters, nil
+			filteredClusters, err := sac.FilterSliceReflect(ctx, clustersSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS), clusters, func(c *storage.Cluster) sac.ScopePredicate {
+				return sac.ScopeSuffix{sac.ClusterScopeKey(c.GetId())}
+			})
+			if err != nil {
+				return nil, err
+			}
+			return filteredClusters.([]*storage.Cluster), nil
 		}
 	}
 	return nil, errors.Errorf("Cannot find cve with type %v id %s", cveType, cveID)

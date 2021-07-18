@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"context"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
@@ -20,7 +21,7 @@ type OrchestratorIstioCVEManager interface {
 	Start()
 	Update(zipPath string, forceUpdate bool)
 	HandleClusterConnection()
-	GetAffectedClusters(cveID string, ct converter.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error)
+	GetAffectedClusters(ctx context.Context, cveID string, ct converter.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error)
 	UpsertOrchestratorIntegration(integration *storage.OrchestratorIntegration) error
 	RemoveIntegration(integrationID string)
 }

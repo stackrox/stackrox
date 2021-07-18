@@ -75,7 +75,7 @@ func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnera
 	newCVEs := make([]converter.ClusterCVEParts, 0, len(cves))
 	newCVEIDs := set.NewStringSet()
 	for _, cve := range cves {
-		clusters, err := m.cveMatcher.GetAffectedClusters(m.getNVDCVE(cve.GetId()))
+		clusters, err := m.cveMatcher.GetAffectedClusters(cveElevatedCtx, m.getNVDCVE(cve.GetId()))
 		if err != nil {
 			return err
 		}

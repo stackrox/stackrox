@@ -284,7 +284,7 @@ func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, c
 		return 0, 0, nil
 	}
 
-	affectedClusters, err := resolver.cveMatcher.GetAffectedClusters(cve)
+	affectedClusters, err := resolver.cveMatcher.GetAffectedClusters(ctx, cve)
 	if err != nil {
 		return 0, 0, errors.Errorf("unknown CVE type: %s", ct)
 	}
@@ -296,7 +296,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVul
 	if err != nil {
 		return 0, 0, err
 	}
-	affectedClusters, err := evr.root.orchestratorIstioCVEManager.GetAffectedClusters(evr.data.Cve, ct, evr.root.cveMatcher)
+	affectedClusters, err := evr.root.orchestratorIstioCVEManager.GetAffectedClusters(ctx, evr.data.Cve, ct, evr.root.cveMatcher)
 	if err != nil {
 		return 0, 0, err
 	}

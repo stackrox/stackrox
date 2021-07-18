@@ -13,11 +13,9 @@ import (
 	"github.com/stackrox/rox/central/cve/converter"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -25,12 +23,6 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-
-	readCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Cluster, resources.Namespace, resources.Image),
-		))
 
 	gkeVersionRegex = regexp.MustCompile(`^[v|V]?[0-9]+\.[0-9]+\.[0-9]+-gke\.[0-9]+$`)
 	eksVersionRegex = regexp.MustCompile(`^[v|V]?[0-9]+\.[0-9]+\.[0-9]+.*eks.*$`)
@@ -80,15 +72,15 @@ func (m *CVEMatcher) IsEKSVersion(version string) bool {
 }
 
 // GetAffectedClusters returns the clusters affected by k8s and istio cves
-func (m *CVEMatcher) GetAffectedClusters(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) ([]*storage.Cluster, error) {
-	clusters, err := m.clusters.GetClusters(readCtx)
+func (m *CVEMatcher) GetAffectedClusters(ctx context.Context, nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) ([]*storage.Cluster, error) {
+	clusters, err := m.clusters.GetClusters(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	filtered := make([]*storage.Cluster, 0, len(clusters))
 	for _, cluster := range clusters {
-		affected, err := m.IsClusterAffectedByK8sOrIstioCVE(readCtx, cluster, nvdCVE)
+		affected, err := m.IsClusterAffectedByK8sOrIstioCVE(ctx, cluster, nvdCVE)
 		if err != nil {
 			return nil, err
 		}
