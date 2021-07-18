@@ -463,7 +463,7 @@ func (resolver *cVEResolver) getEnvImpactComponentsForPerClusterVuln(ctx context
 	if err != nil {
 		return 0, 0, err
 	}
-	affectedClusters, err := resolver.root.orchestratorIstioCVEManager.GetAffectedClusters(resolver.data.GetId(), ct, resolver.root.cveMatcher)
+	affectedClusters, err := resolver.root.orchestratorIstioCVEManager.GetAffectedClusters(ctx, resolver.data.GetId(), ct, resolver.root.cveMatcher)
 	if err != nil {
 		return 0, 0, err
 	}

@@ -101,16 +101,16 @@ func (m *orchestratorIstioCVEManagerImpl) Update(zipPath string, forceUpdate boo
 }
 
 // GetAffectedClusters returns the affected clusters for a CVE
-func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(cveID string, ct converter.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
+func (m *orchestratorIstioCVEManagerImpl) GetAffectedClusters(ctx context.Context, cveID string, ct converter.CVEType, cveMatcher *cveMatcher.CVEMatcher) ([]*storage.Cluster, error) {
 	if ct == converter.K8s || ct == converter.OpenShift {
-		clusters, err := m.orchestratorCVEMgr.getAffectedClusters(cveID, ct)
+		clusters, err := m.orchestratorCVEMgr.getAffectedClusters(ctx, cveID, ct)
 		if err != nil {
 			return nil, err
 		}
 		return clusters, nil
 	}
 	cve := m.istioCVEMgr.getNVDCVE(cveID)
-	clusters, err := cveMatcher.GetAffectedClusters(cve)
+	clusters, err := cveMatcher.GetAffectedClusters(ctx, cve)
 	if err != nil {
 		return nil, err
 	}
