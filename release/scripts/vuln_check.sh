@@ -4,6 +4,9 @@ set -eu
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
+GITROOT="$(git rev-parse --show-toplevel)"
+[[ -n "${GITROOT}" ]] || { echo >&2 "Could not determine git root!"; exit 1; }
+
 # Helper method to call curl command to quay
 function quay_curl {
     curl -H "Authorization: Bearer ${QUAY_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/stackrox/${1}"
@@ -73,10 +76,10 @@ function compare_fixable_vulns {
 FAIL_SCRIPT=false
 
 # determine all image tags
-RELEASE_TAG=$(make --quiet --no-print-directory -C "${DIR}/.." tag)
-COLLECTOR_TAG=$(cat "$DIR/../../COLLECTOR_VERSION")
-SCANNER_TAG=$(cat "$DIR/../../SCANNER_VERSION")
-DOCS_PRERELEASE_TAG=$(cat "$DIR/../../DOCS_VERSION")
+RELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" tag)
+COLLECTOR_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" collector-tag)
+SCANNER_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" scanner-tag)
+DOCS_PRERELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" docs-tag)
 
 ALLOWED_VULNS=$(jq -c '.[]' "$DIR/allowed_vulns.json")
 

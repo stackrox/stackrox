@@ -40,14 +40,14 @@ RELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" tag)
 retag_with_rhel stackrox/main "$RELEASE_TAG"
 
 # Docs image
-DOCS_PRERELEASE_TAG=$(cat "${GITROOT}/DOCS_VERSION")
+DOCS_PRERELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" docs-tag)
 retag_without_rhel stackrox/docs "$DOCS_PRERELEASE_TAG"
 
 # Collector images
-COLLECTOR_TAG=$(cat "${GITROOT}/COLLECTOR_VERSION")
+COLLECTOR_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" collector-tag)
 retag_with_rhel "stackrox/collector" "$COLLECTOR_TAG"
 
 # Legacy scanner images
-SCANNER_TAG=$(cat "${GITROOT}/SCANNER_VERSION")
+SCANNER_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" scanner-tag)
 retag_with_rhel stackrox/scanner "$SCANNER_TAG"
 retag_with_rhel "stackrox/scanner-db" "$SCANNER_TAG"
