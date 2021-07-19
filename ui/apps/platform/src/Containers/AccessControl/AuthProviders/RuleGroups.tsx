@@ -11,6 +11,7 @@ import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
 
 export type RuleGroupsProps = {
+    authProviderId: string;
     onChange: (
         _value: unknown,
         event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
@@ -21,9 +22,10 @@ export type RuleGroupsProps = {
     disabled: boolean | undefined;
 };
 
-const ruleKeys = ['userid', 'name', 'email', 'super-groups'];
+const ruleKeys = ['userid', 'name', 'email', 'groups'];
 
 function RuleGroups({
+    authProviderId,
     onChange,
     setFieldValue,
     groups = [],
@@ -86,16 +88,18 @@ function RuleGroups({
                                         </SelectSingle>
                                     </FormGroup>
                                 </FlexItem>
-                                <FlexItem>
-                                    <Button
-                                        variant="plain"
-                                        aria-label="Delete rule"
-                                        style={{ transform: 'translate(0, 42px)' }}
-                                        onClick={() => arrayHelpers.remove(index)}
-                                    >
-                                        <TrashIcon />
-                                    </Button>
-                                </FlexItem>
+                                {!disabled && (
+                                    <FlexItem>
+                                        <Button
+                                            variant="plain"
+                                            aria-label="Delete rule"
+                                            style={{ transform: 'translate(0, 42px)' }}
+                                            onClick={() => arrayHelpers.remove(index)}
+                                        >
+                                            <TrashIcon />
+                                        </Button>
+                                    </FlexItem>
+                                )}
                             </Flex>
                         ))}
                     {!disabled && (
@@ -109,7 +113,7 @@ function RuleGroups({
                                         arrayHelpers.push({
                                             roleName: roles[0]?.name || '',
                                             props: {
-                                                authProviderId: '',
+                                                authProviderId: authProviderId || '',
                                                 key: ruleKeys[0],
                                                 value: '',
                                             },
