@@ -38,4 +38,7 @@ var (
 
 	// ComplianceOperatorCheckResults enables getting compliance results from the compliance operator
 	ComplianceOperatorCheckResults = registerFeature("Enable fetching of compliance operator results", "ROX_COMPLIANCE_OPERATOR_INTEGRATION", true)
+
+	// ActiveVulnManagement enables detection of active vulnerabilities
+	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", false)
 )
