@@ -32,7 +32,18 @@ func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filter Filter) search.S
 			return results, nil
 		},
 		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			return searcher.Count(q)
+			if filter == nil {
+				return searcher.Count(q)
+			}
+			result, err := searcher.Search(q)
+			if err != nil {
+				return 0, err
+			}
+			err = ApplySACFilterToSearchResults(ctx, &result, filter)
+			if err != nil {
+				return 0, err
+			}
+			return len(result), nil
 		},
 	}
 }
@@ -61,12 +72,11 @@ func Searcher(searcher search.Searcher, filter Filter) search.Searcher {
 			if err != nil {
 				return 0, err
 			}
-
-			filtered, err := ApplySACFilter(ctx, search.ResultsToIDs(results), filter)
+			err = ApplySACFilterToSearchResults(ctx, &results, filter)
 			if err != nil {
 				return 0, err
 			}
-			return len(filtered), nil
+			return len(results), nil
 		},
 	}
 }
