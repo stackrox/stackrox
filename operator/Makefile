@@ -114,8 +114,7 @@ KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
-# TODO(ROX-7417): Migrate from 1.5.2 to the newest version and have only one operator-sdk target in the file.
-OPERATOR_SDK_VERSION = 1.5.2
+OPERATOR_SDK_VERSION = 1.9.0
 OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
 .PHONY: operator-sdk
 operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
@@ -124,15 +123,6 @@ operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
 	OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$(OPERATOR_SDK_VERSION)/operator-sdk_$(OS)_$${ARCH} ;\
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(OPERATOR_SDK) $${OPERATOR_SDK_URL}
-
-.PHONY: operator-sdk-for-testing
-operator-sdk-for-testing: ## Download newer operator-sdk version necessary for testing bundle.
-	@OPERATOR_SDK_VERSION=1.9.0 ;\
-	OPERATOR_SDK=$(PROJECT_DIR)/bin/operator-sdk-$${OPERATOR_SDK_VERSION} ;\
-	ARCH=$$(case $$(uname -m) in (x86_64) echo -n amd64 ;; (aarch64) echo -n arm64 ;; (*) echo -n $$(uname -m) ;; esac) ;\
-	OPERATOR_SDK_URL=https://github.com/operator-framework/operator-sdk/releases/download/v$${OPERATOR_SDK_VERSION}/operator-sdk_$(OS)_$${ARCH} ;\
-	$(GET_GITHUB_RELEASE_FN); \
-	get_github_release $${OPERATOR_SDK} $${OPERATOR_SDK_URL}
 
 KUTTL_VERSION = 0.11.0
 KUTTL_UPSTREAM = kudobuilder

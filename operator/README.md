@@ -2,13 +2,9 @@
 
 Central Services and Secured Cluster Services operator.
 
-## Requirements
-
- - operator-sdk 1.5.x
-
 ## Quickstart
 
-All following commands should be ran from this directory (`operator/`).
+All following commands should be run from this directory (`operator/`).
 
 1. Build and run operator locally. Note that this starts the operator without deploying it as a container in the cluster.  
 See [Advanced usage](#advanced-usage) for different ways of running operator.
@@ -160,8 +156,8 @@ $ make bundle-test-image
 ### Launch the operator on the cluster with OLM and the bundle
 
 ```bash
-# 0. Get a proper operator-sdk for testing.
-$ make operator-sdk-for-testing
+# 0. Get operator-sdk program.
+$ make operator-sdk
 
 # 1. Install OLM.
 $ bin/operator-sdk-1.9.0 olm install

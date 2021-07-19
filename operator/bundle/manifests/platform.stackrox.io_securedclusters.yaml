@@ -17,41 +17,60 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is responsible for the connection to Central, and Collector, which performs host-level collection of process and network events.<p> **Important:** Please see the _Installation Prerequisites_ on the main RHACS operator page before deploying, or consult the RHACS documentation on creating cluster init bundles.
+        description: SecuredCluster is the configuration template for the secured
+          cluster services. These include Sensor, which is responsible for the connection
+          to Central, and Collector, which performs host-level collection of process
+          and network events.<p> **Important:** Please see the _Installation Prerequisites_
+          on the main RHACS operator page before deploying, or consult the RHACS documentation
+          on creating cluster init bundles.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
-            description: SecuredClusterSpec defines the desired configuration state of a secured cluster.
+            description: SecuredClusterSpec defines the desired configuration state
+              of a secured cluster.
             properties:
               admissionControl:
-                description: Settings for the Admission Control component, which is necessary for preventive policy enforcement, and for Kubernetes event monitoring.
+                description: Settings for the Admission Control component, which is
+                  necessary for preventive policy enforcement, and for Kubernetes
+                  event monitoring.
                 properties:
                   listenOnCreates:
                     default: false
-                    description: Set this to 'true' to enable preventive policy enforcement for object creations.
+                    description: Set this to 'true' to enable preventive policy enforcement
+                      for object creations.
                     type: boolean
                   listenOnEvents:
                     default: true
-                    description: Set this to 'true' to enable monitoring and enforcement for Kubernetes events (port-forward and exec).
+                    description: Set this to 'true' to enable monitoring and enforcement
+                      for Kubernetes events (port-forward and exec).
                     type: boolean
                   listenOnUpdates:
                     default: false
-                    description: "Set this to 'true' to enable preventive policy enforcement for object updates. \n Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well."
+                    description: "Set this to 'true' to enable preventive policy enforcement
+                      for object updates. \n Note: this will not have any effect unless
+                      'Listen On Creates' is set to 'true' as well."
                     type: boolean
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: If you want this component to only run on specific nodes, you can configure a node selector here.
+                    description: If you want this component to only run on specific
+                      nodes, you can configure a node selector here.
                     type: object
                   resources:
-                    description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
+                    description: Allows overriding the default resource settings for
+                      this component. Please consult the documentation for an overview
+                      of default resource requirements and a sizing guide.
                     properties:
                       limits:
                         additionalProperties:
@@ -60,7 +79,8 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:
@@ -69,16 +89,24 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
                 type: object
               auditLogs:
-                description: Settings relating to the ingestion of Kubernetes audit logs.
+                description: Settings relating to the ingestion of Kubernetes audit
+                  logs.
                 properties:
                   collection:
                     default: Auto
-                    description: Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error. Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+                    description: Whether collection of Kubernetes audit logs should
+                      be enabled or disabled. Currently, this is only supported on
+                      OpenShift 4, and trying to enable it on non-OpenShift 4 clusters
+                      will result in an error. Use the 'Auto' setting to enable it
+                      on compatible environments, and disable it elsewhere.
                     enum:
                     - Auto
                     - Disabled
@@ -86,10 +114,19 @@ spec:
                     type: string
                 type: object
               centralEndpoint:
-                description: 'The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to, including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by prefixing the endpoint address with wss://. Note: when leaving this blank, Sensor will attempt to connect to a Central instance running in the same namespace.'
+                description: 'The endpoint of the Red Hat Advanced Cluster Security
+                  Central instance to connect to, including the port number. If using
+                  a non-gRPC capable load balancer, use the WebSocket protocol by
+                  prefixing the endpoint address with wss://. Note: when leaving this
+                  blank, Sensor will attempt to connect to a Central instance running
+                  in the same namespace.'
                 type: string
               clusterName:
-                description: 'The unique name of this cluster, as it will be shown in the Red Hat Advanced Cluster Security UI. Note: Once a name is set here, you will not be able to change it again. You will need to delete and re-create this object in order to register a cluster with a new name.'
+                description: 'The unique name of this cluster, as it will be shown
+                  in the Red Hat Advanced Cluster Security UI. Note: Once a name is
+                  set here, you will not be able to change it again. You will need
+                  to delete and re-create this object in order to register a cluster
+                  with a new name.'
                 type: string
               customize:
                 description: Customizations to apply on all Central Services components.
@@ -100,18 +137,29 @@ spec:
                     description: Custom annotations to set on all managed objects.
                     type: object
                   envVars:
-                    description: Custom environment variables to set on managed pods' containers.
+                    description: Custom environment variables to set on managed pods'
+                      containers.
                     items:
-                      description: EnvVar represents an environment variable present in a Container.
+                      description: EnvVar represents an environment variable present
+                        in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a
+                            C_IDENTIFIER.
                           type: string
                         value:
-                          description: 'Variable references $(VAR_NAME) are expanded using the previous defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".'
+                          description: 'Variable references $(VAR_NAME) are expanded
+                            using the previous defined environment variables in the
+                            container and any service environment variables. If a
+                            variable cannot be resolved, the reference in the input
+                            string will be unchanged. The $(VAR_NAME) syntax can be
+                            escaped with a double $$, ie: $$(VAR_NAME). Escaped references
+                            will never be expanded, regardless of whether the variable
+                            exists or not. Defaults to "".'
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value. Cannot be used if value is not empty.
+                          description: Source for the environment variable's value.
+                            Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -120,37 +168,51 @@ spec:
                                   description: The key to select.
                                   type: string
                                 name:
-                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its key must be defined
+                                  description: Specify whether the ConfigMap or its
+                                    key must be defined
                                   type: boolean
                               required:
                               - key
                               type: object
                             fieldRef:
-                              description: 'Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`, `metadata.annotations[''<KEY>'']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.'
+                              description: 'Selects a field of the pod: supports metadata.name,
+                                metadata.namespace, `metadata.labels[''<KEY>'']`,
+                                `metadata.annotations[''<KEY>'']`, spec.nodeName,
+                                spec.serviceAccountName, status.hostIP, status.podIP,
+                                status.podIPs.'
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath
+                                    is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the specified API version.
+                                  description: Path of the field to select in the
+                                    specified API version.
                                   type: string
                               required:
                               - fieldPath
                               type: object
                             resourceFieldRef:
-                              description: 'Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.'
+                              description: 'Selects a resource of the container: only
+                                resources limits and requests (limits.cpu, limits.memory,
+                                limits.ephemeral-storage, requests.cpu, requests.memory
+                                and requests.ephemeral-storage) are currently supported.'
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes, optional for env vars'
+                                  description: 'Container name: required for volumes,
+                                    optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the exposed resources, defaults to "1"
+                                  description: Specifies the output format of the
+                                    exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -160,16 +222,21 @@ spec:
                               - resource
                               type: object
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's namespace
+                              description: Selects a key of a secret in the pod's
+                                namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must be a valid secret key.
+                                  description: The key of the secret to select from.  Must
+                                    be a valid secret key.
                                   type: string
                                 name:
-                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key must be defined
+                                  description: Specify whether the Secret or its key
+                                    must be defined
                                   type: boolean
                               required:
                               - key
@@ -186,9 +253,11 @@ spec:
                     type: object
                 type: object
               imagePullSecrets:
-                description: Additional image pull secrets to be taken into account for pulling images.
+                description: Additional image pull secrets to be taken into account
+                  for pulling images.
                 items:
-                  description: LocalSecretReference is a reference to a secret within the same namespace.
+                  description: LocalSecretReference is a reference to a secret within
+                    the same namespace.
                   properties:
                     name:
                       description: The name of the referenced secret.
@@ -201,18 +270,26 @@ spec:
                 description: Miscellaneous settings.
                 properties:
                   createSCCs:
-                    description: Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This isn't usually needed, and may interfere with other workloads.
+                    description: Set this to true to have the operator create SecurityContextConstraints
+                      (SCCs) for the operands. This isn't usually needed, and may
+                      interfere with other workloads.
                     type: boolean
                 type: object
               perNode:
-                description: Settings for the components running on each node in the cluster (Collector and Compliance).
+                description: Settings for the components running on each node in the
+                  cluster (Collector and Compliance).
                 properties:
                   collector:
-                    description: Settings for the Collector container, which is responsible for collecting process and networking activity at the host level.
+                    description: Settings for the Collector container, which is responsible
+                      for collecting process and networking activity at the host level.
                     properties:
                       collection:
                         default: KernelModule
-                        description: The method for system-level data collection. Kernel module is recommended. If you select "NoCollection", you will not be able to see any information about network activity and process executions. The remaining settings in these section will not have any effect.
+                        description: The method for system-level data collection.
+                          Kernel module is recommended. If you select "NoCollection",
+                          you will not be able to see any information about network
+                          activity and process executions. The remaining settings
+                          in these section will not have any effect.
                         enum:
                         - EBPF
                         - KernelModule
@@ -220,13 +297,21 @@ spec:
                         type: string
                       imageFlavor:
                         default: Regular
-                        description: The image flavor to use for collector. "Regular" images are bigger in size, but contain kernel modules for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance is connected to the internet, or regularly receives Collector Support Package updates (for further instructions, please refer to the documentation).
+                        description: The image flavor to use for collector. "Regular"
+                          images are bigger in size, but contain kernel modules for
+                          most kernels. If you use the "Slim" image flavor, you must
+                          ensure that your Central instance is connected to the internet,
+                          or regularly receives Collector Support Package updates
+                          (for further instructions, please refer to the documentation).
                         enum:
                         - Regular
                         - Slim
                         type: string
                       resources:
-                        description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
+                        description: Allows overriding the default resource settings
+                          for this component. Please consult the documentation for
+                          an overview of default resource requirements and a sizing
+                          guide.
                         properties:
                           limits:
                             additionalProperties:
@@ -235,7 +320,8 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                           requests:
                             additionalProperties:
@@ -244,15 +330,23 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
                     type: object
                   compliance:
-                    description: Settings for the Compliance container, which is responsible for checking host-level configurations.
+                    description: Settings for the Compliance container, which is responsible
+                      for checking host-level configurations.
                     properties:
                       resources:
-                        description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
+                        description: Allows overriding the default resource settings
+                          for this component. Please consult the documentation for
+                          an overview of default resource requirements and a sizing
+                          guide.
                         properties:
                           limits:
                             additionalProperties:
@@ -261,7 +355,8 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                           requests:
                             additionalProperties:
@@ -270,13 +365,21 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
                     type: object
                   taintToleration:
                     default: TolerateTaints
-                    description: To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security will run services on every node in the cluster, including tainted nodes by default. If you do not want this behavior, please select 'AvoidTaints' here.
+                    description: To ensure comprehensive monitoring of your cluster
+                      activity, Red Hat Advanced Cluster Security will run services
+                      on every node in the cluster, including tainted nodes by default.
+                      If you do not want this behavior, please select 'AvoidTaints'
+                      here.
                     enum:
                     - TolerateTaints
                     - AvoidTaints
@@ -288,10 +391,13 @@ spec:
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: If you want this component to only run on specific nodes, you can configure a node selector here.
+                    description: If you want this component to only run on specific
+                      nodes, you can configure a node selector here.
                     type: object
                   resources:
-                    description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
+                    description: Allows overriding the default resource settings for
+                      this component. Please consult the documentation for an overview
+                      of default resource requirements and a sizing guide.
                     properties:
                       limits:
                         additionalProperties:
@@ -300,7 +406,8 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:
@@ -309,7 +416,10 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
                 type: object
@@ -318,7 +428,8 @@ spec:
                 properties:
                   additionalCAs:
                     items:
-                      description: AdditionalCA defines a certificate for an additional Certificate Authority.
+                      description: AdditionalCA defines a certificate for an additional
+                        Certificate Authority.
                       properties:
                         content:
                           description: PEM format
@@ -339,11 +450,14 @@ spec:
             description: SecuredClusterStatus defines the observed state of SecuredCluster
             properties:
               clusterName:
-                description: The assigned cluster name per the spec. This cannot be changed afterwards. If you need to change the cluster name, please delete and recreate this resource.
+                description: The assigned cluster name per the spec. This cannot be
+                  changed afterwards. If you need to change the cluster name, please
+                  delete and recreate this resource.
                 type: string
               conditions:
                 items:
-                  description: StackRoxCondition defines a condition for a StackRox custom resource.
+                  description: StackRoxCondition defines a condition for a StackRox
+                    custom resource.
                   properties:
                     lastTransitionTime:
                       format: date-time
@@ -351,13 +465,16 @@ spec:
                     message:
                       type: string
                     reason:
-                      description: ConditionReason is a type of values of condition reason.
+                      description: ConditionReason is a type of values of condition
+                        reason.
                       type: string
                     status:
-                      description: ConditionStatus is a type of values of condition status.
+                      description: ConditionStatus is a type of values of condition
+                        status.
                       type: string
                     type:
-                      description: ConditionType is a type of values of condition type.
+                      description: ConditionType is a type of values of condition
+                        type.
                       type: string
                   required:
                   - status
@@ -365,7 +482,8 @@ spec:
                   type: object
                 type: array
               deployedRelease:
-                description: StackRoxRelease describes the Helm "release" that was most recently applied.
+                description: StackRoxRelease describes the Helm "release" that was
+                  most recently applied.
                 properties:
                   version:
                     type: string

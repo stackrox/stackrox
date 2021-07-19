@@ -17,13 +17,19 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Central is the configuration template for the central services. This includes the API server, persistent storage, and the web UI, as well as the image scanner.
+        description: Central is the configuration template for the central services.
+          This includes the API server, persistent storage, and the web UI, as well
+          as the image scanner.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -31,10 +37,14 @@ spec:
             description: CentralSpec defines the desired state of Central
             properties:
               central:
-                description: Settings for the Central component, which is responsible for all user interaction.
+                description: Settings for the Central component, which is responsible
+                  for all user interaction.
                 properties:
                   adminPasswordSecret:
-                    description: Specify a secret that contains the administrator password in the "password" data item. If omitted, the operator will auto-generate a password and store it in the "password" item in the "central-htpasswd" secret.
+                    description: Specify a secret that contains the administrator
+                      password in the "password" data item. If omitted, the operator
+                      will auto-generate a password and store it in the "password"
+                      item in the "central-htpasswd" secret.
                     properties:
                       name:
                         description: The name of the referenced secret.
@@ -43,7 +53,12 @@ spec:
                     - name
                     type: object
                   defaultTLSSecret:
-                    description: By default, Central will only serve an internal TLS certificate, which means that you will need to handle TLS termination at the ingress or load balancer level. If you want to terminate TLS in Central and serve a custom server certificate, you can specify a secret containing the certificate and private key here.
+                    description: By default, Central will only serve an internal TLS
+                      certificate, which means that you will need to handle TLS termination
+                      at the ingress or load balancer level. If you want to terminate
+                      TLS in Central and serve a custom server certificate, you can
+                      specify a secret containing the certificate and private key
+                      here.
                     properties:
                       name:
                         description: The name of the referenced secret.
@@ -52,7 +67,8 @@ spec:
                     - name
                     type: object
                   exposure:
-                    description: Here you can configure if you want to expose central through a node port, a load balancer, or an OpenShift route.
+                    description: Here you can configure if you want to expose central
+                      through a node port, a load balancer, or an OpenShift route.
                     properties:
                       loadBalancer:
                         description: Expose Central through a load balancer service.
@@ -61,7 +77,8 @@ spec:
                             default: false
                             type: boolean
                           ip:
-                            description: If you have a static IP address reserved for your load balancer, you can enter it here.
+                            description: If you have a static IP address reserved
+                              for your load balancer, you can enter it here.
                             type: string
                           port:
                             default: 443
@@ -78,7 +95,8 @@ spec:
                             default: false
                             type: boolean
                           port:
-                            description: Use this to specify an explicit node port. Most users should leave this empty.
+                            description: Use this to specify an explicit node port.
+                              Most users should leave this empty.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -95,36 +113,53 @@ spec:
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: If you want this component to only run on specific nodes, you can configure a node selector here.
+                    description: If you want this component to only run on specific
+                      nodes, you can configure a node selector here.
                     type: object
                   persistence:
-                    description: Configures how Central should store its persistent data. You can choose between using a persistent volume claim (recommended default), and a host path.
+                    description: Configures how Central should store its persistent
+                      data. You can choose between using a persistent volume claim
+                      (recommended default), and a host path.
                     properties:
                       hostPath:
-                        description: Stores persistent data on a directory on the host. This is not recommended, and should only be used together with a node selector (only available in YAML view).
+                        description: Stores persistent data on a directory on the
+                          host. This is not recommended, and should only be used together
+                          with a node selector (only available in YAML view).
                         properties:
                           path:
                             description: The path on the host running Central.
                             type: string
                         type: object
                       persistentVolumeClaim:
-                        description: Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data. Recommended for most users.
+                        description: Uses a Kubernetes persistent volume claim (PVC)
+                          to manage the storage location of persistent data. Recommended
+                          for most users.
                         properties:
                           claimName:
                             default: stackrox-db
-                            description: The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be created. Defaults to "stackrox-db" if not set.
+                            description: The name of the PVC to manage persistent
+                              data. If no PVC with the given name exists, it will
+                              be created. Defaults to "stackrox-db" if not set.
                             type: string
                           size:
-                            description: The size of the persistent volume when created through the claim. If a claim was automatically created, this can be used after the initial deployment to resize (grow) the volume (only supported by some storage class controllers).
+                            description: The size of the persistent volume when created
+                              through the claim. If a claim was automatically created,
+                              this can be used after the initial deployment to resize
+                              (grow) the volume (only supported by some storage class
+                              controllers).
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             type: string
                           storageClassName:
-                            description: The name of the storage class to use for the PVC. If your cluster is not configured with a default storage class, you must select a value here.
+                            description: The name of the storage class to use for
+                              the PVC. If your cluster is not configured with a default
+                              storage class, you must select a value here.
                             type: string
                         type: object
                     type: object
                   resources:
-                    description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
+                    description: Allows overriding the default resource settings for
+                      this component. Please consult the documentation for an overview
+                      of default resource requirements and a sizing guide.
                     properties:
                       limits:
                         additionalProperties:
@@ -133,7 +168,8 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:
@@ -142,7 +178,10 @@ spec:
                           - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
-                        description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
                 type: object
@@ -155,18 +194,29 @@ spec:
                     description: Custom annotations to set on all managed objects.
                     type: object
                   envVars:
-                    description: Custom environment variables to set on managed pods' containers.
+                    description: Custom environment variables to set on managed pods'
+                      containers.
                     items:
-                      description: EnvVar represents an environment variable present in a Container.
+                      description: EnvVar represents an environment variable present
+                        in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a C_IDENTIFIER.
+                          description: Name of the environment variable. Must be a
+                            C_IDENTIFIER.
                           type: string
                         value:
-                          description: 'Variable references $(VAR_NAME) are expanded using the previous defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to "".'
+                          description: 'Variable references $(VAR_NAME) are expanded
+                            using the previous defined environment variables in the
+                            container and any service environment variables. If a
+                            variable cannot be resolved, the reference in the input
+                            string will be unchanged. The $(VAR_NAME) syntax can be
+                            escaped with a double $$, ie: $$(VAR_NAME). Escaped references
+                            will never be expanded, regardless of whether the variable
+                            exists or not. Defaults to "".'
                           type: string
                         valueFrom:
-                          description: Source for the environment variable's value. Cannot be used if value is not empty.
+                          description: Source for the environment variable's value.
+                            Cannot be used if value is not empty.
                           properties:
                             configMapKeyRef:
                               description: Selects a key of a ConfigMap.
@@ -175,37 +225,51 @@ spec:
                                   description: The key to select.
                                   type: string
                                 name:
-                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
                                   type: string
                                 optional:
-                                  description: Specify whether the ConfigMap or its key must be defined
+                                  description: Specify whether the ConfigMap or its
+                                    key must be defined
                                   type: boolean
                               required:
                               - key
                               type: object
                             fieldRef:
-                              description: 'Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`, `metadata.annotations[''<KEY>'']`, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.'
+                              description: 'Selects a field of the pod: supports metadata.name,
+                                metadata.namespace, `metadata.labels[''<KEY>'']`,
+                                `metadata.annotations[''<KEY>'']`, spec.nodeName,
+                                spec.serviceAccountName, status.hostIP, status.podIP,
+                                status.podIPs.'
                               properties:
                                 apiVersion:
-                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
+                                  description: Version of the schema the FieldPath
+                                    is written in terms of, defaults to "v1".
                                   type: string
                                 fieldPath:
-                                  description: Path of the field to select in the specified API version.
+                                  description: Path of the field to select in the
+                                    specified API version.
                                   type: string
                               required:
                               - fieldPath
                               type: object
                             resourceFieldRef:
-                              description: 'Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.'
+                              description: 'Selects a resource of the container: only
+                                resources limits and requests (limits.cpu, limits.memory,
+                                limits.ephemeral-storage, requests.cpu, requests.memory
+                                and requests.ephemeral-storage) are currently supported.'
                               properties:
                                 containerName:
-                                  description: 'Container name: required for volumes, optional for env vars'
+                                  description: 'Container name: required for volumes,
+                                    optional for env vars'
                                   type: string
                                 divisor:
                                   anyOf:
                                   - type: integer
                                   - type: string
-                                  description: Specifies the output format of the exposed resources, defaults to "1"
+                                  description: Specifies the output format of the
+                                    exposed resources, defaults to "1"
                                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                   x-kubernetes-int-or-string: true
                                 resource:
@@ -215,16 +279,21 @@ spec:
                               - resource
                               type: object
                             secretKeyRef:
-                              description: Selects a key of a secret in the pod's namespace
+                              description: Selects a key of a secret in the pod's
+                                namespace
                               properties:
                                 key:
-                                  description: The key of the secret to select from.  Must be a valid secret key.
+                                  description: The key of the secret to select from.  Must
+                                    be a valid secret key.
                                   type: string
                                 name:
-                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
                                   type: string
                                 optional:
-                                  description: Specify whether the Secret or its key must be defined
+                                  description: Specify whether the Secret or its key
+                                    must be defined
                                   type: boolean
                               required:
                               - key
@@ -245,16 +314,21 @@ spec:
                 properties:
                   connectivityPolicy:
                     default: Online
-                    description: Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode. In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
+                    description: Configures whether Red Hat Advanced Cluster Security
+                      should run in online or offline (disconnected) mode. In offline
+                      mode, automatic updates of vulnerability definitions and kernel
+                      modules are disabled.
                     enum:
                     - Online
                     - Offline
                     type: string
                 type: object
               imagePullSecrets:
-                description: Additional image pull secrets to be taken into account for pulling images.
+                description: Additional image pull secrets to be taken into account
+                  for pulling images.
                 items:
-                  description: LocalSecretReference is a reference to a secret within the same namespace.
+                  description: LocalSecretReference is a reference to a secret within
+                    the same namespace.
                   properties:
                     name:
                       description: The name of the referenced secret.
@@ -267,22 +341,30 @@ spec:
                 description: Miscellaneous settings.
                 properties:
                   createSCCs:
-                    description: Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This isn't usually needed, and may interfere with other workloads.
+                    description: Set this to true to have the operator create SecurityContextConstraints
+                      (SCCs) for the operands. This isn't usually needed, and may
+                      interfere with other workloads.
                     type: boolean
                 type: object
               scanner:
-                description: Settings for the Scanner component, which is responsible for vulnerability scanning of container images.
+                description: Settings for the Scanner component, which is responsible
+                  for vulnerability scanning of container images.
                 properties:
                   analyzer:
-                    description: Settings pertaining to the analyzer deployment, such as for autoscaling.
+                    description: Settings pertaining to the analyzer deployment, such
+                      as for autoscaling.
                     properties:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific nodes, you can configure a node selector here.
+                        description: If you want this component to only run on specific
+                          nodes, you can configure a node selector here.
                         type: object
                       resources:
-                        description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
+                        description: Allows overriding the default resource settings
+                          for this component. Please consult the documentation for
+                          an overview of default resource requirements and a sizing
+                          guide.
                         properties:
                           limits:
                             additionalProperties:
@@ -291,7 +373,8 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                           requests:
                             additionalProperties:
@@ -300,15 +383,22 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
                       scaling:
-                        description: Controls the number of analyzer replicas and autoscaling.
+                        description: Controls the number of analyzer replicas and
+                          autoscaling.
                         properties:
                           autoScaling:
                             default: Enabled
-                            description: When enabled, the number of analyzer replicas is managed dynamically based on the load, within the limits specified below.
+                            description: When enabled, the number of analyzer replicas
+                              is managed dynamically based on the load, within the
+                              limits specified below.
                             enum:
                             - Enabled
                             - Disabled
@@ -325,22 +415,29 @@ spec:
                             type: integer
                           replicas:
                             default: 3
-                            description: When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                            description: When autoscaling is disabled, the number
+                              of replicas will always be configured to match this
+                              value.
                             format: int32
                             minimum: 1
                             type: integer
                         type: object
                     type: object
                   db:
-                    description: Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
+                    description: Settings pertaining to the database used by the Red
+                      Hat Advanced Cluster Security Scanner.
                     properties:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific nodes, you can configure a node selector here.
+                        description: If you want this component to only run on specific
+                          nodes, you can configure a node selector here.
                         type: object
                       resources:
-                        description: Allows overriding the default resource settings for this component. Please consult the documentation for an overview of default resource requirements and a sizing guide.
+                        description: Allows overriding the default resource settings
+                          for this component. Please consult the documentation for
+                          an overview of default resource requirements and a sizing
+                          guide.
                         properties:
                           limits:
                             additionalProperties:
@@ -349,7 +446,8 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                           requests:
                             additionalProperties:
@@ -358,13 +456,20 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
                     type: object
                   scannerComponent:
                     default: Enabled
-                    description: If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here (not recommended). If you do so, all the settings in this section will have no effect.
+                    description: If you do not want to deploy the Red Hat Advanced
+                      Cluster Security Scanner, you can disable it here (not recommended).
+                      If you do so, all the settings in this section will have no
+                      effect.
                     enum:
                     - Enabled
                     - Disabled
@@ -375,7 +480,8 @@ spec:
                 properties:
                   additionalCAs:
                     items:
-                      description: AdditionalCA defines a certificate for an additional Certificate Authority.
+                      description: AdditionalCA defines a certificate for an additional
+                        Certificate Authority.
                       properties:
                         content:
                           description: PEM format
@@ -394,19 +500,23 @@ spec:
             description: CentralStatus defines the observed state of Central.
             properties:
               central:
-                description: CentralComponentStatus describes status specific to the central component.
+                description: CentralComponentStatus describes status specific to the
+                  central component.
                 properties:
                   adminPassword:
-                    description: AdminPassword stores information related to the auto-generated admin password.
+                    description: AdminPassword stores information related to the auto-generated
+                      admin password.
                     properties:
                       info:
-                        description: Info stores information on how to obtain the admin password.
+                        description: Info stores information on how to obtain the
+                          admin password.
                         type: string
                     type: object
                 type: object
               conditions:
                 items:
-                  description: StackRoxCondition defines a condition for a StackRox custom resource.
+                  description: StackRoxCondition defines a condition for a StackRox
+                    custom resource.
                   properties:
                     lastTransitionTime:
                       format: date-time
@@ -414,13 +524,16 @@ spec:
                     message:
                       type: string
                     reason:
-                      description: ConditionReason is a type of values of condition reason.
+                      description: ConditionReason is a type of values of condition
+                        reason.
                       type: string
                     status:
-                      description: ConditionStatus is a type of values of condition status.
+                      description: ConditionStatus is a type of values of condition
+                        status.
                       type: string
                     type:
-                      description: ConditionType is a type of values of condition type.
+                      description: ConditionType is a type of values of condition
+                        type.
                       type: string
                   required:
                   - status
@@ -428,7 +541,8 @@ spec:
                   type: object
                 type: array
               deployedRelease:
-                description: StackRoxRelease describes the Helm "release" that was most recently applied.
+                description: StackRoxRelease describes the Helm "release" that was
+                  most recently applied.
                 properties:
                   version:
                     type: string
