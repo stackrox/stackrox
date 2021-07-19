@@ -15,6 +15,7 @@ import (
 	imageSAC "github.com/stackrox/rox/central/image/sac"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	imageComponentEdgeSAC "github.com/stackrox/rox/central/imagecomponentedge/sac"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -165,9 +166,9 @@ func formatSearcher(graphProvider graph.Provider,
 	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
 	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
-	imageComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageComponentEdgeIndexer)
-	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
-	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
+	imageComponentEdgeSearcher := filtered.UnsafeSearcher(imageComponentEdgeIndexer, imageComponentEdgeSAC.GetSACFilter())
+	imageSearcher := filtered.UnsafeSearcher(imageIndexer, imageSAC.GetSACFilter())
+	deploymentSearcher := filtered.UnsafeSearcher(deploymentIndexer, deploymentSAC.GetSACFilter())
 
 	compoundSearcher := getDeploymentCompoundSearcher(
 		cveSearcher,

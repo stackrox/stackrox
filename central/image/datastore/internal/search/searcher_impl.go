@@ -7,12 +7,13 @@ import (
 	"github.com/stackrox/rox/central/cve/cveedge"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/dackbox"
-	pkgDeploymentSAC "github.com/stackrox/rox/central/deployment/sac"
+	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
-	pkgImageSAC "github.com/stackrox/rox/central/image/sac"
+	imageSAC "github.com/stackrox/rox/central/image/sac"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	imageComponentEdgeSAC "github.com/stackrox/rox/central/imagecomponentedge/sac"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -147,9 +148,9 @@ func formatSearcher(graphProvider graph.Provider,
 	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
 	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
-	imageComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageComponentEdgeIndexer)
-	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
-	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
+	imageComponentEdgeSearcher := filtered.UnsafeSearcher(imageComponentEdgeIndexer, imageComponentEdgeSAC.GetSACFilter())
+	imageSearcher := filtered.UnsafeSearcher(imageIndexer, imageSAC.GetSACFilter())
+	deploymentSearcher := filtered.UnsafeSearcher(deploymentIndexer, deploymentSAC.GetSACFilter())
 
 	compoundSearcher := getCompoundImageSearcher(
 		cveSearcher,
@@ -159,7 +160,7 @@ func formatSearcher(graphProvider graph.Provider,
 		imageSearcher,
 		deploymentSearcher,
 	)
-	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), pkgImageSAC.GetSACFilter())
+	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), imageSAC.GetSACFilter())
 
 	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortSearcher)
@@ -218,6 +219,6 @@ func getCompoundImageSearcher(
 
 func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher) search.Searcher {
 	return derivedfields.CountSortedSearcher(searcher, map[string]counter.DerivedFieldCounter{
-		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ImageToDeploymentPath, pkgDeploymentSAC.GetSACFilter()),
+		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ImageToDeploymentPath, deploymentSAC.GetSACFilter()),
 	})
 }

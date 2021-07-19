@@ -4,7 +4,9 @@ import (
 	"context"
 
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
+	clusterSAC "github.com/stackrox/rox/central/cluster/sac"
 	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
+	clusterCVEEdgeSAC "github.com/stackrox/rox/central/clustercveedge/sac"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
 	"github.com/stackrox/rox/central/cve/cveedge"
 	"github.com/stackrox/rox/central/cve/index"
@@ -17,9 +19,11 @@ import (
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	componentSAC "github.com/stackrox/rox/central/imagecomponent/sac"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	imageComponentEdgeSAC "github.com/stackrox/rox/central/imagecomponentedge/sac"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	nodeSAC "github.com/stackrox/rox/central/node/sac"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
+	nodeComponentEdgeSAC "github.com/stackrox/rox/central/nodecomponentedge/sac"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -155,15 +159,15 @@ func formatSearcher(graphProvider graph.Provider,
 	clusterIndexer blevesearch.UnsafeSearcher) search.Searcher {
 
 	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
-	clusterCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(clusterCVEEdgeIndexer)
+	clusterCVEEdgeSearcher := filtered.UnsafeSearcher(clusterCVEEdgeIndexer, clusterCVEEdgeSAC.GetSACFilter())
 	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
-	imageComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageComponentEdgeIndexer)
-	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
-	nodeComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(nodeComponentEdgeIndexer)
-	nodeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(nodeIndexer)
-	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
-	clusterSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(clusterIndexer)
+	imageComponentEdgeSearcher := filtered.UnsafeSearcher(imageComponentEdgeIndexer, imageComponentEdgeSAC.GetSACFilter())
+	imageSearcher := filtered.UnsafeSearcher(imageIndexer, imageSAC.GetSACFilter())
+	nodeComponentEdgeSearcher := filtered.UnsafeSearcher(nodeComponentEdgeIndexer, nodeComponentEdgeSAC.GetSACFilter())
+	nodeSearcher := filtered.UnsafeSearcher(nodeIndexer, nodeSAC.GetSACFilter())
+	deploymentSearcher := filtered.UnsafeSearcher(deploymentIndexer, deploymentSAC.GetSACFilter())
+	clusterSearcher := filtered.UnsafeSearcher(clusterIndexer, clusterSAC.GetSACFilter())
 
 	compoundSearcher := getCompoundCVESearcher(
 		cveSearcher,
