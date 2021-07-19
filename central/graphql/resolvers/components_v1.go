@@ -351,11 +351,7 @@ func (eicr *EmbeddedImageScanComponentResolver) getDeploymentBaseQuery(ctx conte
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
-	var qb []*v1.Query
-	for _, id := range search.ResultsToIDs(results) {
-		qb = append(qb, search.NewQueryBuilder().AddExactMatches(search.ImageSHA, id).ProtoQuery())
-	}
-	return search.DisjunctionQuery(qb...), nil
+	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, search.ResultsToIDs(results)...).ProtoQuery(), nil
 }
 
 func (eicr *EmbeddedImageScanComponentResolver) componentQuery() *v1.Query {

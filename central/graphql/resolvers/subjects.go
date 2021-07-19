@@ -188,7 +188,7 @@ func (resolver *subjectResolver) getRolesForSubject(ctx context.Context, filterQ
 	}
 
 	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
-	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, search.NewConjunctionQuery(q, filterQ))
+	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, search.ConjunctionQuery(q, filterQ))
 	if err != nil {
 		return nil, err
 	}

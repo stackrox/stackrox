@@ -135,7 +135,7 @@ func (resolver *secretResolver) getDeploymentQuery(query *v1.Query) (*v1.Query, 
 	}
 	deploymentIDQuery := search.NewQueryBuilder().AddDocIDSet(deploymentIDs).ProtoQuery()
 
-	return search.NewConjunctionQuery(deploymentIDQuery, query), nil
+	return search.ConjunctionQuery(deploymentIDQuery, query), nil
 }
 
 func (resolver *Resolver) getSecret(ctx context.Context, id string) *storage.Secret {

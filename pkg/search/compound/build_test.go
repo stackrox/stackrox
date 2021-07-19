@@ -383,11 +383,11 @@ func (suite *BuildRequestTestSuite) TestBuildBoolean() {
 	}
 
 	q1 := search.NewBooleanQuery(
-		search.NewConjunctionQuery(
+		search.ConjunctionQuery(
 			search.NewQueryBuilder().AddExactMatches("s1field", "s1value").ProtoQuery(),
 			search.NewQueryBuilder().AddExactMatches("s2field", "s2value").ProtoQuery(),
 		).GetConjunction(),
-		search.NewDisjunctionQuery(
+		search.DisjunctionQuery(
 			search.NewQueryBuilder().AddExactMatches("s3field", "s3value").ProtoQuery(),
 			search.NewQueryBuilder().AddExactMatches("s4field", "s4value").ProtoQuery(),
 		).GetDisjunction(),
@@ -483,7 +483,7 @@ func (suite *BuildRequestTestSuite) TestBuildSingleLinked() {
 	// Fall back to allowing linked from the first with a match.
 	suite.mockOptions2.EXPECT().Get("s1field").Return(nil, true)
 
-	expectedQuery := search.NewConjunctionQuery(
+	expectedQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().
 			AddStrings("s1field", "s1value").
 			ProtoQuery(),

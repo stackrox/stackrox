@@ -64,7 +64,7 @@ func (suite *CondenseRequestTestSuite) TestCondenseAnd() {
 	expected := &searchRequestSpec{
 		base: &baseRequestSpec{
 			Spec: &searcherSpecs[0],
-			Query: search.NewConjunctionQuery(
+			Query: search.ConjunctionQuery(
 				&v1.Query{},
 				&v1.Query{},
 			),
@@ -106,7 +106,7 @@ func (suite *CondenseRequestTestSuite) TestCondenseOr() {
 	expected := &searchRequestSpec{
 		base: &baseRequestSpec{
 			Spec: &searcherSpecs[0],
-			Query: search.NewDisjunctionQuery(
+			Query: search.DisjunctionQuery(
 				&v1.Query{},
 				&v1.Query{},
 			),
@@ -170,7 +170,7 @@ func (suite *CondenseRequestTestSuite) TestCondenseBoolean() {
 			must: &searchRequestSpec{
 				base: &baseRequestSpec{
 					Spec: &searcherSpecs[0],
-					Query: search.NewConjunctionQuery(
+					Query: search.ConjunctionQuery(
 						&v1.Query{},
 						&v1.Query{},
 					),
@@ -179,7 +179,7 @@ func (suite *CondenseRequestTestSuite) TestCondenseBoolean() {
 			mustNot: &searchRequestSpec{
 				base: &baseRequestSpec{
 					Spec: &searcherSpecs[1],
-					Query: search.NewDisjunctionQuery(
+					Query: search.DisjunctionQuery(
 						&v1.Query{},
 						&v1.Query{},
 					),
@@ -336,7 +336,7 @@ func (suite *CondenseRequestTestSuite) TestCondenseComplex() {
 					must: &searchRequestSpec{
 						base: &baseRequestSpec{
 							Spec: &searcherSpecs[0],
-							Query: search.NewConjunctionQuery(
+							Query: search.ConjunctionQuery(
 								&v1.Query{},
 								&v1.Query{},
 							),

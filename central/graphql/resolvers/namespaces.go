@@ -440,7 +440,7 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 	}
 
 	results, err := resolver.root.ViolationsDataStore.Search(ctx,
-		search.NewConjunctionQuery(q,
+		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
 				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
@@ -462,7 +462,7 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 	namespace := resolver.data
 
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx,
-		search.NewConjunctionQuery(q,
+		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
 				AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
 				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).

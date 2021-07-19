@@ -81,7 +81,7 @@ func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*
 		return nil, err
 	}
 
-	q = search.NewConjunctionQuery(q,
+	q = search.ConjunctionQuery(q,
 		search.NewQueryBuilder().
 			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 

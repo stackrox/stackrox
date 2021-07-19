@@ -24,7 +24,7 @@ func DeploymentExclusionToQuery(exclusions []*storage.Exclusion) *v1.Query {
 				continue
 			}
 
-			queries = append(queries, search.NewConjunctionQuery(subqueries...))
+			queries = append(queries, search.ConjunctionQuery(subqueries...))
 		}
 	}
 
@@ -32,5 +32,5 @@ func DeploymentExclusionToQuery(exclusions []*storage.Exclusion) *v1.Query {
 		return search.MatchNoneQuery()
 	}
 
-	return search.NewDisjunctionQuery(queries...)
+	return search.DisjunctionQuery(queries...)
 }

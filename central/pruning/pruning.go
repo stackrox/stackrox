@@ -454,8 +454,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 		return
 	}
 
-	alertResults, err := g.alerts.Search(pruningCtx,
-		search.NewDisjunctionQuery(queries...))
+	alertResults, err := g.alerts.Search(pruningCtx, search.DisjunctionQuery(queries...))
 	if err != nil {
 		log.Error(err)
 		return

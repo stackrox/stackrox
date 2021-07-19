@@ -855,7 +855,7 @@ func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context, q *v
 	cluster := resolver.data
 
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx,
-		search.NewConjunctionQuery(q,
+		search.ConjunctionQuery(q,
 			search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).
 				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 				AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))

@@ -141,7 +141,7 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 		return nil, err
 	}
 
-	deploymentQuery := search.NewConjunctionQuery(deploymentFilterQuery,
+	deploymentQuery := search.ConjunctionQuery(deploymentFilterQuery,
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).ProtoQuery())
 	deploymentQuery.Pagination = pagination
 
@@ -183,7 +183,7 @@ func (resolver *policyResolver) FailingDeployments(ctx context.Context, args Pag
 }
 
 func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Query) ([]*deploymentResolver, error) {
-	alertsQuery := search.NewConjunctionQuery(resolver.getPolicyQuery(),
+	alertsQuery := search.ConjunctionQuery(resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 	listAlerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, alertsQuery)
 	if err != nil {
@@ -195,7 +195,7 @@ func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Qu
 		deploymentIDs = append(deploymentIDs, alert.GetDeployment().GetId())
 	}
 
-	deploymentQuery := search.NewConjunctionQuery(q, search.NewQueryBuilder().AddDocIDs(deploymentIDs...).ProtoQuery())
+	deploymentQuery := search.ConjunctionQuery(q, search.NewQueryBuilder().AddDocIDs(deploymentIDs...).ProtoQuery())
 	deploymentQuery.Pagination = q.GetPagination()
 
 	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
@@ -243,7 +243,7 @@ func (resolver *policyResolver) FailingDeploymentCount(ctx context.Context, args
 		return 0, err
 	}
 
-	q = search.NewConjunctionQuery(q, resolver.getPolicyQuery(),
+	q = search.ConjunctionQuery(q, resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
 	if err != nil {

@@ -133,7 +133,7 @@ func (resolver *clusterResolver) getSubjects(ctx context.Context, q *v1.Query) (
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_USER.String(), storage.SubjectKind_GROUP.String()).
 		ProtoQuery()
 
-	bindings, err := resolver.getRoleBindings(ctx, search.NewConjunctionQuery(baseQ, q))
+	bindings, err := resolver.getRoleBindings(ctx, search.ConjunctionQuery(baseQ, q))
 	if err != nil {
 		return nil, err
 	}
@@ -149,12 +149,12 @@ func (resolver *namespaceResolver) getSubjects(ctx context.Context, baseQuery *v
 	if err := readK8sRoleBindings(ctx); err != nil {
 		return nil, err
 	}
-	q := search.NewConjunctionQuery(
-		search.NewDisjunctionQuery(
-			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery(),
-			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-				AddBools(search.ClusterRole, true).ProtoQuery()),
+
+	q := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).ProtoQuery(),
+		search.DisjunctionQuery(
+			search.NewQueryBuilder().AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).ProtoQuery(),
+			search.NewQueryBuilder().AddBools(search.ClusterRole, true).ProtoQuery()),
 		baseQuery)
 	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 	if err != nil {

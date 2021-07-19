@@ -144,7 +144,7 @@ func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context,
 	}
 
 	bindingQuery = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
-	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, search.NewConjunctionQuery(passedQuery, bindingQuery))
+	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, search.ConjunctionQuery(passedQuery, bindingQuery))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -164,7 +164,7 @@ func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args Pa
 		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
 
-	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, search.NewConjunctionQuery(scopedQuery, q)))
+	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, search.ConjunctionQuery(scopedQuery, q)))
 }
 
 func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -182,7 +182,7 @@ func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context, arg
 		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
 
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, search.NewConjunctionQuery(scopedQuery, q))
+	results, err := resolver.root.DeploymentDataStore.Search(ctx, search.ConjunctionQuery(scopedQuery, q))
 	if err != nil {
 		return 0, err
 	}
@@ -297,6 +297,6 @@ func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Conte
 		AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).ProtoQuery()
 
-	q = search.NewConjunctionQuery(passedQuery, q)
+	q = search.ConjunctionQuery(passedQuery, q)
 	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, q))
 }

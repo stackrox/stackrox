@@ -23,7 +23,7 @@ func TestGetQueries(t *testing.T) {
 		{
 			desc:   "query; no scope",
 			rawQ:   "Deployment:dep",
-			depQ:   search.NewConjunctionQuery(clusterQ, depNameQ),
+			depQ:   search.ConjunctionQuery(clusterQ, depNameQ),
 			scopeQ: clusterQ,
 		},
 		{
@@ -32,16 +32,16 @@ func TestGetQueries(t *testing.T) {
 			scope: &v1.NetworkGraphScope{
 				Query: "Orchestrator Component:false",
 			},
-			depQ:   search.NewConjunctionQuery(search.NewConjunctionQuery(clusterQ, baseScopeQ), depNameQ),
-			scopeQ: search.NewConjunctionQuery(clusterQ, baseScopeQ),
+			depQ:   search.ConjunctionQuery(search.ConjunctionQuery(clusterQ, baseScopeQ), depNameQ),
+			scopeQ: search.ConjunctionQuery(clusterQ, baseScopeQ),
 		},
 		{
 			desc: "no query; non-orchestrator component scope",
 			scope: &v1.NetworkGraphScope{
 				Query: "Orchestrator Component:false",
 			},
-			depQ:   search.NewConjunctionQuery(clusterQ, baseScopeQ),
-			scopeQ: search.NewConjunctionQuery(clusterQ, baseScopeQ),
+			depQ:   search.ConjunctionQuery(clusterQ, baseScopeQ),
+			scopeQ: search.ConjunctionQuery(clusterQ, baseScopeQ),
 		},
 	} {
 		t.Run(tc.desc, func(t *testing.T) {

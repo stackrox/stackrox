@@ -93,7 +93,7 @@ func (resolver *podResolver) ContainerCount() int32 {
 func (resolver *podResolver) policyViolationEvents(ctx context.Context) ([]*PolicyViolationEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "PolicyViolationEvents")
 
-	q := search.NewConjunctionQuery(
+	q := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetDeploymentId()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery(),
@@ -118,7 +118,7 @@ func (resolver *podResolver) processActivityEvents(ctx context.Context) ([]*Proc
 
 	// It is possible that not all process indicators have PodUID populated. For now, it is safer to not use it.
 	// PodID (name) is unique within a deployment.
-	query := search.NewConjunctionQuery(
+	query := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetDeploymentId()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.PodID, resolver.data.GetName()).ProtoQuery(),
 	)

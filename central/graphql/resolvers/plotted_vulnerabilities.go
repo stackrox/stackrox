@@ -46,7 +46,7 @@ func newPlottedVulnerabilitiesResolver(ctx context.Context, root *Resolver, args
 	}
 
 	fixable, err := root.CVEDataStore.Count(ctx,
-		search.NewConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
+		search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
 	if err != nil {
 		return nil, err
 	}

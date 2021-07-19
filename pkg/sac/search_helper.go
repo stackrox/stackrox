@@ -111,7 +111,7 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 		fieldQB = fieldQB.AddStringsHighlighted(fieldLabel, search.WildcardString)
 	}
 
-	queryWithFields := search.NewConjunctionQuery(q, fieldQB.ProtoQuery())
+	queryWithFields := search.ConjunctionQuery(q, fieldQB.ProtoQuery())
 	queryWithFields.Pagination = &v1.QueryPagination{
 		Limit:       math.MaxInt32,
 		SortOptions: q.GetPagination().GetSortOptions(),

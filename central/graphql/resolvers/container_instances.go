@@ -193,7 +193,7 @@ func (resolver *Resolver) GroupedContainerInstances(ctx context.Context, args Ra
 func (resolver *ContainerNameGroupResolver) policyViolationEvents(ctx context.Context) ([]*PolicyViolationEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ContainerInstances, "PolicyViolationEvents")
 
-	q := search.NewConjunctionQuery(
+	q := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.deploymentID).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery(),
@@ -216,7 +216,7 @@ func (resolver *ContainerNameGroupResolver) policyViolationEvents(ctx context.Co
 func (resolver *ContainerNameGroupResolver) processActivityEvents(ctx context.Context) ([]*ProcessActivityEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ContainerInstances, "ProcessActivityEvents")
 
-	query := search.NewConjunctionQuery(
+	query := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.deploymentID).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.PodID, resolver.podID.Name).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ContainerName, resolver.name).ProtoQuery(),

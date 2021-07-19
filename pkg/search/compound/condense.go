@@ -20,7 +20,7 @@ func condense(tree *searchRequestSpec) (*searchRequestSpec, error) {
 }
 
 func condenseOr(req *searchRequestSpec) (*searchRequestSpec, error) {
-	condensed, err := condenseList(req.or, search.NewDisjunctionQuery)
+	condensed, err := condenseList(req.or, search.DisjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func condenseOr(req *searchRequestSpec) (*searchRequestSpec, error) {
 }
 
 func condenseAnd(req *searchRequestSpec) (*searchRequestSpec, error) {
-	condensed, err := condenseList(req.and, search.NewConjunctionQuery)
+	condensed, err := condenseList(req.and, search.ConjunctionQuery)
 	if err != nil {
 		return nil, err
 	}

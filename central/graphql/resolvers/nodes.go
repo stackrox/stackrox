@@ -332,7 +332,7 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 		return nil, nil
 	}
 
-	query = search.NewConjunctionQuery(query, resolver.getNodeQuery())
+	query = search.ConjunctionQuery(query, resolver.getNodeQuery())
 	query.Pagination = &v1.QueryPagination{
 		SortOptions: []*v1.QuerySortOption{
 			{

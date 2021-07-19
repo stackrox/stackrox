@@ -214,7 +214,7 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 		return nil, err
 	}
 
-	fixableVulnsQuery := search.NewConjunctionQuery(eicr.componentQuery(), search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
+	fixableVulnsQuery := search.ConjunctionQuery(eicr.componentQuery(), search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 	fixableVulns, err := vulnLoader.FromQuery(scoped.Context(eicr.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    eicr.data.GetId(),
@@ -223,7 +223,7 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 		return nil, err
 	}
 
-	unFixableVulnsQuery := search.NewConjunctionQuery(eicr.componentQuery(), search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
+	unFixableVulnsQuery := search.ConjunctionQuery(eicr.componentQuery(), search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
 	unFixableCVEs, err := vulnLoader.FromQuery(scoped.Context(eicr.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 		ID:    eicr.data.GetId(),

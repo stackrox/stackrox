@@ -195,7 +195,7 @@ func (resolver *k8SRoleResolver) getSubjects(ctx context.Context, filterQ *v1.Qu
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.RoleID, resolver.data.GetId()).ProtoQuery()
 
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, search.NewConjunctionQuery(q, filterQ))
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, search.ConjunctionQuery(q, filterQ))
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +292,7 @@ func (resolver *k8SRoleResolver) convertSubjectToServiceAccount(ctx context.Cont
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
 		AddExactMatches(search.ServiceAccountName, subject.GetName()).ProtoQuery()
 
-	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, search.NewConjunctionQuery(q, filterQ))
+	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, search.ConjunctionQuery(q, filterQ))
 	if err != nil {
 		return nil, err
 	}

@@ -29,5 +29,5 @@ func ScopeToQuery(scopes []*storage.Scope) *v1.Query {
 		queries = append(queries, qb.ProtoQuery())
 	}
 
-	return search.NewDisjunctionQuery(queries...)
+	return search.DisjunctionQuery(queries...)
 }

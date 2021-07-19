@@ -259,7 +259,7 @@ func (tb treeBuilder) matchLinkedSequence(q *v1.MatchLinkedFieldsQuery) (*search
 			},
 		})
 	}
-	newQuery := search.NewConjunctionQuery(conjuncts...)
+	newQuery := search.ConjunctionQuery(conjuncts...)
 
 	// Need to create a new SearcherSpec with that spec as the exit node.
 	specsToUse, combinedOptions := recenterSpecRec(nil, tb[:offset+1])

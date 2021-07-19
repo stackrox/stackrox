@@ -287,13 +287,13 @@ func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Quer
 		return nil, err
 	}
 	query = tryUnsuppressedQuery(query)
-	fixableVulnsQuery := search.NewConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
+	fixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 	fixableVulns, err := vulnLoader.FromQuery(ctx, fixableVulnsQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	unFixableVulnsQuery := search.NewConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
+	unFixableVulnsQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
 	unFixableCVEs, err := vulnLoader.FromQuery(ctx, unFixableVulnsQuery)
 	if err != nil {
 		return nil, err
@@ -367,7 +367,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 		conjuncts = append(conjuncts, resolver.getCVEQuery())
 	}
 
-	results, err := resolver.root.CVEDataStore.Search(ctx, search.NewConjunctionQuery(conjuncts...))
+	results, err := resolver.root.CVEDataStore.Search(ctx, search.ConjunctionQuery(conjuncts...))
 	if err != nil {
 		return false, err
 	}

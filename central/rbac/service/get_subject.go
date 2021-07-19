@@ -19,7 +19,7 @@ var (
 )
 
 func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRoleDS.DataStore, bindingDS k8sRoleBindingDS.DataStore) (*v1.GetSubjectResponse, error) {
-	bindingsQuery := search.NewDisjunctionQuery(
+	bindingsQuery := search.DisjunctionQuery(
 		search.NewQueryBuilder().AddLinkedFields(
 			[]search.FieldLabel{search.SubjectName, search.SubjectKind},
 			[]string{search.ExactMatchString(subjectName), search.ExactMatchString(storage.SubjectKind_USER.String())}).ProtoQuery(),

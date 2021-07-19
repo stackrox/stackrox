@@ -63,7 +63,7 @@ func getCVEEdgeQuery(q *v1.Query) {
 		}
 
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.FixedBy.String() {
-			*q = *search.NewDisjunctionQuery(
+			*q = *search.DisjunctionQuery(
 				search.NewQueryBuilder().AddRegexes(search.FixedBy, matchFieldQuery.MatchFieldQuery.GetValue()).ProtoQuery(),
 				search.NewQueryBuilder().AddRegexes(search.ClusterCVEFixedBy, matchFieldQuery.MatchFieldQuery.GetValue()).ProtoQuery())
 
@@ -74,7 +74,7 @@ func getCVEEdgeQuery(q *v1.Query) {
 			if err != nil {
 				return
 			}
-			*q = *search.NewDisjunctionQuery(
+			*q = *search.DisjunctionQuery(
 				search.NewQueryBuilder().AddBools(search.Fixable, val).ProtoQuery(),
 				search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, val).ProtoQuery())
 		}

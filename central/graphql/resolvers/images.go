@@ -159,7 +159,7 @@ func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (Vu
 		return resolver.root.wrapEmbeddedVulnerability(max, nil)
 	}
 
-	query = search.NewConjunctionQuery(query, resolver.getImageQuery())
+	query = search.ConjunctionQuery(query, resolver.getImageQuery())
 	query.Pagination = &v1.QueryPagination{
 		SortOptions: []*v1.QuerySortOption{
 			{

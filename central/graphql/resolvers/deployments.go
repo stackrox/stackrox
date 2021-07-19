@@ -357,7 +357,7 @@ func (resolver *deploymentResolver) FailingRuntimePolicyCount(ctx context.Contex
 	if err != nil {
 		return 0, err
 	}
-	query = search.NewConjunctionQuery(query,
+	query = search.ConjunctionQuery(query,
 		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery())
 	alerts, err := resolver.root.ViolationsDataStore.Search(ctx, query)
 	if err != nil {
@@ -717,7 +717,7 @@ func (resolver *deploymentResolver) getDeploymentActiveAlertsQuery(q *v1.Query) 
 	if err != nil {
 		return nil, err
 	}
-	return search.NewConjunctionQuery(q, search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()), nil
+	return search.ConjunctionQuery(q, search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()), nil
 }
 
 func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
