@@ -72,6 +72,10 @@ func TestTranslateComplete(t *testing.T) {
 					Spec: v1alpha1.SecuredClusterSpec{
 						ClusterName:     "test-cluster",
 						CentralEndpoint: "central.test:443",
+						ClusterLabels: map[string]string{
+							"my-label1": "value1",
+							"my-label2": "value2",
+						},
 						ImagePullSecrets: []common.LocalSecretReference{
 							{Name: "image-pull-secrets-secret1"},
 							{Name: "image-pull-secrets-secret2"},
@@ -133,6 +137,10 @@ func TestTranslateComplete(t *testing.T) {
 			want: chartutil.Values{
 				"clusterName":     "test-cluster",
 				"centralEndpoint": "central.test:443",
+				"clusterLabels": map[string]interface{}{
+					"my-label1": "value1",
+					"my-label2": "value2",
+				},
 				"imagePullSecrets": map[string]interface{}{
 					"useExisting": []string{
 						"image-pull-secrets-secret1",

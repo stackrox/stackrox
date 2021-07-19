@@ -74,6 +74,7 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 	v := translation.NewValuesBuilder()
 
 	v.SetStringValue("clusterName", sc.Spec.ClusterName)
+	v.SetStringMap("clusterLabels", sc.Spec.ClusterLabels)
 
 	if sc.Spec.CentralEndpoint != "" {
 		v.SetStringValue("centralEndpoint", sc.Spec.CentralEndpoint)
