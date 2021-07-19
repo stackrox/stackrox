@@ -24,6 +24,20 @@ export type RuleGroupsProps = {
 
 const ruleKeys = ['userid', 'name', 'email', 'groups'];
 
+function getAugmentedRuleKeys(existingKeys, groups) {
+    const newRuleKeys = [...ruleKeys];
+
+    groups.forEach((group) => {
+        const alreadyInList = newRuleKeys.find((key) => key === group?.props?.key);
+
+        if (!alreadyInList) {
+            newRuleKeys.push(group.props.key);
+        }
+    });
+
+    return newRuleKeys;
+}
+
 function RuleGroups({
     authProviderId,
     onChange,
@@ -32,6 +46,8 @@ function RuleGroups({
     roles = [],
     disabled = false,
 }: RuleGroupsProps): ReactElement {
+    const augmentedRuleKeys = getAugmentedRuleKeys(ruleKeys, groups);
+
     return (
         <FieldArray
             name="groups"
@@ -49,8 +65,10 @@ function RuleGroups({
                                             isDisabled={disabled}
                                             handleSelect={setFieldValue}
                                             direction="up"
+                                            isCreatable
+                                            variant="typeahead"
                                         >
-                                            {ruleKeys.map((ruleKey) => (
+                                            {augmentedRuleKeys.map((ruleKey) => (
                                                 <SelectOption key={ruleKey} value={ruleKey} />
                                             ))}
                                         </SelectSingle>
@@ -114,7 +132,7 @@ function RuleGroups({
                                             roleName: roles[0]?.name || '',
                                             props: {
                                                 authProviderId: authProviderId || '',
-                                                key: ruleKeys[0],
+                                                key: augmentedRuleKeys[0],
                                                 value: '',
                                             },
                                         })

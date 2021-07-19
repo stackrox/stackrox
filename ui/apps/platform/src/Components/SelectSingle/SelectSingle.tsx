@@ -8,6 +8,8 @@ export type SelectSingleProps = {
     isDisabled: boolean;
     children: ReactElement[];
     direction?: 'up' | 'down';
+    isCreatable?: boolean;
+    variant?: 'typeahead' | null;
 };
 
 function SelectSingle({
@@ -17,8 +19,12 @@ function SelectSingle({
     isDisabled,
     children,
     direction = 'down',
+    isCreatable = false,
+    variant = null,
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
+
+    const isTypeahead = variant === 'typeahead' ? SelectVariant.typeahead : SelectVariant.single;
 
     function onSelect(_event, selection) {
         // The mouse event is not useful.
@@ -28,7 +34,7 @@ function SelectSingle({
 
     return (
         <Select
-            variant={SelectVariant.single}
+            variant={isTypeahead}
             id={id}
             isDisabled={isDisabled}
             isOpen={isOpen}
@@ -36,6 +42,7 @@ function SelectSingle({
             onToggle={setIsOpen}
             selections={value}
             direction={direction}
+            isCreatable={isCreatable}
         >
             {children}
         </Select>
