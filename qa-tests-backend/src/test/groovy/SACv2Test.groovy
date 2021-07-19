@@ -33,6 +33,7 @@ class SACv2Test extends SACTest {
 
         allResourcesAccess = RoleService.resources.resourcesList.collectEntries { [it, READ_WRITE_ACCESS] }
 
+        // TODO: Replace with the defaultAccessScope id: "denyall"
         def noaccessScope = RoleService.createAccessScope(newBuilder()
                 .setName("no-access-scope").build())
         def remoteQaTest1 = createAccessScope("remote", "qa-test1")
@@ -41,24 +42,28 @@ class SACv2Test extends SACTest {
         def noaccess = createRole(noaccessScope.id, allResourcesAccess)
 
         tokenToRoles = [
-                (NOACCESSTOKEN)           : [noaccess],
-                (ALLACCESSTOKEN)          : [createRole("", allResourcesAccess)],
-                "deployments-access-token": [createRole(remoteQaTest2.id,
+                (NOACCESSTOKEN)                   : [noaccess],
+                (ALLACCESSTOKEN)                  : [createRole("", allResourcesAccess)],
+                "deployments-access-token"        : [createRole(remoteQaTest2.id,
                         ["Deployment": READ_ACCESS, "Risk": READ_ACCESS])],
-                "getSummaryCountsToken"   : [createRole(remoteQaTest1.id, allResourcesAccess)],
-                "listSecretsToken"        : [createRole("", ["Secret": READ_ACCESS])],
-                "searchDeploymentsToken"  : [createRole(remoteQaTest1.id, ["Deployment": READ_ACCESS]), noaccess],
-                "searchImagesToken"       : [createRole(remoteQaTest1.id, ["Image": READ_ACCESS]), noaccess],
-                "searchNamespacesToken"   : [createRole(remoteQaTest1.id, ["Namespace": READ_ACCESS]), noaccess],
-                "searchAlertsToken"       : [createRole(remoteQaTest1.id, ["Alert": READ_ACCESS]), noaccess],
-                "stackroxNetFlowsToken"   : [createRole(createAccessScope("remote", "stackrox").id,
+                "getSummaryCountsToken"           : [createRole(remoteQaTest1.id, allResourcesAccess)],
+                "listSecretsToken"                : [createRole("", ["Secret": READ_ACCESS])],
+                "searchAlertsToken"               : [createRole(remoteQaTest1.id, ["Alert": READ_ACCESS]), noaccess],
+                "searchDeploymentsToken"          : [createRole(remoteQaTest1.id,
+                        ["Deployment": READ_ACCESS]), noaccess],
+                "searchImagesToken"               : [createRole(remoteQaTest1.id, ["Image": READ_ACCESS]), noaccess],
+                "searchNamespacesToken"           : [createRole(remoteQaTest1.id,
+                        ["Namespace": READ_ACCESS]), noaccess],
+                "searchDeploymentsImagesToken"    : [createRole(remoteQaTest1.id,
+                        ["Deployment": READ_ACCESS, "Image": READ_ACCESS]), noaccess],
+                "stackroxNetFlowsToken"           : [createRole(createAccessScope("remote", "stackrox").id,
                         ["Deployment": READ_ACCESS, "NetworkGraph": READ_ACCESS]),
-                                             createRole("", ["Cluster": READ_ACCESS]), noaccess],
-                "kubeSystemImagesToken"   : [createRole(createAccessScope(
-                        "remote", "kube-system").id, ["Image": READ_ACCESS]), noaccess],
-                "aggregatedToken"         : [createRole(remoteQaTest2.id, ["Deployment": READ_ACCESS]),
-                                             createRole(remoteQaTest1.id, ["Deployment": NO_ACCESS]),
-                                             noaccess]
+                                                     createRole("", ["Cluster": READ_ACCESS]), noaccess],
+                "kubeSystemDeploymentsImagesToken": [createRole(createAccessScope(
+                        "remote", "kube-system").id, ["Deployment": READ_ACCESS, "Image": READ_ACCESS]), noaccess],
+                "aggregatedToken"                 : [createRole(remoteQaTest2.id, ["Deployment": READ_ACCESS]),
+                                                     createRole(remoteQaTest1.id, ["Deployment": NO_ACCESS]),
+                                                     noaccess]
         ]
     }
 

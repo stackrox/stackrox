@@ -18,6 +18,9 @@ import (
 var log = logging.LoggerForModule()
 
 var (
+	// ClusterSACTransform transforms cluster ids into their SAC scopes.
+	ClusterSACTransform = clusterScoped(ClusterTransformationPaths[v1.SearchCategory_CLUSTERS])
+
 	// NamespaceSACTransform transforms namespace ids into their SAC scopes.
 	NamespaceSACTransform = namespaceScoped(NamespaceTransformationPaths[v1.SearchCategory_NAMESPACES])
 

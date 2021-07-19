@@ -54,6 +54,15 @@ principal.authProvider.type == "api-token" && \
     )
 
 principal.authProvider.type == "api-token" && \
+    principal.attributes["name"][0] == "searchDeploymentsImagesToken" && \
+    scope.verb == "view" && \
+    ( \
+        (scope.noun == "Deployment" || scope.noun == "Image") && \
+        scope.attributes.cluster.name == "remote" && \
+        scope.attributes.namespace == "qa-test1" \
+    )
+
+principal.authProvider.type == "api-token" && \
     principal.attributes["name"][0] == "searchNamespacesToken" && \
     scope.verb == "view" && \
     ( \
@@ -63,9 +72,9 @@ principal.authProvider.type == "api-token" && \
     )
 
 principal.authProvider.type == "api-token" && \
-	principal.attributes["name"][0] == "kubeSystemImagesToken" && \
+	principal.attributes["name"][0] == "kubeSystemDeploymentsImagesToken" && \
 	scope.verb == "view" && \
-	scope.noun == "Image" && \
+	(scope.noun == "Deployment" || scope.noun == "Image") && \
 	scope.attributes.namespace == "kube-system"
 
 principal.authProvider.type == "api-token" && \

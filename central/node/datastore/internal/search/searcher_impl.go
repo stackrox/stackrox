@@ -11,8 +11,9 @@ import (
 	"github.com/stackrox/rox/central/node/datastore/internal/store"
 	"github.com/stackrox/rox/central/node/index"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
-	pkgNodeSAC "github.com/stackrox/rox/central/node/sac"
+	nodeSAC "github.com/stackrox/rox/central/node/sac"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
+	nodeComponentEdgeSAC "github.com/stackrox/rox/central/nodecomponentedge/sac"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -134,8 +135,8 @@ func formatSearcher(cveIndexer blevesearch.UnsafeSearcher,
 	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
 	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
-	nodeComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(nodeComponentEdgeIndexer)
-	nodeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(nodeIndexer)
+	nodeComponentEdgeSearcher := filtered.UnsafeSearcher(nodeComponentEdgeIndexer, nodeComponentEdgeSAC.GetSACFilter())
+	nodeSearcher := filtered.UnsafeSearcher(nodeIndexer, nodeSAC.GetSACFilter())
 
 	compoundSearcher := getCompoundNodeSearcher(
 		cveSearcher,
@@ -144,7 +145,7 @@ func formatSearcher(cveIndexer blevesearch.UnsafeSearcher,
 		nodeComponentEdgeSearcher,
 		nodeSearcher,
 	)
-	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), pkgNodeSAC.GetSACFilter())
+	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), nodeSAC.GetSACFilter())
 
 	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
 	paginatedSearcher := paginated.Paginated(transformedSortSearcher)

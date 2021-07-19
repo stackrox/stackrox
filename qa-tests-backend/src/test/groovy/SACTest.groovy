@@ -503,13 +503,14 @@ class SACTest extends BaseSpecification {
 
         where:
         "Data inputs are: "
-        tokenName                | namespace      | categories
-        NOACCESSTOKEN            | "non_existent" | [SSOC.SearchCategory.NAMESPACES, SSOC.SearchCategory.IMAGES,
-                                                     SSOC.SearchCategory.DEPLOYMENTS]
-        "kubeSystemImagesToken"  | "kube-system"  | [SSOC.SearchCategory.IMAGES]
-        "searchNamespacesToken"  | "qa-test1"     | [SSOC.SearchCategory.NAMESPACES]
-        "searchDeploymentsToken" | "qa-test1"     | [SSOC.SearchCategory.DEPLOYMENTS]
-        "searchImagesToken"      | "qa-test1"     | [SSOC.SearchCategory.IMAGES]
+        tokenName                          | namespace      | categories
+        NOACCESSTOKEN                      | "non_existent" | [SSOC.SearchCategory.NAMESPACES,
+                                                               SSOC.SearchCategory.IMAGES,
+                                                               SSOC.SearchCategory.DEPLOYMENTS]
+        "kubeSystemDeploymentsImagesToken" | "kube-system"  | [SSOC.SearchCategory.IMAGES]
+        "searchNamespacesToken"            | "qa-test1"     | [SSOC.SearchCategory.NAMESPACES]
+        "searchDeploymentsToken"           | "qa-test1"     | [SSOC.SearchCategory.DEPLOYMENTS]
+        "searchDeploymentsImagesToken"     | "qa-test1"     | [SSOC.SearchCategory.IMAGES]
     }
 
     def "Verify that SAC has the same effect as query restriction for network flows"() {
