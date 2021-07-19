@@ -96,6 +96,10 @@ function Roles(): ReactElement {
                 // so role is deletable if not referenced by any current auth provider
                 // as either its minimum access role or as a role in assigned rules.
                 const groupsFiltered = groupsFetched.filter((group) => {
+                    if (!group.props) {
+                        return true;
+                    }
+
                     const { authProviderId } = group.props;
                     return authProvidersFetched.some(({ id }) => id === authProviderId);
                 });
