@@ -2,12 +2,15 @@
 set -eu
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
+GITROOT="$(git rev-parse --show-toplevel)"
+[[ -n "${GITROOT}" ]] || { echo >&2 "Could not determine git root!"; exit 1; }
+
 # This launches mock_sensor with the tag defined by `make tag`.
 # Any arguments passed to this script are passed on to the mocksensor program.
 # Example: ./launch_mock_collector.sh -max-collectors 100 -max-processes 1000 will launch
 # mockcollector with the args -max-collectors 100 and -max-processes 1000.
 
-tag="$(make --quiet --no-print-directory -C "${DIR}/.." tag)"
+tag="$(make --no-print-directory --quiet -C "${GITROOT}" tag)"
 echo "Launching mock collector with tag: ${tag}"
 if [[ "$#" -gt 0 ]]; then
   for (( i=$#;i>0;i-- ));do
