@@ -431,6 +431,7 @@ function AuthProviderForm({
                     </div>
                     <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
                         <RuleGroups
+                            authProviderId={selectedAuthProvider.id}
                             groups={values.groups}
                             roles={roles}
                             onChange={onChange}

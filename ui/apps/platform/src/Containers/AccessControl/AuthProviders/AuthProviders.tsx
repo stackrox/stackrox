@@ -85,6 +85,8 @@ function AuthProviders(): ReactElement {
     }
 
     function onClickCreate(event) {
+        setIsCreateMenuOpen(false);
+
         history.push(
             getEntityPath(entityType, undefined, {
                 ...queryObject,
