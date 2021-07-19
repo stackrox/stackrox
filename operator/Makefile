@@ -254,11 +254,6 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):0.0.1
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
-# operator-sdk 1.5.x has a bug in that it doesn't sort some metadata labels, and thus produces non-deterministic output.
-	./bundle_helpers/normalize-metadata.py 'LABEL operators.operatorframework.io.metrics.' <bundle.Dockerfile >bundle.Dockerfile.tmp
-	mv bundle.Dockerfile.tmp bundle.Dockerfile
-	./bundle_helpers/normalize-metadata.py '  operators.operatorframework.io.metrics.' <bundle/metadata/annotations.yaml >bundle/metadata/annotations.yaml.tmp
-	mv bundle/metadata/annotations.yaml.tmp bundle/metadata/annotations.yaml
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
 # Post-processed files will be copied instead, as configured in bundle.Dockerfile.extra.
 	sed -i'.bak' -e '/# Copy files to locations specified by labels./d' bundle.Dockerfile
