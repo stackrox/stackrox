@@ -106,10 +106,6 @@ func (t *txnWrapper) Commit() error {
 }
 
 func (t *txnWrapper) Discard() {
-	if !t.hasDecrementedInProgressOp {
-		t.db.DecRocksDBInProgressOps()
-		t.hasDecrementedInProgressOp = true
-	}
 	if t.batch != nil {
 		t.batch.Destroy()
 		t.batch = nil
@@ -125,5 +121,9 @@ func (t *txnWrapper) Discard() {
 	if t.snapshot != nil {
 		t.db.ReleaseSnapshot(t.snapshot)
 		t.snapshot = nil
+	}
+	if !t.hasDecrementedInProgressOp {
+		t.db.DecRocksDBInProgressOps()
+		t.hasDecrementedInProgressOp = true
 	}
 }
