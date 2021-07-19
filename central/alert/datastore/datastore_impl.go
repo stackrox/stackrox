@@ -112,7 +112,7 @@ func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Aler
 		return nil, false, err
 	}
 
-	if ok, err := alertSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+	if ok, err := alertSAC.ReadAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
 		return nil, false, err
 	}
 	return alert, true, nil
@@ -128,7 +128,7 @@ func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
 func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpsertAlert")
 
-	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -158,7 +158,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 		return
 	}
 	if exists {
-		if !hasSameScope(alert.GetDeployment(), oldAlert.GetDeployment()) {
+		if !hasSameScope(getNSScopedObjectFromAlert(alert), getNSScopedObjectFromAlert(oldAlert)) {
 			c <- fmt.Errorf("cannot change the cluster or namespace of an existing alert %q", alert.GetId())
 			return
 		}
@@ -205,7 +205,7 @@ func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 		return fmt.Errorf("alert with id '%s' does not exist", id)
 	}
 
-	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
 		return sac.ErrResourceAccessDenied
 	}
 	alert.State = storage.ViolationState_RESOLVED
@@ -260,7 +260,7 @@ func (ds *datastoreImpl) AddAlertComment(ctx context.Context, request *storage.C
 	if err != nil || !exists {
 		return "", err
 	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
 		return "", sac.ErrResourceAccessDenied
 	}
 
@@ -274,7 +274,7 @@ func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storag
 	if err != nil || !exists {
 		return err
 	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -299,7 +299,7 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, alertID, commen
 	if err != nil || !exists {
 		return err
 	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -331,7 +331,7 @@ func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, ta
 	if !exists {
 		return nil, fmt.Errorf("cannot add tags to alert %q that no longer exists", resourceID)
 	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -358,7 +358,7 @@ func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string,
 	if !exists {
 		return fmt.Errorf("cannot add tags to alert %q that no longer exists", resourceID)
 	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -377,6 +377,28 @@ func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string,
 	return nil
 }
 
+func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
+	scopedObj := getNSScopedObjectFromAlert(alert)
+	if scopedObj == nil {
+		return sac.GlobalScopeKey()
+	}
+	return sac.KeyForNSScopedObj(scopedObj)
+}
+
+func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject {
+	switch alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		return alert.GetDeployment()
+	case *storage.Alert_Resource_:
+		return alert.GetResource()
+	case *storage.Alert_Image:
+		return nil // This is theoretically possible even though image doesn't have a ns/cluster
+	default:
+		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
+	}
+	return nil
+}
+
 func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {
 	// Checks pass then update.
 	if err := ds.storage.Upsert(alert); err != nil {
@@ -389,7 +411,7 @@ func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {
 }
 
 func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
-	return o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
+	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
 }
 
 func (ds *datastoreImpl) fullReindex() error {

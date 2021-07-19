@@ -159,6 +159,10 @@ func (c *cscc) Close(ctx context.Context) error {
 //AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	if alert.GetDeployment() == nil {
+		// TODO: ROX-7626 - Resource alerts are not supported for CSCC and are ignored until the ticket is resolved
+		if alert.GetResource() != nil {
+			return nil
+		}
 		return errors.New("CSCC integration can only handle alerts for deployments")
 	}
 	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert)

@@ -16,3 +16,8 @@ type NamespaceScopedObject interface {
 func KeyForNSScopedObj(obj NamespaceScopedObject) []ScopeKey {
 	return []ScopeKey{ClusterScopeKey(obj.GetClusterId()), NamespaceScopeKey(obj.GetNamespace())}
 }
+
+// GlobalScopeKey returns a scope key slice for the global access scope.
+func GlobalScopeKey() []ScopeKey {
+	return []ScopeKey{}
+}
