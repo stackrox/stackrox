@@ -76,6 +76,9 @@ type SecuredClusterSpec struct {
 	// Miscellaneous settings.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Misc *common.MiscSpec `json:"misc,omitempty"`
+
+	// Custom labels associated with a secured cluster in Red Hat Advanced Cluster Security.
+	ClusterLabels map[string]string `json:"clusterLabels,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.

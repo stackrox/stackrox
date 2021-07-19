@@ -121,6 +121,12 @@ spec:
                   blank, Sensor will attempt to connect to a Central instance running
                   in the same namespace.'
                 type: string
+              clusterLabels:
+                additionalProperties:
+                  type: string
+                description: Custom labels associated with a secured cluster in Red
+                  Hat Advanced Cluster Security.
+                type: object
               clusterName:
                 description: 'The unique name of this cluster, as it will be shown
                   in the Red Hat Advanced Cluster Security UI. Note: Once a name is
