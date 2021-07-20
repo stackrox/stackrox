@@ -15,7 +15,6 @@ func init() {
 	formats.MustRegisterNewFormat(
 		"roxdbv1",
 		common.NewFileHandler(backup.BoltFileName, false, restoreBoltDB),
-		common.NewFileHandler(backup.BadgerFileName, true, restoreBadger),
 		common.NewFileHandler(backup.RocksFileName, true, restoreRocksDB),
 		common.NewFileHandler(path.Join(backup.KeysBaseFolder, backup.CaCertPem), true, discard),
 		common.NewFileHandler(path.Join(backup.KeysBaseFolder, backup.CaKeyPem), true, discard),

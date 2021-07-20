@@ -42,7 +42,6 @@ func init() {
 		BucketN,
 		InlineBucketN,
 		InlineBucketInuse,
-		BadgerDBSize,
 		BoltDBSize,
 		RocksDBSize,
 	)
@@ -124,13 +123,6 @@ var (
 	BucketN           = newBucketGauge("bucket_n", "total number of buckets including the top bucket")
 	InlineBucketN     = newBucketGauge("inline_bucket_n", "total number on inlined buckets")
 	InlineBucketInuse = newBucketGauge("inline_bucket_inuse", "bytes used for inlined buckets (also accounted for in LeafInuse)")
-
-	BadgerDBSize = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "badger_db_size",
-		Help:      "bytes being used by BadgerDB",
-	})
 
 	BoltDBSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,

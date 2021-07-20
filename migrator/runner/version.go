@@ -3,7 +3,6 @@ package runner
 import (
 	"fmt"
 
-	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -45,34 +44,7 @@ func getCurrentSeqNumBolt(db *bolt.DB) (int, error) {
 	return int(version.GetSeqNum()), nil
 }
 
-// getCurrentSeqNumBolt returns the current seq-num found in the bolt DB.
-// A returned value of 0 means that no version information was found in the DB;
-// this special value is only returned when we're upgrading from a version not using badger.
-func getCurrentSeqNumBadger(db *badger.DB) (int, error) {
-	var badgerVersion *storage.Version
-	err := db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(versionBucketName)
-		if err == badger.ErrKeyNotFound {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		badgerVersion = new(storage.Version)
-		return item.Value(func(val []byte) error {
-			return proto.Unmarshal(val, badgerVersion)
-		})
-	})
-	if err != nil {
-		return 0, errors.Wrap(err, "reading badger version")
-	}
-
-	return int(badgerVersion.GetSeqNum()), nil
-}
-
 // GetCurrentSeqNumRocksDB returns the current seq-num found in the rocks DB.
-// A returned value of 0 means that no version information was found in the DB;
-// this special value is only returned when we're upgrading from a version not using badger.
 func GetCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 	var version storage.Version
 
@@ -99,17 +71,8 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "getting current rocksdb sequence number")
 	}
-	writeHeavyDBName := "rocksdb"
-	if writeHeavySeqNum == 0 {
-		writeHeavySeqNum, err = getCurrentSeqNumBadger(databases.BadgerDB)
-		if err != nil {
-			return 0, errors.Wrap(err, "getting current badger sequence number")
-		}
-		writeHeavyDBName = "badgerdb"
-	}
-
 	if writeHeavySeqNum != 0 && writeHeavySeqNum != boltSeqNum {
-		return 0, fmt.Errorf("bolt and %s numbers mismatch: %d vs %d", writeHeavyDBName, boltSeqNum, writeHeavySeqNum)
+		return 0, fmt.Errorf("bolt and rocksdb numbers mismatch: %d vs %d", boltSeqNum, writeHeavySeqNum)
 	}
 
 	return boltSeqNum, nil
@@ -141,20 +104,8 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 		return errors.Wrap(err, "updating version in bolt")
 	}
 
-	// The migrator now has the RocksDB migration embedded, which will be migrated to from 40->41, so we should only update RocksDB
-	// after this migration has occurred
-	if newVersion.SeqNum >= 41 {
-		if err := updateRocksDB(databases.RocksDB, versionBytes); err != nil {
-			return err
-		}
-	}
-	if databases.BadgerDB != nil {
-		err = databases.BadgerDB.Update(func(txn *badger.Txn) error {
-			return txn.Set(versionBucketName, versionBytes)
-		})
-		if err != nil {
-			return errors.Wrap(err, "updating version in badger")
-		}
+	if err := updateRocksDB(databases.RocksDB, versionBytes); err != nil {
+		return err
 	}
 
 	return nil

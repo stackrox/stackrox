@@ -10,15 +10,12 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb/badgerutils"
 	"github.com/stackrox/rox/pkg/backup"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/odirect"
-	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -55,21 +52,6 @@ func tryRestoreBolt(r io.Reader, outDir string) error {
 	return nil
 }
 
-func tryRestoreBadger(r io.Reader, outDir string) error {
-	badgerDirPath := path.Join(outDir, badgerhelper.BadgerDBDirName)
-	if err := os.Mkdir(badgerDirPath, 0700); err != nil {
-		return errors.Wrap(err, "could not create badger database directory")
-	}
-
-	db, err := badgerhelper.New(badgerDirPath)
-	if err != nil {
-		return errors.Wrap(err, "could not create new badger DB in empty dir")
-	}
-	defer utils.IgnoreError(db.Close)
-
-	return badgerutils.Load(r, db)
-}
-
 func tryRestoreZip(backupFile *os.File, outPath string) error {
 	stat, err := backupFile.Stat()
 	if err != nil {
@@ -81,7 +63,6 @@ func tryRestoreZip(backupFile *os.File, outPath string) error {
 	}
 
 	hasBolt := false
-	hasBadger := false
 
 	for _, f := range zipReader.File {
 		if f.Name == backup.BoltFileName {
@@ -95,25 +76,11 @@ func tryRestoreZip(backupFile *os.File, outPath string) error {
 				return errors.Wrapf(err, "could not restore bolt DB from file %s in ZIP archive", backup.BoltFileName)
 			}
 			hasBolt = true
-		} else if f.Name == backup.BadgerFileName {
-			r, err := f.Open()
-			if err != nil {
-				return errors.Wrapf(err, "could not open %s in ZIP archive", backup.BadgerFileName)
-			}
-			err = tryRestoreBadger(r, outPath)
-			_ = r.Close()
-			if err != nil {
-				return errors.Wrapf(err, "could not restore badger DB from file %s in ZIP archive", backup.BadgerFileName)
-			}
-			hasBadger = true
 		}
 	}
 
 	if !hasBolt {
 		return fmt.Errorf("bolt backup file %s not found in ZIP archive", backup.BoltFileName)
-	}
-	if !hasBadger {
-		return fmt.Errorf("badger backup file %s not found in ZIP archive", backup.BadgerFileName)
 	}
 	return nil
 }

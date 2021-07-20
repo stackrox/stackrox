@@ -4,8 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dgraph-io/badger"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/bbolt"
@@ -35,15 +33,6 @@ func DBFileNameForT(t testingT) string {
 // the DB fails.
 func DBForT(t *testing.T) *bbolt.DB {
 	db, err := bolthelper.NewTemp(DBFileNameForT(t))
-	require.NoError(t, err)
-	require.NotNil(t, db)
-	return db
-}
-
-// BadgerDBForT creates and returns a new DB to use for this test, failing the test if creating/opening
-// the DB fails.
-func BadgerDBForT(t *testing.T) *badger.DB {
-	db, _, err := badgerhelper.NewTemp(DBFileNameForT(t))
 	require.NoError(t, err)
 	require.NotNil(t, db)
 	return db

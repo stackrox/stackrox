@@ -30,7 +30,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) *StoreImpl {
 	}
 }
 
-// CountDeployments returns the number of deployments in badger.
+// CountDeployments returns the number of deployments in dackbox.
 func (b *StoreImpl) CountDeployments() (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Deployment")
 
@@ -162,7 +162,7 @@ func (b *StoreImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment,
 	return ret, missing, nil
 }
 
-// UpsertDeployment updates a deployment to badger.
+// UpsertDeployment updates a deployment to dackbox.
 func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "Deployment")
 

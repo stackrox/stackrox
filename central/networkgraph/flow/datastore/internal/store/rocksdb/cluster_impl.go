@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 )
 
-// NewClusterStore returns a new ClusterStore instance using the provided badger DB instance.
+// NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.
 func NewClusterStore(db *rocksdb.RocksDB) store.ClusterStore {
 	return &clusterStoreImpl{
 		db: db,

@@ -7,7 +7,6 @@ set -e
 move_dbs() {
   local SRC=$1
   local TGT=$2
-  move_if_needed "$SRC/badgerdb" "$TGT/badgerdb"
   move_if_needed "$SRC/rocksdb" "$TGT/rocksdb"
   move_if_needed "$SRC/stackrox.db" "$TGT/stackrox.db"
   move_if_needed "$SRC/migration_version.yaml" "$TGT/migration_version.yaml"

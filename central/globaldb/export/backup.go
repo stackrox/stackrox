@@ -27,7 +27,7 @@ func Backup(ctx context.Context, boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, incl
 	}
 
 	if err := generators.PutTarInZip(generators.PutDirectoryInTar(dbs.NewRocksBackup(rocksDB)), backup.RocksFileName).WriteTo(ctx, zipWriter); err != nil {
-		return errors.Wrap(err, "backing up badger")
+		return errors.Wrap(err, "backing up rocksdb")
 	}
 
 	if includeCerts {

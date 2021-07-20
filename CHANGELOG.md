@@ -6,6 +6,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- Support for BadgerDB is being completely removed. Users running a version less than 48.0 will need to upgrade to 63.0 prior to upgrading
+  to 64.0. All backups taken prior to version 48.0 will no longer be able to be restored to 64.0 and on.
+
+## [63.0]
+
 - Clusters now can have labels.
 - Role is now a combination of a permission set and an optional access scope.
 - Risk priority for relevant resources (Cluster, Node, Namespace, Deployment, Image, ImageComponent) is now continuous

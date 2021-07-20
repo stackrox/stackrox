@@ -37,7 +37,7 @@ func keyFunc(_ proto.Message) []byte {
 	return []byte(telemetryConfigKey)
 }
 
-// New returns a new Store instance using the provided badger DB instance.
+// New returns a new Store instance using the provided rocksDB DB instance.
 func New(db *bbolt.DB) (Store, error) {
 	newCrud, err := protoCrud.NewMessageCrud(db, telemetryBucket, keyFunc, alloc)
 	if err != nil {

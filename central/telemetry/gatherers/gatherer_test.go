@@ -6,14 +6,12 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	installation "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/telemetry/data"
@@ -32,11 +30,9 @@ type gathererTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	bolt      *bbolt.DB
-	badger    *badger.DB
-	badgerDir string
-	rocks     *rocksdb.RocksDB
-	index     bleve.Index
+	bolt  *bbolt.DB
+	rocks *rocksdb.RocksDB
+	index bleve.Index
 
 	gatherer                     *CentralGatherer
 	sensorUpgradeConfigDatastore *mocks.MockDataStore
@@ -49,13 +45,8 @@ func (s *gathererTestSuite) SetupSuite() {
 	s.Require().NoError(err, "Failed to make BoltDB: %s", err)
 	s.bolt = boltDB
 
-	badgerDB, dir, err := badgerhelper.NewTemp(s.T().Name() + ".db")
-	s.Require().NoError(err, "Failed to make BadgerDB: %s", err)
-	s.badger = badgerDB
-	s.badgerDir = dir
-
 	rocksDB := rocksdbtest.RocksDBForT(s.T())
-	s.Require().NoError(err, "Failed to make BadgerDB: %s", err)
+	s.Require().NoError(err, "Failed to make RocksDB: %s", err)
 	s.rocks = rocksDB
 
 	index, err := globalindex.MemOnlyIndex()
@@ -75,9 +66,6 @@ func (s *gathererTestSuite) SetupSuite() {
 func (s *gathererTestSuite) TearDownSuite() {
 	if s.bolt != nil {
 		testutils.TearDownDB(s.bolt)
-	}
-	if s.badger != nil {
-		testutils.TearDownBadger(s.badger, s.badgerDir)
 	}
 	if s.rocks != nil {
 		rocksdbtest.TearDownRocksDB(s.rocks)

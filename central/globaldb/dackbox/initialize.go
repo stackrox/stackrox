@@ -4,7 +4,6 @@ import (
 	"bytes"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 	clusterCVEEdgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
@@ -100,19 +99,6 @@ var (
 		},
 	}
 )
-
-// RemoveReindexBucket removes all of the keys that are handled, so that all handled buckets will be re-indexed on next
-// restart.
-func RemoveReindexBucket(db *badger.DB) error {
-	return db.Update(func(txn *badger.Txn) error {
-		for _, initialized := range initializedBuckets {
-			if err := txn.Delete(dbhelper.GetBucketKey(ReindexIfMissingBucket, initialized.bucket)); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
 
 // Init runs all registered initialization functions.
 func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.WrapperRegistry, reindexBucket, dirtyBucket, reindexValue []byte) error {

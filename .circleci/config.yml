@@ -3512,13 +3512,10 @@ jobs:
           path: tests/destructive-tests-results
 
       - run:
-          name: Deploy and restore DB to version 41.4
+          name: Deploy and restore DB to version 56.1
           command: |
-            # Download 41.4 backup
-            gsutil cp gs://stackrox-ci-upgrade-test-dbs/41.4-upgrade-db.zip .
-
-            # Restore 41.4 backup
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m 41.4-upgrade-db.zip
+            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 
       - *waitForAPI
 
@@ -3782,62 +3779,11 @@ jobs:
             ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
             cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
-      - run:
-          name: Deploy Central version right after 41.4
-          command: |
-            git checkout 309f7d8edc03e9767ddabefad670224e4bd1746f
-            # We explicitly need to set CIRCLE_TAG to empty, as it will otherwise dictate
-            # the output of `make tag`.
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
-
-            ./deploy/k8s/central.sh
-
-            # Remove the scanner HPA for these tests to avoid resource throttling
-            kubectl -n stackrox delete hpa/scanner
-
-            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cci-export ROX_USERNAME "$ROX_USERNAME"
-            cci-export ROX_PASSWORD "$ROX_PASSWORD"
+      - deploy-stackrox:
+          post-central-deploy-steps:
+            - *setupClientTLSCerts
 
       - *waitForAPI
-
-      - run:
-          name: Deploy and restore DB to version 41.4
-          command: |
-            # Download 41.4 backup
-            gsutil cp gs://stackrox-ci-upgrade-test-dbs/41.4-upgrade-db.zip .
-
-            # Restore 41.4 backup to 41.4 based commit
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m 41.4-upgrade-db.zip
-
-      - *waitForAPI
-
-      - run:
-          name: Checkout current commit again
-          command: git reset --hard "${CIRCLE_SHA1}"
-
-      - run:
-         name: Do the upgrade
-         command: |
-          central_image="stackrox/main:$(make --quiet tag)"
-          kubectl -n stackrox set image deploy/central central=${central_image}
-
-          scanner_image="stackrox/scanner:$(cat SCANNER_VERSION)"
-          kubectl -n stackrox set image deploy/scanner scanner=${scanner_image}
-
-          scanner_db_image="stackrox/scanner-db:$(cat SCANNER_VERSION)"
-          kubectl -n stackrox set image deploy/scanner-db db=${scanner_db_image}
-
-      - *waitForAPI
-
-      - validate-upgrade:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Run upgrade tests on migrated version"
-
-      - *restoreGradle
-
-      - *storeQATestResults
-      - *storeQASpockReports
 
       - run:
           name: Fetch bundle for the "remote" cluster in the DB
@@ -4020,61 +3966,6 @@ jobs:
       - remove-existing-stackrox-resources
 
       - run:
-          name: Deploy Central version right after 41.4
-          command: |
-            git checkout 309f7d8edc03e9767ddabefad670224e4bd1746f
-            # We explicitly need to set CIRCLE_TAG to empty, as it will otherwise dictate
-            # the output of `make tag`.
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
-
-            ./deploy/k8s/central.sh
-
-            # Remove the scanner HPA for these tests to avoid resource throttling
-            kubectl -n stackrox delete hpa/scanner
-
-            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cci-export ROX_USERNAME "$ROX_USERNAME"
-            cci-export ROX_PASSWORD "$ROX_PASSWORD"
-
-      - *waitForAPI
-
-      - run:
-          name: Deploy and restore DB to version 41.4
-          command: |
-            # Restore 41.4 backup to 41.4 based commit
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m 41.4-upgrade-db.zip
-
-      - *waitForAPI
-      - run:
-          name: Checkout current commit again
-          command: git reset --hard "${CIRCLE_SHA1}"
-
-      - run:
-          name: Roll up to a 44.x image so that RocksDB is available
-          command: |
-            kubectl -n stackrox set image deploy/central *=stackrox/main:3.0.44.x-7-g633d112298
-
-      - *waitForAPI
-
-      - run:
-          name: Take backup of BadgerDB on 44
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup --output badgerdb-44-backup.zip
-
-      - run:
-          name: Set DB to RocksDB
-          command: |
-            kubectl -n stackrox set env deploy/central ROX_ROCKSDB=true
-      - check-stackrox-logs:
-          collect: true
-      - *waitForAPI
-
-      - run:
-          name: Take backup of RocksDB on 44
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup --output rocksdb-44-backup.zip
-
-      - run:
           name: Install yq
           command: |
             sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
@@ -4084,18 +3975,23 @@ jobs:
           name: Set Central to a 58 image
           command: |
             git checkout b7c73d4d9d627b470d047ea4f026818ed92550d3
-            # We explicitly need to set CIRCLE_TAG to empty, as it will otherwise dictate
-            # the output of `make tag`.
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
+            MAIN_IMAGE_TAG=3.0.58.x-41-gb7c73d4d9d ./deploy/k8s/central.sh
 
             cci-export FORCE_ROLLBACK_VERSION 3.0.58.x-41-gb7c73d4d9d
-            kubectl -n stackrox set image deploy/central "central=stackrox/main:$FORCE_ROLLBACK_VERSION"
+
+            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
       - *waitForAPI
-      - validate-upgrade:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate Central is functional after setting to 3.0.58.x by running upgrade test as a smoke test"
-          policies-dir: "../image/policies/files"
+
+      - run:
+          name: Restore 56.1 backup to 58 image
+          command: |
+            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+
+      - *waitForAPI
 
       - run:
           name: Checkout current commit again
@@ -4108,15 +4004,17 @@ jobs:
 
       - *waitForAPI
       - validate-upgrade:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
           desc: "Validate Central upgrade to current"
 
       - run:
           name: Force rollback Central to 58
           command: |
             # Check upgrade status before proceeding
+            set -x
             upgradeStatus="$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/v1/centralhealth/upgradestatus")"
-            echo "$upgradeStatus"
+            echo "upgrade status: $upgradeStatus"
+            echo "force rollback version: $FORCE_ROLLBACK_VERSION"
             [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" == "$(make --quiet tag)" ]]
             [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" == "$FORCE_ROLLBACK_VERSION" ]]
             [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" == "true" ]]
@@ -4132,14 +4030,15 @@ jobs:
             kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - > /tmp/force_rollback_patch
             central_config=`yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -`
             config_patch=`yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch`
-            echo "$config_patch"
+            echo "config patch: $config_patch"
+            echo "config patch: $config_patch"
 
             kubectl -n stackrox patch configmap/central-config -p "$config_patch"
             kubectl -n stackrox set image deploy/central "central=stackrox/main:$FORCE_ROLLBACK_VERSION"
 
       - *waitForAPI
       - validate-upgrade:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
           desc: "Validate Central is functional after force rollback to 58 by running upgrade test as a smoke test"
           policies-dir: "../image/policies/files"
 
@@ -4156,40 +4055,10 @@ jobs:
 
       - *waitForAPI
       - validate-upgrade:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate roll forward to RocksDB from RocksDB on 44"
+          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+          desc: "Validate upgrade again after rollback"
       - check-stackrox-logs:
           collect: true
-
-      - run:
-          name: Restore 41.4 backup to current head
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m 41.4-upgrade-db.zip
-
-      - *waitForAPI
-      - validate-upgrade-and-check-logs-with-bouncing:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate restore from 41.4 to current head"
-
-      - run:
-          name: Restore 44 BadgerDB backup to current head
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m badgerdb-44-backup.zip
-
-      - *waitForAPI
-      - validate-upgrade-and-check-logs-with-bouncing:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate 44 restore to RocksDB from BadgerDB"
-
-      - run:
-          name: Restore 44 RocksDB backup to current head
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m rocksdb-44-backup.zip
-
-      - *waitForAPI
-      - validate-upgrade-and-check-logs-with-bouncing:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate 44 restore to RocksDB from RocksDB"
 
       - run:
           name: "Backup RocksDB"
@@ -4203,13 +4072,12 @@ jobs:
 
       - *waitForAPI
       - validate-upgrade-and-check-logs-with-bouncing:
-          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
           desc: "Validate RocksDB after backup + restore"
 
       - run:
           name: Restore 56.1 backup to current HEAD
           command: |
-            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 
       - *waitForAPI

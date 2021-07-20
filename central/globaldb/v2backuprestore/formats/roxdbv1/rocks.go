@@ -21,7 +21,7 @@ const (
 func restoreRocksDB(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
 	absDirPath, err := ctx.Mkdir(rocksDBPath, 0700)
 	if err != nil {
-		return errors.Wrap(err, "could not create badger database directory")
+		return errors.Wrap(err, "could not create rocksdb database directory")
 	}
 
 	tmpDir, err := ioutil.TempDir("", scratchPath)
