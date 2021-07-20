@@ -265,6 +265,7 @@ type SecuredClusterStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,admission-control},{DaemonSet,v1,collector},{Deployment,v1,sensor}}
+//+genclient
 
 // SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is
 // responsible for the connection to Central, and Collector, which performs host-level collection of process and
@@ -288,11 +289,7 @@ type SecuredClusterList struct {
 	Items           []SecuredCluster `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&SecuredCluster{}, &SecuredClusterList{})
-}
-
 var (
 	// SecuredClusterGVK is the GVK for the SecuredCluster type.
-	SecuredClusterGVK = GroupVersion.WithKind("SecuredCluster")
+	SecuredClusterGVK = SchemeGroupVersion.WithKind("SecuredCluster")
 )

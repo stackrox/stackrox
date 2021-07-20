@@ -381,7 +381,7 @@ type CentralComponentStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,central},{Deployment,v1,scanner},{Deployment,v1,scanner-db},{Secret,v1,central-htpasswd},{Service,v1,central-loadbalancer},{Route,v1,central}}
-// +genclient
+//+genclient
 
 // Central is the configuration template for the central services. This includes the API server, persistent storage,
 // and the web UI, as well as the image scanner.
