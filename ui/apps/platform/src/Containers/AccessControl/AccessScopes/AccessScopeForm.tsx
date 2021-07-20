@@ -291,16 +291,14 @@ function AccessScopeForm({
             </FormGroup>
             {alertCompute}
             <Flex
-                direction={{ default: 'column', xl: 'row' }}
-                spaceItems={{ default: 'spaceItemsNone', xl: 'spaceItemsLg' }}
-                className="pf-u-pt-lg"
+                direction={{ default: 'row' }}
+                spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}
             >
                 <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                     <FormGroup
                         label="Allowed resources"
                         fieldId="effectiveAccessScope"
                         labelIcon={labelIconEffectiveAccessScope}
-                        className="pf-u-pb-lg"
                     >
                         <EffectiveAccessScopeTable
                             counterComputing={counterComputing}
@@ -318,7 +316,6 @@ function AccessScopeForm({
                         label="Label selection rules"
                         fieldId="labelInclusion"
                         labelIcon={labelIconLabelInclusion}
-                        className="pf-u-pb-lg"
                     >
                         <LabelInclusion
                             clusterLabelSelectors={values.rules.clusterLabelSelectors}
@@ -332,7 +329,7 @@ function AccessScopeForm({
                 </FlexItem>
             </Flex>
             {hasAction && (
-                <Toolbar inset={{ default: 'insetNone' }}>
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
                     <ToolbarContent>
                         <ToolbarGroup variant="button-group">
                             <ToolbarItem>
