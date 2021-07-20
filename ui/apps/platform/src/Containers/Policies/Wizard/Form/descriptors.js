@@ -875,6 +875,21 @@ export const policyConfigurationDescriptor = [
         ],
         canBooleanLogic: false,
     },
+    {
+        label: 'Kubernetes User Name',
+        name: 'Kubernetes User Name',
+        negatedName: "Kubernetes User Name doesn't match",
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'text',
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Kubernetes User Groups',
+        name: 'Kubernetes User Groups',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'text',
+        canBooleanLogic: false,
+    },
 ];
 
 export const auditLogDescriptor = [

@@ -215,6 +215,18 @@ func initializeFieldMetadata() FieldMetadata {
 		}, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT}, negationForbidden,
 	)
 
+	f.registerFieldMetadata(
+		fieldnames.KubeUserName,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserNameCustomTag), nil,
+		kubernetesNameRegex, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
+	)
+
+	f.registerFieldMetadata(
+		fieldnames.KubeUserGroups,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserGroupsCustomTag), nil,
+		kubernetesNameRegex, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
+	)
+
 	if features.K8sAuditLogDetection.Enabled() {
 		f.registerFieldMetadata(
 			fieldnames.KubeResourceName,
@@ -222,16 +234,6 @@ func initializeFieldMetadata() FieldMetadata {
 			[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		)
 
-		f.registerFieldMetadata(
-			fieldnames.KubeUserName,
-			querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserNameCustomTag), nil,
-			kubernetesNameRegex, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		)
-		f.registerFieldMetadata(
-			fieldnames.KubeUserGroups,
-			querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserGroupsCustomTag), nil,
-			kubernetesNameRegex, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		)
 		f.registerFieldMetadata(
 			fieldnames.SourceIPAddress,
 			querybuilders.ForFieldLabel(augmentedobjs.KubernetesSourceIPAddressCustomTag), nil,

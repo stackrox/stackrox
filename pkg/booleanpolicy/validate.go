@@ -114,5 +114,14 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeAPIVerb)
 		}
 	}
+
+	if eventSource == storage.EventSource_DEPLOYMENT_EVENT {
+		if seenFields.Contains(fieldnames.KubeUserName) || seenFields.Contains(fieldnames.KubeUserGroups) {
+			if !seenFields.Contains(fieldnames.KubeResource) {
+				errorList.AddString("kubernetes events policy must have the `Kubernetes Action` criteria")
+			}
+		}
+	}
+
 	return errorList.ToError()
 }

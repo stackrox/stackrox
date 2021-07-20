@@ -71,12 +71,15 @@ func podExecEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, er
 			Resource:  storage.KubernetesEvent_Object_PODS_EXEC,
 			Namespace: req.Namespace,
 		},
-
 		ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
 			PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
 				Container: obj.Container,
 				Commands:  obj.Command,
 			},
+		},
+		User: &storage.KubernetesEvent_User{
+			Username: req.UserInfo.Username,
+			Groups:   req.UserInfo.Groups,
 		},
 	}, nil
 }
@@ -100,11 +103,14 @@ func podPortForwardEvent(req *admission.AdmissionRequest) (*storage.KubernetesEv
 			Resource:  storage.KubernetesEvent_Object_PODS_PORTFORWARD,
 			Namespace: req.Namespace,
 		},
-
 		ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
 			PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
 				Ports: obj.Ports,
 			},
+		},
+		User: &storage.KubernetesEvent_User{
+			Username: req.UserInfo.Username,
+			Groups:   req.UserInfo.Groups,
 		},
 	}, nil
 }
