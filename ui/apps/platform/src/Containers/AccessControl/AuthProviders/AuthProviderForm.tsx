@@ -181,6 +181,7 @@ function AuthProviderForm({
         initialValues: modifiedInitialValues,
         onSubmit: () => {},
         validationSchema: authProviderValidationSchema,
+        enableReinitialize: true,
     });
     const {
         dirty,
