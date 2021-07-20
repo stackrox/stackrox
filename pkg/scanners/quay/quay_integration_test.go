@@ -50,7 +50,6 @@ func (suite *QuayIntegrationSuite) TestScanTest() {
 }
 
 func (suite *QuayIntegrationSuite) TestGetScan() {
-	suite.T().Skip("ROX-7633 to investigate failures")
 	image := &storage.Image{
 		Id: "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 		Name: &storage.ImageName{
