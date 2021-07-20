@@ -29,6 +29,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
     const isRuntimeAlert = violation?.lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
     const isDeployCreateAttemptedAlert =
         violation?.enforcementAction === ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
+    const isDeploymentAlert = violation?.commonEntityInfo?.resourceType === 'DEPLOYMENT';
 
     return (
         <div
@@ -37,7 +38,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
         >
             {!isResolved && (
                 <div className="flex">
-                    {isRuntimeAlert && (
+                    {isRuntimeAlert && isDeploymentAlert && (
                         <Tooltip
                             content={
                                 <TooltipOverlay>
@@ -69,7 +70,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                     )}
                 </div>
             )}
-            {!isDeployCreateAttemptedAlert && (
+            {!isDeployCreateAttemptedAlert && isDeploymentAlert && (
                 <Tooltip content={<TooltipOverlay>Exclude deployment</TooltipOverlay>}>
                     <button
                         data-testid="exclude-deployment-button"
@@ -89,6 +90,9 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
 
 ViolationActionButtons.propTypes = {
     violation: PropTypes.shape({
+        commonEntityInfo: PropTypes.shape({
+            resourceType: PropTypes.string.isRequired,
+        }),
         id: PropTypes.string.isRequired,
         lifecycleStage: PropTypes.string.isRequired,
         deployment: PropTypes.shape({

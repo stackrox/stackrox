@@ -6,7 +6,7 @@ import { FieldArray } from 'redux-form';
 import reduxFormPropTypes from 'constants/reduxFormPropTypes';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
-import { policyCriteriaCategories } from 'messages/common';
+import { policyConfigurationDescriptor } from './descriptors';
 import { addFieldArrayHandler, removeFieldArrayHandler } from './utils';
 import PolicySection from './PolicySection';
 
@@ -24,13 +24,26 @@ function getNewPolicySection(length) {
     };
 }
 
+// returns whether the current field is not an audit log field
+function getIsNonAuditLogField(fieldCard) {
+    // the fieldCard is not an audit log field if the field does has the Kubernetes Action values
+    // since the name Kubernetes Resource is in both audit log and policy configuration descriptors
+    if (fieldCard.fieldName === 'Kubernetes Resource') {
+        return fieldCard.values.find(
+            ({ value }) => value === 'PODS_EXEC' || value === 'PODS_PORTFORWARD'
+        );
+    }
+    return policyConfigurationDescriptor.find(({ name }) => name === fieldCard.fieldName);
+}
+
 function PolicySections({
     fields,
+    meta,
     readOnly,
     className,
     hasHeader,
     descriptor,
-    hasAuditLogEventSource,
+    hasAuditLogEventSource: shouldHaveAuditLogFields,
 }) {
     const newPolicySection = getNewPolicySection(fields.length);
     const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
@@ -39,27 +52,20 @@ function PolicySections({
         // clear policy sections if user toggles between event source options
         if (auditLogEnabled && fields.length > 0 && !readOnly) {
             const field = fields.get(0);
-            if (field?.policyGroups.length > 0) {
-                const fieldCard = field.policyGroups[0];
-                let { fieldKey } = fieldCard;
-                if (!fieldKey) {
-                    fieldKey = descriptor.find((fieldObj) => fieldObj.name === fieldCard.fieldName);
-                }
-                if (fieldKey) {
-                    const hasNonAuditLogFields =
-                        hasAuditLogEventSource &&
-                        (fieldKey.category !== policyCriteriaCategories.KUBERNETES_EVENTS ||
-                            fieldKey.label === 'Kubernetes Action');
-                    const hasAuditLogFields =
-                        !hasAuditLogEventSource &&
-                        fieldKey.category === policyCriteriaCategories.KUBERNETES_EVENTS;
+            if (!meta.pristine) {
+                if (field?.policyGroups.length > 0) {
+                    const fieldCard = field.policyGroups[0];
+                    const isNonAuditLogField = getIsNonAuditLogField(fieldCard);
+                    // this is to clear the policy section when policy criteria and the field cards do not match
+                    const hasNonAuditLogFields = shouldHaveAuditLogFields && isNonAuditLogField;
+                    const hasAuditLogFields = !shouldHaveAuditLogFields && !isNonAuditLogField;
                     if (hasNonAuditLogFields || hasAuditLogFields) {
                         fields.removeAll();
                     }
                 }
             }
         }
-    }, [fields, auditLogEnabled, hasAuditLogEventSource, descriptor, readOnly]);
+    }, [fields, auditLogEnabled, shouldHaveAuditLogFields, descriptor, readOnly, meta]);
     return (
         <div className={`p-3 ${className} overflow-y-scroll`}>
             {hasHeader && <h2 className="text-2xl pb-2">Policy Criteria</h2>}

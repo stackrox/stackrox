@@ -80,7 +80,7 @@ export default function getColumns(setSelectedAlertId) {
                 return (
                     <div className="flex flex-col">
                         <div className="flex items-center">{name}</div>
-                        <div className="text-base-500 text-sm">{`in "${namespace}/${clusterName}"`}</div>
+                        <div className="text-base-500 text-sm">{`in "${clusterName}/${namespace}"`}</div>
                     </div>
                 );
             },
