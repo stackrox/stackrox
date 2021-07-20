@@ -16,16 +16,20 @@ import (
 	npMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	nDataStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -827,4 +831,140 @@ func checkHasPolicies(policyNames ...string) gomock.Matcher {
 		}
 		return true
 	})
+}
+
+func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
+	t.Parallel()
+
+	namespaces := []string{"foo", "bar", "baz", "qux"}
+	clusterID := "clusterA"
+
+	cases := map[string]struct {
+		checker       sac.ScopeCheckerCore
+		expectAllowed bool
+	}{
+		"all access": {
+			checker:       sac.AllowAllAccessScopeChecker(),
+			expectAllowed: true,
+		},
+		"access to clusterA": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.NetworkPolicy),
+				sac.ClusterScopeKeys("clusterA")),
+			expectAllowed: true,
+		},
+		"exactly matching namespaces": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.NetworkPolicy),
+				sac.ClusterScopeKeys("clusterA"),
+				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux")),
+			expectAllowed: true,
+		},
+		"more namespaces": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.NetworkPolicy),
+				sac.ClusterScopeKeys("clusterA"),
+				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux", "quuz")),
+			expectAllowed: true,
+		},
+		"no access": {
+			checker:       sac.DenyAllAccessScopeChecker(),
+			expectAllowed: false,
+		},
+		"access to clusterB": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.NetworkPolicy),
+				sac.ClusterScopeKeys("clusterB")),
+			expectAllowed: false,
+		},
+		"correct namespaces in wrong cluster": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.NetworkPolicy),
+				sac.ClusterScopeKeys("clusterB"),
+				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux")),
+			expectAllowed: false,
+		},
+		"one namespace missing": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.NetworkPolicy),
+				sac.ClusterScopeKeys("clusterA"),
+				sac.NamespaceScopeKeys("bar", "baz", "qux")),
+			expectAllowed: false,
+		},
+	}
+
+	for name, c := range cases {
+		testCase := c
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), testCase.checker)
+			err := checkAllNamespacesWriteAllowed(ctx, clusterID, namespaces...)
+			if testCase.expectAllowed {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorIs(t, err, sac.ErrResourceAccessDenied)
+			}
+		})
+	}
+}
+
+func TestGetNamespacesFromModification(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		applyYAML string
+		toDelete  []*storage.NetworkPolicyReference
+
+		expectedNamespaces []string
+	}{
+		"single policy in default ns": {
+			applyYAML:          fakeYAML1,
+			expectedNamespaces: []string{"default"},
+		},
+		"single deletion in test ns": {
+			toDelete: []*storage.NetworkPolicyReference{
+				{
+					Name:      "foo",
+					Namespace: "testns",
+				},
+			},
+			expectedNamespaces: []string{"testns"},
+		},
+		"multi-document YAML and deletion": {
+			applyYAML: combinedYAMLs,
+			toDelete: []*storage.NetworkPolicyReference{
+				{
+					Name:      "foo",
+					Namespace: "testns",
+				},
+			},
+			expectedNamespaces: []string{"default", "testns"},
+		},
+		"yaml with empty namespace": {
+			applyYAML:          badYAML,
+			expectedNamespaces: []string{""},
+		},
+	}
+
+	for name, c := range cases {
+		testCase := c
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			mod := &storage.NetworkPolicyModification{
+				ApplyYaml: testCase.applyYAML,
+				ToDelete:  testCase.toDelete,
+			}
+
+			nsSet, err := getNamespacesFromModification(mod)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, nsSet.AsSlice(), testCase.expectedNamespaces)
+		})
+	}
 }

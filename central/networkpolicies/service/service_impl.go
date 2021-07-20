@@ -77,6 +77,8 @@ var (
 	})
 
 	deploymentPredicateFactory = predicate.NewFactory("deployment", &storage.Deployment{})
+
+	networkPolicySAC = sac.ForResource(resources.NetworkPolicy)
 )
 
 // serviceImpl provides APIs for alerts.
@@ -617,8 +619,20 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	clusterID string,
 	modification *storage.NetworkPolicyModification,
 ) (*storage.NetworkPolicyApplicationUndoRecord, error) {
-	if modification.GetApplyYaml() == "" && len(modification.GetToDelete()) == 0 {
+	if strings.TrimSpace(modification.GetApplyYaml()) == "" && len(modification.GetToDelete()) == 0 {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
+	}
+
+	// Check that:
+	// - all network policies can be parsed
+	// - all network policies have a non-empty namespace field
+	// - the user has write access to all namespaces where the application takes place
+	if nsSet, err := getNamespacesFromModification(modification); err != nil {
+		return nil, errors.Wrap(err, "failed to determine network policy namespaces")
+	} else if nsSet.Contains("") {
+		return nil, status.Error(codes.InvalidArgument, "network policy has empty namespace")
+	} else if err := checkAllNamespacesWriteAllowed(ctx, clusterID, nsSet.AsSlice()...); err != nil {
+		return nil, err
 	}
 
 	conn := s.sensorConnMgr.GetConnection(clusterID)
@@ -1121,4 +1135,32 @@ func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error
 		return errors.Wrapf(errorhelpers.ErrNotFound, "cluster with ID %q doesn't exist", clusterID)
 	}
 	return nil
+}
+
+func getNamespacesFromModification(modification *storage.NetworkPolicyModification) (set.StringSet, error) {
+	result := set.NewStringSet()
+	for _, toDelete := range modification.GetToDelete() {
+		result.Add(toDelete.GetNamespace())
+	}
+
+	if applyYaml := strings.TrimSpace(modification.GetApplyYaml()); applyYaml != "" {
+		netPols, err := networkPolicyConversion.YamlWrap{Yaml: modification.GetApplyYaml()}.ToKubernetesNetworkPolicies()
+		if err != nil {
+			return nil, errors.Wrap(err, "error parsing network policies")
+		}
+		for _, np := range netPols {
+			result.Add(np.GetNamespace())
+		}
+	}
+	return result, nil
+}
+
+func checkAllNamespacesWriteAllowed(ctx context.Context, clusterID string, namespaces ...string) error {
+	nsScopeKeys := make([][]sac.ScopeKey, 0, len(namespaces))
+	for _, ns := range namespaces {
+		nsScopeKeys = append(nsScopeKeys, []sac.ScopeKey{sac.NamespaceScopeKey(ns)})
+	}
+	return sac.VerifyAuthzOK(
+		networkPolicySAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ClusterID(clusterID).AllAllowed(
+			ctx, nsScopeKeys))
 }

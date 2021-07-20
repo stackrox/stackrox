@@ -136,11 +136,15 @@ func (s *serviceImpl) reprocessDeploymentRisks(keys []*storage.ProcessBaselineKe
 }
 
 func (s *serviceImpl) UpdateProcessBaselines(ctx context.Context, request *v1.UpdateProcessBaselinesRequest) (*v1.UpdateProcessBaselinesResponse, error) {
+	// Make sure only the baselines that were updated are reprocessed afterwards.
+	var resp *v1.UpdateProcessBaselinesResponse
+	defer s.reprocessUpdatedBaselines(&resp)
+
 	updateFunc := func(key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
 		return s.dataStore.UpdateProcessBaselineElements(ctx, key, request.GetAddElements(), request.GetRemoveElements(), false)
 	}
-	defer s.reprocessDeploymentRisks(request.GetKeys())
-	resp := bulkUpdate(request.GetKeys(), updateFunc)
+	resp = bulkUpdate(request.GetKeys(), updateFunc)
+
 	for _, w := range resp.GetBaselines() {
 		s.sendBaselineToSensor(w)
 	}
@@ -148,12 +152,13 @@ func (s *serviceImpl) UpdateProcessBaselines(ctx context.Context, request *v1.Up
 }
 
 func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.LockProcessBaselinesRequest) (*v1.UpdateProcessBaselinesResponse, error) {
+	var resp *v1.UpdateProcessBaselinesResponse
+	defer s.reprocessUpdatedBaselines(&resp)
+
 	updateFunc := func(key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
 		return s.dataStore.UserLockProcessBaseline(ctx, key, request.GetLocked())
 	}
-
-	defer s.reprocessDeploymentRisks(request.GetKeys())
-	resp := bulkUpdate(request.GetKeys(), updateFunc)
+	resp = bulkUpdate(request.GetKeys(), updateFunc)
 	for _, w := range resp.GetBaselines() {
 		s.sendBaselineToSensor(w)
 	}
@@ -188,4 +193,12 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 		return nil, err
 	}
 	return response, nil
+}
+
+func (s *serviceImpl) reprocessUpdatedBaselines(resp **v1.UpdateProcessBaselinesResponse) {
+	var keys []*storage.ProcessBaselineKey
+	for _, pb := range (*resp).GetBaselines() {
+		keys = append(keys, pb.GetKey())
+	}
+	s.reprocessDeploymentRisks(keys)
 }
