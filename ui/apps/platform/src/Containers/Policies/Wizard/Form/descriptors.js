@@ -920,7 +920,7 @@ export const auditLogDescriptor = [
         canBooleanLogic: false,
     },
     {
-        label: 'Kubernetes User Groups',
+        label: 'Kubernetes User Group',
         name: 'Kubernetes User Groups',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
