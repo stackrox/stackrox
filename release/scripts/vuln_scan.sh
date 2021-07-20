@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -euo pipefail
 
 GITROOT="$(git rev-parse --show-toplevel)"
 [[ -n "${GITROOT}" ]] || { echo >&2 "Could not determine git root!"; exit 1; }

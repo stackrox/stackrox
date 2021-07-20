@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -euo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
@@ -9,7 +9,7 @@ GITROOT="$(git rev-parse --show-toplevel)"
 
 # Helper method to call curl command to quay
 function quay_curl {
-    curl -H "Authorization: Bearer ${QUAY_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/stackrox/${1}"
+    curl -sS --fail -H "Authorization: Bearer ${QUAY_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/stackrox/${1}"
 }
 
 # Check image scan results in quay.io and alert on new fixable vulns
@@ -17,7 +17,7 @@ function compare_fixable_vulns {
   local image_name=$1
   local image_tag=$2
 
-  # fetch current image id from quay
+  echo "Fetching current image id from quay for $image_name:$image_tag"
   CURRENT_IMAGE="$(quay_curl "${image_name}/tag/" | jq --arg CURRENT_TAG "${image_tag}" '.tags | first(.[] | select(.name==$CURRENT_TAG)) | .image_id' | tr -d '\"')"
 
   # make sure scan is complete before proceeding, since scans would have been started just before running this
@@ -25,6 +25,7 @@ function compare_fixable_vulns {
   local scan_present
   local count=1
 
+  echo "Getting scan status"
   scan_present=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq '.status')
   until [ "$(echo "$scan_present" | tr -d '\"')" = "scanned" ] || [ "$count" -gt 60 ]; do
     echo "Waiting for scan to complete..."
@@ -38,7 +39,7 @@ function compare_fixable_vulns {
     echo "${image_name}:${image_tag} scan never completed. Check Quay website."
     FAIL_SCRIPT=true
   else
-    # get any fixable vulns for the scanned image
+    echo "Trying to get any fixable vulns for the scanned image"
     CURRENT_FIXABLE=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
 
     # fail the check if fixable vulns are found that are not allowed
