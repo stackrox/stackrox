@@ -135,8 +135,8 @@ for milestone in "${milestones[@]}"; do
         # commit messages, and somebody eliminating the PR# from the commit message), additionally check if
         # the diffs (with context removed) look the same.
         firstline="$(git log "${commit_id}...${commit_id}^" --format='%s')"
-        firstline_search="${firstline//[/\[}"
-        firstline_search="${firstline_search//]/\]}"
+        firstline_search="${firstline//\[/\\[}"
+        firstline_search="${firstline_search//\]/\\]}"
         firstline_match_commit="$(git log --grep "^${firstline_search}\$" --format='%H')"
         if [[ -n "$firstline_match_commit" ]]; then
           if cmp -s \
