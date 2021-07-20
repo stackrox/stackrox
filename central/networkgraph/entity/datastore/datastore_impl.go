@@ -40,10 +40,8 @@ type dataStoreImpl struct {
 	graphConfig   graphConfigDS.DataStore
 	sensorConnMgr connection.Manager
 	treeMgr       networktree.Manager
-	clusterIDs    []string
 
-	netEntityLock    sync.Mutex
-	clusterCacheLock sync.Mutex
+	netEntityLock sync.Mutex
 }
 
 // NewEntityDataStore returns a new instance of EntityDataStore using the input storage underneath.
@@ -77,7 +75,6 @@ func (ds *dataStoreImpl) initNetworkTrees() {
 }
 
 func (ds *dataStoreImpl) RegisterCluster(ctx context.Context, clusterID string) {
-	ds.addCluster(clusterID)
 	ds.getNetworkTree(ctx, clusterID, true)
 
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
@@ -397,7 +394,6 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 
 	// If we are here, it means all the network entities for the `clusterID` are removed.
 	ds.treeMgr.DeleteNetworkTree(ctx, clusterID)
-	ds.removeCluster(clusterID)
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 
 	return nil
@@ -446,52 +442,20 @@ func (ds *dataStoreImpl) doPushExternalNetworkEntitiesToSensor(clusters ...strin
 	}
 }
 
-func (ds *dataStoreImpl) getRegisteredClusters() []string {
-	ds.clusterCacheLock.Lock()
-	defer ds.clusterCacheLock.Unlock()
-
-	return ds.clusterIDs
-}
-
-func (ds *dataStoreImpl) addCluster(cluster string) {
-	ds.clusterCacheLock.Lock()
-	defer ds.clusterCacheLock.Unlock()
-
-	clusterSet := set.NewStringSet(ds.clusterIDs...)
-	clusterSet.Add(cluster)
-	ds.clusterIDs = clusterSet.AsSlice()
-}
-
-func (ds *dataStoreImpl) removeCluster(cluster string) {
-	ds.clusterCacheLock.Lock()
-	defer ds.clusterCacheLock.Unlock()
-
-	for i, id := range ds.clusterIDs {
-		if id == cluster {
-			ds.clusterIDs[i] = ds.clusterIDs[len(ds.clusterIDs)-1]
-			ds.clusterIDs = ds.clusterIDs[:len(ds.clusterIDs)-1]
-			break
-		}
-	}
-}
-
 func (ds *dataStoreImpl) readAllowed(ctx context.Context, id string) (bool, error) {
-	return ds.allowed(ctx, storage.Access_READ_ACCESS, id)
+	return allowed(ctx, storage.Access_READ_ACCESS, id)
 }
 
 func (ds *dataStoreImpl) writeAllowed(ctx context.Context, id string) (bool, error) {
-	return ds.allowed(ctx, storage.Access_READ_WRITE_ACCESS, id)
+	return allowed(ctx, storage.Access_READ_WRITE_ACCESS, id)
 }
 
-func (ds *dataStoreImpl) allowed(ctx context.Context, access storage.Access, id string) (bool, error) {
-	scopeKeys, err := getScopeKeys(id, ds.getRegisteredClusters())
+func allowed(ctx context.Context, access storage.Access, id string) (bool, error) {
+	scopeKey, err := getScopeKey(id)
 	if err != nil {
 		return false, err
 	}
-	if len(scopeKeys) == 0 {
-		return networkGraphSAC.ScopeChecker(ctx, access).Allowed(ctx)
-	}
-	return networkGraphSAC.ScopeChecker(ctx, access).AnyAllowed(ctx, scopeKeys)
+	return networkGraphSAC.ScopeChecker(ctx, access).Allowed(ctx, scopeKey...)
 }
 
 func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
@@ -538,21 +502,15 @@ func excludeEntityForGraphConfig(graphConfig *storage.NetworkGraphConfig, entity
 	return graphConfig.GetHideDefaultExternalSrcs() && entity.GetInfo().GetExternalSource().GetDefault()
 }
 
-func getScopeKeys(id string, clusters []string) ([][]sac.ScopeKey, error) {
+func getScopeKey(id string) ([]sac.ScopeKey, error) {
 	decodedID, err := sac.ParseResourceID(string(id))
 	if err != nil {
 		return nil, err
 	}
 
 	if decodedID.ClusterScoped() {
-		return [][]sac.ScopeKey{sac.ClusterScopeKeys(decodedID.ClusterID())}, nil
+		return []sac.ScopeKey{sac.ClusterScopeKey(decodedID.ClusterID())}, nil
 	}
 
-	// If global-scoped, add all registered clusters as scope key paths.
-	scopeKeys := make([][]sac.ScopeKey, 0, len(clusters))
-	for _, cluster := range clusters {
-		scopeKeys = append(scopeKeys, sac.ClusterScopeKeys(cluster))
-	}
-
-	return scopeKeys, nil
+	return []sac.ScopeKey{}, nil // all clusters
 }

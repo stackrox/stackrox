@@ -479,8 +479,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
 	actuals, err := suite.ds.GetAllEntities(cluster1ReadCtx)
 	suite.NoError(err)
-	suite.Len(actuals, 3)
-	suite.ElementsMatch([]*storage.NetworkEntity{entity1, entity2, defaultEntity}, actuals)
+	suite.ElementsMatch([]*storage.NetworkEntity{entity1, entity2}, actuals)
 
 	// All resources accessible
 	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
@@ -571,7 +570,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 			pushSig.Signal()
 			return nil
 		})
-	suite.NoError(suite.ds.DeleteExternalNetworkEntitiesForCluster(suite.globalWriteAccessCtx, cluster1))
+	suite.NoError(suite.ds.DeleteExternalNetworkEntitiesForCluster(cluster1WriteCtx, cluster1))
 	suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second*2))
 	_, found, err = suite.ds.GetEntity(suite.globalReadAccessCtx, defaultEntity.GetInfo().GetId())
 	suite.NoError(err)
@@ -588,7 +587,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 			pushSig.Signal()
 			return nil
 		})
-	suite.NoError(suite.ds.DeleteExternalNetworkEntity(cluster2WriteCtx, defaultEntityID.String()))
+	suite.NoError(suite.ds.DeleteExternalNetworkEntity(suite.globalWriteAccessCtx, defaultEntityID.String()))
 	suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second*2))
 
 	// Test GetAll
