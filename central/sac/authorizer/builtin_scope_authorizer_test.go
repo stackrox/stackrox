@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -256,6 +257,40 @@ func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
 			principal: adminRolePrincipal,
 			scopes:    []payload.AccessScope{{}},
 			denied:    []payload.AccessScope{{}},
+		},
+		{
+			name: "exclude all access scope => global resource can be accessed",
+			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
+				withTwoClusters(clusterStore)
+				withNoNamespaces(nsStore)
+				withRoles(roleStore, role(allResourcesView, roleDatastore.AccessScopeExcludeAll))
+			},
+			principal: adminRolePrincipal,
+			scopes: []payload.AccessScope{{
+				Verb: view, Noun: globalResource,
+			}},
+			allowed: []payload.AccessScope{{
+				Verb: view, Noun: globalResource,
+			}},
+		},
+		{
+			name: "exclude all access scope => all scoped resources are excluded",
+			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
+				withTwoClusters(clusterStore)
+				withTwoNamespaces(nsStore)
+				withRoles(roleStore, role(allResourcesView, roleDatastore.AccessScopeExcludeAll))
+			},
+			principal: adminRolePrincipal,
+			scopes: []payload.AccessScope{{
+				Verb: view, Noun: cluster,
+			}, {
+				Verb: view, Noun: namespace,
+			}},
+			denied: []payload.AccessScope{{
+				Verb: view, Noun: cluster,
+			}, {
+				Verb: view, Noun: namespace,
+			}},
 		},
 		{
 			name: "no access scope id => allow everything in permission set",

@@ -85,14 +85,16 @@ var defaultRoles = map[string]roleAttributes{
 	},
 }
 
-var defaultAccessScopes = []*storage.SimpleAccessScope{
-	{
-		Id:          roleUtils.EnsureValidAccessScopeID("denyall"),
-		Name:        "Deny All",
-		Description: "No access to scoped resources",
-		Rules:       &storage.SimpleAccessScope_Rules{},
-	},
+// AccessScopeExcludeAll has empty rules and hence excludes all
+// scoped resources. Global resources must be unaffected.
+var AccessScopeExcludeAll = &storage.SimpleAccessScope{
+	Id:          roleUtils.EnsureValidAccessScopeID("denyall"),
+	Name:        "Deny All",
+	Description: "No access to scoped resources",
+	Rules:       &storage.SimpleAccessScope_Rules{},
 }
+
+var defaultAccessScopes = []*storage.SimpleAccessScope{AccessScopeExcludeAll}
 
 func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.SimpleAccessScope) {
 	roles := make([]*storage.Role, 0, len(defaultRoles))
