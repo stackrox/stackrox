@@ -55,3 +55,10 @@
 #access-control .pf-c-form-control.pf-m-limit-width {
     max-width: var(--pf-c-form--m-limit-width--MaxWidth);
 }
+
+/*
+ * Omit 24px row-gap following toolbar because it also has 16px padding-bottom.
+ */
+#access-control .pf-c-toolbar {
+    --pf-c-toolbar--RowGap: 0;
+}

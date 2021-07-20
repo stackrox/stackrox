@@ -275,27 +275,24 @@ function EffectiveAccessScopeTable({
                     </FlexItem>
                 </Flex>
             </Flex>
-            <TableComposable
-                variant="compact"
-                isStickyHeader
-                isTreeTable
-                style={{ overflow: 'auto' }}
-            >
-                <Thead>
-                    <Tr>
-                        <Th width={40}>Cluster name</Th>
-                        <Th
-                            modifier="fitContent"
-                            className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
-                        >
-                            Allowed
-                        </Th>
-                        <Th modifier="fitContent">Manual selection</Th>
-                        <Th>Labels</Th>
-                    </Tr>
-                </Thead>
-                <Tbody>{rows}</Tbody>
-            </TableComposable>
+            <div style={{ maxHeight: '50vh', overflow: 'auto' }}>
+                <TableComposable variant="compact" isStickyHeader isTreeTable>
+                    <Thead>
+                        <Tr>
+                            <Th width={40}>Cluster name</Th>
+                            <Th
+                                modifier="fitContent"
+                                className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
+                            >
+                                Allowed
+                            </Th>
+                            <Th modifier="fitContent">Manual selection</Th>
+                            <Th>Labels</Th>
+                        </Tr>
+                    </Thead>
+                    <Tbody>{rows}</Tbody>
+                </TableComposable>
+            </div>
         </>
     );
 }

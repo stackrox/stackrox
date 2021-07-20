@@ -185,7 +185,7 @@ function LabelSelectorCard({
                     </CardActions>
                 )}
             </CardHeader>
-            <CardBody className="pf-u-pb-0">
+            <CardBody>
                 <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
                     <FlexItem>
                         <strong>Rules</strong>
