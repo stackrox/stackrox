@@ -29,7 +29,7 @@ import { actions as authActions } from 'reducers/auth';
 import { AuthProvider } from 'services/AuthService';
 
 import ConfigurationFormFields from './ConfigurationFormFields';
-import RuleGroups from './RuleGroups';
+import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
     getInitialAuthProviderValues,
     transformInitialValues,
@@ -89,6 +89,16 @@ function AuthProviderForm({
     const authProviderValidationSchema = yup.object().shape({
         name: yup.string().required('A name is required.'),
         type: yup.string().required(),
+        defaultRole: yup.string().required(),
+        groups: yup.array().of(
+            yup.object().shape({
+                roleName: yup.string().required('Role is a required field'),
+                props: yup.object().shape({
+                    key: yup.string().required('Key is a required field'),
+                    value: yup.string().required('Value is a required field'),
+                }),
+            })
+        ),
         config: yup
             .object()
             .when('type', {
@@ -437,6 +447,7 @@ function AuthProviderForm({
                             onChange={onChange}
                             setFieldValue={setFieldValue}
                             disabled={isViewing}
+                            errors={errors?.groups as RuleGroupErrors[]}
                         />
                     </FormSection>
                 </FormSection>

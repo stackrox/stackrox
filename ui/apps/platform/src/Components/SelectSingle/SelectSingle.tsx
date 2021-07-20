@@ -10,6 +10,7 @@ export type SelectSingleProps = {
     direction?: 'up' | 'down';
     isCreatable?: boolean;
     variant?: 'typeahead' | null;
+    placeholderText?: string;
 };
 
 function SelectSingle({
@@ -21,6 +22,7 @@ function SelectSingle({
     direction = 'down',
     isCreatable = false,
     variant = null,
+    placeholderText = '',
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -43,6 +45,7 @@ function SelectSingle({
             selections={value}
             direction={direction}
             isCreatable={isCreatable}
+            placeholderText={placeholderText}
         >
             {children}
         </Select>

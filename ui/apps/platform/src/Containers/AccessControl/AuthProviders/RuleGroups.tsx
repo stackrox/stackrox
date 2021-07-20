@@ -10,6 +10,14 @@ import { Group } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
 
+export type RuleGroupErrors = {
+    roleName?: string;
+    props?: {
+        key?: string;
+        value?: string;
+    };
+};
+
 export type RuleGroupsProps = {
     authProviderId: string;
     onChange: (
@@ -20,17 +28,18 @@ export type RuleGroupsProps = {
     groups: Group[];
     setFieldValue: (name: string, value: string) => void;
     disabled: boolean | undefined;
+    errors?: RuleGroupErrors[];
 };
 
 const ruleKeys = ['userid', 'name', 'email', 'groups'];
 
-function getAugmentedRuleKeys(existingKeys, groups) {
+function getAugmentedRuleKeys(groups) {
     const newRuleKeys = [...ruleKeys];
 
     groups.forEach((group) => {
         const alreadyInList = newRuleKeys.find((key) => key === group?.props?.key);
 
-        if (!alreadyInList) {
+        if (group.props.key && !alreadyInList) {
             newRuleKeys.push(group.props.key);
         }
     });
@@ -45,8 +54,9 @@ function RuleGroups({
     groups = [],
     roles = [],
     disabled = false,
+    errors = [],
 }: RuleGroupsProps): ReactElement {
-    const augmentedRuleKeys = getAugmentedRuleKeys(ruleKeys, groups);
+    const augmentedRuleKeys = getAugmentedRuleKeys(groups);
 
     return (
         <FieldArray
@@ -58,7 +68,12 @@ function RuleGroups({
                         groups.map((group, index: number) => (
                             <Flex key={`${group.props.authProviderId}_custom_rule_${index}`}>
                                 <FlexItem>
-                                    <FormGroup label="Key" fieldId={`groups[${index}].props.key`}>
+                                    <FormGroup
+                                        label="Key"
+                                        fieldId={`groups[${index}].props.key`}
+                                        helperTextInvalid={errors[index]?.props?.key || ''}
+                                        validated={errors[index]?.props?.key ? 'error' : 'default'}
+                                    >
                                         <SelectSingle
                                             id={`groups[${index}].props.key`}
                                             value={groups[`${index}`].props.key}
@@ -67,6 +82,7 @@ function RuleGroups({
                                             direction="up"
                                             isCreatable
                                             variant="typeahead"
+                                            placeholderText="Select or enter a key"
                                         >
                                             {augmentedRuleKeys.map((ruleKey) => (
                                                 <SelectOption key={ruleKey} value={ruleKey} />
@@ -78,6 +94,10 @@ function RuleGroups({
                                     <FormGroup
                                         label="Value"
                                         fieldId={`groups[${index}].props.value`}
+                                        helperTextInvalid={errors[index]?.props?.value || ''}
+                                        validated={
+                                            errors[index]?.props?.value ? 'error' : 'default'
+                                        }
                                     >
                                         <TextInput
                                             type="text"
@@ -92,13 +112,19 @@ function RuleGroups({
                                     <ArrowRightIcon style={{ transform: 'translate(0, 42px)' }} />
                                 </FlexItem>
                                 <FlexItem>
-                                    <FormGroup label="Role" fieldId={`groups[${index}].roleName`}>
+                                    <FormGroup
+                                        label="Role"
+                                        fieldId={`groups[${index}].roleName`}
+                                        helperTextInvalid={errors[index]?.roleName || ''}
+                                        validated={errors[index]?.roleName ? 'error' : 'default'}
+                                    >
                                         <SelectSingle
                                             id={`groups[${index}].roleName`}
                                             value={groups[`${index}`].roleName}
                                             isDisabled={disabled}
                                             handleSelect={setFieldValue}
                                             direction="up"
+                                            placeholderText="Select a role"
                                         >
                                             {roles.map(({ name }) => (
                                                 <SelectOption key={name} value={name} />
@@ -126,13 +152,14 @@ function RuleGroups({
                                 <Button
                                     variant="link"
                                     isInline
+                                    isDisabled={!!errors?.length}
                                     icon={<PlusCircleIcon className="pf-u-mr-sm" />}
                                     onClick={() =>
                                         arrayHelpers.push({
-                                            roleName: roles[0]?.name || '',
+                                            roleName: '',
                                             props: {
                                                 authProviderId: authProviderId || '',
-                                                key: augmentedRuleKeys[0],
+                                                key: '',
                                                 value: '',
                                             },
                                         })
