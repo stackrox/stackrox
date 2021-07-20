@@ -91,8 +91,7 @@ spec:
               clusterLabels:
                 additionalProperties:
                   type: string
-                description: Custom labels associated with a secured cluster in Red
-                  Hat Advanced Cluster Security.
+                description: Custom labels associated with a secured cluster in Red Hat Advanced Cluster Security.
                 type: object
               clusterName:
                 description: 'The unique name of this cluster, as it will be shown in the Red Hat Advanced Cluster Security UI. Note: Once a name is set here, you will not be able to change it again. You will need to delete and re-create this object in order to register a cluster with a new name.'
