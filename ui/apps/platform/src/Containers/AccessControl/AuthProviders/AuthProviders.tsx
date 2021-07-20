@@ -23,7 +23,11 @@ import ACSEmptyState from 'Components/ACSEmptyState';
 import { availableAuthProviders } from 'constants/accessControl';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
-import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
+import {
+    actions as roleActions,
+    types as roleActionTypes,
+    getHasReadWritePermission,
+} from 'reducers/roles';
 import { AuthProvider } from 'services/AuthService';
 
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
@@ -53,6 +57,7 @@ const authProviderState = createStructuredSelector({
         selectors.getLoadingStatus(state, authActionTypes.FETCH_AUTH_PROVIDERS) as boolean,
     isFetchingRoles: (state) =>
         selectors.getLoadingStatus(state, roleActionTypes.FETCH_ROLES) as boolean,
+    userRolePermissions: selectors.getUserRolePermissions,
 });
 
 function getNewAuthProviderObj(type) {
@@ -68,9 +73,14 @@ function AuthProviders(): ReactElement {
     const dispatch = useDispatch();
 
     const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-    const { authProviders, groups, isFetchingAuthProviders, isFetchingRoles } = useSelector(
-        authProviderState
-    );
+    const {
+        authProviders,
+        groups,
+        isFetchingAuthProviders,
+        isFetchingRoles,
+        userRolePermissions,
+    } = useSelector(authProviderState);
+    const hasWriteAccess = getHasReadWritePermission('AuthProvider', userRolePermissions);
 
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
 
@@ -109,7 +119,7 @@ function AuthProviders(): ReactElement {
 
     const selectedAuthProvider =
         authProviders.find(({ id }) => id === entityId) || getNewAuthProviderObj(type);
-    const isActionable = true; // TODO does it depend on user role?
+    const isActionable = hasWriteAccess;
     const hasAction = Boolean(action);
     const isExpanded = hasAction || Boolean(entityId);
 
@@ -158,24 +168,26 @@ function AuthProviders(): ReactElement {
                             <ToolbarItem>
                                 <Badge isRead>{authProvidersWithRules.length}</Badge>
                             </ToolbarItem>
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
-                                <Dropdown
-                                    className="pf-m-small"
-                                    onSelect={onClickCreate}
-                                    position={DropdownPosition.right}
-                                    toggle={
-                                        <DropdownToggle
-                                            onToggle={onToggleCreateMenu}
-                                            toggleIndicator={CaretDownIcon}
-                                            isPrimary
-                                        >
-                                            Add auth provider
-                                        </DropdownToggle>
-                                    }
-                                    isOpen={isCreateMenuOpen}
-                                    dropdownItems={dropdownItems}
-                                />
-                            </ToolbarItem>
+                            {hasWriteAccess && (
+                                <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                    <Dropdown
+                                        className="pf-m-small"
+                                        onSelect={onClickCreate}
+                                        position={DropdownPosition.right}
+                                        toggle={
+                                            <DropdownToggle
+                                                onToggle={onToggleCreateMenu}
+                                                toggleIndicator={CaretDownIcon}
+                                                isPrimary
+                                            >
+                                                Add auth provider
+                                            </DropdownToggle>
+                                        }
+                                        isOpen={isCreateMenuOpen}
+                                        dropdownItems={dropdownItems}
+                                    />
+                                </ToolbarItem>
+                            )}
                         </ToolbarContent>
                     </Toolbar>
                     {authProvidersWithRules.length === 0 && (
