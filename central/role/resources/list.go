@@ -36,7 +36,6 @@ var (
 	K8sRoleBinding        = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject            = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
 	Licenses              = newResourceMetadata("Licenses", permissions.GlobalScope)
-	LogIntegration        = newResourceMetadata("LogIntegration", permissions.GlobalScope)
 	Namespace             = newResourceMetadata("Namespace", permissions.NamespaceScope)
 	NetworkBaseline       = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
 	NetworkGraph          = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
