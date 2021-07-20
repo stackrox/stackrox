@@ -18,7 +18,7 @@
 # You can set VERBOSE=1 to get more verbose output, but this is not recommended.
 #
 
-set -e
+set -eo pipefail
 
 die() {
   echo >&2 "$@"
@@ -113,8 +113,9 @@ for milestone in "${milestones[@]}"; do
   IFS=$'\n' read -d '' -r -a closed_prs < <(
     jq <<<"$milestone_prs" '.items | sort_by(.closed_at) | .[] | select(.state == "closed") | .number' -r) || true
   for closed_pr in "${closed_prs[@]}"; do
+    # GitHub will paginate events if there are more than 100. TODO: loop through pages to reliably detect all events.
     commit_id="$(
-      gh_curl "/repos/stackrox/rox/issues/${closed_pr}/events" |
+      gh_curl "/repos/stackrox/rox/issues/${closed_pr}/events?per_page=100" |
         jq '[.[] | select(.event == "merged") | .commit_id][0] // ""' -r)"
     if [[ -z "$commit_id" ]]; then
       unmerged_closed_prs+=("$closed_pr")
