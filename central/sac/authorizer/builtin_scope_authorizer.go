@@ -176,17 +176,18 @@ func permissionsSetAllows(rolePermissions map[string]storage.Access, scope paylo
 }
 
 func effectiveAccessScopeAllows(effectiveAccessScope *sac.EffectiveAccessScopeTree, scope payload.AccessScope) bool {
+	resourceMetadata, _ := resources.MetadataForResource(permissions.Resource(scope.Noun))
+
+	if resourceMetadata.GetScope() == permissions.GlobalScope {
+		return true
+	}
+
 	if effectiveAccessScope.State != sac.Partial {
 		return effectiveAccessScope.State == sac.Included
 	}
 
 	clusterName := scope.Attributes.Cluster.Name
 	namespaceName := scope.Attributes.Namespace
-	resourceMetadata, _ := resources.MetadataForResource(permissions.Resource(scope.Noun))
-
-	if resourceMetadata.GetScope() == permissions.GlobalScope {
-		return true
-	}
 
 	clusterNode, ok := effectiveAccessScope.Clusters[clusterName]
 	if !ok {
