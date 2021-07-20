@@ -39,12 +39,6 @@ func GetGlobalDackBox() *dackbox.DackBox {
 	return duckBox
 }
 
-// GetWrapperRegistry returns the registry of wrappers that DackBox will use to index items in the queue.
-func GetWrapperRegistry() indexer.WrapperRegistry {
-	initializeDackBox()
-	return registry
-}
-
 // GetIndexQueue returns the queue of items waiting to be indexed.
 func GetIndexQueue() queue.WaitableQueue {
 	initializeDackBox()

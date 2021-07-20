@@ -66,14 +66,6 @@ var (
 	}
 )
 
-// FromCategory returns a transformation provider that transforms from the input category to some other type.
-func FromCategory(cat v1.SearchCategory) TransformationProvider {
-	return toTransformationProviderImpl{
-		transformations: GraphTransformations,
-		primary:         cat,
-	}
-}
-
 // ToCategory returns a transformation provider that transforms to the input category from some other type.
 func ToCategory(cat v1.SearchCategory) TransformationProvider {
 	return fromTransformationProviderImpl{
@@ -85,15 +77,6 @@ func ToCategory(cat v1.SearchCategory) TransformationProvider {
 // TransformationProvider provides a transformation.OneToMany for a given input category.
 type TransformationProvider interface {
 	Get(v1.SearchCategory) transformation.OneToMany
-}
-
-type toTransformationProviderImpl struct {
-	transformations map[v1.SearchCategory]map[v1.SearchCategory]transformation.OneToMany
-	primary         v1.SearchCategory
-}
-
-func (ttp toTransformationProviderImpl) Get(sc v1.SearchCategory) transformation.OneToMany {
-	return ttp.transformations[ttp.primary][sc]
 }
 
 type fromTransformationProviderImpl struct {
