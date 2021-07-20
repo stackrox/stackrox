@@ -57,6 +57,12 @@ func init() {
 	)
 }
 
+func (resolver *namespaceResolver) getNamespaceIDRawQuery() string {
+	return search.NewQueryBuilder().
+		AddExactMatches(search.NamespaceID, resolver.data.GetMetadata().GetId()).
+		Query()
+}
+
 func (resolver *namespaceResolver) getClusterNamespaceRawQuery() string {
 	return search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
@@ -472,41 +478,56 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 func (resolver *namespaceResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Components")
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
 
-	return resolver.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Components(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NAMESPACES,
+		ID:    resolver.data.GetMetadata().GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *namespaceResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ComponentCount")
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
 
-	return resolver.root.ComponentCount(ctx, RawQuery{Query: &query})
+	return resolver.root.ComponentCount(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NAMESPACES,
+		ID:    resolver.data.GetMetadata().GetId(),
+	}), RawQuery{Query: &query})
 }
 
 func (resolver *namespaceResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Vulns")
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
 
-	return resolver.root.Vulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Vulnerabilities(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NAMESPACES,
+		ID:    resolver.data.GetMetadata().GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *namespaceResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "VulnCount")
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
 
-	return resolver.root.VulnerabilityCount(ctx, RawQuery{Query: &query})
+	return resolver.root.VulnerabilityCount(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NAMESPACES,
+		ID:    resolver.data.GetMetadata().GetId(),
+	}), RawQuery{Query: &query})
 }
 
 func (resolver *namespaceResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "VulnCounter")
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
 
-	return resolver.root.VulnCounter(ctx, RawQuery{Query: &query})
+	return resolver.root.VulnCounter(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NAMESPACES,
+		ID:    resolver.data.GetMetadata().GetId(),
+	}), RawQuery{Query: &query})
 }
 
 func (resolver *namespaceResolver) Secrets(ctx context.Context, args PaginatedQuery) ([]*secretResolver, error) {
