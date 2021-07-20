@@ -46,6 +46,16 @@ type compoundSearcherImpl struct {
 // Search constructs and executes the necessary queries on the searchers that the compound searcher is configured to
 // use.
 func (cs *compoundSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return cs.searchInternal(ctx, q, false)
+}
+
+// Count uses Search function to get the search results and then count them
+func (cs *compoundSearcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	results, err := cs.searchInternal(ctx, q, true)
+	return len(results), err
+}
+
+func (cs *compoundSearcherImpl) searchInternal(ctx context.Context, q *v1.Query, skipSort bool) ([]search.Result, error) {
 	var local *v1.Query
 	if q != nil {
 		local = q.Clone()
@@ -69,6 +79,12 @@ func (cs *compoundSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]sear
 		return nil, err
 	}
 
+	if skipSort {
+		if local.GetPagination().GetSortOptions() != nil {
+			local.Pagination.SortOptions = nil
+		}
+	}
+
 	// Add the sorting as necessary to the condensed tree.
 	sorted, err := addSorting(condensed, local.GetPagination(), cs.specs)
 	if err != nil {
@@ -77,10 +93,4 @@ func (cs *compoundSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]sear
 
 	// Execute the tree.
 	return execute(ctx, sorted)
-}
-
-// Count uses Search function to get the search results and then count them
-func (cs *compoundSearcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	results, err := cs.Search(ctx, q)
-	return len(results), err
 }
