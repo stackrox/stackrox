@@ -41,6 +41,7 @@ function NetworkSearch({
             onSearch={onSearch}
             isDisabled={isDisabled}
             prependAutocompleteQuery={prependAutocompleteQuery}
+            autoCompleteCategories={['DEPLOYMENTS']}
         />
     );
 }
