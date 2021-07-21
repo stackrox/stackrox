@@ -174,7 +174,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                                 htmlFor="dynamicConfig.disableAuditLogs"
                                 className={labelClassName}
                             >
-                                Enable Cluster Access Logging
+                                Enable Cluster Audit Logging
                             </label>
                             <ToggleSwitch
                                 id="dynamicConfig.disableAuditLogs"

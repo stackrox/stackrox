@@ -31,7 +31,7 @@ export function PanelHead({ children }) {
     return <div className="border-base-400 border-b flex h-14 w-full">{children}</div>;
 }
 
-export function PanelTitle({ isUpperCase = false, testid = null, text }) {
+export function PanelTitle({ isUpperCase = false, testid = null, breakAll = true, text }) {
     return (
         <div
             className={`flex font-700 items-center leading-normal min-w-24 overflow-hidden px-4 text-base-600 tracking-wide ${
@@ -40,7 +40,7 @@ export function PanelTitle({ isUpperCase = false, testid = null, text }) {
             data-testid={testid}
         >
             <Tooltip content={<TooltipOverlay>{text}</TooltipOverlay>}>
-                <div className="line-clamp break-all">{text}</div>
+                <div className={`line-clamp ${breakAll ? 'break-all' : ''}`}>{text}</div>
             </Tooltip>
         </div>
     );

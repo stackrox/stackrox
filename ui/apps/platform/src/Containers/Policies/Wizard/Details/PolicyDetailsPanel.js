@@ -10,7 +10,7 @@ function PolicyDetailsPanel({ header, onClose, policy }) {
     return (
         <PanelNew testid="side-panel">
             <PanelHead>
-                <PanelTitle isUpperCase testid="side-panel-header" text={header} />
+                <PanelTitle isUpperCase breakAll={false} testid="side-panel-header" text={header} />
                 <PanelHeadEnd>
                     <DetailsButtons />
                     <CloseButton onClose={onClose} className="border-base-400 border-l" />
