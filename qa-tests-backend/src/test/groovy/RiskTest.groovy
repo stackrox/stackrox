@@ -1,21 +1,17 @@
-import static io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery.newBuilder
-
-import services.ClusterService
-import services.DeploymentService
-import services.ProcessBaselineService
-import services.ProcessService
-
+import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import objects.Deployment
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
+import services.ClusterService
+import services.DeploymentService
+import services.ProcessService
+import services.ProcessBaselineService
 import spock.lang.Shared
 import spock.lang.Stepwise
 import util.Env
 import util.Timer
-
-import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
-import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
-import io.stackrox.proto.storage.ProcessBaselineOuterClass
 
 // RiskTest - Test coverage for functionality used on the Risk page and not covered elsewhere.
 // i.e.
@@ -23,8 +19,7 @@ import io.stackrox.proto.storage.ProcessBaselineOuterClass
 // - CountDeployments
 // - GetGroupedProcessByDeploymentAndContainer
 
-@Stepwise
-// tests are ordered and dependent
+@Stepwise // tests are ordered and dependent
 class RiskTest extends BaseSpecification {
     @Shared
     private String clusterId
@@ -83,13 +78,15 @@ class RiskTest extends BaseSpecification {
         "waiting for SR to get to an initial priority and process baseline for each deployment"
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
-            def response = listDeployments()
-            if (!response || response.size() < DEPLOYMENTS.size()) {
+            def response = DeploymentService.listDeploymentsWithProcessInfo(
+                    RawQuery.newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
+            )
+            if (!response || response.deploymentsList.size() < DEPLOYMENTS.size()) {
                 println "not yet ready to test - no deployments found"
                 continue
             }
-            if (response.get(0).baselineStatusesList.size() == 0 ||
-                    response.get(1).baselineStatusesList.size() == 0) {
+            if (response.deploymentsList.get(0).baselineStatusesList.size() == 0 ||
+                    response.deploymentsList.get(1).baselineStatusesList.size() == 0) {
                 println "not yet ready to test - container summary status are not set"
                 continue
             }
@@ -115,7 +112,7 @@ class RiskTest extends BaseSpecification {
             }
 
             println "ready to test"
-            whenEquivalent = response
+            whenEquivalent = response.deploymentsList
             break
         }
 
@@ -127,10 +124,6 @@ class RiskTest extends BaseSpecification {
         println debugPriorityAndState(two)
 
         then:
-        "should have the same risk"
-        risk(one.deployment) == risk(two.deployment)
-
-        and:
         "should be at equivalent priority"
         one.deployment.priority == two.deployment.priority
 
@@ -150,7 +143,9 @@ class RiskTest extends BaseSpecification {
 
     def "Deployment count == 2"() {
         expect:
-        listDeployments().size() == DEPLOYMENTS.size()
+        DeploymentService.getDeploymentCount(
+                RawQuery.newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
+        ) == DEPLOYMENTS.size()
     }
 
     def "Processes grouped by deployment (GetGroupedProcessByDeploymentAndContainer)"() {
@@ -184,7 +179,7 @@ class RiskTest extends BaseSpecification {
         allFound
     }
 
-    def "Risk priority changes when a process is executed after the discovery phase"() {
+    def "Risk changes when a process is executed after the discovery phase"() {
         when:
         "no longer in the process discovery phase"
         // Note: This test (and ProcessWLTest.groovy) rely heavily on the deployed SR using an
@@ -203,18 +198,17 @@ class RiskTest extends BaseSpecification {
 
         and:
         "the changes are discovered"
-        // Now the risk score of one deployment diverges from the risk score of the
-        // other. This must cause the change in relative priority since one
-        // deployment is strictly riskier than the other one.
         def after = null
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
-            after = listDeployments()
+            after = DeploymentService.listDeploymentsWithProcessInfo(
+                    RawQuery.newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
+            ).deploymentsList
             if (before.get(0).deployment.id != after.get(0).deployment.id) {
                 after = after.reverse()
             }
             debugBeforeAndAfter(before, after)
-            if (after.get(withRiskIndex).deployment.priority == after.get(withoutRiskIndex).deployment.priority) {
+            if (after.get(withRiskIndex).deployment.priority == before.get(withRiskIndex).deployment.priority) {
                 println "not yet ready to test - there is no change yet to priorities"
                 after = null
                 continue
@@ -231,8 +225,8 @@ class RiskTest extends BaseSpecification {
         whenOneHasRisk = after
 
         then:
-        "the deployment with risk is still at the same priority then one before"
-        after.get(withRiskIndex).deployment.priority == before.get(withRiskIndex).deployment.priority
+        "the deployment with risk is now at a higher (lower value) priority then before"
+        after.get(withRiskIndex).deployment.priority < before.get(withRiskIndex).deployment.priority
 
         and:
         "and the deployment with risk is now at a higher priority (lower value) then the one without"
@@ -255,7 +249,6 @@ class RiskTest extends BaseSpecification {
         "the baseline is updated"
         def before = whenOneHasRisk
         def withRiskIndex = before.get(0).deployment.name == deploymentWithRisk.name ? 0 : 1
-        def riskBefore = risk(before.get(withRiskIndex).deployment)
         def response = null
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
@@ -284,13 +277,15 @@ class RiskTest extends BaseSpecification {
         def after = null
         t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
-            after = listDeployments()
+            after = DeploymentService.listDeploymentsWithProcessInfo(
+                    RawQuery.newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
+            ).deploymentsList
             if (before.get(0).deployment.id != after.get(0).deployment.id) {
                 after = after.reverse()
             }
             debugBeforeAndAfter(before, after)
-            if (risk(after.get(withRiskIndex).deployment) == riskBefore) {
-                println "not yet ready to test - there is no change yet to risk score"
+            if (after.get(withRiskIndex).deployment.priority == before.get(withRiskIndex).deployment.priority) {
+                println "not yet ready to test - there is no change yet to priorities"
                 after = null
                 continue
             }
@@ -305,8 +300,8 @@ class RiskTest extends BaseSpecification {
         assert after
 
         then:
-        "the updated deployment has a lower risk score then before"
-        assert risk(after.get(withRiskIndex).deployment) < riskBefore
+        "the updated deployment is at a lower priority (higher value) then before"
+        assert after.get(withRiskIndex).deployment.priority > before.get(withRiskIndex).deployment.priority
 
         assert !after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted
 
@@ -348,15 +343,5 @@ class RiskTest extends BaseSpecification {
             return "no processes"
         }
         return processes*.name.join(", ")
-    }
-
-    private static float risk(ListDeployment deployment) {
-        DeploymentService.getDeploymentWithRisk(deployment.id).deployment.riskScore
-    }
-
-    private static List<DeploymentWithProcessInfo> listDeployments() {
-        DeploymentService.listDeploymentsWithProcessInfo(
-                newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
-        )?.deploymentsList
     }
 }

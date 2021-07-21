@@ -52,10 +52,7 @@ const WorkflowListPage = ({
     const searchOptions = (searchData && searchData.searchOptions) || [];
 
     const queryOptionsWithSkip = !data ? queryOptions : { skip: true };
-    const { loading, error, data: ownQueryData, previousData } = useQuery(
-        query,
-        queryOptionsWithSkip
-    );
+    const { loading, error, data: ownQueryData } = useQuery(query, queryOptionsWithSkip);
 
     let displayData = data;
     let count = totalResults;
@@ -65,7 +62,7 @@ const WorkflowListPage = ({
         queryOptions.variables.pagination &&
         queryOptions.variables.pagination.limit;
 
-    if (!displayData) {
+    if (!data) {
         // @DEPRECATED, we no longer us the helper function isGQLLoading here,
         //    because now that we are using backend pagination
         //    it creates a weird UX lag where the table sort arrow changes,
@@ -74,18 +71,12 @@ const WorkflowListPage = ({
             return <Loader />;
         }
 
-        if (error) {
+        if (!ownQueryData || !ownQueryData.results || error) {
             return <PageNotFound resourceType={entityListType} useCase={workflowState.useCase} />;
         }
-
-        const dataFromQuery = ownQueryData || previousData;
-        if (!dataFromQuery?.results) {
-            return <PageNotFound resourceType={entityListType} useCase={workflowState.useCase} />;
-        }
-        displayData = dataFromQuery.results;
-
+        displayData = ownQueryData.results;
         // eslint-disable-next-line prefer-destructuring
-        count = dataFromQuery.count;
+        count = ownQueryData.count;
     }
 
     const tableColumns = getTableColumns(workflowState);

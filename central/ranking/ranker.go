@@ -37,6 +37,22 @@ func (s *Ranker) GetRankForID(id string) int64 {
 	return s.sr.getRankForScore(score)
 }
 
+// GetRankForScore returns the rank for an input score, assuming it is ranked.
+func (s *Ranker) GetRankForScore(score float32) int64 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.sr.getRankForScore(score)
+}
+
+// GetScoreForRank gets the score for a given rank, assuming a score has that rank.
+func (s *Ranker) GetScoreForRank(rank int64) float32 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.sr.getScoreForRank(rank)
+}
+
 // Add upserts an id and its score and recomputes the rank
 func (s *Ranker) Add(id string, score float32) {
 	s.scoreSorterMutex.Lock()

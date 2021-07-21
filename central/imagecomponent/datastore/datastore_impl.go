@@ -54,7 +54,7 @@ func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Que
 	if err != nil {
 		return nil, err
 	}
-	ds.updateImageComponentsPriority(components, q.GetPagination().GetOffset())
+	ds.updateImageComponentPriority(components...)
 	return components, nil
 }
 
@@ -69,7 +69,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 		return nil, false, err
 	}
 
-	ds.updateImageComponentRank(component)
+	ds.updateImageComponentPriority(component)
 	return component, true, nil
 }
 
@@ -97,7 +97,7 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 
-	ds.updateImageComponentsPriority(components, 0)
+	ds.updateImageComponentPriority(components...)
 	return components, nil
 }
 
@@ -176,13 +176,10 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 }
 
-func (ds *datastoreImpl) updateImageComponentsPriority(ics []*storage.ImageComponent, offset int32) {
-	ranking.SetImageComponentsPriorities(ds.imageComponentRanker, ics, int64(offset))
-}
-
-func (ds *datastoreImpl) updateImageComponentRank(ic *storage.ImageComponent) {
-	// TODO(ROX-7565): Create rank field to distinguish it from priority.
-	ic.Priority = ds.imageComponentRanker.GetRankForID(ic.GetId())
+func (ds *datastoreImpl) updateImageComponentPriority(ics ...*storage.ImageComponent) {
+	for _, ic := range ics {
+		ic.Priority = ds.imageComponentRanker.GetRankForID(ic.GetId())
+	}
 }
 
 func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {
