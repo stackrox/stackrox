@@ -132,7 +132,6 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	suite.storage.EXPECT().GetDeployment(deployments[2].Id).Return(deployments[2], true, nil)
 	suite.storage.EXPECT().GetDeployment(deployments[3].Id).Return(nil, false, nil)
 	suite.storage.EXPECT().GetDeployment(deployments[4].Id).Return(nil, false, errors.New("fake error"))
-	suite.storage.EXPECT().GetDeploymentsWithIDs([]string{"1", "2", "3", "4", "5"}).Return(deployments, nil, nil)
 
 	ds.initializeRanker()
 
@@ -145,37 +144,4 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	suite.Equal(int64(1), deploymentRanker.GetRankForID("2"))
 	suite.Equal(int64(2), deploymentRanker.GetRankForID("1"))
 	suite.Equal(int64(3), deploymentRanker.GetRankForID("3"))
-
-	actual, _ := ds.GetDeployments(sac.WithAllAccess(context.Background()), []string{"1", "2", "3", "4", "5"})
-	expected := []*storage.Deployment{
-		{
-			Id:          "1",
-			Priority:    2,
-			RiskScore:   float32(1.0),
-			NamespaceId: "ns1",
-			ClusterId:   "c1",
-		},
-		{
-			Id:          "2",
-			Priority:    1,
-			RiskScore:   float32(2.0),
-			NamespaceId: "ns1",
-			ClusterId:   "c1",
-		},
-		{
-			Id:          "3",
-			Priority:    3,
-			NamespaceId: "ns2",
-			ClusterId:   "c2",
-		},
-		{
-			Id:       "4",
-			Priority: 3,
-		},
-		{
-			Id:       "5",
-			Priority: 3,
-		},
-	}
-	suite.EqualValues(expected, actual)
 }

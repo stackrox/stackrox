@@ -92,7 +92,7 @@ func (ds *datastoreImpl) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*st
 		return nil, err
 	}
 
-	ds.updateNodesPriority(nodes, q.GetPagination().GetOffset())
+	ds.updateNodePriority(nodes...)
 
 	return nodes, nil
 }
@@ -136,7 +136,7 @@ func (ds *datastoreImpl) GetNode(ctx context.Context, id string) (*storage.Node,
 		return nil, false, err
 	}
 
-	ds.updateNodeRank(node)
+	ds.updateNodePriority(node)
 
 	return node, true, nil
 }
@@ -159,7 +159,7 @@ func (ds *datastoreImpl) GetNodesBatch(ctx context.Context, ids []string) ([]*st
 		}
 	}
 
-	ds.updateNodesPriority(nodes, 0)
+	ds.updateNodePriority(nodes...)
 
 	return nodes, nil
 }
@@ -251,13 +251,10 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 }
 
-func (ds *datastoreImpl) updateNodesPriority(nodes []*storage.Node, offset int32) {
-	ranking.SetNodesPriorities(ds.nodeRanker, nodes, int64(offset))
-}
-
-func (ds *datastoreImpl) updateNodeRank(node *storage.Node) {
-	// TODO(ROX-7565): Create rank field to distinguish it from priority.
-	node.Priority = ds.nodeRanker.GetRankForID(node.GetId())
+func (ds *datastoreImpl) updateNodePriority(nodes ...*storage.Node) {
+	for _, node := range nodes {
+		node.Priority = ds.nodeRanker.GetRankForID(node.GetId())
+	}
 }
 
 func (ds *datastoreImpl) updateComponentRisk(node *storage.Node) {

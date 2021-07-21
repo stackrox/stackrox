@@ -8,8 +8,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - Clusters now can have labels.
 - Role is now a combination of a permission set and an optional access scope.
-- Risk priority for relevant resources (Cluster, Node, Namespace, Deployment, Image, ImageComponent) is now continuous
-  and is adjusted to scope and query. Individual resource objects display their global risk rank.     
 - API changes/deprecations:
   - `AuthService(/v1/auth/status)`: `user_info.permissions.name` and `user_info.permissions.global_access` are
     deprecated, use `user_info.roles` instead.
