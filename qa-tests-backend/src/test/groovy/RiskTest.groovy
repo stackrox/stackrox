@@ -1,3 +1,5 @@
+import static io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery.newBuilder
+
 import services.ClusterService
 import services.DeploymentService
 import services.ProcessBaselineService
@@ -12,6 +14,7 @@ import util.Env
 import util.Timer
 
 import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
+import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
 import io.stackrox.proto.storage.ProcessBaselineOuterClass
 
 // RiskTest - Test coverage for functionality used on the Risk page and not covered elsewhere.
@@ -20,7 +23,8 @@ import io.stackrox.proto.storage.ProcessBaselineOuterClass
 // - CountDeployments
 // - GetGroupedProcessByDeploymentAndContainer
 
-@Stepwise // tests are ordered and dependent
+@Stepwise
+// tests are ordered and dependent
 class RiskTest extends BaseSpecification {
     @Shared
     private String clusterId
@@ -123,6 +127,10 @@ class RiskTest extends BaseSpecification {
         println debugPriorityAndState(two)
 
         then:
+        "should have the same risk"
+        risk(one.deployment) == risk(two.deployment)
+
+        and:
         "should be at equivalent priority"
         one.deployment.priority == two.deployment.priority
 
@@ -176,7 +184,7 @@ class RiskTest extends BaseSpecification {
         allFound
     }
 
-    def "Risk changes when a process is executed after the discovery phase"() {
+    def "Risk priority changes when a process is executed after the discovery phase"() {
         when:
         "no longer in the process discovery phase"
         // Note: This test (and ProcessWLTest.groovy) rely heavily on the deployed SR using an
@@ -195,6 +203,9 @@ class RiskTest extends BaseSpecification {
 
         and:
         "the changes are discovered"
+        // Now the risk score of one deployment diverges from the risk score of the
+        // other. This must cause the change in relative priority since one
+        // deployment is strictly riskier than the other one.
         def after = null
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
@@ -203,7 +214,7 @@ class RiskTest extends BaseSpecification {
                 after = after.reverse()
             }
             debugBeforeAndAfter(before, after)
-            if (after.get(withRiskIndex).deployment.priority == before.get(withRiskIndex).deployment.priority) {
+            if (after.get(withRiskIndex).deployment.priority == after.get(withoutRiskIndex).deployment.priority) {
                 println "not yet ready to test - there is no change yet to priorities"
                 after = null
                 continue
@@ -220,8 +231,8 @@ class RiskTest extends BaseSpecification {
         whenOneHasRisk = after
 
         then:
-        "the deployment with risk is now at a higher (lower value) priority then before"
-        after.get(withRiskIndex).deployment.priority < before.get(withRiskIndex).deployment.priority
+        "the deployment with risk is still at the same priority then one before"
+        after.get(withRiskIndex).deployment.priority == before.get(withRiskIndex).deployment.priority
 
         and:
         "and the deployment with risk is now at a higher priority (lower value) then the one without"
@@ -244,6 +255,7 @@ class RiskTest extends BaseSpecification {
         "the baseline is updated"
         def before = whenOneHasRisk
         def withRiskIndex = before.get(0).deployment.name == deploymentWithRisk.name ? 0 : 1
+        def riskBefore = risk(before.get(withRiskIndex).deployment)
         def response = null
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
@@ -277,8 +289,8 @@ class RiskTest extends BaseSpecification {
                 after = after.reverse()
             }
             debugBeforeAndAfter(before, after)
-            if (after.get(withRiskIndex).deployment.priority == before.get(withRiskIndex).deployment.priority) {
-                println "not yet ready to test - there is no change yet to priorities"
+            if (risk(after.get(withRiskIndex).deployment) == riskBefore) {
+                println "not yet ready to test - there is no change yet to risk score"
                 after = null
                 continue
             }
@@ -293,8 +305,8 @@ class RiskTest extends BaseSpecification {
         assert after
 
         then:
-        "the updated deployment is at a lower priority (higher value) then before"
-        assert after.get(withRiskIndex).deployment.priority > before.get(withRiskIndex).deployment.priority
+        "the updated deployment has a lower risk score then before"
+        assert risk(after.get(withRiskIndex).deployment) < riskBefore
 
         assert !after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted
 
@@ -338,12 +350,13 @@ class RiskTest extends BaseSpecification {
         return processes*.name.join(", ")
     }
 
+    private static float risk(ListDeployment deployment) {
+        DeploymentService.getDeploymentWithRisk(deployment.id).deployment.riskScore
+    }
+
     private static List<DeploymentWithProcessInfo> listDeployments() {
-        // This test is based on global priority (rank) to make it working we need to query for all deployments
-        // and then filter by namespace to preserve priority.
-        // TODO(tj): Fix this test to not relay on global setup but only on deployments created in this test.
-        DeploymentService.listDeploymentsWithProcessInfo()?.deploymentsList?.findAll {
-            it.deployment.namespace == TEST_NAMESPACE
-        }
+        DeploymentService.listDeploymentsWithProcessInfo(
+                newBuilder().setQuery("Namespace:" + TEST_NAMESPACE).build()
+        )?.deploymentsList
     }
 }
