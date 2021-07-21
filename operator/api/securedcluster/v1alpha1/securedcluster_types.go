@@ -36,6 +36,9 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ClusterName string `json:"clusterName"`
 
+	// Custom labels associated with a secured cluster in Red Hat Advanced Cluster Security.
+	ClusterLabels map[string]string `json:"clusterLabels,omitempty"`
+
 	// The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
 	// including the port number. If using a non-gRPC capable load balancer, use the WebSocket protocol by
 	// prefixing the endpoint address with wss://.
@@ -76,9 +79,6 @@ type SecuredClusterSpec struct {
 	// Miscellaneous settings.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Misc *common.MiscSpec `json:"misc,omitempty"`
-
-	// Custom labels associated with a secured cluster in Red Hat Advanced Cluster Security.
-	ClusterLabels map[string]string `json:"clusterLabels,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
