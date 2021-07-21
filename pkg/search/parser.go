@@ -51,7 +51,7 @@ func FilterFields(query string, pred func(field string) bool) string {
 	if query == "" {
 		return query
 	}
-	pairs := strings.Split(query, "+")
+	pairs := splitQuery(query)
 	pairsToKeep := make([]string, 0, len(pairs))
 	for _, pair := range pairs {
 		key, _, valid := parsePair(pair, false)
