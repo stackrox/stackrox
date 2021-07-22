@@ -123,6 +123,11 @@ function AuthProviders(): ReactElement {
     const hasAction = Boolean(action);
     const isExpanded = hasAction || Boolean(entityId);
 
+    // if user elected to ignore a save error, don't pester them if they return to the form
+    if (!isExpanded) {
+        dispatch(authActions.setSaveAuthProviderStatus(null));
+    }
+
     const dropdownItems = availableAuthProviders.map(({ value, label }) => (
         <DropdownItem key={value} value={value} component="button">
             {label}

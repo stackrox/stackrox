@@ -3,6 +3,7 @@ import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { accessControlPath } from 'routePaths';
 import * as service from 'services/GroupsService';
 import { actions, types } from 'reducers/groups';
+import { actions as authActions } from 'reducers/auth';
 import { selectors } from 'reducers';
 import { getGroupsWithDefault, getExistingGroupsWithDefault } from 'utils/permissionRuleGroupUtils';
 
@@ -20,13 +21,40 @@ function* getRuleGroups() {
 function* saveRuleGroup(action) {
     try {
         const { group, defaultRole, id } = action;
+        const hasSomeInvalidRules = group.some(
+            (rule) =>
+                !rule?.props?.authProviderId ||
+                !rule?.props?.key ||
+                !rule?.props?.value ||
+                !rule.roleName
+        );
+        if (!defaultRole || !id || hasSomeInvalidRules) {
+            throw new Error(
+                `Inconsistent state detected. Could not save auth provider minimum role and rules. Auth provider ID: ${id}, minimum role: ${defaultRole}, rules: ${JSON.stringify(
+                    group
+                )}`
+            );
+        }
         const existingGroups = yield select(selectors.getGroupsByAuthProviderId);
         yield call(service.updateOrAddGroup, {
             newGroups: getGroupsWithDefault(group, id, defaultRole),
             oldGroups: getExistingGroupsWithDefault(existingGroups, id),
         });
         yield call(getRuleGroups);
+        yield put(authActions.setAuthProviderEditingState(false));
+        yield put(
+            authActions.setSaveAuthProviderStatus({
+                status: 'success',
+                message: '',
+            })
+        );
     } catch (error) {
+        yield put(
+            authActions.setSaveAuthProviderStatus({
+                status: 'error',
+                message: error?.message,
+            })
+        );
         Raven.captureException(error);
     }
 }
