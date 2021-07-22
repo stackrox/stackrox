@@ -61,6 +61,22 @@ var (
 
 	once       sync.Once
 	csvHandler *handlerImpl
+
+	csvHeader = []string{
+		"CVE",
+		"CVE Type(s)",
+		"Fixable",
+		"CVSS Score",
+		"Env Impact (%s)",
+		"Impact Score",
+		"Deployments",
+		"Images",
+		"Nodes",
+		"Components",
+		"Scanned",
+		"Published",
+		"Summary",
+	}
 )
 
 type handlerImpl struct {
@@ -113,9 +129,9 @@ type csvResults struct {
 	*csv.GenericWriter
 }
 
-func newCSVResults(header []string) csvResults {
+func newCSVResults(header []string, sort bool) csvResults {
 	return csvResults{
-		GenericWriter: csv.NewGenericWriter(header, true),
+		GenericWriter: csv.NewGenericWriter(header, sort),
 	}
 }
 
@@ -166,7 +182,11 @@ func CVECSVHandler() http.HandlerFunc {
 			return
 		}
 
-		output := newCSVResults([]string{"CVE", "CVE Type(s)", "Fixable", "CVSS Score", "Env Impact (%)", "Impact Score", "Deployments", "Images", "Nodes", "Components", "Scanned", "Published", "Summary"})
+		postSortRequired := paginatedQuery.Pagination == nil ||
+			paginatedQuery.Pagination.SortOption == nil ||
+			paginatedQuery.Pagination.SortOption.Field == nil
+
+		output := newCSVResults(csvHeader, postSortRequired)
 		for _, d := range vulnResolvers {
 			var errorList errorhelpers.ErrorList
 			dataRow := cveRow{}
@@ -236,8 +256,13 @@ func (h *handlerImpl) getScopeContext(ctx context.Context, query *v1.Query) (con
 		return ctx, nil
 	}
 
+	cloned := query.Clone()
+	// Remove pagination since we are only determining the resource category which should scope the query.
+	cloned.Pagination = nil
 	for _, searchWrapper := range h.searchWrappers {
-		filteredQ, _ := search.FilterQueryWithMap(query.Clone(), searchWrapper.optionsMap)
+		// Filter the query by resource categories to determine the category that should scope the query.
+		// Note that the resource categories are ordered from COMPONENTS to CLUSTERS.
+		filteredQ, _ := search.FilterQueryWithMap(cloned, searchWrapper.optionsMap)
 		if filteredQ == nil {
 			continue
 		}
