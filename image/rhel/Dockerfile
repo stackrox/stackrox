@@ -1,6 +1,6 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
-ARG BASE_TAG=8.3
+ARG BASE_TAG=8.4
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
