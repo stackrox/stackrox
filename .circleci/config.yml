@@ -8,7 +8,7 @@ runOnAllTags: &runOnAllTags
 runOnlyOnReleaseCandidateBuilds: &runOnlyOnReleaseCandidateBuilds
   filters:
     tags:
-      only: /^\d+(\.\d+)?\.\d+\.\d+-rc\.\d$/
+      only: /^\d+(\.\d+)?\.\d+\.\d+-rc\.\d+$/
     branches:
       ignore: /.*/
 
