@@ -278,20 +278,13 @@ function* saveAuthProvider(action) {
             yield call(AuthService.saveAuthProvider, remaining);
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
-            yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole));
+            yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole, authProvider.id));
             const newAuthProviders = yield select(selectors.getAuthProviders);
             const updatedSelectedAuthProvider = newAuthProviders.find(
                 (provider) => provider.id === authProvider.id
             );
             yield put(actions.selectAuthProvider(updatedSelectedAuthProvider));
         }
-        yield put(actions.setAuthProviderEditingState(false));
-        yield put(
-            actions.setSaveAuthProviderStatus({
-                status: 'success',
-                message: '',
-            })
-        );
     } catch (error) {
         yield put(actions.setAuthProviderEditingState(true));
         const message =
