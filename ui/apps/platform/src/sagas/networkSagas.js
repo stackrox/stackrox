@@ -186,21 +186,23 @@ function* filterNetworkPageByBaselineSimulation() {
 }
 
 function* getBaselineComparisons() {
+    const { deploymentId } = yield select(selectors.getSelectedNode);
     try {
-        const { deploymentId } = yield select(selectors.getSelectedNode);
-
         // TODO: We could probably do this in parallel to make it more efficient
         // Saif found this:
         // https://redux-saga.js.org/docs/advanced/RunningTasksInParallel/
         yield put(baselineSimulationActions.fetchBaselineComparisons.request());
         const baselineResponse = yield call(service.fetchBaselineComparison, { deploymentId });
         yield put(baselineSimulationActions.fetchBaselineComparisons.success(baselineResponse));
-
+    } catch (error) {
+        yield put(baselineSimulationActions.fetchBaselineComparisons.failure(error));
+    }
+    try {
         yield put(baselineSimulationActions.fetchUndoComparisons.request());
         const undoResponse = yield call(service.fetchUndoComparison, { deploymentId });
         yield put(baselineSimulationActions.fetchUndoComparisons.success(undoResponse));
     } catch (error) {
-        yield put(baselineSimulationActions.fetchBaselineComparisons.failure(error));
+        yield put(baselineSimulationActions.fetchUndoComparisons.failure(error));
     }
 }
 
