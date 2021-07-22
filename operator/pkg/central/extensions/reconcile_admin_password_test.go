@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stackrox/rox/operator/api/central/v1alpha1"
-	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
+	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stretchr/testify/assert"
@@ -87,7 +86,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 		"If a secret with a plaintext password is referenced, a central-htpasswd secret should be created accordingly": {
 			Spec: v1alpha1.CentralSpec{
 				Central: &v1alpha1.CentralComponentSpec{
-					AdminPasswordSecret: &common.LocalSecretReference{
+					AdminPasswordSecret: &v1alpha1.LocalSecretReference{
 						Name: plaintextPasswordSecret.Name,
 					},
 				},

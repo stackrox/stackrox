@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
+	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	utils "github.com/stackrox/rox/operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"

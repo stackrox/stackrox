@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	pkgErrors "github.com/pkg/errors"
-	centralV1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
+	centralV1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"

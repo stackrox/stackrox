@@ -3,7 +3,7 @@ package translation
 import (
 	"testing"
 
-	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
+	common "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"

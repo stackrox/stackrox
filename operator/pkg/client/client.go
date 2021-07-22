@@ -1,10 +1,10 @@
 package client
 
 import (
-	"github.com/stackrox/rox/operator/pkg/central/clientset/central"
-	centralv1alpha1 "github.com/stackrox/rox/operator/pkg/central/clientset/central/typed/central/v1alpha1"
-	"github.com/stackrox/rox/operator/pkg/securedcluster/clientset/securedcluster"
-	securedclusterv1alpha1 "github.com/stackrox/rox/operator/pkg/securedcluster/clientset/securedcluster/typed/securedcluster/v1alpha1"
+	central "github.com/stackrox/rox/operator/pkg/clientset/stackrox"
+	securedcluster "github.com/stackrox/rox/operator/pkg/clientset/stackrox"
+	centralv1alpha1 "github.com/stackrox/rox/operator/pkg/clientset/stackrox/typed/platform/v1alpha1"
+	securedclusterv1alpha1 "github.com/stackrox/rox/operator/pkg/clientset/stackrox/typed/platform/v1alpha1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -30,12 +30,12 @@ type StackRoxClientset struct {
 
 // SecuredClusterV1Alpha1 returns a client to access SecuredCluster resources
 func (s StackRoxClientset) SecuredClusterV1Alpha1(namespace string) securedclusterv1alpha1.SecuredClusterInterface {
-	return s.securedClusterClientSet.SecuredclusterV1alpha1().SecuredClusters(namespace)
+	return s.securedClusterClientSet.PlatformV1alpha1().SecuredClusters(namespace)
 }
 
 //CentralV1Alpha1 returns a client to access Central resources
 func (s StackRoxClientset) CentralV1Alpha1(namespace string) centralv1alpha1.CentralInterface {
-	return s.centralClientSet.CentralV1alpha1().Centrals(namespace)
+	return s.centralClientSet.PlatformV1alpha1().Centrals(namespace)
 }
 
 // NewForConfigOrDie creates a new kubernetes client

@@ -8,7 +8,7 @@ import (
 	_ "embed"
 
 	"github.com/pkg/errors"
-	central "github.com/stackrox/rox/operator/api/central/v1alpha1"
+	central "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/utils"

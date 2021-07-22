@@ -3,8 +3,8 @@ package extensions
 import (
 	"testing"
 
-	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
-	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
+	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

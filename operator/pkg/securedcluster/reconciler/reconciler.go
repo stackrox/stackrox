@@ -3,7 +3,7 @@ package reconciler
 import (
 	pkgReconciler "github.com/joelanford/helm-operator/pkg/reconciler"
 	"github.com/stackrox/rox/image"
-	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
+	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"

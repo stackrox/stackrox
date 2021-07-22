@@ -6,7 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
+	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"k8s.io/client-go/kubernetes"

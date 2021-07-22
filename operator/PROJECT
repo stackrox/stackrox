@@ -1,5 +1,7 @@
 domain: stackrox.io
-layout: go.kubebuilder.io/v3
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
@@ -13,7 +15,7 @@ resources:
   domain: stackrox.io
   group: platform
   kind: Central
-  path: github.com/stackrox/rox/operator/api/central/v1alpha1
+  path: github.com/stackrox/rox/operator/apis/platform/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -22,6 +24,6 @@ resources:
   domain: stackrox.io
   group: platform
   kind: SecuredCluster
-  path: github.com/stackrox/rox/operator/api/securedcluster/v1alpha1
+  path: github.com/stackrox/rox/operator/apis/platform/v1alpha1
   version: v1alpha1
 version: "3"

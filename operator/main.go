@@ -20,8 +20,7 @@ import (
 	"flag"
 	"os"
 
-	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
-	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
+	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
 	"github.com/stackrox/rox/operator/pkg/client"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
@@ -47,14 +46,9 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	err := centralv1Alpha1.AddToScheme(scheme)
+	err := v1alpha1.AddToScheme(scheme)
 	if err != nil {
-		setupLog.Error(err, "could not register central scheme")
-		os.Exit(1)
-	}
-	err = securedClusterv1Alpha1.AddToScheme(scheme)
-	if err != nil {
-		setupLog.Error(err, "could not register secured cluster scheme")
+		setupLog.Error(err, "could not register stackrox platform scheme")
 		os.Exit(1)
 	}
 }

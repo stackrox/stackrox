@@ -2,7 +2,7 @@ package translation
 
 import (
 	"github.com/pkg/errors"
-	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
+	common "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"

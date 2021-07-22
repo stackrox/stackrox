@@ -2,10 +2,9 @@ package extensions
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
+	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/core/v1"
@@ -66,7 +65,7 @@ func (r *secretReconciliationExtension) reconcileSecret(name string, shouldExist
 		// If the secret is unmanaged, we cannot fix it, so we should fail. The same applies if there is no
 		// generate function specified, or if the caller told us not to attempt to fix it.
 		if !isManaged || generate == nil || !fixExisting {
-			return fmt.Errorf("Existing %s secret is invalid: %w. Please delete the secret to allow fixing the issue.", name, validateErr)
+			return errors.Wrapf(validateErr, "existing %s secret is invalid, please delete the secret to allow fixing the issue", name)
 		}
 	}
 

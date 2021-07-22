@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	common "github.com/stackrox/rox/operator/api/common/v1alpha1"
-	"github.com/stackrox/rox/operator/api/securedcluster/v1alpha1"
+	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	common "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	testingUtils "github.com/stackrox/rox/operator/pkg/values/testing"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stretchr/testify/assert"

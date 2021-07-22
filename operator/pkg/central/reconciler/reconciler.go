@@ -3,7 +3,7 @@ package reconciler
 import (
 	pkgReconciler "github.com/joelanford/helm-operator/pkg/reconciler"
 	"github.com/stackrox/rox/image"
-	centralV1Alpha1 "github.com/stackrox/rox/operator/api/central/v1alpha1"
+	centralV1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/central/values/translation"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
