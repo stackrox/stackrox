@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import isEqual from 'lodash/isEqual';
+import { useEffect, useState } from 'react';
 
 import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import { fetchNetworkBaselineStatuses } from 'services/NetworkService';
@@ -69,14 +68,6 @@ function getBaselineStatusKey({ id, ingress, port, protocol }): string {
     return `${id as string}-${String(ingress as boolean)}-${port as number}-${protocol as string}`;
 }
 
-function usePrevValue(newValue: unknown): unknown | undefined {
-    const ref = React.useRef<unknown>();
-    useEffect(() => {
-        ref.current = newValue;
-    });
-    return ref.current;
-}
-
 /*
  * This hook does an API call to the baseline status API to get the baseline status
  * of the supplied peers
@@ -93,25 +84,18 @@ function useFetchNetworkBaselines({
     lastUpdatedTimestamp: string;
 }): Result {
     const [result, setResult] = useState<Result>(defaultResultState);
-    const prevEdges = usePrevValue(edges);
-    const prevLastUpdatedTimestamp = usePrevValue(lastUpdatedTimestamp);
 
     useEffect(() => {
-        if (isEqual(prevEdges, edges) && isEqual(prevLastUpdatedTimestamp, lastUpdatedTimestamp)) {
-            return;
-        }
-
         setResult(defaultResultState);
 
         const { networkFlows } = getNetworkFlows(edges, filterState);
         const peers = getPeersFromNetworkFlows(networkFlows);
         const peersToSend = peers.filter((peer) => peer.port !== '*');
-        const baselineStatusPromise = fetchNetworkBaselineStatuses({
+
+        fetchNetworkBaselineStatuses({
             deploymentId,
             peers: peersToSend,
-        });
-
-        baselineStatusPromise
+        })
             .then((response) => {
                 const baselineStatusMap: Record<string, BaselineStatus> = response.statuses.reduce(
                     (
@@ -148,14 +132,9 @@ function useFetchNetworkBaselines({
             .catch((error) => {
                 setResult({ data: [], error, isLoading: false });
             });
-    }, [
-        deploymentId,
-        edges,
-        filterState,
-        prevEdges,
-        lastUpdatedTimestamp,
-        prevLastUpdatedTimestamp,
-    ]);
+        // I added this eslint disable because having "edges" causes some extra renders
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [deploymentId, filterState, lastUpdatedTimestamp]);
 
     return result;
 }
