@@ -6,7 +6,7 @@ FROM stackrox-data:$DATA_IMAGE_TAG AS data
 
 FROM $BUILD_IMAGE as builder
 
-FROM alpine:3.11 as alpine-base-no-debug
+FROM alpine:3.14 as alpine-base-no-debug
 
 FROM builder as debugger
 RUN go get github.com/go-delve/delve/cmd/dlv
@@ -14,11 +14,7 @@ FROM alpine-base-no-debug as alpine-base-yes-debug
 COPY --from=debugger /go/bin/dlv /go/bin/dlv
 
 FROM alpine-base-${DEBUG_BUILD}-debug
-ARG ALPINE_MIRROR=sjc.edge.kernel.org
 LABEL "com.vendor"="StackRox (support@stackrox.com)"
-
-RUN echo http://${ALPINE_MIRROR}/alpine/v3.11/main > /etc/apk/repositories; \
-    echo http://${ALPINE_MIRROR}/alpine/v3.11/community >> /etc/apk/repositories
 
 RUN apk add --update --no-cache zlib-dev bzip2-dev snappy-dev lz4-dev zstd-dev
 

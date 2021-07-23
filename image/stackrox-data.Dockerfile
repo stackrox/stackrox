@@ -1,13 +1,9 @@
 ARG DOCS_VERSION
 FROM stackrox/docs:embed-$DOCS_VERSION AS docs
 
-FROM alpine:3.11
-ARG ALPINE_MIRROR=sjc.edge.kernel.org
+FROM alpine:3.14
 
 RUN mkdir /stackrox-data
-
-RUN echo http://$ALPINE_MIRROR/alpine/v3.11/main > /etc/apk/repositories; \
-    echo http://$ALPINE_MIRROR/alpine/v3.11/community >> /etc/apk/repositories
 
 RUN apk update && \
     apk add --no-cache \
@@ -20,10 +16,7 @@ COPY --from=docs /docs/public /stackrox-data/product-docs
 # Basic sanity check: are the docs in the right place?
 RUN ls /stackrox-data/product-docs/index.html
 
-RUN mkdir -p /stackrox-data/cve/k8s && \
-    wget -O /stackrox-data/cve/k8s/checksum "https://definitions.stackrox.io/cve/k8s/checksum" && \
-    wget -O /stackrox-data/cve/k8s/cve-list.json "https://definitions.stackrox.io/cve/k8s/cve-list.json" && \
-    mkdir -p /stackrox-data/cve/istio && \
+RUN mkdir -p /stackrox-data/cve/istio && \
     wget -O /stackrox-data/cve/istio/checksum "https://definitions.stackrox.io/cve/istio/checksum" && \
     wget -O /stackrox-data/cve/istio/cve-list.json "https://definitions.stackrox.io/cve/istio/cve-list.json"
 

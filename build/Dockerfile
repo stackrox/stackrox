@@ -1,4 +1,4 @@
-FROM alpine:3.11 as builder
+FROM alpine:3.14 as builder
 
 ENV ROCKSDB_VERSION="v6.7.3"
 
