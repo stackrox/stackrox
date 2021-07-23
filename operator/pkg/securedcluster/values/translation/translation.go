@@ -170,6 +170,15 @@ func (t Translator) getAdmissionControlValues(admissionControl *securedcluster.A
 	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
 	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
 	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
+	dynamic := translation.NewValuesBuilder()
+	// Unlike in the UI, both static and dynamic parts of config are driven by
+	// the single spec.admissionControl.listenOn* setting in CR. This is because
+	// redeployment is natively part of the CR lifecycle when we have an operator, so
+	// no need to distinguish between the static and dynamic part.
+	dynamic.SetBool("enforceOnCreates", admissionControl.ListenOnCreates)
+	dynamic.SetBool("enforceOnUpdates", admissionControl.ListenOnUpdates)
+	acv.AddChild("dynamic", &dynamic)
+	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 
 	return &acv
 }

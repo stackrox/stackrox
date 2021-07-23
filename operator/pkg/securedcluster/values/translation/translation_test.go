@@ -56,7 +56,7 @@ func TestTranslateComplete(t *testing.T) {
 		sc        v1alpha1.SecuredCluster
 	}
 
-	//TODO: Add collector, admission-control and compliance tests
+	// TODO(ROX-7647): Add sensor, collector and compliance tests
 	tests := map[string]struct {
 		args args
 		want chartutil.Values
@@ -72,6 +72,27 @@ func TestTranslateComplete(t *testing.T) {
 					Spec: v1alpha1.SecuredClusterSpec{
 						ClusterName:     "test-cluster",
 						CentralEndpoint: "central.test:443",
+						AdmissionControl: &v1alpha1.AdmissionControlComponentSpec{
+							ListenOnCreates: pointer.BoolPtr(true),
+							ListenOnUpdates: pointer.BoolPtr(true),
+							ListenOnEvents:  pointer.BoolPtr(true),
+							DeploymentSpec: common.DeploymentSpec{
+								Resources: &v1.ResourceRequirements{
+									Limits: v1.ResourceList{
+										v1.ResourceCPU:    resource.MustParse("1502m"),
+										v1.ResourceMemory: resource.MustParse("1002Mi"),
+									},
+									Requests: v1.ResourceList{
+										v1.ResourceCPU:    resource.MustParse("1501m"),
+										v1.ResourceMemory: resource.MustParse("1001Mi"),
+									},
+								},
+								NodeSelector: map[string]string{
+									"admission-ctrl-node-selector1": "admission-ctrl-node-selector-val1",
+									"admission-ctrl-node-selector2": "admission-ctrl-node-selector-val2",
+								},
+							},
+						},
 						ClusterLabels: map[string]string{
 							"my-label1": "value1",
 							"my-label2": "value2",
@@ -98,12 +119,12 @@ func TestTranslateComplete(t *testing.T) {
 							Compliance: &v1alpha1.ContainerSpec{
 								Resources: &v1.ResourceRequirements{
 									Limits: v1.ResourceList{
-										v1.ResourceCPU:    resource.MustParse("1500m"),
-										v1.ResourceMemory: resource.MustParse("1Gi"),
+										v1.ResourceCPU:    resource.MustParse("1504m"),
+										v1.ResourceMemory: resource.MustParse("1004Mi"),
 									},
 									Requests: v1.ResourceList{
-										v1.ResourceCPU:    resource.MustParse("1500m"),
-										v1.ResourceMemory: resource.MustParse("1Gi"),
+										v1.ResourceCPU:    resource.MustParse("1503m"),
+										v1.ResourceMemory: resource.MustParse("1003Mi"),
 									},
 								},
 							},
@@ -151,6 +172,28 @@ func TestTranslateComplete(t *testing.T) {
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
 				},
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+					"listenOnEvents":  true,
+					"nodeSelector": map[string]interface{}{
+						"admission-ctrl-node-selector1": "admission-ctrl-node-selector-val1",
+						"admission-ctrl-node-selector2": "admission-ctrl-node-selector-val2",
+					},
+					"resources": map[string]interface{}{
+						"limits": map[string]interface{}{
+							"cpu":    "1502m",
+							"memory": "1002Mi",
+						}, "requests": map[string]interface{}{
+							"cpu":    "1501m",
+							"memory": "1001Mi",
+						},
+					},
+				},
 				"auditLogs": map[string]interface{}{
 					"disableCollection": false,
 				},
@@ -180,11 +223,11 @@ func TestTranslateComplete(t *testing.T) {
 					"slimMode":                false,
 					"complianceResources": map[string]interface{}{
 						"limits": map[string]interface{}{
-							"cpu":    "1500m",
-							"memory": "1Gi",
+							"cpu":    "1504m",
+							"memory": "1004Mi",
 						}, "requests": map[string]interface{}{
-							"cpu":    "1500m",
-							"memory": "1Gi",
+							"cpu":    "1503m",
+							"memory": "1003Mi",
 						},
 					},
 				},

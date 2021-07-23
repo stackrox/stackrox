@@ -23,6 +23,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - In the GraphQL API, `Role { resourceToAccess: [Label!]! }` is deprecated, use
     `PermissionSet { resourceToAccess: [Label!]! }` instead.
   - In the GraphQL API, `Role { globalAccess: Access! }` is deprecated with no replacement intended.
+- The operator now sets dynamic admission control settings (`enforceOnCreates`, `enforceOnUpdates`)
+  based on `spec.admissionControl.listenOn*` in the `SecuredCluster` resource.
 
 ## [62.0]
 
