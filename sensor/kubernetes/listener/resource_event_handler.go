@@ -21,7 +21,7 @@ import (
 )
 
 func (k *listenerImpl) handleAllEvents() {
-	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncPeriod)
+	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
 	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
 
 	// Create informer factories for needed orchestrators.
@@ -78,7 +78,7 @@ func (k *listenerImpl) handleAllEvents() {
 		} else if !ok {
 			log.Warnf("Skipping cluster operator discovery....")
 		} else {
-			osConfigFactory = configExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), resyncingPeriod)
+			osConfigFactory = configExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
 		}
 	}
 	// For openshift clusters only
@@ -96,7 +96,7 @@ func (k *listenerImpl) handleAllEvents() {
 			log.Info("compliance CRD could not be found")
 		} else {
 			log.Infof("initializing compliance operator informers")
-			dynamicFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), resyncPeriod)
+			dynamicFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 			complianceResultInformer = dynamicFactory.ForResource(complianceoperator.CheckResultGVR).Informer()
 			complianceProfileInformer = dynamicFactory.ForResource(complianceoperator.ProfileGVR).Informer()
 			complianceScanSettingBindingsInformer = dynamicFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()

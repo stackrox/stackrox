@@ -17,7 +17,7 @@ const (
 )
 
 func patchNamespaces(client kubernetes.Interface, stopCond concurrency.Waitable) {
-	nsInformer := informers.NewSharedInformerFactory(client, resyncPeriod).Core().V1().Namespaces().Informer()
+	nsInformer := informers.NewSharedInformerFactory(client, noResyncPeriod).Core().V1().Namespaces().Informer()
 	nsClient := client.CoreV1().Namespaces()
 
 	patchHandler := &namespacePatchHandler{

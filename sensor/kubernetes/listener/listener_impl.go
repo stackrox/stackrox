@@ -14,7 +14,7 @@ import (
 const (
 	// See https://groups.google.com/forum/#!topic/kubernetes-sig-api-machinery/PbSCXdLDno0
 	// Kubernetes scheduler no longer uses a resync period and it seems like its usage doesn't apply to us
-	resyncPeriod                = 0
+	noResyncPeriod              = 0
 	resyncingPeriod             = 1 * time.Minute
 	clusterOperatorResourceName = "clusteroperators"
 	clusterOperatorGroupVersion = "config.openshift.io/v1"
