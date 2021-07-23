@@ -106,7 +106,7 @@ func getServiceAccount() *corev1.ServiceAccount {
 	return sa
 }
 
-func getRBAC(workload rbacWorkload) []runtime.Object {
+func getRBAC(workload RBACWorkload) []runtime.Object {
 	objects := make([]runtime.Object, 0, workload.NumServiceAccounts+workload.NumRoles+workload.NumBindings)
 	for i := 0; i < workload.NumServiceAccounts; i++ {
 		sa := getServiceAccount()

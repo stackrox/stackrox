@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
@@ -43,10 +42,9 @@ func main() {
 
 	var sharedClientInterface client.Interface
 
-	// Workload manager is only used when we are mocking out the k8s client
-	var workloadManager *fake.WorkloadManager
-	if workload := env.FakeKubernetesWorkload.Setting(); workload != "" {
-		workloadManager = fake.NewWorkloadManager(workload)
+	// Workload manager is only non-nil when we are mocking out the k8s client
+	workloadManager := fake.NewWorkloadManager()
+	if workloadManager != nil {
 		sharedClientInterface = workloadManager.Client()
 	} else {
 		sharedClientInterface = client.MustCreateInterface()

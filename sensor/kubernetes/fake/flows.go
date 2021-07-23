@@ -84,7 +84,7 @@ func generateAndAddIPToPool() string {
 
 func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.HostNetworkInfo, bool) {
 	// Return false if the network manager hasn't been initialized yet
-	if w.networkManager == nil {
+	if !w.servicesInitialized.IsDone() {
 		return nil, false
 	}
 	if len(registeredHostConnections) == 0 {
@@ -103,7 +103,7 @@ func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.
 }
 
 // manageFlows should be called via `go manageFlows` as it will run forever
-func (w *WorkloadManager) manageFlows(ctx context.Context, workload networkWorkload) {
+func (w *WorkloadManager) manageFlows(ctx context.Context, workload NetworkWorkload) {
 	if workload.FlowInterval == 0 {
 		return
 	}

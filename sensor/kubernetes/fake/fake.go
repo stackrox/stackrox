@@ -2,14 +2,17 @@ package fake
 
 import (
 	"context"
+	"os"
 	"time"
 
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
@@ -19,10 +22,12 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
+const (
+	workloadPath = "/var/scale/stackrox/workload.yaml"
+)
+
 var (
 	log = logging.LoggerForModule()
-
-	workloadRegistry = make(map[string]*workload)
 )
 
 func init() {
@@ -64,11 +69,12 @@ func (c *clientSetImpl) Dynamic() dynamic.Interface {
 type WorkloadManager struct {
 	fakeClient *fake.Clientset
 	client     client.Interface
-	workload   *workload
+	workload   *Workload
 
 	// signals services
-	processes      signal.Pipeline
-	networkManager manager.Manager
+	servicesInitialized concurrency.Signal
+	processes           signal.Pipeline
+	networkManager      manager.Manager
 }
 
 // Client returns the mock client
@@ -76,19 +82,30 @@ func (w *WorkloadManager) Client() client.Interface {
 	return w.client
 }
 
-// NewWorkloadManager returns a fake kubernetes client interface that will be managed with the passed workload
-func NewWorkloadManager(workloadName string) *WorkloadManager {
-	workload := workloadRegistry[workloadName]
-	if workload == nil {
-		log.Panicf("could not find workload with name %q", workloadName)
+// NewWorkloadManager returns a fake kubernetes client interface that will be managed with the passed Workload
+func NewWorkloadManager() *WorkloadManager {
+	data, err := os.ReadFile(workloadPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		log.Debugf("error opening fake scale workload config: %v", err)
+		return nil
+	}
+	var workload Workload
+	if err := yaml.Unmarshal(data, &workload); err != nil {
+		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
 
 	mgr := &WorkloadManager{
-		workload: workload,
+		workload:            &workload,
+		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
 
-	log.Infof("Created workload manager for workload %s", workloadName)
+	log.Infof("Created Workload manager for workload")
+	log.Infof("Workload: %s", string(data))
+	log.Infof("Rendered workload: %+v", workload)
 	return mgr
 }
 
@@ -96,6 +113,7 @@ func NewWorkloadManager(workloadName string) *WorkloadManager {
 func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, networkManager manager.Manager) {
 	w.processes = processPipeline
 	w.networkManager = networkManager
+	w.servicesInitialized.Signal()
 }
 
 // clearActions periodically cleans up the fake client we're using. This needs to exist because we aren't

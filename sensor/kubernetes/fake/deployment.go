@@ -19,7 +19,7 @@ import (
 )
 
 type deploymentResourcesToBeManaged struct {
-	workload deploymentWorkload
+	workload DeploymentWorkload
 
 	deployment *appsv1.Deployment
 	replicaSet *appsv1.ReplicaSet
@@ -34,7 +34,7 @@ func createRandMap(stringSize, entries int) map[string]string {
 	return m
 }
 
-func (w *WorkloadManager) getDeployment(workload deploymentWorkload) *deploymentResourcesToBeManaged {
+func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deploymentResourcesToBeManaged {
 	labels := createRandMap(16, 3)
 
 	var containers []corev1.Container
@@ -208,7 +208,7 @@ func getPod(replicaSet *appsv1.ReplicaSet) *corev1.Pod {
 	return pod
 }
 
-func getContainer(workload containerWorkload) corev1.Container {
+func getContainer(workload ContainerWorkload) corev1.Container {
 	var imageName string
 	if workload.NumImages == 0 {
 		imageName = fixtures.GetRandomImage().FullName()
@@ -387,7 +387,7 @@ func populatePodContainerStatuses(pod *corev1.Pod) {
 	pod.Status.ContainerStatuses = statuses
 }
 
-func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurrency.Signal, podWorkload podWorkload, pod *corev1.Pod) {
+func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod) {
 	podDeadline := newTimerWithJitter(podWorkload.LifecycleDuration)
 	defer podDeadline.Stop()
 
@@ -438,7 +438,7 @@ func getShortContainerID(id string) string {
 	return containerid.ShortContainerIDFromInstanceID(runtimeID)
 }
 
-func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podWorkload podWorkload, pod *corev1.Pod) {
+func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod) {
 	if podWorkload.ProcessWorkload.ProcessInterval == 0 {
 		return
 	}
@@ -453,6 +453,10 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 	for {
 		select {
 		case <-ticker.C:
+			if !w.servicesInitialized.IsDone() {
+				continue
+			}
+
 			// If less than the rate, then it's a bad process
 			containerID := containerIDs[rand.Intn(len(containerIDs))]
 			if rand.Float32() < podWorkload.ProcessWorkload.AlertRate {
