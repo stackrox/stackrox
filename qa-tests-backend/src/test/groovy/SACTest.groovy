@@ -1,6 +1,11 @@
 import static Services.waitForViolation
-import static com.jayway.restassured.RestAssured.given
 
+import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
+import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
+import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
+
+import groups.BAT
+import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.BaseService
@@ -11,19 +16,10 @@ import services.NetworkGraphService
 import services.SearchService
 import services.SecretService
 import services.SummaryService
-
-import com.jayway.restassured.config.RestAssuredConfig
-import com.jayway.restassured.config.SSLConfig
-import groups.BAT
-import objects.Deployment
-import org.junit.experimental.categories.Category
-import spock.lang.Unroll
-import util.Env
 import util.NetworkGraphUtil
 
-import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
-import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
-import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
+import org.junit.experimental.categories.Category
+import spock.lang.Unroll
 
 @Category(BAT)
 class SACTest extends BaseSpecification {
@@ -205,33 +201,28 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    def "Verify alerts count between #alertsMin and #alertsMax for #tokenName"() {
-        when:
-        "GetSummaryCounts is called using a token with all access"
-        def token = useToken(tokenName)
+    def "Verify alerts count is scoped"() {
+        given:
+        def query = SSOC.RawQuery.newBuilder().setQuery(
+                "Deployment:${DEPLOYMENT_QA1.name},${DEPLOYMENT_QA2.name}"
+        ).build()
 
-        def response = given()
-                .config(RestAssuredConfig.newConfig()
-                        .sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation().allowAllHostnames()))
-                .header("Authorization", "Bearer " + token.token)
-                .when()
-                .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}/v1/alertscount?query=")
-        def count = response.jsonPath().getInt("count")
+        when:
+        def alertsCount = { String tokenName ->
+            BaseService.useBasicAuth()
+            useToken(tokenName)
+            AlertService.alertClient.countAlerts(query).count
+        }
 
         then:
-        assert alertsMin <= alertsMax
-        assert alertsMax >= count
+        assert alertsCount(NOACCESSTOKEN) == 0
+        // getSummaryCountsToken has access only to QA1 deployment while
+        // ALLACCESSTOKEN has access to QA1 and QA2. Since deployments are identical
+        // number of alerts for ALLACCESSTOKEN should be twice of getSummaryCountsToken.
+        assert 2 * alertsCount("getSummaryCountsToken") == alertsCount(ALLACCESSTOKEN)
 
         cleanup:
-        "Cleanup"
         BaseService.useBasicAuth()
-
-        where:
-        // lower bound is from local cluster and upper bound from CI
-        tokenName               | alertsMin | alertsMax
-        NOACCESSTOKEN           | 0         | 0
-        ALLACCESSTOKEN          | 7         | 400
-        "getSummaryCountsToken" | 2         | 4
     }
 
     def "Verify ListSecrets using a token without access receives no results"() {
