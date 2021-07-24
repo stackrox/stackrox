@@ -8,6 +8,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - Support for BadgerDB is being completely removed. Users running a version less than 48.0 will need to upgrade to 63.0 prior to upgrading
   to 64.0. All backups taken prior to version 48.0 will no longer be able to be restored to 64.0 and on.
+- The /v1/namespaces endpoint now accepts pagination query parameters
 
 ## [63.0]
 

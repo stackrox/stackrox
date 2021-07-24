@@ -3,6 +3,7 @@ package services
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.NamespaceServiceGrpc
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
+import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.GetNamespaceRequest
 import util.Timer
 
 class NamespaceService extends BaseService {
@@ -12,7 +13,7 @@ class NamespaceService extends BaseService {
     }
 
     static List<Namespace> getNamespaces() {
-        return getNamespaceClient().getNamespaces(EMPTY).namespacesList
+        return getNamespaceClient().getNamespaces(GetNamespaceRequest.newBuilder().build()).namespacesList
     }
     static Namespace getNamespace(String id) {
         try {

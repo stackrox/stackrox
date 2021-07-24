@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"math"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -17,6 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 )
 
@@ -44,8 +47,16 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 	return v1.RegisterNamespaceServiceHandler(ctx, mux, conn)
 }
 
-func (s *serviceImpl) GetNamespaces(ctx context.Context, _ *v1.Empty) (*v1.GetNamespacesResponse, error) {
-	namespaces, err := namespace.ResolveAll(ctx, s.datastore, s.deployments, s.secrets, s.networkPolicies)
+func (s *serviceImpl) GetNamespaces(ctx context.Context, req *v1.GetNamespaceRequest) (*v1.GetNamespacesResponse, error) {
+	rawQuery := req.GetQuery()
+	parsedQuery, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+	}
+	// Fill in pagination. MaxInt32 preserves previous functionality
+	paginated.FillPagination(parsedQuery, rawQuery.GetPagination(), math.MaxInt32)
+
+	namespaces, err := namespace.ResolveAll(ctx, s.datastore, s.deployments, s.secrets, s.networkPolicies, parsedQuery)
 	if err != nil {
 		return nil, errors.Errorf("Failed to retrieve namespaces: %v", err)
 	}

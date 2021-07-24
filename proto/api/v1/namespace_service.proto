@@ -5,8 +5,8 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
-import "api/v1/empty.proto";
 import "storage/namespace_metadata.proto";
+import "api/v1/search_service.proto";
 
 package v1;
 
@@ -21,9 +21,13 @@ message GetNamespacesResponse {
     repeated Namespace namespaces = 1;
 }
 
+message GetNamespaceRequest {
+    RawQuery query = 1;
+}
+
 service NamespaceService {
 
-    rpc GetNamespaces(Empty) returns (GetNamespacesResponse) {
+    rpc GetNamespaces(GetNamespaceRequest) returns (GetNamespacesResponse) {
         option (google.api.http) = {
             get: "/v1/namespaces"
         };

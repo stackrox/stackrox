@@ -16,8 +16,8 @@ import (
 
 // ResolveAll resolves all namespaces, populating volatile runtime data (like deployment and secret counts) by querying related stores.
 func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
-	metadataSlice, err := dataStore.GetNamespaces(ctx)
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore, query *v1.Query) ([]*v1.Namespace, error) {
+	metadataSlice, err := dataStore.SearchNamespaces(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving namespaces")
 	}
