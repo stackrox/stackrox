@@ -18,5 +18,6 @@ done
 
 # Create the databases
 runQuery "CREATE DATABASE \"telegraf_12h\" WITH DURATION 12h NAME \"12_hours\""
+runQuery "CREATE DATABASE \"telegraf_2w\" WITH DURATION 2w NAME \"2_weeks\""
 
 echo "Successfully started InfluxDB"

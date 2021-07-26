@@ -97,7 +97,7 @@ data:
       urls = ["http://127.0.0.1:8086"]
 
       ## The target database for metrics; will be created as needed.
-      database = "telegraf_12h"
+      database = "telegraf_2w"
 
       ## Name of existing retention policy to write to.  Empty string writes to
       ## the default retention policy.  Only takes effect when using HTTP.

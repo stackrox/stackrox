@@ -40,7 +40,7 @@ echo "${PANEL_LIST_JSON}" | jq -c '.[]' | while read -r panel_json; do
     echo ${queries} | jq -rc '.[]' | while read -r query; do
         count=$(( count + 1))
         query=$(echo "${query}" | sed "s/\$timeFilter/time > now() - ${DURATION_MIN}m/g" | sed 's/\$__interval/1s/g')
-        curl -s localhost:8086/query?db=telegraf_12h --data-urlencode "q=$query" > "$DIR/rawcaptures/${panel_title_file}_${count}.json"
+        curl -s localhost:8086/query?db=telegraf_2w --data-urlencode "q=$query" > "$DIR/rawcaptures/${panel_title_file}_${count}.json"
     done
 done
 

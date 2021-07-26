@@ -7,7 +7,7 @@ datasources:
   orgId: 1
   url: http://127.0.0.1:8086
   database: telegraf_12h
-  isDefault: true
+  isDefault: false
   version: 1
   editable: false
 - name: InfluxDB 2w
@@ -16,7 +16,7 @@ datasources:
   orgId: 1
   url: http://127.0.0.1:8086
   database: telegraf_2w
-  isDefault: false
+  isDefault: true
   version: 1
   editable: false
 - name: InfluxDB forever
