@@ -53,7 +53,7 @@ export function fetchIntegration(source) {
  * @param {Object} options - Contains a field like "updatePassword" to determine what API to use
  * @returns {Promise<Object, Error>}
  */
-export function saveIntegration(source, data, options) {
+export function saveIntegration(source, data, options = undefined) {
     if (!data.id) {
         throw new Error('Integration entity must have an id to be saved');
     }
@@ -70,13 +70,27 @@ export function saveIntegration(source, data, options) {
     return axios.patch(`${getPath(source, 'save')}/${data.id}`, integration);
 }
 
+// When we migrate completely over, we can remove saveIntegration and rename this
+export function saveIntegrationV2(source, data) {
+    const { id } = data[getJsonFieldBySource(source)];
+    if (!id) {
+        throw new Error('Integration entity must have an id to be saved');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'updatePassword')) {
+        return axios.patch(`${getPath(source, 'save')}/${id}`, data);
+    }
+    return axios.put(`${getPath(source, 'save')}/${data.id}`, data);
+}
+
 /**
  * Creates an integration by source.
  *
  * @returns {Promise<Object, Error>}
  */
 export function createIntegration(source, data) {
-    return axios.post(getPath(source, 'create'), data);
+    // if the data has a config object, use the contents of that config object
+    const createData = data.config ? data.config : data;
+    return axios.post(getPath(source, 'create'), createData);
 }
 
 /**
@@ -88,7 +102,7 @@ export function createIntegration(source, data) {
  * @param {Object} options - Contains a field like "updatePassword" to determine what API to use
  * @returns {Promise<Object, Error>}
  */
-export function testIntegration(source, data, options) {
+export function testIntegration(source, data, options = undefined) {
     const updatePassword = options?.updatePassword;
     // if the integration is not one that could possibly have stored credentials, use the previous API
     if (updatePassword === undefined) {
@@ -100,6 +114,14 @@ export function testIntegration(source, data, options) {
         updatePassword,
     };
     return axios.post(`${getPath(source, 'test')}/test/updated`, integration);
+}
+
+// When we migrate completely over, we can remove testIntegration and rename this
+export function testIntegrationV2(source, data) {
+    if (Object.prototype.hasOwnProperty.call(data, 'updatePassword')) {
+        return axios.post(`${getPath(source, 'test')}/test/updated`, data);
+    }
+    return axios.post(`${getPath(source, 'test')}/test`, data);
 }
 
 /**

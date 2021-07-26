@@ -15,10 +15,10 @@ import {
 } from 'Containers/Integrations/utils/integrationUtils';
 
 import PageTitle from 'Components/PageTitle';
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import IntegrationsTable from './IntegrationsTable';
-import useIntegrations from '../useIntegrations';
+import useIntegrations from '../hooks/useIntegrations';
 import GenericIntegrationModal from '../GenericIntegrationModal';
-import BreadcrumbItemLink from './BreadcrumbItemLink';
 import ConfirmationModal from './ConfirmationModal';
 import {
     DeleteAPITokensConfirmationText,
@@ -31,16 +31,16 @@ function IntegrationsListPage({
     revokeAPITokens,
     revokeClusterInitBundles,
 }): ReactElement {
-    const { source: selectedSource, type: selectedType } = useParams();
+    const { source, type } = useParams();
     const [selectedIntegration, setSelectedIntegration] = useState<
         Integration | Record<string, unknown> | null
     >(null);
-    const integrations = useIntegrations({ selectedSource, selectedType });
+    const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
-    const typeLabel = getIntegrationLabel(selectedSource, selectedType);
-    const isAPIToken = getIsAPIToken(selectedSource, selectedType);
-    const isClusterInitBundle = getIsClusterInitBundle(selectedSource, selectedType);
+    const typeLabel = getIntegrationLabel(source, type);
+    const isAPIToken = getIsAPIToken(source, type);
+    const isClusterInitBundle = getIsClusterInitBundle(source, type);
 
     function closeModal() {
         setSelectedIntegration(null);
@@ -64,7 +64,7 @@ function IntegrationsListPage({
         } else if (isClusterInitBundle) {
             revokeClusterInitBundles(deletingIntegrationIds);
         } else {
-            deleteIntegrations(selectedSource, selectedType, deletingIntegrationIds);
+            deleteIntegrations(source, type, deletingIntegrationIds);
         }
         setDeletingIntegrationIds([]);
     }
@@ -103,8 +103,8 @@ function IntegrationsListPage({
             {selectedIntegration && (
                 <GenericIntegrationModal
                     integrations={integrations}
-                    source={selectedSource}
-                    type={selectedType}
+                    source={source}
+                    type={type}
                     label={typeLabel}
                     onRequestClose={closeModal}
                     selectedIntegration={selectedIntegration}

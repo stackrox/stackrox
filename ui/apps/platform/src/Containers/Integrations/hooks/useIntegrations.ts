@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
-import { Integration, IntegrationSource, IntegrationType } from './utils/integrationUtils';
+import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 const selectIntegrations = createStructuredSelector({
     authPlugins: selectors.getAuthPlugins,
@@ -16,12 +16,14 @@ const selectIntegrations = createStructuredSelector({
     featureFlags: selectors.getFeatureFlags,
 });
 
-export type UseIntegration = {
-    selectedSource: IntegrationSource;
-    selectedType: IntegrationType;
+export type UseIntegrations = {
+    source: IntegrationSource;
+    type: IntegrationType;
 };
 
-const useIntegrations = ({ selectedSource, selectedType }: UseIntegration): Integration[] => {
+export type UseIntegrationsResponse = Integration[];
+
+const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResponse => {
     const {
         authPlugins,
         apiTokens,
@@ -32,7 +34,7 @@ const useIntegrations = ({ selectedSource, selectedType }: UseIntegration): Inte
         imageIntegrations,
     } = useSelector(selectIntegrations);
 
-    function findIntegrations(source: IntegrationSource, type: IntegrationType) {
+    function findIntegrations() {
         const typeLowerMatches = (integration: Integration) =>
             integration.type.toLowerCase() === type.toLowerCase();
 
@@ -65,7 +67,9 @@ const useIntegrations = ({ selectedSource, selectedType }: UseIntegration): Inte
         }
     }
 
-    return findIntegrations(selectedSource, selectedType);
+    const integrations = findIntegrations();
+
+    return integrations;
 };
 
 export default useIntegrations;

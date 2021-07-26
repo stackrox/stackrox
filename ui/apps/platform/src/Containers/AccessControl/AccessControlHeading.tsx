@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { Breadcrumb, BreadcrumbItem, Title } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
-import BreadcrumbItemLink from 'Containers/Integrations/IntegrationsListPage/BreadcrumbItemLink';
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { AccessControlEntityType } from 'constants/entityTypes';
 import { accessControlLabels } from 'messages/common';
 

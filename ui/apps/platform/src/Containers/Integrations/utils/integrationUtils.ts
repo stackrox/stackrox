@@ -46,6 +46,7 @@ export type IntegrationType =
 export type Integration = {
     type: IntegrationType;
     id: string;
+    name: string;
 };
 
 export type IntegrationTile = {
