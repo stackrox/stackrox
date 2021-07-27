@@ -16,8 +16,14 @@ ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
 # `git ls-files -sm build` prints all files in build (including extra entries for locally
 # modified files), along with the SHAs, and `git hash-object` just computes the SHA of that.
 BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
+
 BUILD_IMAGE := stackrox/main:rocksdb-builder-$(BUILD_DIR_HASH)
 RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+
+ifdef CI
+    BUILD_IMAGE := us.gcr.io/stackrox-ci/builder:rocksdb-builder-$(BUILD_DIR_HASH)
+    RHEL_BUILD_IMAGE := us.gcr.io/stackrox-ci/builder:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+endif
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 

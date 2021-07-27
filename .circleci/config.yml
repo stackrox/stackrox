@@ -530,10 +530,10 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.3.12
+      - image: us.gcr.io/stackrox-ci/apollo-ci:0.3.12
         auth:
-          username: $DOCKER_IO_PULL_USERNAME
-          password: $DOCKER_IO_PULL_PASSWORD
+          username: _json_key
+          password: $GOOGLE_CREDENTIALS_GCR_SCANNER
     working_directory: /go/src/github.com/stackrox/rox
 
   binary-builder:
@@ -2565,6 +2565,10 @@ jobs:
             sudo cp .circleci/bash-wrapper /bin/bash
             sudo cp .circleci/bash.env /etc/bash.env
       - run:
+          name: Login to us.gcr.io for builder
+          command: |
+            docker login us.gcr.io -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER"
+      - run:
           name: Install Go
           command: |
             # We need to install go here to pull go modules, even though the build itself is dockerized.
@@ -2576,8 +2580,8 @@ jobs:
       - *restoreGoModBinaryCache
       - setup-go-build-env
       - *restoreGoBuildBinaryCache
-      - setup-dep-env:
-          docker-login: true
+#       - setup-dep-env:
+#           docker-login: true
 
       - run:
           name: Build the main Go binaries
@@ -2615,11 +2619,24 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - setup-dep-env:
-          docker-login: true
+#       - setup-dep-env:
+#           docker-login: true
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: Login to us.gcr.io for builder
+          command: |
+            docker login us.gcr.io -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER"
+
+      - run:
+          name: Fail on release
+          command: |
+            if [[ "$CIRCLE_TAG" =~ ^[[:digit:]]+(\.[[:digit:]]+)*(-rc.[[:digit:]]+)?$ ]]; then
+              echo "Docs must be added back to the Dockerfile"
+              exit 1
+            fi
 
       - *refreshAlpineBaseImage
 
@@ -2714,9 +2731,14 @@ jobs:
             make ossls-notice
 
       - run:
-          name: Log in to Docker Hub to pull the docs image
+          name: Login to us.gcr.io for builder
           command: |
-            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD" docker.io
+            docker login us.gcr.io -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER"
+
+#       - run:
+#           name: Log in to Docker Hub to pull the docs image
+#           command: |
+#             docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD" docker.io
 
       - run:
           name: Build main image for RHEL which includes building the binaries because they need to be built specifically for RHEL
@@ -5052,111 +5074,111 @@ workflows:
           <<: *runOnAllTagsWithDockerIOPushCtx
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithDockerIOPushCtx
-      - provision-gke-api-nongroovy-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - gke-api-nongroovy-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-nongroovy-tests
-      - provision-gke-ui-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - gke-ui-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-ui-e2e-tests
-      - provision-gke-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - gke-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-e2e-tests
-      - provision-gke-kernel-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - gke-kernel-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-kernel-api-e2e-tests
-      - provision-gke-api-upgrade-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - gke-api-upgrade-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-upgrade-tests
-            - build-rhel
-      - provision-gke-api-scale-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - gke-api-scale-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-scale-tests
-      - provision-openshift-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - openshift-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-api-e2e-tests
-      - provision-openshift-crio-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - openshift-crio-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-crio-api-e2e-tests
-      - provision-eks-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - eks-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-eks-api-e2e-tests
-      - provision-kops-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - kops-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-kops-api-e2e-tests
-      - provision-aks-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - aks-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-aks-api-e2e-tests
-      - provision-openshift-4-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - openshift-4-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-4-api-e2e-tests
-      - provision-openshift-4-operator-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - openshift-4-operator-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-operator
-            - provision-openshift-4-operator-e2e-tests
+#       - provision-gke-api-nongroovy-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - gke-api-nongroovy-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-gke-api-nongroovy-tests
+#       - provision-gke-ui-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - gke-ui-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-gke-ui-e2e-tests
+#       - provision-gke-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - gke-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-gke-api-e2e-tests
+#       - provision-gke-kernel-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - gke-kernel-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-gke-kernel-api-e2e-tests
+#       - provision-gke-api-upgrade-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - gke-api-upgrade-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-gke-api-upgrade-tests
+#             - build-rhel
+#       - provision-gke-api-scale-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - gke-api-scale-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-gke-api-scale-tests
+#       - provision-openshift-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - openshift-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-openshift-api-e2e-tests
+#       - provision-openshift-crio-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - openshift-crio-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-openshift-crio-api-e2e-tests
+#       - provision-eks-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - eks-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-eks-api-e2e-tests
+#       - provision-kops-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - kops-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-kops-api-e2e-tests
+#       - provision-aks-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - aks-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-aks-api-e2e-tests
+#       - provision-openshift-4-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - openshift-4-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-scale-monitoring-and-mock-server
+#             - provision-openshift-4-api-e2e-tests
+#       - provision-openshift-4-operator-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - openshift-4-operator-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build
+#             - build-operator
+#             - provision-openshift-4-operator-e2e-tests
       - roxctl-windows-test:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
@@ -5169,26 +5191,26 @@ workflows:
             - go-unit-tests
             - ui-unit-tests
             - push-release
-      - provision-openshift-rhel-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - openshift-rhel-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build-rhel
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-rhel-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
-      - provision-gke-rhel-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - gke-rhel-api-e2e-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build-rhel
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-rhel-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
+#       - provision-openshift-rhel-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - openshift-rhel-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build-rhel
+#             - build-scale-monitoring-and-mock-server
+#             - provision-openshift-rhel-api-e2e-tests
+#             - pre-build-cli
+#             - pre-build-go-binaries
+#       - provision-gke-rhel-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#       - gke-rhel-api-e2e-tests:
+#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           requires:
+#             - build-rhel
+#             - build-scale-monitoring-and-mock-server
+#             - provision-gke-rhel-api-e2e-tests
+#             - pre-build-cli
+#             - pre-build-go-binaries
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
