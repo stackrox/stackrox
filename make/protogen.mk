@@ -50,7 +50,7 @@ PROTOC_FILE := $(PROTOC_DOWNLOADS_DIR)/$(PROTOC_ZIP)
 
 $(PROTOC_FILE): $(PROTOC_DOWNLOADS_DIR)
 	@echo "+ $@"
-	@wget -q "https://github.com/google/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP)" -O "$@"
+	@wget -q "https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP)" -O "$@"
 
 .PRECIOUS: $(PROTOC_FILE)
 
