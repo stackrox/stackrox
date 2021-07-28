@@ -21,13 +21,16 @@ runOnlyOnReleaseBuilds: &runOnlyOnReleaseBuilds
     branches:
       ignore: /.*/
 
-runOnAllTagsWithDockerIOPullCtx: &runOnAllTagsWithDockerIOPullCtx
+runOnAllTagsWithQuayIOPullCtx: &runOnAllTagsWithQuayIOPullCtx
   <<: *runOnAllTags
-  context: docker-io-pull
+  context: quay-cgorman1-readonly
 
-runOnAllTagsWithDockerIOPushCtx: &runOnAllTagsWithDockerIOPushCtx
+runOnAllTagsWithPushCtx: &runOnAllTagsWithPushCtx
   <<: *runOnAllTags
-  context: docker-io-push
+  context:
+  - docker-io-push
+  - quay-cgorman1-readwrite
+  - quay-cgorman1-readonly
 
 setupGoogleAppCreds: &setupGoogleAppCreds
   run:
@@ -530,10 +533,10 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: us.gcr.io/stackrox-ci/apollo-ci:0.3.12
+      - image: quay.io/cgorman1/apollo-ci:0.3.12
         auth:
-          username: _json_key
-          password: $GOOGLE_CREDENTIALS_GCR_SCANNER
+          username: $QUAY_CGORMAN1_RO_USER
+          password: $QUAY_CGORMAN1_RO_PASSWORD
     working_directory: /go/src/github.com/stackrox/rox
 
   binary-builder:
@@ -869,20 +872,27 @@ commands:
           name: Setup deployment env
           command: |
             <<# parameters.docker-login >>
-            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+            docker login -u  "${QUAY_CGORMAN1_RO_USER}" -p "${QUAY_CGORMAN1_RO_PASSWORD}" quay.io
             <</ parameters.docker-login >>
             <<# parameters.use-websocket >>
             cci-export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
             <</ parameters.use-websocket >>
-            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
-            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
+            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
             cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
+
+            REPO=cgorman1
+            cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
+            cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
+            cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+
             if [[ "<< parameters.use-main-rhel >>" == "true" ]]; then
-              cci-export MAIN_IMAGE_REPO stackrox/main-rhel
-              cci-export COLLECTOR_IMAGE_REPO stackrox/collector-rhel
-              cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-              cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+              cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main-rhel"
+              cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector-rhel"
+              cci-export SCANNER_IMAGE "quay.io/$REPO/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+              cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             fi
 
   setup-gcp:
@@ -1497,9 +1507,8 @@ commands:
       - check-label-exists-or-skip:
           label: << parameters.gate-label >>
 
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+      - setup-dep-env:
+          docker-login: true
 
       - run:
           name: Install kubectl
@@ -1636,9 +1645,8 @@ commands:
 
       - setup_remote_docker
 
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+      - setup-dep-env:
+          docker-login: true
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -1680,15 +1688,21 @@ commands:
             cci-export KUBECONFIG "$PWD/openshift/artifacts/config"
             cci-export CLAIRIFY_IMAGE_TAG 0.5.2
             cci-export OPENSHIFT_HOST "$(cat openshift/artifacts/master)"
-            cci-export ROX_IMAGE_REGISTRY docker.io
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
-            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
+            cci-export REGISTRY_PASSWORD "QUAY_CGORMAN1_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "QUAY_CGORMAN1_RO_USER"
+
+            REPO=cgorman1
+            cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
+            cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
+            cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+
             if [[ "<< parameters.use-main-rhel >>" == "true" ]]; then
-              cci-export MAIN_IMAGE_REPO stackrox/main-rhel
-              cci-export COLLECTOR_IMAGE_REPO stackrox/collector-rhel
-              cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-              cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+              cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main-rhel"
+              cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector-rhel"
+              cci-export SCANNER_IMAGE "quay.io/$REPO/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+              cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             fi
 
       - remove-existing-stackrox-resources
@@ -2392,14 +2406,14 @@ jobs:
           post-central-deploy-steps:
             - *setupClientTLSCerts
 
-      - run:
-          name: Create a SR dockerhub secret for test image access
-          command: |
-            kubectl -n stackrox create secret docker-registry stackrox-dockerhub \
-              --docker-server="docker.io" \
-              --docker-username="${DOCKER_IO_PULL_USERNAME}" \
-              --docker-password="${DOCKER_IO_PULL_PASSWORD}" \
-              --docker-email="test@stackrox.com"
+#       - run:
+#           name: Create a SR dockerhub secret for test image access
+#           command: |
+#             kubectl -n stackrox create secret docker-registry stackrox-dockerhub \
+#               --docker-server="docker.io" \
+#               --docker-username="${DOCKER_IO_PULL_USERNAME}" \
+#               --docker-password="${DOCKER_IO_PULL_PASSWORD}" \
+#               --docker-email="test@stackrox.com"
 
       - deploy-default-psp
       - deploy-webhook-server
@@ -2410,8 +2424,8 @@ jobs:
       - run:
           name: QA Automation Platform
           command: |
-            export REGISTRY_USERNAME="${DOCKER_IO_PULL_USERNAME}"
-            export REGISTRY_PASSWORD="${DOCKER_IO_PULL_PASSWORD}"
+            export REGISTRY_USERNAME="${QUAY_CGORMAN1_RO_USER}"
+            export REGISTRY_PASSWORD="${QUAY_CGORMAN1_RO_PASSWORD}"
             export CLUSTER=K8S
             export API_HOSTNAME=localhost
             export API_PORT=${LOCAL_PORT}
@@ -2565,10 +2579,6 @@ jobs:
             sudo cp .circleci/bash-wrapper /bin/bash
             sudo cp .circleci/bash.env /etc/bash.env
       - run:
-          name: Login to us.gcr.io for builder
-          command: |
-            docker login us.gcr.io -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER"
-      - run:
           name: Install Go
           command: |
             # We need to install go here to pull go modules, even though the build itself is dockerized.
@@ -2580,8 +2590,8 @@ jobs:
       - *restoreGoModBinaryCache
       - setup-go-build-env
       - *restoreGoBuildBinaryCache
-#       - setup-dep-env:
-#           docker-login: true
+      - setup-dep-env:
+          docker-login: true
 
       - run:
           name: Build the main Go binaries
@@ -2619,16 +2629,11 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-#       - setup-dep-env:
-#           docker-login: true
+      - setup-dep-env:
+          docker-login: true
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: Login to us.gcr.io for builder
-          command: |
-            docker login us.gcr.io -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER"
 
       - run:
           name: Fail on release
@@ -2676,6 +2681,17 @@ jobs:
               ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/roxctl:latest
             fi
 
+            QUAY_REPO="cgorman1"
+            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:$(make --quiet tag)" | cat
+            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" | cat
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              docker tag "quay.io/$QUAY_REPO/main:$(make --quiet tag)" "quay.io/$QUAY_REPO/main:latest"
+              ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:latest"
+
+              docker tag "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" "quay.io/$QUAY_REPO/roxctl:latest"
+              ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:latest"
+            fi
       - run:
           name: Publish new versions of NPM packages if any
           command: |
@@ -2730,15 +2746,8 @@ jobs:
           command: |
             make ossls-notice
 
-      - run:
-          name: Login to us.gcr.io for builder
-          command: |
-            docker login us.gcr.io -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER"
-
-#       - run:
-#           name: Log in to Docker Hub to pull the docs image
-#           command: |
-#             docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD" docker.io
+      - setup-dep-env:
+          docker-login: true
 
       - run:
           name: Build main image for RHEL which includes building the binaries because they need to be built specifically for RHEL
@@ -2760,6 +2769,14 @@ jobs:
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
               docker tag "docker.io/stackrox/main-rhel:${TAG}" docker.io/stackrox/main-rhel:latest
               ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/main-rhel:latest
+            fi
+
+            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            QUAY_REPO="cgorman1"
+            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main-rhel:$(make --quiet tag)" | cat
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              docker tag "quay.io/$QUAY_REPO/main-rhel:$(make --quiet tag)" "quay.io/$QUAY_REPO/main-rhel:latest"
+              ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main-rhel:latest"
             fi
 
       - persist_to_workspace:
@@ -2936,6 +2953,9 @@ jobs:
       - setup-go-build-env
       - *restoreGoBuildCache
 
+      - setup-dep-env:
+          docker-login: true
+
       - run:
           name: Build images
           command: |
@@ -3057,9 +3077,8 @@ jobs:
           label: ci-kops-tests
           run-on-master: false
 
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+      - setup-dep-env:
+          docker-login: true
 
       - run:
           name: Install kubectl
@@ -4391,9 +4410,8 @@ jobs:
 
       - setup_remote_docker
 
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+      - setup-dep-env:
+          docker-login: true
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -4412,10 +4430,9 @@ jobs:
           name: Configure Deployment Environment
           command: |
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
-            cci-export ROX_IMAGE_REGISTRY docker.io
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
-            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
+            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -4489,9 +4506,8 @@ jobs:
 
       - setup_remote_docker
 
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+      - setup-dep-env:
+          docker-login: true
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -4515,10 +4531,9 @@ jobs:
           command: |
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
             cci-export KOPS_HOST "$(cat kops/master)"
-            cci-export ROX_IMAGE_REGISTRY docker.io
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
-            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
+            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -5033,154 +5048,154 @@ workflows:
               ignore: /.*/
           context: docker-io-pull
       - style-checks:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - check-generated-files-up-to-date:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - check-policy-files-up-to-date:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - go-unit-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - go-unit-tests-release:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - shell-unit-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - ui-unit-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - integration-unit-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-tag:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-build-ui:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-create-tag
       - pre-build-cli:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-create-tag
       - pre-build-go-binaries:
-          <<: *runOnAllTagsWithDockerIOPushCtx
+          <<: *runOnAllTagsWithPushCtx
           requires:
             - pre-create-tag
       - build:
-          <<: *runOnAllTagsWithDockerIOPushCtx
+          <<: *runOnAllTagsWithPushCtx
           requires:
             - pre-build-ui
             - pre-build-cli
             - pre-build-go-binaries
       - build-rhel:
-          <<: *runOnAllTagsWithDockerIOPushCtx
+          <<: *runOnAllTagsWithPushCtx
       - build-operator:
-          <<: *runOnAllTagsWithDockerIOPushCtx
+          <<: *runOnAllTagsWithPushCtx
       - build-scale-monitoring-and-mock-server:
-          <<: *runOnAllTagsWithDockerIOPushCtx
-#       - provision-gke-api-nongroovy-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
-#       - gke-api-nongroovy-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-gke-api-nongroovy-tests
-#       - provision-gke-ui-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
-#       - gke-ui-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-gke-ui-e2e-tests
+          <<: *runOnAllTagsWithPushCtx
+      - provision-gke-api-nongroovy-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-nongroovy-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-api-nongroovy-tests
+      - provision-gke-ui-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-ui-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-ui-e2e-tests
 #       - provision-gke-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - gke-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-gke-api-e2e-tests
 #       - provision-gke-kernel-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - gke-kernel-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-gke-kernel-api-e2e-tests
 #       - provision-gke-api-upgrade-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - gke-api-upgrade-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-gke-api-upgrade-tests
 #             - build-rhel
 #       - provision-gke-api-scale-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - gke-api-scale-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-gke-api-scale-tests
 #       - provision-openshift-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - openshift-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-openshift-api-e2e-tests
 #       - provision-openshift-crio-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - openshift-crio-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-openshift-crio-api-e2e-tests
 #       - provision-eks-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - eks-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-eks-api-e2e-tests
 #       - provision-kops-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - kops-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-kops-api-e2e-tests
 #       - provision-aks-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - aks-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-aks-api-e2e-tests
 #       - provision-openshift-4-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - openshift-4-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-scale-monitoring-and-mock-server
 #             - provision-openshift-4-api-e2e-tests
 #       - provision-openshift-4-operator-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - openshift-4-operator-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build
 #             - build-operator
 #             - provision-openshift-4-operator-e2e-tests
       - roxctl-windows-test:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-build-cli
       - mark-collector-release:
@@ -5192,9 +5207,9 @@ workflows:
             - ui-unit-tests
             - push-release
 #       - provision-openshift-rhel-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - openshift-rhel-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build-rhel
 #             - build-scale-monitoring-and-mock-server
@@ -5202,9 +5217,9 @@ workflows:
 #             - pre-build-cli
 #             - pre-build-go-binaries
 #       - provision-gke-rhel-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #       - gke-rhel-api-e2e-tests:
-#           <<: *runOnAllTagsWithDockerIOPullCtx
+#           <<: *runOnAllTagsWithQuayIOPullCtx
 #           requires:
 #             - build-rhel
 #             - build-scale-monitoring-and-mock-server

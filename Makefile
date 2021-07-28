@@ -19,10 +19,13 @@ BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
 
 BUILD_IMAGE := stackrox/main:rocksdb-builder-$(BUILD_DIR_HASH)
 RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
 
 ifdef CI
-    BUILD_IMAGE := us.gcr.io/stackrox-ci/builder:rocksdb-builder-$(BUILD_DIR_HASH)
-    RHEL_BUILD_IMAGE := us.gcr.io/stackrox-ci/builder:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+    QUAY_REPO := cgorman1
+    BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-$(BUILD_DIR_HASH)
+    RHEL_BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+    MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
 endif
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
@@ -526,7 +529,7 @@ monitoring-build-context: monitoring/static-bin/save-dir-contents monitoring/sta
 
 .PHONY: monitoring-image
 monitoring-image: monitoring-build-context
-	scripts/ensure_image.sh stackrox/monitoring:$(shell cat MONITORING_VERSION) monitoring/Dockerfile monitoring/
+	scripts/ensure_image.sh $(MONITORING_IMAGE) monitoring/Dockerfile monitoring/
 
 .PHONY: all-builds
 all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
@@ -553,6 +556,9 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image
 	docker build -t stackrox/main:$(TAG) --build-arg BUILD_IMAGE=$(BUILD_IMAGE) --build-arg DATA_IMAGE_TAG=$(TAG) --build-arg DEBUG_BUILD=$(DEBUG_BUILD) $(ALPINE_MIRROR_BUILD_ARG) image/
 	@echo "Built main image with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
+ifdef CI
+	docker tag stackrox/main:$(TAG) quay.io/$(QUAY_REPO)/main:$(TAG)
+endif
 
 $(CURDIR)/image/rhel/bundle.tar.gz:
 	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(RHEL_BUILD_IMAGE) $(CURDIR)/image/rhel
@@ -562,6 +568,10 @@ docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image
 	docker build -t stackrox/main-rhel:$(TAG) --file image/rhel/Dockerfile --label version=$(TAG) --label release=$(TAG) image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
+ifdef CI
+	docker tag stackrox/main-rhel:$(TAG) quay.io/$(QUAY_REPO)/main-rhel:$(TAG)
+endif
+
 
 .PHONY: docker-build-data-image
 docker-build-data-image:
@@ -575,7 +585,9 @@ docker-build-data-image:
 docker-build-roxctl-image:
 	cp -f bin/linux/roxctl image/bin/roxctl-linux
 	docker build -t stackrox/roxctl:$(TAG) -f image/roxctl.Dockerfile image/
-
+ifdef CI
+	docker tag stackrox/roxctl:$(TAG) quay.io/$(QUAY_REPO)/roxctl:$(TAG)
+endif
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir:
