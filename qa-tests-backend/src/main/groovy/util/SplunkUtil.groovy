@@ -141,24 +141,19 @@ class SplunkUtil {
     static SplunkDeployment createSplunk(OrchestratorMain orchestrator, String namespace, boolean useLegacySplunk) {
         def uid = UUID.randomUUID()
         def deploymentName = "splunk-${uid}"
-        if (useLegacySplunk) {
-            orchestrator.createImagePullSecret("qa-stackrox", Env.mustGetDockerIOUserName(),
-                    Env.mustGetDockerIOPassword(), namespace)
-        }
         Deployment deployment =
                 new Deployment()
                         .setNamespace(namespace)
                         .setName(deploymentName)
-                        .setImage(useLegacySplunk ? "stackrox/splunk-test-repo:6.6.2" : "splunk/splunk:8.1.2")
+                        .setImage(useLegacySplunk ?
+                                "quay.io/cgorman1/qa:splunk-test-repo-6-6-2" :
+                                "splunk/splunk:8.1.2")
                         .addPort (8000)
                         .addPort (8088)
                         .addPort(8089)
                         .addPort(514)
                         .setEnv(useLegacySplunk ? LEGACY_ENV_VARIABLES : ENV_VARIABLES)
                         .addLabel("app", deploymentName)
-        if (useLegacySplunk) {
-            deployment.addImagePullSecret("qa-stackrox")
-        }
         orchestrator.createDeployment(deployment)
 
         Service collectorSvc = new Service("splunk-collector-${uid}", namespace)
