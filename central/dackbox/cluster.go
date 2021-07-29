@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
@@ -37,13 +38,21 @@ var (
 			ThenMapEachToMany(transformation.ForwardFromContext(deploymentDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)),
 
+		// Cluster (forwards) Namespaces (forwards) Deployments (forwards) ActiveComponents
+		v1.SearchCategory_ACTIVE_COMPONENT: transformation.AddPrefix(clusterDackBox.Bucket).
+			ThenMapToMany(transformation.ForwardFromContext(nsDackBox.Bucket)).
+			ThenMapEachToMany(transformation.ForwardFromContext(deploymentDackBox.Bucket)).
+			ThenMapEachToMany(transformation.ForwardFromContext(acDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(acDackBox.Bucket)).
+			Then(transformation.Dedupe()),
+
 		// Cluster (forwards) Namespaces (forwards) Deployments (forwards) Images
 		v1.SearchCategory_IMAGES: transformation.AddPrefix(clusterDackBox.Bucket).
 			ThenMapToMany(transformation.ForwardFromContext(nsDackBox.Bucket)).
 			ThenMapEachToMany(transformation.ForwardFromContext(deploymentDackBox.Bucket)).
 			ThenMapEachToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
-			Then(transformation.Dedupe()).
-			ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)),
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
+			Then(transformation.Dedupe()),
 
 		// Combine ( { k1, k2 }
 		//          Cluster (forwards) Namespaces (forwards) Deployments (forwards) Images,
@@ -54,13 +63,13 @@ var (
 				ThenMapToMany(transformation.ForwardFromContext(nsDackBox.Bucket)).
 				ThenMapEachToMany(transformation.ForwardFromContext(deploymentDackBox.Bucket)).
 				ThenMapEachToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
-				Then(transformation.Dedupe()).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)),
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 			transformation.AddPrefix(imageDackBox.Bucket).
 				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
 				ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
-				Then(transformation.Dedupe()).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 		),
 
 		// Combine ( { k1, k2 }

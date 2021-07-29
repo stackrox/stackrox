@@ -16,6 +16,7 @@ var (
 		// We don't want to map cluster vulns to objects within the cluster.
 		v1.SearchCategory_NAMESPACES:           ReturnNothing,
 		v1.SearchCategory_DEPLOYMENTS:          ReturnNothing,
+		v1.SearchCategory_ACTIVE_COMPONENT:     ReturnNothing,
 		v1.SearchCategory_IMAGES:               ReturnNothing,
 		v1.SearchCategory_IMAGE_VULN_EDGE:      ReturnNothing,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: ReturnNothing,

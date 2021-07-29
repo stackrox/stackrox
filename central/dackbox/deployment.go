@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
@@ -37,6 +38,12 @@ var (
 
 		v1.SearchCategory_DEPLOYMENTS: DoNothing,
 
+		// Deployment (forwards) ActiveComponents
+		v1.SearchCategory_ACTIVE_COMPONENT: transformation.AddPrefix(deploymentDackBox.Bucket).
+			ThenMapToMany(transformation.ForwardFromContext(acDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(acDackBox.Bucket)).
+			Then(transformation.Dedupe()),
+
 		// Deployment (forwards) Images
 		v1.SearchCategory_IMAGES: transformation.AddPrefix(deploymentDackBox.Bucket).
 			ThenMapToMany(transformation.ForwardFromContext(imageDackBox.Bucket)).
@@ -53,8 +60,8 @@ var (
 			transformation.AddPrefix(imageDackBox.Bucket).
 				ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
 				ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
-				Then(transformation.Dedupe()).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 		),
 
 		// Combine ( { k1, k2 }

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+// Next available tag: 3
+message ActiveComponent {
+    // base 64 encoded Deployment:ActiveComponent ids.
+    string id = 1;
+
+    // Represent a context of the active edge.
+    message ActiveContext {
+        string container_name = 1;
+    }
+
+    // Map from container name to the active context of an edge.
+    map<string, ActiveContext> active_contexts = 2;
+}

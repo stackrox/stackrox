@@ -39,6 +39,9 @@ var (
 			ThenMapToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)),
 
+		// ActiveComponent does not have deployment context, so return nothing.
+		v1.SearchCategory_ACTIVE_COMPONENT: ReturnNothing,
+
 		// Edge (parse first key in pair) Image
 		v1.SearchCategory_IMAGES: transformation.Split([]byte(":")).
 			ThenMapEachToOne(transformation.Decode()).

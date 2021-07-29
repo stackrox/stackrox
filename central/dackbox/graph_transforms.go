@@ -10,22 +10,22 @@ import (
 /*
 The DackBox graph is currently designed with the following directed hierarchy:
 
-            -Cluster ID-
-          /     |        \
-         /      V         \
-        /   Namespace ID   \
-       /        |           \
-      /         V            |
-     |      Deployment ID    |
-     |          |            |
-     |          V            |
-  Node IDs   Image IDs       |
-     |          |            |
-      \         V            |
-        --> Component IDs   /
-                |          /
-                V         /
-             CVE IDs <---
+            -Cluster ID----------------
+          /     |                       \
+         /      V                        \
+        /   Namespace ID                  |
+       /        |                         |
+      /         V                         |
+     |      Deployment ID-----            |
+     |          |             |           |
+     |          V             V           |
+  Node IDs   Image IDs   ActiveComponent  |
+     |          |             /           |
+      \         V            /            |
+        --> Component IDs <-              |
+                |                        /
+                V                       /
+             CVE IDs <-----------------
 
 So to get from a cluster to it's CVEs, there are two paths (which lead to the two different kinds of CVEs).
 One from the deployment pointing toward it:
@@ -56,6 +56,7 @@ var (
 		v1.SearchCategory_NODE_VULN_EDGE:       NodeCVEEdgeTransformations,
 		v1.SearchCategory_NODE_COMPONENT_EDGE:  NodeComponentEdgeTransformations,
 		v1.SearchCategory_DEPLOYMENTS:          DeploymentTransformations,
+		v1.SearchCategory_ACTIVE_COMPONENT:     ActiveComponentTransformations,
 		v1.SearchCategory_IMAGES:               ImageTransformations,
 		v1.SearchCategory_IMAGE_VULN_EDGE:      ImageCVEEdgeTransformations,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: ImageComponentEdgeTransformations,

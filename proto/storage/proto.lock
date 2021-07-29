@@ -1,6 +1,48 @@
 {
   "definitions": [
     {
+      "protopath": "active_component.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "ActiveComponent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 2,
+                  "name": "active_contexts",
+                  "type": "ActiveContext"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "name": "ActiveContext",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "container_name",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
       "protopath": "alert.proto",
       "def": {
         "enums": [
@@ -1358,6 +1400,16 @@
                 "id": 3,
                 "name": "config_fingerprint",
                 "type": "string"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 4,
+                  "name": "cluster_labels",
+                  "type": "string"
+                }
               }
             ]
           },

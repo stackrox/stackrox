@@ -79,6 +79,8 @@ var (
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)).
 			Then(transformation.Dedupe()),
 
+		v1.SearchCategory_ACTIVE_COMPONENT: ReturnNothing,
+
 		// CVE (backwards) Components (backwards) Images
 		v1.SearchCategory_IMAGES: transformation.AddPrefix(cveDackBox.Bucket).
 			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).

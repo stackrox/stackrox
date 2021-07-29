@@ -42,6 +42,9 @@ var (
 			ThenMapToMany(transformation.BackwardFromContext(deploymentDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)),
 
+		// Image does not have deployment context, so return nothing.
+		v1.SearchCategory_ACTIVE_COMPONENT: ReturnNothing,
+
 		// Image
 		v1.SearchCategory_IMAGES: DoNothing,
 

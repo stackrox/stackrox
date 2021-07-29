@@ -60,6 +60,8 @@ var (
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(deploymentDackBox.Bucket)).
 			Then(transformation.Dedupe()),
 
+		v1.SearchCategory_ACTIVE_COMPONENT: ReturnNothing,
+
 		// Edge (parse first key in pair) Component (backwards) Images
 		v1.SearchCategory_IMAGES: transformation.Split([]byte(":")).
 			ThenMapEachToOne(transformation.Decode()).

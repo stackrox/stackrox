@@ -240,3 +240,23 @@ func ReverseEdgeKeys(toP, pToC OneToMany) OneToMany {
 		return ret
 	}
 }
+
+// Intersect returns the intersect of results of the two given transformations.
+func Intersect(f1, f2 OneToMany) OneToMany {
+	return func(ctx context.Context, key []byte) [][]byte {
+		result1 := f1(ctx, key)
+		result1Set := set.StringSet(make(map[string]struct{}, len(result1)))
+		for _, k := range result1 {
+			result1Set.Add(string(k))
+		}
+		var intersect [][]byte
+		for _, k := range f2(ctx, key) {
+			kString := string(k)
+			if result1Set.Contains(kString) {
+				intersect = append(intersect, k)
+				result1Set.Remove(kString)
+			}
+		}
+		return intersect
+	}
+}

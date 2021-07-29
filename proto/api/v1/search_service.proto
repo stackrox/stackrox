@@ -9,38 +9,39 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 30
+// Next available tag: 31
 enum SearchCategory {
-    SEARCH_UNSET             = 0;
-    ALERTS                   = 1;
-    IMAGES                   = 2;
-    IMAGE_COMPONENTS         = 20;
-    IMAGE_VULN_EDGE          = 27;
-    IMAGE_COMPONENT_EDGE     = 23;
-    POLICIES                 = 3;
-    DEPLOYMENTS              = 4;
-    PODS                     = 25;
-    SECRETS                  = 5;
-    PROCESS_INDICATORS       = 6;
-    COMPLIANCE               = 7;
-    CLUSTERS                 = 8;
-    NAMESPACES               = 9;
-    NODES                    = 10;
-    NODE_VULN_EDGE           = 28;
-    NODE_COMPONENT_EDGE      = 29;
-    COMPLIANCE_STANDARD      = 11;
-    COMPLIANCE_CONTROL_GROUP = 12;
-    COMPLIANCE_CONTROL       = 13;
-    SERVICE_ACCOUNTS         = 14;
-    ROLES                    = 15;
-    ROLEBINDINGS             = 16;
-    PROCESS_BASELINES        = 17;
-    SUBJECTS                 = 18;
-    RISKS                    = 19;
-    VULNERABILITIES          = 21;
-    COMPONENT_VULN_EDGE      = 22;
-    CLUSTER_VULN_EDGE        = 24;
-    NETWORK_ENTITY           = 26;
+    SEARCH_UNSET              = 0;
+    ALERTS                    = 1;
+    IMAGES                    = 2;
+    IMAGE_COMPONENTS          = 20;
+    IMAGE_VULN_EDGE           = 27;
+    IMAGE_COMPONENT_EDGE      = 23;
+    POLICIES                  = 3;
+    DEPLOYMENTS               = 4;
+    ACTIVE_COMPONENT          = 30;
+    PODS                      = 25;
+    SECRETS                   = 5;
+    PROCESS_INDICATORS        = 6;
+    COMPLIANCE                = 7;
+    CLUSTERS                  = 8;
+    NAMESPACES                = 9;
+    NODES                     = 10;
+    NODE_VULN_EDGE            = 28;
+    NODE_COMPONENT_EDGE       = 29;
+    COMPLIANCE_STANDARD       = 11;
+    COMPLIANCE_CONTROL_GROUP  = 12;
+    COMPLIANCE_CONTROL        = 13;
+    SERVICE_ACCOUNTS          = 14;
+    ROLES                     = 15;
+    ROLEBINDINGS              = 16;
+    PROCESS_BASELINES         = 17;
+    SUBJECTS                  = 18;
+    RISKS                     = 19;
+    VULNERABILITIES           = 21;
+    COMPONENT_VULN_EDGE       = 22;
+    CLUSTER_VULN_EDGE         = 24;
+    NETWORK_ENTITY            = 26;
 }
 
 enum SearchDataType {
