@@ -624,18 +624,20 @@ scale-image: scale-build clean-image
 	cp bin/linux/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*
 	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
+	docker tag stackrox/scale:$(TAG) quay.io/$(QUAY_REPO)/scale:$(TAG)
 
 webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
 	docker build -t stackrox/webhookserver:1.2 -f webhookserver/Dockerfile webhookserver
+	docker tag stackrox/webhookserver:1.2 quay.io/$(QUAY_REPO)/webhookserver:1.2
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
-
+	docker tag stackrox/grpc-server:$(TAG) quay.io/$(QUAY_REPO)/grpc-server:$(TAG)
 ###########
 ## Clean ##
 ###########

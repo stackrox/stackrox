@@ -225,6 +225,7 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
+
         try {
             orchestrator.cleanup()
         } catch (Exception e) {
@@ -258,15 +259,22 @@ class BaseSpecification extends Specification {
                 ns
         )
         orchestrator.createImagePullSecret(
-                "stackrox",
+                "quay",
                 Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"),
                 Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"),
+                ns,
+                "https://quay.io"
+        )
+        orchestrator.createImagePullSecret(
+                "public-dockerhub",
+                "",
+                "",
                 ns
         )
         def sa = new K8sServiceAccount(
                 name: "default",
                 namespace: ns,
-                imagePullSecrets: ["stackrox"]
+                imagePullSecrets: ["quay", "public-dockerhub"]
         )
         orchestrator.createServiceAccount(sa)
     }

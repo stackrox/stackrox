@@ -1837,6 +1837,7 @@ commands:
               fi
             fi
 
+            cci-export MONITORING_IMAGE quay.io/cgorman1/monitoring:$(cat MONITORING_VERSION)
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
             "${deploy_dir}/central.sh"
 
@@ -2968,11 +2969,14 @@ jobs:
           name: Push new Docker image
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
 
             TAG=$(make --quiet tag)
 
+            QUAY_REPO="cgorman1"
             for img in scale grpc-server; do
               docker push "docker.io/stackrox/${img}:${TAG}" | cat
+              docker push "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
             done
 
       - cleanup-clusters-on-fail
@@ -5105,95 +5109,95 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-ui-e2e-tests
-#       - provision-gke-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - gke-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-gke-api-e2e-tests
-#       - provision-gke-kernel-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - gke-kernel-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-gke-kernel-api-e2e-tests
-#       - provision-gke-api-upgrade-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - gke-api-upgrade-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-gke-api-upgrade-tests
-#             - build-rhel
-#       - provision-gke-api-scale-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - gke-api-scale-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-gke-api-scale-tests
-#       - provision-openshift-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - openshift-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-openshift-api-e2e-tests
-#       - provision-openshift-crio-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - openshift-crio-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-openshift-crio-api-e2e-tests
-#       - provision-eks-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - eks-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-eks-api-e2e-tests
-#       - provision-kops-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - kops-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-kops-api-e2e-tests
-#       - provision-aks-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - aks-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-aks-api-e2e-tests
-#       - provision-openshift-4-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - openshift-4-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-scale-monitoring-and-mock-server
-#             - provision-openshift-4-api-e2e-tests
-#       - provision-openshift-4-operator-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - openshift-4-operator-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build
-#             - build-operator
-#             - provision-openshift-4-operator-e2e-tests
+      - provision-gke-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-api-e2e-tests
+      - provision-gke-kernel-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-kernel-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-kernel-api-e2e-tests
+      - provision-gke-api-upgrade-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-upgrade-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-api-upgrade-tests
+            - build-rhel
+      - provision-gke-api-scale-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-api-scale-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-api-scale-tests
+      - provision-openshift-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - openshift-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-api-e2e-tests
+      - provision-openshift-crio-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - openshift-crio-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-crio-api-e2e-tests
+      - provision-eks-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - eks-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-eks-api-e2e-tests
+      - provision-kops-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - kops-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-kops-api-e2e-tests
+      - provision-aks-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - aks-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-aks-api-e2e-tests
+      - provision-openshift-4-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - openshift-4-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-4-api-e2e-tests
+      - provision-openshift-4-operator-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - openshift-4-operator-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-operator
+            - provision-openshift-4-operator-e2e-tests
       - roxctl-windows-test:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -5206,26 +5210,26 @@ workflows:
             - go-unit-tests
             - ui-unit-tests
             - push-release
-#       - provision-openshift-rhel-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - openshift-rhel-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build-rhel
-#             - build-scale-monitoring-and-mock-server
-#             - provision-openshift-rhel-api-e2e-tests
-#             - pre-build-cli
-#             - pre-build-go-binaries
-#       - provision-gke-rhel-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#       - gke-rhel-api-e2e-tests:
-#           <<: *runOnAllTagsWithQuayIOPullCtx
-#           requires:
-#             - build-rhel
-#             - build-scale-monitoring-and-mock-server
-#             - provision-gke-rhel-api-e2e-tests
-#             - pre-build-cli
-#             - pre-build-go-binaries
+      - provision-openshift-rhel-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - openshift-rhel-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-rhel
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-rhel-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
+      - provision-gke-rhel-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-rhel-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-rhel
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-rhel-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds

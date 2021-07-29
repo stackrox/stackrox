@@ -18,7 +18,8 @@ export TLS_KEY_FILE="${DIR}/scopedaccess/config/server-tls.key"
 export SERVER_CONFIG_FILE="${DIR}/scopedaccess/config/server-config.json"
 export RULES_FILE="${DIR}/scopedaccess/config/rules.gval"
 
-export AUTHZ_PLUGIN_IMAGE="stackrox/default-authz-plugin:${PLUGIN_VERSION}"
+QUAY_REPO="cgorman1"
+export AUTHZ_PLUGIN_IMAGE="quay.io/$QUAY_REPO/default-authz-plugin:${PLUGIN_VERSION}"
 
 "${plugin_dir}/examples/deployment/deploy.sh"
 

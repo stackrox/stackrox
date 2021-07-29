@@ -26,7 +26,7 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ( "app", "test" ),
             new Deployment()
                 .setName (STRUTSDEPLOYMENT)
-                .setImage ("stackrox/qa:struts-app")
+                .setImage("quay.io/cgorman1/qa:struts-app")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (CENTOSDEPLOYMENT)
@@ -52,11 +52,11 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4751DEPLOYMENT)
-                .setImage ("stackrox/qa:ROX4751")
+                .setImage ("quay.io/cgorman1/qa:ROX4751")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4979DEPLOYMENT)
-                .setImage ("stackrox/qa:ROX4979")
+                .setImage ("quay.io/cgorman1/qa:ROX4979")
                 .addLabel ("app", "test" ),
      ]
 

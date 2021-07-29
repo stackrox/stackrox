@@ -916,10 +916,11 @@ class Kubernetes implements OrchestratorMain {
         println "Timed out waiting for secret ${secretName} to be created"
     }
 
-    String createImagePullSecret(String name, String username, String password, String namespace = this.namespace) {
+    String createImagePullSecret(String name, String username, String password,
+                                 String namespace = this.namespace, String server = "https://docker.io") {
         return createImagePullSecret(new Secret(
             name: name,
-            server: "https://docker.io",
+            server: server,
             username: username,
             password: password,
             namespace: namespace
@@ -927,11 +928,6 @@ class Kubernetes implements OrchestratorMain {
     }
 
     String createImagePullSecret(Secret secret) {
-        if (!secret.username || !secret.password) {
-            throw new RuntimeException("Secret requires a username and password: " +
-                    "username provided: ${secret.username}, " +
-                    "password provided: ${secret.password}")
-        }
         def namespace = secret.namespace ?: this.namespace
 
         def auth = secret.username + ":" + secret.password

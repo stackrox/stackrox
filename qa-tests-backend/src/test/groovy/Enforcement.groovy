@@ -165,7 +165,7 @@ class Enforcement extends BaseSpecification {
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE):
                     new Deployment()
-                            .setImage("stackrox/qa:enforcement")
+                            .setImage("quay.io/cgorman1/qa:enforcement")
                             .addPort(22)
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY):

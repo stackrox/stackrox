@@ -86,11 +86,11 @@ class PolicyConfigurationTest extends BaseSpecification {
                             mountPath: "/tmp/test")),
             new Deployment()
                     .setName(STRUTS)
-                    .setImage("docker.io/stackrox/qa:struts-app")
+                    .setImage("quay.io/cgorman1/qa:struts-app")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DNS)
-                    .setImage("stackrox/qa:apache-dns")
+                    .setImage("quay.io/cgorman1/qa:apache-dns")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_LB)

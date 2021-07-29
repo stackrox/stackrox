@@ -14,7 +14,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()
             .setName (STRUTSDEPLOYMENT_VULN_SCAN)
-            .setImage ("docker.io/stackrox/qa:struts-app")
+            .setImage ("quay.io/cgorman1/qa:struts-app")
             .addLabel ("app", "test" )
     static final private List<Deployment> DEPLOYMENTS = [
     STRUTS_DEP,

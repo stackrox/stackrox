@@ -19,6 +19,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 import services.AlertService
 import services.CreatePolicyService
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -191,7 +192,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_D =
             createAndRegisterDeployment()
                     .setName("deployment-d")
-                    .setImage("docker.io/stackrox/qa:apache-dns")
+                    .setImage("quay.io/cgorman1/qa:apache-dns")
                     .setNamespace("qa-policyfieldstest-d")
 
     static final private WITHOUT_ANNOTATIONS = DEP_D
@@ -818,6 +819,7 @@ class PolicyFieldsTest extends BaseSpecification {
     @SuppressWarnings('LineLength')
     @Unroll
     @Category([BAT])
+    @Ignore("ROX-7726")
     def "Expect violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify expected violations are triggered"

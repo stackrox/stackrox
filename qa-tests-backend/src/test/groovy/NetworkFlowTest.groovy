@@ -63,7 +63,7 @@ class NetworkFlowTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(UDPCONNECTIONTARGET)
-                    .setImage("stackrox/qa:socat")
+                    .setImage("quay.io/cgorman1/qa:socat")
                     .addPort(8080, "UDP")
                     .addLabel("app", UDPCONNECTIONTARGET)
                     .setExposeAsService(true)
@@ -71,7 +71,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setArgs(["socat "+SOCAT_DEBUG+" UDP-RECV:8080 STDOUT",]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET)
-                    .setImage("stackrox/qa:socat")
+                    .setImage("quay.io/cgorman1/qa:socat")
                     .addPort(80)
                     .addPort(8080)
                     .addLabel("app", TCPCONNECTIONTARGET)
@@ -117,7 +117,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "while sleep 30; do echo hello; done" as String,]),
             new Deployment()
                     .setName(UDPCONNECTIONSOURCE)
-                    .setImage("stackrox/qa:socat")
+                    .setImage("quay.io/cgorman1/qa:socat")
                     .addLabel("app", UDPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -126,7 +126,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
-                    .setImage("stackrox/qa:socat")
+                    .setImage("quay.io/cgorman1/qa:socat")
                     .addLabel("app", TCPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -135,7 +135,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
-                    .setImage("stackrox/qa:socat")
+                    .setImage("quay.io/cgorman1/qa:socat")
                     .addLabel("app", MULTIPLEPORTSCONNECTION)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -155,7 +155,7 @@ class NetworkFlowTest extends BaseSpecification {
             new Deployment()
                     .setName("${TCPCONNECTIONSOURCE}-qa2")
                     .setNamespace(OTHER_NAMESPACE)
-                    .setImage("stackrox/qa:socat")
+                    .setImage("quay.io/cgorman1/qa:socat")
                     .addLabel("app", "${TCPCONNECTIONSOURCE}-qa2")
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -203,7 +203,7 @@ class NetworkFlowTest extends BaseSpecification {
     def setupSpec() {
         orchestrator.createNamespace(OTHER_NAMESPACE)
         orchestrator.createImagePullSecret(
-                "stackrox",
+                "quay",
                 Env.mustGet("REGISTRY_USERNAME"),
                 Env.mustGet("REGISTRY_PASSWORD"),
                 OTHER_NAMESPACE
@@ -212,7 +212,7 @@ class NetworkFlowTest extends BaseSpecification {
                 new K8sServiceAccount(
                         name: "default",
                         namespace: OTHER_NAMESPACE,
-                        imagePullSecrets: ["stackrox"]
+                        imagePullSecrets: ["quay"]
                 )
         )
 
