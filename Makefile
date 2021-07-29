@@ -8,8 +8,6 @@ ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
-ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
-
 # Compute the tag of the build image based on the contents of the tracked files in
 # build. This ensures that we build it if and only if necessary, pulling from DockerHub
 # otherwise.
@@ -20,12 +18,14 @@ BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
 BUILD_IMAGE := stackrox/main:rocksdb-builder-$(BUILD_DIR_HASH)
 RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
 MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
+DOCS_IMAGE := stackrox/docs:embed-$(shell cat DOCS_VERSION)
 
 ifdef CI
     QUAY_REPO := cgorman1
     BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-$(BUILD_DIR_HASH)
     RHEL_BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
     MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
+    DOCS_IMAGE := quay.io/$(QUAY_REPO)/docs:embed-$(shell cat DOCS_VERSION)
 endif
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
@@ -553,7 +553,7 @@ main-image-rhel: all-rhel-builds
 # declare its dependencies explicitly.
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image
-	docker build -t stackrox/main:$(TAG) --build-arg BUILD_IMAGE=$(BUILD_IMAGE) --build-arg DATA_IMAGE_TAG=$(TAG) --build-arg DEBUG_BUILD=$(DEBUG_BUILD) $(ALPINE_MIRROR_BUILD_ARG) image/
+	docker build -t stackrox/main:$(TAG) --build-arg BUILD_IMAGE=$(BUILD_IMAGE) --build-arg DATA_IMAGE_TAG=$(TAG) --build-arg DEBUG_BUILD=$(DEBUG_BUILD) image/
 	@echo "Built main image with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 ifdef CI
@@ -576,8 +576,7 @@ endif
 .PHONY: docker-build-data-image
 docker-build-data-image:
 	docker build -t stackrox-data:$(TAG) \
-		--build-arg DOCS_VERSION=$(shell cat DOCS_VERSION) \
-		$(ALPINE_MIRROR_BUILD_ARG) \
+	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
 

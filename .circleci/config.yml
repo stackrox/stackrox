@@ -2636,14 +2636,6 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
-      - run:
-          name: Fail on release
-          command: |
-            if [[ "$CIRCLE_TAG" =~ ^[[:digit:]]+(\.[[:digit:]]+)*(-rc.[[:digit:]]+)?$ ]]; then
-              echo "Docs must be added back to the Dockerfile"
-              exit 1
-            fi
-
       - *refreshAlpineBaseImage
 
       - install-ossls
