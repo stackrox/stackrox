@@ -16,17 +16,17 @@ const (
 	// APIVerbKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the kubernetes API verb.
 	APIVerbKey = "Kubernetes API Verb"
 	// UsernameKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the name of the user taking the action.
-	UsernameKey = "username"
+	UsernameKey = "Username"
 	// UserGroupsKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the groups of the user taking the action.
-	UserGroupsKey = "user groups"
+	UserGroupsKey = "User Groups"
 	// ImpersonatedUsernameKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the name of the impersonated user taking the action.
-	ImpersonatedUsernameKey = "impersonated username"
+	ImpersonatedUsernameKey = "Impersonated Username"
 	// ImpersonatedUserGroupsKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the groups of the impersonated user taking the action.
-	ImpersonatedUserGroupsKey = "impersonated user groups"
+	ImpersonatedUserGroupsKey = "Impersonated User Groups"
 	// ResourceURIKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the resource URI.
-	ResourceURIKey = "resource"
+	ResourceURIKey = "Resource"
 	// UserAgentKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the user agent.
-	UserAgentKey = "user agent"
+	UserAgentKey = "User Agent"
 	// IPAddressKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the IP Address.
 	IPAddressKey = "IP address"
 	// PortsKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the (port-forward) ports.

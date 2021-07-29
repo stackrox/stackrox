@@ -121,8 +121,19 @@ func (t *teams) getEntitySection(alert *storage.Alert) section {
 		return t.getDeploymentSection(entity.Deployment)
 	case *storage.Alert_Image:
 		return t.getImageSection(entity.Image)
+	case *storage.Alert_Resource_:
+		return t.getResourceSection(entity.Resource)
 	}
 	return section{}
+}
+
+func (t *teams) getResourceSection(resource *storage.Alert_Resource) section {
+	return section{Title: "Resource Details",
+		Facts: []fact{{Name: "Resource Name", Value: resource.GetName()},
+			{Name: "Type", Value: resource.GetResourceType().String()},
+			{Name: "Namespace", Value: resource.GetNamespace()},
+			{Name: "Cluster Id", Value: resource.GetClusterId()},
+			{Name: "Cluster Name", Value: resource.GetClusterName()}}}
 }
 
 func (t *teams) getImageSection(image *storage.ContainerImage) section {
@@ -178,6 +189,11 @@ func (t *teams) getViolationSection(alert *storage.Alert) (section, error) {
 		if len(v.GetMessage()) > 0 {
 			text := fmt.Sprintf("Message : %s", v.GetMessage())
 			facts = append(facts, fact{Name: "Description", Value: text})
+		}
+		if v.GetType() == storage.Alert_Violation_K8S_EVENT {
+			for _, attr := range v.GetKeyValueAttrs().GetAttrs() {
+				facts = append(facts, fact{Name: attr.GetKey(), Value: attr.GetValue()})
+			}
 		}
 	}
 	return section{Title: "Violation Details", Facts: facts}, nil
