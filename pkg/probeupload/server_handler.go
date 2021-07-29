@@ -88,7 +88,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if data != nil {
 				_ = data.Close()
 			}
-			log.Errorf("error loading probe %s from %s: %v", probePath, source, err)
+			log.Errorf("error loading probe %s: %v", probePath, err)
 		} else if data != nil {
 			break
 		}
