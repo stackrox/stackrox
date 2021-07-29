@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
+	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/role/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -219,7 +219,7 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 	if permissionSet.GetId() != "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "setting id field is not allowed")
 	}
-	permissionSet.Id = utils.GeneratePermissionSetID()
+	permissionSet.Id = role.GeneratePermissionSetID()
 
 	// Store the augmented permission set; report back on error. Note the
 	// permission set is referenced by its name because that's what the caller
@@ -303,7 +303,7 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 	if scope.GetId() != "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "setting id field is not allowed")
 	}
-	scope.Id = utils.GenerateAccessScopeID()
+	scope.Id = role.GenerateAccessScopeID()
 
 	// Store the augmented access scope; report back on error. Note the access
 	// scope is referenced by its name because that's what the caller knows.
@@ -351,7 +351,7 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 
 	// If we're here, service-level authz has already verified that the caller
 	// has at least READ permission on the Role resource.
-	err := utils.ValidateSimpleAccessScopeRules(req.GetAccessScope().GetSimpleRules())
+	err := role.ValidateSimpleAccessScopeRules(req.GetAccessScope().GetSimpleRules())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to compute effective access scope")
 	}

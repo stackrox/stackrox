@@ -1,4 +1,4 @@
-package utils
+package role
 
 import (
 	"strings"
@@ -49,6 +49,48 @@ func EnsureValidAccessScopeID(id string) string {
 		return id
 	}
 	return accessScopeIDPrefix + id
+}
+
+// ValidateRole checks whether the supplied protobuf message is a valid role.
+func ValidateRole(role *storage.Role, permissionSetRequired bool) error {
+	var multiErr error
+
+	if role.GetName() == "" {
+		err := errors.New("role name field must be set")
+		multiErr = multierror.Append(multiErr, err)
+	}
+
+	if permissionSetRequired {
+		if len(role.GetResourceToAccess()) != 0 {
+			err := errors.Errorf("role name=%q: must not have resourceToAccess, use a permission set instead", role.GetName())
+			multiErr = multierror.Append(multiErr, err)
+		}
+		if role.GetPermissionSetId() == "" {
+			err := errors.New("role permission_set_id field must be set")
+			multiErr = multierror.Append(multiErr, err)
+		}
+		return multiErr
+	}
+
+	if role.GetPermissionSetId() != "" {
+		err := errors.Errorf(
+			"role name=%q: permission sets are not supported without the scoped access control feature", role.GetName())
+		multiErr = multierror.Append(multiErr, err)
+	}
+	if role.GetAccessScopeId() != "" {
+		err := errors.Errorf(
+			"role name=%q: access scopes are not supported without the scoped access control feature", role.GetName())
+		multiErr = multierror.Append(multiErr, err)
+	}
+
+	for resource := range role.GetResourceToAccess() {
+		if _, ok := resources.MetadataForResource(permissions.Resource(resource)); !ok {
+			multiErr = multierror.Append(multiErr, errors.Errorf(
+				"role name=%q: resource %q does not exist", role.GetName(), resource))
+		}
+	}
+
+	return multiErr
 }
 
 // ValidatePermissionSet checks whether the supplied protobuf message is a

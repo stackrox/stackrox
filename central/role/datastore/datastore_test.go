@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
-	"github.com/stackrox/rox/central/role/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -183,14 +182,14 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 
 func getValidPermissionSet(id string, name string) *storage.PermissionSet {
 	return &storage.PermissionSet{
-		Id:   utils.EnsureValidPermissionSetID(id),
+		Id:   role.EnsureValidPermissionSetID(id),
 		Name: name,
 	}
 }
 
 func getInvalidPermissionSet(id string, name string) *storage.PermissionSet {
 	return &storage.PermissionSet{
-		Id:   utils.EnsureValidPermissionSetID(id),
+		Id:   role.EnsureValidPermissionSetID(id),
 		Name: name,
 		ResourceToAccess: map[string]storage.Access{
 			"Some non-existent resource": storage.Access_NO_ACCESS,
@@ -267,7 +266,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	badPermissionSet := getInvalidPermissionSet("permissionset.new", "new invalid permissionset")
 	mimicPermissionSet := getValidPermissionSet("permissionset.new", "existing permissionset")
 	clonePermissionSet := getValidPermissionSet("permissionset.existing", "new existing permissionset")
-	updatedAdminPermissionSet := getValidPermissionSet(utils.EnsureValidAccessScopeID("admin"), role.Admin)
+	updatedAdminPermissionSet := getValidPermissionSet(role.EnsureValidAccessScopeID("admin"), role.Admin)
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, badPermissionSet)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid permission set for Add*() yields an error")
@@ -318,14 +317,14 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 func getValidAccessScope(id string, name string) *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
-		Id:   utils.EnsureValidAccessScopeID(id),
+		Id:   role.EnsureValidAccessScopeID(id),
 		Name: name,
 	}
 }
 
 func getInvalidAccessScope(id string, name string) *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
-		Id:   utils.EnsureValidAccessScopeID(id),
+		Id:   role.EnsureValidAccessScopeID(id),
 		Name: name,
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
@@ -406,7 +405,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	badScope := getInvalidAccessScope("scope.new", "new invalid scope")
 	mimicScope := getValidAccessScope("scope.new", "existing scope")
 	cloneScope := getValidAccessScope("scope.existing", "new existing scope")
-	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall", defaultAccessScopes[0].GetName())
+	updatedDefaultScope := getValidAccessScope("io.stackrox.authz.accessscope.denyall", role.AccessScopeExcludeAll.GetName())
 
 	err := s.dataStore.AddAccessScope(s.hasWriteCtx, badScope)
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid scope for Add*() yields an error")

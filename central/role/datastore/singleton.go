@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
-	roleUtils "github.com/stackrox/rox/central/role/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
@@ -85,17 +84,6 @@ var defaultRoles = map[string]roleAttributes{
 	},
 }
 
-// AccessScopeExcludeAll has empty rules and hence excludes all
-// scoped resources. Global resources must be unaffected.
-var AccessScopeExcludeAll = &storage.SimpleAccessScope{
-	Id:          roleUtils.EnsureValidAccessScopeID("denyall"),
-	Name:        "Deny All",
-	Description: "No access to scoped resources",
-	Rules:       &storage.SimpleAccessScope_Rules{},
-}
-
-var defaultAccessScopes = []*storage.SimpleAccessScope{AccessScopeExcludeAll}
-
 func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.SimpleAccessScope) {
 	roles := make([]*storage.Role, 0, len(defaultRoles))
 	permissionSets := make([]*storage.PermissionSet, 0, len(defaultRoles))
@@ -110,7 +98,7 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 
 		if features.ScopedAccessControl.Enabled() {
 			permissionSet := &storage.PermissionSet{
-				Id:               roleUtils.EnsureValidPermissionSetID(attributes.idSuffix),
+				Id:               rolePkg.EnsureValidPermissionSetID(attributes.idSuffix),
 				Name:             role.Name,
 				Description:      role.Description,
 				ResourceToAccess: resourceToAccess,
@@ -124,7 +112,7 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 		roles = append(roles, role)
 
 	}
-	return roles, permissionSets, defaultAccessScopes
+	return roles, permissionSets, []*storage.SimpleAccessScope{rolePkg.AccessScopeExcludeAll}
 }
 
 func upsertDefaultRoles(store roleStore.Store, roles []*storage.Role) error {

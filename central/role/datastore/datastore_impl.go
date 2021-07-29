@@ -3,13 +3,11 @@ package datastore
 import (
 	"context"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	rolePkg "github.com/stackrox/rox/central/role"
 	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
-	"github.com/stackrox/rox/central/role/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -53,7 +51,7 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := ds.validateRole(role); err != nil {
+	if err := rolePkg.ValidateRole(role, ds.useRolesWithPermissionSets); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := verifyNotDefaultRole(role.GetName()); err != nil {
@@ -75,7 +73,7 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := ds.validateRole(role); err != nil {
+	if err := rolePkg.ValidateRole(role, ds.useRolesWithPermissionSets); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := verifyNotDefaultRole(role.GetName()); err != nil {
@@ -137,7 +135,7 @@ func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *st
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := utils.ValidatePermissionSet(permissionSet); err != nil {
+	if err := rolePkg.ValidatePermissionSet(permissionSet); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := verifyNotDefaultPermissionSet(permissionSet.GetName()); err != nil {
@@ -165,7 +163,7 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := utils.ValidatePermissionSet(permissionSet); err != nil {
+	if err := rolePkg.ValidatePermissionSet(permissionSet); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := verifyNotDefaultPermissionSet(permissionSet.GetName()); err != nil {
@@ -260,7 +258,7 @@ func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.Simp
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := utils.ValidateSimpleAccessScope(scope); err != nil {
+	if err := rolePkg.ValidateSimpleAccessScope(scope); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := verifyNotDefaultAccessScope(scope.GetName()); err != nil {
@@ -288,7 +286,7 @@ func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, scope *storage.S
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := utils.ValidateSimpleAccessScope(scope); err != nil {
+	if err := rolePkg.ValidateSimpleAccessScope(scope); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := verifyNotDefaultAccessScope(scope.GetName()); err != nil {
@@ -414,7 +412,7 @@ func (ds *dataStoreImpl) verifyRoleReferencesExist(role *storage.Role) error {
 
 // Returns errorhelpers.ErrInvalidArgs if the given role is a default one.
 func verifyNotDefaultRole(name string) error {
-	if isDefaultRoleName(name) {
+	if rolePkg.IsDefaultRoleName(name) {
 		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "default role %q cannot be modified or deleted", name)
 	}
 	return nil
@@ -447,9 +445,9 @@ func (ds *dataStoreImpl) verifyPermissionSetIDDoesNotExist(id string) error {
 }
 
 // Returns errorhelpers.ErrInvalidArgs if the given permission set is a default
-// one. Note that isDefaultRoleName() is reused due to the name sameness.
+// one. Note that IsDefaultRoleName() is reused due to the name sameness.
 func verifyNotDefaultPermissionSet(name string) error {
-	if isDefaultRoleName(name) {
+	if rolePkg.IsDefaultRoleName(name) {
 		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "default permission set %q cannot be modified or deleted", name)
 	}
 	return nil
@@ -483,74 +481,15 @@ func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(id string) error {
 
 // Returns errorhelpers.ErrInvalidArgs if the given scope is a default one.
 func verifyNotDefaultAccessScope(name string) error {
-	if isDefaultAccessScope(name) {
+	if rolePkg.IsDefaultAccessScope(name) {
 		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "default access scope %q cannot be modified or deleted", name)
 	}
 	return nil
 }
 
-// ValidateRole checks whether the supplied protobuf message is a valid role.
-//
-// Note: Move to other validators in the "role/utils" package once
-// `useRolesWithPermissionSets` is removed.
-func (ds *dataStoreImpl) validateRole(role *storage.Role) error {
-	var multiErr error
-
-	if role.GetName() == "" {
-		err := errors.New("role name field must be set")
-		multiErr = multierror.Append(multiErr, err)
-	}
-
-	if ds.useRolesWithPermissionSets {
-		if len(role.GetResourceToAccess()) != 0 {
-			err := errors.Errorf("role name=%q: must not have resourceToAccess, use a permission set instead", role.GetName())
-			multiErr = multierror.Append(multiErr, err)
-		}
-		if role.GetPermissionSetId() == "" {
-			err := errors.New("role permission_set_id field must be set")
-			multiErr = multierror.Append(multiErr, err)
-		}
-		return multiErr
-	}
-
-	if role.GetPermissionSetId() != "" {
-		err := errors.Errorf(
-			"role name=%q: permission sets are not supported without the scoped access control feature", role.GetName())
-		multiErr = multierror.Append(multiErr, err)
-	}
-	if role.GetAccessScopeId() != "" {
-		err := errors.Errorf(
-			"role name=%q: access scopes are not supported without the scoped access control feature", role.GetName())
-		multiErr = multierror.Append(multiErr, err)
-	}
-
-	for resource := range role.GetResourceToAccess() {
-		if _, ok := resources.MetadataForResource(permissions.Resource(resource)); !ok {
-			multiErr = multierror.Append(multiErr, errors.Errorf(
-				"role name=%q: resource %q does not exist", role.GetName(), resource))
-		}
-	}
-
-	return multiErr
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers                                                                    //
 //                                                                            //
-
-// Checks if a given role name corresponds to a pre-loaded role.
-func isDefaultRoleName(name string) bool {
-	return rolePkg.DefaultRoleNames.Contains(name)
-}
-
-func isDefaultAccessScope(name string) bool {
-	for _, elem := range defaultAccessScopes {
-		if elem.GetName() == name {
-			return true
-		}
-	}
-	return false
-}
 
 // Finds the permission set associated with the given role. Every stored role
 // must reference an existing permission set.

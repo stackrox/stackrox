@@ -76,13 +76,13 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootS
 	return nil
 }
 
-func (p *permissionChecker) checkPermissions(perms map[string]storage.Access) error {
-	if perms == nil {
+func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access) error {
+	if rolePerms == nil {
 		return authz.ErrNoCredentials
 	}
-	for _, perm := range p.requiredPermissions {
-		if !evaluateAgainstPermissions(perms, perm) {
-			return authz.ErrNotAuthorized(fmt.Sprintf("not authorized to %s %s", perm.Access, perm.Resource))
+	for _, requiredPerm := range p.requiredPermissions {
+		if !evaluateAgainstPermissions(rolePerms, requiredPerm) {
+			return authz.ErrNotAuthorized(fmt.Sprintf("not authorized to %s %s", requiredPerm.Access, requiredPerm.Resource))
 		}
 	}
 	return nil
