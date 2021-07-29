@@ -19,7 +19,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 import services.AlertService
 import services.CreatePolicyService
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -819,7 +818,6 @@ class PolicyFieldsTest extends BaseSpecification {
     @SuppressWarnings('LineLength')
     @Unroll
     @Category([BAT])
-    @Ignore("ROX-7726")
     def "Expect violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify expected violations are triggered"

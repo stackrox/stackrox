@@ -22,7 +22,6 @@ import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -350,7 +349,6 @@ class ImageScanningTest extends BaseSpecification {
     @SuppressWarnings('LineLength')
     @Unroll
     @Category([BAT, Integration])
-    @Ignore("ROX-7726")
     def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #idx"() {
         Assume.assumeTrue(scanner.isTestable())
         cleanupSetupForRetry()

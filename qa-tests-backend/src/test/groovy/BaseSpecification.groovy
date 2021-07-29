@@ -3,6 +3,7 @@ import common.Constants
 import groovy.util.logging.Slf4j
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 import objects.K8sServiceAccount
 import objects.Secret
@@ -14,6 +15,7 @@ import org.junit.rules.TestName
 import org.junit.rules.Timeout
 import services.BaseService
 import services.ClusterService
+import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
 import services.SACService
@@ -157,6 +159,9 @@ class BaseSpecification extends Specification {
     long orchestratorCreateTime = System.currentTimeSeconds()
 
     @Shared
+    String coreImageIntegrationId = null
+
+    @Shared
     private long testStartTimeMillis
 
     @Shared
@@ -193,6 +198,21 @@ class BaseSpecification extends Specification {
         } catch (StatusRuntimeException e) {
             println("Unable to enable the authz plugin, defaulting to basic auth: ${e.message}")
         }
+
+        println "Adding integration"
+        coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
+                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                        .setName("core quay")
+                        .setType("docker")
+                        .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                        .setDocker(
+                                ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                                        .setEndpoint("https://quay.io")
+                                        .setUsername(Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"))
+                                        .setPassword(Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"))
+                                        .build()
+                        ).build()
+        )
     }
 
     def resetAuth() {
@@ -225,6 +245,9 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
+
+        println "Removing integration"
+        ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
 
         try {
             orchestrator.cleanup()
