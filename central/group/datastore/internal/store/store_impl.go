@@ -54,17 +54,13 @@ func (s *storeImpl) GetAll() (grps []*storage.Group, err error) {
 	return s.GetFiltered(nil)
 }
 
-// Walk is an optimization. Since we normally want to find groups that apply to a user,
-// we need to search through the DB and find all of them. Here we do the search with a single
-// transaction.
-//
-// When given an auth provider, and map, we will look for all key and key/value pairs that exist
-// in the store both for the given auth provider, and for no auth provider (applies to all auth providers.)
+// Walk is an optimization that allows to search through the datastore and find
+// groups that apply to a user within a single transaction.
 func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) (grps []*storage.Group, err error) {
-	// Build list to search
+	// Which groups to search for based on the auth provider and attributes.
 	toSearch := getPossibleGroupProperties(authProviderID, attributes)
 
-	// Search for items in list.
+	// Search for groups in the list.
 	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
 		for _, check := range toSearch {
@@ -154,7 +150,7 @@ func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 func addInTransaction(tx *bolt.Tx, key, value []byte) error {
 	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) != nil {
-		return fmt.Errorf("group config for %s already exists", key)
+		return fmt.Errorf("group config for %q already exists", key)
 	}
 	return buc.Put(key, value)
 }
@@ -162,7 +158,7 @@ func addInTransaction(tx *bolt.Tx, key, value []byte) error {
 func updateInTransaction(tx *bolt.Tx, key, value []byte) error {
 	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) == nil {
-		return fmt.Errorf("group config for %s does not exist", key)
+		return fmt.Errorf("group config for %q does not exist", key)
 	}
 	return buc.Put(key, value)
 }
@@ -170,11 +166,13 @@ func updateInTransaction(tx *bolt.Tx, key, value []byte) error {
 func removeInTransaction(tx *bolt.Tx, key []byte) error {
 	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) == nil {
-		return fmt.Errorf("group config for %s does not exist", key)
+		return fmt.Errorf("group config for %q does not exist", key)
 	}
 	return buc.Delete(key)
 }
 
+// When given an auth provider and attributes, we will look for all keys and
+// key/value pairs that exist in the datastore for the given auth provider.
 func getPossibleGroupProperties(authProviderID string, attributes map[string][]string) (props []*storage.GroupProperties) {
 	// Need to consider no key.
 	props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID})
