@@ -2351,6 +2351,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
     steps:
       - checkout
 
@@ -3297,6 +3298,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - checkout
@@ -3596,6 +3598,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - checkout
@@ -3669,6 +3672,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - run-qa-tests:
@@ -3699,6 +3703,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - checkout
@@ -3734,6 +3739,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - run-qa-tests:
@@ -3770,6 +3776,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - run-qa-tests:
@@ -3789,6 +3796,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - MONITORING_SUPPORT: false
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - checkout
@@ -4338,6 +4346,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - check-label-exists-or-skip:
@@ -4367,6 +4376,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - check-label-exists-or-skip:
@@ -4397,6 +4407,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - checkout
@@ -4493,6 +4504,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
+      - ROX_NS_ANNOTATION_FOR_NOTIFIERS: true
 
     steps:
       - checkout

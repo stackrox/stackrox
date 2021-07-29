@@ -16,6 +16,7 @@ export const knownBackendFlags = {
     ROX_K8S_AUDIT_LOG_DETECTION: 'ROX_K8S_AUDIT_LOG_DETECTION',
     ROX_SCOPED_ACCESS_CONTROL: 'ROX_SCOPED_ACCESS_CONTROL_V2',
     ROX_INACTIVE_IMAGE_SCANNING_UI: 'ROX_INACTIVE_IMAGE_SCANNING_UI',
+    ROX_NS_ANNOTATION_FOR_NOTIFIERS: 'ROX_NS_ANNOTATION_FOR_NOTIFIERS',
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

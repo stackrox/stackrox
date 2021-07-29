@@ -41,4 +41,7 @@ var (
 
 	// ActiveVulnManagement enables detection of active vulnerabilities
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", false)
+
+	// NamespaceAnnotationsForNotifiers enables using namespace annotations for notifiers.
+	NamespaceAnnotationsForNotifiers = registerFeature("Enable using namespace annotations for notifiers", "ROX_NS_ANNOTATION_FOR_NOTIFIERS", false)
 )
