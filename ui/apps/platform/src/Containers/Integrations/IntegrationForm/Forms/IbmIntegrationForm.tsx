@@ -4,6 +4,7 @@ import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
@@ -28,11 +29,6 @@ export type IbmIntegration = {
 export type IbmIntegrationFormValues = {
     config: IbmIntegration;
     updatePassword: boolean;
-};
-
-export type IbmIntegrationFormProps = {
-    initialValues: IbmIntegration | null;
-    isEdittable?: boolean;
 };
 
 export const validationSchema = yup.object().shape({
@@ -71,8 +67,8 @@ export const defaultValues: IbmIntegrationFormValues = {
 
 function IbmIntegrationForm({
     initialValues = null,
-    isEdittable = false,
-}: IbmIntegrationFormProps): ReactElement {
+    isEditable = false,
+}: IntegrationFormProps<IbmIntegration>): ReactElement {
     const formInitialValues = defaultValues;
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
@@ -112,7 +108,7 @@ function IbmIntegrationForm({
                             name="config.name"
                             value={values.config.name}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -127,7 +123,7 @@ function IbmIntegrationForm({
                             name="config.ibm.endpoint"
                             value={values.config.ibm.endpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
@@ -144,7 +140,7 @@ function IbmIntegrationForm({
                                 aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -156,13 +152,13 @@ function IbmIntegrationForm({
                                 name="config.ibm.apiKey"
                                 value={values.config.ibm.apiKey}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
                 </Form>
             </PageSection>
-            {isEdittable && (
+            {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
                         onSave={onSave}

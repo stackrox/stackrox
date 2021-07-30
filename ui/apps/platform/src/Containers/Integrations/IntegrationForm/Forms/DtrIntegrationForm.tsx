@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import FormMultiSelect from 'Components/FormMultiSelect';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
@@ -32,11 +33,6 @@ export type DtrIntegration = {
 export type DtrIntegrationFormValues = {
     config: DtrIntegration;
     updatePassword: boolean;
-};
-
-export type DtrIntegrationFormProps = {
-    initialValues: DtrIntegration | null;
-    isEdittable?: boolean;
 };
 
 export const validationSchema = yup.object().shape({
@@ -81,8 +77,8 @@ export const defaultValues: DtrIntegrationFormValues = {
 
 function DtrIntegrationForm({
     initialValues = null,
-    isEdittable = false,
-}: DtrIntegrationFormProps): ReactElement {
+    isEditable = false,
+}: IntegrationFormProps<DtrIntegration>): ReactElement {
     const formInitialValues = defaultValues;
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
@@ -128,7 +124,7 @@ function DtrIntegrationForm({
                             placeholder="(ex. Prod Docker Trusted Registry)"
                             value={values.config.name}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -141,7 +137,7 @@ function DtrIntegrationForm({
                             id="config.categories"
                             values={values.config.categories}
                             onChange={onCustomChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         >
                             <SelectOption key={0} value="REGISTRY">
                                 Registry
@@ -165,7 +161,7 @@ function DtrIntegrationForm({
                             placeholder="(ex. dtr.example.com)"
                             value={values.config.dtr.endpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup label="Username" fieldId="config.dtr.username" errors={errors}>
@@ -176,7 +172,7 @@ function DtrIntegrationForm({
                             name="config.dtr.username"
                             value={values.config.dtr.username}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
@@ -192,7 +188,7 @@ function DtrIntegrationForm({
                                 aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -209,7 +205,7 @@ function DtrIntegrationForm({
                                 name="config.dtr.password"
                                 value={values.config.dtr.password}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -224,7 +220,7 @@ function DtrIntegrationForm({
                             aria-label="disable tls certificate validation"
                             isChecked={values.config.dtr.insecure}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -238,12 +234,12 @@ function DtrIntegrationForm({
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
             </PageSection>
-            {isEdittable && (
+            {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
                         onSave={onSave}

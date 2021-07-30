@@ -12,7 +12,7 @@ function CreateIntegrationPage(): ReactElement {
 
     return (
         <IntegrationPage title="Create Integration">
-            <IntegrationForm source={source} type={type} isEdittable />
+            <IntegrationForm source={source} type={type} isEditable />
         </IntegrationPage>
     );
 }

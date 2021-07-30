@@ -4,6 +4,7 @@ import * as yup from 'yup';
 
 import FormMultiSelect from 'Components/FormMultiSelect';
 import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
@@ -23,11 +24,6 @@ export type ClairIntegration = {
     type: 'clair';
     enabled: boolean;
     clusterIds: string[];
-};
-
-export type ClairIntegrationFormProps = {
-    initialValues: ClairIntegration | null;
-    isEdittable?: boolean;
 };
 
 export const validationSchema = yup.object().shape({
@@ -58,10 +54,10 @@ export const defaultValues: ClairIntegration = {
     clusterIds: [],
 };
 
-function ClairifyIntegrationForm({
+function ClairIntegrationForm({
     initialValues = null,
-    isEdittable = false,
-}: ClairIntegrationFormProps): ReactElement {
+    isEditable = false,
+}: IntegrationFormProps<ClairIntegration>): ReactElement {
     const formInitialValues = initialValues
         ? ({ ...defaultValues, ...initialValues } as ClairIntegration)
         : defaultValues;
@@ -101,7 +97,7 @@ function ClairifyIntegrationForm({
                             name="name"
                             value={values.name}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup label="Type" isRequired fieldId="categories" errors={errors}>
@@ -109,7 +105,7 @@ function ClairifyIntegrationForm({
                             id="categories"
                             values={values.categories}
                             onChange={onCustomChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         >
                             <SelectOption key={0} value="SCANNER">
                                 Image Scanner
@@ -132,7 +128,7 @@ function ClairifyIntegrationForm({
                             name="clair.endpoint"
                             value={values.clair.endpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup label="Insecure" fieldId="clair.insecure" errors={errors}>
@@ -142,12 +138,12 @@ function ClairifyIntegrationForm({
                             aria-label="insecure"
                             isChecked={values.clair.insecure}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
             </PageSection>
-            {isEdittable && (
+            {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
                         onSave={onSave}
@@ -171,4 +167,4 @@ function ClairifyIntegrationForm({
     );
 }
 
-export default ClairifyIntegrationForm;
+export default ClairIntegrationForm;

@@ -4,6 +4,7 @@ import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
@@ -33,11 +34,6 @@ export type EcrIntegration = {
 export type EcrIntegrationFormValues = {
     config: EcrIntegration;
     updatePassword: boolean;
-};
-
-export type EcrIntegrationFormProps = {
-    initialValues: EcrIntegration | null;
-    isEdittable?: boolean;
 };
 
 export const validationSchema = yup.object().shape({
@@ -89,8 +85,8 @@ export const defaultValues: EcrIntegrationFormValues = {
 
 function EcrIntegrationForm({
     initialValues = null,
-    isEdittable = false,
-}: EcrIntegrationFormProps): ReactElement {
+    isEditable = false,
+}: IntegrationFormProps<EcrIntegration>): ReactElement {
     const formInitialValues = defaultValues;
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
@@ -131,7 +127,7 @@ function EcrIntegrationForm({
                             name="config.name"
                             value={values.config.name}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -146,7 +142,7 @@ function EcrIntegrationForm({
                             name="config.ecr.registryId"
                             value={values.config.ecr.registryId}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -161,7 +157,7 @@ function EcrIntegrationForm({
                             name="config.ecr.endpoint"
                             value={values.config.ecr.endpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -177,7 +173,7 @@ function EcrIntegrationForm({
                             name="config.ecr.region"
                             value={values.config.ecr.region}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -191,7 +187,7 @@ function EcrIntegrationForm({
                             aria-label="use container iam role"
                             isChecked={values.config.ecr.useIam}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
@@ -207,7 +203,7 @@ function EcrIntegrationForm({
                                 aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -225,7 +221,7 @@ function EcrIntegrationForm({
                                     name="config.ecr.accessKeyId"
                                     value={values.config.ecr.accessKeyId}
                                     onChange={onChange}
-                                    isDisabled={!isEdittable}
+                                    isDisabled={!isEditable}
                                 />
                             </FormLabelGroup>
                             <FormLabelGroup
@@ -240,7 +236,7 @@ function EcrIntegrationForm({
                                     name="config.ecr.secretAccessKey"
                                     value={values.config.ecr.secretAccessKey}
                                     onChange={onChange}
-                                    isDisabled={!isEdittable}
+                                    isDisabled={!isEditable}
                                 />
                             </FormLabelGroup>
                         </>
@@ -256,12 +252,12 @@ function EcrIntegrationForm({
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
             </PageSection>
-            {isEdittable && (
+            {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
                         onSave={onSave}

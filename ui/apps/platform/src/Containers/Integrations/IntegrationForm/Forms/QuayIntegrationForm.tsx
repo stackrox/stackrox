@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import FormMultiSelect from 'Components/FormMultiSelect';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
@@ -31,11 +32,6 @@ export type QuayIntegration = {
 export type QuayIntegrationFormValues = {
     config: QuayIntegration;
     updatePassword: boolean;
-};
-
-export type QuayIntegrationFormProps = {
-    initialValues: QuayIntegration | null;
-    isEdittable?: boolean;
 };
 
 export const validationSchema = yup.object().shape({
@@ -78,8 +74,8 @@ export const defaultValues: QuayIntegrationFormValues = {
 
 function QuayIntegrationForm({
     initialValues = null,
-    isEdittable = false,
-}: QuayIntegrationFormProps): ReactElement {
+    isEditable = false,
+}: IntegrationFormProps<QuayIntegration>): ReactElement {
     const formInitialValues = defaultValues;
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
@@ -125,7 +121,7 @@ function QuayIntegrationForm({
                             placeholder="(ex. Quay)"
                             value={values.config.name}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -138,7 +134,7 @@ function QuayIntegrationForm({
                             id="config.categories"
                             values={values.config.categories}
                             onChange={onCustomChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         >
                             <SelectOption key={0} value="REGISTRY">
                                 Registry
@@ -162,7 +158,7 @@ function QuayIntegrationForm({
                             placeholder="(ex. quay.io)"
                             value={values.config.quay.endpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
@@ -178,7 +174,7 @@ function QuayIntegrationForm({
                                 aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -196,7 +192,7 @@ function QuayIntegrationForm({
                                 name="config.quay.oauthToken"
                                 value={values.config.quay.oauthToken}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -211,7 +207,7 @@ function QuayIntegrationForm({
                             aria-label="disable tls certificate validation"
                             isChecked={values.config.quay.insecure}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -225,12 +221,12 @@ function QuayIntegrationForm({
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
             </PageSection>
-            {isEdittable && (
+            {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
                         onSave={onSave}

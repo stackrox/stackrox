@@ -4,6 +4,7 @@ import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
@@ -30,11 +31,6 @@ export type AzureIntegration = {
 export type AzureIntegrationFormValues = {
     config: AzureIntegration;
     updatePassword: boolean;
-};
-
-export type AzureIntegrationFormProps = {
-    initialValues: AzureIntegration | null;
-    isEdittable?: boolean;
 };
 
 export const validationSchema = yup.object().shape({
@@ -77,8 +73,8 @@ export const defaultValues: AzureIntegrationFormValues = {
 
 function ClairifyIntegrationForm({
     initialValues = null,
-    isEdittable = false,
-}: AzureIntegrationFormProps): ReactElement {
+    isEditable = false,
+}: IntegrationFormProps<AzureIntegration>): ReactElement {
     const formInitialValues = defaultValues;
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
@@ -120,7 +116,7 @@ function ClairifyIntegrationForm({
                             placeholder="(ex. Azure Registry)"
                             value={values.config.name}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -137,7 +133,7 @@ function ClairifyIntegrationForm({
                             placeholder="(ex. <registry>.azurecr.io)"
                             value={values.config.docker.endpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -152,7 +148,7 @@ function ClairifyIntegrationForm({
                             name="config.docker.username"
                             value={values.config.docker.username}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
@@ -168,7 +164,7 @@ function ClairifyIntegrationForm({
                                 aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -185,7 +181,7 @@ function ClairifyIntegrationForm({
                                 name="config.docker.password"
                                 value={values.config.docker.password}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -200,12 +196,12 @@ function ClairifyIntegrationForm({
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
             </PageSection>
-            {isEdittable && (
+            {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
                         onSave={onSave}

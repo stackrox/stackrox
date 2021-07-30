@@ -4,6 +4,7 @@ import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
@@ -31,11 +32,6 @@ export type AnchoreIntegration = {
 export type AnchoreIntegrationFormValues = {
     config: AnchoreIntegration;
     updatePassword: boolean;
-};
-
-export type AnchoreIntegrationFormProps = {
-    initialValues: AnchoreIntegration | null;
-    isEdittable?: boolean;
 };
 
 export const validationSchema = yup.object().shape({
@@ -80,8 +76,8 @@ export const defaultValues: AnchoreIntegrationFormValues = {
 
 function AnchoreIntegrationForm({
     initialValues = null,
-    isEdittable = false,
-}: AnchoreIntegrationFormProps): ReactElement {
+    isEditable = false,
+}: IntegrationFormProps<AnchoreIntegration>): ReactElement {
     const formInitialValues = defaultValues;
     if (initialValues) {
         formInitialValues.config = {
@@ -125,7 +121,7 @@ function AnchoreIntegrationForm({
                             name="config.name"
                             value={values.config.name}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -141,7 +137,7 @@ function AnchoreIntegrationForm({
                             name="config.anchore.endpoint"
                             value={values.config.anchore.endpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -156,7 +152,7 @@ function AnchoreIntegrationForm({
                             name="config.anchore.username"
                             value={values.config.anchore.username}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
@@ -172,7 +168,7 @@ function AnchoreIntegrationForm({
                                 aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -189,7 +185,7 @@ function AnchoreIntegrationForm({
                                 name="config.anchore.password"
                                 value={values.config.anchore.password}
                                 onChange={onChange}
-                                isDisabled={!isEdittable}
+                                isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
@@ -204,7 +200,7 @@ function AnchoreIntegrationForm({
                             aria-label="disable tls certificate validation"
                             isChecked={Boolean(values.config.anchore.insecure)}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -218,12 +214,12 @@ function AnchoreIntegrationForm({
                             aria-label="skip test integration"
                             isChecked={Boolean(values.config.skipTestIntegration)}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
             </PageSection>
-            {isEdittable && (
+            {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
                         onSave={onSave}

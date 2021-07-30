@@ -1,6 +1,7 @@
 import React, { FunctionComponent, ReactElement } from 'react';
 
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+// image integrations
 import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
 import ClairIntegrationForm from './Forms/ClairIntegrationForm';
 import DockerIntegrationForm from './Forms/DockerIntegrationForm';
@@ -16,17 +17,20 @@ import NexusIntegrationForm from './Forms/NexusIntegrationForm';
 import TenableIntegrationForm from './Forms/TenableIntegrationForm';
 import IbmIntegrationForm from './Forms/IbmIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
+// external backups
+import S3IntegrationForm from './Forms/S3IntegrationForm';
+import GcsIntegrationForm from './Forms/GcsIntegrationForm';
 
 type IntegrationFormProps = {
     source: IntegrationSource;
     type: IntegrationType;
     initialValues?: Integration | null;
-    isEdittable?: boolean;
+    isEditable?: boolean;
 };
 
 type FormProps = {
     initialValues?: Integration | null;
-    isEdittable?: boolean;
+    isEditable?: boolean;
 };
 
 const ComponentFormMap = {
@@ -47,13 +51,17 @@ const ComponentFormMap = {
         ibm: IbmIntegrationForm,
         rhel: RhelIntegrationForm,
     },
+    backups: {
+        s3: S3IntegrationForm,
+        gcs: GcsIntegrationForm,
+    },
 } as Record<IntegrationSource, Record<IntegrationType, FunctionComponent<FormProps>>>;
 
 function IntegrationForm({
     source,
     type,
     initialValues,
-    isEdittable,
+    isEditable,
 }: IntegrationFormProps): ReactElement {
     const Form: FunctionComponent<FormProps> = ComponentFormMap?.[source]?.[type];
     if (!Form) {
@@ -61,7 +69,7 @@ function IntegrationForm({
             `There are no integration form components for source (${source}) and type (${type})`
         );
     }
-    return <Form initialValues={initialValues} isEdittable={isEdittable} />;
+    return <Form initialValues={initialValues} isEditable={isEditable} />;
 }
 
 export default IntegrationForm;

@@ -20,7 +20,7 @@ function EditIntegrationPage(): ReactElement {
 
     return (
         <IntegrationPage title="Edit Integration">
-            <IntegrationForm source={source} type={type} initialValues={integration} isEdittable />
+            <IntegrationForm source={source} type={type} initialValues={integration} isEditable />
         </IntegrationPage>
     );
 }

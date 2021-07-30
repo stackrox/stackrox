@@ -4,6 +4,7 @@ import * as yup from 'yup';
 
 import FormMultiSelect from 'Components/FormMultiSelect';
 import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
@@ -24,11 +25,6 @@ export type ClairifyIntegration = {
     type: 'clairify';
     enabled: boolean;
     clusterIds: string[];
-};
-
-export type ClairifyIntegrationFormProps = {
-    initialValues: ClairifyIntegration | null;
-    isEdittable?: boolean;
 };
 
 export const validationSchema = yup.object().shape({
@@ -63,8 +59,8 @@ export const defaultValues: ClairifyIntegration = {
 
 function ClairifyIntegrationForm({
     initialValues = null,
-    isEdittable = false,
-}: ClairifyIntegrationFormProps): ReactElement {
+    isEditable = false,
+}: IntegrationFormProps<ClairifyIntegration>): ReactElement {
     const formInitialValues = initialValues
         ? { ...defaultValues, ...initialValues }
         : defaultValues;
@@ -104,7 +100,7 @@ function ClairifyIntegrationForm({
                             name="name"
                             value={values.name}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup label="Type" isRequired fieldId="categories" errors={errors}>
@@ -112,7 +108,7 @@ function ClairifyIntegrationForm({
                             id="categories"
                             values={values.categories}
                             onChange={onCustomChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         >
                             <SelectOption key={0} value="SCANNER">
                                 Image Scanner
@@ -135,7 +131,7 @@ function ClairifyIntegrationForm({
                             name="clairify.endpoint"
                             value={values.clairify.endpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -151,7 +147,7 @@ function ClairifyIntegrationForm({
                             name="clairify.grpcEndpoint"
                             value={values.clairify.grpcEndpoint}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
@@ -167,12 +163,12 @@ function ClairifyIntegrationForm({
                             name="clairify.numConcurrentScans"
                             value={values.clairify.numConcurrentScans}
                             onChange={onChange}
-                            isDisabled={!isEdittable}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
             </PageSection>
-            {isEdittable && (
+            {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
                         onSave={onSave}
