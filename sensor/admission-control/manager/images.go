@@ -19,6 +19,7 @@ const (
 	imageCacheTTL = 30 * time.Minute
 )
 
+// imageCacheEntry is the cache entry on an image
 type imageCacheEntry struct {
 	*storage.Image
 	timestamp time.Time

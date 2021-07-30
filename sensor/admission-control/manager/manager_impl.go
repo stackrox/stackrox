@@ -97,8 +97,9 @@ type manager struct {
 	ownNamespace string
 }
 
-func newManager(conn *grpc.ClientConn, namespace string) *manager {
-	cache, err := sizeboundedcache.New(200*size.MB, 2*size.MB, func(key interface{}, value interface{}) int64 {
+// NewManager creates a new manager
+func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
+	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key interface{}, value interface{}) int64 {
 		return int64(len(key.(string)) + value.(imageCacheEntry).Size())
 	})
 	utils.CrashOnError(err)
@@ -111,7 +112,7 @@ func newManager(conn *grpc.ClientConn, namespace string) *manager {
 		settingsC:      make(chan *sensor.AdmissionControlSettings),
 		stoppedSig:     concurrency.NewErrorSignal(),
 
-		client:     sensor.NewImageServiceClient(conn),
+		client:     imageServiceClient,
 		imageCache: cache,
 
 		alertsC: make(chan []*storage.Alert),
@@ -121,7 +122,7 @@ func newManager(conn *grpc.ClientConn, namespace string) *manager {
 		pods:             podStore,
 		resourceUpdatesC: make(chan *sensor.AdmCtrlUpdateResourceRequest),
 		initialSyncSig:   concurrency.NewSignal(),
-		depClient:        sensor.NewDeploymentServiceClient(conn),
+		depClient:        deploymentServiceClient,
 
 		ownNamespace: namespace,
 	}
@@ -176,10 +177,10 @@ func (m *manager) runSettingsWatch() {
 	for !m.stopSig.IsDone() {
 		select {
 		case <-m.stopSig.Done():
-			m.processNewSettings(nil)
+			m.ProcessNewSettings(nil)
 			return
 		case newSettings := <-m.settingsC:
-			m.processNewSettings(newSettings)
+			m.ProcessNewSettings(newSettings)
 		}
 	}
 }
@@ -198,7 +199,8 @@ func (m *manager) runUpdateResourceReqWatch() {
 	}
 }
 
-func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSettings) {
+// ProcessNewSettings processes new settings
+func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSettings) {
 	if newSettings == nil {
 		log.Info("DISABLING admission control service (config map was deleted).")
 		atomic.StorePointer(&m.statePtr, nil)
