@@ -152,7 +152,7 @@ style: staticcheck
 endif
 
 .PHONY: golangci-lint
-golangci-lint: $(GOLANGCILINT_BIN) volatile-generated-srcs
+golangci-lint: $(GOLANGCILINT_BIN)
 ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
@@ -295,24 +295,16 @@ go-generated-srcs: deps go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_
 proto-generated-srcs: $(PROTO_GENERATED_SRCS)
 	@echo "+ $@"
 	@touch proto-generated-srcs
+	@$(MAKE) clean-obsolete-protos
 
 clean-proto-generated-srcs:
 	@echo "+ $@"
 	git clean -xdf generated
 
-# volatile-generated-srcs are all generated sources that are NOT committed
-.PHONY: volatile-generated-srcs
-volatile-generated-srcs: proto-generated-srcs
-
 .PHONY: generated-srcs
-generated-srcs: volatile-generated-srcs go-generated-srcs
+generated-srcs: go-generated-srcs
 
-# clean-generated-srcs cleans ONLY volatile-generated-srcs.
-.PHONY: clean-generated-srcs
-clean-generated-srcs: clean-proto-generated-srcs
-	@echo "+ $@"
-
-deps: go.mod proto-generated-srcs
+deps: go.mod
 	@echo "+ $@"
 	@$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	@test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
@@ -328,6 +320,13 @@ clean-deps:
 	@echo "+ $@"
 	@rm -f deps
 
+.PHONY: clean-obsolete-protos
+clean-obsolete-protos:
+	@echo "+ $@"
+	$(BASE_DIR)/tools/clean_autogen_protos.py --protos $(BASE_DIR)/proto --generated $(BASE_DIR)/generated
+	
+
+
 ###########
 ## Build ##
 ###########
@@ -338,7 +337,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 .PHONY: build-prep
-build-prep: deps volatile-generated-srcs
+build-prep: deps
 	mkdir -p bin/{darwin,linux,windows}
 
 cli: build-prep
@@ -641,7 +640,7 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 ## Clean ##
 ###########
 .PHONY: clean
-clean: clean-image clean-generated-srcs
+clean: clean-image
 	@echo "+ $@"
 
 .PHONY: clean-image

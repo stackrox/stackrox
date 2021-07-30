@@ -2095,6 +2095,15 @@ jobs:
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
   ###
 
+  check-rebase:
+    docker:
+    - image: cimg/base:2021.04
+    resource_class: small
+    steps:
+      - run:
+          name: Check Rebase Status
+          command: exit 0
+
   slack-notify:
     executor: custom
     resource_class: small
@@ -2204,14 +2213,15 @@ jobs:
       - setup-go-build-env
       - run:
           no_output_timeout: 30m
-          name: Ensure that generated files are up to date. (If this fails, run `make go-generated-srcs` and commit the result.)
+          name: Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)
           command: |
             git ls-files --others --exclude-standard >/tmp/untracked
+            make proto-generated-srcs
             make go-generated-srcs
             git diff --exit-code HEAD
             { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
             if [[ -s /tmp/untracked-new ]]; then
-              echo 'Found new untracked files after running `make go-generated-srcs`. Did you forget to git add generated mocks?'
+              echo 'Found new untracked files after running `make proto-generated-srcs` and `make go-generated-srcs`. Did you forget to `git add` generated mocks and protos?'
               cat /tmp/untracked-new
               exit 1
             fi
@@ -5042,6 +5052,10 @@ workflows:
             branches:
               ignore: /.*/
           context: docker-io-pull
+      - check-rebase:
+          filters:
+            branches:
+              ignore: '/^master$/'
       - style-checks:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - check-generated-files-up-to-date:
