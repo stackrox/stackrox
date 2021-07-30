@@ -5250,14 +5250,13 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 9 * * *"
+          cron: "0 18 * * *"
           filters:
             branches:
               only: master
 
     jobs:
       - trigger-nightly-build:
-          context: docker-io-pull
           filters:
             branches:
               only: master
