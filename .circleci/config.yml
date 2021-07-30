@@ -1507,9 +1507,6 @@ commands:
       - check-label-exists-or-skip:
           label: << parameters.gate-label >>
 
-      - setup-dep-env:
-          docker-login: true
-
       - run:
           name: Install kubectl
           working_directory: /tmp
@@ -3075,9 +3072,6 @@ jobs:
       - check-label-exists-or-skip:
           label: ci-kops-tests
           run-on-master: false
-
-      - setup-dep-env:
-          docker-login: true
 
       - run:
           name: Install kubectl
