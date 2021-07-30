@@ -1,0 +1,188 @@
+import React, { ReactElement } from 'react';
+import { TextInput, PageSection, Form, Switch } from '@patternfly/react-core';
+import * as yup from 'yup';
+
+import usePageState from 'Containers/Integrations/hooks/usePageState';
+import useIntegrationForm from '../useIntegrationForm';
+
+import IntegrationFormActions from '../IntegrationFormActions';
+import FormCancelButton from '../FormCancelButton';
+import FormTestButton from '../FormTestButton';
+import FormSaveButton from '../FormSaveButton';
+import FormMessageBanner from '../FormMessageBanner';
+import FormLabelGroup from '../FormLabelGroup';
+
+export type IbmIntegration = {
+    id?: string;
+    name: string;
+    categories: 'REGISTRY'[];
+    ibm: {
+        endpoint: string;
+        apiKey: string;
+    };
+    type: 'ibm';
+    enabled: boolean;
+    clusterIds: string[];
+};
+
+export type IbmIntegrationFormValues = {
+    config: IbmIntegration;
+    updatePassword: boolean;
+};
+
+export type IbmIntegrationFormProps = {
+    initialValues: IbmIntegration | null;
+    isEdittable?: boolean;
+};
+
+export const validationSchema = yup.object().shape({
+    config: yup.object().shape({
+        name: yup.string().required('Required'),
+        categories: yup
+            .array()
+            .of(yup.string().oneOf(['REGISTRY']))
+            .min(1, 'Must have at least one type selected')
+            .required('Required'),
+        ibm: yup.object().shape({
+            endpoint: yup.string().required('Required'),
+            apiKey: yup.string(),
+        }),
+        type: yup.string().matches(/ibm/),
+        enabled: yup.bool(),
+        clusterIds: yup.array().of(yup.string()),
+    }),
+    updatePassword: yup.bool(),
+});
+
+export const defaultValues: IbmIntegrationFormValues = {
+    config: {
+        name: '',
+        categories: ['REGISTRY'],
+        ibm: {
+            endpoint: '',
+            apiKey: '',
+        },
+        type: 'ibm',
+        enabled: true,
+        clusterIds: [],
+    },
+    updatePassword: true,
+};
+
+function IbmIntegrationForm({
+    initialValues = null,
+    isEdittable = false,
+}: IbmIntegrationFormProps): ReactElement {
+    const formInitialValues = defaultValues;
+    if (initialValues) {
+        formInitialValues.config = { ...formInitialValues.config, ...initialValues };
+        // We want to clear the password because backend returns '******' to represent that there
+        // are currently stored credentials
+        formInitialValues.config.ibm.apiKey = '';
+    }
+    const {
+        values,
+        errors,
+        setFieldValue,
+        isSubmitting,
+        isTesting,
+        onSave,
+        onTest,
+        onCancel,
+        message,
+    } = useIntegrationForm<IbmIntegrationFormValues, typeof validationSchema>({
+        initialValues: formInitialValues,
+        validationSchema,
+    });
+    const { isCreating } = usePageState();
+
+    function onChange(value, event) {
+        return setFieldValue(event.target.id, value, false);
+    }
+
+    return (
+        <>
+            {message && <FormMessageBanner message={message} />}
+            <PageSection variant="light" isFilled hasOverflowScroll>
+                <Form isWidthLimited>
+                    <FormLabelGroup label="Name" isRequired fieldId="config.name" errors={errors}>
+                        <TextInput
+                            type="text"
+                            id="config.name"
+                            name="config.name"
+                            value={values.config.name}
+                            onChange={onChange}
+                            isDisabled={!isEdittable}
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Endpoint"
+                        fieldId="config.ibm.endpoint"
+                        isRequired
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="config.ibm.endpoint"
+                            name="config.ibm.endpoint"
+                            value={values.config.ibm.endpoint}
+                            onChange={onChange}
+                            isDisabled={!isEdittable}
+                        />
+                    </FormLabelGroup>
+                    {!isCreating && (
+                        <FormLabelGroup
+                            label="Update Password"
+                            fieldId="updatePassword"
+                            isRequired
+                            helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            errors={errors}
+                        >
+                            <Switch
+                                id="updatePassword"
+                                name="updatePassword"
+                                aria-label="update password"
+                                isChecked={values.updatePassword}
+                                onChange={onChange}
+                                isDisabled={!isEdittable}
+                            />
+                        </FormLabelGroup>
+                    )}
+                    {values.updatePassword && (
+                        <FormLabelGroup label="API Key" fieldId="config.ibm.apiKey" errors={errors}>
+                            <TextInput
+                                type="password"
+                                id="config.ibm.apiKey"
+                                name="config.ibm.apiKey"
+                                value={values.config.ibm.apiKey}
+                                onChange={onChange}
+                                isDisabled={!isEdittable}
+                            />
+                        </FormLabelGroup>
+                    )}
+                </Form>
+            </PageSection>
+            {isEdittable && (
+                <IntegrationFormActions>
+                    <FormSaveButton
+                        onSave={onSave}
+                        isSubmitting={isSubmitting}
+                        isTesting={isTesting}
+                    >
+                        Save
+                    </FormSaveButton>
+                    <FormTestButton
+                        onTest={onTest}
+                        isSubmitting={isSubmitting}
+                        isTesting={isTesting}
+                    >
+                        Test
+                    </FormTestButton>
+                    <FormCancelButton onCancel={onCancel}>Cancel</FormCancelButton>
+                </IntegrationFormActions>
+            )}
+        </>
+    );
+}
+
+export default IbmIntegrationForm;

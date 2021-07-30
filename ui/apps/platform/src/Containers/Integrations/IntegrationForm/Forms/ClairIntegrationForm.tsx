@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, SelectOption, PageSection, Form } from '@patternfly/react-core';
+import { TextInput, SelectOption, PageSection, Form, Switch } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import FormMultiSelect from 'Components/FormMultiSelect';
@@ -12,22 +12,21 @@ import FormSaveButton from '../FormSaveButton';
 import FormMessageBanner from '../FormMessageBanner';
 import FormLabelGroup from '../FormLabelGroup';
 
-export type ClairifyIntegration = {
+export type ClairIntegration = {
     id?: string;
     name: string;
-    categories: ('NODE_SCANNER' | 'SCANNER')[];
-    clairify: {
+    categories: 'SCANNER'[];
+    clair: {
         endpoint: string;
-        grpcEndpoint: string;
-        numConcurrentScans: string;
+        insecure: boolean;
     };
-    type: 'clairify';
+    type: 'clair';
     enabled: boolean;
     clusterIds: string[];
 };
 
-export type ClairifyIntegrationFormProps = {
-    initialValues: ClairifyIntegration | null;
+export type ClairIntegrationFormProps = {
+    initialValues: ClairIntegration | null;
     isEdittable?: boolean;
 };
 
@@ -35,28 +34,26 @@ export const validationSchema = yup.object().shape({
     name: yup.string().required('Required'),
     categories: yup
         .array()
-        .of(yup.string().oneOf(['NODE_SCANNER', 'SCANNER']))
+        .of(yup.string().oneOf(['SCANNER']))
         .min(1, 'Must have at least one type selected')
         .required('Required'),
-    clairify: yup.object().shape({
+    clair: yup.object().shape({
         endpoint: yup.string().required('Required').min(1),
-        grpcEndpoint: yup.string(),
-        numConcurrentScans: yup.string(),
+        insecure: yup.bool(),
     }),
-    type: yup.string().matches(/clairify/),
+    type: yup.string().matches(/clair/),
     enabled: yup.bool(),
     clusterIds: yup.array().of(yup.string()),
 });
 
-export const defaultValues: ClairifyIntegration = {
+export const defaultValues: ClairIntegration = {
     name: '',
     categories: [],
-    clairify: {
+    clair: {
         endpoint: '',
-        grpcEndpoint: '',
-        numConcurrentScans: '0',
+        insecure: false,
     },
-    type: 'clairify',
+    type: 'clair',
     enabled: true,
     clusterIds: [],
 };
@@ -64,9 +61,9 @@ export const defaultValues: ClairifyIntegration = {
 function ClairifyIntegrationForm({
     initialValues = null,
     isEdittable = false,
-}: ClairifyIntegrationFormProps): ReactElement {
+}: ClairIntegrationFormProps): ReactElement {
     const formInitialValues = initialValues
-        ? { ...defaultValues, ...initialValues }
+        ? ({ ...defaultValues, ...initialValues } as ClairIntegration)
         : defaultValues;
     const {
         values,
@@ -78,7 +75,7 @@ function ClairifyIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<ClairifyIntegration, typeof validationSchema>({
+    } = useIntegrationForm<ClairIntegration, typeof validationSchema>({
         initialValues: formInitialValues,
         validationSchema,
     });
@@ -125,47 +122,25 @@ function ClairifyIntegrationForm({
                     <FormLabelGroup
                         label="Endpoint"
                         isRequired
-                        fieldId="clairify.endpoint"
+                        fieldId="clair.endpoint"
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="clairify.endpoint"
-                            name="clairify.endpoint"
-                            value={values.clairify.endpoint}
+                            id="clair.endpoint"
+                            name="clair.endpoint"
+                            value={values.clair.endpoint}
                             onChange={onChange}
                             isDisabled={!isEdittable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        label="GRPC Endpoint"
-                        fieldId="clairify.grpcEndpoint"
-                        helperText="Used For Node Scanning"
-                        errors={errors}
-                    >
-                        <TextInput
-                            isRequired
-                            type="text"
-                            id="clairify.grpcEndpoint"
-                            name="clairify.grpcEndpoint"
-                            value={values.clairify.grpcEndpoint}
-                            onChange={onChange}
-                            isDisabled={!isEdittable}
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Max Concurrent Image Scans"
-                        fieldId="clairify.numConcurrentScans"
-                        helperText="0 for default"
-                        errors={errors}
-                    >
-                        <TextInput
-                            isRequired
-                            type="number"
-                            id="clairify.numConcurrentScans"
-                            name="clairify.numConcurrentScans"
-                            value={values.clairify.numConcurrentScans}
+                    <FormLabelGroup label="Insecure" fieldId="clair.insecure" errors={errors}>
+                        <Switch
+                            id="clair.insecure"
+                            name="clair.insecure"
+                            aria-label="insecure"
+                            isChecked={values.clair.insecure}
                             onChange={onChange}
                             isDisabled={!isEdittable}
                         />
@@ -188,6 +163,7 @@ function ClairifyIntegrationForm({
                     >
                         Test
                     </FormTestButton>
+
                     <FormCancelButton onCancel={onCancel}>Cancel</FormCancelButton>
                 </IntegrationFormActions>
             )}
