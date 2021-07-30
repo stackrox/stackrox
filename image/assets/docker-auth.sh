@@ -80,7 +80,7 @@ function print_auth() {
 	fi
 	if [[ -z "$output_mode" ]]; then
 		echo "$auth_token"
-		return 1
+		return 0
 	fi
 	if [[ "$output_mode" == "k8s" ]]; then
 		local auth_token_std="$(url2std <<<"$auth_token")"
