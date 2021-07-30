@@ -41,4 +41,7 @@ var (
 
 	// NamespaceAnnotationsForNotifiers enables using namespace annotations for notifiers.
 	NamespaceAnnotationsForNotifiers = registerFeature("Enable using namespace annotations for notifiers", "ROX_NS_ANNOTATION_FOR_NOTIFIERS", false)
+
+	// SystemPolicyMitreFramework enables MITRE ATT&CK framework for RHACS System Policies.
+	SystemPolicyMitreFramework = registerFeature("Enable MITRE ATT&CK framework for RHACS System Policies", "ROX_SYSTEM_POLICY_MITRE_FRAMEWORK", false)
 )
