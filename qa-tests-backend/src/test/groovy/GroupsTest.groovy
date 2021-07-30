@@ -1,11 +1,14 @@
+import groups.BAT
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
+import org.junit.experimental.categories.Category
 import services.GroupService
 import spock.lang.Unroll
 
+@Category(BAT)
 class GroupsTest extends BaseSpecification {
 
     private static final PROVIDERS = [
@@ -14,9 +17,6 @@ class GroupsTest extends BaseSpecification {
     ]
 
     private static final GROUPS = [
-            Group.newBuilder()
-                    .setRoleName("QAGroupTest-Group0")
-                    .build(),
             Group.newBuilder()
                     .setRoleName("QAGroupTest-Group1")
                     .setProps(GroupProperties.newBuilder()
@@ -99,7 +99,6 @@ class GroupsTest extends BaseSpecification {
         where:
         "Data inputs are"
         authProviderId | key   | value | expectGroup | expectGroups
-        null           | null  | null  | "Group0"    | ["Group0", "Group1", "Group2", "Group3"]
         0              | null  | null  | "Group1"    | ["Group1", "Group2"]
         null           | "foo" | "bar" | null        | ["Group2", "Group3"]
         0              | "foo" | "bar" | "Group2"    | ["Group2"]
