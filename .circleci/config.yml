@@ -5009,11 +5009,6 @@ jobs:
             git commit --allow-empty -m "Nightly build $(date)"
             NIGHTLY_TAG="$(git describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
             git tag "$NIGHTLY_TAG"
-            cci-export NIGHTLY_TAG "$NIGHTLY_TAG"
-
-      - run:
-          name: Push nightly tag to remote
-          command: |
             git push origin "$NIGHTLY_TAG"
 
       - run:
@@ -5261,7 +5256,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 19 * * *"
+          cron: "0 20 * * *"
           filters:
             branches:
               only: master
