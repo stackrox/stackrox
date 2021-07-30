@@ -35,6 +35,8 @@ import java.text.SimpleDateFormat
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
+    static final String TEST_IMAGE = "nginx:1.7.9"
+
     static final String RUN_ID
 
     static {
@@ -108,6 +110,9 @@ class BaseSpecification extends Specification {
             assert Env.mustGetOrchestratorType() == OrchestratorTypes.K8S,
                     "Set CLUSTER=K8S when testing non OpenShift"
         }
+
+        // ROX-6260: pre scan the image to avoid different risk scores
+        Services.scanImage(TEST_IMAGE)
 
         withRetry(30, 1) {
             def allResources = RoleService.getResources()

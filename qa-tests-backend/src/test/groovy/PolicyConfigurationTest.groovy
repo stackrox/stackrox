@@ -69,7 +69,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(DEPLOYMENTNGINX)
-                    .setImage("nginx:1.7.9")
+                    .setImage(TEST_IMAGE)
                     .addPort(22, "TCP")
                     .setEnv(["CLUSTER_NAME": "main"])
                     .addLabel("app", "test")
@@ -94,7 +94,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_LB)
-                    .setImage("nginx:1.7.9")
+                    .setImage(TEST_IMAGE)
                     .addPort(22, "TCP")
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
@@ -102,7 +102,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setCreateLoadBalancer(true).setExposeAsService(true),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_NP)
-                    .setImage("nginx:1.7.9")
+                    .setImage(TEST_IMAGE)
                     .addPort(22, "TCP")
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])

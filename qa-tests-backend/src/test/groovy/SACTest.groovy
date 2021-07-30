@@ -31,7 +31,7 @@ class SACTest extends BaseSpecification {
     static final protected String NOACCESSTOKEN = "noAccess"
     static final protected Deployment DEPLOYMENT_QA1 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA1)
-            .setImage("nginx:1.7.9")
+            .setImage(TEST_IMAGE)
             .addPort(22, "TCP")
             .addAnnotation("test", "annotation")
             .setEnv(["CLUSTER_NAME": "main"])
@@ -39,7 +39,7 @@ class SACTest extends BaseSpecification {
             .addLabel("app", "test")
     static final protected Deployment DEPLOYMENT_QA2 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA2)
-            .setImage("nginx:1.7.9")
+            .setImage(TEST_IMAGE)
             .addPort(22, "TCP")
             .addAnnotation("test", "annotation")
             .setEnv(["CLUSTER_NAME": "main"])

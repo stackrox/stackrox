@@ -188,7 +188,7 @@ class Enforcement extends BaseSpecification {
                             .setSkipReplicaWait(true),
             (ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS):
                     new Deployment()
-                            .setImage("nginx:1.7.9")
+                            .setImage(TEST_IMAGE)
                             .addPort(22, "TCP")
                             .addAnnotation("test", "annotation")
                             .setEnv(["CLUSTER_NAME": "main"]),
