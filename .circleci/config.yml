@@ -2417,15 +2417,6 @@ jobs:
           post-central-deploy-steps:
             - *setupClientTLSCerts
 
-#       - run:
-#           name: Create a SR dockerhub secret for test image access
-#           command: |
-#             kubectl -n stackrox create secret docker-registry stackrox-dockerhub \
-#               --docker-server="docker.io" \
-#               --docker-username="${DOCKER_IO_PULL_USERNAME}" \
-#               --docker-password="${DOCKER_IO_PULL_PASSWORD}" \
-#               --docker-email="test@stackrox.com"
-
       - deploy-default-psp
       - deploy-webhook-server
       - deploy-authz-plugin
@@ -3807,14 +3798,14 @@ jobs:
       - check-label-exists-or-skip:
           label: ci-upgrade-tests
           run-on-master: true
-
       - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-
+      - setup-dep-env:
+          docker-login: true
       - *setupRoxctl
+
       - setup-gcp
-      - setup-dep-env
       - attach-gke-cluster:
           cluster-id: upgrade-test
       - remove-existing-stackrox-resources
@@ -3839,13 +3830,16 @@ jobs:
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor get-bundle remote
             [[ -d sensor-remote ]]
 
+            cci-export ROXCTL_IMAGE_REPO quay.io/cgorman1/roxctl
+            cci-export QUAY_REPO cgorman1
+
             ## Edit the main image and collector image in the YAMLs to be the latest ones.
             ## Note that we do NOT want to patch the cluster object directly since we want to ensure
             ## that an unpatched cluster object works.
-            main_image="${MAIN_IMAGE_REPO:-docker.io/stackrox/main}:$(make --quiet tag)"
-            sed -i 's@docker.io/stackrox/main[^"]*@'"${main_image}"'@g' ./sensor-remote/sensor.yaml
-            collector_image="${COLLECTOR_IMAGE_REPO:-docker.io/stackrox/collector}:$(cat COLLECTOR_VERSION)-latest"
-            sed -i 's@docker.io/stackrox/collector[^"]*@'"${collector_image}"'@g' ./sensor-remote/sensor.yaml
+            main_image="${MAIN_IMAGE_REPO:-quay.io/$QUAY_REPO/main}:$(make --quiet tag)"
+            sed -i 's@quay.io/$QUAY_REPO/main[^"]*@'"${main_image}"'@g' ./sensor-remote/sensor.yaml
+            collector_image="${COLLECTOR_IMAGE_REPO:-quay.io/$QUAY_REPO/collector}:$(cat COLLECTOR_VERSION)-latest"
+            sed -i 's@quay.io/$QUAY_REPO/collector[^"]*@'"${collector_image}"'@g' ./sensor-remote/sensor.yaml
 
       - run:
           name: Install the sensor
@@ -3903,8 +3897,8 @@ jobs:
           name: Create a "sensor-remote-new" cluster
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor generate k8s \
-              --main-image-repository "${MAIN_IMAGE_REPO:-docker.io/stackrox/main}" \
-              --collector-image-repository "${COLLECTOR_IMAGE_REPO:-docker.io/stackrox/collector}" \
+              --main-image-repository "${MAIN_IMAGE_REPO:-quay.io/$QUAY_REPO/main}" \
+              --collector-image-repository "${COLLECTOR_IMAGE_REPO:-quay.io/$QUAY_REPO/collector}" \
               --name remote-new \
               --create-admission-controller
 
@@ -4048,7 +4042,7 @@ jobs:
       - run:
           name: Set Central to current commit
           command: |
-            kubectl -n stackrox set image deploy/central "central=stackrox/main:$(make --quiet tag)"
+            kubectl -n stackrox set image deploy/central "central=quay.io/$QUAY_REPO/main:$(make --quiet tag)"
 
       - *waitForAPI
       - validate-upgrade:
@@ -4082,7 +4076,7 @@ jobs:
             echo "config patch: $config_patch"
 
             kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-            kubectl -n stackrox set image deploy/central "central=stackrox/main:$FORCE_ROLLBACK_VERSION"
+            kubectl -n stackrox set image deploy/central "central=quay.io/cgorman1/main:$FORCE_ROLLBACK_VERSION"
 
       - *waitForAPI
       - validate-upgrade:
@@ -4097,9 +4091,9 @@ jobs:
       - run:
           name: Set Central + Scanner images to most recent commit
           command: |
-            kubectl -n stackrox set image deploy/central "central=stackrox/main:$(make --quiet tag)"
-            kubectl -n stackrox set image deploy/scanner "scanner=stackrox/scanner:$(cat SCANNER_VERSION)"
-            kubectl -n stackrox set image deploy/scanner-db "*=stackrox/scanner-db:$(cat SCANNER_VERSION)"
+            kubectl -n stackrox set image deploy/central "central=quay.io/$QUAY_REPO/main:$(make --quiet tag)"
+            kubectl -n stackrox set image deploy/scanner "scanner=quay.io/$QUAY_REPO/scanner:$(cat SCANNER_VERSION)"
+            kubectl -n stackrox set image deploy/scanner-db "*=quay.io/$QUAY_REPO/scanner-db:$(cat SCANNER_VERSION)"
 
       - *waitForAPI
       - validate-upgrade:
@@ -4140,9 +4134,9 @@ jobs:
           command: |
             git checkout 3.0.56.1
 
-            cci-export MAIN_IMAGE_REPO stackrox/main-rhel
-            cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            cci-export MAIN_IMAGE_REPO quay.io/$QUAY_REPO/main-rhel
+            cci-export SCANNER_IMAGE "quay.io/$QUAY_REPO/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            cci-export SCANNER_DB_IMAGE "quay.io/$QUAY_REPO/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 
             cci-export MAIN_IMAGE_TAG 3.0.56.1
             ./deploy/k8s/central.sh
@@ -4167,9 +4161,9 @@ jobs:
           name: Set Central + Scanner images to most recent commit
           command: |
             git reset --hard "${CIRCLE_SHA1}"
-            kubectl -n stackrox set image deploy/central "central=stackrox/main-rhel:$(make --quiet tag)"
-            kubectl -n stackrox set image deploy/scanner "scanner=stackrox/scanner-rhel:$(cat SCANNER_VERSION)"
-            kubectl -n stackrox set image deploy/scanner-db "*=stackrox/scanner-db-rhel:$(cat SCANNER_VERSION)"
+            kubectl -n stackrox set image deploy/central "central=quay.io/$QUAY_REPO/main-rhel:$(make --quiet tag)"
+            kubectl -n stackrox set image deploy/scanner "scanner=quay.io/$QUAY_REPO/scanner-rhel:$(cat SCANNER_VERSION)"
+            kubectl -n stackrox set image deploy/scanner-db "*=quay.io/$QUAY_REPO/scanner-db-rhel:$(cat SCANNER_VERSION)"
 
       - *waitForAPI
 
@@ -4180,9 +4174,9 @@ jobs:
       - run:
           name: Set images back to base and checkout HEAD again
           command: |
-            cci-export MAIN_IMAGE_REPO stackrox/main
-            cci-export SCANNER_IMAGE "stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            cci-export SCANNER_DB_IMAGE "stackrox/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            cci-export MAIN_IMAGE_REPO quay.io/$QUAY_REPO/main
+            cci-export SCANNER_IMAGE "quay.io/$QUAY_REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            cci-export SCANNER_DB_IMAGE "quay.io/$QUAY_REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 
       - run:
           name: Fetch bundle for the "remote" cluster in the DB
@@ -4196,8 +4190,12 @@ jobs:
             [[ -d sensor-remote ]]
 
       - run:
-          name: Install the sensor
-          command: ./sensor-remote/sensor.sh
+          name: Install the sensor and patch to correct images
+          command: |
+            ./sensor-remote/sensor.sh
+            kubectl -n stackrox set image deploy/sensor *=quay.io/$QUAY_REPO/main:$(make --quiet tag)
+            kubectl -n stackrox set image deploy/admission-control *=quay.io/$QUAY_REPO/main:$(make --quiet tag)
+            kubectl -n stackrox set image ds/collector collector=quay.io/$QUAY_REPO/collector:$(cat COLLECTOR_VERSION)  compliance=quay.io/$QUAY_REPO/main:$(make --quiet tag)
 
       - *waitForSensorK8s
 
@@ -4230,20 +4228,7 @@ jobs:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - get-central-data
-      - run:
-          name: Delete the sensor
-          command: |
-            ./sensor-remote/delete-sensor.sh
-
-      - run:
-          name: Deploy from the sensor helm chart and perform upgrades to the current secured cluster services chart
-          command: |
-            ./scripts/ci/sensor-helm-upgrade-test.sh
-
-      - *collectK8sLogs
-      - store-k8s-logs
       - *storeQALogs
-
       - teardown-gke
 
   gke-api-scale-tests:
