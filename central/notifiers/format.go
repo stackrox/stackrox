@@ -71,6 +71,14 @@ const bplPolicyFormat = `
 		{{stringify "Images:"  .DeploymentCommaSeparatedImages | list}}
 	{{end}}
 
+	{{if .GetResource}}{{line ""}}{{subheader "Resource:"}}
+		{{stringify "Name:" .GetResource.Name | list}}
+		{{stringify "Type:" .GetResource.ResourceType | list}}
+		{{stringify "Cluster:" .GetResource.ClusterName | list}}
+		{{stringify "ClusterId:" .GetResource.ClusterId | list}}
+		{{stringify "Namespace:" .GetResource.Namespace | list}}
+	{{end}}
+
 	{{if .GetImage}}{{line ""}}{{subheader "Image:"}}
 		{{stringify "Name:" .Image | list}}
 	{{end}}
