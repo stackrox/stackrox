@@ -4983,8 +4983,7 @@ jobs:
             fi
 
   trigger-nightly-build:
-    executor: custom
-    resource_class: small
+    machine: true
     steps:
       - checkout
 
@@ -5262,7 +5261,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 18 * * *"
+          cron: "0 19 * * *"
           filters:
             branches:
               only: master
