@@ -15,9 +15,7 @@ import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import { searchParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useInterval from 'hooks/useInterval';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import useMetadata from 'hooks/useMetadata';
-import { knownBackendFlags } from 'utils/featureFlags';
 import {
     fetchClustersAsArray,
     deleteClusters,
@@ -42,10 +40,6 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const [pollingCount, setPollingCount] = useState(0);
     const [tableRef, setTableRef] = useState(null);
     const [showDialog, setShowDialog] = useState(false);
-
-    const newSensorInstallationExperience = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_SENSOR_INSTALLATION_EXPERIENCE
-    );
 
     // Handle changes to applied search options.
     const [isViewFiltered, setIsViewFiltered] = useState(false);
@@ -169,7 +163,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     const headerActions = (
         <>
-            {newSensorInstallationExperience && <AutoUpgradeToggle />}
+            <AutoUpgradeToggle />
             <PanelButton
                 icon={<DownloadCloud className="h-4 w-4 ml-1" />}
                 tooltip={`Upgrade (${upgradableClusters.length})`}
@@ -238,7 +232,6 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             onDeleteHandler,
             upgradeSingleCluster,
         },
-        newSensorInstallationExperience,
     };
     const clusterColumns = getColumnsForClusters(columnOptions);
 

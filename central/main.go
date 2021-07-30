@@ -134,7 +134,6 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -324,10 +323,8 @@ func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 		userService.Singleton(),
 		cveService.Singleton(),
 		integrationHealthService.Singleton(),
-	}
-
-	if features.SensorInstallationExperience.Enabled() {
-		servicesToRegister = append(servicesToRegister, clusterInitService.Singleton(), helmcharts.NewService())
+		clusterInitService.Singleton(),
+		helmcharts.NewService(),
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
@@ -609,14 +606,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	}
 
-	if features.SensorInstallationExperience.Enabled() {
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/extensions/clusters/helm-config.yaml",
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
-			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
-			Compression:   true,
-		})
-	}
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/extensions/clusters/helm-config.yaml",
+		Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
+		ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
+		Compression:   true,
+	})
 
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	customRoutes = append(customRoutes,

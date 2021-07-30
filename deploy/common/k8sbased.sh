@@ -394,14 +394,14 @@ function launch_sensor {
     # Delete path
     rm -rf "$k8s_dir/sensor-deploy"
 
-    if [[ "$(curl_central "https://${API_ENDPOINT}/v1/featureflags" | jq -r '.featureFlags[] | select(.envVar == "ROX_SENSOR_INSTALLATION_EXPERIENCE") | .enabled')" != "true" ]]; then
-      SENSOR_HELM_DEPLOY=false  # Old central version doesn't support helm deploy
-    elif [[ -z "$CI" && -z "${SENSOR_HELM_DEPLOY:-}" && -x "$(command -v helm)" && "$(helm version --short)" == v3.* ]]; then
+    if [[ -z "$CI" && -z "${SENSOR_HELM_DEPLOY:-}" && -x "$(command -v helm)" && "$(helm version --short)" == v3.* ]]; then
       echo >&2 "================================================================================================"
-      echo >&2 "NOTE: Based on your environment, you have been volunteered to participate in the experimental"
-      echo >&2 "      Helm-based deployment method. Set SENSOR_HELM_DEPLOY=false in your environment to opt out."
+      echo >&2 "NOTE: Based on your environment, you are using the Helm-based deployment method."
+      echo >&2 "      To disable the Helm based installation set SENSOR_HELM_DEPLOY=false"
       echo >&2 "================================================================================================"
       SENSOR_HELM_DEPLOY=true
+    else
+      SENSOR_HELM_DEPLOY=false
     fi
 
     if [[ "$SENSOR_HELM_DEPLOY" == "true" ]]; then

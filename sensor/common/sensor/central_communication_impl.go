@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
@@ -108,19 +107,17 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	sensorHello.Capabilities = centralsensor.CapSetToStringSlice(capsSet)
 
 	// Inject desired Helm configuration, if any.
-	if features.SensorInstallationExperience.Enabled() {
-		if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
-			cachedClusterID, err := helmconfig.LoadCachedClusterID()
-			if err != nil {
-				log.Warnf("Failed to load cached cluster ID: %s", err)
-			} else if cachedClusterID != "" {
-				helmManagedCfg = helmManagedCfg.Clone()
-				helmManagedCfg.ClusterId = cachedClusterID
-				log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
-			}
-
-			sensorHello.HelmManagedConfigInit = helmManagedCfg
+	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
+		cachedClusterID, err := helmconfig.LoadCachedClusterID()
+		if err != nil {
+			log.Warnf("Failed to load cached cluster ID: %s", err)
+		} else if cachedClusterID != "" {
+			helmManagedCfg = helmManagedCfg.Clone()
+			helmManagedCfg.ClusterId = cachedClusterID
+			log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
 		}
+
+		sensorHello.HelmManagedConfigInit = helmManagedCfg
 	}
 
 	// Prepare outgoing context
@@ -198,7 +195,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	clusterID := centralHello.GetClusterId()
 	clusterid.Set(clusterID)
 
-	if features.SensorInstallationExperience.Enabled() && hello.HelmManagedConfigInit != nil {
+	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
 			log.Warnf("Could not cache cluster ID: %v", err)
 		}

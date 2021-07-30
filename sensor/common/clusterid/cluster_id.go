@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -32,7 +31,7 @@ func clusterIDFromCert() string {
 func Get() string {
 	once.Do(func() {
 		id := clusterIDFromCert()
-		if features.SensorInstallationExperience.Enabled() && id == centralsensor.InitCertClusterID {
+		if id == centralsensor.InitCertClusterID {
 			log.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
 			clusterIDAvailable.Wait()
 		} else {

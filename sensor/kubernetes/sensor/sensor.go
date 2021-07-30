@@ -60,31 +60,29 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
-	if features.SensorInstallationExperience.Enabled() {
-		if configFP := helmconfig.HelmConfigFingerprint.Setting(); configFP != "" {
-			var err error
-			helmManagedConfig, err = helmconfig.Load()
-			if err != nil {
-				return nil, errors.Wrap(err, "loading Helm cluster config")
-			}
-			if helmManagedConfig.GetClusterConfig().GetConfigFingerprint() != configFP {
-				return nil, errors.Errorf("fingerprint %q of loaded config does not match expected fingerprint %q, config changes can only be applied via 'helm upgrade' or a similar chart-based mechanism", helmManagedConfig.GetClusterConfig().GetConfigFingerprint(), configFP)
-			}
-			log.Infof("Loaded Helm cluster configuration with fingerprint %q", configFP)
-
-			if err := helmconfig.CheckEffectiveClusterName(helmManagedConfig); err != nil {
-				return nil, errors.Wrap(err, "validating cluster name")
-			}
+	if configFP := helmconfig.HelmConfigFingerprint.Setting(); configFP != "" {
+		var err error
+		helmManagedConfig, err = helmconfig.Load()
+		if err != nil {
+			return nil, errors.Wrap(err, "loading Helm cluster config")
 		}
+		if helmManagedConfig.GetClusterConfig().GetConfigFingerprint() != configFP {
+			return nil, errors.Errorf("fingerprint %q of loaded config does not match expected fingerprint %q, config changes can only be applied via 'helm upgrade' or a similar chart-based mechanism", helmManagedConfig.GetClusterConfig().GetConfigFingerprint(), configFP)
+		}
+		log.Infof("Loaded Helm cluster configuration with fingerprint %q", configFP)
 
-		if helmManagedConfig.GetClusterName() == "" {
-			certClusterID, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
-			if err != nil {
-				return nil, errors.Wrap(err, "parsing cluster ID from service certificate")
-			}
-			if certClusterID == centralsensor.InitCertClusterID {
-				return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
-			}
+		if err := helmconfig.CheckEffectiveClusterName(helmManagedConfig); err != nil {
+			return nil, errors.Wrap(err, "validating cluster name")
+		}
+	}
+
+	if helmManagedConfig.GetClusterName() == "" {
+		certClusterID, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing cluster ID from service certificate")
+		}
+		if certClusterID == centralsensor.InitCertClusterID {
+			return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
 		}
 	}
 

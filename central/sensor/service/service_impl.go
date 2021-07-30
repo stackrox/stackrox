@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -130,16 +129,11 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 }
 
 func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {
-	var helmConfigInit *central.HelmManagedConfigInit
-	if features.SensorInstallationExperience.Enabled() {
-		helmConfigInit = sensorHello.GetHelmManagedConfigInit()
-	}
+	helmConfigInit := sensorHello.GetHelmManagedConfigInit()
 
 	clusterIDFromCert := serviceID.GetId()
-	if features.SensorInstallationExperience.Enabled() {
-		if helmConfigInit == nil && clusterIDFromCert == centralsensor.InitCertClusterID {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
-		}
+	if helmConfigInit == nil && clusterIDFromCert == centralsensor.InitCertClusterID {
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
 	}
 
 	clusterID := helmConfigInit.GetClusterId()

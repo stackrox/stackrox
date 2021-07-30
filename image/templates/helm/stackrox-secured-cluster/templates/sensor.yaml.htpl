@@ -104,7 +104,7 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
         {{- end}}
-        [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
+        [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
         [<- end >]
@@ -124,7 +124,7 @@ spec:
           readOnly: true
         - name: cache
           mountPath: /var/cache/stackrox
-        [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
+        [<- if not .KubectlOutput >]
         - name: helm-cluster-config
           mountPath: /run/secrets/stackrox.io/helm-cluster-config/
           readOnly: true
@@ -155,7 +155,7 @@ spec:
         emptyDir: {}
       - name: cache
         emptyDir: {}
-      [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
+      [<- if not .KubectlOutput >]
       - name: helm-cluster-config
         secret:
           secretName: helm-cluster-config

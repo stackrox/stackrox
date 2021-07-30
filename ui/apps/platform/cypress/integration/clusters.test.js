@@ -3,7 +3,6 @@ import cloneDeep from 'lodash/cloneDeep';
 import { selectors, clustersUrl } from '../constants/ClustersPage';
 import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
-import checkFeatureFlag from '../helpers/features';
 
 describe('Clusters page', () => {
     withAuth();
@@ -271,12 +270,6 @@ describe('Cluster Creation Flow', () => {
 });
 
 describe('Cluster with Helm management', () => {
-    before(function beforeHook() {
-        if (checkFeatureFlag('ROX_SENSOR_INSTALLATION_EXPERIENCE', false)) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     beforeEach(() => {

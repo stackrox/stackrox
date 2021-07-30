@@ -9,9 +9,6 @@ var (
 	// ComplianceInRocksDB switches compliance over to using RocksDB instead of Bolt
 	ComplianceInRocksDB = registerFeature("Switch compliance to using RocksDB", "ROX_COMPLIANCE_IN_ROCKSDB", true)
 
-	// SensorInstallationExperience enables new features related to the new installation experience for sensor.
-	SensorInstallationExperience = registerFeature("Enable new installation user experience for Sensor", "ROX_SENSOR_INSTALLATION_EXPERIENCE", true)
-
 	// NetworkDetectionBaselineViolation enables new features related to the baseline violation part of the network detection experience.
 	NetworkDetectionBaselineViolation = registerFeature("Enable network detection baseline violation", "ROX_NETWORK_DETECTION_BASELINE_VIOLATION", true)
 

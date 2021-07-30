@@ -36,12 +36,7 @@
             "config": {
                 "env": [
                     { "key": "ROX_DEVELOPMENT_BUILD", "value": "true", "envVarSource": "RAW" },
-                    { "key": "ROX_NETWORK_ACCESS_LOG", "value": "false", "envVarSource": "RAW" },
-                    {
-                        "key": "ROX_SENSOR_INSTALLATION_EXPERIENCE",
-                        "value": "true",
-                        "envVarSource": "RAW"
-                    }
+                    { "key": "ROX_NETWORK_ACCESS_LOG", "value": "false", "envVarSource": "RAW" }
                 ],
                 "command": [
                     "/usr/local/bin/docker-entrypoint.sh",

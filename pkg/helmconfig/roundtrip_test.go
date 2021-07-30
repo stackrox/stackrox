@@ -34,9 +34,6 @@ var (
 		"MainRegistry":      defaults.MainImageRegistry(),
 		"CollectorRegistry": defaults.CollectorImageRegistry(),
 		"RenderMode":        "",
-		"FeatureFlags": map[string]interface{}{
-			"ROX_SENSOR_INSTALLATION_EXPERIENCE": "true",
-		},
 	}
 
 	installOpts = helmutil.Options{

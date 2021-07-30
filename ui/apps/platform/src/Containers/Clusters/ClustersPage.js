@@ -10,8 +10,6 @@ import PageHeader from 'Components/PageHeader';
 import URLSearchInput from 'Components/URLSearchInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { actions as clustersActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
@@ -20,7 +18,6 @@ import parseURL from 'utils/URLParser';
 
 import ClustersTablePanel from './ClustersTablePanel';
 import ClustersSidePanel from './ClustersSidePanel';
-import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 
 const ClustersPage = ({
     history,
@@ -30,9 +27,6 @@ const ClustersPage = ({
     },
 }) => {
     const workflowState = parseURL({ pathname, search });
-    const newSensorInstallationExperience = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_SENSOR_INSTALLATION_EXPERIENCE
-    );
 
     // Handle changes to the currently selected deployment.
     const setSelectedClusterId = useCallback(
@@ -82,15 +76,12 @@ const ClustersPage = ({
                     autoFocus={autoFocusSearchInput}
                 />
                 <div className="flex items-center ml-4 mr-3">
-                    {newSensorInstallationExperience && (
-                        <HashLink
-                            to={`${integrationsPath}#token-integrations`}
-                            className="no-underline btn btn-base flex-shrink-0"
-                        >
-                            Manage Tokens
-                        </HashLink>
-                    )}
-                    {!newSensorInstallationExperience && <AutoUpgradeToggle />}
+                    <HashLink
+                        to={`${integrationsPath}#token-integrations`}
+                        className="no-underline btn btn-base flex-shrink-0"
+                    >
+                        Manage Tokens
+                    </HashLink>
                 </div>
             </div>
         </PageHeader>

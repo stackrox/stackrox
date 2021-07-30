@@ -2,7 +2,6 @@ package centralsensor
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -12,16 +11,6 @@ const (
 
 // GetClusterID allows joining
 func GetClusterID(explicitID, idFromCert string) (string, error) {
-	if !features.SensorInstallationExperience.Enabled() {
-		// In legacy mode, the explicit ID must be empty or match the ID from the cert, which always references
-		// a concrete cluster ID.
-		if explicitID != "" && explicitID != idFromCert {
-			return "", errors.Errorf("explicit cluster ID %q does not match cluster ID %q from certificate", explicitID, idFromCert)
-		}
-		// idFromCert is always a concrete cluster ID
-		return idFromCert, nil
-	}
-
 	id := explicitID
 	if id == "" {
 		id = idFromCert

@@ -15,7 +15,7 @@ import CredentialExpiration from './Components/CredentialExpiration';
 import SensorUpgrade from './Components/SensorUpgrade';
 import HelmIndicator from './Components/HelmIndicator';
 
-export function getColumnsForClusters({ metadata, rowActions, newSensorInstallationExperience }) {
+export function getColumnsForClusters({ metadata, rowActions }) {
     function renderRowActionButtons(cluster) {
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100">
@@ -40,7 +40,7 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
             Cell: ({ original }) => (
                 <span className="flex items-center" data-testid="cluster-name">
                     {original.name}
-                    {newSensorInstallationExperience && !!original.helmConfig && (
+                    {!!original.helmConfig && (
                         <span className="pl-2">
                             <HelmIndicator />
                         </span>

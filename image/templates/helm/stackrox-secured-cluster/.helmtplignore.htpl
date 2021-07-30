@@ -19,7 +19,7 @@ templates/*
 scripts/add-cluster.sh
 scripts/setup.sh
 [<- end >]
-[<- if or .KubectlOutput (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE" | not) >]
+[<- if .KubectlOutput >]
 templates/cluster-config.yaml
 internal/cluster-config.yaml.tpl
 [<- end >]

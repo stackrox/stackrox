@@ -30,7 +30,6 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -724,10 +723,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		return nil, err
 	}
 
-	var helmConfig *central.HelmManagedConfigInit
-	if features.SensorInstallationExperience.Enabled() {
-		helmConfig = hello.GetHelmManagedConfigInit()
-	}
+	helmConfig := hello.GetHelmManagedConfigInit()
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
