@@ -185,8 +185,9 @@ var (
 	NodeJoinTime     = newFieldLabel("Node Join Time")
 
 	// Namespace Search Fields
-	NamespaceID = newFieldLabel("Namespace ID")
-	Namespace   = newFieldLabel("Namespace")
+	NamespaceID         = newFieldLabel("Namespace ID")
+	Namespace           = newFieldLabel("Namespace")
+	NamespaceAnnotation = newFieldLabel("Namespace Annotation")
 
 	// Role Search Fields
 	RoleID      = newFieldLabel("Role ID")

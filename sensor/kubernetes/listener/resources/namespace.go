@@ -26,7 +26,7 @@ func newNamespaceDispatcher(nsStore *namespaceStore, deletionListeners ...Namesp
 	}
 }
 
-// Process processes a namespace resource events, and returns the sensor events to emit in response.
+// ProcessEvent processes namespace resource events, and returns the sensor events to emit in response.
 func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
 	ns := obj.(*v1.Namespace)
 
@@ -40,6 +40,7 @@ func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.Re
 		Id:           string(ns.GetUID()),
 		Name:         ns.GetName(),
 		Labels:       ns.GetLabels(),
+		Annotations:  ns.GetAnnotations(),
 		CreationTime: protoconv.ConvertTimeToTimestamp(ns.GetCreationTimestamp().Time),
 	}
 

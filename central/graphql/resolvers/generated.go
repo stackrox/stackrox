@@ -738,6 +738,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"numSecrets: Int!",
 	}))
 	utils.Must(builder.AddType("NamespaceMetadata", []string{
+		"annotations: [Label!]!",
 		"clusterId: String!",
 		"clusterName: String!",
 		"creationTime: Time",
@@ -7026,6 +7027,11 @@ func (resolver *Resolver) wrapNamespaceMetadatas(values []*storage.NamespaceMeta
 		output[i] = &namespaceMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *namespaceMetadataResolver) Annotations(ctx context.Context) labels {
+	value := resolver.data.GetAnnotations()
+	return labelsResolver(value)
 }
 
 func (resolver *namespaceMetadataResolver) ClusterId(ctx context.Context) string {
