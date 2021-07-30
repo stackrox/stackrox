@@ -4983,7 +4983,8 @@ jobs:
             fi
 
   trigger-nightly-build:
-    machine: true
+    executor: custom
+    resource_class: small
     steps:
       - checkout
 
@@ -5042,7 +5043,7 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
-          context: docker-io-pull
+          context: quay-cgorman1-readonly
       - check-rebase:
           filters:
             branches:
@@ -5246,7 +5247,7 @@ workflows:
             - build-rhel
 
       - retrigger-master-workflow:
-          context: docker-io-pull
+          context: quay-cgorman1-readonly
           filters:
             branches:
               ignore: /.*/
@@ -5256,7 +5257,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 20 * * *"
+          cron: "30 21 * * *"
           filters:
             branches:
               only: master
@@ -5266,6 +5267,7 @@ workflows:
           filters:
             branches:
               only: master
+          context: quay-cgorman1-readonly
 
   ###
   # These workflows can be triggered on demand.
@@ -5287,13 +5289,13 @@ workflows:
       equal: [ "build", << pipeline.parameters.workflow_name >> ]
     jobs:
       - pre-create-tag:
-          context: docker-io-pull
+          context: quay-cgorman1-readonly
       - pre-build-ui:
-          context: docker-io-pull
+          context: quay-cgorman1-readonly
           requires:
             - pre-create-tag
       - pre-build-cli:
-          context: docker-io-pull
+          context: quay-cgorman1-readonly
           requires:
             - pre-create-tag
       - pre-build-go-binaries:
@@ -5312,4 +5314,4 @@ workflows:
       equal: [ "designated_image_test", << pipeline.parameters.workflow_name >> ]
     jobs:
       - designated-image-tests:
-          context: docker-io-pull
+          context: quay-cgorman1-readonly
