@@ -7,7 +7,9 @@ import (
 
 // A Setting is a runtime configuration set using an environment variable.
 type Setting interface {
+	// EnvVar returns the name of the env variable
 	EnvVar() string
+	// Setting returns the value of the env variable
 	Setting() string
 }
 

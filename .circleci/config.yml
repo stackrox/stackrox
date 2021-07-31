@@ -2789,8 +2789,10 @@ jobs:
           # Default docker server version isn't new enough therefore we're asking for more recent one to enjoy Buildkit.
           version: 20.10.2
       - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD"
+          name: Login to Docker Hub and Quay.io
+          command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -2824,10 +2826,17 @@ jobs:
           name: Build index
           command: |
             make -C operator/ index-build
+
       - run:
           name: Push index image
           command: |
             make -C operator/ docker-push-index | cat
+
+      - run:
+          name: Build and push images for quay.io
+          command: |
+            IMAGE_REPO=quay.io/cgorman1 make -C operator/ everything
+
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
@@ -4672,6 +4681,10 @@ jobs:
 
   openshift-4-operator-e2e-tests:
     executor: custom
+    environment:
+    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/cgorman1"
+    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/cgorman1"
+    - IMAGE_TAG_BASE: "quay.io/cgorman1/stackrox-operator"
 
     steps:
     - checkout

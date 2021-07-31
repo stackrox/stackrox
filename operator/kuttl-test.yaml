@@ -28,7 +28,8 @@ commands:
 - script: |
     set -e # shell in CI does not grok -o pipefail
     secret=$(mktemp)
-    ../deploy/common/pull-secret.sh stackrox docker.io > $secret
+    registry=${ROX_OPERATOR_MAIN_REGISTRY:-docker.io}
+    ../deploy/common/pull-secret.sh stackrox ${registry%%/*} > $secret
     kubectl -n stackrox create -f $secret
     rm $secret
 parallel: 1  # because we share the namespace :-(

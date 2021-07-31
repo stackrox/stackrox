@@ -62,8 +62,9 @@ func RHACSMetaValues() MetaValues {
 	}
 
 	if !buildinfo.ReleaseBuild {
-		metaValues["MainRegistry"] = "docker.io/stackrox"
-		metaValues["CollectorRegistry"] = "docker.io/stackrox"
+		// TODO(ROX-7740): Temporarily use images from quay until our private registries are up again
+		metaValues["MainRegistry"] = mainRegistryOverride.Setting()
+		metaValues["CollectorRegistry"] = collectorRegistryOverride.Setting()
 	}
 
 	featureFlagVals := make(map[string]interface{})
