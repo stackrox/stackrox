@@ -52,21 +52,6 @@ func (mr *MockDataStoreMockRecorder) ClearAggregationResults(arg0 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAggregationResults", reflect.TypeOf((*MockDataStore)(nil).ClearAggregationResults), arg0)
 }
 
-// GetLatestRunMetadataBatch mocks base method
-func (m *MockDataStore) GetLatestRunMetadataBatch(arg0 context.Context, arg1 string, arg2 []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestRunMetadataBatch", arg0, arg1, arg2)
-	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLatestRunMetadataBatch indicates an expected call of GetLatestRunMetadataBatch
-func (mr *MockDataStoreMockRecorder) GetLatestRunMetadataBatch(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunMetadataBatch", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunMetadataBatch), arg0, arg1, arg2)
-}
-
 // GetLatestRunResults mocks base method
 func (m *MockDataStore) GetLatestRunResults(arg0 context.Context, arg1, arg2 string, arg3 types.GetFlags) (types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()

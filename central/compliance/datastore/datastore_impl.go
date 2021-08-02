@@ -117,24 +117,6 @@ func (ds *datastoreImpl) GetLatestRunResultsForClustersAndStandards(ctx context.
 	return filteredResults, err
 }
 
-func (ds *datastoreImpl) GetLatestRunMetadataBatch(ctx context.Context, clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error) {
-	standardIDs, unsupported := standards.FilterSupported(standardIDs)
-	if len(unsupported) > 0 {
-		return nil, standards.UnSupportedStandardsErr(unsupported...)
-	}
-
-	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, errors.Wrapf(sac.ErrResourceAccessDenied, "ClusterID %s read", clusterID)
-	}
-	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
-}
-
 func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context, clusterID string, standardIDs []string) (bool, error) {
 	standardIDs, unsupported := standards.FilterSupported(standardIDs)
 	if len(unsupported) > 0 {
@@ -144,7 +126,7 @@ func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context,
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return false, err
 	} else if !ok {
-		return false, errors.Wrapf(sac.ErrResourceAccessDenied, "ClusterID %s read", clusterID)
+		return false, errors.Wrapf(errorhelpers.ErrNotFound, "ClusterID %s", clusterID)
 	}
 	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
 	if err != nil || len(results) == 0 {

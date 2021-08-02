@@ -464,33 +464,6 @@ func (m *manager) getSchedules(request *v1.GetComplianceRunSchedulesRequest) []*
 	return result
 }
 
-func (m *manager) GetSchedule(ctx context.Context, id string) (*v1.ComplianceRunScheduleInfo, error) {
-	schedule := m.getSchedule(id)
-	if schedule == nil {
-		return nil, fmt.Errorf("schedule with id %q not found", id)
-	}
-
-	// Check read access to the cluster the schedule is for.
-	if ok, err := complianceRunScheduleSAC.ReadAllowed(ctx, sac.ClusterScopeKey(schedule.Schedule.ClusterId)); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
-
-	return schedule, nil
-}
-
-func (m *manager) getSchedule(id string) *v1.ComplianceRunScheduleInfo {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-
-	schedule := m.schedulesByID[id]
-	if schedule == nil {
-		return nil
-	}
-	return schedule.ToProto()
-}
-
 func runMatches(request *v1.GetRecentComplianceRunsRequest, runProto *v1.ComplianceRun) bool {
 	if request.GetSince() != nil && runProto.GetStartTime().Compare(request.GetSince()) < 0 {
 		return false
@@ -545,7 +518,7 @@ func (m *manager) GetRecentRun(ctx context.Context, id string) (*v1.ComplianceRu
 	if ok, err := complianceRunSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.ClusterId)); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
+		return nil, errorhelpers.ErrNotFound
 	}
 
 	return run, nil
@@ -713,7 +686,7 @@ func (m *manager) GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.Comp
 	if ok, err := complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(ctx, clusterScopes.get()); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
+		return nil, errorhelpers.ErrNotFound
 	}
 
 	return runStatuses, nil

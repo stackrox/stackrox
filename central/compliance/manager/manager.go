@@ -30,7 +30,6 @@ type ComplianceManager interface {
 	Stop() error
 
 	GetSchedules(ctx context.Context, request *v1.GetComplianceRunSchedulesRequest) ([]*v1.ComplianceRunScheduleInfo, error)
-	GetSchedule(ctx context.Context, id string) (*v1.ComplianceRunScheduleInfo, error)
 	AddSchedule(ctx context.Context, spec *storage.ComplianceRunSchedule) (*v1.ComplianceRunScheduleInfo, error)
 	UpdateSchedule(ctx context.Context, spec *storage.ComplianceRunSchedule) (*v1.ComplianceRunScheduleInfo, error)
 	DeleteSchedule(ctx context.Context, id string) error
