@@ -69,6 +69,7 @@ import (
 	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkBaselineService "github.com/stackrox/rox/central/networkbaseline/service"
@@ -134,6 +135,7 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -325,6 +327,10 @@ func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 		integrationHealthService.Singleton(),
 		clusterInitService.Singleton(),
 		helmcharts.NewService(),
+	}
+
+	if features.SystemPolicyMitreFramework.Enabled() {
+		servicesToRegister = append(servicesToRegister, mitreService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
