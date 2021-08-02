@@ -44,7 +44,7 @@ message InitBundleGenRequest {
 
 message InitBundleRevokeRequest {
     repeated string ids                           = 1;
-    repeated string confirm_impacted_clusters_ids = 3;
+    repeated string confirm_impacted_clusters_ids = 2;
 
 }
 
