@@ -33,4 +33,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_72_to_m_73_change_roles_to_sac_v2"
 	_ "github.com/stackrox/rox/migrator/migrations/m_73_to_m_74_runtime_policy_event_source"
 	_ "github.com/stackrox/rox/migrator/migrations/m_74_to_m_75_severity_policy"
+	_ "github.com/stackrox/rox/migrator/migrations/m_75_to_m_76_exclude_compliance_operator_dnf_policy"
 )
