@@ -1,8 +1,7 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Switch, SelectOption } from '@patternfly/react-core';
+import { TextInput, PageSection, Form, FormSelect, Switch } from '@patternfly/react-core';
 import * as yup from 'yup';
 
-import FormMultiSelect from 'Components/FormMultiSelect';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -13,73 +12,79 @@ import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
 import FormMessageBanner from '../FormMessageBanner';
 import FormLabelGroup from '../FormLabelGroup';
+import AwsRegionOptions from '../AwsRegionOptions';
 
-export type TenableIntegration = {
+export type AwsSecurityHubIntegration = {
     id?: string;
     name: string;
-    categories: ('REGISTRY' | 'SCANNER')[];
-    tenable: {
-        accessKey: string;
-        secretKey: string;
+    awsSecurityHub: {
+        accountId: string;
+        region: string;
+        credentials: {
+            accessKeyId: string;
+            secretAccessKey: string;
+        };
     };
-    skipTestIntegration: boolean;
-    type: 'tenable';
+    uiEndpoint: string;
+    type: 'awsSecurityHub';
     enabled: boolean;
-    clusterIds: string[];
 };
 
-export type TenableIntegrationFormValues = {
-    config: TenableIntegration;
+export type AwsSecurityHubIntegrationFormValues = {
+    notifier: AwsSecurityHubIntegration;
     updatePassword: boolean;
 };
 
 export const validationSchema = yup.object().shape({
-    config: yup.object().shape({
+    notifier: yup.object().shape({
         name: yup.string().required('Required'),
-        categories: yup
-            .array()
-            .of(yup.string().oneOf(['REGISTRY', 'SCANNER']))
-            .min(1, 'Must have at least one type selected')
-            .required('Required'),
-        tenable: yup.object().shape({
-            accessKey: yup.string(),
-            secretKey: yup.string(),
+        awsSecurityHub: yup.object().shape({
+            accountId: yup.string().required('Required'),
+            region: yup.string().required('Required'),
+            credentials: yup.object().shape({
+                accessKeyId: yup.string(),
+                secretAccessKey: yup.string(),
+            }),
         }),
-        skipTestIntegration: yup.bool(),
-        type: yup.string().matches(/tenable/),
+        uiEndpoint: yup.string(),
+        type: yup.string().matches(/awsSecurityHub/),
         enabled: yup.bool(),
-        clusterIds: yup.array().of(yup.string()),
     }),
     updatePassword: yup.bool(),
 });
 
-export const defaultValues: TenableIntegrationFormValues = {
-    config: {
+export const defaultValues: AwsSecurityHubIntegrationFormValues = {
+    notifier: {
         name: '',
-        categories: [],
-        tenable: {
-            accessKey: '',
-            secretKey: '',
+        awsSecurityHub: {
+            accountId: '',
+            region: '',
+            credentials: {
+                accessKeyId: '',
+                secretAccessKey: '',
+            },
         },
-        skipTestIntegration: false,
-        type: 'tenable',
+        uiEndpoint: window.location.origin,
+        type: 'awsSecurityHub',
         enabled: true,
-        clusterIds: [],
     },
     updatePassword: true,
 };
 
-function TenableIntegrationForm({
+function AwsSecurityHubIntegrationForm({
     initialValues = null,
     isEditable = false,
-}: IntegrationFormProps<TenableIntegration>): ReactElement {
+}: IntegrationFormProps<AwsSecurityHubIntegration>): ReactElement {
     const formInitialValues = defaultValues;
     if (initialValues) {
-        formInitialValues.config = { ...formInitialValues.config, ...initialValues };
+        formInitialValues.notifier = {
+            ...formInitialValues.notifier,
+            ...initialValues,
+        };
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
-        formInitialValues.config.tenable.accessKey = '';
-        formInitialValues.config.tenable.secretKey = '';
+        formInitialValues.notifier.awsSecurityHub.credentials.accessKeyId = '';
+        formInitialValues.notifier.awsSecurityHub.credentials.secretAccessKey = '';
     }
     const {
         values,
@@ -91,7 +96,7 @@ function TenableIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<TenableIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<AwsSecurityHubIntegrationFormValues, typeof validationSchema>({
         initialValues: formInitialValues,
         validationSchema,
     });
@@ -101,45 +106,50 @@ function TenableIntegrationForm({
         return setFieldValue(event.target.id, value, false);
     }
 
-    function onCustomChange(id, value) {
-        return setFieldValue(id, value, false);
-    }
-
     return (
         <>
             {message && <FormMessageBanner message={message} />}
             <PageSection variant="light" isFilled hasOverflowScroll>
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="config.name" errors={errors}>
+                    <FormLabelGroup isRequired label="Name" fieldId="notifier.name" errors={errors}>
                         <TextInput
-                            isRequired
                             type="text"
-                            id="config.name"
-                            name="config.name"
-                            value={values.config.name}
+                            id="notifier.name"
+                            name="notifier.name"
+                            value={values.notifier.name}
                             onChange={onChange}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Type"
                         isRequired
-                        fieldId="config.categories"
+                        label="AWS Account Number"
+                        fieldId="notifier.awsSecurityHub.accountId"
                         errors={errors}
                     >
-                        <FormMultiSelect
-                            id="config.categories"
-                            values={values.config.categories}
-                            onChange={onCustomChange}
+                        <TextInput
+                            type="text"
+                            id="notifier.awsSecurityHub.accountId"
+                            name="notifier.awsSecurityHub.accountId"
+                            value={values.notifier.awsSecurityHub.accountId}
+                            onChange={onChange}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        isRequired
+                        label="AWS Region"
+                        fieldId="notifier.awsSecurityHub.region"
+                        errors={errors}
+                    >
+                        <FormSelect
+                            id="notifier.awsSecurityHub.region"
+                            value={values.notifier.awsSecurityHub.region}
+                            onChange={onChange}
                             isDisabled={!isEditable}
                         >
-                            <SelectOption key={0} value="REGISTRY">
-                                Registry
-                            </SelectOption>
-                            <SelectOption key={1} value="SCANNER">
-                                Scanner
-                            </SelectOption>
-                        </FormMultiSelect>
+                            <AwsRegionOptions />
+                        </FormSelect>
                     </FormLabelGroup>
                     {!isCreating && (
                         <FormLabelGroup
@@ -161,51 +171,37 @@ function TenableIntegrationForm({
                     {values.updatePassword && (
                         <>
                             <FormLabelGroup
-                                label="Access Key"
-                                fieldId="config.tenable.accessKey"
+                                label="Access Key ID"
+                                fieldId="notifier.awsSecurityHub.credentials.accessKeyId"
                                 errors={errors}
                             >
                                 <TextInput
-                                    isRequired
-                                    type="text"
-                                    id="config.tenable.accessKey"
-                                    name="config.tenable.accessKey"
-                                    value={values.config.tenable.accessKey}
+                                    type="password"
+                                    id="notifier.awsSecurityHub.credentials.accessKeyId"
+                                    name="notifier.awsSecurityHub.credentials.accessKeyId"
+                                    value={values.notifier.awsSecurityHub.credentials.accessKeyId}
                                     onChange={onChange}
                                     isDisabled={!isEditable}
                                 />
                             </FormLabelGroup>
                             <FormLabelGroup
-                                label="Secret Key"
-                                fieldId="config.tenable.secretKey"
+                                label="Secret Access Key"
+                                fieldId="notifier.awsSecurityHub.credentials.secretAccessKey"
                                 errors={errors}
                             >
                                 <TextInput
-                                    isRequired
                                     type="password"
-                                    id="config.tenable.secretKey"
-                                    name="config.tenable.secretKey"
-                                    value={values.config.tenable.secretKey}
+                                    id="notifier.awsSecurityHub.credentials.secretAccessKey"
+                                    name="notifier.awsSecurityHub.credentials.secretAccessKey"
+                                    value={
+                                        values.notifier.awsSecurityHub.credentials.secretAccessKey
+                                    }
                                     onChange={onChange}
                                     isDisabled={!isEditable}
                                 />
                             </FormLabelGroup>
                         </>
                     )}
-                    <FormLabelGroup
-                        label="Create Integration Without Testing"
-                        fieldId="config.skipTestIntegration"
-                        errors={errors}
-                    >
-                        <Switch
-                            id="config.skipTestIntegration"
-                            name="config.skipTestIntegration"
-                            aria-label="skip test integration"
-                            isChecked={values.config.skipTestIntegration}
-                            onChange={onChange}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
                 </Form>
             </PageSection>
             {isEditable && (
@@ -231,4 +227,4 @@ function TenableIntegrationForm({
     );
 }
 
-export default TenableIntegrationForm;
+export default AwsSecurityHubIntegrationForm;

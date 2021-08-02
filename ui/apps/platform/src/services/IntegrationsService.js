@@ -72,11 +72,8 @@ export function saveIntegration(source, data, options = undefined) {
 
 // When we migrate completely over, we can remove saveIntegration and rename this
 export function saveIntegrationV2(source, data) {
-    const { id } = data[getJsonFieldBySource(source)];
-    if (!id) {
-        throw new Error('Integration entity must have an id to be saved');
-    }
     if (Object.prototype.hasOwnProperty.call(data, 'updatePassword')) {
+        const { id } = data[getJsonFieldBySource(source)];
         return axios.patch(`${getPath(source, 'save')}/${id}`, data);
     }
     return axios.put(`${getPath(source, 'save')}/${data.id}`, data);

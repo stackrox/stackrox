@@ -17,6 +17,10 @@ import NexusIntegrationForm from './Forms/NexusIntegrationForm';
 import TenableIntegrationForm from './Forms/TenableIntegrationForm';
 import IbmIntegrationForm from './Forms/IbmIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
+// notifiers
+import TeamsIntegrationForm from './Forms/TeamsIntegrationForm';
+import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
+import SyslogIntegrationForm from './Forms/SyslogIntegrationForm';
 // external backups
 import S3IntegrationForm from './Forms/S3IntegrationForm';
 import GcsIntegrationForm from './Forms/GcsIntegrationForm';
@@ -50,6 +54,11 @@ const ComponentFormMap = {
         tenable: TenableIntegrationForm,
         ibm: IbmIntegrationForm,
         rhel: RhelIntegrationForm,
+    },
+    notifiers: {
+        teams: TeamsIntegrationForm,
+        awsSecurityHub: AwsSecurityHubIntegrationForm,
+        syslog: SyslogIntegrationForm,
     },
     backups: {
         s3: S3IntegrationForm,
