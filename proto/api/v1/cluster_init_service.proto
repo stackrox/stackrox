@@ -11,11 +11,17 @@ import "storage/user.proto";
 package v1;
 
 message InitBundleMeta {
-    string                    id          = 1;
-    string                    name        = 2;
-    google.protobuf.Timestamp created_at  = 3;
-    storage.User              created_by  = 4;
-    google.protobuf.Timestamp expires_at  = 5;
+    message ImpactedCluster {
+        string name = 1;
+        string id   = 2;
+    }
+
+    string                    id                = 1;
+    string                    name              = 2;
+    repeated ImpactedCluster  impacted_clusters = 6;
+    google.protobuf.Timestamp created_at        = 3;
+    storage.User              created_by        = 4;
+    google.protobuf.Timestamp expires_at        = 5;
 }
 
 message InitBundleGenResponse {
@@ -37,21 +43,29 @@ message InitBundleGenRequest {
 }
 
 message InitBundleRevokeRequest {
-    repeated string ids = 1;
+    repeated string ids                           = 1;
+    repeated string confirm_impacted_clusters_ids = 3;
+
 }
 
 
 message InitBundleRevokeResponse {
     message InitBundleRevocationError {
-        string id = 1;
-        string error = 2;
+        string                                  id                = 1;
+        string                                  error             = 2;
+        repeated InitBundleMeta.ImpactedCluster impacted_clusters = 3;
     }
 
     repeated InitBundleRevocationError init_bundle_revocation_errors = 2;
     repeated string init_bundle_revoked_ids = 3;
 }
 
+// ClusterInitService manages cluster init bundles.
 service ClusterInitService {
+    // RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
+    // then its ID should be included in request.
+    // If confirm_impacted_clusters_ids does not match with current impacted clusters
+    // then request will fail with error that includes all impacted clusters.
     rpc RevokeInitBundle(InitBundleRevokeRequest) returns (InitBundleRevokeResponse) {
         option (google.api.http) = {
             patch: "/v1/cluster-init/init-bundles/revoke",

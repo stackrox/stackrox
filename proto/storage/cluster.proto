@@ -143,6 +143,8 @@ message Cluster {
 
     // For internal use only.
     map<string, AuditLogFileState> audit_log_state             = 28;
+
+    string                    init_bundle_id                  = 29;
 }
 
 message ClusterCertExpiryStatus {

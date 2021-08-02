@@ -29,14 +29,15 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type InitBundleMeta struct {
-	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CreatedAt            *types.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	CreatedBy            *storage.User    `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	ExpiresAt            *types.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Id                   string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string                            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ImpactedClusters     []*InitBundleMeta_ImpactedCluster `protobuf:"bytes,6,rep,name=impacted_clusters,json=impactedClusters,proto3" json:"impacted_clusters,omitempty"`
+	CreatedAt            *types.Timestamp                  `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedBy            *storage.User                     `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	ExpiresAt            *types.Timestamp                  `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
+	XXX_unrecognized     []byte                            `json:"-"`
+	XXX_sizecache        int32                             `json:"-"`
 }
 
 func (m *InitBundleMeta) Reset()         { *m = InitBundleMeta{} }
@@ -86,6 +87,13 @@ func (m *InitBundleMeta) GetName() string {
 	return ""
 }
 
+func (m *InitBundleMeta) GetImpactedClusters() []*InitBundleMeta_ImpactedCluster {
+	if m != nil {
+		return m.ImpactedClusters
+	}
+	return nil
+}
+
 func (m *InitBundleMeta) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
@@ -117,9 +125,83 @@ func (m *InitBundleMeta) Clone() *InitBundleMeta {
 	cloned := new(InitBundleMeta)
 	*cloned = *m
 
+	if m.ImpactedClusters != nil {
+		cloned.ImpactedClusters = make([]*InitBundleMeta_ImpactedCluster, len(m.ImpactedClusters))
+		for idx, v := range m.ImpactedClusters {
+			cloned.ImpactedClusters[idx] = v.Clone()
+		}
+	}
 	cloned.CreatedAt = m.CreatedAt.Clone()
 	cloned.CreatedBy = m.CreatedBy.Clone()
 	cloned.ExpiresAt = m.ExpiresAt.Clone()
+	return cloned
+}
+
+type InitBundleMeta_ImpactedCluster struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *InitBundleMeta_ImpactedCluster) Reset()         { *m = InitBundleMeta_ImpactedCluster{} }
+func (m *InitBundleMeta_ImpactedCluster) String() string { return proto.CompactTextString(m) }
+func (*InitBundleMeta_ImpactedCluster) ProtoMessage()    {}
+func (*InitBundleMeta_ImpactedCluster) Descriptor() ([]byte, []int) {
+	return fileDescriptor_72d12c1400ba6fdb, []int{0, 0}
+}
+func (m *InitBundleMeta_ImpactedCluster) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *InitBundleMeta_ImpactedCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_InitBundleMeta_ImpactedCluster.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *InitBundleMeta_ImpactedCluster) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InitBundleMeta_ImpactedCluster.Merge(m, src)
+}
+func (m *InitBundleMeta_ImpactedCluster) XXX_Size() int {
+	return m.Size()
+}
+func (m *InitBundleMeta_ImpactedCluster) XXX_DiscardUnknown() {
+	xxx_messageInfo_InitBundleMeta_ImpactedCluster.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_InitBundleMeta_ImpactedCluster proto.InternalMessageInfo
+
+func (m *InitBundleMeta_ImpactedCluster) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *InitBundleMeta_ImpactedCluster) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *InitBundleMeta_ImpactedCluster) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *InitBundleMeta_ImpactedCluster) Clone() *InitBundleMeta_ImpactedCluster {
+	if m == nil {
+		return nil
+	}
+	cloned := new(InitBundleMeta_ImpactedCluster)
+	*cloned = *m
+
 	return cloned
 }
 
@@ -399,10 +481,11 @@ func (m *InitBundleGenRequest) Clone() *InitBundleGenRequest {
 }
 
 type InitBundleRevokeRequest struct {
-	Ids                  []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Ids                        []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	ConfirmImpactedClustersIds []string `protobuf:"bytes,3,rep,name=confirm_impacted_clusters_ids,json=confirmImpactedClustersIds,proto3" json:"confirm_impacted_clusters_ids,omitempty"`
+	XXX_NoUnkeyedLiteral       struct{} `json:"-"`
+	XXX_unrecognized           []byte   `json:"-"`
+	XXX_sizecache              int32    `json:"-"`
 }
 
 func (m *InitBundleRevokeRequest) Reset()         { *m = InitBundleRevokeRequest{} }
@@ -445,6 +528,13 @@ func (m *InitBundleRevokeRequest) GetIds() []string {
 	return nil
 }
 
+func (m *InitBundleRevokeRequest) GetConfirmImpactedClustersIds() []string {
+	if m != nil {
+		return m.ConfirmImpactedClustersIds
+	}
+	return nil
+}
+
 func (m *InitBundleRevokeRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -458,6 +548,10 @@ func (m *InitBundleRevokeRequest) Clone() *InitBundleRevokeRequest {
 	if m.Ids != nil {
 		cloned.Ids = make([]string, len(m.Ids))
 		copy(cloned.Ids, m.Ids)
+	}
+	if m.ConfirmImpactedClustersIds != nil {
+		cloned.ConfirmImpactedClustersIds = make([]string, len(m.ConfirmImpactedClustersIds))
+		copy(cloned.ConfirmImpactedClustersIds, m.ConfirmImpactedClustersIds)
 	}
 	return cloned
 }
@@ -541,11 +635,12 @@ func (m *InitBundleRevokeResponse) Clone() *InitBundleRevokeResponse {
 }
 
 type InitBundleRevokeResponse_InitBundleRevocationError struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Error                string   `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Id                   string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Error                string                            `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	ImpactedClusters     []*InitBundleMeta_ImpactedCluster `protobuf:"bytes,3,rep,name=impacted_clusters,json=impactedClusters,proto3" json:"impacted_clusters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
+	XXX_unrecognized     []byte                            `json:"-"`
+	XXX_sizecache        int32                             `json:"-"`
 }
 
 func (m *InitBundleRevokeResponse_InitBundleRevocationError) Reset() {
@@ -599,6 +694,13 @@ func (m *InitBundleRevokeResponse_InitBundleRevocationError) GetError() string {
 	return ""
 }
 
+func (m *InitBundleRevokeResponse_InitBundleRevocationError) GetImpactedClusters() []*InitBundleMeta_ImpactedCluster {
+	if m != nil {
+		return m.ImpactedClusters
+	}
+	return nil
+}
+
 func (m *InitBundleRevokeResponse_InitBundleRevocationError) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -609,11 +711,18 @@ func (m *InitBundleRevokeResponse_InitBundleRevocationError) Clone() *InitBundle
 	cloned := new(InitBundleRevokeResponse_InitBundleRevocationError)
 	*cloned = *m
 
+	if m.ImpactedClusters != nil {
+		cloned.ImpactedClusters = make([]*InitBundleMeta_ImpactedCluster, len(m.ImpactedClusters))
+		for idx, v := range m.ImpactedClusters {
+			cloned.ImpactedClusters[idx] = v.Clone()
+		}
+	}
 	return cloned
 }
 
 func init() {
 	proto.RegisterType((*InitBundleMeta)(nil), "v1.InitBundleMeta")
+	proto.RegisterType((*InitBundleMeta_ImpactedCluster)(nil), "v1.InitBundleMeta.ImpactedCluster")
 	proto.RegisterType((*InitBundleGenResponse)(nil), "v1.InitBundleGenResponse")
 	proto.RegisterType((*GetCAConfigResponse)(nil), "v1.GetCAConfigResponse")
 	proto.RegisterType((*InitBundleMetasResponse)(nil), "v1.InitBundleMetasResponse")
@@ -626,51 +735,56 @@ func init() {
 func init() { proto.RegisterFile("api/v1/cluster_init_service.proto", fileDescriptor_72d12c1400ba6fdb) }
 
 var fileDescriptor_72d12c1400ba6fdb = []byte{
-	// 696 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x54, 0x4f, 0x6f, 0xd3, 0x4e,
-	0x10, 0xad, 0x9d, 0xf6, 0x27, 0x65, 0xfb, 0x6b, 0x54, 0x2d, 0x45, 0x75, 0xdd, 0x36, 0x2d, 0x16,
-	0x45, 0xa1, 0xb4, 0xb6, 0x12, 0x04, 0x12, 0xbd, 0xa5, 0x51, 0x15, 0xf5, 0xc0, 0xc5, 0x50, 0x84,
-	0xb8, 0x58, 0x1b, 0x7b, 0x1a, 0x56, 0x49, 0xbc, 0x61, 0x77, 0x6d, 0x35, 0x17, 0x0e, 0x7c, 0x01,
-	0x0e, 0x70, 0xe0, 0xeb, 0x70, 0xe3, 0x88, 0xc4, 0x85, 0x23, 0x2a, 0x7c, 0x10, 0xe4, 0x5d, 0xe7,
-	0x7f, 0x5a, 0x2e, 0xd1, 0x66, 0xe6, 0xcd, 0xbc, 0xf7, 0xc6, 0xb3, 0x8b, 0xee, 0x91, 0x3e, 0xf5,
-	0xd2, 0xaa, 0x17, 0x76, 0x13, 0x21, 0x81, 0x07, 0x34, 0xa6, 0x32, 0x10, 0xc0, 0x53, 0x1a, 0x82,
-	0xdb, 0xe7, 0x4c, 0x32, 0x6c, 0xa6, 0x55, 0x7b, 0xa7, 0xcd, 0x58, 0xbb, 0x0b, 0x5e, 0x86, 0x26,
-	0x71, 0xcc, 0x24, 0x91, 0x94, 0xc5, 0x42, 0x23, 0xec, 0xbd, 0x3c, 0xab, 0xfe, 0xb5, 0x92, 0x4b,
-	0x4f, 0xd2, 0x1e, 0x08, 0x49, 0x7a, 0xfd, 0x1c, 0x80, 0x73, 0x16, 0xe8, 0xf5, 0xe5, 0x60, 0x18,
-	0x13, 0x92, 0x71, 0xd2, 0x06, 0x2f, 0x11, 0xc0, 0x75, 0xcc, 0xf9, 0x69, 0xa0, 0xd2, 0x79, 0x4c,
-	0xe5, 0x69, 0x12, 0x47, 0x5d, 0x78, 0x0e, 0x92, 0xe0, 0x12, 0x32, 0x69, 0x64, 0x19, 0xfb, 0x46,
-	0xa5, 0xe8, 0x9b, 0x34, 0xc2, 0x18, 0x2d, 0xc7, 0xa4, 0x07, 0x96, 0xa9, 0x22, 0xea, 0x8c, 0x9f,
-	0x21, 0x14, 0x72, 0x20, 0x12, 0xa2, 0x80, 0x48, 0xab, 0xb0, 0x6f, 0x54, 0x56, 0x6b, 0xb6, 0xab,
-	0x45, 0xb9, 0x43, 0x51, 0xee, 0xcb, 0xa1, 0x28, 0xbf, 0x98, 0xa3, 0xeb, 0x12, 0x1f, 0x8d, 0x4b,
-	0x5b, 0x03, 0x6b, 0x59, 0x95, 0xae, 0xb9, 0xb9, 0x34, 0xf7, 0x42, 0x00, 0x1f, 0xa1, 0x4f, 0x07,
-	0x19, 0x11, 0x5c, 0xf5, 0x29, 0x07, 0x91, 0x11, 0xad, 0xfc, 0x9b, 0x28, 0x47, 0xd7, 0xa5, 0xf3,
-	0xd9, 0x40, 0x77, 0xc7, 0xd6, 0x9a, 0x10, 0xfb, 0x20, 0xfa, 0x2c, 0x16, 0x80, 0x1f, 0xa0, 0xe5,
-	0x1e, 0x48, 0xa2, 0x3c, 0xae, 0xd6, 0xb0, 0x9b, 0x56, 0xdd, 0xe9, 0x19, 0xf8, 0x2a, 0x8f, 0x8f,
-	0x10, 0x7e, 0x0b, 0xdd, 0x5e, 0x90, 0x92, 0x6e, 0x02, 0x22, 0x68, 0xa9, 0xbc, 0x9a, 0xc3, 0xff,
-	0xfe, 0x7a, 0x96, 0x79, 0xa5, 0x12, 0xba, 0x0e, 0x1f, 0xa0, 0x52, 0x27, 0x69, 0x41, 0x28, 0xbb,
-	0x43, 0x64, 0x41, 0x21, 0xd7, 0xf2, 0xa8, 0x86, 0x39, 0x0d, 0x74, 0xa7, 0x09, 0xb2, 0x51, 0x6f,
-	0xb0, 0xf8, 0x92, 0xb6, 0x47, 0x9a, 0x16, 0x73, 0x19, 0x8b, 0xb9, 0x9c, 0x06, 0xda, 0x9c, 0x56,
-	0x2c, 0x46, 0x8d, 0x2a, 0x68, 0x85, 0x4a, 0xe8, 0x09, 0xcb, 0xd8, 0x2f, 0xdc, 0xe0, 0x4e, 0x03,
-	0x9c, 0x43, 0xb4, 0x31, 0x33, 0x9f, 0x77, 0x09, 0x08, 0x39, 0xfa, 0xe0, 0xc6, 0xf8, 0x83, 0x3b,
-	0x8f, 0x26, 0x09, 0x7d, 0x48, 0x59, 0x07, 0x86, 0xf0, 0x75, 0x54, 0xa0, 0x91, 0xa6, 0x2b, 0xfa,
-	0xd9, 0xd1, 0xf9, 0x68, 0x22, 0x6b, 0x1e, 0x9d, 0xeb, 0x1b, 0xa0, 0x5d, 0xb5, 0xf2, 0xda, 0x61,
-	0xc0, 0x21, 0x65, 0xa1, 0xda, 0xed, 0x00, 0x38, 0x67, 0x5c, 0x58, 0xa6, 0xd2, 0xfd, 0x74, 0x5a,
-	0xf7, 0x74, 0x93, 0x99, 0x84, 0xae, 0x3f, 0xcb, 0xca, 0x7d, 0x9b, 0xde, 0x94, 0x12, 0xf8, 0x09,
-	0xda, 0x9c, 0xa5, 0xee, 0x40, 0x14, 0x64, 0xea, 0x0b, 0x4a, 0xfd, 0x06, 0x9d, 0x21, 0x8c, 0xce,
-	0x23, 0x61, 0xd7, 0xd1, 0xd6, 0x8d, 0x7c, 0x73, 0xb7, 0x65, 0x03, 0xad, 0x28, 0x1f, 0xf9, 0x75,
-	0xd1, 0x7f, 0x6a, 0x5f, 0x0b, 0x08, 0x37, 0xf4, 0x85, 0xcf, 0x5a, 0xbd, 0xd0, 0xd7, 0x1d, 0xbf,
-	0x47, 0xeb, 0x9a, 0x67, 0xdc, 0x1f, 0x6f, 0x2f, 0x36, 0xae, 0x66, 0x6d, 0xef, 0xdc, 0x36, 0x15,
-	0xc7, 0xfb, 0xf0, 0xe3, 0xcf, 0x27, 0xf3, 0x61, 0xed, 0xfe, 0xc4, 0xfb, 0x72, 0x9c, 0x59, 0xf2,
-	0xb2, 0x9f, 0x63, 0x6d, 0x5b, 0x78, 0xda, 0xf7, 0x89, 0x71, 0x88, 0x2f, 0xd0, 0xea, 0xc4, 0x2e,
-	0xe2, 0x62, 0xd6, 0xfd, 0x2c, 0x7b, 0x31, 0xec, 0xcd, 0xec, 0xb8, 0x60, 0x4f, 0x1d, 0x47, 0x71,
-	0xec, 0x60, 0x7b, 0x8e, 0x23, 0x24, 0xc7, 0xa1, 0xee, 0x13, 0xa0, 0x52, 0x13, 0xe4, 0x58, 0xa6,
-	0x98, 0xec, 0xbc, 0x3d, 0xbf, 0x90, 0xa3, 0xe5, 0x75, 0x0e, 0x54, 0xf7, 0x3d, 0xbc, 0x7b, 0xab,
-	0x03, 0x2c, 0x10, 0x6e, 0x42, 0x0c, 0x9c, 0xc8, 0xc9, 0xc9, 0x59, 0xd3, 0x9d, 0xc7, 0x1b, 0x6d,
-	0x6f, 0x2d, 0xc8, 0xe4, 0x8c, 0x15, 0xc5, 0xe8, 0x38, 0xb7, 0x33, 0x9e, 0x18, 0x87, 0xa7, 0xee,
-	0xb7, 0xeb, 0xb2, 0xf1, 0xfd, 0xba, 0x6c, 0xfc, 0xba, 0x2e, 0x1b, 0x5f, 0x7e, 0x97, 0x97, 0x90,
-	0x45, 0x99, 0x2b, 0x24, 0x09, 0x3b, 0x9c, 0x5d, 0xe9, 0xc7, 0xc8, 0x25, 0x7d, 0xea, 0xa6, 0xd5,
-	0x37, 0x66, 0x5a, 0x7d, 0xbd, 0xd4, 0xfa, 0x4f, 0xc5, 0x1e, 0xff, 0x0d, 0x00, 0x00, 0xff, 0xff,
-	0xa9, 0x8d, 0xef, 0xce, 0xf3, 0x05, 0x00, 0x00,
+	// 770 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0xdd, 0x4e, 0xdb, 0x48,
+	0x14, 0xc6, 0x0e, 0x20, 0x65, 0xb2, 0x64, 0xb3, 0xb3, 0xac, 0x30, 0x06, 0x02, 0x6b, 0x2d, 0xab,
+	0x2c, 0x02, 0x5b, 0xc9, 0x8a, 0x4a, 0xe5, 0x2e, 0x44, 0x28, 0xca, 0x45, 0x55, 0xc9, 0x2d, 0x55,
+	0xd5, 0x1b, 0x6b, 0x62, 0x1f, 0xd2, 0x51, 0xe2, 0x9f, 0x7a, 0x26, 0x16, 0xb9, 0xe9, 0x45, 0x1f,
+	0xa1, 0xed, 0x45, 0x5f, 0xa7, 0x77, 0xbd, 0xac, 0xd4, 0x17, 0xa0, 0xb4, 0x0f, 0x52, 0x79, 0xc6,
+	0xf9, 0x37, 0x54, 0xea, 0x8d, 0x35, 0x73, 0xce, 0x77, 0xce, 0x37, 0xdf, 0xe7, 0x39, 0x83, 0xfe,
+	0x26, 0x11, 0xb5, 0x92, 0xba, 0xe5, 0x0e, 0x86, 0x8c, 0x43, 0xec, 0xd0, 0x80, 0x72, 0x87, 0x41,
+	0x9c, 0x50, 0x17, 0xcc, 0x28, 0x0e, 0x79, 0x88, 0xd5, 0xa4, 0xae, 0xef, 0xf6, 0xc2, 0xb0, 0x37,
+	0x00, 0x2b, 0x45, 0x93, 0x20, 0x08, 0x39, 0xe1, 0x34, 0x0c, 0x98, 0x44, 0xe8, 0xfb, 0x59, 0x56,
+	0xec, 0xba, 0xc3, 0x2b, 0x8b, 0x53, 0x1f, 0x18, 0x27, 0x7e, 0x94, 0x01, 0x70, 0xc6, 0x02, 0x7e,
+	0xc4, 0x47, 0xe3, 0x18, 0xe3, 0x61, 0x4c, 0x7a, 0x60, 0x0d, 0x19, 0xc4, 0x32, 0x66, 0xdc, 0xa8,
+	0xa8, 0xdc, 0x09, 0x28, 0x3f, 0x1f, 0x06, 0xde, 0x00, 0x1e, 0x01, 0x27, 0xb8, 0x8c, 0x54, 0xea,
+	0x69, 0xca, 0x81, 0x52, 0x2b, 0xda, 0x2a, 0xf5, 0x30, 0x46, 0xab, 0x01, 0xf1, 0x41, 0x53, 0x45,
+	0x44, 0xac, 0xf1, 0x63, 0xf4, 0x07, 0xf5, 0x23, 0xe2, 0x72, 0xf0, 0x9c, 0x4c, 0x08, 0xd3, 0xd6,
+	0x0f, 0x0a, 0xb5, 0x52, 0xc3, 0x30, 0x93, 0xba, 0x39, 0xdf, 0xd2, 0xec, 0x64, 0xd8, 0x96, 0x84,
+	0xda, 0x15, 0x3a, 0x1f, 0x60, 0xf8, 0x21, 0x42, 0x6e, 0x0c, 0x24, 0xed, 0x47, 0xb8, 0x56, 0x38,
+	0x50, 0x6a, 0xa5, 0x86, 0x6e, 0x4a, 0x95, 0xe6, 0x58, 0xa5, 0xf9, 0x74, 0xac, 0xd2, 0x2e, 0x66,
+	0xe8, 0x26, 0xc7, 0xc7, 0xd3, 0xd2, 0xee, 0x48, 0x5b, 0x15, 0xa5, 0x1b, 0x66, 0xa6, 0xd5, 0xbc,
+	0x64, 0x10, 0x4f, 0xd0, 0xe7, 0xa3, 0x94, 0x08, 0xae, 0x23, 0x1a, 0x03, 0x4b, 0x89, 0xd6, 0x7e,
+	0x4e, 0x94, 0xa1, 0x9b, 0x5c, 0x3f, 0x45, 0xbf, 0x2f, 0x08, 0x99, 0x78, 0xa3, 0xcc, 0x78, 0x23,
+	0xfd, 0x53, 0xc7, 0xfe, 0x19, 0xef, 0x15, 0xf4, 0xd7, 0xd4, 0x8f, 0x36, 0x04, 0x36, 0xb0, 0x28,
+	0x0c, 0x18, 0xe0, 0x7f, 0xd1, 0xaa, 0x0f, 0x9c, 0x88, 0xea, 0x52, 0x03, 0x2f, 0x1b, 0x67, 0x8b,
+	0x3c, 0x3e, 0x46, 0xf8, 0x25, 0x0c, 0x7c, 0x27, 0x21, 0x83, 0x21, 0x30, 0xa7, 0x2b, 0xf2, 0x82,
+	0xe1, 0x37, 0xbb, 0x92, 0x66, 0x9e, 0x89, 0x84, 0xac, 0xc3, 0x87, 0xa8, 0xdc, 0x1f, 0x76, 0xc1,
+	0xe5, 0x83, 0x31, 0xb2, 0x20, 0x90, 0x1b, 0x59, 0x54, 0xc2, 0x8c, 0x16, 0xfa, 0xb3, 0x0d, 0xbc,
+	0xd5, 0x6c, 0x85, 0xc1, 0x15, 0xed, 0x4d, 0xce, 0x94, 0xcf, 0xa5, 0xe4, 0x73, 0x19, 0x2d, 0xb4,
+	0x35, 0x7f, 0x62, 0x36, 0x69, 0x54, 0x43, 0x6b, 0x94, 0x83, 0xcf, 0x34, 0x45, 0x5c, 0x8b, 0x3c,
+	0x75, 0x12, 0x60, 0x1c, 0xa1, 0xcd, 0x05, 0x7f, 0x5e, 0x0d, 0x81, 0xf1, 0x3c, 0x73, 0x8d, 0x60,
+	0x96, 0xd0, 0x86, 0x24, 0xec, 0xc3, 0x18, 0x5e, 0x41, 0x05, 0xea, 0x49, 0xba, 0xa2, 0x9d, 0x2e,
+	0x71, 0x13, 0xed, 0xb9, 0xa9, 0xba, 0xd8, 0x77, 0x96, 0x6e, 0xab, 0x93, 0x62, 0x0b, 0x02, 0xab,
+	0x67, 0xa0, 0x85, 0x9f, 0xcb, 0x3a, 0x1e, 0x33, 0xbe, 0xaa, 0x48, 0x5b, 0x26, 0xcc, 0x24, 0x8e,
+	0xd0, 0x9e, 0x98, 0x5e, 0x69, 0x92, 0x13, 0x43, 0x12, 0xba, 0x62, 0x4c, 0x1d, 0x88, 0xe3, 0x30,
+	0x66, 0x9a, 0x2a, 0xa4, 0x3f, 0x98, 0x97, 0x3e, 0xdf, 0x64, 0x21, 0x21, 0xeb, 0x2f, 0xd2, 0x72,
+	0x5b, 0xa7, 0x77, 0xa5, 0x18, 0x3e, 0x45, 0x5b, 0x8b, 0xd4, 0x7d, 0xf0, 0x66, 0x44, 0x6d, 0xd2,
+	0x05, 0x42, 0xaf, 0xe3, 0x31, 0xfd, 0xad, 0x82, 0xb6, 0xef, 0x24, 0x5c, 0x9a, 0xfc, 0x4d, 0xb4,
+	0x26, 0x84, 0x64, 0x97, 0x59, 0x6e, 0xf2, 0x67, 0xbf, 0xf0, 0xeb, 0xb3, 0xdf, 0xf8, 0x58, 0x40,
+	0x38, 0xdb, 0xa4, 0xb5, 0x4f, 0xe4, 0x5b, 0x88, 0x5f, 0xa3, 0x8a, 0x3c, 0xf9, 0xb4, 0x21, 0xde,
+	0xc9, 0xb7, 0x52, 0x5c, 0x00, 0x7d, 0xf7, 0x3e, 0x9f, 0x0d, 0xeb, 0xcd, 0x97, 0xef, 0xef, 0xd4,
+	0xff, 0x1a, 0xff, 0xcc, 0x3c, 0xbe, 0x27, 0xa9, 0x49, 0x56, 0xfa, 0x39, 0x91, 0x46, 0x32, 0x4b,
+	0x3a, 0x79, 0xa6, 0x1c, 0xe1, 0x4b, 0x54, 0x9a, 0x19, 0x10, 0x5c, 0x4c, 0xbb, 0x5f, 0xa4, 0xcf,
+	0xa9, 0xbe, 0x95, 0x2e, 0x73, 0x86, 0xc7, 0x30, 0x04, 0xc7, 0x2e, 0xd6, 0x97, 0x38, 0x5c, 0x72,
+	0xe2, 0xca, 0x3e, 0x0e, 0x2a, 0xb7, 0x81, 0x4f, 0x8f, 0xc9, 0x66, 0x3b, 0xef, 0x2c, 0x1b, 0x38,
+	0x99, 0x28, 0xe3, 0x50, 0x74, 0xdf, 0xc7, 0x7b, 0xf7, 0x2a, 0xc0, 0x0c, 0xe1, 0x36, 0x04, 0x10,
+	0x13, 0x3e, 0xeb, 0x9c, 0x36, 0xdf, 0x79, 0x3a, 0x66, 0xfa, 0x76, 0x4e, 0x26, 0x63, 0xac, 0x09,
+	0x46, 0xc3, 0xb8, 0x9f, 0xf1, 0x4c, 0x39, 0x3a, 0x37, 0x3f, 0xdd, 0x56, 0x95, 0xcf, 0xb7, 0x55,
+	0xe5, 0xe6, 0xb6, 0xaa, 0x7c, 0xf8, 0x56, 0x5d, 0x41, 0x1a, 0x0d, 0x4d, 0xc6, 0x89, 0xdb, 0x8f,
+	0xc3, 0x6b, 0xf9, 0xb0, 0x9a, 0x24, 0xa2, 0x66, 0x52, 0x7f, 0xa1, 0x26, 0xf5, 0xe7, 0x2b, 0xdd,
+	0x75, 0x11, 0xfb, 0xff, 0x47, 0x00, 0x00, 0x00, 0xff, 0xff, 0x8f, 0x09, 0x50, 0x66, 0x10, 0x07,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -685,6 +799,10 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ClusterInitServiceClient interface {
+	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
+	// then its ID should be included in request.
+	// If confirm_impacted_clusters_ids does not match with current impacted clusters
+	// then request will fail with error that includes all impacted clusters.
 	RevokeInitBundle(ctx context.Context, in *InitBundleRevokeRequest, opts ...grpc.CallOption) (*InitBundleRevokeResponse, error)
 	GetCAConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCAConfigResponse, error)
 	GetInitBundles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InitBundleMetasResponse, error)
@@ -737,6 +855,10 @@ func (c *clusterInitServiceClient) GenerateInitBundle(ctx context.Context, in *I
 
 // ClusterInitServiceServer is the server API for ClusterInitService service.
 type ClusterInitServiceServer interface {
+	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
+	// then its ID should be included in request.
+	// If confirm_impacted_clusters_ids does not match with current impacted clusters
+	// then request will fail with error that includes all impacted clusters.
 	RevokeInitBundle(context.Context, *InitBundleRevokeRequest) (*InitBundleRevokeResponse, error)
 	GetCAConfig(context.Context, *Empty) (*GetCAConfigResponse, error)
 	GetInitBundles(context.Context, *Empty) (*InitBundleMetasResponse, error)
@@ -885,6 +1007,20 @@ func (m *InitBundleMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.ImpactedClusters) > 0 {
+		for iNdEx := len(m.ImpactedClusters) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ImpactedClusters[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintClusterInitService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x32
+		}
+	}
 	if m.ExpiresAt != nil {
 		{
 			size, err := m.ExpiresAt.MarshalToSizedBuffer(dAtA[:i])
@@ -932,6 +1068,47 @@ func (m *InitBundleMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Id)
 		copy(dAtA[i:], m.Id)
 		i = encodeVarintClusterInitService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *InitBundleMeta_ImpactedCluster) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *InitBundleMeta_ImpactedCluster) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *InitBundleMeta_ImpactedCluster) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintClusterInitService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintClusterInitService(dAtA, i, uint64(len(m.Name)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1124,6 +1301,15 @@ func (m *InitBundleRevokeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.ConfirmImpactedClustersIds) > 0 {
+		for iNdEx := len(m.ConfirmImpactedClustersIds) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ConfirmImpactedClustersIds[iNdEx])
+			copy(dAtA[i:], m.ConfirmImpactedClustersIds[iNdEx])
+			i = encodeVarintClusterInitService(dAtA, i, uint64(len(m.ConfirmImpactedClustersIds[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
 	if len(m.Ids) > 0 {
 		for iNdEx := len(m.Ids) - 1; iNdEx >= 0; iNdEx-- {
 			i -= len(m.Ids[iNdEx])
@@ -1210,6 +1396,20 @@ func (m *InitBundleRevokeResponse_InitBundleRevocationError) MarshalToSizedBuffe
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.ImpactedClusters) > 0 {
+		for iNdEx := len(m.ImpactedClusters) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ImpactedClusters[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintClusterInitService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
 	if len(m.Error) > 0 {
 		i -= len(m.Error)
 		copy(dAtA[i:], m.Error)
@@ -1262,6 +1462,32 @@ func (m *InitBundleMeta) Size() (n int) {
 	}
 	if m.ExpiresAt != nil {
 		l = m.ExpiresAt.Size()
+		n += 1 + l + sovClusterInitService(uint64(l))
+	}
+	if len(m.ImpactedClusters) > 0 {
+		for _, e := range m.ImpactedClusters {
+			l = e.Size()
+			n += 1 + l + sovClusterInitService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *InitBundleMeta_ImpactedCluster) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovClusterInitService(uint64(l))
+	}
+	l = len(m.Id)
+	if l > 0 {
 		n += 1 + l + sovClusterInitService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -1356,6 +1582,12 @@ func (m *InitBundleRevokeRequest) Size() (n int) {
 			n += 1 + l + sovClusterInitService(uint64(l))
 		}
 	}
+	if len(m.ConfirmImpactedClustersIds) > 0 {
+		for _, s := range m.ConfirmImpactedClustersIds {
+			l = len(s)
+			n += 1 + l + sovClusterInitService(uint64(l))
+		}
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -1399,6 +1631,12 @@ func (m *InitBundleRevokeResponse_InitBundleRevocationError) Size() (n int) {
 	l = len(m.Error)
 	if l > 0 {
 		n += 1 + l + sovClusterInitService(uint64(l))
+	}
+	if len(m.ImpactedClusters) > 0 {
+		for _, e := range m.ImpactedClusters {
+			l = e.Size()
+			n += 1 + l + sovClusterInitService(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1612,6 +1850,155 @@ func (m *InitBundleMeta) Unmarshal(dAtA []byte) error {
 			if err := m.ExpiresAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImpactedClusters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterInitService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImpactedClusters = append(m.ImpactedClusters, &InitBundleMeta_ImpactedCluster{})
+			if err := m.ImpactedClusters[len(m.ImpactedClusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipClusterInitService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *InitBundleMeta_ImpactedCluster) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowClusterInitService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ImpactedCluster: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ImpactedCluster: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterInitService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterInitService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2104,6 +2491,38 @@ func (m *InitBundleRevokeRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.Ids = append(m.Ids, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConfirmImpactedClustersIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterInitService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ConfirmImpactedClustersIds = append(m.ConfirmImpactedClustersIds, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipClusterInitService(dAtA[iNdEx:])
@@ -2335,6 +2754,40 @@ func (m *InitBundleRevokeResponse_InitBundleRevocationError) Unmarshal(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			m.Error = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImpactedClusters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterInitService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterInitService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImpactedClusters = append(m.ImpactedClusters, &InitBundleMeta_ImpactedCluster{})
+			if err := m.ImpactedClusters[len(m.ImpactedClusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

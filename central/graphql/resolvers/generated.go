@@ -228,6 +228,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"healthStatus: ClusterHealthStatus",
 		"helmConfig: CompleteClusterConfig",
 		"id: ID!",
+		"initBundleId: String!",
 		"labels: [Label!]!",
 		"mainImage: String!",
 		"mostRecentSensorId: SensorDeploymentIdentification",
@@ -3024,6 +3025,11 @@ func (resolver *clusterResolver) HelmConfig(ctx context.Context) (*completeClust
 func (resolver *clusterResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *clusterResolver) InitBundleId(ctx context.Context) string {
+	value := resolver.data.GetInitBundleId()
+	return value
 }
 
 func (resolver *clusterResolver) Labels(ctx context.Context) labels {
