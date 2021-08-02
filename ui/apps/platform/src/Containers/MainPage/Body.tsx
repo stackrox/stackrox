@@ -6,6 +6,7 @@ import {
     dashboardPath,
     networkPath,
     violationsPath,
+    violationsPFBasePath,
     compliancePath,
     clustersPathWithParam,
     integrationsPath,
@@ -36,6 +37,10 @@ const AsyncIntegrationsPage = asyncComponent(
     () => import('Containers/Integrations/IntegrationsPage')
 );
 const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
+const AsyncViolationsPFPage = asyncComponent(
+    () => import('Containers/Violations/PatternFly/ViolationsPage')
+);
+
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
@@ -67,6 +72,11 @@ function Body(): ReactElement {
                 <Switch>
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
                     <ProtectedRoute path={networkPath} component={AsyncNetworkPage} />
+                    <ProtectedRoute
+                        path={violationsPFBasePath}
+                        component={AsyncViolationsPFPage}
+                        devOnly
+                    />
                     <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />
                     <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
                     <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />

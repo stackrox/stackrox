@@ -5,6 +5,7 @@ import {
     clustersPathWithParam,
     dashboardPath,
     violationsPath,
+    violationsPFPath,
     riskPath,
     policiesPath,
     imagesPath,
@@ -91,6 +92,14 @@ export default function* searches() {
         ),
         takeEveryNewlyMatchedLocation(
             violationsPath,
+            getSearchOptions,
+            alertActions.setAlertsSearchModifiers,
+            alertActions.setAlertsSearchSuggestions,
+            alertActions.setAlertsSearchOptions,
+            `categories=ALERTS`
+        ),
+        takeEveryNewlyMatchedLocation(
+            violationsPFPath,
             getSearchOptions,
             alertActions.setAlertsSearchModifiers,
             alertActions.setAlertsSearchSuggestions,
