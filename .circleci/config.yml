@@ -1686,8 +1686,8 @@ commands:
             cci-export CLAIRIFY_IMAGE_TAG 0.5.2
             cci-export OPENSHIFT_HOST "$(cat openshift/artifacts/master)"
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "QUAY_CGORMAN1_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "QUAY_CGORMAN1_RO_USER"
+            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
 
             REPO=cgorman1
             cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
