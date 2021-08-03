@@ -7,6 +7,7 @@ import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
 import "api/v1/search_service.proto";
+import "storage/mitre.proto";
 import "storage/policy.proto";
 
 package v1;
@@ -119,6 +120,21 @@ message PolicyFromSearchResponse {
     bool            has_nested_fields      = 3;
 }
 
+message GetPolicyMitreVectorsRequest {
+    message Options {
+        // If set to true, policy is excluded from the response.
+        bool exclude_policy = 1;
+    }
+
+    string  id      = 1;
+    Options options = 2;
+}
+
+message GetPolicyMitreVectorsResponse {
+    storage.Policy                     policy  = 1;
+    repeated storage.MitreAttackVector vectors = 2;
+}
+
 // PolicyService APIs can be used to manage policies.
 service PolicyService {
 
@@ -126,6 +142,13 @@ service PolicyService {
     rpc GetPolicy (ResourceByID) returns (storage.Policy) {
         option (google.api.http) = {
             get: "/v1/policies/{id}"
+        };
+    }
+
+    // GetMitreVectorsForPolicy returns the requested policy by ID.
+    rpc GetPolicyMitreVectors (GetPolicyMitreVectorsRequest) returns (GetPolicyMitreVectorsResponse) {
+        option (google.api.http) = {
+            get: "/v1/policies/{id}/mitrevectors"
         };
     }
 

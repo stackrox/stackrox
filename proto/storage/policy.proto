@@ -13,37 +13,46 @@ import "storage/rbac.proto";
 package storage;
 
 message Policy {
-    string id                                      = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
-    string name                                    = 2 [(gogoproto.moretags) = "search:\"Policy,store\""];
-    string description                             = 3 [(gogoproto.moretags) = "search:\"Description\""];
-    string rationale                               = 4;
-    string remediation                             = 5;
-    bool disabled                                  = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
-    repeated string categories                     = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
-    PolicyFields fields                            = 8;
+    string                      id                      = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
+    string                      name                    = 2 [(gogoproto.moretags) = "search:\"Policy,store\""];
+    string                      description             = 3 [(gogoproto.moretags) = "search:\"Description\""];
+    string                      rationale               = 4;
+    string                      remediation             = 5;
+    bool                        disabled                = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
+    repeated string             categories              = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
+    PolicyFields                fields                  = 8;
 
-    repeated LifecycleStage lifecycle_stages       = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
-    repeated Exclusion whitelists                  = 10 [deprecated = true];
-    repeated Exclusion exclusions                  = 21;
-    repeated Scope scope                           = 11;
-    Severity severity                              = 12 [(gogoproto.moretags) = "search:\"Severity,store\""];
+    repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
+    EventSource                 event_source            = 22;
+
+    repeated Exclusion          whitelists              = 10 [deprecated = true];
+    repeated Exclusion          exclusions              = 21;
+    repeated Scope              scope                   = 11;
+
+    Severity                    severity                = 12 [(gogoproto.moretags) = "search:\"Severity,store\""];
     // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
     // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
     // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-    repeated EnforcementAction enforcement_actions = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
-    repeated string notifiers                      = 14;
-    google.protobuf.Timestamp last_updated         = 15 [(gogoproto.moretags) = "search:\"Policy Last Updated\""];
+    repeated EnforcementAction  enforcement_actions     = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
+    repeated string             notifiers               = 14;
+    google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = "search:\"Policy Last Updated\""];
 
     // For internal use only.
-    string SORT_name                               = 16 [(gogoproto.moretags) = "search:\"SORT_Policy,hidden,analyzer=keyword\""];
+    string                      SORT_name               = 16 [(gogoproto.moretags) = "search:\"SORT_Policy,hidden,analyzer=keyword\""];
     // For internal use only.
-    string SORT_lifecycleStage                     = 17 [(gogoproto.moretags) = "search:\"SORT_Lifecycle Stage,hidden\""];
+    string                      SORT_lifecycleStage     = 17 [(gogoproto.moretags) = "search:\"SORT_Lifecycle Stage,hidden\""];
     // For internal use only.
-    bool   SORT_enforcement                        = 18 [(gogoproto.moretags) = "search:\"SORT_Enforcement,hidden\""];
-    string policy_version                          = 19;
-    repeated PolicySection policy_sections         = 20;
+    bool                        SORT_enforcement        = 18 [(gogoproto.moretags) = "search:\"SORT_Enforcement,hidden\""];
 
-    EventSource event_source                       = 22;
+    string                      policy_version          = 19;
+    repeated PolicySection      policy_sections         = 20;
+
+    message MitreAttackVectors {
+        string          tactic     = 1;
+        repeated string techniques = 2;
+    }
+
+    repeated MitreAttackVectors mitre_attack_vectors    = 23;
 }
 
 enum EventSource {

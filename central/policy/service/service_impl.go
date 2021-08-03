@@ -11,6 +11,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	"github.com/stackrox/rox/central/mitre/common"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -60,6 +61,7 @@ var (
 			"/v1.PolicyService/QueryDryRunJobStatus",
 			"/v1.PolicyService/ExportPolicies",
 			"/v1.PolicyService/PolicyFromSearch",
+			"/v1.PolicyService/GetPolicyMitreVectors",
 		},
 		user.With(permissions.Modify(resources.Policy)): {
 			"/v1.PolicyService/PostPolicy",
@@ -97,6 +99,7 @@ type serviceImpl struct {
 	clusters          clusterDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	notifiers         notifierDataStore.DataStore
+	mitreStore        common.MitreAttackReadOnlyStore
 	reprocessor       reprocessor.Loop
 	connectionManager connection.Manager
 
@@ -128,18 +131,29 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetPolicy returns a policy by name.
 func (s *serviceImpl) GetPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.Policy, error) {
-	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Policy id must be provided")
+	return s.getPolicy(ctx, request.GetId())
+}
+
+func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy, error) {
+	if id == "" {
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Policy ID must be provided")
 	}
-	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
+	policy, exists, err := s.policies.GetPolicy(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "policy with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "policy with ID '%s' does not exist", id)
 	}
 	if len(policy.GetCategories()) == 0 {
 		policy.Categories = []string{uncategorizedCategory}
+	}
+
+	if !features.SystemPolicyMitreFramework.Enabled() {
+		policy.MitreAttackVectors = nil
+	} else {
+		// TODO(@Mandar): ROX-7749: Remove sample data when feature is turned on by default
+		injectMitreTestData(policy)
 	}
 	return policy, nil
 }
@@ -238,6 +252,67 @@ func (s *serviceImpl) addPolicyToStoreAndSetID(ctx context.Context, p *storage.P
 	}
 	p.Id = id
 	return nil
+}
+
+// GetPolicyMitreVectors returns a policy's MITRE ATT&CK vectors.
+func (s *serviceImpl) GetPolicyMitreVectors(ctx context.Context, request *v1.GetPolicyMitreVectorsRequest) (*v1.GetPolicyMitreVectorsResponse, error) {
+	if !features.SystemPolicyMitreFramework.Enabled() {
+		return nil, status.Error(codes.FailedPrecondition, "RHACS System Policy MITRE ATT&CK Framework is not enabled. Request cannot be fulfilled.")
+	}
+
+	policy, err := s.getPolicy(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	vectorsAsMap := vectorsAsMap(policy.GetMitreAttackVectors()...)
+	fullVectors, err := s.getFullMitreAttackVectors(vectorsAsMap)
+	if err != nil {
+		return nil, errors.Wrapf(err, "fetching MITRE ATT&CK vectors for policy %q", request.GetId())
+	}
+
+	resp := &v1.GetPolicyMitreVectorsResponse{
+		Vectors: fullVectors,
+	}
+
+	if !request.GetOptions().GetExcludePolicy() {
+		resp.Policy = policy
+	}
+
+	return resp, nil
+}
+
+func vectorsAsMap(vectors ...*storage.Policy_MitreAttackVectors) map[string]map[string]struct{} {
+	vectorsAsMap := make(map[string]map[string]struct{})
+	for _, vector := range vectors {
+		tacticID := vector.GetTactic()
+		vectorsAsMap[tacticID] = make(map[string]struct{})
+		for _, techniqueID := range vector.GetTechniques() {
+			vectorsAsMap[tacticID][techniqueID] = struct{}{}
+		}
+	}
+	return vectorsAsMap
+}
+
+func (s *serviceImpl) getFullMitreAttackVectors(vectorsAsMap map[string]map[string]struct{}) ([]*storage.MitreAttackVector, error) {
+	resp := make([]*storage.MitreAttackVector, 0, len(vectorsAsMap))
+	for tacticID, techniqueIDs := range vectorsAsMap {
+		fullVector, err := s.mitreStore.Get(tacticID)
+		if err != nil {
+			return nil, err
+		}
+
+		vector := &storage.MitreAttackVector{
+			Tactic: fullVector.GetTactic(),
+		}
+		for _, technique := range fullVector.GetTechniques() {
+			if _, ok := techniqueIDs[technique.GetId()]; ok {
+				vector.Techniques = append(vector.Techniques, technique)
+			}
+		}
+		resp = append(resp, vector)
+	}
+	return resp, nil
 }
 
 // PostPolicy inserts a new policy into the system.

@@ -891,6 +891,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"lastUpdated: Time",
 		"lifecycleStages: [LifecycleStage!]!",
+		"mitreAttackVectors: [Policy_MitreAttackVectors]!",
 		"name: String!",
 		"notifiers: [String!]!",
 		"policySections: [PolicySection]!",
@@ -949,6 +950,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("PolicyValue", []string{
 		"value: String!",
+	}))
+	utils.Must(builder.AddType("Policy_MitreAttackVectors", []string{
+		"tactic: String!",
+		"techniques: [String!]!",
 	}))
 	utils.Must(builder.AddType("PortConfig", []string{
 		"containerPort: Int!",
@@ -8075,6 +8080,11 @@ func (resolver *policyResolver) LifecycleStages(ctx context.Context) []string {
 	return stringSlice(value)
 }
 
+func (resolver *policyResolver) MitreAttackVectors(ctx context.Context) ([]*policy_MitreAttackVectorsResolver, error) {
+	value := resolver.data.GetMitreAttackVectors()
+	return resolver.root.wrapPolicy_MitreAttackVectorses(value, nil)
+}
+
 func (resolver *policyResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -8432,6 +8442,40 @@ func (resolver *Resolver) wrapPolicyValues(values []*storage.PolicyValue, err er
 
 func (resolver *policyValueResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
+	return value
+}
+
+type policy_MitreAttackVectorsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Policy_MitreAttackVectors
+}
+
+func (resolver *Resolver) wrapPolicy_MitreAttackVectors(value *storage.Policy_MitreAttackVectors, ok bool, err error) (*policy_MitreAttackVectorsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &policy_MitreAttackVectorsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPolicy_MitreAttackVectorses(values []*storage.Policy_MitreAttackVectors, err error) ([]*policy_MitreAttackVectorsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*policy_MitreAttackVectorsResolver, len(values))
+	for i, v := range values {
+		output[i] = &policy_MitreAttackVectorsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *policy_MitreAttackVectorsResolver) Tactic(ctx context.Context) string {
+	value := resolver.data.GetTactic()
+	return value
+}
+
+func (resolver *policy_MitreAttackVectorsResolver) Techniques(ctx context.Context) []string {
+	value := resolver.data.GetTechniques()
 	return value
 }
 

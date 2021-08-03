@@ -7,6 +7,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	"github.com/stackrox/rox/central/mitre/common"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -32,6 +33,7 @@ func New(policies datastore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
 	notifiers notifierDataStore.DataStore,
+	mitreStore common.MitreAttackReadOnlyStore,
 	reprocessor reprocessor.Loop,
 	buildTimePolicies detection.PolicySet,
 	manager lifecycle.Manager,
@@ -47,6 +49,7 @@ func New(policies datastore.DataStore,
 		deployments:       deployments,
 		reprocessor:       reprocessor,
 		notifiers:         notifiers,
+		mitreStore:        mitreStore,
 		buildTimePolicies: buildTimePolicies,
 		lifecycleManager:  manager,
 		connectionManager: connectionManager,

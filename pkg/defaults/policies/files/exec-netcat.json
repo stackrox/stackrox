@@ -10,6 +10,7 @@
   "lifecycleStages": [
     "RUNTIME"
   ],
+  "eventSource": "DEPLOYMENT_EVENT",
   "severity": "MEDIUM_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
@@ -25,6 +26,5 @@
         }
       ]
     }
-  ],
-  "eventSource": "DEPLOYMENT_EVENT"
+  ]
 }

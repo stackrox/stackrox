@@ -10,6 +10,7 @@
   "lifecycleStages": [
     "RUNTIME"
   ],
+  "eventSource": "DEPLOYMENT_EVENT",
   "exclusions": [
     {
       "name": "Don't alert on StackRox namespace",
@@ -35,6 +36,5 @@
         }
       ]
     }
-  ],
-  "eventSource": "DEPLOYMENT_EVENT"
+  ]
 }

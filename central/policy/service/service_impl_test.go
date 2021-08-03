@@ -10,6 +10,8 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
+	"github.com/stackrox/rox/central/mitre/common"
+	mitreMocks "github.com/stackrox/rox/central/mitre/common/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -49,6 +52,7 @@ type PolicyServiceTestSuite struct {
 	suite.Suite
 	policies              *mocks.MockDataStore
 	clusters              *clusterMocks.MockDataStore
+	mitreVectorStore      *mitreMocks.MockMitreAttackReadOnlyStore
 	mockBuildTimePolicies *detectionMocks.MockPolicySet
 	mockLifecycleManager  *lifecycleMocks.MockManager
 	mockConnectionManager *connectionMocks.MockManager
@@ -71,12 +75,14 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 	s.mockBuildTimePolicies = detectionMocks.NewMockPolicySet(s.mockCtrl)
 	s.mockLifecycleManager = lifecycleMocks.NewMockManager(s.mockCtrl)
 	s.mockConnectionManager = connectionMocks.NewMockManager(s.mockCtrl)
+	s.mitreVectorStore = mitreMocks.NewMockMitreAttackReadOnlyStore(s.mockCtrl)
 
 	s.tested = New(
 		s.policies,
 		s.clusters,
 		nil,
 		nil,
+		s.mitreVectorStore,
 		nil,
 		&testDeploymentMatcher{s.mockBuildTimePolicies},
 		s.mockLifecycleManager,
@@ -826,4 +832,107 @@ func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
 	s.ElementsMatch(expectedPolicyGroup, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
 	expectedLifecycleStages := []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
 	s.ElementsMatch(expectedLifecycleStages, response.GetPolicy().GetLifecycleStages())
+}
+
+// This test is the expected behavior after the sample mitre data injection is removed.
+func (s *PolicyServiceTestSuite) TestMitreVectors() {
+	if !features.SystemPolicyMitreFramework.Enabled() {
+		s.T().Skip("RHACS System Policy MITRE ATT&CK framework feature is disabled. skipping...")
+	}
+
+	s.policies.EXPECT().GetPolicy(gomock.Any(), "policy1").Return(&storage.Policy{
+		Id: "policy1",
+		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{
+			{
+				Tactic:     "tactic1",
+				Techniques: []string{"tech1"},
+			},
+			{
+				Tactic:     "tactic2",
+				Techniques: []string{"tech2"},
+			},
+		},
+	}, true, nil)
+
+	s.mitreVectorStore.EXPECT().Get("tactic1").Return(
+		getFakeVector("tactic1", "tech1", "tech2", "tech3"), nil,
+	)
+	s.mitreVectorStore.EXPECT().Get("tactic2").Return(
+		getFakeVector("tactic2", "tech1", "tech2"), nil,
+	)
+
+	response, err := s.tested.GetPolicyMitreVectors(context.Background(), &v1.GetPolicyMitreVectorsRequest{
+		Id: "policy1",
+	})
+	s.NoError(err)
+	s.ElementsMatch([]*storage.MitreAttackVector{
+		getFakeVector("tactic1", "tech1"),
+		getFakeVector("tactic2", "tech2"),
+	}, response.GetVectors())
+}
+
+func (s *PolicyServiceTestSuite) TestMitreVectorsFeatureEnabled() {
+	envIso := envisolator.NewEnvIsolator(s.T())
+	envIso.Setenv(features.SystemPolicyMitreFramework.EnvVar(), "true")
+	defer envIso.RestoreAll()
+
+	if !features.SystemPolicyMitreFramework.Enabled() {
+		s.T().Skip("RHACS System Policy MITRE ATT&CK framework feature is disabled. skipping...")
+	}
+
+	s.policies.EXPECT().GetPolicy(gomock.Any(), "policy1").Return(&storage.Policy{Id: "policy1"}, true, nil)
+
+	s.mitreVectorStore.EXPECT().Get("TA0005").Return(common.MitreTestData["TA0005"], nil)
+	s.mitreVectorStore.EXPECT().Get("TA0006").Return(common.MitreTestData["TA0006"], nil)
+
+	response, err := s.tested.GetPolicyMitreVectors(
+		context.Background(), &v1.GetPolicyMitreVectorsRequest{Id: "policy1"},
+	)
+	s.NoError(err)
+	s.ElementsMatch([]*storage.MitreAttackVector{
+		common.MitreTestData["TA0005"],
+		// Technique T1110 should be filtered.
+		{
+			Tactic: &storage.MitreTactic{
+				Id:   "TA0006",
+				Name: "Credential Access",
+				Description: "The adversary is trying to steal account names and passwords. Credential Access " +
+					"consists of techniques for stealing credentials like account names and passwords. " +
+					"Techniques used to get credentials include keylogging or credential dumping. Using " +
+					"legitimate credentials can give adversaries access to systems, make them harder to detect, " +
+					"and provide the opportunity to create more accounts to help achieve their goals.",
+			},
+			Techniques: []*storage.MitreTechnique{
+				{
+					Id:   "T1552",
+					Name: "Unsecured Credentials",
+					Description: "Adversaries may search compromised systems to find and obtain insecurely " +
+						"stored credentials. These credentials can be stored and/or misplaced in many locations " +
+						"on a system, including plaintext files (e.g. Bash History), operating system or " +
+						"application-specific repositories (e.g. Credentials in Registry), or other specialized " +
+						"files/artifacts (e.g. Private Keys).",
+				},
+			},
+		},
+	}, response.GetVectors())
+}
+
+func getFakeVector(tactic string, techniques ...string) *storage.MitreAttackVector {
+	resp := &storage.MitreAttackVector{
+		Tactic: &storage.MitreTactic{
+			Id:          tactic,
+			Name:        tactic,
+			Description: tactic,
+		},
+	}
+
+	for _, technique := range techniques {
+		resp.Techniques = append(resp.Techniques, &storage.MitreTechnique{
+			Id:          technique,
+			Name:        technique,
+			Description: technique,
+		})
+	}
+
+	return resp
 }

@@ -10,6 +10,7 @@ import (
 
 // MitreAttackReadOnlyStore provides functionality to read MITRE ATT&CK vectors.
 // A vector represents MITRE tactics (why) and its techniques/sub-techniques (how).
+//go:generate mockgen-wrapper
 type MitreAttackReadOnlyStore interface {
 	GetAll() []*storage.MitreAttackVector
 	Get(id string) (*storage.MitreAttackVector, error)
