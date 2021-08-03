@@ -6,12 +6,15 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 var (
+	clientContentType = stringutils.FirstNonEmpty(env.KubernetesClientContentType.Setting(), "application/vnd.kubernetes.protobuf")
+
 	log = logging.LoggerForModule()
 )
 
@@ -30,49 +33,61 @@ type clientSet struct {
 	openshiftConfig configVersioned.Interface
 }
 
+func mustCreateK8sClient(config *rest.Config) kubernetes.Interface {
+	config.ContentType = clientContentType
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Panicf("Creating Kubernetes clientset: %v", err)
+	}
+	return client
+}
+
+func mustCreateOpenshiftAppsClient(config *rest.Config) appVersioned.Interface {
+	if env.OpenshiftAPI.Setting() != "true" {
+		return nil
+	}
+	client, err := appVersioned.NewForConfig(config)
+	if err != nil {
+		log.Panicf("Could not generate openshift client: %v", err)
+	}
+	return client
+}
+
+func mustCreateOpenshiftConfigClient(config *rest.Config) configVersioned.Interface {
+	if env.OpenshiftAPI.Setting() != "true" {
+		return nil
+	}
+	client, err := configVersioned.NewForConfig(config)
+	if err != nil {
+		log.Warnf("Could not generate openshift client: %s", err)
+	}
+	return client
+}
+
+func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
+	if !features.ComplianceOperatorCheckResults.Enabled() {
+		return nil
+	}
+	client, err := dynamic.NewForConfig(config)
+	if err != nil {
+		log.Panicf("Creating dynamic client: %v", err)
+	}
+	return client
+}
+
 // MustCreateInterface creates a client interface for both Kubernetes and Openshift clients
 func MustCreateInterface() Interface {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Panicf("Obtaining in-cluster Kubernetes config: %v", err)
 	}
-
-	k8sClientSet, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Panicf("Creating Kubernetes clientset: %v", err)
-	}
-
-	var dynamicClientGenerator dynamic.Interface
-	if features.ComplianceOperatorCheckResults.Enabled() {
-		dynamicClientGenerator, err = dynamic.NewForConfig(config)
-		if err != nil {
-			log.Panicf("Creating dynamic client: %v", err)
-		}
-	}
-
-	var openshiftAppsClientSet appVersioned.Interface
-	var openshiftConfigClientSet configVersioned.Interface
-	if env.OpenshiftAPI.Setting() == "true" {
-		config, err := rest.InClusterConfig()
-		if err != nil {
-			log.Panicf("Unable to get cluster config: %v", err)
-		}
-		openshiftAppsClientSet, err = appVersioned.NewForConfig(config)
-		if err != nil {
-			log.Warnf("Could not generate openshift client: %v", err)
-		}
-
-		openshiftConfigClientSet, err = configVersioned.NewForConfig(config)
-		if err != nil {
-			log.Warnf("Could not generate openshift client: %s", err)
-		}
-	}
+	config.ContentType = clientContentType
 
 	return &clientSet{
-		dynamic:         dynamicClientGenerator,
-		k8s:             k8sClientSet,
-		openshiftApps:   openshiftAppsClientSet,
-		openshiftConfig: openshiftConfigClientSet,
+		dynamic:         mustCreateDynamicClient(config),
+		k8s:             mustCreateK8sClient(config),
+		openshiftApps:   mustCreateOpenshiftAppsClient(config),
+		openshiftConfig: mustCreateOpenshiftConfigClient(config),
 	}
 }
 
