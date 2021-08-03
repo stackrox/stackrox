@@ -400,11 +400,9 @@ function launch_sensor {
       echo >&2 "      To disable the Helm based installation set SENSOR_HELM_DEPLOY=false"
       echo >&2 "================================================================================================"
       SENSOR_HELM_DEPLOY=true
-    else
-      SENSOR_HELM_DEPLOY=false
     fi
 
-    if [[ "$SENSOR_HELM_DEPLOY" == "true" ]]; then
+    if [[ "${SENSOR_HELM_DEPLOY:-}" == "true" ]]; then
       local sensor_namespace="${SENSOR_HELM_OVERRIDE_NAMESPACE:-stackrox}"
       mkdir "$k8s_dir/sensor-deploy"
       touch "$k8s_dir/sensor-deploy/init-bundle.yaml"
