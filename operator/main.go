@@ -20,7 +20,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
 	"github.com/stackrox/rox/operator/pkg/client"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
@@ -46,7 +46,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	err := v1alpha1.AddToScheme(scheme)
+	err := platform.AddToScheme(scheme)
 	if err != nil {
 		setupLog.Error(err, "could not register stackrox platform scheme")
 		os.Exit(1)

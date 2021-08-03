@@ -6,26 +6,26 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
-	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 )
 
-type updateStatusFunc func(status *securedClusterv1Alpha1.SecuredClusterStatus) bool
+type updateStatusFunc func(status *platform.SecuredClusterStatus) bool
 
 var (
 	errUnexpectedGVK = errors.New("invoked reconciliation extension for object with unexpected GVK")
 )
 
-func wrapExtension(runFn func(ctx context.Context, securedCluster *securedClusterv1Alpha1.SecuredCluster, k8sClient kubernetes.Interface, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, k8sClient kubernetes.Interface) extensions.ReconcileExtension {
+func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.SecuredCluster, k8sClient kubernetes.Interface, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, k8sClient kubernetes.Interface) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
-		if u.GroupVersionKind() != securedClusterv1Alpha1.SecuredClusterGVK {
-			log.Error(errUnexpectedGVK, "unable to reconcile secured cluster", "expectedGVK", securedClusterv1Alpha1.SecuredClusterGVK, "actualGVK", u.GroupVersionKind())
+		if u.GroupVersionKind() != platform.SecuredClusterGVK {
+			log.Error(errUnexpectedGVK, "unable to reconcile secured cluster", "expectedGVK", platform.SecuredClusterGVK, "actualGVK", u.GroupVersionKind())
 			return errUnexpectedGVK
 		}
 
-		c := securedClusterv1Alpha1.SecuredCluster{}
+		c := platform.SecuredCluster{}
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &c)
 		if err != nil {
 			return errors.Wrap(err, "converting object to SecuredCluster")
@@ -33,7 +33,7 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *securedCluste
 
 		wrappedStatusUpdater := func(typedUpdateStatus updateStatusFunc) {
 			statusUpdater(func(uSt *unstructured.Unstructured) bool {
-				var status securedClusterv1Alpha1.SecuredClusterStatus
+				var status platform.SecuredClusterStatus
 				_ = runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status)
 				if !typedUpdateStatus(&status) {
 					return false

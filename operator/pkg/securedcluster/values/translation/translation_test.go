@@ -7,8 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	common "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	testingUtils "github.com/stackrox/rox/operator/pkg/values/testing"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stretchr/testify/assert"
@@ -30,8 +29,8 @@ func TestReadBaseValues(t *testing.T) {
 }
 
 func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
-	sc := v1alpha1.SecuredCluster{
-		Spec: v1alpha1.SecuredClusterSpec{
+	sc := platform.SecuredCluster{
+		Spec: platform.SecuredClusterSpec{
 			ClusterName: "my-cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -53,7 +52,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 func TestTranslateComplete(t *testing.T) {
 	type args struct {
 		clientSet kubernetes.Interface
-		sc        v1alpha1.SecuredCluster
+		sc        platform.SecuredCluster
 	}
 
 	// TODO(ROX-7647): Add sensor, collector and compliance tests
@@ -64,19 +63,19 @@ func TestTranslateComplete(t *testing.T) {
 		"SecuredCluster basic spec": {
 			args: args{
 				clientSet: newFakeClientSetWithInitBundle(),
-				sc: v1alpha1.SecuredCluster{
+				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-secured-cluster",
 						Namespace: "stackrox",
 					},
-					Spec: v1alpha1.SecuredClusterSpec{
+					Spec: platform.SecuredClusterSpec{
 						ClusterName:     "test-cluster",
 						CentralEndpoint: "central.test:443",
-						AdmissionControl: &v1alpha1.AdmissionControlComponentSpec{
+						AdmissionControl: &platform.AdmissionControlComponentSpec{
 							ListenOnCreates: pointer.BoolPtr(true),
 							ListenOnUpdates: pointer.BoolPtr(true),
 							ListenOnEvents:  pointer.BoolPtr(true),
-							DeploymentSpec: common.DeploymentSpec{
+							DeploymentSpec: platform.DeploymentSpec{
 								Resources: &v1.ResourceRequirements{
 									Limits: v1.ResourceList{
 										v1.ResourceCPU:    resource.MustParse("1502m"),
@@ -97,26 +96,26 @@ func TestTranslateComplete(t *testing.T) {
 							"my-label1": "value1",
 							"my-label2": "value2",
 						},
-						ImagePullSecrets: []common.LocalSecretReference{
+						ImagePullSecrets: []platform.LocalSecretReference{
 							{Name: "image-pull-secrets-secret1"},
 							{Name: "image-pull-secrets-secret2"},
 						},
-						TLS: &common.TLSConfig{
-							AdditionalCAs: []common.AdditionalCA{
+						TLS: &platform.TLSConfig{
+							AdditionalCAs: []platform.AdditionalCA{
 								{Name: "ca1-name", Content: "ca1-content"},
 								{Name: "ca2-name", Content: "ca2-content"},
 							},
 						},
-						AuditLogs: &v1alpha1.AuditLogsSpec{
-							Collection: v1alpha1.AuditLogsCollectionEnabled.Pointer(),
+						AuditLogs: &platform.AuditLogsSpec{
+							Collection: platform.AuditLogsCollectionEnabled.Pointer(),
 						},
-						PerNode: &v1alpha1.PerNodeSpec{
-							Collector: &v1alpha1.CollectorContainerSpec{
-								ImageFlavor: v1alpha1.ImageFlavorRegular.Pointer(),
-								Collection:  v1alpha1.CollectionEBPF.Pointer(),
+						PerNode: &platform.PerNodeSpec{
+							Collector: &platform.CollectorContainerSpec{
+								ImageFlavor: platform.ImageFlavorRegular.Pointer(),
+								Collection:  platform.CollectionEBPF.Pointer(),
 							},
-							TaintToleration: v1alpha1.TaintTolerate.Pointer(),
-							Compliance: &v1alpha1.ContainerSpec{
+							TaintToleration: platform.TaintTolerate.Pointer(),
+							Compliance: &platform.ContainerSpec{
 								Resources: &v1.ResourceRequirements{
 									Limits: v1.ResourceList{
 										v1.ResourceCPU:    resource.MustParse("1504m"),
@@ -129,7 +128,7 @@ func TestTranslateComplete(t *testing.T) {
 								},
 							},
 						},
-						Customize: &common.CustomizeSpec{
+						Customize: &platform.CustomizeSpec{
 							Labels: map[string]string{
 								"customize-label1": "customize-label1-value",
 								"customize-label2": "customize-label2-value",
@@ -149,7 +148,7 @@ func TestTranslateComplete(t *testing.T) {
 								},
 							},
 						},
-						Misc: &common.MiscSpec{
+						Misc: &platform.MiscSpec{
 							CreateSCCs: pointer.BoolPtr(true),
 						},
 					},
@@ -260,7 +259,7 @@ func TestTranslateComplete(t *testing.T) {
 	}
 }
 
-func toUnstructured(sc v1alpha1.SecuredCluster) (*unstructured.Unstructured, error) {
+func toUnstructured(sc platform.SecuredCluster) (*unstructured.Unstructured, error) {
 	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sc)
 	if err != nil {
 		return nil, err

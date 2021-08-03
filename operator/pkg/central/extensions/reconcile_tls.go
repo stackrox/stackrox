@@ -6,7 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"k8s.io/client-go/kubernetes"
@@ -22,7 +22,7 @@ func ReconcileCentralTLSExtensions(k8sClient kubernetes.Interface) extensions.Re
 	return wrapExtension(reconcileCentralTLS, k8sClient)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *centralv1Alpha1.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,

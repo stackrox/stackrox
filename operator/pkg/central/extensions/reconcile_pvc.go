@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	utils "github.com/stackrox/rox/operator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,7 +35,7 @@ func ReconcilePVCExtension(k8sClient kubernetes.Interface) extensions.ReconcileE
 	return wrapExtension(reconcilePVC, k8sClient)
 }
 
-func reconcilePVC(ctx context.Context, central *centralv1Alpha1.Central, k8sClient kubernetes.Interface, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+func reconcilePVC(ctx context.Context, central *platform.Central, k8sClient kubernetes.Interface, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:        ctx,
 		namespace:  central.GetNamespace(),
@@ -51,7 +51,7 @@ type reconcilePVCExtensionRun struct {
 	ctx        context.Context
 	namespace  string
 	pvcClient  coreV1.PersistentVolumeClaimInterface
-	centralObj *centralv1Alpha1.Central
+	centralObj *platform.Central
 	log        logr.Logger
 }
 
@@ -69,7 +69,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 
 	pvcConfig := r.centralObj.Spec.Central.GetPersistentVolumeClaim()
 	if pvcConfig == nil {
-		pvcConfig = &centralv1Alpha1.PersistentVolumeClaim{}
+		pvcConfig = &platform.PersistentVolumeClaim{}
 	}
 	claimName := pointer.StringPtrDerefOr(pvcConfig.ClaimName, defaultPVCName)
 
@@ -126,7 +126,7 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 	return nil
 }
 
-func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *centralv1Alpha1.PersistentVolumeClaim) error {
+func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *platform.PersistentVolumeClaim) error {
 	size, err := parseResourceQuantityOr(pvcConfig.Size, defaultPVCSize)
 	if err != nil {
 		return errors.Wrap(err, "invalid PVC size")
@@ -156,7 +156,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *cen
 	return nil
 }
 
-func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.PersistentVolumeClaim, pvcConfig *centralv1Alpha1.PersistentVolumeClaim) error {
+func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.PersistentVolumeClaim, pvcConfig *platform.PersistentVolumeClaim) error {
 	shouldUpdate := false
 
 	if pvcSize := pointer.StringPtrDerefOr(pvcConfig.Size, ""); pvcSize != "" {

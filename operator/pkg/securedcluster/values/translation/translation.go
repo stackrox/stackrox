@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	securedcluster "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -50,7 +50,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	baseValues, err := chartutil.ReadValues(baseValuesYAML)
 	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
 
-	sc := securedcluster.SecuredCluster{}
+	sc := platform.SecuredCluster{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &sc)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 }
 
 // Translate translates a SecuredCluster CR into helm values.
-func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredCluster) (chartutil.Values, error) {
+func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
 
 	v.SetStringValue("clusterName", sc.Spec.ClusterName)
@@ -111,7 +111,7 @@ func (t Translator) translate(ctx context.Context, sc securedcluster.SecuredClus
 }
 
 // getTLSValues reads TLS configuration and looks up CA certificate from secrets.
-func (t Translator) getTLSValues(ctx context.Context, sc securedcluster.SecuredCluster) *translation.ValuesBuilder {
+func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster) *translation.ValuesBuilder {
 	v := translation.NewValuesBuilder()
 	if err := t.checkRequiredTLSSecrets(ctx, sc); err != nil {
 		return v.SetError(err)
@@ -134,7 +134,7 @@ func (t Translator) getTLSValues(ctx context.Context, sc securedcluster.SecuredC
 	return &v
 }
 
-func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc securedcluster.SecuredCluster) error {
+func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.SecuredCluster) error {
 	var finalErr error
 	for _, name := range []string{sensorTLSSecretName, admissionControlTLSSecretName, collectorTLSSecretName} {
 		if err := t.checkInitBundleSecret(ctx, sc, name); err != nil {
@@ -144,7 +144,7 @@ func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc securedclust
 	return finalErr
 }
 
-func (t Translator) checkInitBundleSecret(ctx context.Context, sc securedcluster.SecuredCluster, secretName string) error {
+func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.SecuredCluster, secretName string) error {
 	if _, err := t.clientSet.CoreV1().Secrets(sc.Namespace).Get(ctx, secretName, metav1.GetOptions{}); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "init-bundle secret %q does not exist, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the cluster", secretName)
@@ -154,7 +154,7 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc securedcluster
 	return nil
 }
 
-func (t Translator) getSensorValues(sensor *securedcluster.SensorComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
@@ -163,7 +163,7 @@ func (t Translator) getSensorValues(sensor *securedcluster.SensorComponentSpec) 
 	return &sv
 }
 
-func (t Translator) getAdmissionControlValues(admissionControl *securedcluster.AdmissionControlComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getAdmissionControlValues(admissionControl *platform.AdmissionControlComponentSpec) *translation.ValuesBuilder {
 	acv := translation.NewValuesBuilder()
 
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
@@ -183,16 +183,16 @@ func (t Translator) getAdmissionControlValues(admissionControl *securedcluster.A
 	return &acv
 }
 
-func (t Translator) getAuditLogsValues(auditLogs *securedcluster.AuditLogsSpec) *translation.ValuesBuilder {
-	if auditLogs.Collection == nil || *auditLogs.Collection == securedcluster.AuditLogsCollectionAuto {
+func (t Translator) getAuditLogsValues(auditLogs *platform.AuditLogsSpec) *translation.ValuesBuilder {
+	if auditLogs.Collection == nil || *auditLogs.Collection == platform.AuditLogsCollectionAuto {
 		return nil
 	}
 
 	cv := translation.NewValuesBuilder()
 	switch *auditLogs.Collection {
-	case securedcluster.AuditLogsCollectionEnabled:
+	case platform.AuditLogsCollectionEnabled:
 		cv.SetBoolValue("disableCollection", false)
-	case securedcluster.AuditLogsCollectionDisabled:
+	case platform.AuditLogsCollectionDisabled:
 		cv.SetBoolValue("disableCollection", true)
 	default:
 		return cv.SetError(errors.Errorf("invalid spec.auditLogs.collection setting %q", *auditLogs.Collection))
@@ -200,14 +200,14 @@ func (t Translator) getAuditLogsValues(auditLogs *securedcluster.AuditLogsSpec) 
 	return &cv
 }
 
-func (t Translator) getCollectorValues(perNode *securedcluster.PerNodeSpec) *translation.ValuesBuilder {
+func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
 	if perNode.TaintToleration != nil {
 		switch *perNode.TaintToleration {
-		case securedcluster.TaintTolerate:
+		case platform.TaintTolerate:
 			cv.SetBoolValue("disableTaintTolerations", false)
-		case securedcluster.TaintAvoid:
+		case platform.TaintAvoid:
 			cv.SetBoolValue("disableTaintTolerations", true)
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.taintToleration %q", *perNode.TaintToleration))
@@ -220,7 +220,7 @@ func (t Translator) getCollectorValues(perNode *securedcluster.PerNodeSpec) *tra
 	return &cv
 }
 
-func (t Translator) getCollectorContainerValues(collectorContainerSpec *securedcluster.CollectorContainerSpec) *translation.ValuesBuilder {
+func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform.CollectorContainerSpec) *translation.ValuesBuilder {
 	if collectorContainerSpec == nil {
 		return nil
 	}
@@ -229,11 +229,11 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *securedc
 
 	if c := collectorContainerSpec.Collection; c != nil {
 		switch *c {
-		case securedcluster.CollectionEBPF:
+		case platform.CollectionEBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
-		case securedcluster.CollectionKernelModule:
+		case platform.CollectionKernelModule:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_KERNEL_MODULE.String())
-		case securedcluster.CollectionNone:
+		case platform.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *c))
@@ -242,9 +242,9 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *securedc
 
 	if collectorContainerSpec.ImageFlavor != nil {
 		switch *collectorContainerSpec.ImageFlavor {
-		case securedcluster.ImageFlavorSlim:
+		case platform.ImageFlavorSlim:
 			cv.SetBoolValue("slimMode", true)
-		case securedcluster.ImageFlavorRegular:
+		case platform.ImageFlavorRegular:
 			cv.SetBoolValue("slimMode", false)
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.collector.collector.imageFlavor %q", *collectorContainerSpec.ImageFlavor))
@@ -256,7 +256,7 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *securedc
 	return &cv
 }
 
-func (t Translator) getComplianceContainerValues(compliance *securedcluster.ContainerSpec) *translation.ValuesBuilder {
+func (t Translator) getComplianceContainerValues(compliance *platform.ContainerSpec) *translation.ValuesBuilder {
 	if compliance == nil {
 		return nil
 	}
@@ -267,7 +267,7 @@ func (t Translator) getComplianceContainerValues(compliance *securedcluster.Cont
 	return &cv
 }
 
-func getMetaValues(sc securedcluster.SecuredCluster) *translation.ValuesBuilder {
+func getMetaValues(sc platform.SecuredCluster) *translation.ValuesBuilder {
 	meta := translation.NewValuesBuilder()
 	fp, err := createConfigFingerprint(sc)
 	if err != nil {
@@ -277,7 +277,7 @@ func getMetaValues(sc securedcluster.SecuredCluster) *translation.ValuesBuilder 
 	return &meta
 }
 
-func createConfigFingerprint(sc securedcluster.SecuredCluster) (string, error) {
+func createConfigFingerprint(sc platform.SecuredCluster) (string, error) {
 	specAsYaml, err := yaml.Marshal(sc.Spec)
 	if err != nil {
 		return "", errors.Wrap(err, "marshaling SecuredCluster spec")

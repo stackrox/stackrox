@@ -3,7 +3,7 @@ package translation
 import (
 	"testing"
 
-	common "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -13,7 +13,7 @@ import (
 
 func TestGetCustomize(t *testing.T) {
 	tests := map[string]struct {
-		customizeSpec *common.CustomizeSpec
+		customizeSpec *platform.CustomizeSpec
 		values        chartutil.Values
 		wantValues    chartutil.Values
 	}{
@@ -22,11 +22,11 @@ func TestGetCustomize(t *testing.T) {
 			wantValues:    chartutil.Values{},
 		},
 		"empty": {
-			customizeSpec: &common.CustomizeSpec{},
+			customizeSpec: &platform.CustomizeSpec{},
 			wantValues:    chartutil.Values{},
 		},
 		"all-data": {
-			customizeSpec: &common.CustomizeSpec{
+			customizeSpec: &platform.CustomizeSpec{
 				Labels:      map[string]string{"label1": "value2"},
 				Annotations: map[string]string{"annotation1": "value3"},
 				EnvVars: []corev1.EnvVar{
@@ -47,7 +47,7 @@ func TestGetCustomize(t *testing.T) {
 			},
 		},
 		"partial-data": {
-			customizeSpec: &common.CustomizeSpec{
+			customizeSpec: &platform.CustomizeSpec{
 				Labels: map[string]string{"value2": "should-apply"},
 			},
 			wantValues: chartutil.Values{
@@ -125,7 +125,7 @@ func TestGetResources(t *testing.T) {
 
 func TestGetTLSConfigValues(t *testing.T) {
 	tests := map[string]struct {
-		tls  *common.TLSConfig
+		tls  *platform.TLSConfig
 		want chartutil.Values
 	}{
 		"nil": {
@@ -133,12 +133,12 @@ func TestGetTLSConfigValues(t *testing.T) {
 			want: chartutil.Values{},
 		},
 		"empty": {
-			tls:  &common.TLSConfig{AdditionalCAs: []common.AdditionalCA{}},
+			tls:  &platform.TLSConfig{AdditionalCAs: []platform.AdditionalCA{}},
 			want: chartutil.Values{},
 		},
 		"single-ca": {
-			tls: &common.TLSConfig{
-				AdditionalCAs: []common.AdditionalCA{
+			tls: &platform.TLSConfig{
+				AdditionalCAs: []platform.AdditionalCA{
 					{
 						Name:    "ca-name",
 						Content: "ca-content",
@@ -152,8 +152,8 @@ func TestGetTLSConfigValues(t *testing.T) {
 			},
 		},
 		"many-cas": {
-			tls: &common.TLSConfig{
-				AdditionalCAs: []common.AdditionalCA{
+			tls: &platform.TLSConfig{
+				AdditionalCAs: []platform.AdditionalCA{
 					{
 						Name:    "ca1-name",
 						Content: "ca1-content",

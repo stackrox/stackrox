@@ -6,7 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
-	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -16,7 +16,7 @@ func CheckClusterNameExtension(k8sClient kubernetes.Interface) extensions.Reconc
 	return wrapExtension(checkClusterName, k8sClient)
 }
 
-func checkClusterName(ctx context.Context, sc *securedClusterv1Alpha1.SecuredCluster, _ kubernetes.Interface, statusUpdater func(statusFunc updateStatusFunc), _ logr.Logger) error {
+func checkClusterName(ctx context.Context, sc *platform.SecuredCluster, _ kubernetes.Interface, statusUpdater func(statusFunc updateStatusFunc), _ logr.Logger) error {
 	if sc.DeletionTimestamp != nil {
 		return nil // doesn't matter on deletion
 	}
@@ -32,7 +32,7 @@ func checkClusterName(ctx context.Context, sc *securedClusterv1Alpha1.SecuredClu
 			sc.Status.ClusterName, sc.Spec.ClusterName)
 	}
 
-	statusUpdater(func(status *securedClusterv1Alpha1.SecuredClusterStatus) bool {
+	statusUpdater(func(status *platform.SecuredClusterStatus) bool {
 		status.ClusterName = sc.Spec.ClusterName
 		return true
 	})

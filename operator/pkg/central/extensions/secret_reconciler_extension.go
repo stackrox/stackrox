@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/core/v1"
@@ -20,7 +20,7 @@ type generateSecretDataFunc func() (secretDataMap, error)
 type secretReconciliationExtension struct {
 	ctx        context.Context
 	k8sClient  kubernetes.Interface
-	centralObj *centralv1Alpha1.Central
+	centralObj *platform.Central
 }
 
 func (r *secretReconciliationExtension) Namespace() string {

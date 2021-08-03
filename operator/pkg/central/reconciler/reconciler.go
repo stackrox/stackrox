@@ -3,7 +3,7 @@ package reconciler
 import (
 	pkgReconciler "github.com/joelanford/helm-operator/pkg/reconciler"
 	"github.com/stackrox/rox/image"
-	centralV1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/central/values/translation"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
@@ -18,7 +18,7 @@ import (
 func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	return reconciler.SetupReconcilerWithManager(
-		mgr, centralV1Alpha1.CentralGVK, image.CentralServicesChartPrefix,
+		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		proxy.InjectProxyEnvVars(translation.Translator{Client: client}, proxyEnv),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(client)),

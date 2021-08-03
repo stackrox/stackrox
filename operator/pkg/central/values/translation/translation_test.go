@@ -3,8 +3,7 @@ package translation
 import (
 	"testing"
 
-	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	common "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,13 +24,13 @@ func TestReadBaseValues(t *testing.T) {
 func TestTranslate(t *testing.T) {
 	type args struct {
 		clientSet kubernetes.Interface
-		c         v1alpha1.Central
+		c         platform.Central
 	}
 
-	connectivityPolicy := v1alpha1.ConnectivityOffline
+	connectivityPolicy := platform.ConnectivityOffline
 	claimName := "central-claim-name"
-	scannerComponentPolicy := v1alpha1.ScannerComponentEnabled
-	scannerAutoScalingPolicy := v1alpha1.ScannerAutoScalingEnabled
+	scannerComponentPolicy := platform.ScannerComponentEnabled
+	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
 
 	truth := true
 	lbPort := int32(12345)
@@ -47,8 +46,8 @@ func TestTranslate(t *testing.T) {
 	}{
 		"empty spec": {
 			args: args{
-				c: v1alpha1.Central{
-					Spec: v1alpha1.CentralSpec{},
+				c: platform.Central{
+					Spec: platform.CentralSpec{},
 				},
 			},
 			want: chartutil.Values{
@@ -64,24 +63,24 @@ func TestTranslate(t *testing.T) {
 
 		"everything and the kitchen sink": {
 			args: args{
-				c: v1alpha1.Central{
+				c: platform.Central{
 					ObjectMeta: v1.ObjectMeta{Namespace: "stackrox"},
-					Spec: v1alpha1.CentralSpec{
-						ImagePullSecrets: []common.LocalSecretReference{
+					Spec: platform.CentralSpec{
+						ImagePullSecrets: []platform.LocalSecretReference{
 							{Name: "image-pull-secrets-secret1"},
 							{Name: "image-pull-secrets-secret2"},
 						},
-						Egress: &v1alpha1.Egress{
+						Egress: &platform.Egress{
 							ConnectivityPolicy: &connectivityPolicy,
 						},
-						TLS: &common.TLSConfig{
-							AdditionalCAs: []common.AdditionalCA{
+						TLS: &platform.TLSConfig{
+							AdditionalCAs: []platform.AdditionalCA{
 								{Name: "ca1-name", Content: "ca1-content"},
 								{Name: "ca2-name", Content: "ca2-content"},
 							},
 						},
-						Central: &v1alpha1.CentralComponentSpec{
-							DeploymentSpec: common.DeploymentSpec{
+						Central: &platform.CentralComponentSpec{
+							DeploymentSpec: platform.DeploymentSpec{
 								NodeSelector: map[string]string{
 									"central-node-selector-label1": "central-node-selector-value1",
 									"central-node-selector-label2": "central-node-selector-value2",
@@ -97,42 +96,42 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
-							DefaultTLSSecret: &common.LocalSecretReference{
+							DefaultTLSSecret: &platform.LocalSecretReference{
 								Name: "my-default-tls-secret",
 							},
-							Persistence: &v1alpha1.Persistence{
-								HostPath: &v1alpha1.HostPathSpec{
+							Persistence: &platform.Persistence{
+								HostPath: &platform.HostPathSpec{
 									Path: pointer.StringPtr("/central/host/path"),
 								},
-								PersistentVolumeClaim: &v1alpha1.PersistentVolumeClaim{
+								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 									ClaimName: &claimName,
 								},
 							},
-							Exposure: &v1alpha1.Exposure{
-								LoadBalancer: &v1alpha1.ExposureLoadBalancer{
+							Exposure: &platform.Exposure{
+								LoadBalancer: &platform.ExposureLoadBalancer{
 									Enabled: &truth,
 									Port:    &lbPort,
 									IP:      &lbIP,
 								},
-								NodePort: &v1alpha1.ExposureNodePort{
+								NodePort: &platform.ExposureNodePort{
 									Enabled: &truth,
 									Port:    &nodePortPort,
 								},
-								Route: &v1alpha1.ExposureRoute{
+								Route: &platform.ExposureRoute{
 									Enabled: &truth,
 								},
 							},
 						},
-						Scanner: &v1alpha1.ScannerComponentSpec{
+						Scanner: &platform.ScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
-							Analyzer: &v1alpha1.ScannerAnalyzerComponent{
-								Scaling: &v1alpha1.ScannerAnalyzerScaling{
+							Analyzer: &platform.ScannerAnalyzerComponent{
+								Scaling: &platform.ScannerAnalyzerScaling{
 									AutoScaling: &scannerAutoScalingPolicy,
 									Replicas:    &scannerReplicas,
 									MinReplicas: &scannerMinReplicas,
 									MaxReplicas: &scannerMaxReplicas,
 								},
-								DeploymentSpec: common.DeploymentSpec{
+								DeploymentSpec: platform.DeploymentSpec{
 									NodeSelector: map[string]string{
 										"scanner-node-selector-label1": "scanner-node-selector-value1",
 										"scanner-node-selector-label2": "scanner-node-selector-value2",
@@ -149,7 +148,7 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
-							DB: &common.DeploymentSpec{
+							DB: &platform.DeploymentSpec{
 								NodeSelector: map[string]string{
 									"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 									"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
@@ -166,7 +165,7 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 						},
-						Customize: &common.CustomizeSpec{
+						Customize: &platform.CustomizeSpec{
 							Labels: map[string]string{
 								"customize-label1": "customize-label1-value",
 								"customize-label2": "customize-label2-value",
@@ -186,7 +185,7 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 						},
-						Misc: &common.MiscSpec{
+						Misc: &platform.MiscSpec{
 							CreateSCCs: pointer.BoolPtr(true),
 						},
 					},
@@ -322,11 +321,11 @@ func TestTranslate(t *testing.T) {
 
 		"with configured PVC": {
 			args: args{
-				c: v1alpha1.Central{
-					Spec: v1alpha1.CentralSpec{
-						Central: &v1alpha1.CentralComponentSpec{
-							Persistence: &v1alpha1.Persistence{
-								PersistentVolumeClaim: &v1alpha1.PersistentVolumeClaim{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Persistence: &platform.Persistence{
+								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 									ClaimName:        pointer.StringPtr("stackrox-db-test"),
 									StorageClassName: pointer.StringPtr("storage-class"),
 									Size:             pointer.StringPtr("50Gi"),

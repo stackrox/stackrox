@@ -8,7 +8,7 @@ import (
 	_ "embed"
 
 	"github.com/pkg/errors"
-	central "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -33,7 +33,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	baseValues, err := chartutil.ReadValues(baseValuesYAML)
 	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
 
-	c := central.Central{}
+	c := platform.Central{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &c)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 }
 
 // translate translates a Central CR into helm values.
-func translate(c central.Central) (chartutil.Values, error) {
+func translate(c platform.Central) (chartutil.Values, error) {
 	v := translation.NewValuesBuilder()
 
 	v.AddAllFrom(translation.GetImagePullSecrets(c.Spec.ImagePullSecrets))
@@ -65,7 +65,7 @@ func translate(c central.Central) (chartutil.Values, error) {
 
 	centralSpec := c.Spec.Central
 	if centralSpec == nil {
-		centralSpec = &central.CentralComponentSpec{}
+		centralSpec = &platform.CentralComponentSpec{}
 	}
 	v.AddChild("central", getCentralComponentValues(centralSpec))
 
@@ -80,14 +80,14 @@ func translate(c central.Central) (chartutil.Values, error) {
 	return v.Build()
 }
 
-func getEnv(egress *central.Egress) *translation.ValuesBuilder {
+func getEnv(egress *platform.Egress) *translation.ValuesBuilder {
 	env := translation.NewValuesBuilder()
 	if egress != nil {
 		if egress.ConnectivityPolicy != nil {
 			switch *egress.ConnectivityPolicy {
-			case central.ConnectivityOnline:
+			case platform.ConnectivityOnline:
 				env.SetBoolValue("offlineMode", false)
-			case central.ConnectivityOffline:
+			case platform.ConnectivityOffline:
 				env.SetBoolValue("offlineMode", true)
 			default:
 				return env.SetError(fmt.Errorf("invalid spec.egress.connectivityPolicy %q", *egress.ConnectivityPolicy))
@@ -99,7 +99,7 @@ func getEnv(egress *central.Egress) *translation.ValuesBuilder {
 	return &ret
 }
 
-func getCentralComponentValues(c *central.CentralComponentSpec) *translation.ValuesBuilder {
+func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
@@ -152,14 +152,14 @@ func getCentralComponentValues(c *central.CentralComponentSpec) *translation.Val
 	return &cv
 }
 
-func getScannerComponentValues(s *central.ScannerComponentSpec) *translation.ValuesBuilder {
+func getScannerComponentValues(s *platform.ScannerComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	if s.ScannerComponent != nil {
 		switch *s.ScannerComponent {
-		case central.ScannerComponentDisabled:
+		case platform.ScannerComponentDisabled:
 			sv.SetBoolValue("disable", true)
-		case central.ScannerComponentEnabled:
+		case platform.ScannerComponentEnabled:
 			sv.SetBoolValue("disable", false)
 		default:
 			return sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *s.ScannerComponent))
@@ -173,9 +173,9 @@ func getScannerComponentValues(s *central.ScannerComponentSpec) *translation.Val
 		autoscaling := translation.NewValuesBuilder()
 		if scaling.AutoScaling != nil {
 			switch *scaling.AutoScaling {
-			case central.ScannerAutoScalingDisabled:
+			case platform.ScannerAutoScalingDisabled:
 				autoscaling.SetBoolValue("disable", true)
-			case central.ScannerAutoScalingEnabled:
+			case platform.ScannerAutoScalingEnabled:
 				autoscaling.SetBoolValue("disable", false)
 			default:
 				return autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))

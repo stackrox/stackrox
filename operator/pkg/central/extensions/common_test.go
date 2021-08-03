@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -20,10 +20,10 @@ const (
 )
 
 type secretVerifyFunc func(t *testing.T, data secretDataMap)
-type statusVerifyFunc func(t *testing.T, status *centralv1Alpha1.CentralStatus)
+type statusVerifyFunc func(t *testing.T, status *platform.CentralStatus)
 
 type secretReconciliationTestCase struct {
-	Spec     centralv1Alpha1.CentralSpec
+	Spec     platform.CentralSpec
 	Deleted  bool
 	Existing []*v1.Secret
 
@@ -32,22 +32,22 @@ type secretReconciliationTestCase struct {
 	VerifyStatus           statusVerifyFunc
 }
 
-func basicSpecWithScanner(scannerEnabled bool) centralv1Alpha1.CentralSpec {
-	spec := centralv1Alpha1.CentralSpec{
-		Scanner: &centralv1Alpha1.ScannerComponentSpec{
-			ScannerComponent: new(centralv1Alpha1.ScannerComponentPolicy),
+func basicSpecWithScanner(scannerEnabled bool) platform.CentralSpec {
+	spec := platform.CentralSpec{
+		Scanner: &platform.ScannerComponentSpec{
+			ScannerComponent: new(platform.ScannerComponentPolicy),
 		},
 	}
 	if scannerEnabled {
-		*spec.Scanner.ScannerComponent = centralv1Alpha1.ScannerComponentEnabled
+		*spec.Scanner.ScannerComponent = platform.ScannerComponentEnabled
 	} else {
-		*spec.Scanner.ScannerComponent = centralv1Alpha1.ScannerComponentDisabled
+		*spec.Scanner.ScannerComponent = platform.ScannerComponentDisabled
 	}
 	return spec
 }
 
-func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *centralv1Alpha1.Central, k8sClient kubernetes.Interface, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
-	central := &centralv1Alpha1.Central{
+func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, k8sClient kubernetes.Interface, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
+	central := &platform.Central{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "platform.stackrox.io/v1alpha1",
 			Kind:       "Central",

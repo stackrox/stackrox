@@ -2,7 +2,7 @@ package translation
 
 import (
 	"github.com/pkg/errors"
-	common "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
@@ -13,7 +13,7 @@ const (
 	ResourcesKey = "resources"
 )
 
-// GetResources converts common.Resources to chart values builder.
+// GetResources converts platform.Resources to chart values builder.
 func GetResources(resources *corev1.ResourceRequirements) *ValuesBuilder {
 	if resources == nil {
 		return nil
@@ -29,8 +29,8 @@ func GetResources(resources *corev1.ResourceRequirements) *ValuesBuilder {
 	return &res
 }
 
-// GetCustomize converts common.CustomizeSpec to chart values builder.
-func GetCustomize(customizeSpec *common.CustomizeSpec) *ValuesBuilder {
+// GetCustomize converts platform.CustomizeSpec to chart values builder.
+func GetCustomize(customizeSpec *platform.CustomizeSpec) *ValuesBuilder {
 	if customizeSpec == nil {
 		return nil
 	}
@@ -61,8 +61,8 @@ func GetCustomize(customizeSpec *common.CustomizeSpec) *ValuesBuilder {
 	return &res
 }
 
-// GetMisc converts common.MiscSpec to chart values builder.
-func GetMisc(miscSpec *common.MiscSpec) *ValuesBuilder {
+// GetMisc converts platform.MiscSpec to chart values builder.
+func GetMisc(miscSpec *platform.MiscSpec) *ValuesBuilder {
 	if miscSpec == nil {
 		return nil
 	}
@@ -76,7 +76,7 @@ func GetMisc(miscSpec *common.MiscSpec) *ValuesBuilder {
 }
 
 // GetImagePullSecrets converts corev1.LocalObjectReference to a *ValuesBuilder with an "imagePullSecrets" field.
-func GetImagePullSecrets(imagePullSecrets []common.LocalSecretReference) *ValuesBuilder {
+func GetImagePullSecrets(imagePullSecrets []platform.LocalSecretReference) *ValuesBuilder {
 	res := NewValuesBuilder()
 	if len(imagePullSecrets) > 0 {
 		var ps []string
@@ -90,8 +90,8 @@ func GetImagePullSecrets(imagePullSecrets []common.LocalSecretReference) *Values
 	return &res
 }
 
-// GetTLSConfigValues converts common.TLSConfig to a *ValuesBuilder with an "additionalCAs" field.
-func GetTLSConfigValues(tls *common.TLSConfig) *ValuesBuilder {
+// GetTLSConfigValues converts platform.TLSConfig to a *ValuesBuilder with an "additionalCAs" field.
+func GetTLSConfigValues(tls *platform.TLSConfig) *ValuesBuilder {
 	if tls == nil || len(tls.AdditionalCAs) == 0 {
 		return nil
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
-	centralV1alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -28,7 +28,7 @@ func ReconcileAdminPasswordExtension(k8sClient kubernetes.Interface) extensions.
 	return wrapExtension(reconcileAdminPassword, k8sClient)
 }
 
-func reconcileAdminPassword(ctx context.Context, c *centralV1alpha1.Central, k8sClient kubernetes.Interface, statusUpdater func(updateStatusFunc), log logr.Logger) error {
+func reconcileAdminPassword(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, statusUpdater func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileAdminPasswordExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
@@ -86,12 +86,12 @@ func (r *reconcileAdminPasswordExtensionRun) Execute() error {
 	}
 
 	if r.infoUpdate != "" {
-		r.statusUpdater(func(status *centralV1alpha1.CentralStatus) bool {
+		r.statusUpdater(func(status *platform.CentralStatus) bool {
 			if status.Central == nil {
-				status.Central = &centralV1alpha1.CentralComponentStatus{}
+				status.Central = &platform.CentralComponentStatus{}
 			}
 			if status.Central.AdminPassword == nil {
-				status.Central.AdminPassword = &centralV1alpha1.AdminPasswordStatus{}
+				status.Central.AdminPassword = &platform.AdminPasswordStatus{}
 			}
 			if r.infoUpdate == status.Central.AdminPassword.Info {
 				return false

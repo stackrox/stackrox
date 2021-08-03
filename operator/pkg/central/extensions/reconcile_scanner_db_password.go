@@ -6,7 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
 	"github.com/pkg/errors"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/renderer"
 	"k8s.io/client-go/kubernetes"
 )
@@ -21,7 +21,7 @@ func ReconcileScannerDBPasswordExtension(k8sClient kubernetes.Interface) extensi
 	return wrapExtension(reconcileScannerDBPassword, k8sClient)
 }
 
-func reconcileScannerDBPassword(ctx context.Context, c *centralv1Alpha1.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,

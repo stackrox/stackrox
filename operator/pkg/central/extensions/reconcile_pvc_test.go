@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ const (
 )
 
 type pvcReconciliationTestCase struct {
-	Central      *centralv1Alpha1.Central
+	Central      *platform.Central
 	ExistingPVCs []*corev1.PersistentVolumeClaim
 	Delete       bool
 
@@ -43,7 +43,7 @@ func verifyMultiple(funcs ...pvcVerifyFunc) pvcVerifyFunc {
 	}
 }
 
-func ownedBy(central *centralv1Alpha1.Central) pvcVerifyFunc {
+func ownedBy(central *platform.Central) pvcVerifyFunc {
 	return func(t *testing.T, pvc *corev1.PersistentVolumeClaim) {
 		require.NotNil(t, pvc)
 		assert.True(t, metav1.IsControlledBy(pvc, central))
@@ -68,7 +68,7 @@ func pvcNotCreatedVerifier(t *testing.T, pvc *corev1.PersistentVolumeClaim) {
 	assert.Nil(t, pvc, "PVC should not be created if hostpath is given")
 }
 
-func notOwnedBy(central *centralv1Alpha1.Central) pvcVerifyFunc {
+func notOwnedBy(central *platform.Central) pvcVerifyFunc {
 	return func(t *testing.T, pvc *corev1.PersistentVolumeClaim) {
 		require.NotNil(t, pvc)
 		assert.False(t, metav1.IsControlledBy(pvc, central))
@@ -79,35 +79,35 @@ func notOwnedBy(central *centralv1Alpha1.Central) pvcVerifyFunc {
 func TestReconcilePVCExtension(t *testing.T) {
 	removedCentral := makeCentral(nil)
 	emptyNotDeletedCentral := makeCentral(nil)
-	deleteHostPathCentral := makeCentral(&centralv1Alpha1.Persistence{HostPath: makeHostPathSpec("/tmp/path")})
+	deleteHostPathCentral := makeCentral(&platform.Persistence{HostPath: makeHostPathSpec("/tmp/path")})
 
-	changedPVCConfigCentral := makeCentral(&centralv1Alpha1.Persistence{
-		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
+	changedPVCConfigCentral := makeCentral(&platform.Persistence{
+		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 			Size:             pointer.StringPtr("500Gi"),
 			StorageClassName: pointer.StringPtr("new-storage-class"),
 			ClaimName:        pointer.StringPtr(testPVCName),
 		},
 	})
-	changedPVCNameCentral := makeCentral(&centralv1Alpha1.Persistence{
-		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
+	changedPVCNameCentral := makeCentral(&platform.Persistence{
+		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 			ClaimName: pointer.StringPtr(testPVCName),
 			Size:      pointer.StringPtr("500Gi"),
 		},
 	})
-	referencedPVCCentral := makeCentral(&centralv1Alpha1.Persistence{
-		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
+	referencedPVCCentral := makeCentral(&platform.Persistence{
+		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 			ClaimName: pointer.StringPtr(testPVCName),
 		},
 	})
-	pvcShouldCreateWithConfigCentral := makeCentral(&centralv1Alpha1.Persistence{
-		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
+	pvcShouldCreateWithConfigCentral := makeCentral(&platform.Persistence{
+		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 			ClaimName:        pointer.StringPtr(testPVCName),
 			Size:             pointer.StringPtr("50Gi"),
 			StorageClassName: pointer.StringPtr("test-storage-class"),
 		},
 	})
-	notOwnedPVCConfigChangeCentral := makeCentral(&centralv1Alpha1.Persistence{
-		PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{
+	notOwnedPVCConfigChangeCentral := makeCentral(&platform.Persistence{
+		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 			Size:             pointer.StringPtr("500Gi"),
 			StorageClassName: pointer.StringPtr("new-storage-class"),
 		},
@@ -123,9 +123,9 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"given-hostpath-and-pvc-should-return-error": {
-			Central: makeCentral(&centralv1Alpha1.Persistence{
+			Central: makeCentral(&platform.Persistence{
 				HostPath:              makeHostPathSpec("/tmp/hostpath"),
-				PersistentVolumeClaim: &centralv1Alpha1.PersistentVolumeClaim{},
+				PersistentVolumeClaim: &platform.PersistentVolumeClaim{},
 			}),
 			ExistingPVCs:  nil,
 			ExpectedError: "invalid persistence configuration, either hostPath oder persistentVolumeClaim must be set, not both",
@@ -135,7 +135,7 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"given-hostpath-should-not-create-pvc": {
-			Central:      makeCentral(&centralv1Alpha1.Persistence{HostPath: makeHostPathSpec("/tmp/hostpath")}),
+			Central:      makeCentral(&platform.Persistence{HostPath: makeHostPathSpec("/tmp/hostpath")}),
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				defaultPVCName: pvcNotCreatedVerifier,
@@ -310,20 +310,20 @@ func executeAndVerify(t *testing.T, testCase pvcReconciliationTestCase, r reconc
 	}
 }
 
-func makeCentral(p *centralv1Alpha1.Persistence) *centralv1Alpha1.Central {
-	return &centralv1Alpha1.Central{
+func makeCentral(p *platform.Persistence) *platform.Central {
+	return &platform.Central{
 		ObjectMeta: metav1.ObjectMeta{
 			UID: types.UID(uuid.NewV4().String()),
 		},
-		Spec: centralv1Alpha1.CentralSpec{
-			Central: &centralv1Alpha1.CentralComponentSpec{
+		Spec: platform.CentralSpec{
+			Central: &platform.CentralComponentSpec{
 				Persistence: p,
 			},
 		},
 	}
 }
 
-func makePVC(owner *centralv1Alpha1.Central, name string, size resource.Quantity, storageClassName string) *corev1.PersistentVolumeClaim {
+func makePVC(owner *platform.Central, name string, size resource.Quantity, storageClassName string) *corev1.PersistentVolumeClaim {
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:       "stackrox",
@@ -342,7 +342,7 @@ func makePVC(owner *centralv1Alpha1.Central, name string, size resource.Quantity
 
 }
 
-func newReconcilePVCExtensionRun(c *centralv1Alpha1.Central, client kubernetes.Interface) reconcilePVCExtensionRun {
+func newReconcilePVCExtensionRun(c *platform.Central, client kubernetes.Interface) reconcilePVCExtensionRun {
 	return reconcilePVCExtensionRun{
 		ctx:        context.Background(),
 		namespace:  "stackrox",
@@ -352,8 +352,8 @@ func newReconcilePVCExtensionRun(c *centralv1Alpha1.Central, client kubernetes.I
 	}
 }
 
-func makeHostPathSpec(path string) *centralv1Alpha1.HostPathSpec {
-	return &centralv1Alpha1.HostPathSpec{
+func makeHostPathSpec(path string) *platform.HostPathSpec {
+	return &platform.HostPathSpec{
 		Path: &path,
 	}
 }

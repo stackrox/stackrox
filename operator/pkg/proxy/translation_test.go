@@ -3,7 +3,7 @@ package proxy
 import (
 	"testing"
 
-	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	testObj = &centralv1Alpha1.Central{
+	testObj = &platform.Central{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: centralv1Alpha1.CentralGVK.GroupVersion().String(),
-			Kind:       centralv1Alpha1.CentralGVK.Kind,
+			APIVersion: platform.CentralGVK.GroupVersion().String(),
+			Kind:       platform.CentralGVK.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-central",

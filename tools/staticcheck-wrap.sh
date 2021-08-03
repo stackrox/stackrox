@@ -8,14 +8,10 @@ total=0
 
 [[ -x "$(command -v staticcheck)" ]] || { echo >&2 "staticcheck binary not found in path!"; exit 1; }
 
-# TODO(ROX-7658): Remove the operator/pkg/... regexes once imports are renamed.
 allowlisted_regexes=(
   '.*var log is unused'
   'generated/.*\.pb\.go'
   'pkg/complianceoperator/api/.*\.go'
-  '.*pkg/clientset.*being imported more than once'
-  '.*operator/apis/platform.*being imported more than once'
-  '.*other import of.*rox/operator'
 )
 
 while read -r line; do

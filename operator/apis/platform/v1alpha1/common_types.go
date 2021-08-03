@@ -7,10 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Important: Run "make generate" in the common directory to regenerate code,
-// and run "make manifests" in the "central" and "securedcluster" directories
-// to regenerate manifests, after modifying this file
-
 // MiscSpec defines miscellaneous settings for custom resources.
 type MiscSpec struct {
 	// Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This

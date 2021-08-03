@@ -3,8 +3,7 @@ package extensions
 import (
 	"testing"
 
-	centralv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	securedClusterv1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -12,7 +11,7 @@ import (
 )
 
 func TestUpdateProductVersion_Central(t *testing.T) {
-	var status centralv1Alpha1.CentralStatus
+	var status platform.CentralStatus
 	var uSt unstructured.Unstructured
 
 	var err error
@@ -21,7 +20,7 @@ func TestUpdateProductVersion_Central(t *testing.T) {
 
 	// Update from empty to 1.2.3
 	assert.True(t, updateProductVersion(&uSt, "1.2.3"))
-	status = centralv1Alpha1.CentralStatus{}
+	status = platform.CentralStatus{}
 	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status))
 
 	assert.Equal(t, "1.2.3", status.ProductVersion)
@@ -32,7 +31,7 @@ func TestUpdateProductVersion_Central(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.False(t, updateProductVersion(&uSt, "1.2.3"))
-	status = centralv1Alpha1.CentralStatus{}
+	status = platform.CentralStatus{}
 	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status))
 
 	assert.Equal(t, "1.2.3", status.ProductVersion)
@@ -43,14 +42,14 @@ func TestUpdateProductVersion_Central(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.True(t, updateProductVersion(&uSt, "4.5.6"))
-	status = centralv1Alpha1.CentralStatus{}
+	status = platform.CentralStatus{}
 	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status))
 
 	assert.Equal(t, "4.5.6", status.ProductVersion)
 }
 
 func TestUpdateProductVersion_SecuredCluster(t *testing.T) {
-	var status securedClusterv1Alpha1.SecuredClusterStatus
+	var status platform.SecuredClusterStatus
 	var uSt unstructured.Unstructured
 
 	var err error
@@ -59,7 +58,7 @@ func TestUpdateProductVersion_SecuredCluster(t *testing.T) {
 
 	// Update from empty to 1.2.3
 	assert.True(t, updateProductVersion(&uSt, "1.2.3"))
-	status = securedClusterv1Alpha1.SecuredClusterStatus{}
+	status = platform.SecuredClusterStatus{}
 	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status))
 
 	assert.Equal(t, "1.2.3", status.ProductVersion)
@@ -70,7 +69,7 @@ func TestUpdateProductVersion_SecuredCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.False(t, updateProductVersion(&uSt, "1.2.3"))
-	status = securedClusterv1Alpha1.SecuredClusterStatus{}
+	status = platform.SecuredClusterStatus{}
 	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status))
 
 	assert.Equal(t, "1.2.3", status.ProductVersion)
@@ -81,7 +80,7 @@ func TestUpdateProductVersion_SecuredCluster(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.True(t, updateProductVersion(&uSt, "4.5.6"))
-	status = securedClusterv1Alpha1.SecuredClusterStatus{}
+	status = platform.SecuredClusterStatus{}
 	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(uSt.Object, &status))
 
 	assert.Equal(t, "4.5.6", status.ProductVersion)

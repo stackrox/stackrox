@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	pkgErrors "github.com/pkg/errors"
-	centralV1Alpha1 "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
@@ -19,7 +19,7 @@ import (
 type secretReconcilerExtensionTestSuite struct {
 	suite.Suite
 
-	centralObj *centralV1Alpha1.Central
+	centralObj *platform.Central
 	k8sClient  kubernetes.Interface
 
 	reconcileExt *secretReconciliationExtension
@@ -30,10 +30,10 @@ func TestSecretReconcilerExtension(t *testing.T) {
 }
 
 func (s *secretReconcilerExtensionTestSuite) SetupTest() {
-	s.centralObj = &centralV1Alpha1.Central{
+	s.centralObj = &platform.Central{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: centralV1Alpha1.CentralGVK.GroupVersion().String(),
-			Kind:       centralV1Alpha1.CentralGVK.Kind,
+			APIVersion: platform.CentralGVK.GroupVersion().String(),
+			Kind:       platform.CentralGVK.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "stackrox-central-services",
@@ -66,7 +66,7 @@ func (s *secretReconcilerExtensionTestSuite) SetupTest() {
 			Name:      "existing-managed-secret",
 			Namespace: testNamespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(s.centralObj, centralV1Alpha1.CentralGVK),
+				*metav1.NewControllerRef(s.centralObj, platform.CentralGVK),
 			},
 		},
 		Data: map[string][]byte{
@@ -156,7 +156,7 @@ func (s *secretReconcilerExtensionTestSuite) Test_ShouldExist_OnNonExisting_Shou
 	secret, err := s.k8sClient.CoreV1().Secrets(testNamespace).Get(context.Background(), "absent-secret", metav1.GetOptions{})
 	s.Require().NoError(err)
 
-	s.EqualValues(secret.GetOwnerReferences(), []metav1.OwnerReference{*metav1.NewControllerRef(s.centralObj, centralV1Alpha1.CentralGVK)})
+	s.EqualValues(secret.GetOwnerReferences(), []metav1.OwnerReference{*metav1.NewControllerRef(s.centralObj, platform.CentralGVK)})
 
 	s.Equal(markerID, string(secret.Data["generated"]))
 }
