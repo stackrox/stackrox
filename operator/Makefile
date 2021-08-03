@@ -36,13 +36,13 @@ IMAGE_TAG_BASE ?= docker.io/stackrox/stackrox-operator
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
-ALL_BUNDLE_IMGS ?= $(BUNDLE_IMG)
-
 # INDEX_IMG defines the image:tag used for the index (a.k.a. catalog) image, containing the single operator bundle image.
-INDEX_IMG ?= $(IMAGE_TAG_BASE)-index:v$(VERSION)
+INDEX_IMG_BASE = $(IMAGE_TAG_BASE)-index
+INDEX_IMG ?= $(INDEX_IMG_BASE):v$(VERSION)
 
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -141,7 +141,7 @@ kuttl: ## Download kuttl.
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(KUTTL) $${KUTTL_URL}
 
-OPM_VERSION = 1.17.3
+OPM_VERSION = 1.17.5
 OPM = $(PROJECT_DIR)/bin/opm-$(OPM_VERSION)
 .PHONY: opm
 opm: ## Download opm.
@@ -248,6 +248,12 @@ undeploy: kustomize ## Undeploy operator image from the K8s cluster specified in
 
 ##@ Bundle and Index build
 
+# Commands to enter local Python virtual environment and get needed dependencies there.
+ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
+	. bundle_helpers/.venv/bin/activate ;\
+	pip3 install --upgrade pip setuptools ;\
+	pip3 install -r bundle_helpers/requirements.txt
+
 .PHONY: bundle
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 # Version is hardcoded to 0.0.1 here because otherwise git-versioned files are changed which we want to avoid.
@@ -271,10 +277,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	cat bundle.Dockerfile.extra >> bundle.Dockerfile
 # Run a python script to fix the orders in the specDescriptors (children must not appear before their parents).
 	set -euo pipefail ;\
-	python3 -m venv bundle_helpers/.venv ;\
-	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip setuptools ;\
-	pip3 install -r bundle_helpers/requirements.txt ;\
+	$(ACTIVATE_PYTHON) ;\
 	bundle_helpers/fix-spec-descriptor-order.py \
 	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
 	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
@@ -290,13 +293,10 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 	cp -a bundle build/
 # Run Python script to post-process necessary files in the build/bundle/. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
-	python3 -m venv bundle_helpers/.venv ;\
-	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip setuptools ;\
-	pip3 install -r bundle_helpers/requirements.txt ;\
+	$(ACTIVATE_PYTHON) ;\
 	./bundle_helpers/patch-csv.py \
 		--use-version $(VERSION) \
-		--first-version 3.62.0 \
+		--first-version 3.62.0 `# 3.62.0 is the first operator version ever released` \
 		--operator-image $(IMG) \
 		--no-related-images \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
@@ -316,8 +316,25 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	$(OPERATOR_SDK) scorecard $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: opm ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(ALL_BUNDLE_IMGS) --tag $(INDEX_IMG) --build-tool docker
+index-build: opm bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
+# If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise
+# `opm index add` fails with an error like this:
+#  Invalid bundle rhacs-operator.v3.63.0-73-g7aab09c265-dirty, replaces nonexistent bundle rhacs-operator.v3.62.0
+# We assume that the index for the replaced bundle is already in the registry with the same tag and so we tell opm to
+# pull previous index image and use it as a base when building the current index image.
+# The sed expression below should extract everything after the first dot in `replaces:` value.
+# E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
+	@set -euo pipefail ;\
+	replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	if [[ -n "$$replaced_version" ]]; then \
+		previous_index="$(INDEX_IMG_BASE):$${replaced_version}" ;\
+		previous_index_arg="--from-index $${previous_index}" ;\
+		echo "Detected that this bundle updates (replaces) version $$replaced_version. Will use index image $${previous_index} as the base for the current one." ;\
+	else \
+		previous_index_arg="" ;\
+	fi ;\
+	set -x ;\
+	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(BUNDLE_IMG) --tag $(INDEX_IMG) $${previous_index_arg} --build-tool docker
 
 ##@ Push images
 
