@@ -12,6 +12,8 @@ import (
 
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/gogo/protobuf/types"
+	"github.com/golang/mock/gomock"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -164,7 +166,11 @@ func TestWithFakeJira(t *testing.T) {
 		},
 	}
 
-	j, err := newJira(fakeJiraConfig)
+	mockCtrl := gomock.NewController(t)
+	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	j, err := newJira(fakeJiraConfig, nsStore)
+	defer mockCtrl.Finish()
+
 	require.NoError(t, err)
 
 	assert.NoError(t, j.Test(context.Background()))

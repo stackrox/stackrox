@@ -15,6 +15,7 @@ import (
 
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -53,6 +54,8 @@ type jira struct {
 	conf *storage.Jira
 
 	notifier *storage.Notifier
+
+	namespaces namespaceDataStore.DataStore
 
 	severityToPriority map[storage.Severity]string
 	needsPriority      bool
@@ -142,7 +145,7 @@ func (j *jira) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	project := notifiers.GetLabelValue(alert, j.notifier.GetLabelKey(), j.notifier.GetLabelDefault())
+	project := notifiers.GetAnnotationValue(ctx, alert, j.notifier.GetLabelKey(), j.notifier.GetLabelDefault(), j.namespaces)
 	i := &jiraLib.Issue{
 		Fields: &jiraLib.IssueFields{
 			Summary: notifiers.SummaryForAlert(alert),
@@ -216,7 +219,7 @@ func validate(jira *storage.Jira) error {
 	return errorList.ToError()
 }
 
-func newJira(notifier *storage.Notifier) (*jira, error) {
+func newJira(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore) (*jira, error) {
 	conf := notifier.GetJira()
 	if conf == nil {
 		return nil, errors.New("Jira configuration required")
@@ -279,6 +282,7 @@ func newJira(notifier *storage.Notifier) (*jira, error) {
 		client:             client,
 		conf:               notifier.GetJira(),
 		notifier:           notifier,
+		namespaces:         namespaces,
 		severityToPriority: derivedPriorities,
 
 		needsPriority: needsPriority,
@@ -391,7 +395,7 @@ func mapPriorities(integration *storage.Jira, prios []jiraLib.Priority) map[stor
 
 func init() {
 	notifiers.Add("jira", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := newJira(notifier)
+		j, err := newJira(notifier, namespaceDataStore.Singleton())
 		return j, err
 	})
 }

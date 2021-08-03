@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +31,11 @@ func skip(t *testing.T) string {
 	return recipient
 }
 
-func getEmail(t *testing.T) *email {
+func getEmail(t *testing.T) (*email, *gomock.Controller) {
+	mockCtrl := gomock.NewController(t)
+	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
+
 	recipient := skip(t)
 
 	notifier := &storage.Notifier{
@@ -45,23 +51,28 @@ func getEmail(t *testing.T) *email {
 		},
 	}
 
-	e, err := newEmail(notifier)
+	e, err := newEmail(notifier, nsStore)
 	require.NoError(t, err)
-	return e
+	return e, mockCtrl
 }
 
 func TestEmailAlertNotify(t *testing.T) {
-	e := getEmail(t)
+	e, mockCtrl := getEmail(t)
+	defer mockCtrl.Finish()
+
 	assert.NoError(t, e.AlertNotify(context.Background(), fixtures.GetAlert()))
 }
 
 func TestEmailNetworkPolicyYAMLNotify(t *testing.T) {
-	e := getEmail(t)
+	e, mockCtrl := getEmail(t)
+	defer mockCtrl.Finish()
 
 	assert.NoError(t, e.NetworkPolicyYAMLNotify(context.Background(), fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestEmailTest(t *testing.T) {
-	e := getEmail(t)
+	e, mockCtrl := getEmail(t)
+	defer mockCtrl.Finish()
+
 	assert.NoError(t, e.Test(context.Background()))
 }

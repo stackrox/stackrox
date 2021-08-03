@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -22,25 +24,35 @@ func skip(t *testing.T) string {
 	return webhook
 }
 
+func getTeamsWithMock(t *testing.T, notifier *storage.Notifier) (*teams, *gomock.Controller) {
+	mockCtrl := gomock.NewController(t)
+	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
+	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
+
+	s, err := newTeams(notifier, nsStore)
+	assert.NoError(t, err)
+
+	return s, mockCtrl
+}
+
 func TestTeamsAlertNotify(t *testing.T) {
 	webhook := skip(t)
-	s := teams{
-		Notifier: &storage.Notifier{
-			UiEndpoint:   "http://google.com",
-			LabelDefault: webhook,
-		},
-	}
+	s, mockCtrl := getTeamsWithMock(t, &storage.Notifier{
+		UiEndpoint:   "http://google.com",
+		LabelDefault: webhook,
+	})
+	defer mockCtrl.Finish()
+
 	assert.NoError(t, s.AlertNotify(context.Background(), fixtures.GetAlert()))
 }
 
 func TestTeamsRandomAlertNotify(t *testing.T) {
 	webhook := skip(t)
-	s := teams{
-		Notifier: &storage.Notifier{
-			UiEndpoint:   "http://google.com",
-			LabelDefault: webhook,
-		},
-	}
+	s, mockCtrl := getTeamsWithMock(t, &storage.Notifier{
+		UiEndpoint:   "http://google.com",
+		LabelDefault: webhook,
+	})
+	defer mockCtrl.Finish()
 
 	alert := fixtures.GetAlert()
 	alert.Policy.Rationale = ""
@@ -72,24 +84,23 @@ func TestTeamsRandomAlertNotify(t *testing.T) {
 
 func TestTeamsNetworkPolicyYAMLNotify(t *testing.T) {
 	webhook := skip(t)
-	s := teams{
-		Notifier: &storage.Notifier{
-			UiEndpoint:   "http://google.com",
-			LabelDefault: webhook,
-		},
-	}
+	s, mockCtrl := getTeamsWithMock(t, &storage.Notifier{
+		UiEndpoint:   "http://google.com",
+		LabelDefault: webhook,
+	})
+	defer mockCtrl.Finish()
 
 	assert.NoError(t, s.NetworkPolicyYAMLNotify(context.Background(), fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestTeamsTest(t *testing.T) {
 	webhook := skip(t)
-	s := teams{
-		Notifier: &storage.Notifier{
-			UiEndpoint:   "http://google.com",
-			LabelDefault: webhook,
-		},
-	}
+	s, mockCtrl := getTeamsWithMock(t, &storage.Notifier{
+		UiEndpoint:   "http://google.com",
+		LabelDefault: webhook,
+	})
+	defer mockCtrl.Finish()
+
 	assert.NoError(t, s.Test(context.Background()))
 }
 

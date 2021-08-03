@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -34,6 +35,8 @@ var (
 type slack struct {
 	*storage.Notifier
 	client *http.Client
+
+	namespaces namespaceDataStore.DataStore
 }
 
 // notification json struct for richly-formatted notifications
@@ -138,7 +141,7 @@ func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.Errorf("Could not marshal notification for alert %v", alert.Id)
 	}
 
-	webhookURL := notifiers.GetLabelValue(alert, s.GetLabelKey(), s.GetLabelDefault())
+	webhookURL := notifiers.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault(), s.namespaces)
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
@@ -154,7 +157,7 @@ func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	)
 }
 
-// YamlNotify takes in a yaml file and generates the Slack message
+// NetworkPolicyYAMLNotify takes in a yaml file and generates the Slack message
 func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	if strings.Count(yaml, "\n") > 300 { // Looks like messages are truncated at ~340 lines.
 		return errors.New("yaml is too large (>300 lines) to send over slack")
@@ -209,12 +212,13 @@ func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newSlack(notifier *storage.Notifier) (*slack, error) {
+func newSlack(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 		client: &http.Client{
 			Transport: proxy.RoundTripper(),
 		},
+		namespaces: namespaces,
 	}, nil
 }
 
@@ -265,7 +269,7 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 
 func init() {
 	notifiers.Add("slack", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newSlack(notifier)
+		s, err := newSlack(notifier, namespaceDataStore.Singleton())
 		return s, err
 	})
 }

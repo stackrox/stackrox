@@ -24,11 +24,11 @@ var (
 )
 
 func initialize() {
-	// Create a context that can access notifiers since this is on initialization.
+	// Create a context that can access notifiers and namespaces since this is on initialization.
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Notifier)))
+			sac.ResourceScopeKeys(resources.Notifier, resources.Namespace)))
 
 	// Keep track of the notifiers in use.
 	ns = NewNotifierSet()

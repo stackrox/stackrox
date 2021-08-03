@@ -56,12 +56,13 @@ func createNotifier() *storage.Notifier {
 		Id:         "id",
 		Name:       "name",
 		UiEndpoint: "endpoint",
-		Type:       "email",
-		Config: &storage.Notifier_Email{Email: &storage.Email{
-			Server:   "server:25",
-			Sender:   "test@stackrox.com",
-			Username: "username",
-			Password: "password",
+		Type:       "generic",
+		Config: &storage.Notifier_Generic{Generic: &storage.Generic{
+			Endpoint:            "server:25",
+			SkipTLSVerify:       true,
+			Username:            "username",
+			Password:            "password",
+			AuditLoggingEnabled: false,
 		}},
 	}
 }
@@ -93,16 +94,16 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	_, err := s.getSvc().UpdateNotifier(s.ctx, &v1.UpdateNotifierRequest{})
 	s.Error(err)
 	updateReq := createUpdateNotifierRequest()
-	updateReq.GetNotifier().GetEmail().Password = "updatePassword"
+	updateReq.GetNotifier().GetGeneric().Password = "updatePassword"
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
-	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, "non-zero or unmasked credential field 'Notifier.Notifier_Email.Email.Password'").Error())
+	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, "non-zero or unmasked credential field 'Notifier.Notifier_Generic.Generic.Password'").Error())
 
 	updateReq.UpdatePassword = true
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
 	s.NoError(err)
 
 	updateDependentReq := createUpdateNotifierRequest()
-	updateDependentReq.GetNotifier().GetEmail().Server = "updated-server:25"
+	updateDependentReq.GetNotifier().GetGeneric().Endpoint = "updated-server:25"
 	updateDependentReq.UpdatePassword = true
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateDependentReq)
 	s.NoError(err)
@@ -110,10 +111,10 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	secrets.ScrubSecretsFromStructWithReplacement(updateDependentReq, secrets.ScrubReplacementStr)
 	updateDependentReq.UpdatePassword = false
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateDependentReq)
-	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, "credentials required to update field 'Notifier.Notifier_Email.Email.Server'").Error())
+	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, "credentials required to update field 'Notifier.Notifier_Generic.Generic.Endpoint'").Error())
 
 	updateBasic := createUpdateNotifierRequest()
-	updateBasic.GetNotifier().GetEmail().From = "support@stackrox.com"
+	updateBasic.GetNotifier().GetGeneric().AuditLoggingEnabled = true
 	secrets.ScrubSecretsFromStructWithReplacement(updateBasic, secrets.ScrubReplacementStr)
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateBasic)
 	s.NoError(err)

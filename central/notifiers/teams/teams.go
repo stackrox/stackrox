@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -33,6 +34,8 @@ var (
 // teams notifier plugin
 type teams struct {
 	*storage.Notifier
+
+	namespaces namespaceDataStore.DataStore
 }
 
 type section struct {
@@ -283,7 +286,7 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.Wrapf(err, "Could not marshal notification for alert %v", alert.GetId())
 	}
 
-	webhookURL := notifiers.GetLabelValue(alert, t.GetLabelKey(), t.GetLabelDefault())
+	webhookURL := notifiers.GetAnnotationValue(ctx, alert, t.GetLabelKey(), t.GetLabelDefault(), t.namespaces)
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
@@ -337,9 +340,10 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newTeams(notifier *storage.Notifier) (*teams, error) {
+func newTeams(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore) (*teams, error) {
 	return &teams{
-		Notifier: notifier,
+		Notifier:   notifier,
+		namespaces: namespaces,
 	}, nil
 }
 
@@ -393,7 +397,7 @@ func backOff(previousAttempt int) {
 
 func init() {
 	notifiers.Add("teams", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newTeams(notifier)
+		s, err := newTeams(notifier, namespaceDataStore.Singleton())
 		return s, err
 	})
 }

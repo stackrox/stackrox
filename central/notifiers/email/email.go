@@ -14,6 +14,7 @@ import (
 	"text/template"
 	"time"
 
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -35,6 +36,8 @@ const (
 type email struct {
 	config     *storage.Email
 	smtpServer smtpServer
+
+	namespaces namespaceDataStore.DataStore
 
 	notifier *storage.Notifier
 }
@@ -130,7 +133,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *storage.Notifier) (*email, error) {
+func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, errors.New("Email configuration required")
@@ -158,7 +161,8 @@ func newEmail(notifier *storage.Notifier) (*email, error) {
 			host: host,
 			port: port,
 		},
-		notifier: notifier,
+		notifier:   notifier,
+		namespaces: namespaces,
 	}, nil
 }
 
@@ -222,7 +226,7 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	recipient := notifiers.GetLabelValue(alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
+	recipient := notifiers.GetAnnotationValue(ctx, alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault(), e.namespaces)
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 
@@ -399,7 +403,7 @@ func (e *email) ProtoNotifier() *storage.Notifier {
 
 func init() {
 	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := newEmail(notifier)
+		e, err := newEmail(notifier, namespaceDataStore.Singleton())
 		return e, err
 	})
 }
