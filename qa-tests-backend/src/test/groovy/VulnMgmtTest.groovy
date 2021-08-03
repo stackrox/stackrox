@@ -11,12 +11,15 @@ class VulnMgmtTest extends BaseSpecification {
     static final private String RHEL_IMAGE_DIGEST =
             "sha256:481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
     static final private String RHEL_IMAGE =
-            "docker.io/ansibleplaybookbundle/gluster-s3object-apb@${RHEL_IMAGE_DIGEST}"
+            "quay.io/cgorman1/qa:ansibleplaybookbundle-"+
+            "-gluster-s3object-apb-"+
+            "-481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
 
     static final private String UBUNTU_IMAGE_DIGEST =
             "sha256:ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a"
     static final private String UBUNTU_IMAGE =
-            "docker.io/barchart/dockerup@${UBUNTU_IMAGE_DIGEST}"
+            "quay.io/cgorman1/qa:barchart-"+
+            "-dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a"
 
     private static final EMBEDDED_IMAGE_QUERY = """
     query getImage(\$id: ID!, \$query: String) {
