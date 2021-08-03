@@ -25,6 +25,7 @@ import spock.lang.Unroll
 class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
+    static final private String TEST_IMAGE = "nginx:1.7.9"
     static final private String NONE = "None"
     static final private String SECRETNAME = "sac-secret"
     static final protected String ALLACCESSTOKEN = "allAccessToken"
@@ -56,6 +57,8 @@ class SACTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 600 : 60
 
     def setupSpec() {
+        // ROX-6260: pre scan the image to avoid missing risk score
+        Services.scanImage(TEST_IMAGE)
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)

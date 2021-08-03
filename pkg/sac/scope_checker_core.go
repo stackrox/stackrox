@@ -7,6 +7,7 @@ import (
 )
 
 // TryAllowedResult represents the possible values of a `TryAllowed` call on an access scope checker.
+//go:generate stringer -type=TryAllowedResult
 type TryAllowedResult int32
 
 const (

@@ -24,6 +24,7 @@ type ScopeCheckerCoreImpl struct {
 	reqTracker   ScopeRequestTracker
 }
 
+// createSubScope creates access scope from current scope and given sub scope key.
 func createSubScope(currentScope payload.AccessScope, subScopeKey ScopeKey) payload.AccessScope {
 	subAccessScope := currentScope
 	switch t := subScopeKey.(type) {

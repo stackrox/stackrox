@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/central/cluster/datastore"
@@ -48,28 +49,41 @@ func newEnricher() *Enricher {
 	}
 }
 
-// PreAuthContextEnricher adds the client in use at the time of request to the context for use in scope checking.
+// PreAuthContextEnricher adds a scope checker to the context for later use in
+// scope checking. There are four possibilities currently:
+//   1. Scoped access control is disabled => nothing to add.
+//   2. User identity maps to a special case: (a) deny all or (b) allow all =>
+//      add the corresponding trivial scope checker.
+//   3. Built-in scoped authorizer must be used => use the scope checker
+//      constructed from resolved roles associated with the identity.
+//   4. Auth plugin is detected => use the scope checker created around the
+//      auth plugin client in use at the time of request.
 func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context, error) {
 	client := se.clientManager.GetClient()
-	if client == nil {
-		if !features.ScopedAccessControl.Enabled() {
-			return ctx, nil
-		}
-		client = authorizer.Singleton()
-		ctx = sac.SetContextBuiltinScopedAuthzEnabled(ctx)
+	if client == nil && !features.ScopedAccessControl.Enabled() {
+		// 1. Scoped access control is disabled.
+		return ctx, nil
 	}
 	ctx = sac.SetContextSACEnabled(ctx)
 
 	// Check the id of the context and decide scope checker to use.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
+		// 2a. User identity not found => deny all
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), nil
 	}
-	if id.Service() != nil {
+	if id.Service() != nil || userpass.IsLocalAdmin(id) {
+		// 2b. Admin => allow all
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
 	}
-	if userpass.IsLocalAdmin(id) {
-		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
+	if client == nil && features.ScopedAccessControl.Enabled() {
+		// 3. Built-in scoped authorizer must be used.
+		ctx = sac.SetContextBuiltinScopedAuthzEnabled(ctx)
+		scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, id.Roles())
+		if err != nil {
+			return nil, errors.Wrap(err, "creating scoped authorizer for identity")
+		}
+		return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), nil
 	}
 
 	// Get the principal and the cache key for it.
@@ -78,7 +92,7 @@ func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context
 		return nil, err
 	}
 
-	// If we have a scope checker cached for the user, use that, otherwise generate a new one and add it to the cache.
+	// 4. If we have a scope checker cached for the user, use that, otherwise generate a new one and add it to the cache.
 	cacheForClient := se.cacheForClient(client)
 	rsc, _ := cacheForClient.Get(idCacheKey).(sac.ScopeCheckerCore)
 	if rsc == nil {
@@ -146,9 +160,6 @@ func idToPrincipal(id authn.Identity) *payload.Principal {
 		attributes[k] = v
 	}
 
-	// TODO(ROX-7392): Consider including complete resolved roles instead of
-	//   just role names to avoid another subsequent (and likely with a
-	//   different outcome) role resolution later on.
 	return &payload.Principal{AuthProvider: authProvider, Attributes: attributes, Roles: utils.RoleNames(id.Roles())}
 }
 

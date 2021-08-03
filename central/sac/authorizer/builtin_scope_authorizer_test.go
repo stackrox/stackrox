@@ -4,23 +4,18 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	rolePkg "github.com/stackrox/rox/central/role"
-	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/sac/client"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	testRole     = "test-role"
 	firstCluster = payload.Cluster{
 		ID:   "cluster-1",
 		Name: "FirstCluster",
@@ -32,411 +27,14 @@ var (
 
 	firstNamespaceName  = "FirstNamespace"
 	secondNamespaceName = "SecondNamespace"
-)
 
-func TestBuiltInScopeAuthorizer_ForUser(t *testing.T) {
-	cluster := string(resources.Cluster.Resource)
-	namespace := string(resources.Namespace.Resource)
-	globalResource := string(resources.APIToken.Resource)
+	allResourcesView = mapResourcesToAccess(resources.AllResourcesViewPermissions())
 
-	allResourcesView := mapResourcesToAccess(resources.AllResourcesViewPermissions())
-	allResourcesEdit := mapResourcesToAccess(resources.AllResourcesModifyPermissions())
-	firstClusterScope := payload.AccessScope{
-		Verb:       view,
-		Noun:       cluster,
-		Attributes: payload.NounAttributes{Cluster: firstCluster},
+	clusters = []*storage.Cluster{
+		{Id: firstCluster.ID, Name: firstCluster.Name},
+		{Id: secondCluster.ID, Name: secondCluster.Name},
 	}
-	secondClusterScope := payload.AccessScope{
-		Verb: view, Noun: cluster,
-		Attributes: payload.NounAttributes{Cluster: secondCluster},
-	}
-	adminRolePrincipal := payload.Principal{
-		Roles: []string{testRole},
-	}
-	principalWithNoRoles := payload.Principal{}
-	mockError := errors.New("some error")
-
-	tests := []struct {
-		name      string
-		mockSetup func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore)
-		principal payload.Principal
-		scopes    []payload.AccessScope
-		allowed   []payload.AccessScope
-		denied    []payload.AccessScope
-		wantErr   bool
-	}{
-		{
-			name: "get clusters error => error",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				clusterStore.EXPECT().GetClusters(gomock.Any()).Return(nil, mockError).Times(1)
-			},
-			principal: principalWithNoRoles,
-			scopes:    []payload.AccessScope{firstClusterScope},
-			wantErr:   true,
-		},
-		{
-			name: "get namespaces error => error",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				clusterStore.EXPECT().GetClusters(gomock.Any()).Return(nil, nil).Times(1)
-				nsStore.EXPECT().GetNamespaces(gomock.Any()).Return(nil, mockError).Times(1)
-			},
-			principal: principalWithNoRoles,
-			scopes:    []payload.AccessScope{firstClusterScope},
-			wantErr:   true,
-		},
-		{
-			name: "get roles error => error",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				roleStore.EXPECT().GetAndResolveRole(gomock.Any(), gomock.Any()).Return(nil, mockError).Times(1)
-			},
-			principal: adminRolePrincipal,
-			scopes:    []payload.AccessScope{firstClusterScope},
-			wantErr:   true,
-		},
-		{
-			name: "compute access scope error => error",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					allResourcesEdit,
-					&storage.SimpleAccessScope{
-						Id: "2",
-						Rules: &storage.SimpleAccessScope_Rules{
-							ClusterLabelSelectors: []*storage.SetBasedLabelSelector{{
-								Requirements: []*storage.SetBasedLabelSelector_Requirement{
-									{Key: "invalid key"},
-								}}}}}))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{
-				firstClusterScope,
-				secondClusterScope,
-			},
-			wantErr: true,
-		},
-		{
-			name: "simple sac with no resources to access",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(nil, withAccessTo1Cluster()))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{
-				firstClusterScope,
-				secondClusterScope,
-			},
-			denied: []payload.AccessScope{firstClusterScope, {
-				Verb: view, Noun: cluster,
-				Attributes: payload.NounAttributes{Cluster: secondCluster},
-			}},
-		},
-		{
-			name: "simple sac with no access to cluster",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					map[string]storage.Access{cluster: storage.Access_NO_ACCESS},
-					withAccessTo1Cluster(),
-				))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{
-				firstClusterScope,
-				secondClusterScope,
-			},
-			denied: []payload.AccessScope{firstClusterScope, {
-				Verb: view, Noun: cluster,
-				Attributes: payload.NounAttributes{Cluster: secondCluster},
-			}},
-		},
-		{
-			name: "simple sac global scope resource",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(
-					map[string]storage.Access{globalResource: storage.Access_READ_ACCESS},
-					withAccessTo1Cluster()))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{{
-				Verb: view, Noun: globalResource,
-			}},
-			allowed: []payload.AccessScope{{
-				Verb: view, Noun: globalResource,
-			}},
-		},
-		{
-			name: "simple sac with included cluster and no namespaces",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesEdit, withAccessTo1Cluster()))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{
-				firstClusterScope,
-				secondClusterScope,
-			},
-			allowed: []payload.AccessScope{firstClusterScope},
-			denied: []payload.AccessScope{{
-				Verb: view, Noun: cluster,
-				Attributes: payload.NounAttributes{Cluster: secondCluster},
-			}},
-		},
-		{
-			name: "simple sac with included cluster and no namespace name in attributes",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withTwoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesEdit, withAccessTo1Namespace()))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{
-				{
-					Verb: view, Noun: namespace,
-					Attributes: payload.NounAttributes{Cluster: firstCluster},
-				},
-			},
-			denied: []payload.AccessScope{{
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster},
-			}},
-		},
-		{
-			name: "simple sac with empty permission set and access scope",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(nil, nil))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{
-				firstClusterScope,
-				secondClusterScope,
-			},
-			denied: []payload.AccessScope{
-				firstClusterScope,
-				{
-					Verb: view, Noun: cluster,
-					Attributes: payload.NounAttributes{Cluster: secondCluster},
-				}},
-		},
-		{
-			name: "just a verb and no noun => require verb to all resources",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesEdit, withAccessTo1Cluster()))
-			},
-			principal: adminRolePrincipal,
-			scopes:    []payload.AccessScope{{Verb: view}},
-			allowed:   []payload.AccessScope{{Verb: view}},
-		},
-		{
-			name: "no verb and no noun => require edit to all",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesEdit, withAccessTo1Cluster()))
-			},
-			principal: adminRolePrincipal,
-			scopes:    []payload.AccessScope{{}},
-			allowed:   []payload.AccessScope{{}},
-		},
-		{
-			name: "no verb and no noun => require edit to all",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesView, withAccessTo1Cluster()))
-			},
-			principal: adminRolePrincipal,
-			scopes:    []payload.AccessScope{{}},
-			denied:    []payload.AccessScope{{}},
-		},
-		{
-			name: "exclude all access scope => global resource can be accessed",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesView, rolePkg.AccessScopeExcludeAll))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{{
-				Verb: view, Noun: globalResource,
-			}},
-			allowed: []payload.AccessScope{{
-				Verb: view, Noun: globalResource,
-			}},
-		},
-		{
-			name: "exclude all access scope => all scoped resources are excluded",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withTwoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesView, rolePkg.AccessScopeExcludeAll))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{{
-				Verb: view, Noun: cluster,
-			}, {
-				Verb: view, Noun: namespace,
-			}},
-			denied: []payload.AccessScope{{
-				Verb: view, Noun: cluster,
-			}, {
-				Verb: view, Noun: namespace,
-			}},
-		},
-		{
-			name: "no access scope id => allow everything in permission set",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withNoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesView, nil))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{{
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: firstNamespaceName},
-			}, {
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: secondNamespaceName},
-			}},
-			allowed: []payload.AccessScope{{
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: firstNamespaceName},
-			}, {
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: secondNamespaceName},
-			}},
-		},
-		{
-			name: "<Verb, Noun, Cluster, *> => allows partial clusters",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withTwoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesView, withAccessTo1Namespace()))
-			},
-			principal: adminRolePrincipal,
-			scopes:    []payload.AccessScope{firstClusterScope},
-			allowed:   []payload.AccessScope{firstClusterScope},
-		},
-		{
-			name: "no roles => no access",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withTwoNamespaces(nsStore)
-			},
-			principal: principalWithNoRoles,
-			scopes:    []payload.AccessScope{firstClusterScope},
-			denied:    []payload.AccessScope{firstClusterScope},
-		},
-		{
-			name: "<Verb, Noun, Cluster, Namespace> => allows only included namespaces",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withTwoNamespaces(nsStore)
-				withRoles(roleStore, role(allResourcesView, withAccessTo1Namespace()))
-			},
-			principal: adminRolePrincipal,
-			scopes: []payload.AccessScope{{
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: firstNamespaceName},
-			}, {
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: secondNamespaceName},
-			}},
-			allowed: []payload.AccessScope{{
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: firstNamespaceName},
-			}},
-			denied: []payload.AccessScope{{
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: secondNamespaceName},
-			}},
-		},
-		{
-			name: "multiple roles => union of all roles permissions",
-			mockSetup: func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore) {
-				withTwoClusters(clusterStore)
-				withTwoNamespaces(nsStore)
-				withRoles(roleStore,
-					roleWithName("firstRole",
-						allResourcesView,
-						withAccessTo1Namespace()),
-					roleWithName("secondRole",
-						allResourcesView,
-						&storage.SimpleAccessScope{
-							Rules: &storage.SimpleAccessScope_Rules{
-								IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{
-									ClusterName: firstCluster.Name, NamespaceName: secondNamespaceName}}},
-						}))
-			},
-			principal: payload.Principal{
-				Roles: []string{"firstRole", "secondRole", "secondRole"},
-			},
-			scopes: []payload.AccessScope{{
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: firstNamespaceName},
-			}, {
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: secondNamespaceName},
-			}},
-			allowed: []payload.AccessScope{{
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: firstNamespaceName},
-			}, {
-				Verb: view, Noun: namespace,
-				Attributes: payload.NounAttributes{Cluster: firstCluster, Namespace: secondNamespaceName},
-			}},
-		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			c, ctrl := mockedClient(t, tc.mockSetup)
-			defer ctrl.Finish()
-			allowed, denied, err := c.ForUser(context.Background(), tc.principal, tc.scopes...)
-			assert.Truef(t, (err != nil) == tc.wantErr, "got %+v", err)
-			assert.Equal(t, tc.allowed, allowed, "allowed mismatch")
-			assert.Equal(t, tc.denied, denied, "denied mismatch")
-		})
-	}
-}
-
-func withRoles(roleStore *roleMocks.MockDataStore, roles ...permissions.ResolvedRole) {
-	for _, role := range roles {
-		roleStore.EXPECT().GetAndResolveRole(gomock.Any(), role.GetRoleName()).Return(role, nil)
-	}
-}
-
-func withAccessTo1Cluster() *storage.SimpleAccessScope {
-	return &storage.SimpleAccessScope{
-		Id: "2",
-		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: []string{firstCluster.Name},
-		},
-	}
-}
-
-func withAccessTo1Namespace() *storage.SimpleAccessScope {
-	return &storage.SimpleAccessScope{
-		Id: "2",
-		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{
-				ClusterName:   firstCluster.Name,
-				NamespaceName: firstNamespaceName,
-			}},
-		},
-	}
-}
-
-func withTwoNamespaces(nsStore *namespaceMocks.MockDataStore) *gomock.Call {
-	return nsStore.EXPECT().GetNamespaces(gomock.Any()).Return([]*storage.NamespaceMetadata{{
+	namespaces = []*storage.NamespaceMetadata{{
 		Id:          "namespace-1",
 		Name:        firstNamespaceName,
 		ClusterId:   firstCluster.ID,
@@ -446,24 +44,291 @@ func withTwoNamespaces(nsStore *namespaceMocks.MockDataStore) *gomock.Call {
 		Name:        secondNamespaceName,
 		ClusterId:   firstCluster.ID,
 		ClusterName: firstCluster.Name,
-	}}, nil).Times(1)
+	}}
+)
+
+func TestBuiltInScopeAuthorizer(t *testing.T) {
+	t.Parallel()
+	clusterEdit := map[string]storage.Access{string(resources.Cluster.Resource): storage.Access_READ_WRITE_ACCESS}
+
+	tests := []struct {
+		name      string
+		roles     []permissions.ResolvedRole
+		scopeKeys []sac.ScopeKey
+		results   []sac.TryAllowedResult
+	}{
+		{
+			name:      "allow read from cluster with permissions",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
+			scopeKeys: readCluster(firstCluster.ID),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+		},
+		{
+			name:      "allow cluster modification (e.g., creation) with permissions even if it does not exist yet",
+			roles:     []permissions.ResolvedRole{role(clusterEdit, nil)},
+			scopeKeys: scopeKeys(storage.Access_READ_WRITE_ACCESS, resources.Cluster.Resource, "unknown ID", ""),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow, sac.Allow},
+		},
+		{
+			name:      "deny cluster view with permissions but no access scope if id does not exist",
+			roles:     []permissions.ResolvedRole{role(clusterEdit, withAccessTo1Cluster())},
+			scopeKeys: readCluster("unknown ID"),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+		},
+		{
+			name:      "deny cluster modification with permission to view",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
+			scopeKeys: scopeKeys(storage.Access_READ_WRITE_ACCESS, resources.Cluster.Resource, firstCluster.ID, ""),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+		},
+		{
+			name:      "deny read from cluster with no scope access",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
+			scopeKeys: readCluster(secondCluster.ID),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+		},
+		{
+			name: "allow read from namespace with multiple roles",
+			roles: []permissions.ResolvedRole{
+				role(allResourcesView, withAccessTo1Namespace()),
+				role(allResourcesView, withAccessTo1Cluster())},
+			scopeKeys: readNamespace(firstCluster.ID, secondNamespaceName),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow, sac.Allow},
+		},
+		{
+			name:      "allow read from anything when scope is nil",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, nil)},
+			scopeKeys: readCluster("unknown ID"),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow, sac.Allow},
+		},
+		{
+			name:      "deny read from anything when scope is empty",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "empty"})},
+			scopeKeys: readCluster(firstCluster.ID),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+		},
+		{
+			name:      "deny read from anything when scope deny all",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeExcludeAll)},
+			scopeKeys: readCluster(firstCluster.ID),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles)
+			for i, scopeKey := range tc.scopeKeys {
+				scc = scc.SubScopeChecker(scopeKey)
+				expected := tc.results[i]
+				got := scc.TryAllowed()
+				assert.Equalf(t, expected, got, "expected %d, got %d for scope %s, level [%d]", expected, got, scopeKey, i)
+				err := scc.PerformChecks(context.Background())
+				wantErr := expected == sac.Unknown
+				assert.Truef(t, (err != nil) == wantErr, "got %+v", err)
+			}
+		})
+	}
+}
+
+func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T) {
+	t.Parallel()
+	roles := []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Namespace())}
+
+	subScopeChecker := newGlobalScopeCheckerCore(clusters, namespaces, roles)
+
+	tests := []struct {
+		name      string
+		scopeKeys []sac.ScopeKey
+		results   []sac.TryAllowedResult
+	}{
+		{
+			name:      "allow read from cluster with partial access",
+			scopeKeys: readCluster(firstCluster.ID),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow},
+		},
+		{
+			name:      "allow read from namespace with direct access",
+			scopeKeys: readNamespace(firstCluster.ID, firstNamespaceName),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Allow},
+		},
+		{
+			name: "deny read from global",
+			scopeKeys: []sac.ScopeKey{
+				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+			},
+			results: []sac.TryAllowedResult{sac.Deny},
+		},
+		{
+			name:      "error when wrong sub scope",
+			scopeKeys: sac.ClusterScopeKeys(firstCluster.ID),
+			results:   []sac.TryAllowedResult{sac.Unknown},
+		},
+		{
+			name: "error when wrong sub scope",
+			scopeKeys: []sac.ScopeKey{
+				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKey("unknown resource"),
+			},
+			results: []sac.TryAllowedResult{sac.Deny, sac.Unknown},
+		},
+		{
+			name: "error when wrong sub scope",
+			scopeKeys: []sac.ScopeKey{
+				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+				sac.ClusterScopeKey(firstCluster.ID),
+			},
+			results: []sac.TryAllowedResult{sac.Deny, sac.Unknown},
+		},
+		{
+			name: "error when wrong sub scope",
+			scopeKeys: []sac.ScopeKey{
+				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKey(resources.Cluster.Resource),
+				sac.NamespaceScopeKey(firstNamespaceName),
+			},
+			results: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Unknown},
+		},
+		{
+			name: "error when wrong sub scope",
+			scopeKeys: []sac.ScopeKey{
+				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKey(resources.Cluster.Resource),
+				sac.ClusterScopeKey(firstCluster.ID),
+				sac.ClusterScopeKey(secondCluster.ID),
+			},
+			results: []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Allow, sac.Unknown},
+		},
+		{
+			name:      "deny when unknown namespace",
+			scopeKeys: readNamespace(firstCluster.ID, "unknown ID"),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+		},
+		{
+			name:      "deny when empty namespace",
+			scopeKeys: readNamespace(firstCluster.ID, ""),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+		},
+		{
+			name: "allow when global scope resource",
+			scopeKeys: []sac.ScopeKey{
+				sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKey(resources.APIToken.Resource),
+			},
+			results: []sac.TryAllowedResult{sac.Deny, sac.Allow},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			scc := subScopeChecker
+			assert.Len(t, tc.results, len(tc.scopeKeys), "results and scope keys must have same length")
+			for i, scopeKey := range tc.scopeKeys {
+				scc = scc.SubScopeChecker(scopeKey)
+				expected := tc.results[i]
+				assert.Equalf(t, expected, scc.TryAllowed(), "scope %s, level [%d]", scopeKey, i)
+				err := scc.PerformChecks(context.Background())
+				wantErr := expected == sac.Unknown
+				assert.Truef(t, (err != nil) == wantErr, "got %+v", err)
+			}
+		})
+	}
+}
+
+func TestGlobalScopeCheckerCore(t *testing.T) {
+	t.Parallel()
+	scc := newGlobalScopeCheckerCore(nil, nil, nil)
+	assert.Equal(t, nil, scc.PerformChecks(context.Background()))
+	assert.Equal(t, sac.Deny, scc.TryAllowed())
+}
+
+func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name      string
+		roles     []permissions.ResolvedRole
+		scopeKeys []sac.ScopeKey
+		results   []sac.TryAllowedResult
+	}{
+		{
+			name: "error when could not compute effective access scope",
+			roles: []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{
+				Id: "with-invalid-key",
+				Rules: &storage.SimpleAccessScope_Rules{
+					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{{
+						Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							{Key: "invalid key"},
+						}}}}})},
+			scopeKeys: readCluster(firstCluster.ID),
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Unknown, sac.Unknown, sac.Unknown},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles)
+			for i, scopeKey := range tc.scopeKeys {
+				scc = scc.SubScopeChecker(scopeKey)
+				expected := tc.results[i]
+				if expected == sac.Unknown && !buildinfo.ReleaseBuild {
+					assert.Panics(t, func() { scc.TryAllowed() })
+				} else {
+					assert.Equal(t, expected, scc.TryAllowed())
+				}
+				err := scc.PerformChecks(context.Background())
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func readCluster(clusterID string) []sac.ScopeKey {
+	return scopeKeys(storage.Access_READ_ACCESS, resources.Cluster.Resource, clusterID, "")[:3]
+}
+
+func readNamespace(clusterID, namespaceName string) []sac.ScopeKey {
+	return scopeKeys(storage.Access_READ_ACCESS, resources.Namespace.Resource, clusterID, namespaceName)
+}
+
+func scopeKeys(access storage.Access, res permissions.Resource, clusterID, namespaceName string) []sac.ScopeKey {
+	return []sac.ScopeKey{
+		sac.AccessModeScopeKey(access),
+		sac.ResourceScopeKey(res),
+		sac.ClusterScopeKey(clusterID),
+		sac.NamespaceScopeKey(namespaceName),
+	}
+}
+
+func withAccessTo1Cluster() *storage.SimpleAccessScope {
+	return &storage.SimpleAccessScope{
+		Id: "withAccessTo1Cluster",
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{firstCluster.Name},
+		},
+	}
+}
+
+func withAccessTo1Namespace() *storage.SimpleAccessScope {
+	return &storage.SimpleAccessScope{
+		Id: "withAccessTo1Namespace",
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{
+				ClusterName:   firstCluster.Name,
+				NamespaceName: firstNamespaceName,
+			}},
+		},
+	}
 }
 
 func role(perms map[string]storage.Access, as *storage.SimpleAccessScope) permissions.ResolvedRole {
-	return roleWithName(testRole, perms, as)
+	return roleWithName("test-role", perms, as)
 }
 
 func roleWithName(name string, perms map[string]storage.Access, as *storage.SimpleAccessScope) permissions.ResolvedRole {
 	return roletest.NewResolvedRole(name, perms, as)
-}
-
-func withNoNamespaces(nsStore *namespaceMocks.MockDataStore) *gomock.Call {
-	return nsStore.EXPECT().GetNamespaces(gomock.Any()).Return(nil, nil).Times(1)
-}
-
-func withTwoClusters(clusterStore *clusterDataStoreMocks.MockDataStore) *gomock.Call {
-	return clusterStore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
-		{Id: firstCluster.ID, Name: firstCluster.Name}, {Id: secondCluster.ID, Name: secondCluster.Name}}, nil).Times(1)
 }
 
 func mapResourcesToAccess(res []permissions.ResourceWithAccess) map[string]storage.Access {
@@ -472,19 +337,4 @@ func mapResourcesToAccess(res []permissions.ResourceWithAccess) map[string]stora
 		idToAccess[rwa.Resource.String()] = rwa.Access
 	}
 	return idToAccess
-}
-
-func mockedClient(t *testing.T, setupMocks func(clusterStore *clusterDataStoreMocks.MockDataStore, nsStore *namespaceMocks.MockDataStore, roleStore *roleMocks.MockDataStore)) (client.Client, *gomock.Controller) {
-	mockCtrl := gomock.NewController(t)
-	clusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
-	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	roleStore := roleMocks.NewMockDataStore(mockCtrl)
-
-	setupMocks(clusterStore, nsStore, roleStore)
-
-	return &builtInScopeAuthorizer{
-		clusterStore:   clusterStore,
-		namespaceStore: nsStore,
-		roleStore:      roleStore,
-	}, mockCtrl
 }
