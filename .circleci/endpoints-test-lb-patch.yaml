@@ -1,0 +1,6 @@
+spec:
+  ports:
+  - port: 443
+    name: api
+  - port: 8446
+    name: http-8446

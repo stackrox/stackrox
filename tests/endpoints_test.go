@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -49,16 +49,24 @@ var (
 	}
 )
 
-func endpointForTargetPort(targetPort uint16) string {
+func endpointForTargetPort(targetPort uint16, accessViaLoadBalancer bool) string {
+	if accessViaLoadBalancer {
+		endpointHostname := os.Getenv("API_HOSTNAME")
+		if endpointHostname == "" || endpointHostname == "localhost" {
+			panic(errors.Errorf("API_HOSTNAME=%q env variable is not set correctly", endpointHostname))
+		}
+		return fmt.Sprintf("%s:%d", endpointHostname, targetPort)
+	}
 	return fmt.Sprintf("localhost:%d", targetPort+portOffset)
 }
 
 type endpointsTestCase struct {
 	targetPort uint16
 
-	skipTLS          bool
-	clientCert       *tls.Certificate
-	validServerNames []string
+	accessViaLoadBalancer bool
+	skipTLS               bool
+	clientCert            *tls.Certificate
+	validServerNames      []string
 
 	expectConnectFailure bool
 	expectGRPCSuccess    bool
@@ -114,7 +122,7 @@ func (c *endpointsTestContext) tlsConfig(clientCert *tls.Certificate, serverName
 }
 
 func (c *endpointsTestCase) endpoint() string {
-	return endpointForTargetPort(c.targetPort)
+	return endpointForTargetPort(c.targetPort, c.accessViaLoadBalancer)
 }
 
 func (c *endpointsTestCase) Run(t *testing.T, testCtx *endpointsTestContext) {
@@ -425,26 +433,29 @@ func TestEndpoints(t *testing.T) {
 			expectHTTPSuccess: true,
 		},
 		"http-only TLS port with no client cert": {
-			targetPort:        8446,
-			validServerNames:  testCtx.allServerNames,
-			expectGRPCSuccess: false,
-			expectHTTPSuccess: true,
+			targetPort:            8446,
+			validServerNames:      testCtx.allServerNames,
+			expectGRPCSuccess:     false,
+			expectHTTPSuccess:     true,
+			accessViaLoadBalancer: true,
 		},
 		"http-only TLS port with service client cert": {
-			targetPort:        8446,
-			validServerNames:  testCtx.allServerNames,
-			clientCert:        &serviceCert,
-			expectAuth:        serviceAuth,
-			expectGRPCSuccess: false,
-			expectHTTPSuccess: true,
+			targetPort:            8446,
+			validServerNames:      testCtx.allServerNames,
+			clientCert:            &serviceCert,
+			expectAuth:            serviceAuth,
+			expectGRPCSuccess:     false,
+			expectHTTPSuccess:     true,
+			accessViaLoadBalancer: true,
 		},
 		"http-only TLS port with user client cert": {
-			targetPort:        8446,
-			validServerNames:  testCtx.allServerNames,
-			clientCert:        &userCert,
-			expectAuth:        userAuth,
-			expectGRPCSuccess: false,
-			expectHTTPSuccess: true,
+			targetPort:            8446,
+			validServerNames:      testCtx.allServerNames,
+			clientCert:            &userCert,
+			expectAuth:            userAuth,
+			expectGRPCSuccess:     false,
+			expectHTTPSuccess:     true,
+			accessViaLoadBalancer: true,
 		},
 		"grpc-only client-auth required TLS port with no client cert": {
 			targetPort:           8447,
