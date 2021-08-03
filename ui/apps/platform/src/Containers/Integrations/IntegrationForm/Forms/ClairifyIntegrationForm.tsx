@@ -10,7 +10,7 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessageBanner from '../FormMessageBanner';
+import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type ClairifyIntegration = {
@@ -89,8 +89,8 @@ function ClairifyIntegrationForm({
 
     return (
         <>
-            {message && <FormMessageBanner message={message} />}
             <PageSection variant="light" isFilled hasOverflowScroll>
+                {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
                     <FormLabelGroup label="Name" isRequired fieldId="name" errors={errors}>
                         <TextInput
