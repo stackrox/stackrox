@@ -133,7 +133,11 @@ function IntegrationsTable({
                                 }}
                             />
                             {columns.map((column) => {
-                                return <Th modifier="wrap">{column.Header}</Th>;
+                                return (
+                                    <Th key={column.Header} modifier="wrap">
+                                        {column.Header}
+                                    </Th>
+                                );
                             })}
                             <Th />
                         </Tr>

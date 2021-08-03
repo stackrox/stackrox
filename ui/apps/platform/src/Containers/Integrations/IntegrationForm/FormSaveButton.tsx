@@ -11,6 +11,7 @@ export type FormSaveButtonProps = {
     onSave: () => void;
     isSubmitting: boolean;
     isTesting: boolean;
+    isDisabled?: boolean;
 };
 
 function FormSaveButton({
@@ -18,13 +19,14 @@ function FormSaveButton({
     onSave,
     isSubmitting,
     isTesting,
+    isDisabled = false,
 }: FormSaveButtonProps): ReactElement {
     return (
         <Button
             variant="primary"
             onClick={onSave}
             data-testid="create-btn"
-            isDisabled={isSubmitting}
+            isDisabled={isDisabled || isSubmitting}
             isLoading={isSubmitting && !isTesting}
         >
             {children}

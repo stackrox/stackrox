@@ -7,6 +7,7 @@ import ClairIntegrationForm from './Forms/ClairIntegrationForm';
 import DockerIntegrationForm from './Forms/DockerIntegrationForm';
 import AnchoreIntegrationForm from './Forms/AnchoreIntegrationForm';
 import EcrIntegrationForm from './Forms/EcrIntegrationForm';
+import EmailIntegrationForm from './Forms/EmailIntegrationForm';
 import GoogleIntegrationForm from './Forms/GoogleIntegrationForm';
 import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
 import AzureIntegrationForm from './Forms/AzureIntegrationForm';
@@ -56,6 +57,7 @@ const ComponentFormMap = {
         rhel: RhelIntegrationForm,
     },
     notifiers: {
+        email: EmailIntegrationForm,
         teams: TeamsIntegrationForm,
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         syslog: SyslogIntegrationForm,

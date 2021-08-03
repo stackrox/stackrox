@@ -6,8 +6,13 @@ export type IntegrationFormActionsProps = {
 };
 
 function IntegrationFormActions({ children }: IntegrationFormActionsProps): ReactElement {
-    const integrationActionItems = React.Children.toArray(children).map((child) => {
-        return <FlexItem spacer={{ default: 'spacerMd' }}>{child}</FlexItem>;
+    const integrationActionItems = React.Children.toArray(children).map((child, i) => {
+        return (
+            // eslint-disable-next-line react/no-array-index-key
+            <FlexItem key={i} spacer={{ default: 'spacerMd' }}>
+                {child}
+            </FlexItem>
+        );
     });
 
     return (
