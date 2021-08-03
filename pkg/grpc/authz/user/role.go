@@ -30,6 +30,7 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 
 func (p *roleChecker) checkRole(roleNames []string) error {
 	if len(roleNames) == 0 {
+		// A user with no roles is an invalid user.
 		return authz.ErrNoCredentials
 	}
 

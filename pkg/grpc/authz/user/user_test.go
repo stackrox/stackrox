@@ -72,7 +72,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: nsScopedResource, Access: storage.Access_READ_ACCESS,
 			}},
 			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
-			err: authz.ErrNotAuthorized("not authorized to READ_ACCESS dummy-2"),
+			err: authz.ErrNotAuthorized(fmt.Sprintf("%q for %q", "READ_ACCESS", "dummy-2")),
 		},
 		{
 			name: "built in scope auth check permissions",
@@ -111,7 +111,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: sac.WithNoAccess(sac.SetContextSACEnabled(ctx)),
-			err: authz.ErrNotAuthorized("scoped access: not authorized"),
+			err: authz.ErrNotAuthorized("scoped access"),
 		},
 		{
 			name: "plugin SAC check only global permissions",

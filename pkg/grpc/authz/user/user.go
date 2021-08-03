@@ -71,7 +71,7 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootS
 		return err
 	}
 	if !allowed {
-		return authz.ErrNotAuthorized("scoped access: not authorized")
+		return authz.ErrNotAuthorized("scoped access")
 	}
 	return nil
 }
@@ -82,7 +82,7 @@ func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access
 	}
 	for _, requiredPerm := range p.requiredPermissions {
 		if !evaluateAgainstPermissions(rolePerms, requiredPerm) {
-			return authz.ErrNotAuthorized(fmt.Sprintf("not authorized to %s %s", requiredPerm.Access, requiredPerm.Resource))
+			return authz.ErrNotAuthorized(fmt.Sprintf("%q for %q", requiredPerm.Access, requiredPerm.Resource))
 		}
 	}
 	return nil

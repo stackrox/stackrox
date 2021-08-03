@@ -32,7 +32,7 @@ type service struct {
 func clusterIDFromCtx(ctx context.Context) (string, error) {
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return "", authz.ErrNotAuthorized("no identity in context")
+		return "", authz.ErrNoCredentials
 	}
 
 	svc := id.Service()

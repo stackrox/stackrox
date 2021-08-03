@@ -25,7 +25,7 @@ func Wrap(idAuthorizer IdentityBasedAuthorizer) authz.Authorizer {
 func (w identityBasedAuthorizerWrapper) Authorized(ctx context.Context, fullMethodName string) error {
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return authz.ErrNotAuthorized("no identity in context")
+		return authz.ErrNoCredentials
 	}
 	return w.idAuthorizer.AuthorizeByIdentity(id)
 }
