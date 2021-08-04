@@ -12,14 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc/connectivity"
-	admission "k8s.io/api/admission/v1beta1"
+	admission "k8s.io/api/admission/v1"
 )
 
 const (
 	imageCacheTTL = 30 * time.Minute
 )
 
-// imageCacheEntry is the cache entry on an image
 type imageCacheEntry struct {
 	*storage.Image
 	timestamp time.Time

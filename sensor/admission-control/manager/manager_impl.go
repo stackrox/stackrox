@@ -24,7 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/admission-control/errors"
 	"github.com/stackrox/rox/sensor/admission-control/resources"
 	"google.golang.org/grpc"
-	admission "k8s.io/api/admission/v1beta1"
+	admission "k8s.io/api/admission/v1"
 )
 
 var (
@@ -326,12 +326,13 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	m.settingsStream.Push(newSettings)
 }
 
-func (m *manager) HandleReview(req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
+func (m *manager) HandleValidate(req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
 	state := m.currentState()
 
 	if state == nil {
 		return nil, pkgErr.New("admission controller is disabled, not handling request")
 	}
+
 	return m.evaluateAdmissionRequest(state, req)
 }
 

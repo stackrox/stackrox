@@ -25,3 +25,34 @@ tests:
   expect: |
     [.objects[] | select(.kind == "ValidatingWebhookConfiguration" and .metadata.name == "stackrox").webhooks[] |
       select(.sideEffects == "NoneOnDryRun")] | assertThat(length == 2)
+
+- name: "Create admissionregistration.k8s.io/v1"
+  expect: |
+    .validatingwebhookconfigurations[].apiVersion | assertThat(. == "admissionregistration.k8s.io/v1")
+    .validatingwebhookconfigurations[].webhooks[].admissionReviewVersions | assertThat(sort == ["v1", "v1beta1"])
+  values:
+    admissionControl:
+      listenOnCreates: true
+      listenOnEvents: true
+  tests:
+    - name: "on Kubernetes"
+      server:
+        availableSchemas:
+          - kubernetes-1.20.2
+    - name: "on OpenShift 4"
+      server:
+        availableSchemas:
+          - openshift-4.1.0
+
+- name: "Create admissionregistration.k8s.io/v1beta1 on OpenShift 3.11"
+  server:
+    availableSchemas:
+      - openshift-3.11.0
+  set:
+    env.openshift: 3
+  values:
+    admissionControl:
+      listenOnCreates: true
+  expect: |
+    .validatingwebhookconfigurations[].apiVersion | assertThat(. == "admissionregistration.k8s.io/v1beta1")
+    .validatingwebhookconfigurations[].webhooks[] | assertThat(.admissionReviewVersions == null)

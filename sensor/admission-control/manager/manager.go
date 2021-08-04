@@ -6,8 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/size"
 	"google.golang.org/grpc"
-
-	admission "k8s.io/api/admission/v1beta1"
+	admission "k8s.io/api/admission/v1"
 )
 
 // Manager manages the main business logic of the admission control service.
@@ -25,8 +24,8 @@ type Manager interface {
 
 	IsReady() bool
 
-	HandleReview(review *admission.AdmissionRequest) (*admission.AdmissionResponse, error)
-	HandleK8sEvent(review *admission.AdmissionRequest) (*admission.AdmissionResponse, error)
+	HandleValidate(request *admission.AdmissionRequest) (*admission.AdmissionResponse, error)
+	HandleK8sEvent(request *admission.AdmissionRequest) (*admission.AdmissionResponse, error)
 
 	Alerts() <-chan []*storage.Alert
 }

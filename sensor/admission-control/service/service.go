@@ -2,9 +2,8 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -15,9 +14,11 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/admission-control/manager"
 	"google.golang.org/grpc"
-	admission "k8s.io/api/admission/v1beta1"
+	admission "k8s.io/api/admission/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 var (
@@ -76,7 +77,7 @@ func (s *service) handleReady(w http.ResponseWriter, req *http.Request) {
 	_, _ = fmt.Fprintln(w, "ok")
 }
 
-func (s *service) handleValidate(w http.ResponseWriter, req *http.Request) {
+func (s *service) handleRequest(w http.ResponseWriter, req *http.Request, validateFunc func(*admission.AdmissionRequest) (*admission.AdmissionResponse, error)) {
 	if req.Method == http.MethodGet {
 		_, _ = fmt.Fprintln(w, "{}")
 		return
@@ -92,22 +93,26 @@ func (s *service) handleValidate(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	admissionRequest, err := readAdmissionRequest(req)
+	admissionRequest, apiVersion, err := readAdmissionRequest(req)
 	if err != nil {
-		log.Errorf("Failed to read admission request: %v", err)
+		log.Errorf("Failed to read admission request body: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	reviewResp, err := s.mgr.HandleReview(admissionRequest)
+	reviewResp, err := validateFunc(admissionRequest)
 	if err != nil {
-		log.Errorf("Error handling admission review request: %v", err)
+		log.Errorf("Error handling admission request: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	resp := &admission.AdmissionReview{
 		Response: reviewResp,
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: apiVersion,
+			Kind:       "AdmissionReview",
+		},
 	}
 
 	data, err := json.Marshal(resp)
@@ -117,60 +122,33 @@ func (s *service) handleValidate(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	log.Debugf("Sending admission review: %s", data)
+
 	if _, err := w.Write(data); err != nil {
 		log.Errorf("Could not send admission review response back to client: %v", err)
 	}
 }
 
-func (s *service) handleK8sEvents(w http.ResponseWriter, req *http.Request) {
-	if !s.mgr.IsReady() {
-		http.Error(w, "No settings are available. Not ready to handle admission controller requests", http.StatusServiceUnavailable)
-		return
-	}
-
-	admissionRequest, err := readAdmissionRequest(req)
-	if err != nil {
-		log.Errorf("Failed to read admission request: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	reviewResp, err := s.mgr.HandleK8sEvent(admissionRequest)
-	if err != nil {
-		log.Errorf("Error handling k8s event admission review request: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := &admission.AdmissionReview{
-		Response: reviewResp,
-	}
-
-	data, err := json.Marshal(resp)
-	if err != nil {
-		log.Errorf("Could not marshal k8s event admission review response to JSON: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if _, err := w.Write(data); err != nil {
-		log.Errorf("Could not send k8s event admission review response back to client: %v", err)
-	}
+func (s *service) handleValidate(w http.ResponseWriter, req *http.Request) {
+	s.handleRequest(w, req, s.mgr.HandleValidate)
 }
 
-func readAdmissionRequest(req *http.Request) (*admission.AdmissionRequest, error) {
-	respBody, err := ioutil.ReadAll(req.Body)
+func (s *service) handleK8sEvents(w http.ResponseWriter, req *http.Request) {
+	s.handleRequest(w, req, s.mgr.HandleK8sEvent)
+}
+
+func readAdmissionRequest(req *http.Request) (*admission.AdmissionRequest, string, error) {
+	respBody, err := io.ReadAll(req.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading request body")
+		return nil, "", errors.Wrap(err, "reading request body")
 	}
+
+	log.Debugf("Received admission review request: %s", respBody)
 
 	var admissionReview admission.AdmissionReview
 	if _, _, err := universalDeserializer.Decode(respBody, nil, &admissionReview); err != nil {
-		return nil, errors.Wrap(err, "decoding admission review")
+		return nil, "", errors.Wrap(err, "decoding v1 admission review")
 	}
 
-	if admissionReview.Request == nil {
-		return nil, errors.Errorf("invalid admission review. nil request: %+v", admissionReview)
-	}
-	return admissionReview.Request, nil
+	return admissionReview.Request, admissionReview.APIVersion, nil
 }
