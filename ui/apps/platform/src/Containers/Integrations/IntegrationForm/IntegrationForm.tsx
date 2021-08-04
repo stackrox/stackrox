@@ -8,6 +8,7 @@ import DockerIntegrationForm from './Forms/DockerIntegrationForm';
 import AnchoreIntegrationForm from './Forms/AnchoreIntegrationForm';
 import EcrIntegrationForm from './Forms/EcrIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
+import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import GoogleIntegrationForm from './Forms/GoogleIntegrationForm';
 import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
 import AzureIntegrationForm from './Forms/AzureIntegrationForm';
@@ -25,6 +26,8 @@ import SyslogIntegrationForm from './Forms/SyslogIntegrationForm';
 // external backups
 import S3IntegrationForm from './Forms/S3IntegrationForm';
 import GcsIntegrationForm from './Forms/GcsIntegrationForm';
+
+import './IntegrationForm.css';
 
 type IntegrationFormProps = {
     source: IntegrationSource;
@@ -58,6 +61,7 @@ const ComponentFormMap = {
     },
     notifiers: {
         email: EmailIntegrationForm,
+        cscc: GoogleCloudSccIntegrationForm,
         teams: TeamsIntegrationForm,
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         syslog: SyslogIntegrationForm,

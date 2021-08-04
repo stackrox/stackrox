@@ -4,6 +4,7 @@ import { Button } from '@patternfly/react-core';
 export type FormTestButtonProps = {
     children: ReactElement | ReactElement[] | string;
     onTest: () => void;
+    isValid?: boolean;
     isSubmitting: boolean;
     isTesting: boolean;
 };
@@ -11,6 +12,7 @@ export type FormTestButtonProps = {
 function FormTestButton({
     children,
     onTest,
+    isValid = false,
     isSubmitting,
     isTesting,
 }: FormTestButtonProps): ReactElement {
@@ -19,7 +21,7 @@ function FormTestButton({
             variant="secondary"
             onClick={onTest}
             data-testid="test-btn"
-            isDisabled={isSubmitting}
+            isDisabled={isSubmitting || isTesting || !isValid}
             isLoading={isSubmitting && isTesting}
         >
             {children}

@@ -68,6 +68,7 @@ function useIntegrationForm<T, V>({
             return response;
         },
         validationSchema,
+        validateOnMount: true,
     });
 
     async function onTestHandler() {
