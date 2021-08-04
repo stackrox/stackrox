@@ -1149,6 +1149,14 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    def addNamespaceAnnotation(String ns, String key, String value) {
+        client.namespaces().withName(ns).edit().editMetadata().addToAnnotations(key, value).endMetadata().done()
+    }
+
+    def removeNamespaceAnnotation(String ns, String key) {
+        client.namespaces().withName(ns).edit().editMetadata().removeFromAnnotations(key).endMetadata().done()
+    }
+
     /*
         Service Accounts
      */

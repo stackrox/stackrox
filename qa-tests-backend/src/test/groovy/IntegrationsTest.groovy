@@ -30,6 +30,7 @@ import services.CreatePolicyService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
+import services.NotifierService
 import spock.lang.Unroll
 import util.SplunkUtil
 import util.Env
@@ -477,6 +478,110 @@ class IntegrationsTest extends BaseSpecification {
         "GCS"                 | Env.mustGetGCSBucketName()   | Env.mustGetGCSBucketRegion()   |
                 "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
                 Env.mustGetGCPAccessKey()
+    }
+
+    @Unroll
+    @Category([BAT, Notifiers])
+    def "Verify Policy Violation Notifications Destination Overrides: #type"() {
+        when:
+        "Create notifier"
+        notifier.createNotifier()
+        notifier.notifier
+
+        and:
+        "annotate namespace if required"
+        if (namespaceAnnotation != null) {
+            orchestrator.addNamespaceAnnotation(
+                    orchestrator.getNameSpace(),
+                    namespaceAnnotation["key"],
+                    namespaceAnnotation["value"]
+            )
+        }
+
+        and:
+        "Create policy scoped to test deployment with notification enabled"
+        PolicyOuterClass.Policy.Builder policy =
+                PolicyOuterClass.Policy.newBuilder(Services.getPolicyByName("Latest tag"))
+        policy.setId("")
+                .setName("Policy Notifier Test Policy")
+                .addScope(ScopeOuterClass.Scope.newBuilder()
+                        .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                                .setKey("app")
+                                .setValue(deployment.name)
+                        )
+                )
+        policy.addNotifiers(notifier.getId())
+        String policyId = CreatePolicyService.createNewPolicy(policy.build())
+        assert policyId
+
+        and:
+        "create deployment to generate policy violation notification"
+        orchestrator
+        orchestrator.createDeployment(deployment)
+        assert Services.waitForDeployment(deployment)
+        assert Services.waitForViolation(deployment.name, policy.name, WAIT_FOR_VIOLATION_TIMEOUT)
+
+        then:
+        "Validate Notification details"
+        notifier.validateViolationNotification(policy.build(), deployment, strictIntegrationTesting)
+
+        cleanup:
+        "delete deployment, policy, notifiers and clear annotation"
+        if (deployment.deploymentUid != null) {
+            orchestrator.deleteDeployment(deployment)
+        }
+        if (policyId != null) {
+            CreatePolicyService.deletePolicy(policyId)
+        }
+
+        notifier.validateViolationResolution()
+        notifier.cleanup()
+        notifier.deleteNotifier()
+
+        if (namespaceAnnotation != null) {
+            orchestrator.removeNamespaceAnnotation(orchestrator.getNameSpace(), namespaceAnnotation.key)
+        }
+
+        where:
+        "data inputs are:"
+
+        type     |
+                notifier   |
+                namespaceAnnotation   |
+                deployment
+
+        "Email deploy override"     |
+                new EmailNotifier("Email Test", false,
+                        NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt1@gmail.com")   |
+                null   |
+                new Deployment()
+                        .setName("policy-violation-email-notification-deploy-override")
+                        .addLabel("app", "policy-violation-email-notification-deploy-override")
+                        .addAnnotation("mailgun", "stackrox.qa+alt1@gmail.com")
+                        .setImage("nginx:latest")
+        "Email namespace override"     |
+                new EmailNotifier("Email Test", false,
+                        NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt2@gmail.com")   |
+                [key: "mailgun", value: "stackrox.qa+alt2@gmail.com"]   |
+                new Deployment()
+                        .setName("policy-violation-email-notification-namespace-override")
+                        .addLabel("app", "policy-violation-email-notification-namespace-override")
+                        .setImage("nginx:latest")
+        "Slack deploy override"   |
+                new SlackNotifier("slack test", "slack-key")   |
+                null   |
+                new Deployment()
+                        .setName("policy-violation-generic-notification-deploy-override")
+                        .addLabel("app", "policy-violation-generic-notification-deploy-override")
+                        .addAnnotation("slack-key", NotifierService.SLACK_ALT_WEBHOOK)
+                        .setImage("nginx:latest")
+        "Slack namespace override"   |
+                new SlackNotifier("slack test", "slack-key")   |
+                [key: "slack-key", value: NotifierService.SLACK_ALT_WEBHOOK] |
+                new Deployment()
+                        .setName("policy-violation-generic-notification-ns-override")
+                        .addLabel("app", "policy-violation-generic-notification-ns-override")
+                        .setImage("nginx:latest")
     }
 
     @Unroll

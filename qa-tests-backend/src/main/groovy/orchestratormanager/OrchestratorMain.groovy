@@ -111,6 +111,8 @@ interface OrchestratorMain {
     String createNamespace(String ns)
     def deleteNamespace(String ns)
     def waitForNamespaceDeletion(String ns)
+    def addNamespaceAnnotation(String ns, String key, String value)
+    def removeNamespaceAnnotation(String ns, String key)
     def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated)
     List<Namespace> getNamespaceDetails()
 

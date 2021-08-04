@@ -10,6 +10,13 @@ import util.Env
 class NotifierService extends BaseService {
     private static final PAGERDUTY_API_KEY = "9e2d142a2946419c9192a0b224dd811b"
 
+    // SLACK_MAIN_WEBHOOK is the webhook URL for #slack-test
+    public static final SLACK_MAIN_WEBHOOK =
+            "https://hooks.slack.com/services/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"
+    // SLACK_ALT_WEBHOOK is the webhook URL for #stackrox-alerts-2
+    public static final SLACK_ALT_WEBHOOK =
+            "https://hooks.slack.com/services/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"
+
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
@@ -104,12 +111,12 @@ class NotifierService extends BaseService {
                 .build()
     }
 
-    static NotifierOuterClass.Notifier getSlackIntegrationConfig(String name) {
+    static NotifierOuterClass.Notifier getSlackIntegrationConfig(String name, String labelKey) {
         return NotifierOuterClass.Notifier.newBuilder()
                 .setType("slack")
                 .setName(name)
-                .setLabelKey("#slack-test")
-                .setLabelDefault("https://hooks.slack.com/services/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")
+                .setLabelKey(labelKey)
+                .setLabelDefault(SLACK_MAIN_WEBHOOK)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .build()
     }

@@ -58,12 +58,15 @@ class Notifier {
 class EmailNotifier extends Notifier {
     private final MailService mail =
             new MailService("imap.gmail.com", "stackrox.qa@gmail.com", Env.mustGet("EMAIL_NOTIFIER_PASSWORD"))
+    private final String recipientEmail
 
     EmailNotifier(
             String integrationName = "Email Test",
             disableTLS = false,
             startTLS = NotifierOuterClass.Email.AuthMethod.DISABLED,
-            Integer port = null) {
+            Integer port = null,
+            String recipientEmail = "stackrox.qa@gmail.com") {
+        this.recipientEmail = recipientEmail
         notifier = NotifierService.getEmailIntegrationConfig(integrationName, disableTLS, startTLS, port)
     }
 
@@ -107,6 +110,7 @@ class EmailNotifier extends Notifier {
         assert notifications.find { it.content.toString().contains("ID: ${deployment.deploymentUid}") }
         assert notifications.find { it.content.toString().contains("Name: ${deployment.name}") }
         assert notifications.find { it.content.toString().contains("Namespace: ${deployment.namespace}") }
+        assert notifications.find { it.getAllRecipients().find { a -> (a.toString() == this.recipientEmail) } }
         mail.logout()
     }
 
@@ -172,8 +176,8 @@ class GenericNotifier extends Notifier {
 }
 
 class SlackNotifier extends Notifier {
-    SlackNotifier(String integrationName = "Slack Test") {
-        notifier = NotifierService.getSlackIntegrationConfig(integrationName)
+    SlackNotifier(String integrationName = "Slack Test", String labelKey = "#slack-test") {
+        notifier = NotifierService.getSlackIntegrationConfig(integrationName, labelKey)
     }
 }
 
