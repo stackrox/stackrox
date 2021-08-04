@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/mitre/common"
+	"github.com/stackrox/rox/central/mitre/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -21,11 +21,11 @@ func TestMitreAttack(t *testing.T) {
 		t.Skip("RHACS System Policy MITRE ATT&CK framework feature is disabled. skipping...")
 	}
 
-	srv := New(common.Singleton())
+	srv := New(datastore.Singleton())
 	resp, err := srv.ListMitreAttackVectors(context.Background(), &v1.Empty{})
 	assert.NoError(t, err)
 	assert.Equal(t, []*storage.MitreAttackVector{
-		common.MitreTestData["TA0006"],
-		common.MitreTestData["TA0005"],
+		datastore.MitreTestData["TA0006"],
+		datastore.MitreTestData["TA0005"],
 	}, resp.GetMitreAttackVectors())
 }

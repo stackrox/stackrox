@@ -732,6 +732,20 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
+	utils.Must(builder.AddType("MitreAttackVector", []string{
+		"tactic: MitreTactic",
+		"techniques: [MitreTechnique]!",
+	}))
+	utils.Must(builder.AddType("MitreTactic", []string{
+		"description: String!",
+		"id: ID!",
+		"name: String!",
+	}))
+	utils.Must(builder.AddType("MitreTechnique", []string{
+		"description: String!",
+		"id: ID!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddType("Namespace", []string{
 		"metadata: NamespaceMetadata",
 		"numDeployments: Int!",
@@ -6970,6 +6984,118 @@ func toMetadata_LicenseStatuses(values *[]string) []v1.Metadata_LicenseStatus {
 		output[i] = toMetadata_LicenseStatus(&v)
 	}
 	return output
+}
+
+type mitreAttackVectorResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MitreAttackVector
+}
+
+func (resolver *Resolver) wrapMitreAttackVector(value *storage.MitreAttackVector, ok bool, err error) (*mitreAttackVectorResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &mitreAttackVectorResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMitreAttackVectors(values []*storage.MitreAttackVector, err error) ([]*mitreAttackVectorResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*mitreAttackVectorResolver, len(values))
+	for i, v := range values {
+		output[i] = &mitreAttackVectorResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *mitreAttackVectorResolver) Tactic(ctx context.Context) (*mitreTacticResolver, error) {
+	value := resolver.data.GetTactic()
+	return resolver.root.wrapMitreTactic(value, true, nil)
+}
+
+func (resolver *mitreAttackVectorResolver) Techniques(ctx context.Context) ([]*mitreTechniqueResolver, error) {
+	value := resolver.data.GetTechniques()
+	return resolver.root.wrapMitreTechniques(value, nil)
+}
+
+type mitreTacticResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MitreTactic
+}
+
+func (resolver *Resolver) wrapMitreTactic(value *storage.MitreTactic, ok bool, err error) (*mitreTacticResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &mitreTacticResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMitreTactics(values []*storage.MitreTactic, err error) ([]*mitreTacticResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*mitreTacticResolver, len(values))
+	for i, v := range values {
+		output[i] = &mitreTacticResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *mitreTacticResolver) Description(ctx context.Context) string {
+	value := resolver.data.GetDescription()
+	return value
+}
+
+func (resolver *mitreTacticResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *mitreTacticResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+type mitreTechniqueResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MitreTechnique
+}
+
+func (resolver *Resolver) wrapMitreTechnique(value *storage.MitreTechnique, ok bool, err error) (*mitreTechniqueResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &mitreTechniqueResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMitreTechniques(values []*storage.MitreTechnique, err error) ([]*mitreTechniqueResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*mitreTechniqueResolver, len(values))
+	for i, v := range values {
+		output[i] = &mitreTechniqueResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *mitreTechniqueResolver) Description(ctx context.Context) string {
+	value := resolver.data.GetDescription()
+	return value
+}
+
+func (resolver *mitreTechniqueResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *mitreTechniqueResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 type namespaceResolver struct {

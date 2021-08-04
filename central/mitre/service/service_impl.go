@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/mitre/common"
+	"github.com/stackrox/rox/central/mitre/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -27,7 +27,7 @@ var (
 )
 
 type serviceImpl struct {
-	store common.MitreAttackReadOnlyStore
+	store datastore.MitreAttackReadOnlyDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

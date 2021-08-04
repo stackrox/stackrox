@@ -1,4 +1,4 @@
-package common
+package datastore
 
 import (
 	"github.com/stackrox/rox/generated/storage"

@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -23,14 +24,16 @@ func init() {
 		schema.AddQuery("policies(query: String, pagination: Pagination): [Policy!]!"),
 		schema.AddQuery("policy(id: ID): Policy"),
 		schema.AddQuery("policyCount(query: String): Int!"),
-		schema.AddExtraResolver("Policy", `alerts(query: String, pagination: Pagination): [Alert!]!`),
+
 		schema.AddExtraResolver("Policy", `alertCount(query: String): Int!`),
-		schema.AddExtraResolver("Policy", `deployments(query: String, pagination: Pagination): [Deployment!]!`),
-		schema.AddExtraResolver("Policy", `failingDeployments(query: String, pagination: Pagination): [Deployment!]!`),
+		schema.AddExtraResolver("Policy", `alerts(query: String, pagination: Pagination): [Alert!]!`),
 		schema.AddExtraResolver("Policy", `deploymentCount(query: String): Int!`),
+		schema.AddExtraResolver("Policy", `deployments(query: String, pagination: Pagination): [Deployment!]!`),
 		schema.AddExtraResolver("Policy", `failingDeploymentCount(query: String): Int!`),
-		schema.AddExtraResolver("Policy", `policyStatus(query: String): String!`),
+		schema.AddExtraResolver("Policy", `failingDeployments(query: String, pagination: Pagination): [Deployment!]!`),
+		schema.AddExtraResolver("Policy", "fullMitreAttackVectors: [MitreAttackVector!]!"),
 		schema.AddExtraResolver("Policy", "latestViolation(query: String): Time"),
+		schema.AddExtraResolver("Policy", `policyStatus(query: String): String!`),
 
 		schema.AddExtraResolver("PolicyFields", "imageAgeDays: Int"),
 		schema.AddExtraResolver("PolicyFields", "scanAgeDays: Int"),
@@ -326,6 +329,12 @@ func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQue
 	}
 
 	return getLatestViolationTime(ctx, resolver.root, q)
+}
+
+func (resolver *policyResolver) FullMitreAttackVectors(ctx context.Context) ([]*mitreAttackVectorResolver, error) {
+	return resolver.root.wrapMitreAttackVectors(
+		policyUtils.GetFullMitreAttackVectors(resolver.root.mitreStore, resolver.data),
+	)
 }
 
 func (resolver *policyResolver) getPolicyQuery() *v1.Query {

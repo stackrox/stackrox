@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/mitre/common"
+	"github.com/stackrox/rox/central/mitre/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -14,7 +14,7 @@ type Service interface {
 }
 
 // New returns a new MITRE ATTACK Service instance.
-func New(store common.MitreAttackReadOnlyStore) Service {
+func New(store datastore.MitreAttackReadOnlyDataStore) Service {
 	return &serviceImpl{
 		store: store,
 	}

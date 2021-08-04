@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/mitre/common"
+	"github.com/stackrox/rox/central/mitre/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,7 +12,7 @@ var (
 )
 
 func initialize() {
-	as = New(common.Singleton())
+	as = New(datastore.Singleton())
 }
 
 // Singleton provides the instance of the MITRE ATTACK Service interface to register.

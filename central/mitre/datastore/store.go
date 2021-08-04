@@ -1,4 +1,4 @@
-package common
+package datastore
 
 import (
 	"sort"
@@ -8,17 +8,17 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
-// MitreAttackReadOnlyStore provides functionality to read MITRE ATT&CK vectors.
+// MitreAttackReadOnlyDataStore provides functionality to read MITRE ATT&CK vectors.
 // A vector represents MITRE tactics (why) and its techniques/sub-techniques (how).
 //go:generate mockgen-wrapper
-type MitreAttackReadOnlyStore interface {
+type MitreAttackReadOnlyDataStore interface {
 	GetAll() []*storage.MitreAttackVector
 	Get(id string) (*storage.MitreAttackVector, error)
 }
 
-// mitreAttackStore provides functionality to read and write MITRE ATT&CK vectors.
-type mitreAttackStore interface {
-	MitreAttackReadOnlyStore
+// mitreAttackRWDataStore provides functionality to read and write MITRE ATT&CK vectors.
+type mitreAttackRWDataStore interface {
+	MitreAttackReadOnlyDataStore
 	// adds the vector and overwrites if already present.
 	add(id string, vector *storage.MitreAttackVector)
 }

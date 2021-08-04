@@ -10,8 +10,8 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
-	"github.com/stackrox/rox/central/mitre/common"
-	mitreMocks "github.com/stackrox/rox/central/mitre/common/mocks"
+	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
+	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -52,7 +52,7 @@ type PolicyServiceTestSuite struct {
 	suite.Suite
 	policies              *mocks.MockDataStore
 	clusters              *clusterMocks.MockDataStore
-	mitreVectorStore      *mitreMocks.MockMitreAttackReadOnlyStore
+	mitreVectorStore      *mitreMocks.MockMitreAttackReadOnlyDataStore
 	mockBuildTimePolicies *detectionMocks.MockPolicySet
 	mockLifecycleManager  *lifecycleMocks.MockManager
 	mockConnectionManager *connectionMocks.MockManager
@@ -75,7 +75,7 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 	s.mockBuildTimePolicies = detectionMocks.NewMockPolicySet(s.mockCtrl)
 	s.mockLifecycleManager = lifecycleMocks.NewMockManager(s.mockCtrl)
 	s.mockConnectionManager = connectionMocks.NewMockManager(s.mockCtrl)
-	s.mitreVectorStore = mitreMocks.NewMockMitreAttackReadOnlyStore(s.mockCtrl)
+	s.mitreVectorStore = mitreMocks.NewMockMitreAttackReadOnlyDataStore(s.mockCtrl)
 
 	s.tested = New(
 		s.policies,
@@ -882,15 +882,15 @@ func (s *PolicyServiceTestSuite) TestMitreVectorsFeatureEnabled() {
 
 	s.policies.EXPECT().GetPolicy(gomock.Any(), "policy1").Return(&storage.Policy{Id: "policy1"}, true, nil)
 
-	s.mitreVectorStore.EXPECT().Get("TA0005").Return(common.MitreTestData["TA0005"], nil)
-	s.mitreVectorStore.EXPECT().Get("TA0006").Return(common.MitreTestData["TA0006"], nil)
+	s.mitreVectorStore.EXPECT().Get("TA0005").Return(mitreDataStore.MitreTestData["TA0005"], nil)
+	s.mitreVectorStore.EXPECT().Get("TA0006").Return(mitreDataStore.MitreTestData["TA0006"], nil)
 
 	response, err := s.tested.GetPolicyMitreVectors(
 		context.Background(), &v1.GetPolicyMitreVectorsRequest{Id: "policy1"},
 	)
 	s.NoError(err)
 	s.ElementsMatch([]*storage.MitreAttackVector{
-		common.MitreTestData["TA0005"],
+		mitreDataStore.MitreTestData["TA0005"],
 		// Technique T1110 should be filtered.
 		{
 			Tactic: &storage.MitreTactic{

@@ -11,10 +11,11 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	"github.com/stackrox/rox/central/mitre/common"
+	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
+	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -99,7 +100,7 @@ type serviceImpl struct {
 	clusters          clusterDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	notifiers         notifierDataStore.DataStore
-	mitreStore        common.MitreAttackReadOnlyStore
+	mitreStore        mitreDataStore.MitreAttackReadOnlyDataStore
 	reprocessor       reprocessor.Loop
 	connectionManager connection.Manager
 
@@ -265,8 +266,7 @@ func (s *serviceImpl) GetPolicyMitreVectors(ctx context.Context, request *v1.Get
 		return nil, err
 	}
 
-	vectorsAsMap := vectorsAsMap(policy.GetMitreAttackVectors()...)
-	fullVectors, err := s.getFullMitreAttackVectors(vectorsAsMap)
+	fullVectors, err := policyUtils.GetFullMitreAttackVectors(s.mitreStore, policy)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching MITRE ATT&CK vectors for policy %q", request.GetId())
 	}
@@ -279,39 +279,6 @@ func (s *serviceImpl) GetPolicyMitreVectors(ctx context.Context, request *v1.Get
 		resp.Policy = policy
 	}
 
-	return resp, nil
-}
-
-func vectorsAsMap(vectors ...*storage.Policy_MitreAttackVectors) map[string]map[string]struct{} {
-	vectorsAsMap := make(map[string]map[string]struct{})
-	for _, vector := range vectors {
-		tacticID := vector.GetTactic()
-		vectorsAsMap[tacticID] = make(map[string]struct{})
-		for _, techniqueID := range vector.GetTechniques() {
-			vectorsAsMap[tacticID][techniqueID] = struct{}{}
-		}
-	}
-	return vectorsAsMap
-}
-
-func (s *serviceImpl) getFullMitreAttackVectors(vectorsAsMap map[string]map[string]struct{}) ([]*storage.MitreAttackVector, error) {
-	resp := make([]*storage.MitreAttackVector, 0, len(vectorsAsMap))
-	for tacticID, techniqueIDs := range vectorsAsMap {
-		fullVector, err := s.mitreStore.Get(tacticID)
-		if err != nil {
-			return nil, err
-		}
-
-		vector := &storage.MitreAttackVector{
-			Tactic: fullVector.GetTactic(),
-		}
-		for _, technique := range fullVector.GetTechniques() {
-			if _, ok := techniqueIDs[technique.GetId()]; ok {
-				vector.Techniques = append(vector.Techniques, technique)
-			}
-		}
-		resp = append(resp, vector)
-	}
 	return resp, nil
 }
 

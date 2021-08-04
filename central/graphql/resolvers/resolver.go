@@ -28,6 +28,7 @@ import (
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
+	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -90,6 +91,7 @@ type Resolver struct {
 	orchestratorIstioCVEManager fetcher.OrchestratorIstioCVEManager
 	cveMatcher                  *cveMatcher.CVEMatcher
 	manager                     complianceOperatorManager.Manager
+	mitreStore                  mitreDataStore.MitreAttackReadOnlyDataStore
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -132,6 +134,7 @@ func New() *Resolver {
 		orchestratorIstioCVEManager: fetcher.SingletonManager(),
 		cveMatcher:                  cveMatcher.Singleton(),
 		manager:                     complianceOperatorManager.Singleton(),
+		mitreStore:                  mitreDataStore.Singleton(),
 	}
 	return resolver
 }
