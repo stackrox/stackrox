@@ -39,14 +39,8 @@ func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRol
 }
 
 func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, roles []permissions.ResolvedRole) sac.ScopeCheckerCore {
-	clusterIDToName := make(map[string]string, len(clusters))
-	for _, c := range clusters {
-		clusterIDToName[c.GetId()] = c.GetName()
-	}
-
 	scc := &globalScopeChecker{
-		roles:           roles,
-		clusterIDToName: clusterIDToName,
+		roles: roles,
 		cache: &authorizerDataCache{
 			clusters:                  clusters,
 			namespaces:                namespaces,
@@ -64,8 +58,7 @@ func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storag
 // and returns an accessModeLevelScopeCheckerCore with the same resolved roles,
 //setting the desired access mode.
 type globalScopeChecker struct {
-	cache           *authorizerDataCache
-	clusterIDToName map[string]string
+	cache *authorizerDataCache
 
 	roles []permissions.ResolvedRole
 }
@@ -123,9 +116,8 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 		accessModeLevelScopeCheckerCore: accessModeLevelScopeCheckerCore{
 			access: a.access,
 			globalScopeChecker: globalScopeChecker{
-				cache:           a.cache,
-				clusterIDToName: a.clusterIDToName,
-				roles:           filteredRoles,
+				cache: a.cache,
+				roles: filteredRoles,
 			},
 		},
 	}
@@ -134,7 +126,7 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 // resourceLevelScopeCheckerCore maintains a list of resolved roles and a resource.
 // TryAllowed returns Allow if the resource itself has "global" scope,
 // or if there exists a resolved role where the root node is marked Included.
-// SubScopeChecker extracts the cluster ID from the scope key, translates it to the cluster name (also see below),
+// SubScopeChecker extracts the cluster ID from the scope key,
 // and in each effective access scope tree for a resolved role, it determines the ClustersScopeSubTree for that cluster ID.
 // The list of all *ClustersScopeSubTree is filtered down to those elements which are not nil and which have a state of not Excluded.
 // If this list is empty, a deny-all scope checker core is returned, otherwise a clusterLevelScopeCheckerCore is returned.
@@ -165,14 +157,14 @@ func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) s
 		return errorScopeChecker(a, scopeKey)
 	}
 	return &clusterNamespaceLevelScopeCheckerCore{
-		cluster:                       a.clusterIDToName[scope.String()],
+		clusterID:                     scope.String(),
 		resourceLevelScopeCheckerCore: *a,
 	}
 }
 
 type clusterNamespaceLevelScopeCheckerCore struct {
 	resourceLevelScopeCheckerCore
-	cluster   string
+	clusterID string
 	namespace string
 }
 
@@ -182,7 +174,7 @@ func (a *clusterNamespaceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResul
 		if utils.Should(err) != nil {
 			return sac.Unknown
 		}
-		if effectiveAccessScopeAllows(scope, a.resource, a.cluster, a.namespace) {
+		if effectiveAccessScopeAllows(scope, a.resource, a.clusterID, a.namespace) {
 			return sac.Allow
 		}
 	}
@@ -195,7 +187,7 @@ func (a *clusterNamespaceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.Sco
 		return errorScopeChecker(a, scopeKey)
 	}
 	return &clusterNamespaceLevelScopeCheckerCore{
-		cluster:                       a.cluster,
+		clusterID:                     a.clusterID,
 		namespace:                     scope.String(),
 		resourceLevelScopeCheckerCore: a.resourceLevelScopeCheckerCore,
 	}
@@ -250,14 +242,14 @@ func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.S
 
 func effectiveAccessScopeAllows(effectiveAccessScope *sac.EffectiveAccessScopeTree,
 	resourceMetadata permissions.ResourceMetadata,
-	clusterName, namespaceName string) bool {
+	clusterID, namespaceName string) bool {
 
 	if effectiveAccessScope.State != sac.Partial {
 		return effectiveAccessScope.State == sac.Included
 	}
 
-	clusterNode, ok := effectiveAccessScope.Clusters[clusterName]
-	if !ok {
+	clusterNode := effectiveAccessScope.GetClusterByID(clusterID)
+	if clusterNode == nil {
 		return false
 	}
 

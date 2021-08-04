@@ -198,14 +198,19 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 	}
 	arrakisExtras := &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis", Labels: map[string]string{"focus": "melange"}}
 	earthExtras := &EffectiveAccessScopeTreeExtras{ID: "planet.earth", Name: "Earth"}
+	clusterIDs := map[string]string{}
+	for _, c := range clusters {
+		clusterIDs[c.GetId()] = c.GetName()
+	}
 	testCases := []testCase{
 		{
 			desc:      "no access scope includes nothing",
 			scopeDesc: `nil => { }`,
 			scope:     nil,
 			expected: &EffectiveAccessScopeTree{
-				Excluded,
-				map[string]*ClustersScopeSubTree{
+				State:           Excluded,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
 						Namespaces: namespacesTree(
@@ -241,8 +246,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				Name: accessScopeName,
 			},
 			expected: &EffectiveAccessScopeTree{
-				Excluded,
-				map[string]*ClustersScopeSubTree{
+				State:           Excluded,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
 						Namespaces: namespacesTree(
@@ -284,8 +290,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Excluded,
-				map[string]*ClustersScopeSubTree{
+				State:           Excluded,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
 						Namespaces: namespacesTree(
@@ -324,8 +331,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
 						Namespaces: namespacesTree(
@@ -364,8 +372,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Arrakis": {
 						State:  Included,
 						Extras: &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis"},
@@ -386,8 +395,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
 						Namespaces: namespacesTree(
@@ -431,8 +441,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
 						Namespaces: namespacesTree(
@@ -471,8 +482,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
 						Namespaces: namespacesTree(
@@ -511,8 +523,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
@@ -558,8 +571,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
@@ -606,8 +620,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
@@ -655,8 +670,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
@@ -702,8 +718,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				Partial,
-				map[string]*ClustersScopeSubTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
@@ -742,7 +759,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				State: Partial,
+				State:           Partial,
+				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
 					"Arrakis": {
 						State: Partial,
@@ -774,7 +792,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				},
 			},
 			expected: &EffectiveAccessScopeTree{
-				State: Partial,
+				State:           Partial,
+				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
@@ -850,14 +869,21 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			assert.Exactly(t, tc.expected, result, tc.scopeDesc)
 			assert.Exactly(t, clusters, clonedClusters, "clusters have been modified")
 			assert.Exactly(t, namespaces, clonedNamespaces, "namespaces have been modified")
+			if tc.expected != nil {
+				assert.Nil(t, result.GetClusterByID("unknown cluster id"))
+				for _, c := range clonedClusters {
+					assert.Equal(t, result.GetClusterByID(c.GetId()), tc.expected.Clusters[c.GetName()])
+				}
+			}
 		})
 	}
 }
 
 func TestUnrestrictedEffectiveAccessScope(t *testing.T) {
 	expected := &EffectiveAccessScopeTree{
-		State:    Included,
-		Clusters: make(map[string]*ClustersScopeSubTree),
+		State:           Included,
+		Clusters:        make(map[string]*ClustersScopeSubTree),
+		clusterIDToName: make(map[string]string),
 	}
 	result := UnrestrictedEffectiveAccessScope()
 	assert.Exactly(t, expected, result)
