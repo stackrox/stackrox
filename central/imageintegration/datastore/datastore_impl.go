@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	groupSAC = sac.ForResource(resources.ImageIntegration)
+	imageIntegrationSAC = sac.ForResource(resources.ImageIntegration)
 )
 
 type datastoreImpl struct {
@@ -21,7 +21,7 @@ type datastoreImpl struct {
 
 // GetImageIntegration is pass-through to the underlying store.
 func (ds *datastoreImpl) GetImageIntegration(ctx context.Context, id string) (*storage.ImageIntegration, bool, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := imageIntegrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, nil
@@ -32,7 +32,7 @@ func (ds *datastoreImpl) GetImageIntegration(ctx context.Context, id string) (*s
 
 // GetImageIntegrations provides an in memory layer on top of the underlying DB based storage.
 func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
-	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := imageIntegrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -59,7 +59,7 @@ func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.G
 
 // AddImageIntegration is pass-through to the underlying store.
 func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *storage.ImageIntegration) (string, error) {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := imageIntegrationSAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
@@ -70,7 +70,7 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 
 // UpdateImageIntegration is pass-through to the underlying store.
 func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration *storage.ImageIntegration) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := imageIntegrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -81,7 +81,7 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 
 // RemoveImageIntegration is pass-through to the underlying store.
 func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) error {
-	if ok, err := groupSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := imageIntegrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

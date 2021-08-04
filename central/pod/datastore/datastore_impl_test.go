@@ -68,9 +68,6 @@ func (suite *PodDataStoreTestSuite) TestNoAccessAllowed() {
 	_, ok, _ := suite.datastore.GetPod(ctx, expectedPod.GetId())
 	suite.False(ok)
 
-	_, err := suite.datastore.GetPods(ctx, []string{expectedPod.GetId()})
-	suite.Error(err, "permission denied")
-
 	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "permission denied")
 
 	suite.Error(suite.datastore.RemovePod(ctx, expectedPod.GetId()), "permission denied")
@@ -96,21 +93,6 @@ func (suite *PodDataStoreTestSuite) TestGetPod() {
 
 	suite.storage.EXPECT().Get(expectedPod.GetId()).Return(nil, false, errors.New("error"))
 	_, _, err = suite.datastore.GetPod(ctx, expectedPod.GetId())
-	suite.Error(err, "error")
-}
-
-func (suite *PodDataStoreTestSuite) TestGetPods() {
-	suite.storage.EXPECT().GetMany([]string{expectedPod.GetId()}).Return([]*storage.Pod{expectedPod}, []int{0}, nil)
-	pods, err := suite.datastore.GetPods(ctx, []string{expectedPod.GetId()})
-	suite.NoError(err)
-	suite.Equal([]*storage.Pod{expectedPod}, pods)
-
-	suite.storage.EXPECT().GetMany([]string{expectedPod.GetId()}).Return(nil, nil, nil)
-	_, err = suite.datastore.GetPods(ctx, []string{expectedPod.GetId()})
-	suite.NoError(err)
-
-	suite.storage.EXPECT().GetMany([]string{expectedPod.GetId()}).Return(nil, nil, errors.New("error"))
-	_, err = suite.datastore.GetPods(ctx, []string{expectedPod.GetId()})
 	suite.Error(err, "error")
 }
 

@@ -192,10 +192,8 @@ func (m *manager) getFileInfo(file string) (*v1.ProbeUploadManifest_File, error)
 }
 
 func (m *manager) GetExistingProbeFiles(ctx context.Context, files []string) ([]*v1.ProbeUploadManifest_File, error) {
-	if ok, err := probeUploadSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := probeUploadSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
 	}
 
 	var result []*v1.ProbeUploadManifest_File

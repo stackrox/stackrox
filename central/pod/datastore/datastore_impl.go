@@ -171,20 +171,6 @@ func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, b
 	return pod, true, nil
 }
 
-func (ds *datastoreImpl) GetPods(ctx context.Context, ids []string) ([]*storage.Pod, error) {
-	if ok, err := podsSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
-
-	pods, _, err := ds.podStore.GetMany(ids)
-	if err != nil {
-		return nil, err
-	}
-	return pods, nil
-}
-
 // UpsertPod inserts a pod into podStore
 func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Upsert")

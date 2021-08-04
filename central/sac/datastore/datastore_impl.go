@@ -78,10 +78,8 @@ func (ds *datastoreImpl) Initialize() error {
 }
 
 func (ds *datastoreImpl) ListAuthzPluginConfigs(ctx context.Context) ([]*storage.AuthzPluginConfig, error) {
-	if ok, err := authPluginSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := authPluginSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
 	}
 
 	ds.mutex.Lock()

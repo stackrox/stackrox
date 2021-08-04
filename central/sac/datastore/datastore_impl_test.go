@@ -274,7 +274,7 @@ func (s *authzDataStoreAccessTestSuite) TestEnforcesList() {
 	s.mockStorage.EXPECT().ListAuthzPluginConfigs().Times(0)
 
 	configs, err := s.getDataStore().ListAuthzPluginConfigs(s.hasNoneCtx)
-	s.Error(err, "expected permission denied error")
+	s.NoError(err, "expected no error")
 	s.Nil(configs, "expected return value to be nil")
 }
 
