@@ -197,7 +197,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         printlnDated "Policy created to scale-to-zero deployments with CVE-2019-3462"
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000)
+        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
         printlnDated "Sensor and admission-controller _should_ have the policy update"
 
         def deployment = new Deployment()
@@ -215,7 +215,7 @@ class AdmissionControllerTest extends BaseSpecification {
         CVEService.suppressCVE("CVE-2019-3462")
         printlnDated "Suppressing CVE-2019-3462"
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(5000)
+        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
         printlnDated "Expect that the suppression has propagated"
 
         created = orchestrator.createDeploymentNoWait(deployment)
@@ -228,7 +228,7 @@ class AdmissionControllerTest extends BaseSpecification {
         CVEService.unsuppressCVE("CVE-2019-3462")
         printlnDated "Unsuppress CVE-2019-3462"
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(15000)
+        Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         printlnDated "Expect that the unsuppression has propagated"
 
         and:

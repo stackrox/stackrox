@@ -373,16 +373,23 @@ class Kubernetes implements OrchestratorMain {
         }
         // Retry deletion due to race condition in sdk and controller
         // See https://github.com/fabric8io/kubernetes-client/issues/1477
+        Boolean deleted = false
         Timer t = new Timer(10, 1)
         while (t.IsValid()) {
             try {
                 this.deployments.inNamespace(deployment.namespace).withName(deployment.name).delete()
+                deleted = true
                 break
             } catch (KubernetesClientException ex) {
                 println "Failed to delete deployment: ${ex.toString()}"
             }
         }
-        println "removing the deployment: ${deployment.name}"
+        if (deleted) {
+            println "Removed the deployment: ${deployment.name}"
+        }
+        else {
+            println "Failed to deleted the deployment: ${deployment.name} after repeated attempts"
+        }
     }
 
     def createOrchestratorDeployment(K8sDeployment dep) {
