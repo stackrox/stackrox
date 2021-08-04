@@ -10,6 +10,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   to 64.0. All backups taken prior to version 48.0 will no longer be able to be restored to 64.0 and on.
 - The /v1/namespaces endpoint now accepts pagination query parameters
 - Message attribute keys for audit log based violations changed to use capital case instead of lowercase in API response
+- Prefixed the names of all `SecurityContextConstraint` (SCC) resources with `stackrox-` on OpenShift.
+
 ## [63.0]
 
 - Clusters now can have labels.

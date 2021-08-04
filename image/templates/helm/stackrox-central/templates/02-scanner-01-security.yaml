@@ -78,12 +78,12 @@ spec:
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
-  name: {{ include "srox.globalResourceName" (list . "scanner") }}
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner") }}
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "scanner") | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "scanner") | nindent 4 }}
-    kubernetes.io/description: scanner is the security constraint for the Scanner container
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-scanner") | nindent 4 }}
+    kubernetes.io/description: stackrox-scanner is the security constraint for the Scanner container
 priority: 0
 runAsUser:
   type: RunAsAny

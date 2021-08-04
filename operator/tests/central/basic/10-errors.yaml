@@ -6,9 +6,9 @@ metadata:
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: central
+  name: stackrox-central
 ---
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: scanner
+  name: stackrox-scanner

@@ -5,13 +5,13 @@
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: sensor
+  name: stackrox-sensor
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "sensor") | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-sensor") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "sensor") | nindent 4 }}
-    kubernetes.io/description: sensor is the security constraint for the sensor
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-sensor") | nindent 4 }}
+    kubernetes.io/description: stackrox-sensor is the security constraint for the sensor
 users:
   - system:serviceaccount:{{ ._rox._namespace }}:sensor
   - system:serviceaccount:{{ ._rox._namespace }}:sensor-upgrader

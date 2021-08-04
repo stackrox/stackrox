@@ -4,12 +4,12 @@
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: collector
+  name: stackrox-collector
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "collector") | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-collector") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "collector") | nindent 4 }}
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-collector") | nindent 4 }}
     kubernetes.io/description: This SCC is based on privileged, hostaccess, and hostmount-anyuid
 users:
   - system:serviceaccount:{{ ._rox._namespace }}:collector

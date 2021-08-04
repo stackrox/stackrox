@@ -83,12 +83,12 @@ spec:
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
-  name: {{ include "srox.globalResourceName" (list . "central") }}
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central") }}
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "central") | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-central") | nindent 4 }}
   annotations:
-    kubernetes.io/description: central is the security constraint for the central server
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "central") | nindent 4 }}
+    kubernetes.io/description: stackrox-central is the security constraint for the central server
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-central") | nindent 4 }}
 allowHostDirVolumePlugin: {{ ._rox.central.persistence.hostPath | not | not }}
 allowedCapabilities: []
 allowHostIPC: false

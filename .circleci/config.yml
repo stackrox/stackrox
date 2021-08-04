@@ -2040,7 +2040,8 @@ commands:
       - check-to-run:
           run-on-master: false  # don't run by default, only with changed go files
           run-on-tags: true
-          changed-path: '^go\.(mod|sum)|\.(go|proto)$'
+          # tests in pkg/charts/tests evaluate files in image/templates/helm
+          changed-path: '^go\.(mod|sum)|\.(go|proto)$|/testdata/|^image/templates/helm/)'
       - *restoreGoModCache
       - setup-go-build-env
       - *restoreGoBuildCache
