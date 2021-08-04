@@ -248,8 +248,12 @@ func TestGetAnnotationValue(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			envIsolator.Setenv(features.NamespaceAnnotationsForNotifiers.EnvVar(), strconv.FormatBool(c.feature))
-			if c.feature && !features.NamespaceAnnotationsForNotifiers.Enabled() { // skip tests with feature on for release tests
+
+			// skip tests with feature in a flipped state for release tests
+			if c.feature && !features.NamespaceAnnotationsForNotifiers.Enabled() {
 				t.Skipf("%s feature flag not enabled, skipping...", features.NamespaceAnnotationsForNotifiers.Name())
+			} else if !c.feature && features.NamespaceAnnotationsForNotifiers.Enabled() {
+				t.Skipf("%s feature flag enabled, skipping...", features.NamespaceAnnotationsForNotifiers.Name())
 			}
 
 			mockCtrl := gomock.NewController(t)
