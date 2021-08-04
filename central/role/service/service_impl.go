@@ -101,11 +101,11 @@ func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesRe
 }
 
 func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storage.Role, error) {
-	role, err := s.roleDataStore.GetRole(ctx, id.GetId())
+	role, found, err := s.roleDataStore.GetRole(ctx, id.GetId())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to retrieve role %q", id.GetId())
 	}
-	if role == nil {
+	if !found {
 		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role %q not found", id.GetId())
 	}
 	return role, nil
@@ -115,9 +115,17 @@ func (s *serviceImpl) GetMyPermissions(ctx context.Context, _ *v1.Empty) (*v1.Ge
 	return GetMyPermissions(ctx)
 }
 
-func (s *serviceImpl) CreateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
+func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRoleRequest) (*v1.Empty, error) {
+	role := roleRequest.GetRole()
+
+	// Check role request correctness.
+	if role.GetName() != "" && role.GetName() != roleRequest.GetName() {
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Different role name in path and body")
+	}
+	role.Name = roleRequest.GetName()
+
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Setting global access is not supported.")
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Setting global access is not supported")
 	}
 	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
@@ -138,16 +146,9 @@ func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.E
 }
 
 func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
-	role, err := s.roleDataStore.GetRole(ctx, id.GetId())
+	err := s.roleDataStore.RemoveRole(ctx, id.GetId())
 	if err != nil {
-		return nil, err
-	} else if role == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Role %q not found", id.GetId())
-	}
-
-	err = s.roleDataStore.RemoveRole(ctx, id.GetId())
-	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to delete role %q", id.GetId())
 	}
 	return &v1.Empty{}, nil
 }

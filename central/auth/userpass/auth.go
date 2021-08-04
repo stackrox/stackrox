@@ -34,8 +34,8 @@ var (
 // CreateManager creates and returns a manager for user/password authentication.
 func CreateManager(store roleDatastore.DataStore) (*basicAuthn.Manager, error) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	adminRole, err := store.GetRole(ctx, role.Admin)
-	if err != nil || adminRole == nil {
+	adminRole, found, err := store.GetRole(ctx, role.Admin)
+	if err != nil || !found || adminRole == nil {
 		return nil, errors.Wrap(err, "Could not look up admin role")
 	}
 
@@ -94,8 +94,8 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 // IdentityExtractorOrPanic creates and returns the identity extractor for basic authentication.
 func IdentityExtractorOrPanic(store roleDatastore.DataStore, mgr *basicAuthn.Manager, authProvider authproviders.Provider) authn.IdentityExtractor {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	adminRole, err := store.GetRole(ctx, role.Admin)
-	if err != nil || adminRole == nil {
+	adminRole, found, err := store.GetRole(ctx, role.Admin)
+	if err != nil || !found || adminRole == nil {
 		log.Panic("Could not look up admin role")
 	}
 

@@ -61,6 +61,13 @@ message ComputeEffectiveAccessScopeRequest {
     Payload access_scope = 2;
 }
 
+// CreateRoleRequest unites name we take from the URL path and role body in the same structure.
+// This way we can verify that name in the path and name in the body are identical.
+message CreateRoleRequest {
+    string         name = 1;
+    storage.Role   role = 2;
+}
+
 service RoleService {
 
     rpc GetRoles (Empty) returns (GetRolesResponse) {
@@ -81,10 +88,10 @@ service RoleService {
         };
     }
 
-    rpc CreateRole (storage.Role) returns (Empty) {
+    rpc CreateRole (CreateRoleRequest) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/roles/{name}"
-            body: "*"
+            body: "role"
         };
     }
 

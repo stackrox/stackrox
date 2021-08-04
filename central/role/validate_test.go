@@ -10,6 +10,86 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestValidateRoleNewFormat(t *testing.T) {
+	testCasesBad := map[string]*storage.Role{
+		"name field must be set": {},
+		"role must not have resourceToAccess field set": {
+			Name: "name",
+			ResourceToAccess: map[string]storage.Access{
+				"Policy": storage.Access_READ_ACCESS,
+			},
+		},
+		"role must reference an existing permission set": constructRole("role with no permission set", "", ""),
+	}
+
+	testCasesGood := map[string]*storage.Role{
+		"valid name, permissionSetId and accessScopeId": constructRole("new valid role", GeneratePermissionSetID(), GenerateAccessScopeID()),
+		"empty access scope reference is allowed":       constructRole("role with no access scope", GeneratePermissionSetID(), ""),
+	}
+
+	for desc, role := range testCasesGood {
+		t.Run(desc, func(t *testing.T) {
+			err := ValidateRole(role, true)
+			assert.NoErrorf(t, err, "role: '%+v'", role)
+		})
+	}
+
+	for desc, role := range testCasesBad {
+		t.Run(desc, func(t *testing.T) {
+			err := ValidateRole(role, true)
+			assert.Errorf(t, err, "role: '%+v'", role)
+		})
+	}
+}
+
+func TestValidateRoleOldFormat(t *testing.T) {
+	testCasesBad := map[string]*storage.Role{
+		"permission sets are not supported in the old role format": constructRole("role with permission set", "some permissionset", ""),
+		"access scope are not supported in the old role format":    constructRole("role with scope", "", "some accessscope"),
+		"non-existing resources are not supported": {
+			Name: "name",
+			ResourceToAccess: map[string]storage.Access{
+				"EndlessSummer": storage.Access_READ_WRITE_ACCESS,
+			},
+		},
+		"role must not have globalAccess field set": {
+			Name:         "name",
+			GlobalAccess: storage.Access_READ_WRITE_ACCESS,
+		},
+	}
+
+	testCasesGood := map[string]*storage.Role{
+		"valid role": {
+			Name: "new valid role",
+			ResourceToAccess: map[string]storage.Access{
+				"Policy": storage.Access_READ_ACCESS,
+			},
+		},
+	}
+
+	for desc, role := range testCasesGood {
+		t.Run(desc, func(t *testing.T) {
+			err := ValidateRole(role, false)
+			assert.NoErrorf(t, err, "role: '%+v'", role)
+		})
+	}
+
+	for desc, role := range testCasesBad {
+		t.Run(desc, func(t *testing.T) {
+			err := ValidateRole(role, false)
+			assert.Errorf(t, err, "role: '%+v'", role)
+		})
+	}
+}
+
+func constructRole(name, permissionSetID, accessScopeID string) *storage.Role {
+	return &storage.Role{
+		Name:            name,
+		PermissionSetId: permissionSetID,
+		AccessScopeId:   accessScopeID,
+	}
+}
+
 func TestValidatePermissionSet(t *testing.T) {
 	mockGoodID := permissionSetIDPrefix + "Tanis Half-Elven"
 	mockBadID := "Tanis Half-Elven"

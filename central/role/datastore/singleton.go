@@ -1,12 +1,11 @@
 package datastore
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	rolePkg "github.com/stackrox/rox/central/role"
-	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
+	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -24,7 +23,8 @@ var (
 // Singleton returns the singleton providing access to the roles store.
 func Singleton() DataStore {
 	once.Do(func() {
-		roleStorage := roleStore.New(globaldb.GetGlobalDB())
+		roleStorage, err := roleStore.New(globaldb.GetRocksDB())
+		utils.CrashOnError(err)
 		permissionSetStorage, err := permissionSetStore.New(globaldb.GetRocksDB())
 		utils.CrashOnError(err)
 		accessScopeStorage, err := simpleAccessScopeStore.New(globaldb.GetRocksDB())
@@ -34,10 +34,8 @@ func Singleton() DataStore {
 		useRolesWithPermissionSets := features.ScopedAccessControl.Enabled()
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, useRolesWithPermissionSets)
 
-		// All operations are upserts, the syntactic difference is due to the
-		// distinct underlying stores, boltdb vs rocksdb.
 		roles, permissionSets, accessScopes := getDefaultObjects()
-		utils.Must(upsertDefaultRoles(roleStorage, roles))
+		utils.Must(roleStorage.UpsertMany(roles))
 		utils.Must(permissionSetStorage.UpsertMany(permissionSets))
 		utils.Must(accessScopeStorage.UpsertMany(accessScopes))
 	})
@@ -113,20 +111,4 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 
 	}
 	return roles, permissionSets, []*storage.SimpleAccessScope{rolePkg.AccessScopeExcludeAll}
-}
-
-func upsertDefaultRoles(store roleStore.Store, roles []*storage.Role) error {
-	// The default values may already exist in the Store, but we use
-	// Add and Update in combination to "Upsert" to the latest set of
-	// permissions. If *both* fail then we have an actual problem.
-	for _, role := range roles {
-		addRoleErr := store.AddRole(role)
-		if addRoleErr != nil {
-			updateErr := store.UpdateRole(role)
-			if updateErr != nil {
-				return errors.Wrapf(updateErr, "cannot upsert predefined role %s", role.Name)
-			}
-		}
-	}
-	return nil
 }

@@ -37,7 +37,12 @@ class RoleService extends BaseService {
                     .clearResourceToAccess()
                     .setPermissionSetId(permissionSet.id).build()
         }
-        getRoleService().createRole(r)
+        getRoleService().createRole(RoleServiceOuterClass.CreateRoleRequest
+                .newBuilder()
+                .setName(r.name)
+                .setRole(r)
+                .build()
+        )
         r
     }
 

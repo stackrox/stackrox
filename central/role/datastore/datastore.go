@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -12,7 +11,7 @@ import (
 // DataStore is the datastore for roles.
 //go:generate mockgen-wrapper
 type DataStore interface {
-	GetRole(ctx context.Context, name string) (*storage.Role, error)
+	GetRole(ctx context.Context, name string) (*storage.Role, bool, error)
 	GetAllRoles(ctx context.Context) ([]*storage.Role, error)
 	AddRole(ctx context.Context, role *storage.Role) error
 	UpdateRole(ctx context.Context, role *storage.Role) error
@@ -34,7 +33,7 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance.
-func New(roleStorage roleStore.Store, permissionSetStore rocksDBStore.PermissionSetStore, accessScopeStore rocksDBStore.SimpleAccessScopeStore, useRolesWithPermissionSets bool) DataStore {
+func New(roleStorage rocksDBStore.RoleStore, permissionSetStore rocksDBStore.PermissionSetStore, accessScopeStore rocksDBStore.SimpleAccessScopeStore, useRolesWithPermissionSets bool) DataStore {
 	return &dataStoreImpl{
 		roleStorage:                roleStorage,
 		permissionSetStorage:       permissionSetStore,

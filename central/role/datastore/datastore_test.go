@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/role"
-	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
+	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -75,7 +75,8 @@ func (s *roleDataStoreTestSuite) initDataStore(useRolesWithPermissionSets bool) 
 	s.Require().NoError(err)
 	s.rocksie = rocksdbtest.RocksDBForT(s.T())
 
-	roleStorage := roleStore.New(s.boltDB)
+	roleStorage, err := roleStore.New(s.rocksie)
+	s.Require().NoError(err)
 	permissionSetStorage, err := permissionSetStore.New(s.rocksie)
 	s.Require().NoError(err)
 	scopeStorage, err := simpleAccessScopeStore.New(s.rocksie)
@@ -90,13 +91,13 @@ func (s *roleDataStoreTestSuite) initDataStore(useRolesWithPermissionSets bool) 
 		s.existingScope = getValidAccessScope("scope.existing", "existing scope")
 		s.Require().NoError(scopeStorage.Upsert(s.existingScope))
 		s.existingRole = getValidRole("existing role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
-		s.Require().NoError(roleStorage.AddRole(s.existingRole))
+		s.Require().NoError(roleStorage.Upsert(s.existingRole))
 	} else {
 		s.existingRole = getValidRole("existing role", "", "")
 		s.existingRole.ResourceToAccess = map[string]storage.Access{
 			"Policy": storage.Access_READ_ACCESS,
 		}
-		s.Require().NoError(roleStorage.AddRole(s.existingRole))
+		s.Require().NoError(roleStorage.Upsert(s.existingRole))
 	}
 }
 
@@ -136,12 +137,14 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 	goodRole := getValidRole("new valid role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
 	badRole := getInvalidRole("new invalid role")
 
-	role, err := s.dataStore.GetRole(s.hasNoneCtx, s.existingRole.GetName())
+	role, found, err := s.dataStore.GetRole(s.hasNoneCtx, s.existingRole.GetName())
 	s.NoError(err, "no access for Get*() is not an error")
+	s.False(found, "not found")
 	s.Nil(role)
 
-	role, err = s.dataStore.GetRole(s.hasNoneCtx, goodRole.GetName())
+	role, found, err = s.dataStore.GetRole(s.hasNoneCtx, goodRole.GetName())
 	s.NoError(err, "no error even if the object does not exist")
+	s.False(found, "not found")
 	s.Nil(role)
 
 	roles, err := s.dataStore.GetAllRoles(s.hasNoneCtx)
@@ -174,6 +177,65 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 
 	err = s.dataStore.RemoveRole(s.hasReadCtx, goodRole.GetName())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
+}
+
+func (s *roleDataStoreTestSuite) TestRoleReadOperations() {
+	role, found, err := s.dataStore.GetRole(s.hasReadCtx, "non-existing role")
+	s.NoError(err, "not found for Get*() is not an error")
+	s.False(found)
+	s.Nil(role)
+
+	role, found, err = s.dataStore.GetRole(s.hasReadCtx, s.existingRole.GetName())
+	s.NoError(err)
+	s.True(found)
+	s.Equal(s.existingRole, role, "with READ access existing object is returned")
+
+	roles, err := s.dataStore.GetAllRoles(s.hasReadCtx)
+	s.NoError(err)
+	s.Len(roles, 1, "with READ access all objects are returned")
+}
+
+func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
+	goodRole := getValidRole("valid role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
+	badRole := &storage.Role{Name: "invalid role"}
+	cloneRole := getValidRole(s.existingRole.GetName(), s.existingPermissionSet.GetId(), s.existingScope.GetId())
+	updatedAdminRole := getValidRole(role.Admin, s.existingPermissionSet.GetId(), s.existingScope.GetId())
+
+	err := s.dataStore.AddRole(s.hasWriteCtx, badRole)
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid role for Add*() yields an error")
+
+	err = s.dataStore.AddRole(s.hasWriteCtx, cloneRole)
+	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "adding role with an existing name yields an error")
+
+	err = s.dataStore.UpdateRole(s.hasWriteCtx, goodRole)
+	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing role yields an error")
+
+	err = s.dataStore.UpdateRole(s.hasWriteCtx, updatedAdminRole)
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "updating a default role yields an error")
+
+	err = s.dataStore.RemoveRole(s.hasWriteCtx, goodRole.GetName())
+	s.ErrorIs(err, errorhelpers.ErrNotFound, "removing non-existing role yields an error")
+
+	err = s.dataStore.AddRole(s.hasWriteCtx, goodRole)
+	s.NoError(err)
+
+	roles, _ := s.dataStore.GetAllRoles(s.hasReadCtx)
+	s.Len(roles, 2, "added roles should be visible in the subsequent Get*()")
+
+	err = s.dataStore.UpdateRole(s.hasWriteCtx, badRole)
+	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid role for Update*() yields an error")
+
+	err = s.dataStore.UpdateRole(s.hasWriteCtx, goodRole)
+	s.NoError(err)
+
+	err = s.dataStore.RemoveRole(s.hasWriteCtx, goodRole.GetName())
+	s.NoError(err)
+
+	roles, _ = s.dataStore.GetAllRoles(s.hasReadCtx)
+	s.Len(roles, 1, "removed role should be absent in the subsequent Get*()")
+
+	err = s.dataStore.AddRole(s.hasWriteCtx, goodRole)
+	s.NoError(err, "adding a role with name that used to exist is not an error")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -525,63 +587,4 @@ func (s *roleDataStoreTestSuite) TestGetAndResolveRoleOldFormat() {
 	s.NoError(err)
 	s.Equal(s.existingRole.GetName(), resolvedRole.GetRoleName())
 	s.Equal(s.existingRole.GetResourceToAccess(), resolvedRole.GetPermissions())
-}
-
-func (s *roleDataStoreTestSuite) TestValidateRoleNewFormat() {
-	err := s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{})
-	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "name field must be set")
-
-	err = s.dataStore.AddRole(s.hasWriteCtx, &storage.Role{
-		Name: "name",
-		ResourceToAccess: map[string]storage.Access{
-			"Policy": storage.Access_READ_ACCESS,
-		},
-	})
-	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "role must not have resourceToAccess field set")
-
-	noPermsRole := getValidRole("role with no permission set", "", "")
-	err = s.dataStore.AddRole(s.hasWriteCtx, noPermsRole)
-	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "role must reference an existing permission set")
-
-	updatedAdminRole := getValidRole(role.Admin, s.existingPermissionSet.GetId(), "")
-	err = s.dataStore.UpdateRole(s.hasWriteCtx, updatedAdminRole)
-	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "updating a default role yields an error")
-
-	noScopeRole := getValidRole("role with no access scope", s.existingPermissionSet.GetId(), "")
-	err = s.dataStore.AddRole(s.hasWriteCtx, noScopeRole)
-	s.NoError(err, "empty access scope reference is allowed")
-
-	goodRole := getValidRole("new valid role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
-	err = s.dataStore.AddRole(s.hasWriteCtx, goodRole)
-	s.NoError(err)
-}
-
-func (s *roleDataStoreTestSuite) TestValidateRoleOldFormat() {
-	s.reInitDataStore(false)
-
-	roleWithPermSet := getValidRole("role with permission set", "some permissionset", "")
-	err := s.dataStore.AddRole(s.hasWriteCtx, roleWithPermSet)
-	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "permission sets are not supported in the old role format")
-
-	roleWithScope := getValidRole("role with scope", "", "some accessscope")
-	err = s.dataStore.AddRole(s.hasWriteCtx, roleWithScope)
-	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "access scope are not supported in the old role format")
-
-	roleWithInvalidResource := &storage.Role{
-		Name: "name",
-		ResourceToAccess: map[string]storage.Access{
-			"EndlessSummer": storage.Access_READ_WRITE_ACCESS,
-		},
-	}
-	err = s.dataStore.AddRole(s.hasWriteCtx, roleWithInvalidResource)
-	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "non-existing resources are not supported")
-
-	goodRole := &storage.Role{
-		Name: "new valid role",
-		ResourceToAccess: map[string]storage.Access{
-			"Policy": storage.Access_READ_ACCESS,
-		},
-	}
-	err = s.dataStore.AddRole(s.hasWriteCtx, goodRole)
-	s.NoError(err)
 }

@@ -36,12 +36,13 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // GetRole mocks base method
-func (m *MockDataStore) GetRole(ctx context.Context, name string) (*storage.Role, error) {
+func (m *MockDataStore) GetRole(ctx context.Context, name string) (*storage.Role, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRole", ctx, name)
 	ret0, _ := ret[0].(*storage.Role)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetRole indicates an expected call of GetRole

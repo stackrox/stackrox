@@ -59,6 +59,10 @@ func ValidateRole(role *storage.Role, permissionSetRequired bool) error {
 		err := errors.New("role name field must be set")
 		multiErr = multierror.Append(multiErr, err)
 	}
+	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
+		err := errors.Errorf("role name=%q: globalAccess should not be set, but is set to %s", role.GetName(), role.GetGlobalAccess())
+		multiErr = multierror.Append(multiErr, err)
+	}
 
 	if permissionSetRequired {
 		if len(role.GetResourceToAccess()) != 0 {

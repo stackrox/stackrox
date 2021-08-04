@@ -23,5 +23,10 @@ _ "github.com/stackrox/rox/migrator/migrations/m_{currentDBVersion}_to_m_{curren
 6. Create all necessary testing data via central UI and REST endpoints
 7. Checkout **at the same commit** your PR currently pointing to
 8. `kubectl -n stackrox set image deploy/central central=stackrox/main:$(make tag)`
-9. Re-run `./scripts/k8s/local-port-forward.sh`
-10. Verify that migration worked correctly
+9. You can ensure migration script was executed by looking into Central logs. You should see next log messages:
+```bigquery
+Migrator: <timestamp> log.go:18: Info: Found DB at version <currentDBVersion>, which is less than what we expect (<currentDBVersion+1>). Running migrations...
+Migrator: <timestamp> log.go:18: Info: Successfully updated DB from version <currentDBVersion> to <currentDBVersion+1>
+```   
+10. Re-run `./scripts/k8s/local-port-forward.sh`
+11. Verify that migration worked correctly

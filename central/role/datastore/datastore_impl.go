@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	rolePkg "github.com/stackrox/rox/central/role"
-	roleStore "github.com/stackrox/rox/central/role/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,7 +22,7 @@ var (
 )
 
 type dataStoreImpl struct {
-	roleStorage                roleStore.Store
+	roleStorage                rocksDBStore.RoleStore
 	permissionSetStorage       rocksDBStore.PermissionSetStore
 	accessScopeStorage         rocksDBStore.SimpleAccessScopeStore
 	useRolesWithPermissionSets bool
@@ -31,12 +30,12 @@ type dataStoreImpl struct {
 	lock sync.RWMutex
 }
 
-func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Role, error) {
+func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Role, bool, error) {
 	if ok, err := roleSAC.ReadAllowed(ctx); !ok || err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return ds.roleStorage.GetRole(name)
+	return ds.roleStorage.Get(name)
 }
 
 func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {
@@ -44,7 +43,20 @@ func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, erro
 		return nil, err
 	}
 
-	return ds.roleStorage.GetAllRoles()
+	return ds.getAllRolesNoScopeCheck()
+}
+
+func (ds *dataStoreImpl) getAllRolesNoScopeCheck() ([]*storage.Role, error) {
+	var roles []*storage.Role
+	err := ds.roleStorage.Walk(func(role *storage.Role) error {
+		roles = append(roles, role)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return roles, nil
 }
 
 func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error {
@@ -62,11 +74,15 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
+	// Verify storage constraints.
+	if err := ds.verifyRoleNameDoesNotExist(role.GetName()); err != nil {
+		return err
+	}
 	if err := ds.verifyRoleReferencesExist(role); err != nil {
 		return err
 	}
 
-	return ds.roleStorage.AddRole(role)
+	return ds.roleStorage.Upsert(role)
 }
 
 func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) error {
@@ -84,11 +100,15 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
+	// Verify storage constraints.
+	if err := ds.verifyRoleNameExists(role.GetName()); err != nil {
+		return err
+	}
 	if err := ds.verifyRoleReferencesExist(role); err != nil {
 		return err
 	}
 
-	return ds.roleStorage.UpdateRole(role)
+	return ds.roleStorage.Upsert(role)
 }
 
 func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
@@ -98,8 +118,12 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 	if err := verifyNotDefaultRole(name); err != nil {
 		return err
 	}
+	// Verify storage constraints.
+	if err := ds.verifyRoleNameExists(name); err != nil {
+		return err
+	}
 
-	return ds.roleStorage.RemoveRole(name)
+	return ds.roleStorage.Delete(name)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -207,7 +231,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 	}
 
 	// Ensure this PermissionSet isn't in use by any Role.
-	roles, err := ds.roleStorage.GetAllRoles()
+	roles, err := ds.getAllRolesNoScopeCheck()
 	if err != nil {
 		return err
 	}
@@ -331,7 +355,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	}
 
 	// Ensure this AccessScope isn't in use by any Role.
-	roles, err := ds.roleStorage.GetAllRoles()
+	roles, err := ds.getAllRolesNoScopeCheck()
 	if err != nil {
 		return err
 	}
@@ -358,8 +382,8 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 	defer ds.lock.RUnlock()
 
 	// No need to continue if the role does not exist.
-	role, err := ds.roleStorage.GetRole(name)
-	if err != nil || role == nil {
+	role, found, err := ds.roleStorage.Get(name)
+	if err != nil || !found {
 		return nil, err
 	}
 
@@ -475,6 +499,32 @@ func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(id string) error {
 	}
 	if found {
 		return errors.Wrapf(errorhelpers.ErrAlreadyExists, "id = %s", id)
+	}
+	return nil
+}
+
+// Returns errorhelpers.ErrAlreadyExists if there is a role with the same name.
+func (ds *dataStoreImpl) verifyRoleNameDoesNotExist(name string) error {
+	_, found, err := ds.roleStorage.Get(name)
+
+	if err != nil {
+		return err
+	}
+	if found {
+		return errors.Wrapf(errorhelpers.ErrAlreadyExists, "name = %q", name)
+	}
+	return nil
+}
+
+// Returns errorhelpers.ErrNotFound if there is no role with the supplied name.
+func (ds *dataStoreImpl) verifyRoleNameExists(name string) error {
+	_, found, err := ds.roleStorage.Get(name)
+
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.Wrapf(errorhelpers.ErrNotFound, "name = %q", name)
 	}
 	return nil
 }

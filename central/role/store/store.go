@@ -21,3 +21,13 @@ type SimpleAccessScopeStore interface {
 	Delete(id string) error
 	Walk(fn func(obj *storage.SimpleAccessScope) error) error
 }
+
+// RoleStore provides storage functionality for roles.
+//go:generate mockgen-wrapper
+type RoleStore interface {
+	Count() (int, error)
+	Get(id string) (*storage.Role, bool, error)
+	Upsert(obj *storage.Role) error
+	Delete(id string) error
+	Walk(fn func(obj *storage.Role) error) error
+}

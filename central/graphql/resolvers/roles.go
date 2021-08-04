@@ -45,8 +45,8 @@ func (resolver *Resolver) Role(ctx context.Context, args struct{ *graphql.ID }) 
 		return nil, err
 	}
 
-	role, err := resolver.RoleDataStore.GetRole(ctx, string(*args.ID))
-	return resolver.wrapRole(role, role != nil, err)
+	role, found, err := resolver.RoleDataStore.GetRole(ctx, string(*args.ID))
+	return resolver.wrapRole(role, found, err)
 }
 
 // MyPermissions returns a GraphQL resolver for the role of the current authenticated user. Only supplies permissions.
