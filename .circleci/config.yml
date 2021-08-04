@@ -2281,7 +2281,9 @@ jobs:
           destination: policies-diff
 
   integration-unit-tests:
-    executor: custom
+    executor:
+      name: custom
+      resource_class: large
     steps:
       - checkout
       - *restoreGoModCache
