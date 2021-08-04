@@ -14,6 +14,10 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
+const (
+	batchSize = 1000
+)
+
 var (
 	k8sRolesSAC = sac.ForResource(resources.K8sRole)
 )
@@ -30,8 +34,16 @@ func (d *datastoreImpl) buildIndex() error {
 	log.Info("[STARTUP] Indexing roles")
 
 	var roles []*storage.K8SRole
+	var count int
 	err := d.storage.Walk(func(role *storage.K8SRole) error {
 		roles = append(roles, role)
+		if len(roles) == batchSize {
+			if err := d.indexer.AddK8SRoles(roles); err != nil {
+				return err
+			}
+			roles = roles[:0]
+		}
+		count++
 		return nil
 	})
 	if err != nil {
@@ -40,7 +52,7 @@ func (d *datastoreImpl) buildIndex() error {
 	if err := d.indexer.AddK8SRoles(roles); err != nil {
 		return err
 	}
-	log.Info("[STARTUP] Successfully indexed roles")
+	log.Infof("[STARTUP] Successfully indexed %d roles", count)
 	return nil
 }
 

@@ -13,6 +13,10 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
+const (
+	batchSize = 1000
+)
+
 var (
 	serviceAccountsSAC = sac.ForResource(resources.ServiceAccount)
 )
@@ -24,10 +28,18 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) buildIndex() error {
-	log.Info("[STARTUP] Indexing process baselines")
+	log.Info("[STARTUP] Indexing service accounts")
 	var serviceAccounts []*storage.ServiceAccount
+	var count int
 	err := d.storage.Walk(func(sa *storage.ServiceAccount) error {
 		serviceAccounts = append(serviceAccounts, sa)
+		if len(serviceAccounts) == batchSize {
+			if err := d.indexer.AddServiceAccounts(serviceAccounts); err != nil {
+				return err
+			}
+			serviceAccounts = serviceAccounts[:0]
+		}
+		count++
 		return nil
 	})
 	if err != nil {
@@ -36,7 +48,8 @@ func (d *datastoreImpl) buildIndex() error {
 	if err := d.indexer.AddServiceAccounts(serviceAccounts); err != nil {
 		return err
 	}
-	log.Info("[STARTUP] Successfully indexed service accounts")
+
+	log.Infof("[STARTUP] Successfully indexed %d service accounts", count)
 	return nil
 }
 

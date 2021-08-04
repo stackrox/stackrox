@@ -883,6 +883,7 @@ commands:
             cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
 
             REPO=cgorman1
+            cci-export MONITORING_IMAGE "quay.io/$REPO/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
             cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
             cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
             cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"

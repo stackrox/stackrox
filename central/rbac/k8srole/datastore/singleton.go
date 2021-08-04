@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -20,10 +19,9 @@ var (
 )
 
 func initialize() {
-	storage, err := rocksdb.New(globaldb.GetRocksDB())
-	utils.CrashOnError(err)
-
+	storage := rocksdb.New(globaldb.GetRocksDB())
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
+	var err error
 	ad, err = New(storage, indexer, search.New(storage, indexer))
 	if err != nil {
 		log.Panicf("Failed to initialize k8s role datastore: %s", err)
