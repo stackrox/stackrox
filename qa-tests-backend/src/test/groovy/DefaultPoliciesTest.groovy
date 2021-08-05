@@ -231,9 +231,9 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    def "Verify that StackRox services don't trigger alerts"() {
+    def "Notifier for StackRox images with fixable vulns"() {
         when:
-        "Test are running against a 'nightly' CI build"
+        "Running against a 'nightly' CI build"
         Assume.assumeTrue(Env.CI_TAG != null && Env.CI_TAG.contains("nightly"))
 
         then:
@@ -241,60 +241,80 @@ class DefaultPoliciesTest extends BaseSpecification {
         def violations = AlertService.getViolations(
                 ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,Violation State:*").build()
         )
+        println "${violations.size()} violation(s) were found in the stackrox namespace"
         def unexpectedViolations = violations.findAll {
             def deploymentName = it.deployment.name
             def policyName = it.policy.name
             !Constants.VIOLATIONS_ALLOWLIST.containsKey(deploymentName) ||
                     !Constants.VIOLATIONS_ALLOWLIST.get(deploymentName).contains(policyName)
         }
-        if (!unexpectedViolations.isEmpty()) {
-            String slackPayload = ":rotating_light: " +
-                    "Fixable Vulnerabilities found in StackRox Images (build tag: ${Env.CI_TAG})! " +
-                    ":rotating_light:"
+        println "${unexpectedViolations.size()} violation(s) were not expected"
+        if (unexpectedViolations.isEmpty()) {
+            return
+        }
 
-            Map<String, Set<String>> deploymentPolicyMap = [:]
-            Map<String, Set<String>> imageVulnMap = [:]
-            unexpectedViolations.each {
-                if (!deploymentPolicyMap.containsKey(it.deployment.name)) {
-                    deploymentPolicyMap.put(it.deployment.name, [] as Set)
-                }
-                deploymentPolicyMap.get(it.deployment.name).add(it.policy.name)
+        String slackPayload = ":rotating_light: " +
+                "Fixable Vulnerabilities found in StackRox Images (build tag: ${Env.CI_TAG})! " +
+                ":rotating_light:"
 
-                DeploymentOuterClass.Deployment dep = DeploymentService.getDeployment(it.deployment.id)
-                dep.containersList.each {
-                    ImageOuterClass.Image image = ImageService.getImage(it.image.id)
-                    Set<String> fixables = []
-                    image.scan.componentsList*.vulnsList*.each {
-                        if (it.fixedBy != null && it.fixedBy != "") {
-                            fixables.add(it.cve)
-                        }
-                    }
-                    if (!fixables.isEmpty()) {
-                        imageVulnMap.containsKey(image.name.fullName) ?
-                                imageVulnMap.get(image.name.fullName).addAll(fixables) :
-                                imageVulnMap.putIfAbsent(image.name.fullName, fixables)
-                    }
-                }
+        Map<String, Set<String>> deploymentPolicyMap = [:]
+        Map<String, Set<String>> imageFixableVulnMap = [:]
+        Boolean hadGetErrors = false
+        unexpectedViolations.each {
+            if (!deploymentPolicyMap.containsKey(it.deployment.name)) {
+                deploymentPolicyMap.put(it.deployment.name, [] as Set)
             }
-            if (!imageVulnMap.isEmpty()) {
-                if (!deploymentPolicyMap.isEmpty()) {
-                    slackPayload += "\nDeployments and violated policies: "
-                    deploymentPolicyMap.each { k, v ->
-                        slackPayload += "${k}: ${v}  "
+            deploymentPolicyMap.get(it.deployment.name).add(it.policy.name)
+
+            DeploymentOuterClass.Deployment dep
+            try {
+                dep = DeploymentService.getDeployment(it.deployment.id)
+            }
+            catch (Exception e) {
+                hadGetErrors = true
+                println "Could not get the deployment with id ${it.deployment.id}, name ${it.deployment.name}: ${e}"
+                return it
+            }
+
+            dep.containersList.each {
+                ImageOuterClass.Image image = ImageService.getImage(it.image.id)
+                Set<String> fixables = []
+                image.scan.componentsList*.vulnsList*.each {
+                    if (it.fixedBy != null && it.fixedBy != "") {
+                        fixables.add(it.cve)
                     }
                 }
-                imageVulnMap.each { k, v ->
-                    slackPayload += "\n${k}: ${v}"
-                }
-                SlackUtil.sendMessage(slackPayload)
-
-                imageVulnMap.keySet().collect().each { imageFullName ->
-                    Helpers.collectImageScanForDebug(
-                            imageFullName, imageFullName.replaceAll("\\W", "-")+".json"
-                    )
+                if (!fixables.isEmpty()) {
+                    imageFixableVulnMap.containsKey(image.name.fullName) ?
+                            imageFixableVulnMap.get(image.name.fullName).addAll(fixables) :
+                            imageFixableVulnMap.putIfAbsent(image.name.fullName, fixables)
                 }
             }
         }
+        if (imageFixableVulnMap.isEmpty()) {
+            assert !hadGetErrors
+            println "There are no fixable vulns to report"
+            return
+        }
+
+        if (!deploymentPolicyMap.isEmpty()) {
+            slackPayload += "\nDeployments and violated policies: "
+            deploymentPolicyMap.each { k, v ->
+                slackPayload += "${k}: ${v}  "
+            }
+        }
+        imageFixableVulnMap.each { k, v ->
+            slackPayload += "\n${k}: ${v}"
+        }
+        SlackUtil.sendMessage(slackPayload)
+
+        imageFixableVulnMap.keySet().collect().each { imageFullName ->
+            Helpers.collectImageScanForDebug(
+                    imageFullName, imageFullName.replaceAll("\\W", "-")+".json"
+            )
+        }
+
+        assert !hadGetErrors
     }
 
     @Unroll

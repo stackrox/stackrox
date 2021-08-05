@@ -218,6 +218,10 @@ class BaseSpecification extends Specification {
                                         .build()
                         ).build()
         )
+        if (!coreImageIntegrationId) {
+            println "WARNING: Could not create the core image integration."
+            println "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
+        }
     }
 
     def resetAuth() {
