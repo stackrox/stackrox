@@ -30,6 +30,13 @@ body {
     width: var(--pf-c-check__input--Height);
 }
 
+.pf-c-form-control {
+    border-top-color: var(--pf-global--BorderColor--300);
+    border-right-color: var(--pf-global--BorderColor--300);
+    border-bottom-color: var(--pf-global--BorderColor--200);
+    border-left-color: var(--pf-global--BorderColor--300);
+}
+
 .pf-c-select__toggle::before {
     position: absolute;
     top: 0;
