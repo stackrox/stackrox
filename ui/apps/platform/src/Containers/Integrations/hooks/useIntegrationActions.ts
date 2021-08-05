@@ -8,6 +8,7 @@ import {
 } from 'services/IntegrationsService';
 import { IntegrationSource, IntegrationType } from 'Containers/Integrations/utils/integrationUtils';
 import { generateAPIToken } from 'services/APITokensService';
+import { generateClusterInitBundle } from 'services/ClustersService';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
 
@@ -44,6 +45,8 @@ function useIntegrationActions(): UseIntegrationActionsResult {
                 responseData = await saveIntegrationV2(source, data);
             } else if (type === 'apitoken') {
                 responseData = await generateAPIToken(data);
+            } else if (type === 'clusterInitBundle') {
+                responseData = await generateClusterInitBundle(data);
             } else {
                 responseData = await createIntegration(source, data);
             }
