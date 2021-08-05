@@ -19,7 +19,7 @@ updates:
       - "ci-no-upgrade-tests"
       - "dependencies"
     reviewers:
-      - "stackrox/ui-dep-reviewers"
+      - "stackrox/ui-dep-updaters"
 
 
   - package-ecosystem: 'gradle'
@@ -33,7 +33,7 @@ updates:
       - "ci-no-ui-tests"
       - "dependencies"
     reviewers:
-      - "stackrox/backend-dep-reviewers"
+      - "stackrox/backend-dep-updaters"
 
   - package-ecosystem: 'gomod'
     directory: '/'
@@ -42,4 +42,4 @@ updates:
       day: 'wednesday'
     open-pull-requests-limit: 10
     reviewers:
-      - "stackrox/backend-dep-reviewers"
+      - "stackrox/backend-dep-updaters"
