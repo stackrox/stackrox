@@ -1,5 +1,5 @@
 plugins {
-    id "com.google.protobuf" version "0.8.8"
+    id "com.google.protobuf" version "0.8.17"
     id "groovy"
     id "codenarc"
 }
@@ -49,56 +49,56 @@ sourceSets.each { ss ->
 
 dependencies {
     // grpc and protobuf
-    compile 'com.google.code.gson:gson:2.7'
-    compile "com.google.api.grpc:proto-google-common-protos:1.0.0"
-    compile "io.grpc:grpc-alts:${grpcVersion}"
-    compile "io.grpc:grpc-netty:${grpcVersion}"
-    compile "io.grpc:grpc-protobuf:${grpcVersion}"
-    compile "io.grpc:grpc-stub:${grpcVersion}"
-    compile "io.grpc:grpc-auth:${grpcVersion}"
-    compile "com.google.protobuf:protobuf-java-util:${protobufVersion}"
-    compile "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
+    implementation 'com.google.code.gson:gson:2.7'
+    implementation "com.google.api.grpc:proto-google-common-protos:1.0.0"
+    implementation "io.grpc:grpc-alts:${grpcVersion}"
+    implementation "io.grpc:grpc-netty:${grpcVersion}"
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation "io.grpc:grpc-auth:${grpcVersion}"
+    implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
+    implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
     // Use the latest Groovy version for building this library
-    compile 'org.codehaus.groovy:groovy-all:2.4.18'
-    testCompile group: 'junit', name: 'junit', version: '4.11'
-    testCompile group: 'org.yaml', name: 'snakeyaml', version: '1.29'
-    compile group: 'com.jayway.restassured', name: 'rest-assured', version: '2.4.1'
-    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-    testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.6.1'
-    testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.3'
-    testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.1'
-    testCompile( 'com.athaydes:spock-reports:1.4.0' ) {
+    implementation 'org.codehaus.groovy:groovy-all:2.4.18'
+    testImplementation group: 'junit', name: 'junit', version: '4.11'
+    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '1.29'
+    implementation group: 'com.jayway.restassured', name: 'rest-assured', version: '2.4.1'
+    testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.6.1'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.3'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.1'
+    testImplementation( 'com.athaydes:spock-reports:1.4.0' ) {
         transitive = false
     }
-    compile group: 'com.google.protobuf', name: 'protobuf-java', version: "${protobufVersion}"
-    compile group: 'com.google.protobuf', name: 'protobuf-java-util', version: "${protobufVersion}"
+    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: "${protobufVersion}"
+    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: "${protobufVersion}"
 
     // Use the Kubernetes API
-    compile 'io.fabric8:kubernetes-client:4.13.0'
-    compile 'io.fabric8:openshift-client:4.13.0'
+    implementation 'io.fabric8:kubernetes-client:4.13.0'
+    implementation 'io.fabric8:openshift-client:4.13.0'
 
-    compile 'io.kubernetes:client-java:2.0.0-beta1'
+    implementation 'io.kubernetes:client-java:2.0.0-beta1'
 
-    compile group: 'com.github.docker-java', name: 'docker-java', version: '3.1.0-rc-3'
+    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.1.0-rc-3'
 
-    compile group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.4'
+    implementation group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.4'
 
-    compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+    implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
 
-    compile 'com.google.api.grpc:googleapis-common-protos:0.0.3'
+    implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
-    compile group: 'com.opencsv', name: 'opencsv', version: '4.0'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '4.0'
 
-    testCompile group: 'com.google.code.gson', name: 'gson', version: '2.7'
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
+    testImplementation group: 'com.google.code.gson', name: 'gson', version: '2.7'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.2'
 
     //JavaMail for mail verifications
-    compile group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
+    implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
 
     //Slack API
-    compile group: 'com.slack.api', name: 'slack-api-client', version: '1.9.0'
+    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.9.0'
 
     // JAX-B dependencies for JDK 9+
     implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
@@ -111,7 +111,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.10")
     }
 
-    compile 'org.javers:javers-core:6.0.1'
+    implementation 'org.javers:javers-core:6.0.1'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 }
 

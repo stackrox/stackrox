@@ -72,7 +72,7 @@ class AnchoreScannerIntegration implements ImageIntegration {
                 name: "anchore",
                 endpoint: Env.get("ANCHORE_ENDPOINT", ""),
                 username: Env.get("ANCHORE_USERNAME", ""),
-                password: Env.get("ANCHORE_PASSWORD", "")
+                password: Env.get("ANCHORE_PASSWORD", ""),
         ]
         Map args = defaultArgs + customArgs
 

@@ -271,7 +271,7 @@ class UpgradesTest extends BaseSpecification {
                 builder.clearExclusions().addAllExclusions(
                         // exclusionList is immutable, but .sort sees it's a list and assumes it's mutable
                         // so force it not mutate otherwise this will throw
-                        policy.exclusionsList.sort(false) { it.name}
+                        policy.exclusionsList.sort(false) { it.name }
                 )
             }
             builder.build()
@@ -281,7 +281,7 @@ class UpgradesTest extends BaseSpecification {
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
             if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
                 builder.clearExclusions().addAllExclusions(
-                        policy.exclusionsList.sort(false) { it.name}
+                        policy.exclusionsList.sort(false) { it.name }
                 )
             }
             [id, builder.build()]

@@ -95,7 +95,7 @@ class ImageScanningTest extends BaseSpecification {
                     namespace: Constants.ORCHESTRATOR_NAMESPACE,
                     username: "stackroxci",
                     password: Env.mustGet("AZURE_REGISTRY_PASSWORD"),
-                    server: "https://stackroxci.azurecr.io")
+                    server: "https://stackroxci.azurecr.io"),
     ]
 
     @Shared

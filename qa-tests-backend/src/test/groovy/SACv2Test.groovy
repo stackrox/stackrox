@@ -63,7 +63,7 @@ class SACv2Test extends SACTest {
                         "remote", "kube-system").id, ["Deployment": READ_ACCESS, "Image": READ_ACCESS]), noaccess],
                 "aggregatedToken"                 : [createRole(remoteQaTest2.id, ["Deployment": READ_ACCESS]),
                                                      createRole(remoteQaTest1.id, ["Deployment": NO_ACCESS]),
-                                                     noaccess]
+                                                     noaccess],
         ]
     }
 

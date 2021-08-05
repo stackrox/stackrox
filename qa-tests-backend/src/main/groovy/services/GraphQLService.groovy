@@ -2,8 +2,6 @@ package services
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
-import java.net.HttpClients
-import java.net.SSLContext
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
 import org.apache.http.HttpResponse

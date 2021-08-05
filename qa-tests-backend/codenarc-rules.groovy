@@ -175,8 +175,10 @@ ruleset {
     // ClassJavadoc
     // ClosureStatementOnOpeningLineOfMultipleLineClosure
     ConsecutiveBlankLines 
-    FileEndsWithoutNewline 
-    Indentation 
+    FileEndsWithoutNewline
+    //TODO(ROX-7771): Re-enable indentation checks and fix indentation
+    //Indentation
+
     LineLength 
     MissingBlankLineAfterImports 
     MissingBlankLineAfterPackage 
