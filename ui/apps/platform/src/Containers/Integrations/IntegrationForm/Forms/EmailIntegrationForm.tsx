@@ -1,13 +1,5 @@
 import React, { ReactElement } from 'react';
-import {
-    Checkbox,
-    Form,
-    PageSection,
-    Popover,
-    SelectOption,
-    TextInput,
-} from '@patternfly/react-core';
-import { HelpIcon } from '@patternfly/react-icons';
+import { Checkbox, Form, PageSection, SelectOption, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import SelectSingle from 'Components/SelectSingle';
@@ -20,6 +12,7 @@ import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
 import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
+import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
 export type EmailIntegration = {
     id?: string;
@@ -263,32 +256,7 @@ function EmailIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Annotation key for recipient"
-                        labelIcon={
-                            <Popover
-                                showClose={false}
-                                bodyContent={
-                                    <div>
-                                        Using an annotation key, you can define an audience to
-                                        notify about policy violations associated with any given
-                                        deployment or namespace. If the deployment has the
-                                        annotation, its value overrides the default; otherwise, if
-                                        the namespace has the annotation, its value overrides the
-                                        default.
-                                    </div>
-                                }
-                            >
-                                <button
-                                    type="button"
-                                    aria-label="More info for annotation field"
-                                    // eslint-disable-next-line react/jsx-no-bind
-                                    onClick={(e) => e.preventDefault()}
-                                    aria-describedby="simple-form-name-01"
-                                    className="pf-c-form__group-label-help"
-                                >
-                                    <HelpIcon noVerticalAlign />
-                                </button>
-                            </Popover>
-                        }
+                        labelIcon={<AnnotationKeyLabelIcon />}
                         fieldId="labelKey"
                         touched={touched}
                         errors={errors}

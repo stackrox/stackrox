@@ -11,6 +11,7 @@ import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
 import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
+import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
 export type TeamsIntegration = {
     id?: string;
@@ -107,16 +108,14 @@ function TeamsIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Label/Annotation Key For Teams Webhook"
-                        isRequired
+                        label="Annotation key for recipient"
+                        labelIcon={<AnnotationKeyLabelIcon />}
                         fieldId="labelKey"
                         errors={errors}
                     >
                         <TextInput
-                            isRequired
                             type="text"
                             id="labelKey"
-                            name="labelKey"
                             value={values.labelKey}
                             onChange={onChange}
                             isDisabled={!isEditable}
