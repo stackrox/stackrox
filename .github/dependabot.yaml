@@ -11,10 +11,35 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     # always update package.json files to match new version for any package in UI monorepo
-    versioning-strategy: increase  
+    versioning-strategy: increase
+    open-pull-requests-limit: 10
+    labels:
+      - "ci-no-api-tests"
+      - "ci-no-qa-tests"
+      - "ci-no-upgrade-tests"
+      - "dependencies"
+    reviewers:
+      - "stackrox/ui-dep-reviewers"
+
+
+  - package-ecosystem: 'gradle'
+    directory: 'qa-tests-backend/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 10
+    labels:
+      - "ci-no-api-tests"
+      - "ci-no-ui-tests"
+      - "dependencies"
+    reviewers:
+      - "stackrox/backend-dep-reviewers"
+
+  - package-ecosystem: 'gomod'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
     open-pull-requests-limit: 10
     reviewers:
-      - 'alwayshooin'
-      - 'pedrottimark'
-      - 'sachaudh'
-      - 'vjwilson'
+      - "stackrox/backend-dep-reviewers"
