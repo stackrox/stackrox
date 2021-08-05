@@ -255,7 +255,7 @@ spec:
   installPlanApproval: Automatic' | kubectl -n index-test apply -f -
 
 kubectl -n index-test patch clusterserviceversions.operators.coreos.com rhacs-operator.v$(make --quiet tag) --type json -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "my-opm-image-pull-secrets"}] } ]'
-
+# force reconciliation of above patch command:
 kubectl -n index-test delete deployments.apps rhacs-operator-controller-manager
 
 # undeploy
