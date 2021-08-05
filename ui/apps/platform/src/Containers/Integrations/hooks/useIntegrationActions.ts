@@ -7,12 +7,14 @@ import {
     testIntegrationV2,
 } from 'services/IntegrationsService';
 import { IntegrationSource, IntegrationType } from 'Containers/Integrations/utils/integrationUtils';
+import { generateAPIToken } from 'services/APITokensService';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
 
 export type FormResponseMessage = {
     message: string;
     isError: boolean;
+    responseData?: unknown;
 } | null;
 
 export type UseIntegrationActions = {
@@ -37,14 +39,16 @@ function useIntegrationActions(): UseIntegrationActionsResult {
 
     async function onSave(data) {
         try {
+            let responseData;
             if (isEditing) {
-                await saveIntegrationV2(source, data);
+                responseData = await saveIntegrationV2(source, data);
+            } else if (type === 'apitoken') {
+                responseData = await generateAPIToken(data);
             } else {
-                await createIntegration(source, data);
+                responseData = await createIntegration(source, data);
             }
             fetchIntegrations();
-            history.push(integrationsListPath);
-            return null;
+            return { message: 'Integration was saved successfully', isError: false, responseData };
         } catch (error) {
             return { message: error?.response?.data?.error || error, isError: true };
         }

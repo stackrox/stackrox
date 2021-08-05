@@ -6,6 +6,7 @@ import useIntegrationActions from '../hooks/useIntegrationActions';
 export type FormResponseMessage = {
     message: string;
     isError: boolean;
+    responseData?: unknown;
 } | null;
 
 export type UseIntegrationForm<T, V> = {

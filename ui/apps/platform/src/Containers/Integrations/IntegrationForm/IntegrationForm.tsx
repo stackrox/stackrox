@@ -26,6 +26,8 @@ import SyslogIntegrationForm from './Forms/SyslogIntegrationForm';
 // external backups
 import S3IntegrationForm from './Forms/S3IntegrationForm';
 import GcsIntegrationForm from './Forms/GcsIntegrationForm';
+// auth plugins
+import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
 
 import './IntegrationForm.css';
 
@@ -69,6 +71,9 @@ const ComponentFormMap = {
     backups: {
         s3: S3IntegrationForm,
         gcs: GcsIntegrationForm,
+    },
+    authProviders: {
+        apitoken: ApiTokenIntegrationForm,
     },
 } as Record<IntegrationSource, Record<IntegrationType, FunctionComponent<FormProps>>>;
 

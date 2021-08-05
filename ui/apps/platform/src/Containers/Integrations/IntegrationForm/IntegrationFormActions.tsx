@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { Divider, FlexItem, Flex } from '@patternfly/react-core';
 
 export type IntegrationFormActionsProps = {
-    children: ReactElement | ReactElement[];
+    children: ReactElement | (ReactElement | null)[];
 };
 
 function IntegrationFormActions({ children }: IntegrationFormActionsProps): ReactElement {
