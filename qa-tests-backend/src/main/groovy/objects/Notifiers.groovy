@@ -110,7 +110,12 @@ class EmailNotifier extends Notifier {
         assert notifications.find { it.content.toString().contains("ID: ${deployment.deploymentUid}") }
         assert notifications.find { it.content.toString().contains("Name: ${deployment.name}") }
         assert notifications.find { it.content.toString().contains("Namespace: ${deployment.namespace}") }
-        assert notifications.find { it.getAllRecipients().find { a -> (a.toString() == this.recipientEmail) } }
+
+        // Split out so that if recipient email doesn't match, the test will print out all of the emails
+        // Otherwise it'll print notifications.toString which is unreadable
+        def recipients = notifications.collect { it.getAllRecipients()*.toString() }
+        assert recipients.find { it.find { a -> a == this.recipientEmail } }
+
         mail.logout()
     }
 
