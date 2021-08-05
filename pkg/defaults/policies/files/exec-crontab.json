@@ -26,5 +26,7 @@
         }
       ]
     }
-  ]
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true
 }

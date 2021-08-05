@@ -60,5 +60,7 @@
         }
       ]
     }
-  ]
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true
 }

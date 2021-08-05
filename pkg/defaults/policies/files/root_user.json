@@ -111,5 +111,7 @@
         }
       ]
     }
-  ]
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true
 }

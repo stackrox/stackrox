@@ -65,5 +65,7 @@
         }
       ]
     }
-  ]
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true
 }

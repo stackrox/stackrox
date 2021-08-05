@@ -33,5 +33,7 @@
         }
       ]
     }
-  ]
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true
 }

@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	file   string
-	dir    string
-	out    string
-	dryRun bool
+	file             string
+	dir              string
+	out              string
+	dryRun           bool
+	readOnlySettings []string
 )
 
 // Command defines the upgrade command.
@@ -61,6 +62,13 @@ func Command() *cobra.Command {
 		false,
 		"dry run")
 
+	c.PersistentFlags().StringArrayVarP(
+		&readOnlySettings,
+		common.ReadOnlyFlagName,
+		"",
+		[]string{common.None.String()},
+		"one or more read-only policy settings to verify (mitre, criteria)")
+
 	return c
 }
 
@@ -87,6 +95,20 @@ func upgrade(c *cobra.Command, _ []string) error {
 	if dirErr == nil && dirStat.IsDir() && out == "" {
 		multiErr = multierror.Append(multiErr, errors.Errorf("'--%s' must be specified if '--%s' is set",
 			common.OutputFlagName, common.DirectoryFlagName))
+	}
+
+	if len(readOnlySettings) == 0 {
+		multiErr = multierror.Append(multiErr, errors.Errorf("'--%s' must be (mitre, criteria) or none",
+			common.ReadOnlyFlagName))
+	}
+
+	if len(readOnlySettings) > 0 {
+		for _, setting := range readOnlySettings {
+			if _, ok := common.ReadOnlySettingStrToType[setting]; !ok {
+				multiErr = multierror.Append(multiErr, errors.Errorf("'--%s' must be (mitre, criteria) or none",
+					common.ReadOnlyFlagName))
+			}
+		}
 	}
 
 	if multiErr != nil {
@@ -314,10 +336,24 @@ func upgradePolicyJSON(json string) (string, error) {
 		return result, errors.Wrap(err, "upgrade error")
 	}
 
+	ensureReadOnlySettings(&policy)
+
 	result, err = common.ProtoToJSON(&policy)
 	if err != nil {
 		return result, errors.Wrap(err, "upgraded policy can't be serialized to JSON")
 	}
 
 	return common.UnEscape(result), nil
+}
+
+func ensureReadOnlySettings(policy *storage.Policy) {
+	for _, setting := range readOnlySettings {
+		if setting == common.Mitre.String() {
+			policy.MitreVectorsLocked = true
+		}
+
+		if setting == common.Criteria.String() {
+			policy.CriteriaLocked = true
+		}
+	}
 }

@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -187,6 +189,12 @@ func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
+	// Check if policy's lock flags are not updated. If the lock flags are set to read-only,
+	// check the corresponding fields are not updated.
+	if err := b.verifyLockFieldsState(policy); err != nil {
+		return err
+	}
+
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)
 		// If the update is changing the name, check if the name has already been taken
@@ -280,5 +288,42 @@ func (b *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest
 			}
 			return nil
 		})
+	})
+}
+
+func (b *storeImpl) verifyLockFieldsState(newPolicy *storage.Policy) error {
+	return b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(policyBucket)
+
+		oldPolicy, exists, err := b.getPolicy(newPolicy.GetId(), bucket)
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			return nil
+		}
+
+		if oldPolicy.GetCriteriaLocked() != newPolicy.GetCriteriaLocked() ||
+			oldPolicy.GetMitreVectorsLocked() != newPolicy.GetMitreVectorsLocked() {
+			log.Warnf("'criteriaLocked' and 'mitreVectorsLocked' are read-only fields. Setting them to previous values for policy %q.", newPolicy.GetName())
+
+			newPolicy.MitreVectorsLocked = oldPolicy.MitreVectorsLocked
+			newPolicy.CriteriaLocked = oldPolicy.CriteriaLocked
+		}
+
+		var errs errorhelpers.ErrorList
+		if oldPolicy.GetCriteriaLocked() {
+			if !reflect.DeepEqual(oldPolicy.GetPolicySections(), newPolicy.GetPolicySections()) {
+				errs.AddString("policy's criteria fields cannot be updated since they are marked read-only (criteriaLocked=true)")
+			}
+		}
+
+		if oldPolicy.GetMitreVectorsLocked() {
+			if !reflect.DeepEqual(oldPolicy.GetMitreAttackVectors(), newPolicy.GetMitreAttackVectors()) {
+				errs.AddString("policy's MITRE ATT&CK vectors cannot be updated since they are marked read-only (mitreVectorsLocked=true)")
+			}
+		}
+		return errs.ToError()
 	})
 }

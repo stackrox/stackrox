@@ -8,6 +8,8 @@ import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AlertService
+import services.CreatePolicyService
+import services.FeatureFlagService
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -30,17 +32,41 @@ class K8sEventDetectionTest extends BaseSpecification {
     static final private String PRIV_NGINX_2_DEPNAME = registerDeployment("k8seventprivnginx2", true)
 
     static final private String KUBECTL_EXEC_POLICY_NAME = "Kubernetes Actions: Exec into Pod"
+    static final private String CLONED_KUBECTL_EXEC_POLICY_NAME = "CLONED: Kubernetes Actions: Exec into Pod"
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
+
+        // If MITRE feature is enabled, work on the cloned policy instead of default policy.
+        if (FeatureFlagService.isFeatureFlagEnabled('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK')) {
+            def policy = Services.getPolicyByName(KUBECTL_EXEC_POLICY_NAME)
+            policy = CreatePolicyService.createNewPolicy(
+                                    PolicyOuterClass.Policy.newBuilder(policy)
+                                            .setId("")
+                                            .setName(CLONED_KUBECTL_EXEC_POLICY_NAME)
+                                            .setMitreVectorsLocked(false)
+                                            .setCriteriaLocked(false)
+                                            .build()
+                            )
+            assert policy
+
+            Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, true)
+        }
     }
 
     def cleanupSpec() {
         for (def deployment: DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
+        }
+        if (FeatureFlagService.isFeatureFlagEnabled('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK')) {
+            def policy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
+            if (policy) {
+                CreatePolicyService.deletePolicy(policy.getId())
+            }
+            Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, false)
         }
     }
 
@@ -51,13 +77,14 @@ class K8sEventDetectionTest extends BaseSpecification {
         return true
     }
 
-    def checkViolationsAreAsExpected(List<String> execedIntoDeploymentNames, List<String> violatingDeploymentNames,
-                       Map<String, String> podNames, int expectedK8sViolationsCount) {
+    def checkViolationsAreAsExpected(String policyName, List<String> execedIntoDeploymentNames,
+                                     List<String> violatingDeploymentNames, Map<String, String> podNames,
+                                     int expectedK8sViolationsCount) {
         for (def violatingDeploymentName: violatingDeploymentNames) {
             def violatingDeployment = DEPLOYMENTS.find { it.name == violatingDeploymentName }
             assert violatingDeployment
             def violations = Services.getViolationsByDeploymentID(
-                    violatingDeployment.deploymentUid, KUBECTL_EXEC_POLICY_NAME, false, 60)
+                    violatingDeployment.deploymentUid, policyName, false, 60)
             assert violations != null && violations.size() == 1
             def fullViolation = AlertService.getViolation(violations.get(0).getId())
             assert fullViolation
@@ -90,7 +117,7 @@ class K8sEventDetectionTest extends BaseSpecification {
             println "Checking that deployment ${deploymentName} does NOT have a violation"
             def deployment = DEPLOYMENTS.find { it.name == deploymentName }
             assert deployment
-            assert Services.checkForNoViolationsByDeploymentID(deployment.deploymentUid, KUBECTL_EXEC_POLICY_NAME)
+            assert Services.checkForNoViolationsByDeploymentID(deployment.deploymentUid, policyName)
         }
         return true
     }
@@ -104,8 +131,15 @@ class K8sEventDetectionTest extends BaseSpecification {
         // K8s event detection is currently not supported on OpenShift.
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
 
-        def originalPolicy = Services.getPolicyByName(KUBECTL_EXEC_POLICY_NAME)
-        assert originalPolicy != null && originalPolicy.getName() == KUBECTL_EXEC_POLICY_NAME
+        String policyName
+        if (FeatureFlagService.isFeatureFlagEnabled('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK')) {
+            policyName = CLONED_KUBECTL_EXEC_POLICY_NAME
+        } else {
+            policyName = KUBECTL_EXEC_POLICY_NAME
+        }
+
+        def originalPolicy = Services.getPolicyByName(policyName)
+        assert originalPolicy != null && originalPolicy.getName() == policyName
 
         def currentPolicy = originalPolicy
         if (additionalPolicyGroups != null && additionalPolicyGroups.size() > 0) {
@@ -139,7 +173,7 @@ class K8sEventDetectionTest extends BaseSpecification {
 
         then:
         "Fetch violations and assert on properties"
-        assert checkViolationsAreAsExpected(execIntoDeploymentNames, violatingDeploymentNames, podNames, 1)
+        assert checkViolationsAreAsExpected(policyName, execIntoDeploymentNames, violatingDeploymentNames, podNames, 1)
 
         when:
         "Run another exec"
@@ -148,7 +182,9 @@ class K8sEventDetectionTest extends BaseSpecification {
         then:
         "Violations should have the new exec appended to them"
         withRetry(2, 3) {
-            assert checkViolationsAreAsExpected(execIntoDeploymentNames, violatingDeploymentNames, podNames, 2)
+            assert checkViolationsAreAsExpected(
+                    policyName, execIntoDeploymentNames, violatingDeploymentNames, podNames, 2,
+            )
         }
 
         when:
@@ -171,7 +207,7 @@ class K8sEventDetectionTest extends BaseSpecification {
         }
 
         // Still only 2 k8s violations since the updates were blocked
-        assert checkViolationsAreAsExpected(execIntoDeploymentNames, violatingDeploymentNames, podNames, 2)
+        assert checkViolationsAreAsExpected(policyName, execIntoDeploymentNames, violatingDeploymentNames, podNames, 2)
 
         cleanup:
         Services.updatePolicy(originalPolicy)

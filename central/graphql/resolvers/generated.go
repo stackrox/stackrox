@@ -896,6 +896,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Policy", []string{
 		"categories: [String!]!",
+		"criteriaLocked: Boolean!",
 		"description: String!",
 		"disabled: Boolean!",
 		"enforcementActions: [EnforcementAction!]!",
@@ -906,6 +907,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lastUpdated: Time",
 		"lifecycleStages: [LifecycleStage!]!",
 		"mitreAttackVectors: [Policy_MitreAttackVectors]!",
+		"mitreVectorsLocked: Boolean!",
 		"name: String!",
 		"notifiers: [String!]!",
 		"policySections: [PolicySection]!",
@@ -8161,6 +8163,11 @@ func (resolver *policyResolver) Categories(ctx context.Context) []string {
 	return value
 }
 
+func (resolver *policyResolver) CriteriaLocked(ctx context.Context) bool {
+	value := resolver.data.GetCriteriaLocked()
+	return value
+}
+
 func (resolver *policyResolver) Description(ctx context.Context) string {
 	value := resolver.data.GetDescription()
 	return value
@@ -8209,6 +8216,11 @@ func (resolver *policyResolver) LifecycleStages(ctx context.Context) []string {
 func (resolver *policyResolver) MitreAttackVectors(ctx context.Context) ([]*policy_MitreAttackVectorsResolver, error) {
 	value := resolver.data.GetMitreAttackVectors()
 	return resolver.root.wrapPolicy_MitreAttackVectorses(value, nil)
+}
+
+func (resolver *policyResolver) MitreVectorsLocked(ctx context.Context) bool {
+	value := resolver.data.GetMitreVectorsLocked()
+	return value
 }
 
 func (resolver *policyResolver) Name(ctx context.Context) string {

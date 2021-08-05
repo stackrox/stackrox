@@ -19,6 +19,15 @@ const (
 
 	DryRunFlagName      = "dry-run"
 	DryRunFlagShorthand = "n"
+
+	ReadOnlyFlagName = "ensure-read-only"
+)
+
+// Allowed values for read-only flag.
+const (
+	None     readOnlyPolicySettings = "none"
+	Mitre    readOnlyPolicySettings = "mitre"
+	Criteria readOnlyPolicySettings = "criteria"
 )
 
 var (
@@ -26,4 +35,17 @@ var (
 	Verbose bool
 	// Interactive indicates whether we run in the interactive mode.
 	Interactive bool
+
+	// ReadOnlySettingStrToType maps strings to readOnlyPolicySettings type.
+	ReadOnlySettingStrToType = map[string]readOnlyPolicySettings{
+		"none":     None,
+		"mitre":    Mitre,
+		"criteria": Criteria,
+	}
 )
+
+type readOnlyPolicySettings string
+
+func (s readOnlyPolicySettings) String() string {
+	return string(s)
+}

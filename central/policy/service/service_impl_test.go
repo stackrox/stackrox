@@ -10,7 +10,6 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -868,52 +867,6 @@ func (s *PolicyServiceTestSuite) TestMitreVectors() {
 	s.ElementsMatch([]*storage.MitreAttackVector{
 		getFakeVector("tactic1", "tech1"),
 		getFakeVector("tactic2", "tech2"),
-	}, response.GetVectors())
-}
-
-func (s *PolicyServiceTestSuite) TestMitreVectorsFeatureEnabled() {
-	envIso := envisolator.NewEnvIsolator(s.T())
-	envIso.Setenv(features.SystemPolicyMitreFramework.EnvVar(), "true")
-	defer envIso.RestoreAll()
-
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		s.T().Skip("RHACS System Policy MITRE ATT&CK framework feature is disabled. skipping...")
-	}
-
-	s.policies.EXPECT().GetPolicy(gomock.Any(), "policy1").Return(&storage.Policy{Id: "policy1"}, true, nil)
-
-	s.mitreVectorStore.EXPECT().Get("TA0005").Return(mitreDataStore.MitreTestData["TA0005"], nil)
-	s.mitreVectorStore.EXPECT().Get("TA0006").Return(mitreDataStore.MitreTestData["TA0006"], nil)
-
-	response, err := s.tested.GetPolicyMitreVectors(
-		context.Background(), &v1.GetPolicyMitreVectorsRequest{Id: "policy1"},
-	)
-	s.NoError(err)
-	s.ElementsMatch([]*storage.MitreAttackVector{
-		mitreDataStore.MitreTestData["TA0005"],
-		// Technique T1110 should be filtered.
-		{
-			Tactic: &storage.MitreTactic{
-				Id:   "TA0006",
-				Name: "Credential Access",
-				Description: "The adversary is trying to steal account names and passwords. Credential Access " +
-					"consists of techniques for stealing credentials like account names and passwords. " +
-					"Techniques used to get credentials include keylogging or credential dumping. Using " +
-					"legitimate credentials can give adversaries access to systems, make them harder to detect, " +
-					"and provide the opportunity to create more accounts to help achieve their goals.",
-			},
-			Techniques: []*storage.MitreTechnique{
-				{
-					Id:   "T1552",
-					Name: "Unsecured Credentials",
-					Description: "Adversaries may search compromised systems to find and obtain insecurely " +
-						"stored credentials. These credentials can be stored and/or misplaced in many locations " +
-						"on a system, including plaintext files (e.g. Bash History), operating system or " +
-						"application-specific repositories (e.g. Credentials in Registry), or other specialized " +
-						"files/artifacts (e.g. Private Keys).",
-				},
-			},
-		},
 	}, response.GetVectors())
 }
 

@@ -53,6 +53,11 @@ message Policy {
     }
 
     repeated MitreAttackVectors mitre_attack_vectors    = 23;
+
+    // Read-only field. If true, the policy's criteria fields are rendered read-only.
+    bool                        criteria_locked         = 24;
+    // Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
+    bool                        mitre_vectors_locked    = 25;
 }
 
 enum EventSource {

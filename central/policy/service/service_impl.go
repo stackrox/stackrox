@@ -152,9 +152,6 @@ func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy
 
 	if !features.SystemPolicyMitreFramework.Enabled() {
 		policy.MitreAttackVectors = nil
-	} else {
-		// TODO(@Mandar): ROX-7749: Remove sample data when feature is turned on by default
-		injectMitreTestData(policy)
 	}
 	return policy, nil
 }

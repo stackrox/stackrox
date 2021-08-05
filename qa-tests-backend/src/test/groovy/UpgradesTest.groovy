@@ -237,6 +237,12 @@ class UpgradesTest extends BaseSpecification {
                 builder.clearFields() // fields is ignored so clear it out
             }
 
+            // All default policies are expected to have the following flags set to true.
+            // Therefore, move to target by adding the known diff.
+            builder.setCriteriaLocked(true)
+            // TODO(@Mandar): Once the migration to lock mitre vectors is in place, remove the following.
+            builder.setMitreVectorsLocked(true)
+
             if (knownPolicyDifferences.containsKey(policy.id)) {
                 def diffs = knownPolicyDifferences[policy.id]
 

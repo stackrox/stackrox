@@ -188,3 +188,91 @@ func (suite *PolicyStoreTestSuite) TestAddSamePolicySucceeds() {
 
 	suite.verifyAddPolicySucceeds(policy1)
 }
+
+func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
+	policy1 := &storage.Policy{
+		Id:                 "policy1",
+		Name:               "policy1",
+		MitreVectorsLocked: true,
+		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{
+			{
+				Tactic:     "t1",
+				Techniques: []string{"tt1", "tt2"},
+			},
+		},
+	}
+	policy2 := &storage.Policy{
+		Id:                 "policy2",
+		Name:               "policy2",
+		MitreVectorsLocked: false,
+		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{
+			{
+				Tactic:     "t1",
+				Techniques: []string{"tt1", "tt2"},
+			},
+		},
+	}
+
+	policies := []*storage.Policy{policy1, policy2}
+	for _, p := range policies {
+		id, err := suite.store.AddPolicy(p)
+		suite.NoError(err)
+		suite.NotEmpty(id)
+	}
+
+	suite.Error(suite.store.UpdatePolicy(&storage.Policy{
+		Id:                 "policy1",
+		Name:               "policy1",
+		MitreVectorsLocked: true,
+		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{
+			{
+				Tactic:     "t2",
+				Techniques: []string{"tt1", "tt2"},
+			},
+		},
+	}))
+
+	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{
+		Id:                 "policy1",
+		Name:               "policy1",
+		MitreVectorsLocked: false,
+		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{
+			{
+				Tactic:     "t1",
+				Techniques: []string{"tt1", "tt2"},
+			},
+		},
+	}))
+
+	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{
+		Id:                 "policy2",
+		Name:               "policy2",
+		MitreVectorsLocked: false,
+		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{
+			{
+				Tactic:     "t2",
+				Techniques: []string{"tt1", "tt2"},
+			},
+		},
+	}))
+
+	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{
+		Id:                 "policy2",
+		Name:               "policy2",
+		MitreVectorsLocked: true,
+		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{
+			{
+				Tactic:     "t2",
+				Techniques: []string{"tt1", "tt2"},
+			},
+		},
+	}))
+
+	for _, p := range policies {
+		suite.NoError(suite.store.RemovePolicy(p.GetId()))
+	}
+
+	policies, err := suite.store.GetAllPolicies()
+	suite.NoError(err)
+	suite.Empty(policies)
+}

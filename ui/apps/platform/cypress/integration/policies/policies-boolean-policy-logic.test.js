@@ -95,7 +95,7 @@ describe('Boolean Policy Logic Section', () => {
         ).click();
     };
 
-    describe('Single Policy Field Card', () => {
+    describe('Single Policy Field Card 1', () => {
         beforeEach(() => {
             addPolicy();
             goToNextWizardStage();
@@ -138,40 +138,33 @@ describe('Boolean Policy Logic Section', () => {
             cy.get(`${selectors.booleanPolicySection.form.numericInput}:last`).click().type(7.5);
         });
 
-        it('should allow updating image fields in a policy', () => {
-            cy.get(selectors.policies.scanImage).click({
-                force: true,
+        it('should not allow multiple Policy Field Values for boolean Policy Fields', () => {
+            // unfurl Container Configuration policy key group
+            clickPolicyKeyGroup('Container Configuration');
+            // to mock BPL policy here, but for now
+            dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("Root")`);
+
+            cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).should('not.exist');
+        });
+
+        it('should delete only the selected Policy Value from a Policy Field', () => {
+            // to mock BPL policy here, but for now
+            addPolicyFieldCard(0);
+            cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
+            cy.get(selectors.booleanPolicySection.removePolicyFieldValueBtn).eq(0).click();
+            cy.get(selectors.booleanPolicySection.policyFieldValue).then((values) => {
+                expect(values).to.have.length(1);
             });
-            editPolicy();
-            goToNextWizardStage();
+            cy.get(selectors.booleanPolicySection.removePolicyFieldValueBtn).should('not.exist');
+        });
+    });
 
-            // first, drag in an image field
-            dragFieldIntoSection(
-                `${selectors.booleanPolicySection.policyKey}:contains("Image Registry")`
-            );
-
-            // second, add a value to it
-            cy.get(`${selectors.booleanPolicySection.form.textInput}:last`)
-                .click()
-                .clear()
-                .type('docker.io');
-            savePolicy();
-
-            // third, check that the new field and its value saved successfully
-            cy.get(`${selectors.booleanPolicySection.policyFieldCard}:last`).should(
-                'contain.text',
-                'Image pulled from registry:'
-            );
-            cy.get(`${selectors.booleanPolicySection.policyFieldCard}:last input`).should(
-                'have.value',
-                'docker.io'
-            );
-
-            // clean up, by removing the field we just added
-            editPolicy();
-            goToNextWizardStage();
-            cy.get(`${selectors.booleanPolicySection.removePolicyFieldBtn}:last`).click();
-            savePolicy();
+    describe('Single Policy Field Card 2', () => {
+        // TODO: ROX-7768 Enabled once clone operation is fixed.
+        before(function beforeHook() {
+            if (checkFeatureFlag('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK', true)) {
+                this.skip();
+            }
         });
 
         it('should allow updating days since image scanned in a policy', () => {
@@ -209,24 +202,40 @@ describe('Boolean Policy Logic Section', () => {
             savePolicy();
         });
 
-        it('should not allow multiple Policy Field Values for boolean Policy Fields', () => {
-            // unfurl Container Configuration policy key group
-            clickPolicyKeyGroup('Container Configuration');
-            // to mock BPL policy here, but for now
-            dragFieldIntoSection(`${selectors.booleanPolicySection.policyKey}:contains("Root")`);
-
-            cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).should('not.exist');
-        });
-
-        it('should delete only the selected Policy Value from a Policy Field', () => {
-            // to mock BPL policy here, but for now
-            addPolicyFieldCard(0);
-            cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
-            cy.get(selectors.booleanPolicySection.removePolicyFieldValueBtn).eq(0).click();
-            cy.get(selectors.booleanPolicySection.policyFieldValue).then((values) => {
-                expect(values).to.have.length(1);
+        it('should allow updating image fields in a policy', () => {
+            cy.get(selectors.policies.scanImage).click({
+                force: true,
             });
-            cy.get(selectors.booleanPolicySection.removePolicyFieldValueBtn).should('not.exist');
+            editPolicy();
+            goToNextWizardStage();
+
+            // first, drag in an image field
+            dragFieldIntoSection(
+                `${selectors.booleanPolicySection.policyKey}:contains("Image Registry")`
+            );
+
+            // second, add a value to it
+            cy.get(`${selectors.booleanPolicySection.form.textInput}:last`)
+                .click()
+                .clear()
+                .type('docker.io');
+            savePolicy();
+
+            // third, check that the new field and its value saved successfully
+            cy.get(`${selectors.booleanPolicySection.policyFieldCard}:last`).should(
+                'contain.text',
+                'Image pulled from registry:'
+            );
+            cy.get(`${selectors.booleanPolicySection.policyFieldCard}:last input`).should(
+                'have.value',
+                'docker.io'
+            );
+
+            // clean up, by removing the field we just added
+            editPolicy();
+            goToNextWizardStage();
+            cy.get(`${selectors.booleanPolicySection.removePolicyFieldBtn}:last`).click();
+            savePolicy();
         });
     });
 
