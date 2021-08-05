@@ -88,6 +88,12 @@ class CSVTest extends BaseSpecification {
         orchestrator.deleteDeployment(CVE_DEPLOYMENT)
     }
 
+    def secondarySortByID(List<CVE> list) {
+        list.sort {
+            a, b -> a.cvss == b.cvss ? (a.id < b.id ? -1 : 1) : 0
+        }
+    }
+
     @Category(BAT)
     def "Verify CVE CSV data scoped by entity is correct"() {
         when:
@@ -153,6 +159,10 @@ class CSVTest extends BaseSpecification {
         then:
         "Ensure that the CVEs from graphQL and CSV match"
         assert csvCVEs.size() == graphQLCVEs.size()
+
+        secondarySortByID(csvCVEs)
+        secondarySortByID(graphQLCVEs)
+
         for (def i = 0; i < csvCVEs.size(); i++) {
             assert csvCVEs.get(i) == graphQLCVEs.get(i)
         }
