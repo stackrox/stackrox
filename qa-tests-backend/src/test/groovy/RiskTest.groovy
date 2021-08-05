@@ -45,7 +45,7 @@ class RiskTest extends BaseSpecification {
     static final private int RETRIES = 24
     static final private int RETRY_DELAY = 5
     static final private List<Deployment> DEPLOYMENTS = []
-    static final private String TEST_NAMESPACE = "qa-risk-${UUID.randomUUID().toString()}"
+    static final private String TEST_NAMESPACE = "qa-risk-${UUID.randomUUID()}"
 
     def setupSpec() {
         clusterId = ClusterService.getClusterId()

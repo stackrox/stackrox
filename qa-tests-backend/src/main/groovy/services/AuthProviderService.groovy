@@ -34,7 +34,7 @@ class AuthProviderService extends BaseService {
                     AuthproviderService.GetAuthProviderRequest.newBuilder().setId(id).build()
             )
         } catch (Exception e) {
-            println "Failed getting auth provider: ${e.toString()}"
+            println "Failed getting auth provider: ${e}"
         }
     }
 
@@ -52,7 +52,7 @@ class AuthProviderService extends BaseService {
 
             return authProviderId
         } catch (Exception e) {
-            println "Failed to create auth provider: ${e.toString()}"
+            println "Failed to create auth provider: ${e}"
         }
     }
 

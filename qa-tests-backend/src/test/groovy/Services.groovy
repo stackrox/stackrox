@@ -383,7 +383,7 @@ class Services extends BaseService {
             }
             return true
         } catch (Exception e) {
-            println "SR does not detect the deployment ${name} yet: ${e.toString()}"
+            println "SR does not detect the deployment ${name} yet: ${e}"
             return false
         }
     }

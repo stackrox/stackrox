@@ -22,7 +22,7 @@ class ServiceAccountService extends BaseService {
                     Common.ResourceByID.newBuilder().setId(id).build()
             ).getSaAndRole()
         } catch (Exception e) {
-            println "Error fetching service account: ${e.toString()}"
+            println "Error fetching service account: ${e}"
         }
     }
 

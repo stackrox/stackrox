@@ -381,7 +381,7 @@ class Kubernetes implements OrchestratorMain {
                 deleted = true
                 break
             } catch (KubernetesClientException ex) {
-                println "Failed to delete deployment: ${ex.toString()}"
+                println "Failed to delete deployment: ${ex}"
             }
         }
         if (deleted) {
@@ -581,7 +581,7 @@ class Kubernetes implements OrchestratorMain {
             println "Told the orchestrator to create job " + job.getName()
             return this.jobs.inNamespace(job.namespace).createOrReplace(k8sJob)
         } catch (Exception e) {
-            println "Error creating k8s job" + e.toString()
+            println "Error creating k8s job" + e
         }
         return null
     }
@@ -687,7 +687,7 @@ class Kubernetes implements OrchestratorMain {
             }
         }
         println "wasContainerKilled: did not determine container was killed before 60s timeout"
-        println "container details were found:\n${containerName}: ${pod.toString()}"
+        println "container details were found:\n${containerName}: ${pod}"
         return false
     }
 
@@ -726,7 +726,7 @@ class Kubernetes implements OrchestratorMain {
                         .tailingLines(5000)
                         .watchLog(System.out)
             } catch (Exception e) {
-                println "Error getting container logs: ${e.toString()}"
+                println "Error getting container logs: ${e}"
             }
         }
     }
@@ -1000,7 +1000,7 @@ class Kubernetes implements OrchestratorMain {
                     return createdSecret.metadata.uid
                 }
             } catch (Exception e) {
-                println "Error creating secret" + e.toString()
+                println "Error creating secret" + e
             }
             return null
         }
@@ -1679,7 +1679,7 @@ class Kubernetes implements OrchestratorMain {
             watch.close()
             pump.close()
         } catch (Exception e) {
-            println "Error exec'ing in pod: ${e.toString()}"
+            println "Error exec'ing in pod: ${e}"
             return false
         }
         executorService.shutdown()
@@ -1784,7 +1784,7 @@ class Kubernetes implements OrchestratorMain {
             }
             return true
         } catch (Exception e) {
-            println "Error creating k8s deployment: " + e.toString()
+            println "Error creating k8s deployment: " + e
             return false
         }
     }
@@ -1798,7 +1798,7 @@ class Kubernetes implements OrchestratorMain {
             )
             updateDeploymentDetails(deployment)
         } catch (Exception e) {
-            println "Error while waiting for deployment/populating deployment info: " + e.toString()
+            println "Error while waiting for deployment/populating deployment info: " + e
         }
         if (!deployment.skipReplicaWait && !deployment.deploymentUid) {
             throw new OrchestratorManagerException("The deployment did not start or reach replica ready state")
@@ -1813,7 +1813,7 @@ class Kubernetes implements OrchestratorMain {
             try {
                 d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
             } catch (Exception e) {
-                println "Error getting k8s deployment" + e.toString()
+                println "Error getting k8s deployment" + e
             }
             getAndPrintPods(namespace, deploymentName)
             if (d == null) {
@@ -1864,7 +1864,7 @@ class Kubernetes implements OrchestratorMain {
             this.daemonsets.inNamespace(daemonSet.namespace).createOrReplace(ds)
             println "Told the orchestrator to create " + daemonSet.getName()
         } catch (Exception e) {
-            println "Error creating k8s deployment" + e.toString()
+            println "Error creating k8s deployment" + e
         }
     }
 
@@ -1877,7 +1877,7 @@ class Kubernetes implements OrchestratorMain {
             )
             updateDeploymentDetails(daemonSet)
         } catch (Exception e) {
-            println "Error while waiting for daemonset/populating daemonset info: " + e.toString()
+            println "Error while waiting for daemonset/populating daemonset info: " + e
         }
     }
 

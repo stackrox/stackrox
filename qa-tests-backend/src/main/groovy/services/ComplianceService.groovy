@@ -40,7 +40,7 @@ class ComplianceService extends BaseService {
                     .getStandard(Common.ResourceByID.newBuilder()
                     .setId(complianceId).build()).standard
         } catch (Exception e) {
-            println "Could not find Compliance Standard with ID ${complianceId}: ${e.toString()}"
+            println "Could not find Compliance Standard with ID ${complianceId}: ${e}"
         }
     }
 

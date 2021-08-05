@@ -6,6 +6,7 @@ central/networkpolicies/graph/evaluator_test.go
 generated/**/*.pb.go
 generated/**/*.pb.gw.go
 go.sum
+qa-tests-backend/gradle/wrapper/gradle-wrapper.jar
 operator/securedcluster/bundle/manifests/**/*.yaml
 proto/storage/proto.lock
 pkg/booleanpolicy/default_policies_test.go

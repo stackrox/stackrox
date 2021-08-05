@@ -50,7 +50,7 @@ class Env {
         try {
             envVars.load(new FileInputStream(PROPERTIES_FILE))
         } catch (Exception ex) {
-            print "Failed to load extra properties file: ${ex.toString()}"
+            print "Failed to load extra properties file: ${ex}"
         }
     }
 
@@ -121,7 +121,7 @@ class Env {
                 BufferedReader br = new BufferedReader(new FileReader(passwordPath))
                 password = br.readLine()
             } catch (Exception ex) {
-                println "Failed to load password for current deployment: ${ex.toString()}"
+                println "Failed to load password for current deployment: ${ex}"
             }
 
             if (password != null) {

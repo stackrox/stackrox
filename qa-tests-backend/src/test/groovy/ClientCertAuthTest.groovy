@@ -56,7 +56,7 @@ class ClientCertAuthTest extends BaseSpecification {
         try {
             return AuthService.getAuthStatus().authProvider.type
         } catch (StatusRuntimeException ex) {
-            println "Error getting auth status: ${ex.toString()}"
+            println "Error getting auth status: ${ex}"
             return "error"
         }
     }
@@ -65,7 +65,7 @@ class ClientCertAuthTest extends BaseSpecification {
         try {
             return AuthService.getAuthStatus().authProvider.id
         } catch (StatusRuntimeException ex) {
-            println "Error getting auth status: ${ex.toString()}"
+            println "Error getting auth status: ${ex}"
             return ""
         }
     }

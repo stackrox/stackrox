@@ -33,7 +33,7 @@ class NetworkGraphService extends BaseService {
             }
             return getNetworkGraphClient().getNetworkGraph(request.build())
         } catch (Exception e) {
-            println "Exception fetching network graph: ${e.toString()}"
+            println "Exception fetching network graph: ${e}"
         }
     }
 
@@ -66,7 +66,7 @@ class NetworkGraphService extends BaseService {
 
             return getNetworkGraphClient().createExternalNetworkEntity(request)
         } catch (Exception e) {
-            println "Exception while creating network entity: ${e.toString()}"
+            println "Exception while creating network entity: ${e}"
         }
     }
 
@@ -75,7 +75,7 @@ class NetworkGraphService extends BaseService {
             // Create request
             getNetworkGraphClient().deleteExternalNetworkEntity(ResourceByID.newBuilder().setId(entityID).build())
         } catch (Exception e) {
-            println "Exception while deleting network entity: ${e.toString()}"
+            println "Exception while deleting network entity: ${e}"
         }
     }
 

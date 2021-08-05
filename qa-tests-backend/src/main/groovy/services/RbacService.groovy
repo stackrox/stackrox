@@ -22,7 +22,7 @@ class RbacService extends BaseService {
                     Common.ResourceByID.newBuilder().setId(id).build()
             ).role
         } catch (Exception e) {
-            println "Error fetching role: ${e.toString()}"
+            println "Error fetching role: ${e}"
         }
     }
 
@@ -72,7 +72,7 @@ class RbacService extends BaseService {
                     Common.ResourceByID.newBuilder().setId(id).build()
             ).binding
         } catch (Exception e) {
-            println "Error fetching role binding: ${e.toString()}"
+            println "Error fetching role binding: ${e}"
         }
     }
 
@@ -121,7 +121,7 @@ class RbacService extends BaseService {
                     Common.ResourceByID.newBuilder().setId(id).build()
             ).subject
         } catch (Exception e) {
-            println "Error fetching subject: ${e.toString()}"
+            println "Error fetching subject: ${e}"
         }
     }
 }

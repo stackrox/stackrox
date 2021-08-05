@@ -262,7 +262,7 @@ class PagerDutyNotifier extends Notifier {
             os.write(input, 0, input.length)
             con.getInputStream()
         } catch (Exception e) {
-            println "Error resolving PagerDuty incident: ${e.toString()}"
+            println "Error resolving PagerDuty incident: ${e}"
             println "This error will be ignored" // it is not product related
         }
     }

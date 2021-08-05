@@ -64,7 +64,7 @@ class MailService {
                 store = null
                 session = null
             } catch (IllegalStateException ise) {
-                println "Error on logout - already logged out: ${ise.toString()}"
+                println "Error on logout - already logged out: ${ise}"
             } catch (Exception e) {
                 throw e
             }

@@ -1,13 +1,15 @@
 .PHONY: all
 all: style test
 
+GRADLE := ./gradlew
+
 ###########
 ## Style ##
 ###########
 .PHONY: style
 style:
 	@echo "+ $@"
-	@gradle --continue codenarcMain codenarcTest ; \
+	@$(GRADLE) --continue codenarcMain codenarcTest ; \
 	STATUS=$$? ; \
 	if [ $$STATUS -ne 0 ]; then \
 	    cat build/reports/codenarc/main.txt build/reports/codenarc/test.txt >&2 2>/dev/null ; \
@@ -24,7 +26,7 @@ proto-generated-srcs:
 	@echo "+ $@"
 	-rm -r src/main/proto
 	@scripts/migrate_protos.sh
-	gradle generateProto generateTestProto
+	$(GRADLE) generateProto generateTestProto
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
@@ -34,55 +36,55 @@ clean-generated-srcs:
 .PHONY: test
 test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: bat-test
 bat-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=BAT
+	$(GRADLE) test -Dgroups=BAT
 
 .PHONY: smoke-test
 smoke-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=SMOKE
+	$(GRADLE) test -Dgroups=SMOKE
 
 .PHONY: runtime-test
 runtime-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=RUNTIME
+	$(GRADLE) test -Dgroups=RUNTIME
 
 .PHONY: enforcement-test
 enforcement-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=PolicyEnforcement
+	$(GRADLE) test -Dgroups=PolicyEnforcement
 
 .PHONY: integration-test
 integration-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=Integration
+	$(GRADLE) test -Dgroups=Integration
 
 .PHONY: networkpolicy-simulator-test
 networkpolicy-simulator-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=NetworkPolicySimulation
+	$(GRADLE) test -Dgroups=NetworkPolicySimulation
 
 .PHONY: non-bat-test
 non-bat-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: upgrade-test
 upgrade-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=Upgrade
+	$(GRADLE) test -Dgroups=Upgrade
 
 .PHONY: graphql-test
 graphql-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=GraphQL
+	$(GRADLE) test -Dgroups=GraphQL
 
 .PHONY: sensor-bounce-test
 sensor-bounce-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=SensorBounce
-	gradle test -Dgroups=SensorBounceNext
+	$(GRADLE) test -Dgroups=SensorBounce
+	$(GRADLE) test -Dgroups=SensorBounceNext

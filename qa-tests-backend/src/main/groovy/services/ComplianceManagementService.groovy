@@ -29,7 +29,7 @@ class ComplianceManagementService extends BaseService {
                     TriggerComplianceRunsRequest.newBuilder().setSelection(selection).build()
             ).startedRunsList
         } catch (Exception e) {
-            println "Error triggering compliance runs: ${e.toString()}"
+            println "Error triggering compliance runs: ${e}"
         }
     }
 
@@ -85,7 +85,7 @@ class ComplianceManagementService extends BaseService {
                     ).build()
             ).addedSchedule
         } catch (Exception e) {
-            println "Error adding a compliance schedule: ${e.toString()}"
+            println "Error adding a compliance schedule: ${e}"
         }
     }
 
@@ -108,7 +108,7 @@ class ComplianceManagementService extends BaseService {
                     ).build()
             ).updatedSchedule
         } catch (Exception e) {
-            println "Error updating a compliance schedule: ${e.toString()}"
+            println "Error updating a compliance schedule: ${e}"
         }
     }
 
@@ -120,7 +120,7 @@ class ComplianceManagementService extends BaseService {
                             .build()
             )
         } catch (Exception e) {
-            println "Error deleting compliance schedule: ${e.toString()}"
+            println "Error deleting compliance schedule: ${e}"
         }
     }
 }

@@ -38,7 +38,7 @@ class ImageService extends BaseService {
                     .setIncludeSnoozed(includeSnoozed)
                     .build())
         } catch (Exception e) {
-            println "Image failed to scan: ${image} - ${e.toString()}"
+            println "Image failed to scan: ${image} - ${e}"
             return ""
         }
     }

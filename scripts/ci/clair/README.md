@@ -13,7 +13,7 @@ CLAIR_DB_PASSWORD="something" ./scripts/ci/clair/deploy.sh qa-clair
 To test you need to set `CLAIR_ENDPOINT` e.g.:
 
 ```
-CLAIR_ENDPOINT="http://clairsvc.qa-clair:6060" gradle test --tests=ImageScanningTest
+CLAIR_ENDPOINT="http://clairsvc.qa-clair:6060" ./gradlew test --tests=ImageScanningTest
 ```
 
 ### The Test Database

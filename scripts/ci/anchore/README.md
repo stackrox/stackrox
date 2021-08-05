@@ -17,7 +17,7 @@ To test you need to set `ANCHORE_USERNAME`, `ANCHORE_PASSWORD` and `ANCHORE_ENDP
 ```
 ANCHORE_USERNAME=admin ANCHORE_PASSWORD="something" \
 ANCHORE_ENDPOINT="http://qa-anchore-engine-api.qa-anchore:8228" \
-gradle test --tests=ImageScanningTest
+./gradlew test --tests=ImageScanningTest
 ```
 
 ### The Test Database

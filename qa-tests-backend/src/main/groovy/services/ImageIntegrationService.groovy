@@ -90,7 +90,7 @@ class ImageIntegrationService extends BaseService {
         try {
             getImageIntegrationClient().deleteImageIntegration(getResourceByID(integrationId))
         } catch (Exception e) {
-            println "Failed to delete integration: ${e.toString()}"
+            println "Failed to delete integration: ${e}"
             return false
         }
         try {

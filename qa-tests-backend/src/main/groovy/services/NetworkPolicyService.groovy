@@ -36,7 +36,7 @@ class NetworkPolicyService extends BaseService {
             }
             return getNetworkPolicyClient().getNetworkGraph(request.build())
         } catch (Exception e) {
-            println "Exception fetching network policy graph: ${e.toString()}"
+            println "Exception fetching network policy graph: ${e}"
         }
     }
 
@@ -138,7 +138,7 @@ class NetworkPolicyService extends BaseService {
                             .setQuery(query ?: "")
                             .build()).modification
         } catch (Exception e) {
-            println "Network Policy generator failed!: ${e.toString()}"
+            println "Network Policy generator failed!: ${e}"
             return e
         }
     }
@@ -152,7 +152,7 @@ class NetworkPolicyService extends BaseService {
                     .setModification(mod)
                     .build())
         } catch (Exception e) {
-            println "Network Policy apply failed!: ${e.toString()}"
+            println "Network Policy apply failed!: ${e}"
             return  e
         }
     }
@@ -163,7 +163,7 @@ class NetworkPolicyService extends BaseService {
                     .setClusterId(clusterId)
                     .build()).undoRecord
         } catch (Exception e) {
-            println "Network Policy undo failed!: ${e.toString()}"
+            println "Network Policy undo failed!: ${e}"
         }
     }
 }

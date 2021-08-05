@@ -378,7 +378,7 @@ class DefaultPoliciesTest extends BaseSpecification {
              .filter {
                      // ROX-5350 - Ignore alerts for deleted policies
             violation -> Boolean exists = false
-                try {
+                 try {
                     Services.getPolicy(violation.policy.id)
                     exists = true
                 }
@@ -386,7 +386,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                     println "Cannot get the policy associated with the alert: ${e}"
                     println violation
                 }
-                exists
+                 exists
         }.collect()
 
         if (nonWhitelistedKubeSystemViolations.size() != 0) {

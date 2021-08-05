@@ -8,7 +8,6 @@ Gradle is used to build and run tests written in Groovy using the Spock test fra
 - If you would like to use the recommended IDE:
   - Download and install [IntelliJ IDEA](https://www.jetbrains.com/idea/download/)
 and create a new project from the `qa-tests-backend` directory.
-- Install gradle: `brew install gradle`
 
 # Running Tests
 If protos have been changed or not generated: `make proto-generated-srcs`
@@ -51,9 +50,9 @@ are inferred from the `central-deploy` directory.
 
 To run tests, from within `qa-tests-backend` directory:
 
-- A single test: `gradle test --tests=TestName`, where `TestName` is the name of the test, e.g, `TestSummary`
-- A single test with filtering: `gradle test --tests=TestName.*filter*`, where `filter` is something to match in the test def string, e.g, `ComplianceTest.*CVE*` matches all feature tests that include `CVE`.
-- A test group: `gradle test -Dgroups=GroupName`, where `GroupName` is the name of the test group, e.g, `BAT`
+- A single test: `./gradlew test --tests=TestName`, where `TestName` is the name of the test, e.g, `TestSummary`
+- A single test with filtering: `./gradlew test --tests=TestName.*filter*`, where `filter` is something to match in the test def string, e.g, `ComplianceTest.*CVE*` matches all feature tests that include `CVE`.
+- A test group: `./gradlew test -Dgroups=GroupName`, where `GroupName` is the name of the test group, e.g, `BAT`
 - A makefile target: `make -C qa-backend-tests smoke-test`
 
 ### Custom configuration
