@@ -85,7 +85,7 @@ dependencies {
     compile group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.4'
 
     compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.7'
+    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
 
     compile 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
