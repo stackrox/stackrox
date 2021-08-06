@@ -533,7 +533,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/cgorman1/apollo-ci:0.3.12
+      - image: quay.io/cgorman1/apollo-ci:0.3.13
         auth:
           username: $QUAY_CGORMAN1_RO_USER
           password: $QUAY_CGORMAN1_RO_PASSWORD
