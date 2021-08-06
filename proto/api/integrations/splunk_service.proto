@@ -92,6 +92,9 @@ message SplunkViolation {
   }
 
   // From storage.Alert.Entity: storage.Alert.Deployment (numbers 1xx) and storage.ContainerImage (2xx).
+  // NOTE: While Deployment in K8S is a resource, we have DeploymentInfo separate from ResourceInfo mainly for
+  // historical reasons and backwards compatibility. Next time we modify DeploymentInfo/ResourceInfo we should consider
+  // unifying both and migrating users to ResourceInfo (or even newer object).
   message DeploymentInfo {
     string deployment_id = 101;
     string deployment_name = 102;
@@ -105,6 +108,16 @@ message SplunkViolation {
     map<string, string> deployment_annotations = 110;
 
     storage.ContainerImage deployment_image = 201;
+  }
+
+  // A trimmed down version of storage.Alert.Resource.
+  message ResourceInfo {
+    // This is converted from an enum to a string so that it can be properly formatted (capitalized, etc)
+    string resource_type = 1;
+    string name          = 2;
+    string cluster_id    = 3;
+    string cluster_name  = 4;
+    string namespace     = 5;
   }
 
   // From storage.Policy
@@ -122,7 +135,12 @@ message SplunkViolation {
   ViolationInfo  violation_info = 1;
   AlertInfo      alert_info = 2;
   ProcessInfo    process_info = 3;
-  DeploymentInfo deployment_info = 4;
+
+  oneof EntityInfo {
+    DeploymentInfo deployment_info = 4;
+    ResourceInfo   resource_info   = 10;
+  }
+
   PolicyInfo     policy_info = 5;
   // extra details for network violation
   storage.Alert.Violation.NetworkFlowInfo network_flow_info = 6;

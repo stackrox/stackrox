@@ -9,6 +9,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   included in fresh install of 65.0 and later, and new default system policies added since 65.0. Policy criteria fields 
   for user-defined policies, including policies created through 'Clone' operation, will continue to be editable.
 
+- Message attribute keys for audit log based violation messages shortened to be more readable
+
 ## [64.0]
 
 - Support for BadgerDB is being completely removed. Users running a version less than 48.0 will need to upgrade to 63.0

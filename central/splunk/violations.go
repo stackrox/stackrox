@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap"
 )
@@ -63,6 +64,13 @@ var defaultPaginationSettings = paginationSettings{
 	maxAlertsFromQuery:    500,
 	violationsPerResponse: 5000,
 }
+
+var (
+	// Set of keys to remove from the violationMessageAttributes field of a Kubernetes Event violation
+	// This is done for so that we can reduce the amount of unnecessary bytes sent to Splunk for fields that can be inferred
+	// via other fields, as Splunk charges by the data ingested.
+	violationMessagesToRemoveForK8SEvent = set.NewFrozenStringSet(printer.ResourceURIKey)
+)
 
 // NewViolationsHandler provides violations data to Splunk on HTTP requests.
 func NewViolationsHandler(alertDS datastore.DataStore) http.HandlerFunc {
@@ -212,11 +220,14 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 
 			violationInfo := extractProcessViolationInfo(alert, processViolation, procIndicator)
 			result = append(result, &integrations.SplunkViolation{
-				ViolationInfo:  violationInfo,
-				AlertInfo:      extractAlertInfo(alert, violationInfo),
-				ProcessInfo:    extractProcessInfo(alert.GetId(), procIndicator),
-				DeploymentInfo: refineDeploymentInfo(alert.GetId(), deploymentInfo, procIndicator),
-				PolicyInfo:     policyInfo,
+				ViolationInfo: violationInfo,
+				AlertInfo:     extractAlertInfo(alert, violationInfo),
+				ProcessInfo:   extractProcessInfo(alert.GetId(), procIndicator),
+				// Process alerts are on a deployment so we can make the assumption that has a DeploymentInfo
+				EntityInfo: &integrations.SplunkViolation_DeploymentInfo_{
+					DeploymentInfo: refineDeploymentInfo(alert.GetId(), deploymentInfo, procIndicator),
+				},
+				PolicyInfo: policyInfo,
 			})
 		}
 	}
@@ -242,22 +253,26 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, &integrations.SplunkViolation{
+		violation := integrations.SplunkViolation{
 			ViolationInfo:   violationInfo,
 			AlertInfo:       extractAlertInfo(alert, violationInfo),
-			DeploymentInfo:  deploymentInfo,
 			PolicyInfo:      policyInfo,
 			NetworkFlowInfo: v.GetNetworkFlowInfo().Clone(),
-		})
+		}
+
+		addEntityInfoToSplunkViolation(alert, &violation, deploymentInfo)
+
+		result = append(result, &violation)
 	}
 	if genericViolationMessage.Len() != 0 {
 		violationInfo := extractGenericViolationInfo(alert, genericViolationMessage.String())
-		result = append(result, &integrations.SplunkViolation{
-			ViolationInfo:  violationInfo,
-			AlertInfo:      extractAlertInfo(alert, violationInfo),
-			DeploymentInfo: deploymentInfo,
-			PolicyInfo:     policyInfo,
-		})
+		violation := &integrations.SplunkViolation{
+			ViolationInfo: violationInfo,
+			AlertInfo:     extractAlertInfo(alert, violationInfo),
+			PolicyInfo:    policyInfo,
+		}
+		addEntityInfoToSplunkViolation(alert, violation, deploymentInfo)
+		result = append(result, violation)
 	}
 
 	if !seenViolations {
@@ -332,10 +347,7 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		return nil, err
 	}
 
-	var msgAttrs []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
-	if kvs := fromViolation.GetKeyValueAttrs(); kvs != nil {
-		msgAttrs = kvs.Clone().GetAttrs()
-	}
+	msgAttrs := extractViolationMessageAttrs(fromViolation)
 
 	var podID, containerName string
 	for _, kv := range msgAttrs {
@@ -366,6 +378,27 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		PodId:                      podID,
 		ContainerName:              containerName,
 	}, nil
+}
+
+func extractViolationMessageAttrs(fromViolation *storage.Alert_Violation) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
+	var msgAttrs []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
+	if kvs := fromViolation.GetKeyValueAttrs(); kvs != nil {
+		msgAttrs = kvs.Clone().GetAttrs()
+	}
+
+	// Filter out some message attributes, but only for K8S Events
+	// This is done so that we can reduce the amount of unnecessary bytes to Splunk for fields that can be inferred.
+	if fromViolation.Type == storage.Alert_Violation_K8S_EVENT {
+		var filteredAttrs []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
+		for _, kvp := range msgAttrs {
+			if !violationMessagesToRemoveForK8SEvent.Contains(kvp.Key) {
+				filteredAttrs = append(filteredAttrs, kvp)
+			}
+		}
+		msgAttrs = filteredAttrs
+	}
+
+	return msgAttrs
 }
 
 func extractGenericViolationInfo(fromAlert *storage.Alert, message string) *integrations.SplunkViolation_ViolationInfo {
@@ -478,6 +511,13 @@ func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_De
 			containers = append(containers, x.Clone())
 		}
 
+		// NOTE: For backwards compatibility with older TA deployments and existing Splunk queries, we still send DeploymentInfo.
+		// Eventually we may want to migrate all data to ResourceInfo.
+		// We are currently not sending duplicates in DeploymentInfo and ResourceInfo simultaneously because Splunk charges by data ingested and the duplicate would
+		// increase charges for our customers. Instead we will ask them to read from either DeploymentInfo || ResourceInfo
+		// using Splunk's coalesce function.
+		// This is only being done for deployment and image alerts at the moment.
+		// Resource-based alerts are new and receive data in ResourceInfo.
 		res = integrations.SplunkViolation_DeploymentInfo{
 			DeploymentId:          e.Deployment.GetId(),
 			DeploymentName:        e.Deployment.GetName(),
@@ -495,11 +535,42 @@ func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_De
 		res = integrations.SplunkViolation_DeploymentInfo{
 			DeploymentImage: e.Image.Clone(),
 		}
+	case *storage.Alert_Resource_:
+		// ignore for now. Resource cannot be converted to deployment. It will correctly get populated into its own entity later
+		return nil
 	default:
 		log.Warnw("Alert.Entity unrecognized or not set. Resulting violation item will not have deployment details.", zap.String("Alert.Id", from.GetId()))
 	}
 
 	return &res
+}
+
+func extractResourceInfo(from *storage.Alert_Resource) *integrations.SplunkViolation_ResourceInfo {
+	if from == nil {
+		return nil
+	}
+	return &integrations.SplunkViolation_ResourceInfo{
+		ResourceType: strings.Title(strings.ToLower(from.GetResourceType().String())), // capitalize it. Eg "Configmaps" instead of "CONFIGMAPS"
+		Name:         from.GetName(),
+		ClusterId:    from.GetClusterId(),
+		ClusterName:  from.GetClusterName(),
+		Namespace:    from.GetNamespace(),
+	}
+}
+
+func addEntityInfoToSplunkViolation(from *storage.Alert, splunkViolation *integrations.SplunkViolation, deploymentInfo *integrations.SplunkViolation_DeploymentInfo) {
+	if deploymentInfo != nil {
+		splunkViolation.EntityInfo = &integrations.SplunkViolation_DeploymentInfo_{
+			DeploymentInfo: deploymentInfo,
+		}
+	}
+
+	// We know that deploymentInfo and resourceInfo can't both be non-nil at the same time so there's no risk of overwriting.
+	if resource := from.GetResource(); resource != nil {
+		splunkViolation.EntityInfo = &integrations.SplunkViolation_ResourceInfo_{
+			ResourceInfo: extractResourceInfo(resource),
+		}
+	}
 }
 
 // refineDeploymentInfo must only be called for process violations.

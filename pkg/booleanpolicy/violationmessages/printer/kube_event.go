@@ -14,15 +14,15 @@ const (
 	// ContainerKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote a container.
 	ContainerKey = "container"
 	// APIVerbKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the kubernetes API verb.
-	APIVerbKey = "Kubernetes API Verb"
+	APIVerbKey = "Verb"
 	// UsernameKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the name of the user taking the action.
 	UsernameKey = "Username"
 	// UserGroupsKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the groups of the user taking the action.
-	UserGroupsKey = "User Groups"
+	UserGroupsKey = "Groups"
 	// ImpersonatedUsernameKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the name of the impersonated user taking the action.
 	ImpersonatedUsernameKey = "Impersonated Username"
 	// ImpersonatedUserGroupsKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the groups of the impersonated user taking the action.
-	ImpersonatedUserGroupsKey = "Impersonated User Groups"
+	ImpersonatedUserGroupsKey = "Impersonated Groups"
 	// ResourceURIKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the resource URI.
 	ResourceURIKey = "Resource"
 	// UserAgentKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote the user agent.
@@ -36,7 +36,8 @@ const (
 )
 
 type attributeOptions struct {
-	skipVerb bool
+	skipVerb        bool
+	skipResourceURI bool
 }
 
 // GenerateKubeEventViolationMsg constructs violation message for kubernetes event violations.
@@ -118,8 +119,10 @@ func getDefaultViolationMsgViolationAttr(event *storage.KubernetesEvent, options
 		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: IPAddressKey, Value: strings.Join(event.GetSourceIps(), ", ")})
 	}
 
-	if uriParts := strings.Split(event.GetRequestUri(), "?"); len(uriParts) > 0 && !stringutils.AllEmpty(uriParts...) {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ResourceURIKey, Value: uriParts[0]})
+	if !options.skipResourceURI {
+		if uriParts := strings.Split(event.GetRequestUri(), "?"); len(uriParts) > 0 && !stringutils.AllEmpty(uriParts...) {
+			attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ResourceURIKey, Value: uriParts[0]})
+		}
 	}
 
 	if event.GetImpersonatedUser() != nil {
@@ -168,7 +171,7 @@ func getExecMsgViolationAttr(event *storage.KubernetesEvent) []*storage.Alert_Vi
 		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: CommandsKey, Value: cmds})
 	}
 
-	attrs = append(attrs, getDefaultViolationMsgViolationAttr(event, &attributeOptions{skipVerb: true})...)
+	attrs = append(attrs, getDefaultViolationMsgViolationAttr(event, &attributeOptions{skipVerb: true, skipResourceURI: true})...)
 	return attrs
 }
 
@@ -198,6 +201,6 @@ func getPFMsgViolationAttr(event *storage.KubernetesEvent) []*storage.Alert_Viol
 		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PortsKey, Value: ports})
 	}
 
-	attrs = append(attrs, getDefaultViolationMsgViolationAttr(event, &attributeOptions{skipVerb: true})...)
+	attrs = append(attrs, getDefaultViolationMsgViolationAttr(event, &attributeOptions{skipVerb: true, skipResourceURI: true})...)
 	return attrs
 }

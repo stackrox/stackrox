@@ -18,6 +18,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -166,6 +167,7 @@ var (
 					}},
 				}},
 			}},
+			EventSource: storage.EventSource_DEPLOYMENT_EVENT,
 		},
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity: &storage.Alert_Deployment_{
@@ -269,6 +271,7 @@ var (
 					}},
 				}},
 			}},
+			EventSource: storage.EventSource_DEPLOYMENT_EVENT,
 		},
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity: &storage.Alert_Deployment_{
@@ -390,6 +393,7 @@ var (
 					}},
 				}},
 			}},
+			EventSource: storage.EventSource_DEPLOYMENT_EVENT,
 		},
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity: &storage.Alert_Deployment_{
@@ -481,6 +485,130 @@ var (
 		Time:          makeTimestamp("2021-03-21T21:50:46.741586331Z"),
 		FirstOccurred: makeTimestamp("2021-03-21T21:50:46.210811055Z"),
 	}
+
+	resourceAlert = storage.Alert{
+		Id: "9f3cb534-5374-44f2-b661-83a8eec8dbdb",
+		Policy: &storage.Policy{
+			Id:          "18cbcb62-7d18-4a6c-b2ca-dd1242746943",
+			Name:        "OpenShift: Kubeadmin Secret Accessed",
+			Description: "Alert when the kubeadmin secret is accessed",
+			Rationale:   "Kubeadmin is the default administrative user for OpenShift and can be used to obtain full administrative access to the cluster. Investigating if this was accessed for valid business purposes can help organizations to control the use of administrative privileges",
+			Remediation: "Audit the access carefully to ensure that this secret is only accessed for valid business purposes.",
+			Categories: []string{
+				"Anomalous Activity",
+				"Kubernetes Events",
+			},
+			LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			Severity:           storage.Severity_HIGH_SEVERITY,
+			SORTName:           "OpenShift: Kubeadmin Secret Accessed",
+			SORTLifecycleStage: "RUNTIME",
+			PolicyVersion:      "1.1",
+			PolicySections: []*storage.PolicySection{{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: "Kubernetes Resource",
+						Values:    []*storage.PolicyValue{{Value: "SECRETS"}},
+					},
+					{
+						FieldName: "Kubernetes API Verb",
+						Values:    []*storage.PolicyValue{{Value: "GET"}},
+					},
+					{
+						FieldName: "Kubernetes Resource Name",
+						Values:    []*storage.PolicyValue{{Value: "kubeadmin"}},
+					},
+					{
+						FieldName: "Kubernetes User Name",
+						Negate:    true,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "system:serviceaccount:openshift-authentication-operator:authentication-operator",
+							},
+							{
+								Value: "system:apiserver",
+							},
+							{
+								Value: "system:serviceaccount:openshift-authentication:oauth-openshift",
+							},
+						},
+					},
+				}}},
+			EventSource: storage.EventSource_AUDIT_LOG_EVENT,
+		},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity: &storage.Alert_Resource_{
+			Resource: &storage.Alert_Resource{
+				ResourceType: storage.Alert_Resource_SECRETS,
+				Name:         "kubeadmin",
+				ClusterId:    "ea802db2-f0d0-4746-804e-77cdbbeebeba",
+				ClusterName:  "remote",
+				Namespace:    "kube-system",
+			},
+		},
+		Violations: []*storage.Alert_Violation{{
+			Message: "Access to secret \"kubeadmin\" in \"kube-system\"",
+			MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+					Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{{
+						Key:   printer.APIVerbKey,
+						Value: "GET",
+					}, {
+						Key:   printer.UsernameKey,
+						Value: "system:admin",
+					}, {
+						Key:   printer.UserGroupsKey,
+						Value: "system:masters, system:authenticated",
+					}, {
+						Key:   printer.UserAgentKey,
+						Value: "oc/4.7.0 (darwin/amd64) kubernetes/c66c03f",
+					}, {
+						Key:   printer.IPAddressKey,
+						Value: "67.160.238.22",
+					}, {
+						Key:   printer.ResourceURIKey,
+						Value: "/api/v1/namespaces/kube-system/secrets/kubeadmin",
+					}, {
+						Key:   printer.ImpersonatedUsernameKey,
+						Value: "system:serviceaccount:openshift-authentication-operator:authentication-operator",
+					}, {
+						Key:   printer.ImpersonatedUserGroupsKey,
+						Value: "system:serviceaccounts, system:serviceaccounts:openshift-authentication-operator, system:authenticated",
+					}},
+				},
+			},
+			Type: storage.Alert_Violation_K8S_EVENT,
+			Time: makeTimestamp("2021-07-15T17:26:35.115310605Z"),
+		}, {
+			Message: "Access to secret \"kubeadmin\" in \"kube-system\"",
+			MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+					Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{{
+						Key:   printer.APIVerbKey,
+						Value: "PATCH",
+					}, {
+						Key:   printer.UsernameKey,
+						Value: "system:admin",
+					}, {
+						Key:   printer.UserGroupsKey,
+						Value: "system:masters, system:authenticated",
+					}, {
+						Key:   printer.UserAgentKey,
+						Value: "oc/4.7.0 (darwin/amd64) kubernetes/c66c03f",
+					}, {
+						Key:   printer.IPAddressKey,
+						Value: "67.160.238.22",
+					}, {
+						Key:   printer.ResourceURIKey,
+						Value: "/api/v1/namespaces/kube-system/secrets/kubeadmin",
+					}},
+				},
+			},
+			Type: storage.Alert_Violation_K8S_EVENT,
+			Time: makeTimestamp("2021-07-15T17:36:35.115310605Z"),
+		}},
+		Time:          makeTimestamp("2021-07-15T17:36:35.115310605Z"),
+		FirstOccurred: makeTimestamp("2021-07-15T17:26:35.115310605Z"),
+	}
 )
 
 func makeTimestamp(timeStr string) *types.Timestamp {
@@ -501,8 +629,8 @@ func TestViolations(t *testing.T) {
 
 type violationsTestSuite struct {
 	suite.Suite
-	deployAlert, processAlert, k8sAlert, networkAlert storage.Alert
-	allowCtx                                          context.Context
+	deployAlert, processAlert, k8sAlert, networkAlert, resourceAlert storage.Alert
+	allowCtx                                                         context.Context
 }
 
 func (s *violationsTestSuite) SetupTest() {
@@ -510,6 +638,7 @@ func (s *violationsTestSuite) SetupTest() {
 	s.processAlert = *processAlert.Clone()
 	s.k8sAlert = *k8sAlert.Clone()
 	s.networkAlert = *networkAlert.Clone()
+	s.resourceAlert = *resourceAlert.Clone()
 	s.allowCtx = sac.WithAllAccess(context.Background())
 }
 
@@ -521,7 +650,10 @@ func (s *violationsTestSuite) TestNetworkAlert() {
 		s.Equal("NETWORK_FLOW", s.extr(v, ".violationInfo.violationType"))
 		s.checkViolationInfo(v)
 		s.checkAlertInfo(v, ".lifecycleStage")
+
 		s.checkDeploymentInfo(v)
+		s.Empty(s.extr(v, ".resourceInfo"))
+
 		s.checkPolicy(v)
 	}
 
@@ -585,7 +717,10 @@ func (s *violationsTestSuite) TestProcessAlert() {
 		s.checkViolationInfo(v, ".podId", ".podUid", ".containerName", ".containerStartTime", ".containerId")
 		s.checkProcessInfo(v)
 		s.checkAlertInfo(v, ".lifecycleStage")
+
 		s.checkDeploymentInfo(v)
+		s.Empty(s.extr(v, ".resourceInfo"))
+
 		s.checkPolicy(v)
 	}
 }
@@ -599,7 +734,10 @@ func (s *violationsTestSuite) TestK8sAlert() {
 
 		s.checkViolationInfo(v, ".violationMessageAttributes")
 		s.checkAlertInfo(v, ".lifecycleStage")
+
 		s.checkDeploymentInfo(v)
+		s.Empty(s.extr(v, ".resourceInfo"))
+
 		s.checkPolicy(v)
 	}
 
@@ -630,6 +768,27 @@ func (s *violationsTestSuite) TestDeployAlert() {
 	s.checkAlertInfo(vs[0])
 	s.checkDeploymentInfo(vs[0])
 	s.checkPolicy(vs[0])
+}
+
+func (s *violationsTestSuite) TestResourceAlert() {
+	vs := s.getViolations(s.prepare().setAlerts(&s.resourceAlert).runRequestAndGetBody())
+	s.Len(vs, 2)
+
+	for _, v := range vs {
+		s.Equal("K8S_EVENT", s.extr(v, ".violationInfo.violationType"))
+
+		s.checkViolationInfo(v, ".violationMessageAttributes")
+		s.checkAlertInfo(v, ".lifecycleStage")
+
+		s.checkResourceInfo(v)
+		s.Empty(s.extr(v, ".deploymentInfo"))
+
+		s.checkPolicy(v)
+	}
+
+	s.Equal("2021-07-15T17:26:35.115310605Z", s.extr(vs[0], ".violationInfo.violationTime"))
+	s.Equal("2021-07-15T17:36:35.115310605Z", s.extr(vs[1], ".violationInfo.violationTime"))
+
 }
 
 func (s *violationsTestSuite) TestViolationIdsAreDistinct() {
@@ -692,12 +851,13 @@ func (s *violationsTestSuite) TestAlertWithoutViolations() {
 	s.Empty(s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody()))
 }
 
-func (s *violationsTestSuite) TestK8sAlertWithoutDeployment() {
+func (s *violationsTestSuite) TestK8sAlertWithoutDeploymentOrResource() {
 	alert := s.k8sAlert.Clone()
 	alert.Entity = nil
 	alert.Violations = alert.Violations[:1]
 	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	s.Empty(s.extr(vs[0], ".deploymentInfo"))
+	s.Empty(s.extr(vs[0], ".resourceInfo"))
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutDeployment() {
@@ -798,6 +958,14 @@ func (s *violationsTestSuite) checkDeploymentInfo(violation interface{}) {
 		".clusterName",
 		".deploymentContainers",
 		".deploymentAnnotations")
+}
+
+func (s *violationsTestSuite) checkResourceInfo(violation interface{}) {
+	s.assertPresent(violation, ".resourceInfo",
+		".resourceType",
+		".name",
+		".clusterName",
+		".namespace")
 }
 
 func (s *violationsTestSuite) checkPolicy(violation interface{}) {
