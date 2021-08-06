@@ -32,24 +32,6 @@ function* generateClusterInitBundle() {
     }
 }
 
-function* revokeClusterInitBundles({ ids }) {
-    try {
-        yield call(service.revokeClusterInitBundles, ids);
-        yield fork(getClusterInitBundles);
-        yield put(
-            notificationActions.addNotification(
-                `Successfully revoked ${ids.length} cluster init bundle${ids.length > 1 ? 's' : ''}`
-            )
-        );
-        yield put(notificationActions.removeOldestNotification());
-    } catch (error) {
-        if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
-        }
-    }
-}
-
 function* watchLocation() {
     yield takeEveryNewlyMatchedLocation(integrationsPath, getClusterInitBundles);
 }
@@ -68,10 +50,6 @@ function* watchGenerateRequest() {
     yield takeLatest(types.GENERATE_CLUSTER_INIT_BUNDLE.REQUEST, generateClusterInitBundle);
 }
 
-function* watchRevokeRequest() {
-    yield takeLatest(types.REVOKE_CLUSTER_INIT_BUNDLES, revokeClusterInitBundles);
-}
-
 function* requestFetchRoles() {
     yield put(roleActions.fetchRoles.request());
 }
@@ -85,7 +63,6 @@ export default function* integrations() {
         fork(watchLocation),
         fork(watchFetchRequest),
         fork(watchGenerateRequest),
-        fork(watchRevokeRequest),
         fork(watchModalOpen),
     ]);
 }

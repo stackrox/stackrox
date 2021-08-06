@@ -44,6 +44,7 @@ function TableCell({ row, column, onClick }: TableCellProps): React.ReactElement
 type IntegrationsTableProps = {
     title: string;
     integrations: Integration[];
+    hasMultipleDelete: boolean;
     onCreateIntegration: (integration) => void;
     onEditIntegration: (integration) => void;
     onDeleteIntegrations: (integration) => void;
@@ -53,6 +54,7 @@ type IntegrationsTableProps = {
 function IntegrationsTable({
     title,
     integrations,
+    hasMultipleDelete,
     onCreateIntegration,
     onEditIntegration,
     onDeleteIntegrations,
@@ -103,7 +105,7 @@ function IntegrationsTable({
                 </FlexItem>
                 <FlexItem align={{ default: 'alignRight' }}>
                     <Flex>
-                        {hasSelections && (
+                        {hasSelections && hasMultipleDelete && (
                             <FlexItem spacer={{ default: 'spacerMd' }}>
                                 <Button variant="danger" onClick={onDeleteIntegrationHandler}>
                                     Delete integrations
@@ -126,12 +128,14 @@ function IntegrationsTable({
                 <TableComposable variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th
-                                select={{
-                                    onSelect: onSelectAll,
-                                    isSelected: allRowsSelected,
-                                }}
-                            />
+                            {hasMultipleDelete && (
+                                <Th
+                                    select={{
+                                        onSelect: onSelectAll,
+                                        isSelected: allRowsSelected,
+                                    }}
+                                />
+                            )}
                             {columns.map((column) => {
                                 return (
                                     <Th key={column.Header} modifier="wrap">
@@ -139,7 +143,7 @@ function IntegrationsTable({
                                     </Th>
                                 );
                             })}
-                            <Th />
+                            <Th aria-label="Row actions" />
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -165,14 +169,16 @@ function IntegrationsTable({
                             });
                             return (
                                 <Tr key={integration.id}>
-                                    <Td
-                                        key={integration.id}
-                                        select={{
-                                            rowIndex,
-                                            onSelect,
-                                            isSelected: selected[rowIndex],
-                                        }}
-                                    />
+                                    {hasMultipleDelete && (
+                                        <Td
+                                            key={integration.id}
+                                            select={{
+                                                rowIndex,
+                                                onSelect,
+                                                isSelected: selected[rowIndex],
+                                            }}
+                                        />
+                                    )}
                                     {columns.map((column) => {
                                         return (
                                             <TableCell
@@ -186,6 +192,7 @@ function IntegrationsTable({
                                         actions={{
                                             items: actionItems,
                                         }}
+                                        className="pf-u-text-align-right"
                                     />
                                 </Tr>
                             );

@@ -183,8 +183,13 @@ export type InitBundleAttribute = {
     value: string;
 };
 
+export type ImpactedCluster = {
+    name: string;
+    id: string;
+};
+
 export type ClusterInitBundle = {
-    id?: string;
+    id: string;
     name: string;
     createdAt: string;
     createdBy: {
@@ -193,6 +198,7 @@ export type ClusterInitBundle = {
         attributes: InitBundleAttribute[];
     };
     expiresAt: string;
+    impactedClusters: ImpactedCluster[];
 };
 
 export function fetchCAConfig(): Promise<{ helmValuesBundle?: string }> {
@@ -213,9 +219,9 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         });
 }
 
-export function generateClusterInitBundle(
-    data: ClusterInitBundle
-): Promise<{
+export function generateClusterInitBundle(data: {
+    name: string;
+}): Promise<{
     response: { meta?: ClusterInitBundle; helmValuesBundle?: string; kubectlBundle?: string };
 }> {
     return axios
@@ -230,6 +236,27 @@ export function generateClusterInitBundle(
         });
 }
 
-export function revokeClusterInitBundles(ids: string[]): Promise<Record<string, never>> {
-    return axios.patch(`${clusterInitUrl}/init-bundles/revoke`, { ids });
+export type InitBundleRevocationError = {
+    id: string;
+    error: string;
+    impactedClusters: ImpactedCluster[];
+};
+
+export type InitBundleRevokeResponse = {
+    initBundleRevocationErrors: InitBundleRevocationError[];
+    initBundleRevokedIds: string[];
+};
+
+export function revokeClusterInitBundles(
+    ids: string[],
+    confirmImpactedClustersIds: string[]
+): Promise<InitBundleRevokeResponse> {
+    return axios
+        .patch<InitBundleRevokeResponse>(`${clusterInitUrl}/init-bundles/revoke`, {
+            ids,
+            confirmImpactedClustersIds,
+        })
+        .then((response) => {
+            return response.data;
+        });
 }

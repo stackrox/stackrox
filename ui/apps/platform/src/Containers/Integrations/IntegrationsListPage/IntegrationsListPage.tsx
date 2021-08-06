@@ -7,6 +7,7 @@ import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
 import { integrationsPath } from 'routePaths';
+import { ClusterInitBundle } from 'services/ClustersService';
 import {
     Integration,
     getIsAPIToken,
@@ -16,20 +17,21 @@ import {
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+
 import IntegrationsTable from './IntegrationsTable';
 import useIntegrations from '../hooks/useIntegrations';
 import GenericIntegrationModal from '../GenericIntegrationModal';
 import ConfirmationModal from './ConfirmationModal';
 import {
     DeleteAPITokensConfirmationText,
-    DeleteClusterInitBundlesConfirmationText,
     DeleteIntegrationsConfirmationText,
 } from './ConfirmationTexts';
+import DeleteClusterInitBundleConfirmationModal from './DeleteClusterInitBundleConfirmationModal';
 
 function IntegrationsListPage({
     deleteIntegrations,
+    fetchClusterInitBundles,
     revokeAPITokens,
-    revokeClusterInitBundles,
 }): ReactElement {
     const { source, type } = useParams();
     const [selectedIntegration, setSelectedIntegration] = useState<
@@ -61,8 +63,6 @@ function IntegrationsListPage({
     function onConfirmDeletingIntegrationIds() {
         if (isAPIToken) {
             revokeAPITokens(deletingIntegrationIds);
-        } else if (isClusterInitBundle) {
-            revokeClusterInitBundles(deletingIntegrationIds);
         } else {
             deleteIntegrations(source, type, deletingIntegrationIds);
         }
@@ -71,6 +71,16 @@ function IntegrationsListPage({
 
     function onCancelDeleteIntegrationIds() {
         setDeletingIntegrationIds([]);
+    }
+
+    /*
+     * Instead of using bundleId arg to delete bundle from integrations in local state,
+     * use Redux fetch action to indirectly update integrations and re-render the list,
+     * because confirmation modal has already made the revokeClusterInitBundles request.
+     */
+    function handleDeleteClusterInitBundle() {
+        setDeletingIntegrationIds([]);
+        fetchClusterInitBundles();
     }
 
     function onCreateIntegration() {
@@ -93,6 +103,7 @@ function IntegrationsListPage({
             <IntegrationsTable
                 title={typeLabel}
                 integrations={integrations}
+                hasMultipleDelete={!isClusterInitBundle}
                 onCreateIntegration={onCreateIntegration}
                 onEditIntegration={onEditIntegration}
                 onDeleteIntegrations={onDeleteIntegrations}
@@ -122,15 +133,17 @@ function IntegrationsListPage({
                 </ConfirmationModal>
             )}
             {isClusterInitBundle && (
-                <ConfirmationModal
-                    isOpen={deletingIntegrationIds.length !== 0}
-                    onConfirm={onConfirmDeletingIntegrationIds}
-                    onCancel={onCancelDeleteIntegrationIds}
-                >
-                    <DeleteClusterInitBundlesConfirmationText
-                        numIntegrations={deletingIntegrationIds.length}
-                    />
-                </ConfirmationModal>
+                <DeleteClusterInitBundleConfirmationModal
+                    bundle={
+                        deletingIntegrationIds.length === 1
+                            ? ((integrations.find(
+                                  (integration) => integration.id === deletingIntegrationIds[0]
+                              ) as unknown) as ClusterInitBundle)
+                            : undefined
+                    }
+                    handleCancel={onCancelDeleteIntegrationIds}
+                    handleDelete={handleDeleteClusterInitBundle}
+                />
             )}
             {!isAPIToken && !isClusterInitBundle && (
                 <ConfirmationModal
@@ -149,8 +162,8 @@ function IntegrationsListPage({
 
 const mapDispatchToProps = {
     deleteIntegrations: integrationsActions.deleteIntegrations,
+    fetchClusterInitBundles: clusterInitBundlesActions.fetchClusterInitBundles.request,
     revokeAPITokens: apitokensActions.revokeAPITokens,
-    revokeClusterInitBundles: clusterInitBundlesActions.revokeClusterInitBundles,
 };
 
 export default connect(null, mapDispatchToProps)(IntegrationsListPage);
