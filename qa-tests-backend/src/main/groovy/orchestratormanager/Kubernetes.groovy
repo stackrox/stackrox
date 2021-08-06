@@ -924,7 +924,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     String createImagePullSecret(String name, String username, String password,
-                                 String namespace = this.namespace, String server = "https://docker.io") {
+                                 String namespace, String server) {
         return createImagePullSecret(new Secret(
             name: name,
             server: server,
