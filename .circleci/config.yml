@@ -4196,6 +4196,11 @@ jobs:
 
       - *waitForAPI
 
+      - run:
+          name: Wait for Scanner to be ready
+          command: |
+            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
+
       - validate-upgrade-and-check-logs-with-bouncing:
           upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
           desc: "Validate 56.1 migration to current HEAD on RHEL-based image"
