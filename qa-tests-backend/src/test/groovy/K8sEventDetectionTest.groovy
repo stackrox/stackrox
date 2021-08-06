@@ -9,7 +9,6 @@ import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.CreatePolicyService
-import services.FeatureFlagService
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -41,33 +40,30 @@ class K8sEventDetectionTest extends BaseSpecification {
         }
 
         // If MITRE feature is enabled, work on the cloned policy instead of default policy.
-        if (FeatureFlagService.isFeatureFlagEnabled('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK')) {
-            def policy = Services.getPolicyByName(KUBECTL_EXEC_POLICY_NAME)
-            policy = CreatePolicyService.createNewPolicy(
-                                    PolicyOuterClass.Policy.newBuilder(policy)
-                                            .setId("")
-                                            .setName(CLONED_KUBECTL_EXEC_POLICY_NAME)
-                                            .setMitreVectorsLocked(false)
-                                            .setCriteriaLocked(false)
-                                            .build()
-                            )
-            assert policy
+        def policy = Services.getPolicyByName(KUBECTL_EXEC_POLICY_NAME)
+        policy = CreatePolicyService.createNewPolicy(
+                PolicyOuterClass.Policy.newBuilder(policy)
+                        .setId("")
+                        .setName(CLONED_KUBECTL_EXEC_POLICY_NAME)
+                        .setMitreVectorsLocked(false)
+                        .setCriteriaLocked(false)
+                        .build()
+        )
+        assert policy
 
-            Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, true)
-        }
+        Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, true)
     }
 
     def cleanupSpec() {
         for (def deployment: DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
-        if (FeatureFlagService.isFeatureFlagEnabled('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK')) {
-            def policy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
-            if (policy) {
-                CreatePolicyService.deletePolicy(policy.getId())
-            }
-            Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, false)
+
+        def policy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
+        if (policy) {
+            CreatePolicyService.deletePolicy(policy.getId())
         }
+        Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, false)
     }
 
     def runExec(List<Deployment> deployments) {
@@ -131,15 +127,8 @@ class K8sEventDetectionTest extends BaseSpecification {
         // K8s event detection is currently not supported on OpenShift.
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
 
-        String policyName
-        if (FeatureFlagService.isFeatureFlagEnabled('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK')) {
-            policyName = CLONED_KUBECTL_EXEC_POLICY_NAME
-        } else {
-            policyName = KUBECTL_EXEC_POLICY_NAME
-        }
-
-        def originalPolicy = Services.getPolicyByName(policyName)
-        assert originalPolicy != null && originalPolicy.getName() == policyName
+        def originalPolicy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
+        assert originalPolicy != null && originalPolicy.getName() == CLONED_KUBECTL_EXEC_POLICY_NAME
 
         def currentPolicy = originalPolicy
         if (additionalPolicyGroups != null && additionalPolicyGroups.size() > 0) {
@@ -173,7 +162,9 @@ class K8sEventDetectionTest extends BaseSpecification {
 
         then:
         "Fetch violations and assert on properties"
-        assert checkViolationsAreAsExpected(policyName, execIntoDeploymentNames, violatingDeploymentNames, podNames, 1)
+        assert checkViolationsAreAsExpected(
+                CLONED_KUBECTL_EXEC_POLICY_NAME, execIntoDeploymentNames, violatingDeploymentNames, podNames, 1,
+        )
 
         when:
         "Run another exec"
@@ -183,7 +174,7 @@ class K8sEventDetectionTest extends BaseSpecification {
         "Violations should have the new exec appended to them"
         withRetry(2, 3) {
             assert checkViolationsAreAsExpected(
-                    policyName, execIntoDeploymentNames, violatingDeploymentNames, podNames, 2,
+                    CLONED_KUBECTL_EXEC_POLICY_NAME, execIntoDeploymentNames, violatingDeploymentNames, podNames, 2,
             )
         }
 
@@ -207,7 +198,9 @@ class K8sEventDetectionTest extends BaseSpecification {
         }
 
         // Still only 2 k8s violations since the updates were blocked
-        assert checkViolationsAreAsExpected(policyName, execIntoDeploymentNames, violatingDeploymentNames, podNames, 2)
+        assert checkViolationsAreAsExpected(
+                CLONED_KUBECTL_EXEC_POLICY_NAME, execIntoDeploymentNames, violatingDeploymentNames, podNames, 2,
+        )
 
         cleanup:
         Services.updatePolicy(originalPolicy)
