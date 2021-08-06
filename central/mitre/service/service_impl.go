@@ -20,8 +20,8 @@ var (
 	// and that MITRE ATT&CK is a globally available knowledge base. Unlike CVEs, we do not add any extra insights to MITRE data.
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
-			"/v1.MitreService/ListMitreAttackVectors",
-			"/v1.MitreService/GetMitreAttackVector",
+			"/v1.MitreAttackService/ListMitreAttackVectors",
+			"/v1.MitreAttackService/GetMitreAttackVector",
 		},
 	})
 )

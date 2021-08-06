@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,4 +29,8 @@ func TestMitreAttack(t *testing.T) {
 		datastore.MitreTestData["TA0006"],
 		datastore.MitreTestData["TA0005"],
 	}, resp.GetMitreAttackVectors())
+}
+
+func TestAuthz(t *testing.T) {
+	testutils.AssertAuthzWorks(t, &serviceImpl{})
 }
