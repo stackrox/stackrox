@@ -6,10 +6,13 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -250,6 +253,28 @@ func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Cont
 		return 0, err
 	}
 	return deploymentLoader.CountFromQuery(ctx, search.ConjunctionQuery(deploymentBaseQuery, query))
+}
+
+// ActiveState shows the activeness of a component in a deployment context.
+func (eicr *EmbeddedImageScanComponentResolver) ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error) {
+	deploymentID := deploymentctx.FromContext(ctx)
+	if !features.ActiveVulnManagement.Enabled() || deploymentID == "" {
+		return nil, nil
+	}
+	if eicr.data.GetSource() != storage.SourceType_OS {
+		return &activeStateResolver{root: eicr.root, state: Undetermined}, nil
+	}
+
+	edgeID := edges.EdgeID{ParentID: deploymentID, ChildID: scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion())}.ToString()
+	found, err := eicr.root.ActiveComponent.Exists(ctx, edgeID)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return &activeStateResolver{root: eicr.root, state: Inactive}, nil
+	}
+
+	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{edgeID}}, nil
 }
 
 // Nodes are the nodes that contain the Component.

@@ -9,12 +9,14 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -749,6 +751,42 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuer
 		return nil, err
 	}
 	return timestamp(edge.GetFirstImageOccurrence())
+}
+
+// ActiveState shows the activeness of a vulnerability in a deployment context.
+func (resolver *cVEResolver) ActiveState(ctx context.Context, _ PaginatedQuery) (*activeStateResolver, error) {
+	if !features.ActiveVulnManagement.Enabled() {
+		return nil, nil
+	}
+	deploymentID := deploymentctx.FromContext(ctx)
+	if deploymentID == "" {
+		deploymentID = deploymentctx.FromContext(resolver.ctx)
+	}
+
+	if deploymentID == "" {
+		return nil, nil
+	}
+	// We only support OS level component. The active state is not determined if there is no OS level component associate with this vuln.
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).AddStrings(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
+	osLeveComponents, err := resolver.root.ImageComponentDataStore.Count(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	if osLeveComponents == 0 {
+		return &activeStateResolver{root: resolver.root, state: Undetermined}, nil
+	}
+
+	query = search.ConjunctionQuery(resolver.getCVEQuery(), search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentID).ProtoQuery())
+	results, err := resolver.root.ActiveComponent.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	ids := search.ResultsToIDs(results)
+	state := Inactive
+	if len(ids) != 0 {
+		state = Active
+	}
+	return &activeStateResolver{root: resolver.root, state: state, activeComponentIDs: ids}, nil
 }
 
 func containsCVEType(cveTypes []storage.CVE_CVEType, cveType storage.CVE_CVEType) bool {

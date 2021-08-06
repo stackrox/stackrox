@@ -9,10 +9,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -457,6 +459,43 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, q
 	query.Pagination = pagination
 
 	return evr.root.wrapListDeployments(ListDeploymentLoader.FromQuery(ctx, query))
+}
+
+// ActiveState shows the activeness of a vulnerability in a deployment context.
+func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error) {
+	if !features.ActiveVulnManagement.Enabled() {
+		return nil, nil
+	}
+	deploymentID := deploymentctx.FromContext(ctx)
+	if deploymentID == "" {
+		deploymentID = deploymentctx.FromContext(evr.ctx)
+	}
+
+	if deploymentID == "" {
+		return nil, nil
+	}
+
+	// We only support OS level component. The active state is not determined if there is no OS level component associate with this vuln.
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).AddStrings(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
+	osLeveComponents, err := evr.root.ImageComponentDataStore.Count(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	if osLeveComponents == 0 {
+		return &activeStateResolver{root: evr.root, state: Undetermined}, nil
+	}
+
+	query = search.ConjunctionQuery(evr.vulnQuery(), search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentID).ProtoQuery())
+	results, err := evr.root.ActiveComponent.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	ids := search.ResultsToIDs(results)
+	state := Inactive
+	if len(ids) != 0 {
+		state = Active
+	}
+	return &activeStateResolver{root: evr.root, state: state, activeComponentIDs: ids}, nil
 }
 
 func (evr *EmbeddedVulnerabilityResolver) getDeploymentBaseQuery(ctx context.Context) (*v1.Query, error) {

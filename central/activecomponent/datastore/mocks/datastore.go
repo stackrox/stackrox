@@ -7,7 +7,9 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
 
@@ -78,4 +80,34 @@ func (m *MockDataStore) GetBatch(arg0 context.Context, arg1 []string) ([]*storag
 func (mr *MockDataStoreMockRecorder) GetBatch(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), arg0, arg1)
+}
+
+// Search mocks base method
+func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search
+func (mr *MockDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0, arg1)
+}
+
+// SearchRawActiveComponents mocks base method
+func (m *MockDataStore) SearchRawActiveComponents(arg0 context.Context, arg1 *v1.Query) ([]*storage.ActiveComponent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawActiveComponents", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.ActiveComponent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawActiveComponents indicates an expected call of SearchRawActiveComponents
+func (mr *MockDataStoreMockRecorder) SearchRawActiveComponents(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawActiveComponents", reflect.TypeOf((*MockDataStore)(nil).SearchRawActiveComponents), arg0, arg1)
 }

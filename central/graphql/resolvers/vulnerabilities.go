@@ -46,6 +46,7 @@ func init() {
 			"suppressed: Boolean!",
 			"suppressActivation: Time",
 			"suppressExpiry: Time",
+			"activeState(query: String): ActiveState",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
@@ -98,6 +99,8 @@ type VulnerabilityResolver interface {
 	Suppressed(ctx context.Context) bool
 	SuppressActivation(ctx context.Context) (*graphql.Time, error)
 	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
+
+	ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error)
 }
 
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).

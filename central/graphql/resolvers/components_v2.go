@@ -5,9 +5,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 )
@@ -312,6 +315,34 @@ func (eicr *imageComponentResolver) DeploymentCount(ctx context.Context, args Ra
 		return 0, err
 	}
 	return deploymentLoader.CountFromQuery(ctx, query)
+}
+
+// ActiveState shows the activeness of a component in a deployment context.
+func (eicr *imageComponentResolver) ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error) {
+	if !features.ActiveVulnManagement.Enabled() {
+		return nil, nil
+	}
+	deploymentID := deploymentctx.FromContext(ctx)
+	if deploymentID == "" {
+		deploymentID = deploymentctx.FromContext(eicr.ctx)
+	}
+	if deploymentID == "" {
+		return nil, nil
+	}
+
+	if eicr.data.GetSource() != storage.SourceType_OS {
+		return &activeStateResolver{root: eicr.root, state: Undetermined}, nil
+	}
+	edgeID := edges.EdgeID{ParentID: deploymentID, ChildID: eicr.data.GetId()}.ToString()
+	found, err := eicr.root.ActiveComponent.Exists(ctx, edgeID)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return &activeStateResolver{root: eicr.root, state: Inactive}, nil
+	}
+
+	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{edgeID}}, nil
 }
 
 // Nodes are the nodes that contain the Component.

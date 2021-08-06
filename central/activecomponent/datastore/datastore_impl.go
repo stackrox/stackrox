@@ -4,15 +4,27 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
+	"github.com/stackrox/rox/central/activecomponent/datastore/search"
 	sacFilters "github.com/stackrox/rox/central/activecomponent/sac"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 type datastoreImpl struct {
 	storage       store.Store
 	graphProvider graph.Provider
+	searcher      search.Searcher
+}
+
+func (ds *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error) {
+	return ds.searcher.Search(ctx, query)
+}
+
+func (ds *datastoreImpl) SearchRawActiveComponents(ctx context.Context, query *v1.Query) ([]*storage.ActiveComponent, error) {
+	return ds.searcher.SearchRawActiveComponents(ctx, query)
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error) {

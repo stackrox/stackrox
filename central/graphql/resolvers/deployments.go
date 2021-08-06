@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/policy/matcher"
@@ -542,6 +543,7 @@ func (resolver *deploymentResolver) Components(ctx context.Context, args Paginat
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 
+	ctx = deploymentctx.Context(ctx, resolver.data.GetId())
 	return resolver.root.Components(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
 		ID:    resolver.data.GetId(),
@@ -564,6 +566,7 @@ func (resolver *deploymentResolver) Vulns(ctx context.Context, args PaginatedQue
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 
+	ctx = deploymentctx.Context(ctx, resolver.data.GetId())
 	return resolver.root.Vulnerabilities(scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
 		ID:    resolver.data.GetId(),

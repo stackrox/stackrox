@@ -17,6 +17,7 @@ import (
 var (
 	walkParameters = generator.TypeWalkParameters{
 		IncludedTypes: []reflect.Type{
+			reflect.TypeOf((*storage.ActiveComponent_ActiveContext)(nil)),
 			reflect.TypeOf((*storage.Alert)(nil)),
 			reflect.TypeOf((*storage.Cluster)(nil)),
 			reflect.TypeOf((*storage.Comment)(nil)),

@@ -33,6 +33,7 @@ func init() {
 			"imageCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
 			"deploymentCount(query: String, scopeQuery: String): Int!",
+			"activeState(query: String): ActiveState",
 			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
 			"nodeCount(query: String, scopeQuery: String): Int!",
 			"priority: Int!",
@@ -76,6 +77,7 @@ type ComponentResolver interface {
 
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
+	ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error)
 
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
 	NodeCount(ctx context.Context, args RawQuery) (int32, error)
