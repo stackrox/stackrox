@@ -91,6 +91,12 @@ class VulnMgmtSACTest extends BaseSpecification {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
     }
 
+    // GraphQL does not provide ordering guarantees, so to compare the results
+    // of two GraphQL queries we extract just the CVE names and sort them.
+    def extractCVEsAndSort(queryCallResult) {
+        return queryCallResult.results*.cve.sort()
+    }
+
     static String getToken(String tokenName, String role = NONE) {
         GenerateTokenResponse token = ApiTokenService.generateToken(tokenName, role)
         return token.token
@@ -119,10 +125,10 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         then:
         baseVulnCallResult.code == vulnCallResult.code
-        baseVulnCallResult.value == vulnCallResult.value
+        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
 
         baseComponentCallResult.code == componentCallResult.code
-        baseComponentCallResult.value == componentCallResult.value
+        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
 
         cleanup:
         "Cleanup"
@@ -160,10 +166,10 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         then:
         baseVulnCallResult.code == vulnCallResult.code
-        baseVulnCallResult.value == vulnCallResult.value
+        extractCVEsAndSort(baseVulnCallResult.value) == extractCVEsAndSort(vulnCallResult.value)
 
         baseComponentCallResult.code == componentCallResult.code
-        baseComponentCallResult.value == componentCallResult.value
+        extractCVEsAndSort(baseComponentCallResult.value) == extractCVEsAndSort(componentCallResult.value)
 
         cleanup:
         "Cleanup"
