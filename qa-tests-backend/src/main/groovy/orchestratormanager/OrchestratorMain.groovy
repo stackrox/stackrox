@@ -98,7 +98,6 @@ interface OrchestratorMain {
     //Secrets
     def createSecret(Secret secret)
     def createSecret(String name, String namespace)
-    def createImagePullSecret(String name, String username, String password, String namespace)
     def createImagePullSecret(String name, String username, String password, String namespace, String server)
     def createImagePullSecret(Secret secret)
     def deleteSecret(String name, String namespace)

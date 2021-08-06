@@ -206,7 +206,8 @@ class NetworkFlowTest extends BaseSpecification {
                 "quay",
                 Env.mustGet("REGISTRY_USERNAME"),
                 Env.mustGet("REGISTRY_PASSWORD"),
-                OTHER_NAMESPACE
+                OTHER_NAMESPACE,
+                "https://quay.io"
         )
         orchestrator.createServiceAccount(
                 new K8sServiceAccount(

@@ -301,7 +301,8 @@ class BaseSpecification extends Specification {
                 "public-dockerhub",
                 "",
                 "",
-                ns
+                ns,
+                "https://docker.io"
         )
         def sa = new K8sServiceAccount(
                 name: "default",
