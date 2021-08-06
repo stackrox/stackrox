@@ -204,20 +204,24 @@ class BaseSpecification extends Specification {
             println("Unable to enable the authz plugin, defaulting to basic auth: ${e.message}")
         }
 
-        println "Adding integration"
-        coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
-                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName("core quay")
-                        .setType("docker")
-                        .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                        .setDocker(
-                                ImageIntegrationOuterClass.DockerConfig.newBuilder()
-                                        .setEndpoint("https://quay.io")
-                                        .setUsername(Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"))
-                                        .setPassword(Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"))
-                                        .build()
-                        ).build()
-        )
+        coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
+                Constants.CORE_IMAGE_INTEGRATION_NAME)
+        if (!coreImageIntegrationId) {
+            println "Adding core image integration"
+            coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
+                    ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                            .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
+                            .setType("docker")
+                            .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                            .setDocker(
+                                    ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                                            .setEndpoint("https://quay.io")
+                                            .setUsername(Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"))
+                                            .setPassword(Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"))
+                                            .build()
+                            ).build()
+            )
+        }
         if (!coreImageIntegrationId) {
             println "WARNING: Could not create the core image integration."
             println "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."

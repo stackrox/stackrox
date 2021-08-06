@@ -36,6 +36,7 @@ class Constants {
     ]
     static final INTERNET_EXTERNAL_SOURCE_ID = "afa12424-bde3-4313-b810-bb463cbe8f90" // pkg/networkgraph/constants.go
     static final STACKROX_NODE_ANNOTATION_TRUNCATION_LENGTH = 254
+    static final CORE_IMAGE_INTEGRATION_NAME = "core quay"
 
     /*
         StackRox Product Feature Flags
