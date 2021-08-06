@@ -125,7 +125,7 @@
     },
     "devDependencies": {
         "@babel/core": "7.12.3",
-        "@cypress/code-coverage": "^3.9.5",
+        "@cypress/code-coverage": "^3.9.10",
         "@cypress/instrument-cra": "^1.4.0",
         "@stackrox/tailwind-config": "*",
         "@storybook/addon-essentials": "^6.3.0",
@@ -144,7 +144,7 @@
         "@types/react-redux": "^7.1.16",
         "autoprefixer": "^10.2.5",
         "cypress": "^6.8.0",
-        "cypress-file-upload": "^5.0.7",
+        "cypress-file-upload": "^5.0.8",
         "eslint": "^7.32.0",
         "eslint-config-airbnb": "^18.2.1",
         "eslint-config-airbnb-typescript": "^12.3.1",
