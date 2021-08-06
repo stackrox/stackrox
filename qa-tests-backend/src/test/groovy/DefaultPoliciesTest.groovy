@@ -1,8 +1,8 @@
-
 import static Services.getPolicies
 import static Services.waitForViolation
 
 import io.grpc.StatusRuntimeException
+import spock.lang.Retry
 import spock.lang.Shared
 import services.AlertService
 import services.CreatePolicyService
@@ -231,6 +231,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @Retry(count = 0)
     def "Notifier for StackRox images with fixable vulns"() {
         when:
         "Running against a 'nightly' CI build"
@@ -245,8 +246,10 @@ class DefaultPoliciesTest extends BaseSpecification {
         def unexpectedViolations = violations.findAll {
             def deploymentName = it.deployment.name
             def policyName = it.policy.name
-            !Constants.VIOLATIONS_ALLOWLIST.containsKey(deploymentName) ||
-                    !Constants.VIOLATIONS_ALLOWLIST.get(deploymentName).contains(policyName)
+
+            (!Constants.VIOLATIONS_ALLOWLIST.containsKey(deploymentName) ||
+                    !Constants.VIOLATIONS_ALLOWLIST.get(deploymentName).contains(policyName)) &&
+                    !Constants.VIOLATIONS_BY_POLICY_ALLOWLIST.contains(policyName)
         }
         println "${unexpectedViolations.size()} violation(s) were not expected"
         if (unexpectedViolations.isEmpty()) {
@@ -258,9 +261,21 @@ class DefaultPoliciesTest extends BaseSpecification {
                 ":rotating_light:"
 
         Map<String, Set<String>> deploymentPolicyMap = [:]
+        Map<String, Set<String>> resourcePolicyMap = [:]
         Map<String, Set<String>> imageFixableVulnMap = [:]
         Boolean hadGetErrors = false
         unexpectedViolations.each {
+            if (it.hasResource()) {
+                def key = "${it.commonEntityInfo.resourceType}/${it.resource.name}".toString()
+                if (!resourcePolicyMap.containsKey(key)) {
+                    resourcePolicyMap.put(key, [] as Set)
+                }
+                resourcePolicyMap.get(key).add(it.policy.name)
+                // Alerts with resources don't have images and thus no image vulns so no point in continuing
+                // But it's not entirely being ignored so that we can catch issues with unexpected resource alerts
+                return
+            }
+
             if (!deploymentPolicyMap.containsKey(it.deployment.name)) {
                 deploymentPolicyMap.put(it.deployment.name, [] as Set)
             }
@@ -303,6 +318,13 @@ class DefaultPoliciesTest extends BaseSpecification {
                 slackPayload += "${k}: ${v}  "
             }
         }
+        if (!resourcePolicyMap.isEmpty()) {
+            slackPayload += " \nResources and violated policies: "
+            resourcePolicyMap.each { k, v ->
+                slackPayload += "${k}: ${v}  "
+            }
+        }
+
         imageFixableVulnMap.each { k, v ->
             slackPayload += "\n${k}: ${v}"
         }
