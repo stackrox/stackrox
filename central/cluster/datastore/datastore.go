@@ -67,7 +67,7 @@ type DataStore interface {
 	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
-	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID string, hello *central.SensorHello) (*storage.Cluster, error)
+	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error)
 }
 
 // New returns an instance of DataStore.

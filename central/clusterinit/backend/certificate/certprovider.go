@@ -1,4 +1,4 @@
-package backend
+package certificate
 
 import (
 	"github.com/pkg/errors"
@@ -7,9 +7,9 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// CertificateProvider provides CA and service certificates to the cluster init backend.
+// Provider provides CA and service certificates to the cluster init backend.
 //go:generate mockgen-wrapper
-type CertificateProvider interface {
+type Provider interface {
 	GetCA() (string, error)
 	GetBundle() (clusters.CertBundle, uuid.UUID, error)
 }
@@ -33,7 +33,7 @@ func (c *certProviderImpl) GetBundle() (clusters.CertBundle, uuid.UUID, error) {
 	return certBundle, id, nil
 }
 
-// NewCertProvider returns a new certificate provider.
-func NewCertProvider() CertificateProvider {
+// NewProvider returns a new certificate provider.
+func NewProvider() Provider {
 	return &certProviderImpl{}
 }

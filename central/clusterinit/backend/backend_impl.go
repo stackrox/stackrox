@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +18,7 @@ var _ authn.ValidateCertChain = (*backendImpl)(nil)
 
 type backendImpl struct {
 	store        store.Store
-	certProvider CertificateProvider
+	certProvider certificate.Provider
 }
 
 func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error) {

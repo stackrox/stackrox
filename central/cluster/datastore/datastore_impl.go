@@ -718,7 +718,7 @@ func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
 	return nil
 }
 
-func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID string, hello *central.SensorHello) (*storage.Cluster, error) {
+func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
 		return nil, err
 	}
@@ -758,6 +758,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		// A this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
 			Name:               clusterName,
+			InitBundleId:       bundleID,
 			MostRecentSensorId: hello.GetDeploymentIdentification().Clone(),
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
@@ -774,8 +775,9 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	// If the cluster should not be helm-managed, clear out the helm config field, if necessary.
 	if helmConfig == nil || helmConfig.GetNotHelmManaged() {
-		if cluster.GetHelmConfig() != nil {
+		if cluster.GetHelmConfig() != nil || cluster.GetInitBundleId() != bundleID {
 			cluster.HelmConfig = nil
+			cluster.InitBundleId = bundleID
 			if err := ds.updateClusterNoLock(cluster); err != nil {
 				return nil, err
 			}
@@ -794,8 +796,8 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			}
 		}
 
-		if cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() {
-			// No change in fingerprint, do not update. Note: this also is the case if the cluster was newly added.
+		if cluster.GetInitBundleId() == bundleID && cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() {
+			// No change in fingerprint nor in init bundle ID, do not update. Note: this also is the case if the cluster was newly added.
 			return cluster, nil
 		}
 	}
@@ -804,6 +806,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	clusterConfig := helmConfig.GetClusterConfig()
 	configureFromHelmConfig(cluster, clusterConfig)
 	cluster.HelmConfig = clusterConfig.Clone()
+	cluster.InitBundleId = bundleID
 
 	if err := ds.updateClusterNoLock(cluster); err != nil {
 		return nil, err

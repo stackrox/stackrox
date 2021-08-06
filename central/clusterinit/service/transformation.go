@@ -5,14 +5,19 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// InitBundleMetaStorageToV1 transforms the internal storage representation of
+// initBundleMetaStorageToV1 transforms the internal storage representation of
 // init bundle metadata to the exposed data model in the v1 API.
-func InitBundleMetaStorageToV1(meta *storage.InitBundleMeta) *v1.InitBundleMeta {
+func initBundleMetaStorageToV1(meta *storage.InitBundleMeta) *v1.InitBundleMeta {
+	return initBundleMetaStorageToV1WithImpactedClusters(meta, nil)
+}
+
+func initBundleMetaStorageToV1WithImpactedClusters(meta *storage.InitBundleMeta, clusters []*v1.InitBundleMeta_ImpactedCluster) *v1.InitBundleMeta {
 	return &v1.InitBundleMeta{
-		Id:        meta.GetId(),
-		Name:      meta.GetName(),
-		CreatedAt: meta.GetCreatedAt(),
-		CreatedBy: meta.GetCreatedBy(),
-		ExpiresAt: meta.GetExpiresAt(),
+		Id:               meta.GetId(),
+		Name:             meta.GetName(),
+		CreatedAt:        meta.GetCreatedAt(),
+		CreatedBy:        meta.GetCreatedBy(),
+		ExpiresAt:        meta.GetExpiresAt(),
+		ImpactedClusters: clusters,
 	}
 }
