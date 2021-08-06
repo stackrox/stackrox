@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/role/resources"
@@ -30,6 +31,7 @@ var (
 )
 
 // Backend is the backend for the cluster-init component.
+//go:generate mockgen-wrapper
 type Backend interface {
 	GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	GetCAConfig(ctx context.Context) (*CAConfig, error)
@@ -39,7 +41,7 @@ type Backend interface {
 	authn.ValidateCertChain
 }
 
-func newBackend(store store.Store, certProvider CertificateProvider) Backend {
+func newBackend(store store.Store, certProvider certificate.Provider) Backend {
 	return &backendImpl{
 		store:        store,
 		certProvider: certProvider,

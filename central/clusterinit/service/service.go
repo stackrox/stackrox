@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -22,6 +23,9 @@ type Service interface {
 }
 
 // New returns a new Service instance.
-func New(backend backend.Backend) Service {
-	return &serviceImpl{backend: backend}
+func New(backend backend.Backend, clusterStore clusterDataStore.DataStore) Service {
+	return &serviceImpl{
+		backend:      backend,
+		clusterStore: clusterStore,
+	}
 }

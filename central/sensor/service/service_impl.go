@@ -145,7 +145,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 		}
 	}
 
-	cluster, err := s.clusters.LookupOrCreateClusterFromConfig(clusterDSSAC, clusterID, sensorHello)
+	cluster, err := s.clusters.LookupOrCreateClusterFromConfig(clusterDSSAC, clusterID, serviceID.InitBundleId, sensorHello)
 	if err != nil {
 		return nil, errors.Errorf("could not fetch cluster for sensor: %v", err)
 	}

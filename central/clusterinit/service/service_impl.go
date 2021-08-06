@@ -5,11 +5,13 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,7 +24,8 @@ var (
 var _ v1.ClusterInitServiceServer = (*serviceImpl)(nil)
 
 type serviceImpl struct {
-	backend backend.Backend
+	backend      backend.Backend
+	clusterStore clusterStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -40,15 +43,24 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetInitBundles(ctx context.Context, empty *v1.Empty) (*v1.InitBundleMetasResponse, error) {
+func (s *serviceImpl) GetInitBundles(ctx context.Context, _ *v1.Empty) (*v1.InitBundleMetasResponse, error) {
 	initBundleMetas, err := s.backend.GetAll(ctx)
 	if err != nil {
-		return nil, errors.Errorf("retrieving meta data for all init bundles: %s", err)
+		return nil, errors.Wrap(err, "retrieving meta data for all init bundles")
+	}
+	bundlesIDs := set.NewStringSet()
+	for _, b := range initBundleMetas {
+		bundlesIDs.Add(b.GetId())
+	}
+	impactedClustersForBundles, err := s.getImpactedClustersForBundles(ctx, bundlesIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving clusters for all init bundles")
 	}
 
 	v1InitBundleMetas := make([]*v1.InitBundleMeta, 0, len(initBundleMetas))
 	for _, initBundle := range initBundleMetas {
-		v1InitBundleMetas = append(v1InitBundleMetas, InitBundleMetaStorageToV1(initBundle))
+		v1InitBundleMetas = append(v1InitBundleMetas,
+			initBundleMetaStorageToV1WithImpactedClusters(initBundle, impactedClustersForBundles[initBundle.GetId()]))
 	}
 
 	return &v1.InitBundleMetasResponse{Items: v1InitBundleMetas}, nil
@@ -78,7 +90,7 @@ func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBu
 		}
 		return nil, errors.Errorf("generating new init bundle: %s", err)
 	}
-	meta := InitBundleMetaStorageToV1(generated.Meta)
+	meta := initBundleMetaStorageToV1(generated.Meta)
 
 	bundleYaml, err := generated.RenderAsYAML()
 	if err != nil {
@@ -100,8 +112,21 @@ func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBund
 	var failed []*v1.InitBundleRevokeResponse_InitBundleRevocationError
 	var revoked []string
 
+	userConfirmedImpactedClusters := request.GetConfirmImpactedClustersIds()
+	impactedClustersForBundles, err := s.getImpactedClustersForBundles(ctx, set.NewStringSet(request.GetIds()...))
+	if err != nil {
+		return nil, err
+	}
+
 	for _, id := range request.GetIds() {
-		if err := s.backend.Revoke(ctx, id); err != nil {
+		impactedClusters := impactedClustersForBundles[id]
+		if !containsAll(userConfirmedImpactedClusters, impactedClusters) {
+			failed = append(failed, &v1.InitBundleRevokeResponse_InitBundleRevocationError{
+				Id:               id,
+				Error:            "not all clusters were confirmed",
+				ImpactedClusters: impactedClusters,
+			})
+		} else if err := s.backend.Revoke(ctx, id); err != nil {
 			failed = append(failed, &v1.InitBundleRevokeResponse_InitBundleRevocationError{Id: id, Error: err.Error()})
 		} else {
 			revoked = append(revoked, id)
@@ -109,4 +134,32 @@ func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBund
 	}
 
 	return &v1.InitBundleRevokeResponse{InitBundleRevokedIds: revoked, InitBundleRevocationErrors: failed}, nil
+}
+
+func (s *serviceImpl) getImpactedClustersForBundles(ctx context.Context, bundleIDs set.StringSet) (map[string][]*v1.InitBundleMeta_ImpactedCluster, error) {
+	clusters, err := s.clusterStore.GetClusters(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not list clusters")
+	}
+	clustersByBundleID := make(map[string][]*v1.InitBundleMeta_ImpactedCluster, len(bundleIDs))
+	for _, cluster := range clusters {
+		bundleID := cluster.GetInitBundleId()
+		if bundleIDs.Contains(bundleID) {
+			clustersByBundleID[bundleID] = append(clustersByBundleID[bundleID], &v1.InitBundleMeta_ImpactedCluster{
+				Name: cluster.GetName(),
+				Id:   cluster.GetId(),
+			})
+		}
+	}
+	return clustersByBundleID, nil
+}
+
+func containsAll(clusterIDs []string, clusters []*v1.InitBundleMeta_ImpactedCluster) bool {
+	ids := set.NewStringSet(clusterIDs...)
+	for _, c := range clusters {
+		if !ids.Contains(c.GetId()) {
+			return false
+		}
+	}
+	return true
 }

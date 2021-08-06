@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/clusterinit/backend/mocks"
+	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
 	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
@@ -106,7 +106,7 @@ type clusterInitBackendTestSuite struct {
 	backend      Backend
 	ctx          context.Context
 	rocksDB      *rocksdb.RocksDB
-	certProvider *mocks.MockCertificateProvider
+	certProvider *mocks.MockProvider
 	mockCtrl     *gomock.Controller
 	certBundle   clusters.CertBundle
 	caCert       string
@@ -116,7 +116,7 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	err := s.initMockData()
 	s.Require().NoError(err, "retrieving test data for mocking")
 	s.mockCtrl = gomock.NewController(s.T())
-	m := mocks.NewMockCertificateProvider(s.mockCtrl)
+	m := mocks.NewMockProvider(s.mockCtrl)
 	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
 	store, err := rocksdbStore.NewStore(s.rocksDB)
 	s.Require().NoError(err)
