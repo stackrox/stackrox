@@ -11,12 +11,15 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
 var (
 	authorizer = idcheck.AdmissionControlOnly()
+
+	log = logging.LoggerForModule()
 )
 
 type managementService struct {

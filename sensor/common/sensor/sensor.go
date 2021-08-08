@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -139,14 +138,20 @@ func (s *Sensor) Start() {
 
 	var centralReachable concurrency.Flag
 
-	admissionControllerRoute := routes.CustomRoute{
+	legacyAdmissionControllerRoute := routes.CustomRoute{
 		Route:         "/admissioncontroller",
 		Authorizer:    allow.Anonymous(),
-		ServerHandler: admissioncontroller.NewHandler(s.centralConnection, &centralReachable, s.configHandler),
+		ServerHandler: &readinessHandler{centralReachable: &centralReachable},
+		Compression:   false,
+	}
+	readinessRoute := routes.CustomRoute{
+		Route:         "/ready",
+		Authorizer:    allow.Anonymous(),
+		ServerHandler: &readinessHandler{centralReachable: &centralReachable},
 		Compression:   false,
 	}
 
-	customRoutes := []routes.CustomRoute{admissionControllerRoute}
+	customRoutes := []routes.CustomRoute{readinessRoute, legacyAdmissionControllerRoute}
 
 	koCacheSource, err := createKOCacheSource(s.centralEndpoint)
 	if err != nil {
@@ -188,7 +193,7 @@ func (s *Sensor) Start() {
 	s.server.Start()
 
 	webhookConfig := pkgGRPC.Config{
-		CustomRoutes: []routes.CustomRoute{admissionControllerRoute},
+		CustomRoutes: []routes.CustomRoute{legacyAdmissionControllerRoute, readinessRoute},
 		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
 				ListenEndpoint: publicWebhookEndpoint,

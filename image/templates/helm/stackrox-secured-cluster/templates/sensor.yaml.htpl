@@ -77,7 +77,7 @@ spec:
         readinessProbe:
           httpGet:
             scheme: HTTPS
-            path: /admissioncontroller
+            path: /ready
             port: 9443
         ports:
           - containerPort: 8443
