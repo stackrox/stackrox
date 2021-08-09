@@ -159,14 +159,14 @@ describe('Boolean Policy Logic Section', () => {
         });
     });
 
-    describe('Single Policy Field Card 2', () => {
+    // TODO: for release 65, re-enable these tests after UI to handle read-only flags is merged
+    describe.skip('Single Policy Field Card 2', () => {
         // TODO: ROX-7768 Enabled once clone operation is fixed.
         before(function beforeHook() {
             if (checkFeatureFlag('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK', true)) {
                 this.skip();
             }
         });
-
         it('should allow updating days since image scanned in a policy', () => {
             cy.get(selectors.policies.scanImage).click({
                 force: true,
