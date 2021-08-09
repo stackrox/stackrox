@@ -35,7 +35,7 @@ type PolicyDatastoreTestSuite struct {
 	ctx context.Context
 }
 
-func (s *PolicyDatastoreTestSuite) SetupSuite() {
+func (s *PolicyDatastoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
@@ -47,7 +47,7 @@ func (s *PolicyDatastoreTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *PolicyDatastoreTestSuite) TearDownSuite() {
+func (s *PolicyDatastoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
@@ -72,9 +72,9 @@ func (s *PolicyDatastoreTestSuite) testImportFailResponse(expectedPolicy *storag
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 	policy := &storage.Policy{
-		Name:     "Some Name",
-		Id:       "Some ID",
-		SORTName: "Some Name",
+		Name:     "policy-to-import",
+		Id:       "import-1",
+		SORTName: "policy-to-import",
 	}
 
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
@@ -91,9 +91,9 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 	policy := &storage.Policy{
-		Name:     "Some Name",
-		Id:       "Some ID",
-		SORTName: "Some Name",
+		Name:     "test policy",
+		Id:       "test-policy-1",
+		SORTName: "test policy",
 	}
 
 	otherName := "Joseph Rules"
@@ -118,10 +118,10 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 }
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
-	name := "Some Name"
+	name := "test-duplicate-policy-name"
 	policy := &storage.Policy{
 		Name:     name,
-		Id:       "Some ID",
+		Id:       "duplicate-1",
 		SORTName: name,
 	}
 
@@ -146,10 +146,10 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 }
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateNameAndDuplicateID() {
-	name := "Some Name"
+	name := "another-duplicate-name"
 	policy := &storage.Policy{
 		Name:     name,
-		Id:       "Some ID",
+		Id:       "another-duplicate-id",
 		SORTName: name,
 	}
 
@@ -178,7 +178,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateNameAndDuplicateID()
 }
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
-	succeedName := "Some Name"
+	succeedName := "success"
 	policySucceed := &storage.Policy{
 		Name:     succeedName,
 		Id:       "Succeed ID",
@@ -223,7 +223,6 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 	s.indexer.EXPECT().AddPolicy(policySucceed).Return(nil)
 
 	s.store.EXPECT().AddPolicy(policyFail1).Return(policyFail1.GetId(), errorFail1)
-
 	s.store.EXPECT().AddPolicy(policyFail2).Return(policyFail2.GetId(), errorFail2)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policySucceed.Clone(), policyFail1.Clone(), policyFail2.Clone()}, false)
@@ -239,10 +238,10 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 }
 
 func (s *PolicyDatastoreTestSuite) TestUnknownError() {
-	name := "Some Name"
+	name := "unknown-error"
 	policy := &storage.Policy{
 		Name:     name,
-		Id:       "Some ID",
+		Id:       "unknown-error-id",
 		SORTName: name,
 	}
 
@@ -288,12 +287,12 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 
 	s.store.EXPECT().GetAllPolicies().Return([]*storage.Policy{existingPolicy1, existingPolicy2}, nil)
 
-	s.store.EXPECT().UpdatePolicy(policy1).Return(nil)
+	s.store.EXPECT().UpsertPolicy(policy1).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy1).Return(nil)
-
 	s.store.EXPECT().RemovePolicy(existingPolicy2.GetId()).Return(nil)
 	s.indexer.EXPECT().DeletePolicy(existingPolicy2.GetId()).Return(nil)
-	s.store.EXPECT().UpdatePolicy(policy2).Return(nil)
+
+	s.store.EXPECT().UpsertPolicy(policy2).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy2).Return(nil)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy1.Clone(), policy2.Clone()}, true)
@@ -309,9 +308,9 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 	clusterName := "test"
 	notifierName := "test"
 	policy := &storage.Policy{
-		Name:     "Some Name",
-		Id:       "Some ID",
-		SORTName: "Some Name",
+		Name:     "Boo's policy",
+		Id:       "policy-boo",
+		SORTName: "Boo's policy",
 		Scope: []*storage.Scope{
 			{
 				Cluster: clusterName,
@@ -330,16 +329,16 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 	}
 
 	resultPolicy := &storage.Policy{
-		Name:     "Some Name",
-		Id:       "Some ID",
-		SORTName: "Some Name",
+		Name:     "Boo's policy",
+		Id:       "policy-boo",
+		SORTName: "Boo's policy",
 	}
 
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.notifierDatastore.EXPECT().GetNotifier(s.ctx, notifierName).Return(nil, false, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(resultPolicy).Return(resultPolicy.GetName(), nil)
-	s.indexer.EXPECT().AddPolicy(resultPolicy).Return(nil)
+	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), nil)
+	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
 	s.NoError(err)
@@ -348,7 +347,7 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 
 	resp := responses[0]
 	s.True(resp.GetSucceeded())
-	s.Equal(resp.GetPolicy(), resultPolicy)
+	s.Equal(resultPolicy, resp.GetPolicy())
 	s.Require().Len(resp.GetErrors(), 1)
 	importError := resp.GetErrors()[0]
 	s.Equal(importError.GetType(), policies.ErrImportClustersOrNotifiersRemoved)
@@ -387,7 +386,7 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(mockClusters, nil)
 	s.notifierDatastore.EXPECT().GetNotifier(s.ctx, notifierName).Return(nil, true, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetName(), nil)
+	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)

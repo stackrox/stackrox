@@ -61,6 +61,7 @@ func tearDownImportExportTest(t *testing.T) {
 
 	var cleanupErrors []error
 	for _, id := range addedPolicies {
+		log.Infof("Added policy: %s", id)
 		if id == knownPolicyID {
 			continue
 		}
@@ -70,6 +71,7 @@ func tearDownImportExportTest(t *testing.T) {
 		})
 		cancel()
 		if err != nil {
+			log.Infof("error deleting policy %s, error: %v", id, err)
 			cleanupErrors = append(cleanupErrors, err)
 		}
 	}

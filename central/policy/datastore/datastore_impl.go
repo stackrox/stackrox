@@ -277,7 +277,7 @@ func (ds *datastoreImpl) importOverwrite(policy *storage.Policy, policiesByName 
 		}
 	}
 	// This should never create a name violation because we just removed any name conflicts
-	return ds.storage.UpdatePolicy(policy)
+	return ds.storage.UpsertPolicy(policy)
 }
 
 func getImportErrorsFromError(err error) []*v1.ImportPolicyError {

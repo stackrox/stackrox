@@ -182,6 +182,15 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 
 // UpdatePolicy updates a policy to bolt
 func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
+	return b.upsertPolicy(policy, true)
+}
+
+// UpsertPolicy updates a policy to bolt
+func (b *storeImpl) UpsertPolicy(policy *storage.Policy) error {
+	return b.upsertPolicy(policy, false)
+}
+
+func (b *storeImpl) upsertPolicy(policy *storage.Policy, errIfNotFound bool) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Policy")
 
 	// Have to lock here because this is an upsert, not an update.  AddPolicy should not re-create a policy which is
@@ -198,11 +207,16 @@ func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)
 		// If the update is changing the name, check if the name has already been taken
-		if val, _ := secondarykey.GetCurrentUniqueKey(tx, policyBucket, policy.GetId()); val != policy.GetName() {
+		val, ok := secondarykey.GetCurrentUniqueKey(tx, policyBucket, policy.GetId())
+		if errIfNotFound && !ok {
+			return errorhelpers.ErrNotFound
+		}
+		if val != policy.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
 				return errors.Wrap(err, "Could not update policy due to name validation")
 			}
 		}
+
 		bytes, err := proto.Marshal(policy)
 		if err != nil {
 			return err

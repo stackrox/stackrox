@@ -59,6 +59,7 @@ type Store interface {
 	GetPolicies(ids ...string) ([]*storage.Policy, []int, []error, error)
 	AddPolicy(*storage.Policy) (string, error)
 	UpdatePolicy(*storage.Policy) error
+	UpsertPolicy(policy *storage.Policy) error
 	RemovePolicy(id string) error
 	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
 	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error

@@ -115,6 +115,20 @@ func (mr *MockStoreMockRecorder) UpdatePolicy(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePolicy", reflect.TypeOf((*MockStore)(nil).UpdatePolicy), arg0)
 }
 
+// UpsertPolicy mocks base method
+func (m *MockStore) UpsertPolicy(policy *storage.Policy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertPolicy", policy)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertPolicy indicates an expected call of UpsertPolicy
+func (mr *MockStoreMockRecorder) UpsertPolicy(policy interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPolicy", reflect.TypeOf((*MockStore)(nil).UpsertPolicy), policy)
+}
+
 // RemovePolicy mocks base method
 func (m *MockStore) RemovePolicy(id string) error {
 	m.ctrl.T.Helper()

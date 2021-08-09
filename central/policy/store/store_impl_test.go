@@ -276,3 +276,16 @@ func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
 	suite.NoError(err)
 	suite.Empty(policies)
 }
+
+func (suite *PolicyStoreTestSuite) TestUpdatePolicyAlreadyExists() {
+	policy1 := &storage.Policy{
+		Name: "Boo",
+		Id:   "boo-1",
+	}
+
+	suite.verifyAddPolicySucceeds(policy1)
+
+	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{Id: "boo-1",
+		Name: "Foo",
+	}))
+}
