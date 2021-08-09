@@ -7,6 +7,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 GITROOT="$(git rev-parse --show-toplevel)"
 [[ -n "${GITROOT}" ]] || { echo >&2 "Could not determine git root!"; exit 1; }
 
+[[ -n "${QUAY_BEARER_TOKEN}" ]] || { echo >&2 "Missing env QUAY_BEARER_TOKEN"; exit 1; }
+
 # Helper method to call curl command to quay
 function quay_curl {
     curl -sS --fail -H "Authorization: Bearer ${QUAY_BEARER_TOKEN}" -s -X GET "https://quay.io/api/v1/repository/stackrox/${1}"

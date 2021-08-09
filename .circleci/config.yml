@@ -4975,20 +4975,15 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
 
       - run:
-          name: Push images into quay.io
+          name: Pull images from quay.io user account and push to an org account
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
-            ./release/scripts/vuln_scan.sh
+            ./release/scripts/push_to_org.sh
 
       - run:
           name: Check for fixable vulns
           command: |
-            export QUAY_BEARER_TOKEN=${QUAY_BEARER_TOKEN}
             ./release/scripts/vuln_check.sh
 
   ###
@@ -5073,7 +5068,7 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
-          context: quay-cgorman1-readonly
+          context: custom-executor-pull
       - check-rebase:
           filters:
             branches:
@@ -5271,13 +5266,13 @@ workflows:
 
       - scan-images-in-quay:
           <<: *runOnlyOnReleaseCandidateBuilds
-          context: docker-io-and-stackrox-io-push
+          context: custom-executor-pull
           requires:
             - build
             - build-rhel
 
       - retrigger-master-workflow:
-          context: quay-cgorman1-readonly
+          context: custom-executor-pull
           filters:
             branches:
               ignore: /.*/
@@ -5319,13 +5314,13 @@ workflows:
       equal: [ "build", << pipeline.parameters.workflow_name >> ]
     jobs:
       - pre-create-tag:
-          context: quay-cgorman1-readonly
+          context: custom-executor-pull
       - pre-build-ui:
-          context: quay-cgorman1-readonly
+          context: custom-executor-pull
           requires:
             - pre-create-tag
       - pre-build-cli:
-          context: quay-cgorman1-readonly
+          context: custom-executor-pull
           requires:
             - pre-create-tag
       - pre-build-go-binaries:
@@ -5344,4 +5339,4 @@ workflows:
       equal: [ "designated_image_test", << pipeline.parameters.workflow_name >> ]
     jobs:
       - designated-image-tests:
-          context: quay-cgorman1-readonly
+          context: custom-executor-pull
