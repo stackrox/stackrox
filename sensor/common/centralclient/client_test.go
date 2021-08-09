@@ -6,14 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,27 +33,42 @@ const (
 	invalidSignature = "MEUCIQDTYU+baqRR2RPy9Y50u5xc+ZrwrxCbqgHsgyf+QrjZQQIgJgqMmvRRvtgLU9O6WfzNifA1X8vwaBZ98CCniRH2pGs="
 )
 
-func TestServiceImpl(t *testing.T) {
+func TestClient(t *testing.T) {
 	suite.Run(t, new(ClientTestSuite))
 }
 
 type ClientTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
+
+	envIsolator   *envisolator.EnvIsolator
+	clientCertDir string
 }
 
 func (t *ClientTestSuite) SetupSuite() {
 	t.envIsolator = envisolator.NewEnvIsolator(t.T())
+
+	cwd, err := os.Getwd()
+	t.Require().NoError(err)
+	t.envIsolator.Setenv(mtls.CAFileEnvName, filepath.Join(cwd, "testdata", "central-ca.pem"))
+
+	// Generate a client certificate (this does not need to be related to the central CA from testdata).
+	ca, err := certgen.GenerateCA()
+	t.Require().NoError(err)
+
+	t.clientCertDir, err = ioutil.TempDir("", "client-certs")
+	t.Require().NoError(err)
+
+	leafCert, err := ca.IssueCertForSubject(mtls.SensorSubject)
+	t.Require().NoError(err)
+
+	t.Require().NoError(ioutil.WriteFile(filepath.Join(t.clientCertDir, "cert.pem"), leafCert.CertPEM, 0644))
+	t.Require().NoError(ioutil.WriteFile(filepath.Join(t.clientCertDir, "key.pem"), leafCert.KeyPEM, 0600))
+	t.envIsolator.Setenv(mtls.CertFilePathEnvName, filepath.Join(t.clientCertDir, "cert.pem"))
+	t.envIsolator.Setenv(mtls.KeyFileEnvName, filepath.Join(t.clientCertDir, "key.pem"))
 }
 
-func (t *ClientTestSuite) SetupTest() {
-	wd, _ := os.Getwd()
-	testdata := path.Join(wd, "testdata")
-
-	t.envIsolator.Setenv("ROX_MTLS_CA_FILE", path.Join(testdata, "central-ca.pem"))
-}
-
-func (t *ClientTestSuite) TearDownTest() {
+func (t *ClientTestSuite) TearDownSuite() {
+	_ = os.RemoveAll(t.clientCertDir)
 	t.envIsolator.RestoreAll()
 }
 
