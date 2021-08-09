@@ -5,7 +5,7 @@ import { createStructuredSelector } from 'reselect';
 import { connect } from 'react-redux';
 
 import { selectors } from 'reducers';
-import { addFieldArrayHandler, removeFieldArrayHandler } from './utils';
+import { addFieldArrayHandler, removeFieldArrayHandler } from '../utils';
 import SingleScope from './SingleScope';
 
 const ScopeArray = ({ fields, clusters, deployments, isDeploymentScope }) => {
