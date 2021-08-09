@@ -69,7 +69,20 @@ func NewClient(endpoint string) (*Client, error) {
 		return nil, errors.Wrap(err, "parsing endpoint url")
 	}
 
-	tlsConf := &tls.Config{InsecureSkipVerify: true}
+	// Load the client certificate. Note that while all endpoints accessed by the client do not require
+	// authentication, it is possible that a user has required client certificate authentication for the
+	// endpoint sensor is connecting to. Since a client certificate can be used without harm even if the
+	// remote is not trusted, make it available here to be on the safe side.
+	clientCert, err := mtls.LeafCertificateFromFile()
+	if err != nil {
+		return nil, errors.Wrap(err, "obtaining client certificate")
+	}
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		Certificates: []tls.Certificate{
+			clientCert,
+		},
+	}
 	httpClient := &http.Client{
 		Transport: &http.Transport{TLSClientConfig: tlsConf},
 		Timeout:   requestTimeout,
