@@ -33,29 +33,31 @@ const ControlRelatedEntitiesList = ({
         const { clusters } = data;
         let options = clusters;
         if (listEntityType === entityTypes.NAMESPACE) {
-            options = clusters.reduce(
-                (acc, cluster) =>
-                    acc.concat(
-                        cluster.namespaces.map((ns) => ({
-                            ...ns.metadata,
-                            name: `${cluster?.name}/${ns?.metadata?.name}`,
-                        }))
-                    ),
-                []
-            );
+            options =
+                clusters?.reduce(
+                    (acc, cluster) =>
+                        acc.concat(
+                            cluster.namespaces.map((ns) => ({
+                                ...ns.metadata,
+                                name: `${cluster?.name}/${ns?.metadata?.name}`,
+                            }))
+                        ),
+                    []
+                ) || [];
         } else if (listEntityType === entityTypes.NODE) {
-            options = clusters.reduce(
-                (acc, cluster) =>
-                    acc.concat(
-                        cluster.nodes.map((node) => ({
-                            ...node,
-                            name: `${cluster?.name}/${node?.name}`,
-                        }))
-                    ),
-                []
-            );
+            options =
+                clusters?.reduce(
+                    (acc, cluster) =>
+                        acc.concat(
+                            cluster.nodes.map((node) => ({
+                                ...node,
+                                name: `${cluster?.name}/${node?.name}`,
+                            }))
+                        ),
+                    []
+                ) || [];
         } else if (listEntityType === entityTypes.DEPLOYMENT) {
-            options = data.deployments;
+            options = data.deployments || [];
         }
 
         function getEntityName(id) {

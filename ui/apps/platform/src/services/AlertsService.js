@@ -15,9 +15,13 @@ export function fetchAlertsByTimeseries(filters) {
     const params = queryString.stringify({
         ...filters,
     });
-    return axios.get(`${baseUrl}/summary/timeseries?${params}`).then((response) => ({
-        response: response.data,
-    }));
+
+    // set higher timeout for this call to handle known backend scale issues with dashboard
+    return axios
+        .get(`${baseUrl}/summary/timeseries?${params}`, { timeout: 59999 })
+        .then((response) => ({
+            response: response.data,
+        }));
 }
 
 /**
@@ -29,9 +33,13 @@ export function fetchSummaryAlertCounts(filters) {
     const params = queryString.stringify({
         ...filters,
     });
-    return axios.get(`${baseUrl}/summary/counts?${params}`).then((response) => ({
-        response: response.data,
-    }));
+
+    // set higher timeout for this call to handle known backend scale issues with dashboard
+    return axios
+        .get(`${baseUrl}/summary/counts?${params}`, { timeout: 59999 })
+        .then((response) => ({
+            response: response.data,
+        }));
 }
 
 /**
