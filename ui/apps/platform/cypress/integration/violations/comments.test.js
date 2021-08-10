@@ -47,10 +47,8 @@ describe('Violation Page: Comments', () => {
 
         cy.get(commentsSelectors.lastComment.userName).should('have.text', 'ui_tests');
         cy.get(commentsSelectors.lastComment.dateAndEditedStatus).should((date) => {
-            const created = Cypress.moment(date.text(), 'MM/DD/YYYY | h:mm:ssA');
-            const now = Cypress.moment();
-            // check the comment was created in the last minute
-            expect(now.diff(created, 'minutes')).to.equal(0); // let's hope the server time is fine
+            // Date matches 'MM/DD/YYYY | h:mm:ssA' format.
+            expect(/\d{2}\/\d{2}\/\d{4} | \d{1,2}:\d{2}:\d{2}(AM|PM)/.test(date.text())).to.be.true;
         });
         cy.get(commentsSelectors.lastComment.message).should('have.text', comment);
         cy.get(commentsSelectors.lastComment.links).should('have.length', 3);

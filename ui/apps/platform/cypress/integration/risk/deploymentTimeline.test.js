@@ -1,3 +1,5 @@
+import { format } from 'date-fns';
+
 import { selectors, url } from '../../constants/RiskPage';
 
 import * as api from '../../constants/apiEndpoints';
@@ -257,10 +259,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             return cy.fixture('risks/eventTimeline/deploymentEventTimeline.json').then((json) => {
                 const eventTime = json.data.pods[0].events.find((event) => event.id === id)
                     .timestamp;
-                const formattedEventTime = Cypress.moment(eventTime).format(
-                    '[Event time:] MM/DD/YYYY | h:mm:ssA'
-                );
-                return formattedEventTime;
+                return `Event time: ${format(eventTime, 'MM/DD/YYYY | h:mm:ssA')}`;
             });
         }
 
