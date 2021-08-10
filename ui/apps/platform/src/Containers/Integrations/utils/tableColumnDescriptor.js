@@ -84,7 +84,7 @@ const tableColumnDescriptor = Object.freeze({
                 ),
                 Header: 'URL',
             },
-            { accessor: 'splunk.truncate', Header: 'HEC Truncate Limit (optional)' },
+            { accessor: 'splunk.truncate', Header: 'HEC Truncate Limit' },
         ],
         pagerduty: [{ accessor: 'name', Header: 'Name' }],
         generic: [

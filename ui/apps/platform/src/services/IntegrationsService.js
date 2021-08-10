@@ -86,7 +86,9 @@ export function saveIntegrationV2(source, data) {
  */
 export function createIntegration(source, data) {
     // if the data has a config object, use the contents of that config object
-    const createData = data.config ? data.config : data;
+    const hasUpdatePassword = Object.prototype.hasOwnProperty.call(data, 'updatePassword');
+    const createData = hasUpdatePassword ? data[getJsonFieldBySource(source)] : data;
+
     return axios.post(getPath(source, 'create'), createData);
 }
 

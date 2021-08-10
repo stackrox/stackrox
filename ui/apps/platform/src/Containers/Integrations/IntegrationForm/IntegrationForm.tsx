@@ -7,8 +7,6 @@ import ClairIntegrationForm from './Forms/ClairIntegrationForm';
 import DockerIntegrationForm from './Forms/DockerIntegrationForm';
 import AnchoreIntegrationForm from './Forms/AnchoreIntegrationForm';
 import EcrIntegrationForm from './Forms/EcrIntegrationForm';
-import EmailIntegrationForm from './Forms/EmailIntegrationForm';
-import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import GoogleIntegrationForm from './Forms/GoogleIntegrationForm';
 import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
 import AzureIntegrationForm from './Forms/AzureIntegrationForm';
@@ -20,9 +18,12 @@ import TenableIntegrationForm from './Forms/TenableIntegrationForm';
 import IbmIntegrationForm from './Forms/IbmIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
 // notifiers
-import TeamsIntegrationForm from './Forms/TeamsIntegrationForm';
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
+import EmailIntegrationForm from './Forms/EmailIntegrationForm';
+import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
+import SplunkIntegrationForm from './Forms/SplunkIntegrationForm';
 import SyslogIntegrationForm from './Forms/SyslogIntegrationForm';
+import TeamsIntegrationForm from './Forms/TeamsIntegrationForm';
 // external backups
 import S3IntegrationForm from './Forms/S3IntegrationForm';
 import GcsIntegrationForm from './Forms/GcsIntegrationForm';
@@ -63,11 +64,12 @@ const ComponentFormMap = {
         rhel: RhelIntegrationForm,
     },
     notifiers: {
-        email: EmailIntegrationForm,
-        cscc: GoogleCloudSccIntegrationForm,
-        teams: TeamsIntegrationForm,
         awsSecurityHub: AwsSecurityHubIntegrationForm,
+        cscc: GoogleCloudSccIntegrationForm,
+        email: EmailIntegrationForm,
+        splunk: SplunkIntegrationForm,
         syslog: SyslogIntegrationForm,
+        teams: TeamsIntegrationForm,
     },
     backups: {
         s3: S3IntegrationForm,
