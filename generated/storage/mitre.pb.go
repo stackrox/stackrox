@@ -249,31 +249,259 @@ func (m *MitreAttackVector) Clone() *MitreAttackVector {
 	return cloned
 }
 
+type MitreAttackMatrix struct {
+	MatrixInfo           *MitreAttackMatrix_MatrixInfo `protobuf:"bytes,1,opt,name=matrix_info,json=matrixInfo,proto3" json:"matrix_info,omitempty"`
+	Vectors              []*MitreAttackVector          `protobuf:"bytes,2,rep,name=vectors,proto3" json:"vectors,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *MitreAttackMatrix) Reset()         { *m = MitreAttackMatrix{} }
+func (m *MitreAttackMatrix) String() string { return proto.CompactTextString(m) }
+func (*MitreAttackMatrix) ProtoMessage()    {}
+func (*MitreAttackMatrix) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6622b189ba02caab, []int{3}
+}
+func (m *MitreAttackMatrix) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MitreAttackMatrix) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MitreAttackMatrix.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MitreAttackMatrix) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MitreAttackMatrix.Merge(m, src)
+}
+func (m *MitreAttackMatrix) XXX_Size() int {
+	return m.Size()
+}
+func (m *MitreAttackMatrix) XXX_DiscardUnknown() {
+	xxx_messageInfo_MitreAttackMatrix.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MitreAttackMatrix proto.InternalMessageInfo
+
+func (m *MitreAttackMatrix) GetMatrixInfo() *MitreAttackMatrix_MatrixInfo {
+	if m != nil {
+		return m.MatrixInfo
+	}
+	return nil
+}
+
+func (m *MitreAttackMatrix) GetVectors() []*MitreAttackVector {
+	if m != nil {
+		return m.Vectors
+	}
+	return nil
+}
+
+func (m *MitreAttackMatrix) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *MitreAttackMatrix) Clone() *MitreAttackMatrix {
+	if m == nil {
+		return nil
+	}
+	cloned := new(MitreAttackMatrix)
+	*cloned = *m
+
+	cloned.MatrixInfo = m.MatrixInfo.Clone()
+	if m.Vectors != nil {
+		cloned.Vectors = make([]*MitreAttackVector, len(m.Vectors))
+		for idx, v := range m.Vectors {
+			cloned.Vectors[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type MitreAttackMatrix_MatrixInfo struct {
+	Domain               string   `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
+	Platform             string   `protobuf:"bytes,2,opt,name=platform,proto3" json:"platform,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *MitreAttackMatrix_MatrixInfo) Reset()         { *m = MitreAttackMatrix_MatrixInfo{} }
+func (m *MitreAttackMatrix_MatrixInfo) String() string { return proto.CompactTextString(m) }
+func (*MitreAttackMatrix_MatrixInfo) ProtoMessage()    {}
+func (*MitreAttackMatrix_MatrixInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6622b189ba02caab, []int{3, 0}
+}
+func (m *MitreAttackMatrix_MatrixInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MitreAttackMatrix_MatrixInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MitreAttackMatrix_MatrixInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MitreAttackMatrix_MatrixInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MitreAttackMatrix_MatrixInfo.Merge(m, src)
+}
+func (m *MitreAttackMatrix_MatrixInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *MitreAttackMatrix_MatrixInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_MitreAttackMatrix_MatrixInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MitreAttackMatrix_MatrixInfo proto.InternalMessageInfo
+
+func (m *MitreAttackMatrix_MatrixInfo) GetDomain() string {
+	if m != nil {
+		return m.Domain
+	}
+	return ""
+}
+
+func (m *MitreAttackMatrix_MatrixInfo) GetPlatform() string {
+	if m != nil {
+		return m.Platform
+	}
+	return ""
+}
+
+func (m *MitreAttackMatrix_MatrixInfo) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *MitreAttackMatrix_MatrixInfo) Clone() *MitreAttackMatrix_MatrixInfo {
+	if m == nil {
+		return nil
+	}
+	cloned := new(MitreAttackMatrix_MatrixInfo)
+	*cloned = *m
+
+	return cloned
+}
+
+type MitreAttackBundle struct {
+	Version              string               `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	Matrices             []*MitreAttackMatrix `protobuf:"bytes,2,rep,name=matrices,proto3" json:"matrices,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *MitreAttackBundle) Reset()         { *m = MitreAttackBundle{} }
+func (m *MitreAttackBundle) String() string { return proto.CompactTextString(m) }
+func (*MitreAttackBundle) ProtoMessage()    {}
+func (*MitreAttackBundle) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6622b189ba02caab, []int{4}
+}
+func (m *MitreAttackBundle) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MitreAttackBundle) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MitreAttackBundle.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MitreAttackBundle) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MitreAttackBundle.Merge(m, src)
+}
+func (m *MitreAttackBundle) XXX_Size() int {
+	return m.Size()
+}
+func (m *MitreAttackBundle) XXX_DiscardUnknown() {
+	xxx_messageInfo_MitreAttackBundle.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MitreAttackBundle proto.InternalMessageInfo
+
+func (m *MitreAttackBundle) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
+func (m *MitreAttackBundle) GetMatrices() []*MitreAttackMatrix {
+	if m != nil {
+		return m.Matrices
+	}
+	return nil
+}
+
+func (m *MitreAttackBundle) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *MitreAttackBundle) Clone() *MitreAttackBundle {
+	if m == nil {
+		return nil
+	}
+	cloned := new(MitreAttackBundle)
+	*cloned = *m
+
+	if m.Matrices != nil {
+		cloned.Matrices = make([]*MitreAttackMatrix, len(m.Matrices))
+		for idx, v := range m.Matrices {
+			cloned.Matrices[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*MitreTactic)(nil), "storage.MitreTactic")
 	proto.RegisterType((*MitreTechnique)(nil), "storage.MitreTechnique")
 	proto.RegisterType((*MitreAttackVector)(nil), "storage.MitreAttackVector")
+	proto.RegisterType((*MitreAttackMatrix)(nil), "storage.MitreAttackMatrix")
+	proto.RegisterType((*MitreAttackMatrix_MatrixInfo)(nil), "storage.MitreAttackMatrix.MatrixInfo")
+	proto.RegisterType((*MitreAttackBundle)(nil), "storage.MitreAttackBundle")
 }
 
 func init() { proto.RegisterFile("storage/mitre.proto", fileDescriptor_6622b189ba02caab) }
 
 var fileDescriptor_6622b189ba02caab = []byte{
-	// 235 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2e, 0x2e, 0xc9, 0x2f,
-	0x4a, 0x4c, 0x4f, 0xd5, 0xcf, 0xcd, 0x2c, 0x29, 0x4a, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17,
-	0x62, 0x87, 0x0a, 0x2a, 0x05, 0x73, 0x71, 0xfb, 0x82, 0xc4, 0x43, 0x12, 0x93, 0x4b, 0x32, 0x93,
-	0x85, 0xf8, 0xb8, 0x98, 0x32, 0x53, 0x24, 0x18, 0x15, 0x18, 0x35, 0x38, 0x83, 0x98, 0x32, 0x53,
-	0x84, 0x84, 0xb8, 0x58, 0xf2, 0x12, 0x73, 0x53, 0x25, 0x98, 0xc0, 0x22, 0x60, 0xb6, 0x90, 0x02,
-	0x17, 0x77, 0x4a, 0x6a, 0x71, 0x72, 0x51, 0x66, 0x41, 0x49, 0x66, 0x7e, 0x9e, 0x04, 0x33, 0x58,
-	0x0a, 0x59, 0x48, 0x29, 0x8c, 0x8b, 0x0f, 0x62, 0x68, 0x6a, 0x72, 0x46, 0x5e, 0x66, 0x61, 0x69,
-	0x2a, 0x95, 0xcc, 0xad, 0xe2, 0x12, 0x04, 0x9b, 0xeb, 0x58, 0x52, 0x92, 0x98, 0x9c, 0x1d, 0x96,
-	0x9a, 0x5c, 0x92, 0x5f, 0x24, 0xa4, 0xc3, 0xc5, 0x56, 0x02, 0x76, 0x3c, 0xd8, 0x78, 0x6e, 0x23,
-	0x11, 0x3d, 0xa8, 0xdf, 0xf4, 0x90, 0x3c, 0x16, 0x04, 0x55, 0x23, 0x64, 0xce, 0xc5, 0x55, 0x02,
-	0x73, 0x55, 0xb1, 0x04, 0x93, 0x02, 0xb3, 0x06, 0xb7, 0x91, 0x38, 0x9a, 0x0e, 0x98, 0x7c, 0x10,
-	0x92, 0x52, 0x27, 0x93, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e,
-	0x71, 0xc6, 0x63, 0x39, 0x06, 0x2e, 0xc9, 0xcc, 0x7c, 0xbd, 0x62, 0x90, 0x43, 0x8a, 0xf2, 0x2b,
-	0x20, 0xc1, 0x0a, 0x33, 0x27, 0x0a, 0x16, 0xbc, 0x49, 0x6c, 0x60, 0x71, 0x63, 0x40, 0x00, 0x00,
-	0x00, 0xff, 0xff, 0x6b, 0x1b, 0x29, 0xe1, 0x85, 0x01, 0x00, 0x00,
+	// 359 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0x41, 0x4b, 0xc3, 0x30,
+	0x14, 0xc7, 0x6d, 0x27, 0xdb, 0x7c, 0x85, 0x81, 0x4f, 0xd1, 0xba, 0x43, 0x19, 0x05, 0x61, 0x07,
+	0xa9, 0x30, 0x87, 0x5e, 0x75, 0x07, 0xc1, 0xc3, 0x2e, 0x55, 0x76, 0xf0, 0x22, 0x35, 0xcd, 0x34,
+	0xb8, 0x26, 0x33, 0xcd, 0x64, 0xf8, 0x49, 0xfc, 0x48, 0x1e, 0x05, 0xbf, 0x80, 0xcc, 0x2f, 0x22,
+	0x4d, 0x93, 0xd9, 0x89, 0x78, 0xf2, 0xd4, 0xf7, 0x5e, 0xfe, 0xf9, 0xf5, 0xff, 0x4f, 0x02, 0x5b,
+	0xb9, 0x12, 0x32, 0xb9, 0xa3, 0x87, 0x19, 0x53, 0x92, 0x46, 0x53, 0x29, 0x94, 0xc0, 0x86, 0x19,
+	0x86, 0x97, 0xe0, 0x0d, 0x8b, 0xf9, 0x55, 0x42, 0x14, 0x23, 0xd8, 0x02, 0x97, 0xa5, 0xbe, 0xd3,
+	0x71, 0xba, 0x1b, 0xb1, 0xcb, 0x52, 0x44, 0x58, 0xe7, 0x49, 0x46, 0x7d, 0x57, 0x4f, 0x74, 0x8d,
+	0x1d, 0xf0, 0x52, 0x9a, 0x13, 0xc9, 0xa6, 0x8a, 0x09, 0xee, 0xd7, 0xf4, 0x52, 0x75, 0x14, 0x8e,
+	0xa0, 0x55, 0x42, 0x29, 0xb9, 0xe7, 0xec, 0x71, 0x46, 0xff, 0x89, 0xfb, 0x0c, 0x9b, 0x9a, 0x7b,
+	0xa6, 0x54, 0x42, 0x1e, 0x46, 0x94, 0x28, 0x21, 0xf1, 0x00, 0xea, 0x4a, 0x9b, 0xd7, 0x78, 0xaf,
+	0xb7, 0x1d, 0x99, 0x6c, 0x51, 0x25, 0x58, 0x6c, 0x34, 0x78, 0x02, 0xa0, 0xac, 0xab, 0xdc, 0x77,
+	0x3b, 0xb5, 0xae, 0xd7, 0xdb, 0xfd, 0xb1, 0xc3, 0xae, 0xc7, 0x15, 0x69, 0xf8, 0xee, 0xac, 0xfc,
+	0x7c, 0x98, 0x28, 0xc9, 0xe6, 0x78, 0x0e, 0x5e, 0xa6, 0xab, 0x1b, 0xc6, 0xc7, 0xc2, 0x38, 0xd8,
+	0x5f, 0xe5, 0x55, 0x37, 0x44, 0xe5, 0xe7, 0x82, 0x8f, 0x45, 0x0c, 0xd9, 0xb2, 0xc6, 0x3e, 0x34,
+	0x9e, 0x74, 0x1c, 0xeb, 0xa9, 0xfd, 0x1b, 0xa3, 0x4c, 0x1c, 0x5b, 0x69, 0xfb, 0x14, 0xe0, 0x9b,
+	0x87, 0x3b, 0x50, 0x4f, 0x45, 0x96, 0x30, 0x6e, 0xce, 0xd9, 0x74, 0xd8, 0x86, 0xe6, 0x74, 0x92,
+	0xa8, 0xb1, 0x90, 0x99, 0x39, 0xef, 0x65, 0x1f, 0xd2, 0x95, 0x50, 0x83, 0x19, 0x4f, 0x27, 0x14,
+	0xfd, 0xc2, 0x8c, 0xcc, 0x8b, 0x4b, 0x28, 0x49, 0xb6, 0xc5, 0x63, 0x68, 0x6a, 0xd3, 0x84, 0xfe,
+	0xe9, 0xb3, 0x34, 0x15, 0x2f, 0xb5, 0x83, 0xfe, 0xeb, 0x22, 0x70, 0xde, 0x16, 0x81, 0xf3, 0xb1,
+	0x08, 0x9c, 0x97, 0xcf, 0x60, 0x0d, 0xf6, 0x98, 0x88, 0xf2, 0x42, 0x2b, 0xc5, 0xbc, 0x7c, 0x93,
+	0x16, 0x74, 0x6d, 0xdf, 0xe6, 0x6d, 0x5d, 0xcf, 0x8f, 0xbe, 0x02, 0x00, 0x00, 0xff, 0xff, 0x89,
+	0xc0, 0x01, 0x52, 0xc2, 0x02, 0x00, 0x00,
 }
 
 func (m *MitreTactic) Marshal() (dAtA []byte, err error) {
@@ -425,6 +653,148 @@ func (m *MitreAttackVector) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MitreAttackMatrix) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MitreAttackMatrix) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MitreAttackMatrix) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Vectors) > 0 {
+		for iNdEx := len(m.Vectors) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Vectors[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintMitre(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.MatrixInfo != nil {
+		{
+			size, err := m.MatrixInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMitre(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MitreAttackMatrix_MatrixInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MitreAttackMatrix_MatrixInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MitreAttackMatrix_MatrixInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Platform) > 0 {
+		i -= len(m.Platform)
+		copy(dAtA[i:], m.Platform)
+		i = encodeVarintMitre(dAtA, i, uint64(len(m.Platform)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Domain) > 0 {
+		i -= len(m.Domain)
+		copy(dAtA[i:], m.Domain)
+		i = encodeVarintMitre(dAtA, i, uint64(len(m.Domain)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MitreAttackBundle) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MitreAttackBundle) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MitreAttackBundle) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Matrices) > 0 {
+		for iNdEx := len(m.Matrices) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Matrices[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintMitre(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Version) > 0 {
+		i -= len(m.Version)
+		copy(dAtA[i:], m.Version)
+		i = encodeVarintMitre(dAtA, i, uint64(len(m.Version)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintMitre(dAtA []byte, offset int, v uint64) int {
 	offset -= sovMitre(v)
 	base := offset
@@ -496,6 +866,70 @@ func (m *MitreAttackVector) Size() (n int) {
 	}
 	if len(m.Techniques) > 0 {
 		for _, e := range m.Techniques {
+			l = e.Size()
+			n += 1 + l + sovMitre(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *MitreAttackMatrix) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MatrixInfo != nil {
+		l = m.MatrixInfo.Size()
+		n += 1 + l + sovMitre(uint64(l))
+	}
+	if len(m.Vectors) > 0 {
+		for _, e := range m.Vectors {
+			l = e.Size()
+			n += 1 + l + sovMitre(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *MitreAttackMatrix_MatrixInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Domain)
+	if l > 0 {
+		n += 1 + l + sovMitre(uint64(l))
+	}
+	l = len(m.Platform)
+	if l > 0 {
+		n += 1 + l + sovMitre(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *MitreAttackBundle) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Version)
+	if l > 0 {
+		n += 1 + l + sovMitre(uint64(l))
+	}
+	if len(m.Matrices) > 0 {
+		for _, e := range m.Matrices {
 			l = e.Size()
 			n += 1 + l + sovMitre(uint64(l))
 		}
@@ -902,6 +1336,359 @@ func (m *MitreAttackVector) Unmarshal(dAtA []byte) error {
 			}
 			m.Techniques = append(m.Techniques, &MitreTechnique{})
 			if err := m.Techniques[len(m.Techniques)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMitre(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MitreAttackMatrix) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMitre
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MitreAttackMatrix: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MitreAttackMatrix: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MatrixInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMitre
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMitre
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.MatrixInfo == nil {
+				m.MatrixInfo = &MitreAttackMatrix_MatrixInfo{}
+			}
+			if err := m.MatrixInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Vectors", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMitre
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMitre
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Vectors = append(m.Vectors, &MitreAttackVector{})
+			if err := m.Vectors[len(m.Vectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMitre(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MitreAttackMatrix_MatrixInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMitre
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MatrixInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MatrixInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Domain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMitre
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMitre
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Domain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Platform", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMitre
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMitre
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Platform = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMitre(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MitreAttackBundle) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMitre
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MitreAttackBundle: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MitreAttackBundle: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMitre
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMitre
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Version = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Matrices", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMitre
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMitre
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMitre
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Matrices = append(m.Matrices, &MitreAttackMatrix{})
+			if err := m.Matrices[len(m.Matrices)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

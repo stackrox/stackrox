@@ -1,0 +1,110 @@
+{
+  "type": "bundle",
+  "id": "bundle--696d2fed-13d8-475a-8d51-23e1033a92e1",
+  "spec_version": "2.1",
+  "objects": [
+    {
+      "type": "x-mitre-collection",
+      "id": "x-mitre-collection--23320f4-22ad-8467-3b73-ed0c869a12838",
+      "spec_version": "2.1",
+      "name": "Enterprise ATT&CK",
+      "x_mitre_version": "9.0",
+      "description": "ATT&CK for Enterprise provides a knowledge base of real-world adversary behavior targeting traditional enterprise networks. ATT&CK for Enterprise covers the following platforms: Windows, macOS, Linux, PRE, Office 365, Google Workspace, IaaS, Network, and Containers.",
+      "created_by_ref": "identity--c78cb6e5-0c4b-4611-8297-d1b8b55e40b5",
+      "created": "2018-01-17T12:56:55.080Z",
+      "modified": "2021-04-29T14:49:39.188Z",
+      "object_marking_refs": [
+        "marking-definition--fa42a846-8d90-4e51-bc29-71d5b4802168"
+      ]
+    },
+    {
+      "id": "attack-pattern--a93494bb-4b80-4ea1-8695-3236a49916fd",
+      "created_by_ref": "identity--c78cb6e5-0c4b-4611-8297-d1b8b55e40b5",
+      "name": "Brute Force",
+      "description": "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained. Without knowledge of the password for an account or set of accounts, an adversary may systematically guess the password using a repetitive or iterative mechanism. Brute forcing passwords can take place via interaction with a service that will check the validity of those credentials or offline against previously acquired credential data, such as password hashes.",
+      "external_references": [
+        {
+          "source_name": "mitre-attack",
+          "external_id": "T1110",
+          "url": "https://attack.mitre.org/techniques/T1110"
+        },
+        {
+          "external_id": "CAPEC-49",
+          "source_name": "capec",
+          "url": "https://capec.mitre.org/data/definitions/49.html"
+        }
+      ],
+      "object_marking_refs": [
+        "marking-definition--fa42a846-8d90-4e51-bc29-71d5b4802168"
+      ],
+      "type": "attack-pattern",
+      "kill_chain_phases": [
+        {
+          "kill_chain_name": "mitre-attack",
+          "phase_name": "credential-access"
+        }
+      ],
+      "modified": "2021-04-14T12:04:36.243Z",
+      "created": "2017-05-31T21:31:22.767Z",
+      "x_mitre_platforms": [
+        "Windows",
+        "Azure AD",
+        "Office 365",
+        "SaaS",
+        "IaaS",
+        "Linux",
+        "macOS",
+        "Google Workspace",
+        "Containers"
+      ],
+      "x_mitre_permissions_required": [
+        "User"
+      ],
+      "x_mitre_detection": "Monitor authentication logs for system and application login failures of [Valid Accounts](https://attack.mitre.org/techniques/T1078). If authentication failures are high, then there may be a brute force attempt to gain access to a system using legitimate credentials. Also monitor for many failed authentication attempts across various accounts that may result from password spraying attempts. It is difficult to detect when hashes are cracked, since this is generally done outside the scope of the target network.",
+      "x_mitre_data_sources": [
+        "User Account: User Account Authentication",
+        "Application Log: Application Log Content"
+      ],
+      "x_mitre_contributors": [
+        "David Fiser, @anu4is, Trend Micro",
+        "Alfredo Oliveira, Trend Micro",
+        "Magno Logan, @magnologan, Trend Micro",
+        "Yossi Weizman, Azure Defender Research Team",
+        "Ed Williams, Trustwave, SpiderLabs"
+      ],
+      "x_mitre_version": "2.2",
+      "x_mitre_is_subtechnique": false,
+      "spec_version": "2.1",
+      "x_mitre_domains": [
+        "enterprise-attack"
+      ],
+      "x_mitre_modified_by_ref": "identity--c78cb6e5-0c4b-4611-8297-d1b8b55e40b5"
+    },
+    {
+      "id": "x-mitre-tactic--2558fd61-8c75-4730-94c4-11926db2a263",
+      "created_by_ref": "identity--c78cb6e5-0c4b-4611-8297-d1b8b55e40b5",
+      "name": "Credential Access",
+      "description": "The adversary is trying to steal account names and passwords.\n\nCredential Access consists of techniques for stealing credentials like account names and passwords. Techniques used to get credentials include keylogging or credential dumping. Using legitimate credentials can give adversaries access to systems, make them harder to detect, and provide the opportunity to create more accounts to help achieve their goals.",
+      "external_references": [
+        {
+          "external_id": "TA0006",
+          "url": "https://attack.mitre.org/tactics/TA0006",
+          "source_name": "mitre-attack"
+        }
+      ],
+      "object_marking_refs": [
+        "marking-definition--fa42a846-8d90-4e51-bc29-71d5b4802168"
+      ],
+      "x_mitre_shortname": "credential-access",
+      "type": "x-mitre-tactic",
+      "modified": "2019-07-19T17:43:41.967Z",
+      "created": "2018-10-17T00:14:20.652Z",
+      "spec_version": "2.1",
+      "x_mitre_domains": [
+        "enterprise-attack"
+      ],
+      "x_mitre_modified_by_ref": "identity--c78cb6e5-0c4b-4611-8297-d1b8b55e40b5",
+      "x_mitre_version": "1.0"
+    }
+  ]
+}
