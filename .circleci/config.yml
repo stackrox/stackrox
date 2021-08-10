@@ -719,6 +719,18 @@ commands:
           path: debug-dump
           destination: debug
 
+  get-and-store-diagnostic-bundle:
+    description: Runs roxctl diagnostic bundle and stores it for the job.
+    steps:
+      - run:
+          name: Pull the diagnostic bundle from Central
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir diagnostic-bundle
+            ls -l diagnostic-bundle
+      - store_artifacts:
+          path: diagnostic-bundle
+          destination: diagnostic
+
   get-central-data:
     description: Pull data from Central
     parameters:
@@ -1438,6 +1450,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - get-and-store-diagnostic-bundle
       - get-central-data
       - *storeQATestResults
       - *checkQASpockResults
@@ -1467,6 +1480,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - get-and-store-diagnostic-bundle
       - get-central-data:
           destination: central-data-part2
       - *backupCentral
@@ -1742,6 +1756,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - get-and-store-diagnostic-bundle
       - get-central-data
 
       - *storeQATestResults
@@ -1770,6 +1785,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - get-and-store-diagnostic-bundle
       - get-central-data:
           destination: central-data-part2
       - check-stackrox-logs
@@ -3560,6 +3576,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - get-and-store-diagnostic-bundle
       - get-central-data
       - *backupCentral
       - *storeCentralBackupArtifact
@@ -3662,6 +3679,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - get-and-store-diagnostic-bundle
       - get-central-data
       - *backupCentral
       - *storeCentralBackupArtifact
@@ -4261,6 +4279,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - get-and-store-diagnostic-bundle
       - get-central-data
       - *storeQALogs
       - teardown-gke
@@ -4323,6 +4342,7 @@ jobs:
       - *storeMonitoringMetrics
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - get-and-store-diagnostic-bundle
       - get-central-data
 
       - *getPrometheusMetricParser
