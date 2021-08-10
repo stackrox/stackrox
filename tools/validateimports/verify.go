@@ -64,6 +64,9 @@ var (
 		"github.com/google/martian/log": {
 			replacement: "a logger",
 		},
+		"github.com/gogo/protobuf/jsonpb": {
+			replacement: "github.com/golang/protobuf/jsonpb",
+		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",
 		},
