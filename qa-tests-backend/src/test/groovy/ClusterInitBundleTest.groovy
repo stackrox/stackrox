@@ -7,9 +7,9 @@ import services.BaseService
 import services.ClusterInitBundleService
 import services.ClusterService
 
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import spock.lang.Shared
-import spock.lang.Unroll
 
 @Category(BAT)
 class ClusterInitBundleTest extends BaseSpecification {
@@ -28,18 +28,19 @@ class ClusterInitBundleTest extends BaseSpecification {
         }
     }
 
-    @Unroll
     def "Test that revoke cluster init bundle requires impacted clusters"() {
         BaseService.useApiToken(adminToken.token)
+
+        def cluster = ClusterService.getCluster()
+        Assume.assumeTrue(cluster.hasHelmConfig())
 
         when:
         "making a request for the cluster init bundle"
         def bundles = ClusterInitBundleService.getInitBundles()
-        def clusterId = ClusterService.getClusterId()
 
         then:
         "there is a bundle for current cluster"
-        def bundle = bundles.find { b -> b.impactedClustersList.find { c -> c.id == clusterId } }
+        def bundle = bundles.find { b -> b.impactedClustersList.find { c -> c.id == cluster.id } }
         assert bundle
 
         when:
