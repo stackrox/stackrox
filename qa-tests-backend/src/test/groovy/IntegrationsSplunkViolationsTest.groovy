@@ -275,6 +275,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         orchestrator.execInContainer(splunkDeployment.deployment,
                 "for i in `seq 25`; do curl http://${centralHost}:443; sleep 1; done")
 
+        // TODO: this code is flaky; see https://stack-rox.atlassian.net/browse/ROX-7772
         assert waitForAlertWithPolicyId("1b74ffdd-8e67-444c-9814-1c23863c8ccb")
     }
 
