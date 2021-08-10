@@ -1,7 +1,6 @@
 package command
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/mitre"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/mitre/common"
@@ -86,12 +86,12 @@ func fetchC(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	bytes, err := json.Marshal(bundle)
+	str, err := jsonutil.ProtoToJSON(bundle)
 	if err != nil {
 		return errors.Wrap(err, "marshalling parsed MITRE ATT&CK bundle")
 	}
 
-	if err := os.WriteFile(out, bytes, 0644); err != nil {
+	if err := os.WriteFile(out, []byte(jsonutil.UnEscape(str)), 0644); err != nil {
 		return errors.Wrapf(err, "writing MITRE ATT&CK bundle to file %q", out)
 	}
 	return nil

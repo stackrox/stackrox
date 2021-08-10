@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/policyutil/common"
 )
@@ -326,7 +327,7 @@ func upgradePolicyJSON(json string) (string, error) {
 	var result string
 
 	var policy storage.Policy
-	err := common.JSONToProto(json, &policy)
+	err := jsonutil.JSONToProto(json, &policy)
 	if err != nil {
 		return result, errors.Wrap(err, "supplied text is not a valid policy")
 	}
@@ -338,12 +339,12 @@ func upgradePolicyJSON(json string) (string, error) {
 
 	ensureReadOnlySettings(&policy)
 
-	result, err = common.ProtoToJSON(&policy)
+	result, err = jsonutil.ProtoToJSON(&policy)
 	if err != nil {
 		return result, errors.Wrap(err, "upgraded policy can't be serialized to JSON")
 	}
 
-	return common.UnEscape(result), nil
+	return jsonutil.UnEscape(result), nil
 }
 
 func ensureReadOnlySettings(policy *storage.Policy) {

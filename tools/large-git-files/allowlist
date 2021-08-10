@@ -26,3 +26,4 @@ ui/apps/platform/src/images/globalSearchEmptyState.svg
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/yarn.lock
 central/splunk/violations_test.go
+pkg/mitre/files/mitre.json

@@ -1,4 +1,4 @@
-package common
+package jsonutil
 
 import (
 	"testing"
