@@ -325,6 +325,8 @@ describe('Access Control Auth providers', () => {
 
         it('should show empty state after deleting the last provider', () => {
             gotoAuthProvidersWithMock('auth/authProviders-id1.json');
+            const id = 'authProvider-id1';
+            cy.intercept('DELETE', `${authProvidersApi.list}/${id}`, {}).as('DeleteAuthProvider');
             cy.log(selectors.list);
             cy.get(selectors.list.authProviders.tdActions).click();
 
@@ -336,7 +338,7 @@ describe('Access Control Auth providers', () => {
             );
             cy.get(accessModalSelectors.delete).click();
 
-            cy.wait('@GetAuthProviders');
+            cy.wait(['@DeleteAuthProvider', '@GetAuthProviders']);
 
             // TODO: uncomment out this last check,
             //       after we are able to upgrade to Cypress 7.0.0+
