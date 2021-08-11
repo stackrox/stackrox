@@ -16,7 +16,7 @@ repositories {
 }
 
 def grpcVersion = '1.21.0'
-def protocVersion = '3.6.1'
+def protocVersion = '3.17.3'
 def protobufVersion = '3.17.3'
 def nettyTcNativeVersion = '2.0.25.Final'
 
