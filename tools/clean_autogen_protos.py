@@ -4,7 +4,7 @@ import argparse
 import pathlib
 
 
-GENERATED_EXTENSIONS = ["pb.go", "pb.gw.go"]
+GENERATED_EXTENSIONS = ["pb.go", "pb.gw.go", "swagger.json"]
 
 
 def find_files(path, fileglob):
@@ -45,7 +45,9 @@ def main():
     v = parser.parse_args()
 
     proto_files = find_files(v.protos, "**/*.proto")
-    generated_files = find_files(v.generated, "**/*.go")
+    generated_files = [f
+                       for file_list in (find_files(v.generated, f'**/*.{ext}') for ext in GENERATED_EXTENSIONS)
+                       for f in file_list]
 
     proto_stripped = strip_path_extension(proto_files)
     generated_stripped = strip_path_extension(generated_files)

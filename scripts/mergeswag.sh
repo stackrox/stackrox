@@ -3,7 +3,7 @@
 # Mergeswag.sh merges JSON-encoded Swagger specification files into one mongo file
 # called swagger.json.
 
-[ -z "$1" ] && echo "Please specify a folder to search for .swagger.json files" && exit 1
+[ -z "$1" ] && echo >&2 "Please specify a folder to search for .swagger.json files" && exit 1
 
 set -euo pipefail
 
@@ -33,5 +33,4 @@ metadata='{
 
 find "$folder/" -name '*.swagger.json' -print0 \
 	| sort -zr \
-	| xargs -0 jq -s 'reduce .[] as $item ('"$metadata"'; $item * .)' \
-		> "$folder/swagger.json"
+	| xargs -0 jq -s 'reduce .[] as $item ('"$metadata"'; $item * .)'

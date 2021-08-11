@@ -1,0 +1,1878 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v1/detection_service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/detect/build": {
+      "post": {
+        "summary": "DetectBuildTime checks if any images violate build time policies.",
+        "operationId": "DetectionService_DetectBuildTime",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1BuildDetectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1BuildDetectionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DetectionService"
+        ]
+      }
+    },
+    "/v1/detect/deploy": {
+      "post": {
+        "summary": "DetectDeployTime checks if any deployments violate deploy time policies.",
+        "operationId": "DetectionService_DetectDeployTime",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeployDetectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1DeployDetectionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DetectionService"
+        ]
+      }
+    },
+    "/v1/detect/deploy/yaml": {
+      "post": {
+        "summary": "DetectDeployTimeFromYAML checks if the given deployment yaml violates any deploy time policies.",
+        "operationId": "DetectionService_DetectDeployTimeFromYAML",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeployDetectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1DeployYAMLDetectionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DetectionService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "AlertDeploymentContainer": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/storageContainerImage"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "AlertEnforcement": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/storageEnforcementAction"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "AlertProcessViolation": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "processes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageProcessIndicator"
+          }
+        }
+      }
+    },
+    "AlertResource": {
+      "type": "object",
+      "properties": {
+        "resourceType": {
+          "$ref": "#/definitions/AlertResourceResourceType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "namespaceId": {
+          "type": "string"
+        }
+      },
+      "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)"
+    },
+    "AlertResourceResourceType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "SECRETS",
+        "CONFIGMAPS"
+      ],
+      "default": "UNKNOWN"
+    },
+    "AlertViolation": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "keyValueAttrs": {
+          "$ref": "#/definitions/ViolationKeyValueAttrs"
+        },
+        "networkFlowInfo": {
+          "$ref": "#/definitions/ViolationNetworkFlowInfo"
+        },
+        "type": {
+          "$ref": "#/definitions/AlertViolationType",
+          "description": "'type' is for internal use only."
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Indicates violation time. This field differs from top-level field 'time' which represents last time the alert\noccurred in case of multiple occurrences of the policy alert. As of 55.0, this field is set only for kubernetes\nevent violations, but may not be limited to it in future."
+        }
+      }
+    },
+    "AlertViolationType": {
+      "type": "string",
+      "enum": [
+        "GENERIC",
+        "K8S_EVENT",
+        "NETWORK_FLOW"
+      ],
+      "default": "GENERIC"
+    },
+    "ContainerConfigEnvironmentConfig": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "envVarSource": {
+          "$ref": "#/definitions/EnvironmentConfigEnvVarSource"
+        }
+      }
+    },
+    "DeployDetectionResponseRun": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageAlert"
+          }
+        }
+      }
+    },
+    "EnvironmentConfigEnvVarSource": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "RAW",
+        "SECRET_KEY",
+        "CONFIG_MAP_KEY",
+        "FIELD",
+        "RESOURCE_FIELD",
+        "UNKNOWN"
+      ],
+      "default": "UNSET",
+      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "KeyValueAttrsKeyValueAttr": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "NetworkFlowInfoEntity": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "entityType": {
+          "$ref": "#/definitions/storageNetworkEntityInfoType"
+        },
+        "deploymentNamespace": {
+          "type": "string"
+        },
+        "deploymentType": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "PolicyMitreAttackVectors": {
+      "type": "object",
+      "properties": {
+        "tactic": {
+          "type": "string"
+        },
+        "techniques": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "PortConfigExposureInfo": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "$ref": "#/definitions/PortConfigExposureLevel"
+        },
+        "serviceName": {
+          "type": "string",
+          "title": "only set if level is not HOST"
+        },
+        "serviceId": {
+          "type": "string"
+        },
+        "serviceClusterIp": {
+          "type": "string"
+        },
+        "servicePort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "nodePort": {
+          "type": "integer",
+          "format": "int32",
+          "title": "only set if level is HOST, NODE, or EXTERNAL"
+        },
+        "externalIps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "only set if level is EXTERNAL"
+        },
+        "externalHostnames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "PortConfigExposureLevel": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "EXTERNAL",
+        "NODE",
+        "INTERNAL",
+        "HOST"
+      ],
+      "default": "UNSET"
+    },
+    "ProcessSignalLineageInfo": {
+      "type": "object",
+      "properties": {
+        "parentUid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "parentExecFilePath": {
+          "type": "string"
+        }
+      }
+    },
+    "SeccompProfileProfileType": {
+      "type": "string",
+      "enum": [
+        "UNCONFINED",
+        "RUNTIME_DEFAULT",
+        "LOCALHOST"
+      ],
+      "default": "UNCONFINED"
+    },
+    "SecurityContextSELinux": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string"
+        }
+      }
+    },
+    "SecurityContextSeccompProfile": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/SeccompProfileProfileType"
+        },
+        "localhostProfile": {
+          "type": "string"
+        }
+      }
+    },
+    "ViolationKeyValueAttrs": {
+      "type": "object",
+      "properties": {
+        "attrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/KeyValueAttrsKeyValueAttr"
+          }
+        }
+      }
+    },
+    "ViolationNetworkFlowInfo": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "$ref": "#/definitions/storageL4Protocol"
+        },
+        "source": {
+          "$ref": "#/definitions/NetworkFlowInfoEntity"
+        },
+        "destination": {
+          "$ref": "#/definitions/NetworkFlowInfoEntity"
+        }
+      }
+    },
+    "VolumeMountPropagation": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "HOST_TO_CONTAINER",
+        "BIDIRECTIONAL"
+      ],
+      "default": "NONE"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        },
+        "value": {
+          "type": "string",
+          "format": "byte",
+          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        }
+      },
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := \u0026pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "storageAlert": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "policy": {
+          "$ref": "#/definitions/storagePolicy"
+        },
+        "lifecycleStage": {
+          "$ref": "#/definitions/storageLifecycleStage"
+        },
+        "deployment": {
+          "$ref": "#/definitions/storageAlertDeployment",
+          "title": "Represents an alert on a deployment\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
+        "image": {
+          "$ref": "#/definitions/storageContainerImage",
+          "title": "Represents an alert on a container image.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
+        "resource": {
+          "$ref": "#/definitions/AlertResource",
+          "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
+        "violations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AlertViolation"
+          },
+          "description": "For run-time phase alert, a maximum of 40 violations are retained."
+        },
+        "processViolation": {
+          "$ref": "#/definitions/AlertProcessViolation"
+        },
+        "enforcement": {
+          "$ref": "#/definitions/AlertEnforcement"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "firstOccurred": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolvedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED."
+        },
+        "state": {
+          "$ref": "#/definitions/storageViolationState"
+        },
+        "snoozeTill": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storageAlertDeployment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "namespaceId": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AlertDeploymentContainer"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "inactive": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageBooleanOperator": {
+      "type": "string",
+      "enum": [
+        "OR",
+        "AND"
+      ],
+      "default": "OR"
+    },
+    "storageComparator": {
+      "type": "string",
+      "enum": [
+        "LESS_THAN",
+        "LESS_THAN_OR_EQUALS",
+        "EQUALS",
+        "GREATER_THAN_OR_EQUALS",
+        "GREATER_THAN"
+      ],
+      "default": "LESS_THAN"
+    },
+    "storageComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "storageContainer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "config": {
+          "$ref": "#/definitions/storageContainerConfig"
+        },
+        "image": {
+          "$ref": "#/definitions/storageContainerImage"
+        },
+        "securityContext": {
+          "$ref": "#/definitions/storageSecurityContext"
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageVolume"
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storagePortConfig"
+          }
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageEmbeddedSecret"
+          }
+        },
+        "resources": {
+          "$ref": "#/definitions/storageResources"
+        },
+        "instances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageContainerInstance"
+          }
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "storageContainerConfig": {
+      "type": "object",
+      "properties": {
+        "env": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContainerConfigEnvironmentConfig"
+          }
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "directory": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "appArmorProfile": {
+          "type": "string"
+        }
+      }
+    },
+    "storageContainerImage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "These tags maintain backwards compatibility with the previously embedded storage.Image"
+        },
+        "name": {
+          "$ref": "#/definitions/storageImageName"
+        },
+        "notPullable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageContainerInstance": {
+      "type": "object",
+      "properties": {
+        "instanceId": {
+          "$ref": "#/definitions/storageContainerInstanceID",
+          "description": "The instance ID of this container."
+        },
+        "containingPodId": {
+          "type": "string",
+          "description": "The pod containing this container instance (kubernetes only)."
+        },
+        "containerName": {
+          "type": "string",
+          "description": "Container name."
+        },
+        "containerIps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The IP addresses of this container."
+        },
+        "started": {
+          "type": "string",
+          "format": "date-time",
+          "title": "The start time of the container"
+        },
+        "imageDigest": {
+          "type": "string",
+          "title": "Image ID"
+        },
+        "finished": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The finish time of the container, if it finished."
+        },
+        "exitCode": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The exit code of the container. Only valid when finished is populated."
+        },
+        "terminationReason": {
+          "type": "string",
+          "description": "The reason for the container's termination, if it finished."
+        }
+      },
+      "description": "ContainerInstanceID allows to uniquely identify a container within a cluster."
+    },
+    "storageContainerInstanceID": {
+      "type": "object",
+      "properties": {
+        "containerRuntime": {
+          "$ref": "#/definitions/storageContainerRuntime",
+          "description": "The runtime running this container."
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the container, specific to the given runtime."
+        },
+        "node": {
+          "type": "string",
+          "description": "The node on which this container runs."
+        }
+      }
+    },
+    "storageContainerRuntime": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_CONTAINER_RUNTIME",
+        "DOCKER_CONTAINER_RUNTIME",
+        "CRIO_CONTAINER_RUNTIME"
+      ],
+      "default": "UNKNOWN_CONTAINER_RUNTIME"
+    },
+    "storageDeployment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "type": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "namespaceId": {
+          "type": "string"
+        },
+        "orchestratorComponent": {
+          "type": "boolean"
+        },
+        "replicas": {
+          "type": "string",
+          "format": "int64"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "TODO(ROX-6895): \"Label\" search term is ambiguous."
+        },
+        "podLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "labelSelector": {
+          "$ref": "#/definitions/storageLabelSelector"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageContainer"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "inactive": {
+          "type": "boolean"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "serviceAccount": {
+          "type": "string"
+        },
+        "serviceAccountPermissionLevel": {
+          "$ref": "#/definitions/storagePermissionLevel"
+        },
+        "automountServiceAccountToken": {
+          "type": "boolean"
+        },
+        "hostNetwork": {
+          "type": "boolean"
+        },
+        "hostPid": {
+          "type": "boolean"
+        },
+        "hostIpc": {
+          "type": "boolean"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageToleration"
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storagePortConfig"
+          }
+        },
+        "stateTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "processTags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 34"
+    },
+    "storageDockerfileLineRuleField": {
+      "type": "object",
+      "properties": {
+        "instruction": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "storageEmbeddedSecret": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "storageEnforcementAction": {
+      "type": "string",
+      "enum": [
+        "UNSET_ENFORCEMENT",
+        "SCALE_TO_ZERO_ENFORCEMENT",
+        "UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT",
+        "KILL_POD_ENFORCEMENT",
+        "FAIL_BUILD_ENFORCEMENT",
+        "FAIL_KUBE_REQUEST_ENFORCEMENT",
+        "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT",
+        "FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT"
+      ],
+      "default": "UNSET_ENFORCEMENT",
+      "description": " - FAIL_KUBE_REQUEST_ENFORCEMENT: FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\n - FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates.\n - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
+    },
+    "storageEventSource": {
+      "type": "string",
+      "enum": [
+        "NOT_APPLICABLE",
+        "DEPLOYMENT_EVENT",
+        "AUDIT_LOG_EVENT"
+      ],
+      "default": "NOT_APPLICABLE"
+    },
+    "storageExclusion": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "deployment": {
+          "$ref": "#/definitions/storageExclusionDeployment"
+        },
+        "image": {
+          "$ref": "#/definitions/storageExclusionImage"
+        },
+        "expiration": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "storageExclusionDeployment": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/storageScope"
+        }
+      }
+    },
+    "storageExclusionImage": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "storageHostMountPolicy": {
+      "type": "object",
+      "properties": {
+        "readOnly": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageImageName": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "remote": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        }
+      }
+    },
+    "storageImageNamePolicy": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "remote": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "storageKeyValuePolicy": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "envVarSource": {
+          "$ref": "#/definitions/EnvironmentConfigEnvVarSource"
+        }
+      }
+    },
+    "storageL4Protocol": {
+      "type": "string",
+      "enum": [
+        "L4_PROTOCOL_UNKNOWN",
+        "L4_PROTOCOL_TCP",
+        "L4_PROTOCOL_UDP",
+        "L4_PROTOCOL_ICMP",
+        "L4_PROTOCOL_RAW",
+        "L4_PROTOCOL_SCTP",
+        "L4_PROTOCOL_ANY"
+      ],
+      "default": "L4_PROTOCOL_UNKNOWN"
+    },
+    "storageLabelSelector": {
+      "type": "object",
+      "properties": {
+        "matchLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "This is actually a oneof, but we can't make it one due to backwards\ncompatibility constraints."
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageLabelSelectorRequirement"
+          }
+        }
+      },
+      "description": "Next available tag: 3",
+      "title": "Label selector components are joined with logical AND, see\n    https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/"
+    },
+    "storageLabelSelectorOperator": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "IN",
+        "NOT_IN",
+        "EXISTS",
+        "NOT_EXISTS"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageLabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/storageLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
+    },
+    "storageLifecycleStage": {
+      "type": "string",
+      "enum": [
+        "DEPLOY",
+        "BUILD",
+        "RUNTIME"
+      ],
+      "default": "DEPLOY"
+    },
+    "storageNetworkEntityInfoType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_TYPE",
+        "DEPLOYMENT",
+        "INTERNET",
+        "LISTEN_ENDPOINT",
+        "EXTERNAL_SOURCE"
+      ],
+      "default": "UNKNOWN_TYPE"
+    },
+    "storageNumericalPolicy": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "$ref": "#/definitions/storageComparator"
+        },
+        "value": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "storagePermissionLevel": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "NONE",
+        "DEFAULT",
+        "ELEVATED_IN_NAMESPACE",
+        "ELEVATED_CLUSTER_WIDE",
+        "CLUSTER_ADMIN"
+      ],
+      "default": "UNSET",
+      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
+    },
+    "storagePermissionPolicy": {
+      "type": "object",
+      "properties": {
+        "permissionLevel": {
+          "$ref": "#/definitions/storagePermissionLevel"
+        }
+      },
+      "description": "K8S RBAC Permission level configuration."
+    },
+    "storagePolicy": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "remediation": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fields": {
+          "$ref": "#/definitions/storagePolicyFields"
+        },
+        "lifecycleStages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageLifecycleStage"
+          }
+        },
+        "eventSource": {
+          "$ref": "#/definitions/storageEventSource"
+        },
+        "whitelists": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageExclusion"
+          }
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageExclusion"
+          }
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageScope"
+          }
+        },
+        "severity": {
+          "$ref": "#/definitions/storageSeverity"
+        },
+        "enforcementActions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageEnforcementAction"
+          },
+          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "SORTName": {
+          "type": "string",
+          "description": "For internal use only."
+        },
+        "SORTLifecycleStage": {
+          "type": "string",
+          "description": "For internal use only."
+        },
+        "SORTEnforcement": {
+          "type": "boolean",
+          "description": "For internal use only."
+        },
+        "policyVersion": {
+          "type": "string"
+        },
+        "policySections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storagePolicySection"
+          }
+        },
+        "mitreAttackVectors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PolicyMitreAttackVectors"
+          }
+        },
+        "criteriaLocked": {
+          "type": "boolean",
+          "description": "Read-only field. If true, the policy's criteria fields are rendered read-only."
+        },
+        "mitreVectorsLocked": {
+          "type": "boolean",
+          "description": "Read-only field. If true, the policy's MITRE ATT\u0026CK fields are rendered read-only."
+        }
+      }
+    },
+    "storagePolicyFields": {
+      "type": "object",
+      "properties": {
+        "imageName": {
+          "$ref": "#/definitions/storageImageNamePolicy"
+        },
+        "imageAgeDays": {
+          "type": "string",
+          "format": "int64"
+        },
+        "lineRule": {
+          "$ref": "#/definitions/storageDockerfileLineRuleField"
+        },
+        "cvss": {
+          "$ref": "#/definitions/storageNumericalPolicy",
+          "title": "Scan Metadata"
+        },
+        "cve": {
+          "type": "string"
+        },
+        "component": {
+          "$ref": "#/definitions/storageComponent"
+        },
+        "scanAgeDays": {
+          "type": "string",
+          "format": "int64"
+        },
+        "noScanExists": {
+          "type": "boolean"
+        },
+        "env": {
+          "$ref": "#/definitions/storageKeyValuePolicy"
+        },
+        "command": {
+          "type": "string"
+        },
+        "args": {
+          "type": "string"
+        },
+        "directory": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "volumePolicy": {
+          "$ref": "#/definitions/storageVolumePolicy"
+        },
+        "portPolicy": {
+          "$ref": "#/definitions/storagePortPolicy"
+        },
+        "requiredLabel": {
+          "$ref": "#/definitions/storageKeyValuePolicy"
+        },
+        "requiredAnnotation": {
+          "$ref": "#/definitions/storageKeyValuePolicy"
+        },
+        "disallowedAnnotation": {
+          "$ref": "#/definitions/storageKeyValuePolicy"
+        },
+        "privileged": {
+          "type": "boolean"
+        },
+        "dropCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "containerResourcePolicy": {
+          "$ref": "#/definitions/storageResourcePolicy"
+        },
+        "processPolicy": {
+          "$ref": "#/definitions/storageProcessPolicy"
+        },
+        "readOnlyRootFs": {
+          "type": "boolean"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "portExposurePolicy": {
+          "$ref": "#/definitions/storagePortExposurePolicy"
+        },
+        "permissionPolicy": {
+          "$ref": "#/definitions/storagePermissionPolicy"
+        },
+        "hostMountPolicy": {
+          "$ref": "#/definitions/storageHostMountPolicy"
+        },
+        "whitelistEnabled": {
+          "type": "boolean"
+        },
+        "requiredImageLabel": {
+          "$ref": "#/definitions/storageKeyValuePolicy"
+        },
+        "disallowedImageLabel": {
+          "$ref": "#/definitions/storageKeyValuePolicy"
+        }
+      },
+      "title": "Next Available Tag: 29"
+    },
+    "storagePolicyGroup": {
+      "type": "object",
+      "properties": {
+        "fieldName": {
+          "type": "string"
+        },
+        "booleanOperator": {
+          "$ref": "#/definitions/storageBooleanOperator"
+        },
+        "negate": {
+          "type": "boolean"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storagePolicyValue"
+          }
+        }
+      }
+    },
+    "storagePolicySection": {
+      "type": "object",
+      "properties": {
+        "sectionName": {
+          "type": "string"
+        },
+        "policyGroups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storagePolicyGroup"
+          }
+        }
+      }
+    },
+    "storagePolicyValue": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "storagePortConfig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "containerPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "protocol": {
+          "type": "string"
+        },
+        "exposure": {
+          "$ref": "#/definitions/PortConfigExposureLevel"
+        },
+        "exposedPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "exposureInfos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PortConfigExposureInfo"
+          }
+        }
+      },
+      "title": "Next Available Tag: 6"
+    },
+    "storagePortExposurePolicy": {
+      "type": "object",
+      "properties": {
+        "exposureLevels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PortConfigExposureLevel"
+          }
+        }
+      }
+    },
+    "storagePortPolicy": {
+      "type": "object",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "protocol": {
+          "type": "string"
+        }
+      }
+    },
+    "storageProcessIndicator": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "A unique uuid for the Indicator message"
+        },
+        "deploymentId": {
+          "type": "string"
+        },
+        "containerName": {
+          "type": "string"
+        },
+        "podId": {
+          "type": "string",
+          "title": "Pod name"
+        },
+        "podUid": {
+          "type": "string"
+        },
+        "signal": {
+          "$ref": "#/definitions/storageProcessSignal",
+          "title": "A process signal message passed from Collector to Sensor"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "containerStartTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "Next available tag: 12"
+    },
+    "storageProcessPolicy": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "args": {
+          "type": "string"
+        },
+        "ancestor": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        }
+      }
+    },
+    "storageProcessSignal": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "A unique UUID for identifying the message\nWe have this here instead of at the top level\nbecause we want to have each message to be\nself contained."
+        },
+        "containerId": {
+          "type": "string",
+          "title": "ID of container associated with this process"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Process creation time"
+        },
+        "name": {
+          "type": "string",
+          "title": "Process name"
+        },
+        "args": {
+          "type": "string",
+          "title": "Process arguments"
+        },
+        "execFilePath": {
+          "type": "string",
+          "title": "Process executable file path"
+        },
+        "pid": {
+          "type": "integer",
+          "format": "int64",
+          "title": "Host process ID"
+        },
+        "uid": {
+          "type": "integer",
+          "format": "int64",
+          "title": "Real user ID"
+        },
+        "gid": {
+          "type": "integer",
+          "format": "int64",
+          "title": "Real group ID"
+        },
+        "lineage": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Process Lineage"
+        },
+        "scraped": {
+          "type": "boolean",
+          "title": "Signal origin"
+        },
+        "lineageInfo": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProcessSignalLineageInfo"
+          },
+          "title": "Process LineageInfo"
+        }
+      }
+    },
+    "storageResourcePolicy": {
+      "type": "object",
+      "properties": {
+        "cpuResourceRequest": {
+          "$ref": "#/definitions/storageNumericalPolicy"
+        },
+        "cpuResourceLimit": {
+          "$ref": "#/definitions/storageNumericalPolicy"
+        },
+        "memoryResourceRequest": {
+          "$ref": "#/definitions/storageNumericalPolicy"
+        },
+        "memoryResourceLimit": {
+          "$ref": "#/definitions/storageNumericalPolicy"
+        }
+      }
+    },
+    "storageResources": {
+      "type": "object",
+      "properties": {
+        "cpuCoresRequest": {
+          "type": "number",
+          "format": "float"
+        },
+        "cpuCoresLimit": {
+          "type": "number",
+          "format": "float"
+        },
+        "memoryMbRequest": {
+          "type": "number",
+          "format": "float"
+        },
+        "memoryMbLimit": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "storageScope": {
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "label": {
+          "$ref": "#/definitions/storageScopeLabel"
+        }
+      }
+    },
+    "storageScopeLabel": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "storageSecurityContext": {
+      "type": "object",
+      "properties": {
+        "privileged": {
+          "type": "boolean"
+        },
+        "selinux": {
+          "$ref": "#/definitions/SecurityContextSELinux"
+        },
+        "dropCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "readOnlyRootFilesystem": {
+          "type": "boolean"
+        },
+        "seccompProfile": {
+          "$ref": "#/definitions/SecurityContextSeccompProfile"
+        }
+      }
+    },
+    "storageSeverity": {
+      "type": "string",
+      "enum": [
+        "UNSET_SEVERITY",
+        "LOW_SEVERITY",
+        "MEDIUM_SEVERITY",
+        "HIGH_SEVERITY",
+        "CRITICAL_SEVERITY"
+      ],
+      "default": "UNSET_SEVERITY"
+    },
+    "storageTaintEffect": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_TAINT_EFFECT",
+        "NO_SCHEDULE_TAINT_EFFECT",
+        "PREFER_NO_SCHEDULE_TAINT_EFFECT",
+        "NO_EXECUTE_TAINT_EFFECT"
+      ],
+      "default": "UNKNOWN_TAINT_EFFECT"
+    },
+    "storageToleration": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/definitions/storageTolerationOperator"
+        },
+        "value": {
+          "type": "string"
+        },
+        "taintEffect": {
+          "$ref": "#/definitions/storageTaintEffect"
+        }
+      }
+    },
+    "storageTolerationOperator": {
+      "type": "string",
+      "enum": [
+        "TOLERATION_OPERATION_UNKNOWN",
+        "TOLERATION_OPERATOR_EXISTS",
+        "TOLERATION_OPERATOR_EQUAL"
+      ],
+      "default": "TOLERATION_OPERATION_UNKNOWN"
+    },
+    "storageViolationState": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "SNOOZED",
+        "RESOLVED",
+        "ATTEMPTED"
+      ],
+      "default": "ACTIVE"
+    },
+    "storageVolume": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        },
+        "mountPropagation": {
+          "$ref": "#/definitions/VolumeMountPropagation"
+        }
+      }
+    },
+    "storageVolumePolicy": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "v1BuildDetectionRequest": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/storageContainerImage"
+        },
+        "imageName": {
+          "type": "string"
+        },
+        "noExternalMetadata": {
+          "type": "boolean"
+        },
+        "sendNotifications": {
+          "type": "boolean"
+        },
+        "policyCategories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1BuildDetectionResponse": {
+      "type": "object",
+      "properties": {
+        "alerts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageAlert"
+          }
+        }
+      }
+    },
+    "v1DeployDetectionRequest": {
+      "type": "object",
+      "properties": {
+        "deployment": {
+          "$ref": "#/definitions/storageDeployment"
+        },
+        "noExternalMetadata": {
+          "type": "boolean"
+        },
+        "enforcementOnly": {
+          "type": "boolean"
+        },
+        "clusterId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1DeployDetectionResponse": {
+      "type": "object",
+      "properties": {
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DeployDetectionResponseRun"
+          }
+        }
+      }
+    },
+    "v1DeployYAMLDetectionRequest": {
+      "type": "object",
+      "properties": {
+        "yaml": {
+          "type": "string"
+        },
+        "noExternalMetadata": {
+          "type": "boolean"
+        },
+        "enforcementOnly": {
+          "type": "boolean"
+        },
+        "policyCategories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

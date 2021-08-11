@@ -292,7 +292,7 @@ go-generated-srcs: deps go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_
 	@echo "+ $@"
 	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 
-proto-generated-srcs: $(PROTO_GENERATED_SRCS)
+proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
 	@touch proto-generated-srcs
 	@$(MAKE) clean-obsolete-protos

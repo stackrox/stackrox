@@ -1,0 +1,1218 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v1/image_service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/images": {
+      "get": {
+        "summary": "ListImages returns all the images.",
+        "operationId": "ImageService_ListImages",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListImagesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteImage removes the images based on a query",
+        "operationId": "ImageService_DeleteImages",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteImagesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "confirm",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    },
+    "/v1/images/cache/invalidate": {
+      "get": {
+        "summary": "InvalidateScanAndRegistryCaches removes the image metadata cache.",
+        "operationId": "ImageService_InvalidateScanAndRegistryCaches",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "ImageService"
+        ]
+      }
+    },
+    "/v1/images/scan": {
+      "post": {
+        "summary": "ScanImage scans a single image and returns the result",
+        "operationId": "ImageService_ScanImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageImage"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ScanImageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    },
+    "/v1/images/{id}": {
+      "get": {
+        "summary": "GetImage returns the image given its ID.",
+        "operationId": "ImageService_GetImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageImage"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "includeSnoozed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    },
+    "/v1/imagescount": {
+      "get": {
+        "summary": "ListImages returns all the images.",
+        "operationId": "ImageService_CountImages",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CountImagesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    },
+    "/v1/watchedimages": {
+      "get": {
+        "summary": "GetWatchedImages returns the list of image names that are currently\nbeing watched.",
+        "operationId": "ImageService_GetWatchedImages",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWatchedImagesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "ImageService"
+        ]
+      },
+      "delete": {
+        "summary": "UnwatchImage marks an image name to no longer be watched.\nIt returns successfully if the image is no longer being watched\nafter the call, irrespective of whether the image was already being watched.",
+        "operationId": "ImageService_UnwatchImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "The name of the image to unwatch.\nShould match the name of a previously watched image.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      },
+      "post": {
+        "summary": "WatchImage marks an image name as to be watched.",
+        "operationId": "ImageService_WatchImage",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1WatchImageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1WatchImageRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "CVSSV2AccessComplexity": {
+      "type": "string",
+      "enum": [
+        "ACCESS_HIGH",
+        "ACCESS_MEDIUM",
+        "ACCESS_LOW"
+      ],
+      "default": "ACCESS_HIGH"
+    },
+    "CVSSV2Authentication": {
+      "type": "string",
+      "enum": [
+        "AUTH_MULTIPLE",
+        "AUTH_SINGLE",
+        "AUTH_NONE"
+      ],
+      "default": "AUTH_MULTIPLE"
+    },
+    "CVSSV3Complexity": {
+      "type": "string",
+      "enum": [
+        "COMPLEXITY_LOW",
+        "COMPLEXITY_HIGH"
+      ],
+      "default": "COMPLEXITY_LOW"
+    },
+    "CVSSV3Privileges": {
+      "type": "string",
+      "enum": [
+        "PRIVILEGE_NONE",
+        "PRIVILEGE_LOW",
+        "PRIVILEGE_HIGH"
+      ],
+      "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3UserInteraction": {
+      "type": "string",
+      "enum": [
+        "UI_NONE",
+        "UI_REQUIRED"
+      ],
+      "default": "UI_NONE"
+    },
+    "EmbeddedVulnerabilityVulnerabilityType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY",
+        "IMAGE_VULNERABILITY",
+        "K8S_VULNERABILITY",
+        "ISTIO_VULNERABILITY",
+        "NODE_VULNERABILITY",
+        "OPENSHIFT_VULNERABILITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY"
+    },
+    "WatchImageResponseErrorType": {
+      "type": "string",
+      "enum": [
+        "NO_ERROR",
+        "INVALID_IMAGE_NAME",
+        "NO_VALID_INTEGRATION",
+        "SCAN_FAILED"
+      ],
+      "default": "NO_ERROR"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        },
+        "value": {
+          "type": "string",
+          "format": "byte",
+          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        }
+      },
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := \u0026pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "storageCVSSV2": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/storageCVSSV2AttackVector"
+        },
+        "accessComplexity": {
+          "$ref": "#/definitions/CVSSV2AccessComplexity"
+        },
+        "authentication": {
+          "$ref": "#/definitions/CVSSV2Authentication"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageCVSSV2Severity"
+        }
+      }
+    },
+    "storageCVSSV2AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "storageCVSSV2Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_PARTIAL",
+        "IMPACT_COMPLETE"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "storageCVSSV2Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageCVSSV3": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/storageCVSSV3AttackVector"
+        },
+        "attackComplexity": {
+          "$ref": "#/definitions/CVSSV3Complexity"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/CVSSV3Privileges"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/CVSSV3UserInteraction"
+        },
+        "scope": {
+          "$ref": "#/definitions/storageCVSSV3Scope"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageCVSSV3Severity"
+        }
+      }
+    },
+    "storageCVSSV3AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "storageCVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "storageCVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
+    "storageCVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageContainerImage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "These tags maintain backwards compatibility with the previously embedded storage.Image"
+        },
+        "name": {
+          "$ref": "#/definitions/storageImageName"
+        },
+        "notPullable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageDataSource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "storageEmbeddedImageScanComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "license": {
+          "$ref": "#/definitions/storageLicense"
+        },
+        "vulns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageEmbeddedVulnerability"
+          }
+        },
+        "layerIndex": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "source": {
+          "$ref": "#/definitions/storageSourceType"
+        },
+        "location": {
+          "type": "string"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "fixedBy": {
+          "type": "string",
+          "description": "Component version that fixes all the fixable vulnerabilities in this component."
+        }
+      }
+    },
+    "storageEmbeddedVulnerability": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "scoreVersion": {
+          "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
+        },
+        "cvssV2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssV3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vulnerabilityType": {
+          "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType",
+          "description": "For internal purposes only."
+        },
+        "vulnerabilityTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
+          }
+        },
+        "suppressed": {
+          "type": "boolean"
+        },
+        "suppressActivation": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "suppressExpiry": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "firstSystemOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in the system."
+        },
+        "firstImageOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in the image."
+        },
+        "firstNodeOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in the node."
+        },
+        "severity": {
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
+        }
+      },
+      "title": "TODO: Remove when migration is in place\nNext Tag: 20"
+    },
+    "storageEmbeddedVulnerabilityScoreVersion": {
+      "type": "string",
+      "enum": [
+        "V2",
+        "V3"
+      ],
+      "default": "V2"
+    },
+    "storageImage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/definitions/storageImageName"
+        },
+        "metadata": {
+          "$ref": "#/definitions/storageImageMetadata"
+        },
+        "scan": {
+          "$ref": "#/definitions/storageImageScan"
+        },
+        "components": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cves": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fixableCves": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notPullable": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageNote"
+          }
+        }
+      },
+      "title": "Next Tag: 15"
+    },
+    "storageImageLayer": {
+      "type": "object",
+      "properties": {
+        "instruction": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        },
+        "empty": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageImageMetadata": {
+      "type": "object",
+      "properties": {
+        "v1": {
+          "$ref": "#/definitions/storageV1Metadata",
+          "title": "V1Metadata contains all of the V1 docker data. In the normal case we will get this because the image is a\nV1 image OR because the v2 manifest has a link to it in it's config.\nSee https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions\nThe only time we will not get it is in the rare caseof a strictly V2 image schema"
+        },
+        "v2": {
+          "$ref": "#/definitions/storageV2Metadata",
+          "title": "We should always get V2 metadata unless the registry is old or the image is strictly V1"
+        },
+        "layerShas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "We never need both sets of layers so consolidate them. They will be ordered by oldest-\u003enewest"
+        },
+        "dataSource": {
+          "$ref": "#/definitions/storageDataSource",
+          "title": "DataSource contains information about which integration was used to pull the metadata"
+        }
+      }
+    },
+    "storageImageName": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "remote": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        }
+      }
+    },
+    "storageImageNote": {
+      "type": "string",
+      "enum": [
+        "MISSING_METADATA",
+        "MISSING_SCAN_DATA"
+      ],
+      "default": "MISSING_METADATA"
+    },
+    "storageImageScan": {
+      "type": "object",
+      "properties": {
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageEmbeddedImageScanComponent"
+          }
+        },
+        "operatingSystem": {
+          "type": "string"
+        },
+        "dataSource": {
+          "$ref": "#/definitions/storageDataSource",
+          "title": "DataSource contains information about which integration was used to scan the image"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageScanNote"
+          }
+        }
+      }
+    },
+    "storageImageScanNote": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "OS_UNAVAILABLE",
+        "PARTIAL_SCAN_DATA",
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "UNSET"
+    },
+    "storageLicense": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "storageListImage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "components": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cves": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fixableCves": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "storageSourceType": {
+      "type": "string",
+      "enum": [
+        "OS",
+        "PYTHON",
+        "JAVA",
+        "RUBY",
+        "NODEJS",
+        "DOTNETCORERUNTIME",
+        "INFRASTRUCTURE"
+      ],
+      "default": "OS"
+    },
+    "storageV1Metadata": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageLayer"
+          }
+        },
+        "user": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storageV2Metadata": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "type": "string"
+        }
+      }
+    },
+    "storageVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "storageWatchedImage": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CountImagesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1DeleteImagesResponse": {
+      "type": "object",
+      "properties": {
+        "numDeleted": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "dryRun": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Empty": {
+      "type": "object"
+    },
+    "v1GetWatchedImagesResponse": {
+      "type": "object",
+      "properties": {
+        "watchedImages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageWatchedImage"
+          }
+        }
+      }
+    },
+    "v1ListImagesResponse": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageListImage"
+          }
+        }
+      }
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        }
+      }
+    },
+    "v1RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v1Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v1ScanImageInternalResponse": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/storageImage"
+        }
+      }
+    },
+    "v1ScanImageRequest": {
+      "type": "object",
+      "properties": {
+        "imageName": {
+          "type": "string"
+        },
+        "force": {
+          "type": "boolean"
+        },
+        "includeSnoozed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1WatchImageRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the image.\nThis must be fully qualified, including a tag,\nbut must NOT include a SHA."
+        }
+      }
+    },
+    "v1WatchImageResponse": {
+      "type": "object",
+      "properties": {
+        "normalizedName": {
+          "type": "string",
+          "title": "If the image was scanned successfully, this returns the normalized name of the image.\nThis depends on what we get from the registry.\nFor example, \"docker.io/wordpress:latest\" -\u003e \"docker.io/library/wordpress:latest\""
+        },
+        "errorType": {
+          "$ref": "#/definitions/WatchImageResponseErrorType"
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "Only set if error_type is NOT equal to \"NO_ERROR\"."
+        }
+      }
+    }
+  }
+}

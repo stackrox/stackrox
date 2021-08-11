@@ -18,7 +18,7 @@ MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
-GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_DOC_PATH)/%.swagger.json)
+GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 
 ##############
 ## Protobuf ##
@@ -205,20 +205,21 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_DOC_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(GENERATED_DOC_PATH) $(ALL_PROTOS)
+$(GENERATED_BASE_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS)
 	@echo "+ $@"
 	@$(PROTOC) \
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_DOC_PATH) \
+		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
 # Generate the docs from the merged swagger specs.
 $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
-	$(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_DOC_PATH)/api/v1
+	@mkdir -p "$(dir $@)"
+	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v1" >"$@"
 
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
