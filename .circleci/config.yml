@@ -5276,6 +5276,7 @@ workflows:
       - push-release:
           <<: *runOnlyOnReleaseBuilds
           context:
+            - custom-executor-pull
             - docker-io-and-stackrox-io-push
             - quay-rh-registry-push
           requires:
