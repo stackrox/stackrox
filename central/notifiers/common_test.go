@@ -2,17 +2,14 @@ package notifiers
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,8 +53,6 @@ func alertWithDeploymentLabel(labelKey, labelValue string) *storage.Alert {
 }
 
 func TestGetAnnotationValue(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-
 	alertWithNoClusterID := fixtures.GetResourceAlert()
 	alertWithNoClusterID.GetResource().ClusterId = ""
 
@@ -66,95 +61,83 @@ func TestGetAnnotationValue(t *testing.T) {
 
 	cases := []struct {
 		name          string
-		feature       bool
 		namespace     []*storage.NamespaceMetadata
 		annotationKey string
 		alert         *storage.Alert
 		expectedValue string
 	}{
 		{
-			name:          "[Feature on] Get from deployment if it exists in both",
-			feature:       true,
+			name:          "Get from deployment if it exists in both",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
 			expectedValue: "deployValue",
 		},
 		{
-			name:          "[Feature on] Get from deployment if it exists but not in namespace",
-			feature:       true,
+			name:          "Get from deployment if it exists but not in namespace",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
 			expectedValue: "deployValue",
 		},
 		{
-			name:          "[Feature on] Get from deployment label if it exists",
-			feature:       true,
+			name:          "Get from deployment label if it exists",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentLabel("annotKey", "labelVal"),
 			expectedValue: "labelVal",
 		},
 		{
-			name:          "[Feature on] Get from namespace when not in deployment and exists in namespace",
-			feature:       true,
+			name:          "Get from namespace when not in deployment and exists in namespace",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("", ""),
 			expectedValue: "nsValue",
 		},
 		{
-			name:          "[Feature on] Get from namespace for resource alert if it exists in namespace",
-			feature:       true,
+			name:          "Get from namespace for resource alert if it exists in namespace",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
 			annotationKey: "annotKey",
 			alert:         fixtures.GetResourceAlert(),
 			expectedValue: "nsValue",
 		},
 		{
-			name:          "[Feature on] Get default when not in deployment or namespace",
-			feature:       true,
+			name:          "Get default when not in deployment or namespace",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("", ""),
 			expectedValue: "default",
 		},
 		{
-			name:          "[Feature on] Get default when no cluster id available to lookup namespace",
-			feature:       true,
+			name:          "Get default when no cluster id available to lookup namespace",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
 			annotationKey: "annotKey",
 			alert:         alertWithNoClusterID,
 			expectedValue: "default",
 		},
 		{
-			name:          "[Feature on] Get default when no namespace name available to lookup namespace",
-			feature:       true,
+			name:          "Get default when no namespace name available to lookup namespace",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
 			annotationKey: "annotKey",
 			alert:         alertWithNoNamespace,
 			expectedValue: "default",
 		},
 		{
-			name:          "[Feature on] Get default when nil namespace found",
-			feature:       true,
+			name:          "Get default when nil namespace found",
 			namespace:     []*storage.NamespaceMetadata{nil},
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("", ""),
 			expectedValue: "default",
 		},
 		{
-			name:          "[Feature on] Get default when no namespaces found",
-			feature:       true,
+			name:          "Get default when no namespaces found",
 			namespace:     []*storage.NamespaceMetadata{},
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("", ""),
 			expectedValue: "default",
 		},
 		{
-			name:    "[Feature on] Get default when multiple namespaces found",
-			feature: true,
+			name: "Get default when multiple namespaces found",
 			namespace: []*storage.NamespaceMetadata{
 				namespaceWithAnnotation("annotKey", "nsValue"),
 				namespaceWithAnnotation("", ""),
@@ -164,81 +147,14 @@ func TestGetAnnotationValue(t *testing.T) {
 			expectedValue: "default",
 		},
 		{
-			name:          "[Feature on] Get default when key is incorrect",
-			feature:       true,
+			name:          "Get default when key is incorrect",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("altKey", "altNsValue")},
 			annotationKey: "annotKey",
 			alert:         alertWithDeploymentAnnotation("altKey", "altDeployValue"),
 			expectedValue: "default",
 		},
 		{
-			name:          "[Feature on] Get default if key is not provided",
-			feature:       true,
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
-			annotationKey: "",
-			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
-			expectedValue: "default",
-		},
-		// Tests with feature off. Will be removed once released
-		{
-			name:          "[Feature off] Get from deployment if it exists in both",
-			feature:       false,
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
-			annotationKey: "annotKey",
-			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
-			expectedValue: "deployValue",
-		},
-		{
-			name:          "[Feature off] Get from deployment if it exists but not in namespace",
-			feature:       false,
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
-			annotationKey: "annotKey",
-			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
-			expectedValue: "deployValue",
-		},
-		{
-			name:          "[Feature off] Get from deployment label if it exists",
-			feature:       false,
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
-			annotationKey: "annotKey",
-			alert:         alertWithDeploymentLabel("annotKey", "labelVal"),
-			expectedValue: "labelVal",
-		},
-		{
-			name:          "[Feature off] Get default when not in deployment and even if it exists in namespace",
-			feature:       false,
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
-			annotationKey: "annotKey",
-			alert:         alertWithDeploymentAnnotation("", ""),
-			expectedValue: "default",
-		},
-		{
-			name:          "[Feature off] Get default for resource alert",
-			feature:       false,
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
-			annotationKey: "annotKey",
-			alert:         fixtures.GetResourceAlert(),
-			expectedValue: "default",
-		},
-		{
-			name:          "[Feature off] Get default when not in deployment or namespace",
-			feature:       false,
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("", "")},
-			annotationKey: "annotKey",
-			alert:         alertWithDeploymentAnnotation("", ""),
-			expectedValue: "default",
-		},
-		{
-			name:          "[Feature off] Get default when key is incorrect",
-			feature:       false,
-			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("altKey", "altNsValue")},
-			annotationKey: "annotKey",
-			alert:         alertWithDeploymentAnnotation("altKey", "altDeployValue"),
-			expectedValue: "default",
-		},
-		{
-			name:          "[Feature off] Get default if key is not provided",
-			feature:       false,
+			name:          "Get default if key is not provided",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
 			annotationKey: "",
 			alert:         alertWithDeploymentAnnotation("annotKey", "deployValue"),
@@ -247,15 +163,6 @@ func TestGetAnnotationValue(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			envIsolator.Setenv(features.NamespaceAnnotationsForNotifiers.EnvVar(), strconv.FormatBool(c.feature))
-
-			// skip tests with feature in a flipped state for release tests
-			if c.feature && !features.NamespaceAnnotationsForNotifiers.Enabled() {
-				t.Skipf("%s feature flag not enabled, skipping...", features.NamespaceAnnotationsForNotifiers.Name())
-			} else if !c.feature && features.NamespaceAnnotationsForNotifiers.Enabled() {
-				t.Skipf("%s feature flag enabled, skipping...", features.NamespaceAnnotationsForNotifiers.Name())
-			}
-
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 			nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
@@ -269,12 +176,6 @@ func TestGetAnnotationValue(t *testing.T) {
 }
 
 func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(features.NamespaceAnnotationsForNotifiers.EnvVar(), "true")
-	if !features.NamespaceAnnotationsForNotifiers.Enabled() {
-		t.Skipf("%s feature flag not enabled, skipping...", features.NamespaceAnnotationsForNotifiers.Name())
-	}
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
@@ -291,12 +192,6 @@ func TestGetAnnotationValueCorrectlyQueriesForNamespace(t *testing.T) {
 }
 
 func TestGetAnnotationValueReturnsDefaultIfNoStoreReturnsError(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(features.NamespaceAnnotationsForNotifiers.EnvVar(), "true")
-	if !features.NamespaceAnnotationsForNotifiers.Enabled() {
-		t.Skipf("%s feature flag not enabled, skipping...", features.NamespaceAnnotationsForNotifiers.Name())
-	}
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)

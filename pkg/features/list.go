@@ -39,9 +39,6 @@ var (
 	// ActiveVulnManagement enables detection of active vulnerabilities
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", false)
 
-	// NamespaceAnnotationsForNotifiers enables using namespace annotations for notifiers.
-	NamespaceAnnotationsForNotifiers = registerFeature("Enable using namespace annotations for notifiers", "ROX_NS_ANNOTATION_FOR_NOTIFIERS", true)
-
 	// SystemPolicyMitreFramework enables MITRE ATT&CK framework for RHACS System Policies.
 	SystemPolicyMitreFramework = registerFeature("Enable MITRE ATT&CK framework for RHACS System Policies", "ROX_SYSTEM_POLICY_MITRE_FRAMEWORK", false)
 )

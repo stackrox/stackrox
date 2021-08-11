@@ -1,6 +1,5 @@
 import React from 'react';
 
-import { knownBackendFlags } from 'utils/featureFlags';
 import renderKeyValues from '../GenericNotifier/GenericNotifier';
 import renderPriorityMapping from '../Jira/Jira';
 
@@ -398,19 +397,6 @@ const formDescriptors = {
                 jsonpath: 'labelKey',
                 type: 'text',
                 help: notifierHelpString,
-                featureFlagDependency: {
-                    featureFlag: knownBackendFlags.ROX_NS_ANNOTATION_FOR_NOTIFIERS,
-                    showIfValueIs: true,
-                },
-            },
-            {
-                label: 'Label/Annotation Key for Project',
-                jsonpath: 'labelKey',
-                type: 'text',
-                featureFlagDependency: {
-                    featureFlag: knownBackendFlags.ROX_NS_ANNOTATION_FOR_NOTIFIERS,
-                    showIfValueIs: false,
-                },
             },
             {
                 label: 'Priority Mapping',
@@ -473,20 +459,6 @@ const formDescriptors = {
                 type: 'text',
                 placeholder: 'email',
                 help: notifierHelpString,
-                featureFlagDependency: {
-                    featureFlag: knownBackendFlags.ROX_NS_ANNOTATION_FOR_NOTIFIERS,
-                    showIfValueIs: true,
-                },
-            },
-            {
-                label: 'Label/Annotation Key for Recipient',
-                jsonpath: 'labelKey',
-                type: 'text',
-                placeholder: 'email',
-                featureFlagDependency: {
-                    featureFlag: knownBackendFlags.ROX_NS_ANNOTATION_FOR_NOTIFIERS,
-                    showIfValueIs: false,
-                },
             },
             {
                 label: 'Connect Without TLS (Unencrypted)',
@@ -535,20 +507,6 @@ const formDescriptors = {
                 type: 'text',
                 placeholder: 'slack',
                 help: notifierHelpString,
-                featureFlagDependency: {
-                    featureFlag: knownBackendFlags.ROX_NS_ANNOTATION_FOR_NOTIFIERS,
-                    showIfValueIs: true,
-                },
-            },
-            {
-                label: 'Label/Annotation Key for Slack Webhook',
-                jsonpath: 'labelKey',
-                type: 'text',
-                placeholder: 'slack',
-                featureFlagDependency: {
-                    featureFlag: knownBackendFlags.ROX_NS_ANNOTATION_FOR_NOTIFIERS,
-                    showIfValueIs: false,
-                },
             },
         ],
         teams: [
@@ -570,20 +528,6 @@ const formDescriptors = {
                 type: 'text',
                 placeholder: 'teams',
                 help: notifierHelpString,
-                featureFlagDependency: {
-                    featureFlag: knownBackendFlags.ROX_NS_ANNOTATION_FOR_NOTIFIERS,
-                    showIfValueIs: true,
-                },
-            },
-            {
-                label: 'Label/Annotation Key For Teams Webhook',
-                jsonpath: 'labelKey',
-                type: 'text',
-                placeholder: 'teams',
-                featureFlagDependency: {
-                    featureFlag: knownBackendFlags.ROX_NS_ANNOTATION_FOR_NOTIFIERS,
-                    showIfValueIs: false,
-                },
             },
         ],
         cscc: [

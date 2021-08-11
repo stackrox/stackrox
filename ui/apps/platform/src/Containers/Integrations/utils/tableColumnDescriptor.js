@@ -42,17 +42,17 @@ const tableColumnDescriptor = Object.freeze({
         slack: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'labelDefault', Header: 'Default Webhook', className: classNameWordBreak },
-            { accessor: 'labelKey', Header: 'Webhook Label Key' },
+            { accessor: 'labelKey', Header: 'Webhook Annotation Key' },
         ],
         teams: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'labelDefault', Header: 'Default Webhook', className: classNameWordBreak },
-            { accessor: 'labelKey', Header: 'Webhook Label Key' },
+            { accessor: 'labelKey', Header: 'Webhook Annotation Key' },
         ],
         jira: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'labelDefault', Header: 'Default Project' },
-            { accessor: 'labelKey', Header: 'Project Label Key' },
+            { accessor: 'labelKey', Header: 'Project Annotation Key' },
             {
                 accessor: 'jira.url',
                 keyValueFunc: (url) => (
@@ -66,7 +66,7 @@ const tableColumnDescriptor = Object.freeze({
         email: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'labelDefault', Header: 'Default Recipient' },
-            { accessor: 'labelKey', Header: 'Recipient Label Key' },
+            { accessor: 'labelKey', Header: 'Recipient Annotation Key' },
             { accessor: 'email.server', Header: 'Server' },
         ],
         cscc: [

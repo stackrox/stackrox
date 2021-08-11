@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/search"
@@ -80,51 +79,33 @@ func SeverityString(s storage.Severity) string {
 // This value from the annotation is used by certain notifiers to redirect notifications to other channels. For example, the email notifier can send to an alternate email depending on the annotation value.
 // NOTE: It is possible that this will pull the value from a deployment label instead of annotation. This remains for backwards compatibility purposes, because versions <63.0 supported this on labels and annotations.
 func GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string, namespaceStore namespaceDataStore.DataStore) string {
-
-	if features.NamespaceAnnotationsForNotifiers.Enabled() {
-		// Skip entire processing if the label key is not even set
-		if annotationKey == "" {
-			return defaultValue
-		}
-
-		// Try get annotation from deployment
-		if deployment := alert.GetDeployment(); deployment != nil {
-			if value, ok := deployment.GetAnnotations()[annotationKey]; ok {
-				return value
-			}
-
-			// Note: Label support was added for Docker Swarm and most notifiers won't even work with labels
-			// because labels cannot have emails or URLs. But it is theoretically possible to store a JIRA project in there
-			// and for backwards compatibility with the users that are using labels, we will continue to read
-			if value, ok := deployment.GetLabels()[annotationKey]; ok {
-				return value
-			}
-		}
-
-		// Otherwise get annotation from namespace
-		if ns := getNamespaceFromAlert(ctx, alert, namespaceStore); ns != nil {
-			if value, ok := ns.GetAnnotations()[annotationKey]; ok {
-				return value
-			}
-		}
-
-		// If neither exists, fallback
+	// Skip entire processing if the label key is not even set
+	if annotationKey == "" {
 		return defaultValue
 	}
 
-	// Old flow (to be removed once feature is enabled)
-	deployment := alert.GetDeployment()
-	if deployment == nil {
-		return defaultValue
+	// Try get annotation from deployment
+	if deployment := alert.GetDeployment(); deployment != nil {
+		if value, ok := deployment.GetAnnotations()[annotationKey]; ok {
+			return value
+		}
+
+		// Note: Label support was added for Docker Swarm and most notifiers won't even work with labels
+		// because labels cannot have emails or URLs. But it is theoretically possible to store a JIRA project in there
+		// and for backwards compatibility with the users that are using labels, we will continue to read
+		if value, ok := deployment.GetLabels()[annotationKey]; ok {
+			return value
+		}
 	}
-	// Annotations will most likely be used for k8s
-	if value, ok := deployment.GetAnnotations()[annotationKey]; ok {
-		return value
+
+	// Otherwise get annotation from namespace
+	if ns := getNamespaceFromAlert(ctx, alert, namespaceStore); ns != nil {
+		if value, ok := ns.GetAnnotations()[annotationKey]; ok {
+			return value
+		}
 	}
-	// Labels will most likely be used for docker
-	if value, ok := deployment.GetLabels()[annotationKey]; ok {
-		return value
-	}
+
+	// If neither exists, fallback
 	return defaultValue
 }
 
