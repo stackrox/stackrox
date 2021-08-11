@@ -411,8 +411,8 @@ func (n *notifier) AlertNotify(ctx context.Context, alert *storage.Alert) error 
 		return errNotRunning
 	}
 
-	if alert.GetDeployment() == nil {
-		return errors.New("AWS SH notifier only supports deployment alerts")
+	if alert.GetImage() != nil {
+		return errors.New("AWS SH notifier only supports deployment and resource alerts")
 	}
 
 	select {
