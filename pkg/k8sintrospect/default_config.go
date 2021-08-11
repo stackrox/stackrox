@@ -1,14 +1,14 @@
 package k8sintrospect
 
 import (
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
 	// DefaultConfig is the default configuration for the StackRox platform.
 	DefaultConfig = Config{
-		Namespaces: []string{namespaces.StackRox},
+		Namespaces: []string{env.Namespace.Setting()},
 		Objects: []ObjectConfig{
 			{
 				GVK: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
