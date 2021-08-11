@@ -884,7 +884,7 @@ commands:
           name: Setup deployment env
           command: |
             <<# parameters.docker-login >>
-            docker login -u  "${QUAY_CGORMAN1_RO_USER}" -p "${QUAY_CGORMAN1_RO_PASSWORD}" quay.io
+            docker login -u  "${QUAY_CGORMAN1_RO_USER}" --password-stdin \<<<"${QUAY_CGORMAN1_RO_PASSWORD}" quay.io
             <</ parameters.docker-login >>
             <<# parameters.use-websocket >>
             cci-export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
@@ -1841,8 +1841,8 @@ commands:
               cci-export MAIN_IMAGE_REPO "stackrox.io/main"
               cci-export REGISTRY_USERNAME "$STACKROX_IO_USERNAME"
               cci-export REGISTRY_PASSWORD "$STACKROX_IO_PASSWORD"
-              docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" stackrox.io
-              docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" collector.stackrox.io
+              docker login -u "$STACKROX_IO_USERNAME" --password-stdin \<<<"$STACKROX_IO_PASSWORD" stackrox.io
+              docker login -u "$STACKROX_IO_USERNAME" --password-stdin \<<<"$STACKROX_IO_PASSWORD" collector.stackrox.io
             fi
 
             if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
@@ -2683,7 +2683,7 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:$(make --quiet tag)" | cat
             ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
@@ -2695,7 +2695,7 @@ jobs:
             fi
 
             QUAY_REPO="cgorman1"
-            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:$(make --quiet tag)" | cat
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" | cat
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
@@ -2775,7 +2775,7 @@ jobs:
       - run:
           name: Push new image
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
 
             TAG="$(make --quiet tag)"
             ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main-rhel:${TAG}" | cat
@@ -2784,7 +2784,7 @@ jobs:
               ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/main-rhel:latest
             fi
 
-            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
             QUAY_REPO="cgorman1"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main-rhel:$(make --quiet tag)" | cat
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
@@ -2811,8 +2811,8 @@ jobs:
       - run:
           name: Login to Docker Hub and Quay.io
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -2981,7 +2981,7 @@ jobs:
       - run:
           name: Build images
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             make scale-image mock-grpc-server-image monitoring-image
 
       - *saveGoBuildCache
@@ -2989,8 +2989,8 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$QUAY_CGORMAN1_RW_USER" -p "$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
 
             TAG=$(make --quiet tag)
 
@@ -4875,7 +4875,7 @@ jobs:
       - run:
           name: Retag docs image with release-version tag in Docker Hub
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
 
             DOCS_TAG=$(make --quiet docs-tag)
             MAIN_TAG=$(make --quiet tag)
@@ -4892,9 +4892,9 @@ jobs:
       - run:
           name: Push image into stackrox.io
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" stackrox.io
-            docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" stackrox.io
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
             MAIN_TAG=$(make --quiet tag)
             COLLECTOR_TAG=$(make --quiet collector-tag)
