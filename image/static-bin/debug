@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+dump_cpu_info() {
+  cat /proc/cpuinfo | grep 'vendor\|family\|model\|stepping\|flags\|^$'
+  return 1
+}
