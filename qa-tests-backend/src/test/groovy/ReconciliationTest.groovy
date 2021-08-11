@@ -103,7 +103,8 @@ class ReconciliationTest extends BaseSpecification {
         Deployment dep = new Deployment()
                 .setNamespace(ns)
                 .setName ("testing123")
-                .setImage ("busybox")
+                .setImage ("quay.io/cgorman1/qa:busybox")
+                .addPort (22)
                 .addLabel ("app", "testing123")
                 .setCommand(["sleep", "600"])
 
@@ -112,7 +113,8 @@ class ReconciliationTest extends BaseSpecification {
         assert Services.waitForDeployment(dep)
         assert Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size() == 1
 
-        def violations = getViolationsWithTimeout("testing123", "Latest Tag", 30)
+        def violations = getViolationsWithTimeout("testing123",
+                "Secure Shell (ssh) Port Exposed", 30)
         assert violations.size() == 1
 
         NetworkPolicy policy = new NetworkPolicy("do-nothing")
