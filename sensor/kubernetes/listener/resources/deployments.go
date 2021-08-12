@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1 "k8s.io/api/core/v1"
@@ -79,7 +80,7 @@ type deploymentHandler struct {
 	processFilter          filter.Filter
 	config                 config.Handler
 	hierarchy              references.ParentHierarchy
-	rbac                   rbacUpdater
+	rbac                   rbac.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 
 	detector detector.Detector
@@ -89,7 +90,7 @@ type deploymentHandler struct {
 
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
-	endpointManager *endpointManager, namespaceStore *namespaceStore, rbac rbacUpdater, podLister v1listers.PodLister,
+	endpointManager *endpointManager, namespaceStore *namespaceStore, rbac rbac.Store, podLister v1listers.PodLister,
 	processFilter filter.Filter, config config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:              podLister,
@@ -158,7 +159,9 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	deploymentWrap.updatePortExposureFromStore(d.serviceStore)
 	if action != central.ResourceAction_REMOVE_RESOURCE {
-		d.rbac.assignPermissionLevelToDeployment(deploymentWrap)
+		// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
+		// right after deploymentWrap object creation.
+		deploymentWrap.updateServiceAccountPermissionLevel(d.rbac.GetPermissionLevelForDeployment(deploymentWrap.GetDeployment()))
 		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
 		d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
 	} else {

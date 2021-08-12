@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 )
@@ -49,13 +50,13 @@ func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLi
 	nodeStore := newNodeStore()
 	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
-	rbacUpdater := newRBACUpdater(syncedRBAC)
+	rbacUpdater := rbac.NewStore(syncedRBAC)
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces),
 
-		rbacDispatcher:            newRBACDispatcher(rbacUpdater),
+		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
 		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
 		secretDispatcher:          newSecretDispatcher(),
@@ -74,7 +75,7 @@ func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLi
 type registryImpl struct {
 	deploymentHandler *deploymentHandler
 
-	rbacDispatcher            *rbacDispatcher
+	rbacDispatcher            *rbac.Dispatcher
 	namespaceDispatcher       *namespaceDispatcher
 	serviceDispatcher         *serviceDispatcher
 	secretDispatcher          *secretDispatcher

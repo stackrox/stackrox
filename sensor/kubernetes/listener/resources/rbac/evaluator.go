@@ -1,33 +1,9 @@
-package resources
+package rbac
 
 import (
-	"errors"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
-	"github.com/stackrox/rox/pkg/utils"
 )
-
-func (rs *rbacUpdaterImpl) assignPermissionLevelToDeployment(wrap *deploymentWrap) {
-	subject := &storage.Subject{
-		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-		Name:      wrap.GetServiceAccount(),
-		Namespace: wrap.GetNamespace(),
-	}
-
-	rs.lock.Lock()
-	defer rs.lock.Unlock()
-
-	if !rs.hasBuiltInitialBucket {
-		rs.hasBuiltInitialBucket = rs.rebuildEvaluatorBucketsNoLock()
-		if !rs.hasBuiltInitialBucket {
-			utils.Should(errors.New("deployment permissions should not be evaluated if rbac has not been synced"))
-		}
-	}
-	// We must always update the underlying Deployment through accessor methods because it can be read and modified
-	// concurrently.
-	wrap.updateServiceAccountPermissionLevel(rs.bucketEvaluator.getBucketNoLock(subject))
-}
 
 // Evaluate the permission bucket for a subject.
 ////////////////////////////////////////////////
