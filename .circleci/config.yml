@@ -5221,7 +5221,9 @@ workflows:
             - pre-build-cli
       - mark-collector-release:
           <<: *runOnlyOnReleaseBuilds
-          context: docker-io-pull
+          context:
+            - custom-executor-pull
+            - docker-io-pull
           requires:
             - build
             - go-unit-tests
