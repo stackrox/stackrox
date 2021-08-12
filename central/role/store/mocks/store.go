@@ -33,21 +33,6 @@ func (m *MockPermissionSetStore) EXPECT() *MockPermissionSetStoreMockRecorder {
 	return m.recorder
 }
 
-// Count mocks base method
-func (m *MockPermissionSetStore) Count() (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count")
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Count indicates an expected call of Count
-func (mr *MockPermissionSetStoreMockRecorder) Count() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockPermissionSetStore)(nil).Count))
-}
-
 // Get mocks base method
 func (m *MockPermissionSetStore) Get(id string) (*storage.PermissionSet, bool, error) {
 	m.ctrl.T.Helper()
@@ -129,21 +114,6 @@ func (m *MockSimpleAccessScopeStore) EXPECT() *MockSimpleAccessScopeStoreMockRec
 	return m.recorder
 }
 
-// Count mocks base method
-func (m *MockSimpleAccessScopeStore) Count() (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count")
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Count indicates an expected call of Count
-func (mr *MockSimpleAccessScopeStoreMockRecorder) Count() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Count))
-}
-
 // Get mocks base method
 func (m *MockSimpleAccessScopeStore) Get(id string) (*storage.SimpleAccessScope, bool, error) {
 	m.ctrl.T.Helper()
@@ -223,21 +193,6 @@ func NewMockRoleStore(ctrl *gomock.Controller) *MockRoleStore {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockRoleStore) EXPECT() *MockRoleStoreMockRecorder {
 	return m.recorder
-}
-
-// Count mocks base method
-func (m *MockRoleStore) Count() (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count")
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Count indicates an expected call of Count
-func (mr *MockRoleStoreMockRecorder) Count() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockRoleStore)(nil).Count))
 }
 
 // Get mocks base method
