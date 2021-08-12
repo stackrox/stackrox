@@ -16,8 +16,22 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 2,
+  "iteration": 1628764631650,
   "links": [],
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 28,
+      "panels": [],
+      "title": "CPU and Memory",
+      "type": "row"
+    },
     {
       "aliasColors": {},
       "bars": false,
@@ -29,7 +43,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "id": 18,
       "legend": {
@@ -82,7 +96,6 @@
           "measurement": "process_cpu_seconds_total",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT difference(mean(\"counter\")) FROM \"process_cpu_seconds_total\" WHERE $timeFilter GROUP BY time(1s), \"url\" fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -104,7 +117,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "url",
+              "operator": "=~",
+              "value": "/^$component_url$/"
+            }
+          ]
         }
       ],
       "thresholds": [],
@@ -159,7 +178,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 1
       },
       "id": 16,
       "legend": {
@@ -211,7 +230,6 @@
           "measurement": "go_memstats_heap_alloc_bytes",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_alloc_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"url\" fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -229,7 +247,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "url",
+              "operator": "=~",
+              "value": "/^$component_url$/"
+            }
+          ]
         },
         {
           "groupBy": [
@@ -255,7 +279,6 @@
           "measurement": "go_memstats_heap_inuse_bytes",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_inuse_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"url\" fill(linear)",
           "rawQuery": false,
           "refId": "B",
           "resultFormat": "time_series",
@@ -273,7 +296,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "url",
+              "operator": "=~",
+              "value": "/^$component_url$/"
+            }
+          ]
         },
         {
           "groupBy": [
@@ -299,7 +328,6 @@
           "measurement": "go_memstats_heap_idle_bytes",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_idle_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"url\" fill(linear)",
           "rawQuery": false,
           "refId": "C",
           "resultFormat": "time_series",
@@ -317,7 +345,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "url",
+              "operator": "=~",
+              "value": "/^$component_url$/"
+            }
+          ]
         }
       ],
       "thresholds": [],
@@ -362,6 +396,19 @@
       }
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 34,
+      "panels": [],
+      "title": "DB Metrics",
+      "type": "row"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
@@ -372,7 +419,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 10
       },
       "id": 22,
       "legend": {
@@ -424,7 +471,6 @@
           "measurement": "rox_central_bolt_bucket_key_n",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"rox_central_bolt_bucket_key_n\" WHERE $timeFilter GROUP BY time($__interval), \"Bucket\" fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -497,9 +543,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 10
       },
-      "id": 20,
+      "id": 26,
       "legend": {
         "avg": false,
         "current": false,
@@ -511,7 +557,6 @@
       },
       "lines": true,
       "linewidth": 1,
-      "links": [],
       "nullPointMode": "null",
       "options": {
         "dataLinks": []
@@ -546,10 +591,9 @@
               "type": "fill"
             }
           ],
-          "measurement": "rox_central_badger_prefix_size",
+          "measurement": "rox_central_rocksdb_prefix_size",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"rox_central_badger_prefix_size\" WHERE $timeFilter GROUP BY time($__interval), \"Prefix\" fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -574,7 +618,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Badger Object Counts",
+      "title": "RocksDB Object Count",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -622,7 +666,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 18
       },
       "id": 10,
       "legend": {
@@ -680,7 +724,6 @@
           "measurement": "rox_central_bolt_op_duration",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"count\") FROM \"rox_central_bolt_op_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Type\", \"Operation\" fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -698,7 +741,19 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "Operation",
+              "operator": "=~",
+              "value": "/^$operation$/"
+            },
+            {
+              "condition": "AND",
+              "key": "Type",
+              "operator": "=~",
+              "value": "/^$type$/"
+            }
+          ]
         }
       ],
       "thresholds": [],
@@ -753,9 +808,9 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 18
       },
-      "id": 6,
+      "id": 31,
       "legend": {
         "avg": false,
         "current": false,
@@ -808,10 +863,9 @@
               "type": "fill"
             }
           ],
-          "measurement": "rox_central_badger_op_duration",
+          "measurement": "rox_central_rocksdb_op_duration",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"count\") FROM \"rox_central_badger_op_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -829,14 +883,26 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "Operation",
+              "operator": "=~",
+              "value": "/^$operation$/"
+            },
+            {
+              "condition": "AND",
+              "key": "Type",
+              "operator": "=~",
+              "value": "/^$type$/"
+            }
+          ]
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Badger Operation Count",
+      "title": "RocksDB Operation Count",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -884,7 +950,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 25
+        "y": 27
       },
       "id": 8,
       "legend": {
@@ -913,61 +979,19 @@
       "steppedLine": false,
       "targets": [
         {
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "Operation"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "Type"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "linear"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "rox_central_bolt_op_duration",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT (mean(\"sum\")/mean(\"count\")) FROM \"rox_central_bolt_op_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
+          "query": "SELECT (mean(\"sum\") / mean(\"count\")) FROM \"rox_central_bolt_op_duration\" WHERE (\"Operation\" =~ /^$operation$/ AND \"Type\" =~ /^$type$/) AND $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
           "rawQuery": true,
           "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "sum"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
+          "resultFormat": "time_series"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Bolt Operation Duration",
+      "title": "Bolt Avg Operation Duration",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1013,11 +1037,11 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 11,
+        "w": 12,
         "x": 12,
-        "y": 25
+        "y": 27
       },
-      "id": 4,
+      "id": 32,
       "legend": {
         "avg": false,
         "current": false,
@@ -1044,61 +1068,19 @@
       "steppedLine": false,
       "targets": [
         {
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "Operation"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "Type"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "linear"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "rox_central_badger_op_duration",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT (mean(\"sum\")/mean(\"count\")) FROM \"rox_central_badger_op_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
+          "query": "SELECT (mean(\"sum\") / mean(\"count\")) FROM \"rox_central_rocksdb_op_duration\" WHERE (\"Operation\" =~ /^$operation$/ AND \"Type\" =~ /^$type$/) AND $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
           "rawQuery": true,
           "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "sum"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
+          "resultFormat": "time_series"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Badger Avg Operation Duration",
+      "title": "RocksDB Avg Operation Duration",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1146,269 +1128,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 33
-      },
-      "id": 14,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "Type"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "Action"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "linear"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "rox_central_sensor_event_duration",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT (mean(\"sum\")/mean(\"count\")) FROM \"rox_central_sensor_event_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Type\", \"Action\" fill(linear)",
-          "rawQuery": true,
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "sum"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Avg Sensor Event Queue Duration",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 33
-      },
-      "id": 12,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "Operation"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "Type"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "linear"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "rox_central_sensor_event_queue",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT mean(\"counter\") FROM \"rox_central_sensor_event_queue\" WHERE $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
-          "rawQuery": false,
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "counter"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Sensor Event Queue Counter",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 42
+        "y": 35
       },
       "id": 2,
       "legend": {
@@ -1437,54 +1157,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "groupBy": [
-            {
-              "params": [
-                "$__interval"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "Operation"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "Type"
-              ],
-              "type": "tag"
-            },
-            {
-              "params": [
-                "linear"
-              ],
-              "type": "fill"
-            }
-          ],
-          "measurement": "rox_central_index_op_duration",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT (mean(\"sum\")/mean(\"count\")) FROM \"rox_central_index_op_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
+          "query": "SELECT (mean(\"sum\") / mean(\"count\")) FROM \"rox_central_index_op_duration\" WHERE (\"Operation\" =~ /^$operation$/ AND \"Type\" =~ /^$type$/) AND $timeFilter GROUP BY time($__interval), \"Operation\", \"Type\" fill(linear)",
           "rawQuery": true,
           "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "sum"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "mean"
-              }
-            ]
-          ],
-          "tags": []
+          "resultFormat": "time_series"
         }
       ],
       "thresholds": [],
@@ -1536,10 +1214,10 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
-        "y": 42
+        "y": 35
       },
       "id": 24,
       "legend": {
@@ -1582,10 +1260,9 @@
               "type": "fill"
             }
           ],
-          "measurement": "rox_central_badger_db_size",
+          "measurement": "rox_central_rocksdb_db_size",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"rox_central_badger_db_size\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1623,7 +1300,6 @@
           "measurement": "rox_central_bolt_db_size",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"rox_central_bolt_db_size\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
           "rawQuery": false,
           "refId": "B",
           "resultFormat": "time_series",
@@ -1661,7 +1337,6 @@
           "measurement": "rox_central_bleve_index_CurOnDiskBytes",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"rox_central_bleve_index_CurOnDiskBytes\" WHERE $timeFilter GROUP BY time($__interval) fill(linear)",
           "rawQuery": false,
           "refId": "C",
           "resultFormat": "time_series",
@@ -1722,16 +1397,330 @@
         "align": false,
         "alignLevel": null
       }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 36,
+      "panels": [],
+      "title": "Sensor Event Queue",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 45
+      },
+      "id": 14,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT (mean(\"sum\")/mean(\"count\")) FROM \"rox_central_sensor_event_duration\" WHERE $timeFilter GROUP BY time($__interval), \"Type\", \"Action\" fill(linear)",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Avg Sensor Event Queue Duration",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 45
+      },
+      "id": 12,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "Operation"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "Type"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "linear"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "rox_central_sensor_event_queue",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "rawQuery": false,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "counter"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Sensor Event Queue Counter",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
   "schemaVersion": 19,
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "InfluxDB 2w",
+        "definition": "SHOW TAG VALUES WITH KEY = \"url\"",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Component",
+        "multi": true,
+        "name": "component_url",
+        "options": [],
+        "query": "SHOW TAG VALUES WITH KEY = \"url\"",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "InfluxDB 2w",
+        "definition": "SHOW TAG VALUES WITH KEY = \"Operation\"",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Operation",
+        "multi": true,
+        "name": "operation",
+        "options": [],
+        "query": "SHOW TAG VALUES WITH KEY = \"Operation\"",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "InfluxDB 2w",
+        "definition": "SHOW TAG VALUES WITH KEY = \"Type\" ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Type",
+        "multi": true,
+        "name": "type",
+        "options": [],
+        "query": "SHOW TAG VALUES WITH KEY = \"Type\" ",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
@@ -1762,5 +1751,5 @@
   "timezone": "",
   "title": "Core dashboard",
   "uid": "Q0AZXCdZk",
-  "version": 1
+  "version": 6
 }
