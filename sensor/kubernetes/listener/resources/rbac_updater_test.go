@@ -16,6 +16,15 @@ import (
 )
 
 func TestRBACUpdater(t *testing.T) {
+	// Namespace: n1
+	// Role: r1
+	// Bindings:
+	//  - b1 -> r1
+	//  - b2 -> r1
+	// Cluster role: r2
+	// Cluster bindings:
+	//  - b3 -> r2
+	//  - b4 -> r2
 	roles := []*v1.Role{
 		{
 			ObjectMeta: metav1.ObjectMeta{
