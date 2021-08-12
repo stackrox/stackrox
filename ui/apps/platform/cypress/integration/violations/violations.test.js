@@ -24,8 +24,10 @@ describe('Violations page', () => {
     });
 
     const mockGetAlert = () => {
-        cy.fixture('alerts/alertById.json').as('alertById');
-        cy.route('GET', api.alerts.alertById, '@alertById').as('alertById');
+        const alertId = '8aaa344c-6266-4037-bc21-cd9323a54a4b';
+        cy.intercept('GET', `/v1/alerts/${alertId}`, {
+            fixture: 'alerts/alertById.json',
+        }).as('alertById');
     };
 
     const mockResolveAlert = () => {

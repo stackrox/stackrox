@@ -146,8 +146,9 @@ describe('Access Control Roles', () => {
         cy.get(selectors.form.inputName).should('be.enabled').should('have.value', '');
         cy.get(selectors.form.inputDescription).should('be.enabled').should('have.value', '');
 
-        const name = `Role-${new Date().getTime()}`;
-        const description = 'New description';
+        const name = `Role-${new Date().toISOString()}`;
+        const description =
+            'adds a new role and form disables name input when editing an existing role';
         const permissionSetName = 'None';
         const accessScopeName = 'Unrestricted';
 
@@ -158,12 +159,12 @@ describe('Access Control Roles', () => {
             .should('be.enabled')
             .should('be.checked');
 
-        cy.intercept('POST', rolesApi.list).as('PostRoles');
+        cy.intercept('POST', `${rolesApi.list}/${name}`).as('PostRoles');
         cy.get(selectors.form.saveButton).click();
         cy.wait('@PostRoles');
 
         cy.get(selectors.h2).should('have.text', h2);
-        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+        cy.get(`${selectors.list.tdNameLink}:contains("${name}") a`).click();
 
         cy.get(selectors.h2).should('have.text', name);
         cy.get(selectors.form.inputName).should('be.disabled').should('have.value', name);
@@ -178,5 +179,7 @@ describe('Access Control Roles', () => {
 
         cy.get(selectors.form.cancelButton).click();
         cy.get(selectors.form.editButton).should('be.enabled');
+
+        // TODO go back to list and delete role to clean up after the test
     });
 });
