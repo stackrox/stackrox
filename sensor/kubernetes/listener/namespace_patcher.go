@@ -43,29 +43,20 @@ func (h *namespacePatchHandler) OnUpdate(oldObj, newObj interface{}) {
 
 func (h *namespacePatchHandler) OnDelete(obj interface{}) {}
 
-func checkDesiredLabels(actual, desired map[string]string) bool {
-	for k, v := range desired {
-		if actual[k] != v {
-			return false
-		}
-	}
-	return true
-}
-
 func (h *namespacePatchHandler) checkAndPatchNamespace(obj interface{}) {
 	ns, ok := obj.(*v1.Namespace)
 	if !ok {
 		return
 	}
 
-	desiredLabels := map[string]string{
-		namespaces.NamespaceNameLabel: ns.GetName(),
-	}
-
-	if checkDesiredLabels(ns.GetLabels(), desiredLabels) {
+	key := namespaces.GetFirstValidNamespaceNameLabelKey(ns.GetLabels(), ns.GetName())
+	if key != "" {
 		return
 	}
 
+	desiredLabels := map[string]string{
+		namespaces.NamespaceNameLabel: ns.GetName(),
+	}
 	if err := h.patchNamespaceLabels(ns, desiredLabels); err != nil {
 		// No need to retry because of concurrent updates - in this case, we'll process another event for this object
 		// anyway.

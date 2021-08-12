@@ -24,9 +24,10 @@ func labelSelectorForNamespace(ns *storage.NamespaceMetadata) *storage.LabelSele
 	var matchLabels map[string]string
 
 	nsLabels := ns.GetLabels()
-	if nsLabels[namespaces.NamespaceNameLabel] == ns.GetName() {
+	labelKey := namespaces.GetFirstValidNamespaceNameLabelKey(nsLabels, ns.GetName())
+	if labelKey != "" {
 		matchLabels = map[string]string{
-			namespaces.NamespaceNameLabel: ns.GetName(),
+			labelKey: ns.GetName(),
 		}
 	} else {
 		matchLabels = nsLabels
