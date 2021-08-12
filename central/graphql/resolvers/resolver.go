@@ -150,6 +150,7 @@ var (
 	readCompliance             = readAuth(resources.Compliance)
 	readComplianceRuns         = readAuth(resources.ComplianceRuns)
 	readComplianceRunSchedule  = readAuth(resources.ComplianceRunSchedule)
+	readCVEs                   = readAuth(resources.CVE)
 	readDeployments            = readAuth(resources.Deployment)
 	readGroups                 = readAuth(resources.Group)
 	readImages                 = readAuth(resources.Image)

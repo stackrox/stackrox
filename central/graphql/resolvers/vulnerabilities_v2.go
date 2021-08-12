@@ -172,6 +172,9 @@ func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error
 }
 
 func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+	if err := readCVEs(ctx); err != nil {
+		return nil, err
+	}
 	vuln, exists, err := resolver.CVEDataStore.Get(ctx, string(*args.ID))
 	if err != nil {
 		return nil, err
@@ -187,6 +190,9 @@ func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args idQuery) (Vu
 }
 
 func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	if err := readCVEs(ctx); err != nil {
+		return nil, err
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -246,6 +252,9 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 }
 
 func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuery) (int32, error) {
+	if err := readCVEs(ctx); err != nil {
+		return 0, err
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
@@ -276,6 +285,9 @@ func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *
 }
 
 func (resolver *Resolver) vulnCounterV2(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	if err := readCVEs(ctx); err != nil {
+		return nil, err
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err

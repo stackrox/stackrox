@@ -79,9 +79,9 @@ class VulnMgmtSACTest extends BaseSpecification {
         ImageService.scanImage(CENTOS_IMAGE)
 
         // Create roles and api tokens for rbac based auth
-        createReadRole(NODE_ROLE, ["Node"])
-        createReadRole(IMAGE_ROLE, ["Image"])
-        createReadRole(NODE_IMAGE_ROLE, ["Node", "Image"])
+        createReadRole(NODE_ROLE, ["Node", "CVE"])
+        createReadRole(IMAGE_ROLE, ["Image", "CVE"])
+        createReadRole(NODE_IMAGE_ROLE, ["Node", "Image", "CVE"])
     }
 
     def cleanupSpec() {
@@ -89,6 +89,9 @@ class VulnMgmtSACTest extends BaseSpecification {
 
         BaseService.useBasicAuth()
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
+        RoleService.deleteRole(NODE_ROLE)
+        RoleService.deleteRole(IMAGE_ROLE)
+        RoleService.deleteRole(NODE_IMAGE_ROLE)
     }
 
     // GraphQL does not provide ordering guarantees, so to compare the results
@@ -137,10 +140,21 @@ class VulnMgmtSACTest extends BaseSpecification {
         where:
         "Data inputs are: "
         roleName        | baseQuery
-        NONE            | "Node:thisdoesntexist"
         NODE_ROLE       | "Node:*"
         IMAGE_ROLE      | "Image:*"
         NODE_IMAGE_ROLE | "Component:*"
+    }
+
+    @Retry(count = 0)
+    @Unroll
+    def "Verify permissions on vuln mgmt: role with no CVE permissions is rejected"() {
+        when:
+        "Get CVEs via GraphQL"
+        def gqlService = new GraphQLService(getToken("none-role", NONE))
+        def vulnCallResult = gqlService.Call(GET_CVES_QUERY, [query: ""])
+
+        then:
+        assert !vulnCallResult.hasNoErrors()
     }
 
     @Retry(count = 0)
