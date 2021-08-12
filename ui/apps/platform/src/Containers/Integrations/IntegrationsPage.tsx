@@ -22,7 +22,7 @@ const Page = (): ReactElement => (
     <Switch>
         <Route exact path={integrationsPath} component={IntegrationTilesPage} />
         <Route exact path={integrationsListPath} component={IntegrationsListPage} />
-        {process.env.NODE_ENV === 'development' && (
+        {(process.env.NODE_ENV === 'development' || !!process.env.CI) && (
             <>
                 <Route path={integrationCreatePath} component={CreateIntegrationPage} />
                 <Route path={integrationEditPath} component={EditIntegrationPage} />

@@ -70,7 +70,7 @@ export const validationSchema = yup.object().shape({
                 ),
             truncate: yup.number().required('HEC truncate limit is required'),
             sourceTypes: yup.object().shape({
-                alert: yup.string().trim().required('Source type for alert Required'),
+                alert: yup.string().trim().required('Source type for alert is required'),
                 audit: yup.string().trim().required('Source type for audit is required'),
             }),
         }),
@@ -144,7 +144,7 @@ function SplunkIntegrationForm({
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
-                        label="Name"
+                        label="Integration name"
                         fieldId="notifier.name"
                         touched={touched}
                         errors={errors}
@@ -225,6 +225,7 @@ function SplunkIntegrationForm({
                             id="notifier.splunk.truncate"
                             value={values.notifier.splunk.truncate}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>

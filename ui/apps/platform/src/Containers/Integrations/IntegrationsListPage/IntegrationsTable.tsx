@@ -118,7 +118,9 @@ function IntegrationsTable({
                             </FlexItem>
                         )}
                         <FlexItem spacer={{ default: 'spacerMd' }}>
-                            <Button onClick={onCreateIntegration}>New integration</Button>
+                            <Button data-testid="add-integration" onClick={onCreateIntegration}>
+                                New integration
+                            </Button>
                         </FlexItem>
                     </Flex>
                 </FlexItem>

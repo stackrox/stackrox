@@ -2,6 +2,7 @@ import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { editIntegration } from './integrationUtils';
+import { getInputByLabel, getEscapedId } from '../../helpers/formHelpers';
 
 describe('Notifiers Test', () => {
     withAuth();
@@ -18,6 +19,208 @@ describe('Notifiers Test', () => {
         cy.wait('@getNotifiers');
     });
 
+    describe.skip('Notifier forms', () => {
+        it('should create a new email integration', () => {
+            cy.get(selectors.emailTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/email/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').type(' ');
+            getInputByLabel('Email server').type(' ');
+            getInputByLabel('Username').type(' ');
+            getInputByLabel('Password').type(' ');
+            getInputByLabel('Sender').type(' ');
+            getInputByLabel('Default recipient').type(' ').blur();
+
+            cy.get('#name-helper').contains('Required');
+            cy.get(getEscapedId('email.server-helper')).contains('A server address is required');
+            cy.get(getEscapedId('email.username-helper')).contains('A username is required');
+            cy.get(getEscapedId('email.password-helper')).contains('A password is required');
+            cy.get(getEscapedId('email.sender-helper')).contains(
+                'A valid sender email address is required'
+            );
+            cy.get(getEscapedId('labelDefault-helper')).contains(
+                'A default recipient email address is required'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            getInputByLabel('Email server').type('example.');
+            getInputByLabel('Sender').type('scooby@doo', {
+                parseSpecialCharSequences: false,
+            });
+            getInputByLabel('Default recipient')
+                .type('shaggy@', {
+                    parseSpecialCharSequences: false,
+                })
+                .blur();
+
+            cy.get(getEscapedId('email.server-helper')).contains('Must be a valid server address');
+            cy.get(getEscapedId('email.sender-helper')).contains(
+                'A valid sender email address is required'
+            );
+            cy.get(getEscapedId('labelDefault-helper')).contains(
+                'Must be a valid default recipient email address'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 3, check valid form form and save
+            getInputByLabel('Integration name')
+                .clear()
+                .type(`Nova Email ${new Date().toISOString()}`);
+            getInputByLabel('Email server').type('smtp.example.com:465');
+            getInputByLabel('Username').clear().type('scooby');
+            getInputByLabel('Password').clear().type('monkey');
+            getInputByLabel('From').clear().type('ACS');
+            getInputByLabel('Sender').clear().type('scooby@doo.com', {
+                parseSpecialCharSequences: false,
+            });
+            getInputByLabel('Default recipient').clear().type('shaggy@example.com', {
+                parseSpecialCharSequences: false,
+            });
+            getInputByLabel('Annotation key for recipient').clear().type('email');
+            getInputByLabel('Disable TLS certificate validation (insecure)').click();
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+
+        it('should create a new Google Cloud SCC integration', () => {
+            cy.get(selectors.googleCloudSCCTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/cscc/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').type(' ');
+            getInputByLabel('Cloud SCC Source ID').type(' ');
+            getInputByLabel('Service Account Key (JSON)').type(' ').blur();
+
+            cy.get('#name-helper').contains('Required');
+            cy.get(getEscapedId('cscc.sourceId-helper')).contains('A source ID is required');
+            cy.get(getEscapedId('cscc.serviceAccount-helper')).contains(
+                'A service account is required'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            getInputByLabel('Cloud SCC Source ID').type('organization-123');
+            getInputByLabel('Service Account Key (JSON)')
+                .type('{ "type": "service_account", "project_id": "123456"', {
+                    parseSpecialCharSequences: false,
+                })
+                .blur();
+
+            cy.get('#name-helper').contains('Required');
+            cy.get(getEscapedId('cscc.sourceId-helper')).contains(
+                'SCC source ID must match the format: organizations/[0-9]+/sources/[0-9]+'
+            );
+            cy.get(getEscapedId('cscc.serviceAccount-helper')).contains(
+                'Service account must be valid JSON'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 3, check valid form form and save
+            getInputByLabel('Integration name')
+                .clear()
+                .type(`Nova Google Cloud SCC ${new Date().toISOString()}`);
+            getInputByLabel('Cloud SCC Source ID').clear().type('organizations/123/sources/456');
+            getInputByLabel('Service Account Key (JSON)')
+                .clear()
+                .type('{ "type": "service_account", "project_id": "123456" }', {
+                    parseSpecialCharSequences: false,
+                })
+                .blur();
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+
+        it('should create a new splunk integration', () => {
+            cy.get(selectors.splunkTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/splunk/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').type(' ');
+            getInputByLabel('HTTP event collector URL').type(' ');
+            getInputByLabel('HTTP event collector token').type(' ');
+            getInputByLabel('HEC truncate limit').clear().type(' ');
+            getInputByLabel('Source type for alert').clear().type(' ');
+            getInputByLabel('Source type for audit').clear().type(' ').blur();
+
+            cy.get(getEscapedId('notifier.name-helper')).contains('Name is required');
+            cy.get(getEscapedId('notifier.splunk.httpEndpoint-helper')).contains(
+                'HTTP event collector URL is required'
+            );
+            cy.get(getEscapedId('notifier.splunk.httpToken-helper')).contains(
+                'HTTP token is required'
+            );
+            cy.get(getEscapedId('notifier.splunk.truncate-helper')).contains(
+                'HEC truncate limit is required'
+            );
+            cy.get(getEscapedId('notifier.splunk.sourceTypes.alert-helper')).contains(
+                'Source type for alert is required'
+            );
+            cy.get(getEscapedId('notifier.splunk.sourceTypes.audit-helper')).contains(
+                'Source type for audit is required'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            getInputByLabel('HTTP event collector URL').clear().type('https://input').blur();
+
+            cy.get(getEscapedId('notifier.splunk.httpEndpoint-helper')).contains(
+                'Must be a valid server address'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 3, check valid form form and save
+            getInputByLabel('Integration name')
+                .clear()
+                .type(`Nova Email ${new Date().toISOString()}`);
+            getInputByLabel('HTTP event collector URL')
+                .clear()
+                .type(
+                    'https://input-prd-p-76sv8wzbfpdv.cloud.splunk.com:8088/services/collector/event'
+                );
+            getInputByLabel('HTTP event collector token').clear().type('asecrettoken');
+            getInputByLabel('HEC truncate limit').type('5000');
+            getInputByLabel('Disable TLS certificate validation (insecure)').click();
+            getInputByLabel('Enable audit logging').click();
+            getInputByLabel('Source type for alert').clear().type('stackrox-alert');
+            getInputByLabel('Source type for audit').clear().type('stackrox-audit-message');
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+    });
+
+    // @DEPRECATED: change this test after migrating forms to PatternFly
     it('should show a hint about stored credentials for Google Cloud SCC', () => {
         cy.get(selectors.googleCloudSCCTile).click();
         editIntegration('Google Cloud SCC Test');
@@ -40,6 +243,7 @@ describe('Notifiers Test', () => {
         );
     });
 
+    // @DEPRECATED: change this test after migrating forms to PatternFly
     it('should show a hint about stored credentials for Email', () => {
         cy.get(selectors.emailTile).click();
         editIntegration('Email Test');
@@ -49,6 +253,7 @@ describe('Notifiers Test', () => {
         );
     });
 
+    // @DEPRECATED: change this test after migrating forms to PatternFly
     it('should show a hint about stored credentials for Splunk', () => {
         cy.get(selectors.splunkTile).click();
         editIntegration('Splunk Test');

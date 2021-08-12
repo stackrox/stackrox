@@ -52,18 +52,26 @@ const validHostnameRegex = /^(([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])\.)*([a-z0-9]
 
 export const validationSchema = yup.object().shape({
     name: yup.string().trim().required('Required'),
-    labelDefault: yup.string().trim().email().required('A valid default recipient email address'),
+    labelDefault: yup
+        .string()
+        .trim()
+        .required('A default recipient email address is required')
+        .email('Must be a valid default recipient email address'),
     labelKey: yup.string(),
     email: yup.object().shape({
         server: yup
             .string()
             .trim()
-            .required('A email server address is required')
+            .required('A server address is required')
             .matches(validHostnameRegex, 'Must be a valid server address'),
         username: yup.string().trim().required('A username is required'),
         password: yup.string().trim().required('A password is required'),
         from: yup.string(),
-        sender: yup.string().trim().email().required('A valid sender email address is required'),
+        sender: yup
+            .string()
+            .trim()
+            .required('A valid sender email address is required')
+            .email('A valid sender email address is required'),
         startTLSAuthMethod: yup.string(),
     }),
 });
@@ -272,7 +280,7 @@ function EmailIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup label="" fieldId="email.disableTLS" errors={errors}>
                         <Checkbox
-                            label="Disable TLS Certificate Validation (Insecure)"
+                            label="Disable TLS certificate validation (insecure)"
                             id="email.disableTLS"
                             isChecked={values.email.disableTLS}
                             onChange={onChange}
@@ -316,6 +324,7 @@ function EmailIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>
