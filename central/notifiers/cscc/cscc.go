@@ -158,13 +158,10 @@ func (c *cscc) Close(ctx context.Context) error {
 
 //AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	if alert.GetDeployment() == nil {
-		// TODO: ROX-7626 - Resource alerts are not supported for CSCC and are ignored until the ticket is resolved
-		if alert.GetResource() != nil {
-			return nil
-		}
-		return errors.New("CSCC integration can only handle alerts for deployments")
+	if alert.GetImage() != nil {
+		return errors.New("CSCC integration can only handle alerts for deployments and resources")
 	}
+
 	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert)
 	summary := c.getAlertDescription(alert)
 
@@ -189,7 +186,11 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		Category:  category,
 		URL:       alertLink,
 		Timestamp: protoconv.ConvertTimestampToTimeOrNow(alert.GetTime()).Format(time.RFC3339Nano),
-		Properties: findings.Properties{
+	}
+
+	switch alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		finding.Properties = findings.Properties{
 			Severity: severity,
 
 			Namespace:      alert.GetDeployment().GetNamespace(),
@@ -198,7 +199,18 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 
 			EnforcementActions: alertEnforcement(alert),
 			Summary:            summary,
-		}.Map(),
+		}.Map()
+	case *storage.Alert_Resource_:
+		findings.Properties{
+			Severity: severity,
+
+			Namespace:    alert.GetResource().GetNamespace(),
+			Service:      alert.GetResource().GetName(),
+			ResourceType: alert.GetResource().GetResourceType().String(),
+
+			EnforcementActions: alertEnforcement(alert),
+			Summary:            summary,
+		}.Map()
 	}
 
 	if alert.GetState() == storage.ViolationState_ATTEMPTED {

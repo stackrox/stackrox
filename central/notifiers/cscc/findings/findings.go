@@ -62,6 +62,7 @@ type Properties struct {
 	Namespace      string `json:"namespace,omitempty"`
 	Service        string `json:"service,omitempty"`
 	DeploymentType string `json:"deployment_type,omitempty"`
+	ResourceType   string `json:"resource_type,omitempty"`
 
 	EnforcementActions []Enforcement `json:"enforcement_actions,omitempty"`
 	Summary            string        `json:"summary,omitempty"`
