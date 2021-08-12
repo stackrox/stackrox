@@ -418,7 +418,12 @@ describe('System Health Clusters subset 1 Healthy', () => {
         problemCount,
     } = selectors.clusters;
 
+    // For comparison to `sensorCertExpiry` in clusters fixture.
+    const currentDatetime = new Date('2020-08-31T13:01:00Z');
+
     beforeEach(() => {
+        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+
         cy.server();
         cy.fixture('clusters/health.json')
             .then((response) => {

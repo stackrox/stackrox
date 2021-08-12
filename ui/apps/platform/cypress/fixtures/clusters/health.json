@@ -486,7 +486,7 @@
                     }
                 },
                 "certExpiryStatus": {
-                    "sensorCertExpiry": "2022-07-31T13:01:00Z"
+                    "sensorCertExpiry": "2021-08-31T13:01:00Z"
                 }
             },
             "dynamicConfig": {
