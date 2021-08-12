@@ -3,6 +3,16 @@
 set -e
 
 dump_cpu_info() {
-  cat /proc/cpuinfo | grep 'vendor\|family\|model\|stepping\|flags\|^$'
-  return 1
+  exit_status="$?"
+  if [ "$exit_status" -eq 132 ]; then  # 132 = 128 + SIGILL (4)
+    grep 'vendor\|family\|model\|stepping\|flags\|^$' /proc/cpuinfo >&2 || true
+    echo >&2 "The migrator failed with an 'Illegal Instruction' error. This can mean either of the following:"
+    echo >&2 " - You are running this application on a CPU that is too old."
+    echo >&2 "   A CPU from 2011 or later (Intel SandyBridge/AMD BullDozer or above) is required."
+    echo >&2 " - Your hypervisor is not configured to propagate all CPU features to the guest VM. Please make sure"
+    echo >&2 "   that at least the SSE4.2 and CLMUL instruction sets are available to the guest VM. You can see the"
+    echo >&2 "   supported features, as seen from within this VM, in the above output ('flags'). Please refer to"
+    echo >&2 "   your hypervisor documentation on how to change the propagation of features."
+  fi
+  return "$exit_status"
 }

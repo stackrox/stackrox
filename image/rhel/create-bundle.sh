@@ -67,6 +67,7 @@ cp "${INPUT_ROOT}/static-bin/move-to-current"          "${OUTPUT_DIR}/scripts"
 cp "${INPUT_ROOT}/static-bin/restore-all-dir-contents" "${OUTPUT_DIR}/scripts"
 cp "${INPUT_ROOT}/static-bin/save-dir-contents"        "${OUTPUT_DIR}/scripts"
 cp "${INPUT_ROOT}/static-bin/start-central.sh"         "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/static-bin/debug"                    "${OUTPUT_DIR}/scripts"
 
 # =============================================================================
 # Copy binaries and data files into bundle
