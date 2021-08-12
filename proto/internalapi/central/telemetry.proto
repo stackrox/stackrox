@@ -16,6 +16,7 @@ message PullTelemetryDataRequest {
         UNKNOWN         = 0;
         KUBERNETES_INFO = 1;
         CLUSTER_INFO    = 2;
+        METRICS         = 3;
     }
 
     string request_id               = 1;
@@ -47,6 +48,7 @@ message TelemetryResponsePayload {
         EndOfStream    end_of_stream   = 1;
         KubernetesInfo kubernetes_info = 2;
         ClusterInfo    cluster_info    = 3;
+        KubernetesInfo metrics_info    = 4;
     }
 }
 

@@ -17,8 +17,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/expfmt"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/logimbue/writer"
@@ -36,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
@@ -52,6 +51,7 @@ const (
 
 	centralClusterPrefix = "_central-cluster"
 
+	metricsPullTimeout     = 10 * time.Second
 	diagnosticsPullTimeout = 10 * time.Second
 	layout                 = "2006-01-02T15:04:05.000Z"
 	logWindow              = 20 * time.Minute
@@ -189,30 +189,7 @@ func zipPrometheusMetrics(zipWriter *zip.Writer, name string) error {
 	if err != nil {
 		return err
 	}
-	return getPrometheusMetrics(metricsWriter)
-}
-
-func getPrometheusMetrics(w io.Writer) error {
-	g := prometheus.DefaultGatherer
-	mfs, err := g.Gather()
-	if err != nil {
-		// Failed to gather metrics.  Write the error to the file and return.  If we fail to write the error to the
-		// file return both errors.
-		_, writeErr := fmt.Fprintf(w, "# ERROR: %s\n", err.Error())
-		return errorhelpers.NewErrorListWithErrors("gathering prometheus metrics", []error{err, writeErr}).ToError()
-	}
-	for _, mf := range mfs {
-		if _, err := expfmt.MetricFamilyToText(w, mf); err != nil {
-			// Failed to write a metric family.  Write the error to the file and continue
-			if _, writeErr := w.Write([]byte(fmt.Sprintf("# ERROR: %s\n", err.Error()))); writeErr != nil {
-				// Failed to write the error to the file.  Return both errors.
-				errList := errorhelpers.NewErrorListWithErrors(fmt.Sprintf("writing metric family %s", mf.GetName()), []error{err, writeErr})
-				return errList.ToError()
-			}
-
-		}
-	}
-	return nil
+	return prometheusutil.ExportText(metricsWriter)
 }
 
 func getMemory(zipWriter *zip.Writer) error {
@@ -413,6 +390,9 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		if err := s.getK8sDiagnostics(ctx, zipWriter, opts); err != nil {
 			log.Error(err)
 			opts.logs = localLogs // fallback to local logs
+		}
+		if err := s.pullSensorMetrics(ctx, zipWriter, opts); err != nil {
+			log.Error(err)
 		}
 	}
 	if opts.logs == localLogs {

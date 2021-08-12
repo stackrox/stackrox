@@ -155,6 +155,19 @@ func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoCh
 	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_KUBERNETES_INFO, genericCB, since)
 }
 
+func (c *controller) PullMetrics(ctx context.Context, cb MetricsInfoChunkCallback) error {
+	genericCB := func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error {
+		metricsInfo := chunk.GetMetricsInfo()
+		if metricsInfo == nil {
+			utils.Should(errors.New("ignoring response in telemetry data stream with missing metrics info payload"))
+			return nil
+		}
+
+		return cb(ctx, metricsInfo)
+	}
+	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_METRICS, genericCB, time.Now())
+}
+
 func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback) error {
 	genericCB := func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error {
 		clusterInfo := chunk.GetClusterInfo()

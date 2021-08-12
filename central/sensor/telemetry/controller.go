@@ -16,10 +16,14 @@ type KubernetesInfoChunkCallback func(ctx concurrency.ErrorWaitable, chunk *cent
 // ClusterInfoCallback is a callback function that handles a single chunk of ClusterInfo returned from the sensor
 type ClusterInfoCallback func(ctx concurrency.ErrorWaitable, sensorInfo *central.TelemetryResponsePayload_ClusterInfo) error
 
+// MetricsInfoChunkCallback is a callback function that handles a single chunk of metrics info returned from the sensor.
+type MetricsInfoChunkCallback func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload_KubernetesInfo) error
+
 // Controller handles requesting telemetry data from remote clusters.
 type Controller interface {
 	PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback, since time.Time) error
 	PullClusterInfo(ctx context.Context, cb ClusterInfoCallback) error
+	PullMetrics(ctx context.Context, cb MetricsInfoChunkCallback) error
 	ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error
 }
 

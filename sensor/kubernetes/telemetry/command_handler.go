@@ -1,8 +1,10 @@
 package telemetry
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"runtime/pprof"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -13,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
@@ -172,6 +175,8 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 		err = h.handleKubernetesInfoRequest(ctx, sendMsg, req.Since)
 	case central.PullTelemetryDataRequest_CLUSTER_INFO:
 		err = h.handleClusterInfoRequest(ctx, sendMsg)
+	case central.PullTelemetryDataRequest_METRICS:
+		err = h.handleMetricsInfoRequest(ctx, sendMsg)
 	default:
 		err = errors.Errorf("unknown telemetry data type %v", req.GetDataType())
 	}
@@ -195,6 +200,25 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 	}
 }
 
+func createKubernetesPayload(file k8sintrospect.File) *central.TelemetryResponsePayload {
+	contents := file.Contents
+	if len(contents) > maxK8sFileSize {
+		contents = contents[:maxK8sFileSize]
+	}
+	return &central.TelemetryResponsePayload{
+		Payload: &central.TelemetryResponsePayload_KubernetesInfo_{
+			KubernetesInfo: &central.TelemetryResponsePayload_KubernetesInfo{
+				Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
+					{
+						Path:     file.Path,
+						Contents: contents,
+					},
+				},
+			},
+		},
+	}
+}
+
 func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 	sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error,
 	since *types.Timestamp) error {
@@ -204,23 +228,7 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 	}
 
 	fileCb := func(ctx concurrency.ErrorWaitable, file k8sintrospect.File) error {
-		contents := file.Contents
-		if len(contents) > maxK8sFileSize {
-			contents = contents[:maxK8sFileSize]
-		}
-		payload := &central.TelemetryResponsePayload{
-			Payload: &central.TelemetryResponsePayload_KubernetesInfo_{
-				KubernetesInfo: &central.TelemetryResponsePayload_KubernetesInfo{
-					Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
-						{
-							Path:     file.Path,
-							Contents: contents,
-						},
-					},
-				},
-			},
-		}
-		return sendMsgCb(ctx, payload)
+		return sendMsgCb(ctx, createKubernetesPayload(file))
 	}
 
 	sinceTs, err := types.TimestampFromProto(since)
@@ -228,7 +236,6 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 		return errors.Wrap(err, "error parsing since timestamp")
 	}
 	return k8sintrospect.Collect(ctx, k8sintrospect.DefaultConfig, restCfg, fileCb, sinceTs)
-
 }
 
 func (h *commandHandler) handleClusterInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
@@ -252,6 +259,46 @@ func (h *commandHandler) handleClusterInfoRequest(ctx context.Context, sendMsgCb
 	return nil
 }
 
+func createMetricsPayload(file string, contents []byte) *central.TelemetryResponsePayload {
+	return &central.TelemetryResponsePayload{
+		Payload: &central.TelemetryResponsePayload_MetricsInfo{
+			MetricsInfo: &central.TelemetryResponsePayload_KubernetesInfo{
+				Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
+					{
+						Path:     file,
+						Contents: contents,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
+	subCtx, cancel := context.WithTimeout(ctx, gatherTimeout)
+	defer cancel()
+
+	fileCb := func(ctx concurrency.ErrorWaitable, file string, contents []byte) error {
+		return sendMsgCb(ctx, createMetricsPayload(file, contents))
+	}
+	w := bytes.NewBuffer(nil)
+	err := prometheusutil.ExportText(w)
+	if err != nil {
+		return err
+	}
+	if err := fileCb(subCtx, "metrics.prom", w.Bytes()); err != nil {
+		return err
+	}
+	w = bytes.NewBuffer(nil)
+	if err := pprof.WriteHeapProfile(w); err != nil {
+		return err
+	}
+	if err := fileCb(subCtx, "heap.pb.gz", w.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.PullTelemetryDataCap, centralsensor.CancelTelemetryPullCap}
+	return []centralsensor.SensorCapability{centralsensor.PullTelemetryDataCap, centralsensor.CancelTelemetryPullCap, centralsensor.PullMetricsCap}
 }

@@ -1,6 +1,9 @@
 package centralsensor
 
 const (
+	// PullMetricsCap identifies the capability to pull metrics from sensor.
+	PullMetricsCap SensorCapability = "PullMetrics"
+
 	// PullTelemetryDataCap identifies the capability to pull telemetry data from sensor.
 	PullTelemetryDataCap SensorCapability = "PullTelemetryData"
 
