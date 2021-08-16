@@ -45,11 +45,18 @@ message AlertResults {
     Source source                 = 4;
 }
 
+message Timing {
+    string dispatcher = 1;
+    string resource   = 2;
+    int64  nanos      = 3;
+}
+
 // Next tag: 24.
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
     string         id                           = 1;
     ResourceAction action                       = 2;
+    Timing         timing                       = 3;
 
     message ResourcesSynced {}
 

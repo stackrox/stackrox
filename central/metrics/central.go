@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -137,6 +138,14 @@ var (
 		Help:      "Histogram of how long a particular segment within a function takes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Segment"})
+
+	k8sObjectProcessingDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "k8s_event_processing_duration",
+		Help:      "Time taken to fully process an event from Kubernetes",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Action", "Resource", "Dispatcher"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -221,4 +230,9 @@ func SetDatastoreFunctionDuration(start time.Time, resourceType, function string
 // SetFunctionSegmentDuration times a specific segment within a function
 func SetFunctionSegmentDuration(start time.Time, segment string) {
 	functionSegmentDurationHistogramVec.With(prometheus.Labels{"Segment": segment}).Observe(startTimeToMS(start))
+}
+
+// SetResourceProcessingDuration is the duration from sensor ingestion to Central processing
+func SetResourceProcessingDuration(event *central.SensorEvent) {
+	metrics.SetResourceProcessingDurationForEvent(k8sObjectProcessingDuration, event, "")
 }

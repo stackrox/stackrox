@@ -90,6 +90,21 @@ var (
 		Name:      "sensor_events",
 		Help:      "A counter for the total number of events sent from Sensor to Central",
 	}, []string{"Action", "ResourceType", "Type"})
+
+	k8sObjectCounts = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "k8s_events",
+		Help:      "A counter for the total number of typed k8s events processed by Sensor",
+	}, []string{"Action", "Resource"})
+
+	k8sObjectProcessingDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "k8s_event_processing_duration",
+		Help:      "Time taken to fully process an event from Kubernetes",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Action", "Resource", "Dispatcher", "Type"})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -145,4 +160,12 @@ func IncrementProcessEnrichmentHits() {
 // SetProcessEnrichmentCacheSize sets the enrichment cache size.
 func SetProcessEnrichmentCacheSize(size float64) {
 	processEnrichmentLRUCacheSize.Set(size)
+}
+
+// IncK8sEventCount increments the number of objects we're receiving from k8s
+func IncK8sEventCount(action string, resource string) {
+	k8sObjectCounts.With(prometheus.Labels{
+		"Action":   action,
+		"Resource": resource,
+	}).Inc()
 }

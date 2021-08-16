@@ -28,5 +28,6 @@ func init() {
 		totalCacheOperationsCounter,
 		datastoreFunctionDurationHistogramVec,
 		functionSegmentDurationHistogramVec,
+		k8sObjectProcessingDuration,
 	)
 }

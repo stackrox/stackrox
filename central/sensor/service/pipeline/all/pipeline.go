@@ -45,6 +45,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, reconciliationStore *recon
 
 // Run looks for one fragment (and only one) that matches the input message and runs that fragment on the message and injector.
 func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+	metrics.SetResourceProcessingDuration(msg.GetEvent())
 	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg), msg.GetEvent().GetAction().String())
 
 	var matchCount int

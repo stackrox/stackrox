@@ -1,12 +1,18 @@
 package resources
 
 import (
+	"fmt"
+	"strings"
+	"time"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/metrics"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -90,58 +96,84 @@ type registryImpl struct {
 	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
 }
 
+func wrapWithMetricDispatcher(d Dispatcher) Dispatcher {
+	return metricDispatcher{
+		Dispatcher: d,
+	}
+}
+
+type metricDispatcher struct {
+	Dispatcher
+}
+
+func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	start := time.Now().UnixNano()
+	dispatcher := strings.Trim(fmt.Sprintf("%T", obj), "*")
+
+	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
+	for _, e := range events {
+		e.Timing = &central.Timing{
+			Dispatcher: dispatcher,
+			Resource:   metricsPkg.GetResourceString(e),
+			Nanos:      start,
+		}
+	}
+	metrics.IncK8sEventCount(action.String(), dispatcher)
+	return events
+}
+
 func (d *registryImpl) ForDeployments(deploymentType string) Dispatcher {
-	return newDeploymentDispatcher(deploymentType, d.deploymentHandler)
+	return wrapWithMetricDispatcher(newDeploymentDispatcher(deploymentType, d.deploymentHandler))
 }
 
 func (d *registryImpl) ForJobs() Dispatcher {
-	return newJobDispatcherImpl(d.deploymentHandler)
+	return wrapWithMetricDispatcher(newJobDispatcherImpl(d.deploymentHandler))
 }
 
 func (d *registryImpl) ForNamespaces() Dispatcher {
-	return d.namespaceDispatcher
+	return wrapWithMetricDispatcher(d.namespaceDispatcher)
 }
 
 func (d *registryImpl) ForNetworkPolicies() Dispatcher {
-	return d.networkPolicyDispatcher
+	return wrapWithMetricDispatcher(d.networkPolicyDispatcher)
 }
 
 func (d *registryImpl) ForNodes() Dispatcher {
-	return d.nodeDispatcher
+	return wrapWithMetricDispatcher(d.nodeDispatcher)
 }
 
 func (d *registryImpl) ForSecrets() Dispatcher {
-	return d.secretDispatcher
+	return wrapWithMetricDispatcher(d.secretDispatcher)
 }
 
 func (d *registryImpl) ForServices() Dispatcher {
-	return d.serviceDispatcher
+	return wrapWithMetricDispatcher(d.serviceDispatcher)
 }
 
 func (d *registryImpl) ForServiceAccounts() Dispatcher {
-	return d.serviceAccountDispatcher
+	return wrapWithMetricDispatcher(d.serviceAccountDispatcher)
 }
 
 func (d *registryImpl) ForRBAC() Dispatcher {
-	return d.rbacDispatcher
+	return wrapWithMetricDispatcher(d.rbacDispatcher)
 }
 
 func (d *registryImpl) ForClusterOperators() Dispatcher {
-	return d.clusterOperatorDispatcher
+	return wrapWithMetricDispatcher(d.clusterOperatorDispatcher)
 }
 
 func (d *registryImpl) ForComplianceOperatorResults() Dispatcher {
-	return d.complianceOperatorResultDispatcher
+	return wrapWithMetricDispatcher(d.complianceOperatorResultDispatcher)
 }
 
 func (d *registryImpl) ForComplianceOperatorProfiles() Dispatcher {
-	return d.complianceOperatorProfileDispatcher
+	return wrapWithMetricDispatcher(d.complianceOperatorProfileDispatcher)
 }
 
 func (d *registryImpl) ForComplianceOperatorRules() Dispatcher {
-	return d.complianceOperatorRulesDispatcher
+	return wrapWithMetricDispatcher(d.complianceOperatorRulesDispatcher)
 }
 
 func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
-	return d.complianceOperatorScanSettingBindingsDispatcher
+	return wrapWithMetricDispatcher(d.complianceOperatorScanSettingBindingsDispatcher)
 }

@@ -19,5 +19,7 @@ func init() {
 		totalNetworkEndpointsSentCounter,
 		totalNetworkEndpointsReceivedCounter,
 		sensorEvents,
+		k8sObjectCounts,
+		k8sObjectProcessingDuration,
 	)
 }

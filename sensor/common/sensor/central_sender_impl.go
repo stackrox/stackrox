@@ -54,8 +54,10 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 	}()
 
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
+	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
 	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
+	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 
 	// NB: The centralSenderImpl reserves the right to perform arbitrary reads and writes on the returned objects.
 	// The providers that send the messages below are responsible for making sure that once they send events here,
