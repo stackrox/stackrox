@@ -19,6 +19,7 @@ import RestrictToScope from './RestrictToScope';
 import ExcludedScope from './ExcludedScope';
 import { clientOnlyExclusionFieldNames } from '../whitelistFieldNames';
 import { FormSection, FormSectionBody } from './FormSection';
+import MitreAttackVectorBuilder from './MitreAttackVectorBuilder';
 
 function filterEventSourceOptions(option) {
     return option.value !== 'NOT_APPLICABLE';
@@ -33,6 +34,9 @@ function PolicyDetailsForm({
     policyCategories,
 }) {
     const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
+    const isMitreEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_SYSTEM_POLICY_MITRE_FRAMEWORK
+    );
     useEffect(() => {
         if (auditLogEnabled) {
             // clear Event Source if Runtime lifecycle stage is not included
@@ -57,7 +61,7 @@ function PolicyDetailsForm({
     ]);
 
     return (
-        <form className="flex flex-col w-full overflow-auto pb-5">
+        <form className="flex flex-col w-full overflow-auto gap-4 p-4">
             <FormSection dataTestId="policyStatusField">
                 <FormSectionBody>
                     <FormField label="Enabled" isInline noMargin>
@@ -173,6 +177,15 @@ function PolicyDetailsForm({
                     </FormField>
                 </FormSectionBody>
             </FormSection>
+            {isMitreEnabled && (
+                <FormSection dataTestId="mitreAttackVectorFormFields" headerText="MITRE ATT&CK">
+                    <FieldArray
+                        name="mitreAttackVectors"
+                        component={MitreAttackVectorBuilder}
+                        rerenderOnEveryChange
+                    />
+                </FormSection>
+            )}
         </form>
     );
 }

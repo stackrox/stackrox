@@ -13,7 +13,7 @@ type FormSectionChildProps = {
 };
 
 export function FormSectionFooter({ children }: FormSectionChildProps): ReactElement {
-    return <div>{children}</div>;
+    return <div className="p-3 border-t border-base-300">{children}</div>;
 }
 
 export function FormSectionBody({ children }: FormSectionChildProps): ReactElement {
@@ -27,7 +27,7 @@ export function FormSection({
     children,
 }: FormCardProps): ReactElement {
     return (
-        <div className="px-3 pt-5" data-testid={dataTestId}>
+        <div data-testid={dataTestId}>
             <div className="bg-base-100 border-base-200 shadow">
                 {(headerText || headerComponents) && (
                     <div className="p-2 pb-2 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between leading-loose">

@@ -60,6 +60,10 @@ function PreviewButtons({
 
 const mapStateToProps = createStructuredSelector({
     hasAuditLogEventSource: (state) => {
+        // TODO: Adding @types/redux-form causes this "state" to be an error. I didn't want to get
+        // side tracked, so adding this disable for now. We should come back and properly type out the state
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         const eventSourceValue = formValueSelector('policyCreationForm')(state, 'eventSource');
         return eventSourceValue === 'AUDIT_LOG_EVENT';
     },
