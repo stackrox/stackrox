@@ -2,10 +2,16 @@ package mitre
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/stringutils"
+)
+
+const (
+	subTechniqueIDSep = "."
 )
 
 // UnmarshalAndExtractMitreAttackBundle parses raw MITRE data per the MITRE specification, and extracts MITRE ATT&CK
@@ -15,12 +21,12 @@ func UnmarshalAndExtractMitreAttackBundle(domain Domain, platform []Platform, da
 	if err := json.Unmarshal(data, &rawBundle); err != nil {
 		return nil, errors.Wrap(err, "parsing MITRE ATT&CK raw data")
 	}
-	return ExtractMitreAttackBundle(domain, platform, rawBundle.Objects), nil
+	return ExtractMitreAttackBundle(domain, platform, rawBundle.Objects)
 }
 
 // ExtractMitreAttackBundle extracts MITRE ATT&CK vectors from MITRE objects into array of `storage.MitreAttackVector`,
 // for given MITRE domain and platform.
-func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreObject) *storage.MitreAttackBundle {
+func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreObject) (*storage.MitreAttackBundle, error) {
 	platformMap := make(map[Platform]struct{})
 	for _, p := range platforms {
 		platformMap[p] = struct{}{}
@@ -54,6 +60,7 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 	}
 
 	techniques := make(map[string]*storage.MitreTechnique)
+	subTechiquesMap := make(map[string]struct{})
 	techniquesMatrixMap := make(map[Platform]map[string]struct{})
 	tacticTechniquesMap := make(map[string]map[string]struct{})
 	// Collect all the techniques applicable to the platform.
@@ -83,6 +90,10 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 			Description: obj.Description,
 		}
 
+		if obj.XMitreIsSubtechnique {
+			subTechiquesMap[techniqueID] = struct{}{}
+		}
+
 		for _, platform := range matchedPlatforms {
 			if techniquesMatrixMap[platform] == nil {
 				techniquesMatrixMap[platform] = make(map[string]struct{})
@@ -108,6 +119,22 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 		}
 	}
 
+	// Build composite names for sub-techniques.
+	for id, technique := range techniques {
+		if _, ok := subTechiquesMap[id]; !ok {
+			continue
+		}
+		pID, _ := stringutils.Split2(id, subTechniqueIDSep)
+		if pID == "" {
+			return nil, errors.Errorf("MITRE ATT&CK sub-technique ID %s does not contain technique ID", id)
+		}
+		pTechnique := techniques[pID]
+		if pTechnique == nil {
+			return nil, errors.Errorf("MITRE ATT&CK technique %s not found", pID)
+		}
+		technique.Name = fmt.Sprintf("%s: %s", pTechnique.GetName(), technique.GetName())
+	}
+
 	var version string
 	for _, obj := range objs {
 		if obj.Type != metadata {
@@ -119,7 +146,7 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 	// Build full vectors.
 	vectors := buildVectors(tactics, techniques, tacticTechniquesMap)
 	// Build bundles.
-	return generateBundle(version, domain, techniquesMatrixMap, vectors...)
+	return generateBundle(version, domain, techniquesMatrixMap, vectors...), nil
 }
 
 func buildVectors(

@@ -58,12 +58,18 @@ func TestUnmarshal(t *testing.T) {
 						Name:        "Brute Force",
 						Description: "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained. Without knowledge of the password for an account or set of accounts, an adversary may systematically guess the password using a repetitive or iterative mechanism. Brute forcing passwords can take place via interaction with a service that will check the validity of those credentials or offline against previously acquired credential data, such as password hashes.",
 					},
+					{
+						Id:          "T1110.002",
+						Name:        "Brute Force: Password Cracking",
+						Description: "Adversaries may use password cracking to attempt to recover usable credentials, such as plaintext passwords, when credential material such as password hashes are obtained. [OS Credential Dumping](https://attack.mitre.org/techniques/T1003) is used to obtain password hashes, this may only get an adversary so far when [Pass the Hash](https://attack.mitre.org/techniques/T1550/002) is not an option. Techniques to systematically guess the passwords used to compute hashes are available, or the adversary may use a pre-computed rainbow table to crack hashes. Cracking hashes is usually done on adversary-controlled systems outside of the target network.(Citation: Wikipedia Password cracking) The resulting plaintext password resulting from a successfully cracked hash may be used to log into systems, resources, and services in which the account has access.",
+					},
 				},
 			},
 		},
 	}
 
-	bundles := ExtractMitreAttackBundle(Enterprise, []Platform{Container}, rawBundle.Objects)
+	bundles, err := ExtractMitreAttackBundle(Enterprise, []Platform{Container}, rawBundle.Objects)
+	assert.NoError(t, err)
 	assert.Equal(t, &storage.MitreAttackBundle{
 		Version: "9.0",
 		Matrices: []*storage.MitreAttackMatrix{
@@ -71,7 +77,8 @@ func TestUnmarshal(t *testing.T) {
 		},
 	}, bundles)
 
-	bundles = ExtractMitreAttackBundle(Enterprise, []Platform{Linux, Container}, rawBundle.Objects)
+	bundles, err = ExtractMitreAttackBundle(Enterprise, []Platform{Linux, Container}, rawBundle.Objects)
+	assert.NoError(t, err)
 	assert.Equal(t, &storage.MitreAttackBundle{
 		Version: "9.0",
 		Matrices: []*storage.MitreAttackMatrix{
