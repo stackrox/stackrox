@@ -1,7 +1,7 @@
 FROM google/cloud-sdk:331.0.0
 
 # Profiler
-RUN apt-get update && apt-get -y install wget curl
+RUN apt-get update --allow-releaseinfo-change && apt-get -y install wget curl
 
 COPY ./image/bin/profiler /profiler
 COPY ./profiler/pprof.sh /pprof.sh
