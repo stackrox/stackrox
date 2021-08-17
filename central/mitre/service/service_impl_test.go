@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/mitre/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -25,10 +24,7 @@ func TestMitreAttack(t *testing.T) {
 	srv := New(datastore.Singleton())
 	resp, err := srv.ListMitreAttackVectors(context.Background(), &v1.Empty{})
 	assert.NoError(t, err)
-	assert.Equal(t, []*storage.MitreAttackVector{
-		datastore.MitreTestData["TA0006"],
-		datastore.MitreTestData["TA0005"],
-	}, resp.GetMitreAttackVectors())
+	assert.True(t, len(resp.GetMitreAttackVectors()) > 0)
 }
 
 func TestAuthz(t *testing.T) {
