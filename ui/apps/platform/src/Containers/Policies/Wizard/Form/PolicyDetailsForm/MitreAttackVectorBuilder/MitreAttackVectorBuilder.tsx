@@ -1,12 +1,13 @@
 import React, { ReactElement } from 'react';
-import { FieldArrayFieldsProps } from 'redux-form';
+import { FieldArray, FieldArrayFieldsProps } from 'redux-form';
 
 import { MitreAttackVectorId } from 'services/MitreService';
 
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
-import AddTacticButton from './AddTacticButton';
-import DeleteTacticButton from './DeleteTacticButton';
 import useFetchMitreAttackVectors from './useFetchMitreAttackVectors';
+import MitreAttackVectorContainer from './MitreAttackVectorContainer';
+import AddTacticButton from './AddTacticButton';
+import Techniques from './Techniques';
 import { FormSectionBody, FormSectionFooter } from '../FormSection';
 
 export type MitreAttackVectorBuilderProps = {
@@ -22,45 +23,66 @@ function MitreAttackVectorBuilder({ fields }: MitreAttackVectorBuilderProps): Re
         value: mitreAttackVector.tactic.id,
     }));
 
+    function onAddTactic() {
+        const newTactic: MitreAttackVectorId = {
+            tactic: '',
+            techniques: [],
+        };
+        fields.push(newTactic);
+    }
+
     return (
         <>
-            <FormSectionBody>
-                <div className="gap-4">
-                    {fields.map((field: string, index: number) => {
-                        const tacticId = fields.get(index).tactic;
-                        const tacticDetail = mitreAttackVectors.find((mitreAttackVector) => {
-                            return mitreAttackVector.tactic.id === tacticId;
-                        });
-                        // @TODO: Extract out into it's own MitreAttackTactic component
-                        // @TODO: Add techniques/subtechniques
-                        return (
-                            <div
-                                className="border border-base-400 mb-4 bg-primary-100 rounded"
-                                key={tacticId}
-                            >
-                                <div className="flex flex-1 items-center">
-                                    <div className="flex flex-1 p-3">Tactic: </div>
-                                    <div className="border-l border-base-400">
-                                        <DeleteTacticButton fields={fields} index={index} />
+            {fields.length > 0 && (
+                <FormSectionBody>
+                    <div className="gap-4">
+                        {fields.map((field: string, index: number) => {
+                            const tacticId = fields.get(index).tactic;
+                            const tacticDetail = mitreAttackVectors.find((mitreAttackVector) => {
+                                return mitreAttackVector.tactic.id === tacticId;
+                            });
+
+                            function onDeleteTactic() {
+                                fields.remove(index);
+                            }
+
+                            return (
+                                <MitreAttackVectorContainer
+                                    headerText="Tactic"
+                                    onDelete={onDeleteTactic}
+                                >
+                                    <div className="p-3">
+                                        <ReduxSelectField
+                                            name={`${field}.tactic`}
+                                            options={tacticOptions}
+                                            value={tacticId}
+                                            disabled={isLoading}
+                                            placeholder="Select a tactic..."
+                                        />
+                                        <div className="mt-3">
+                                            {tacticDetail?.tactic.description}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="p-3 border-t border-base-400">
-                                    <ReduxSelectField
-                                        name={`${field}.tactic`}
-                                        options={tacticOptions}
-                                        value={tacticId}
-                                        disabled={isLoading}
-                                        placeholder="Select a tactic..."
-                                    />
-                                    <div className="py-3">{tacticDetail?.tactic.description}</div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </FormSectionBody>
+                                    {tacticDetail?.techniques && (
+                                        <div className="border-t border-base-300">
+                                            <FieldArray
+                                                name={`${field}.techniques`}
+                                                component={Techniques}
+                                                rerenderOnEveryChange
+                                                props={{
+                                                    possibleTechniques: tacticDetail.techniques,
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                </MitreAttackVectorContainer>
+                            );
+                        })}
+                    </div>
+                </FormSectionBody>
+            )}
             <FormSectionFooter>
-                <AddTacticButton fields={fields} />
+                <AddTacticButton onClick={onAddTactic} />
             </FormSectionFooter>
         </>
     );
