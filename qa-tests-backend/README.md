@@ -7,7 +7,11 @@ Gradle is used to build and run tests written in Groovy using the Spock test fra
 
 - If you would like to use the recommended IDE:
   - Download and install [IntelliJ IDEA](https://www.jetbrains.com/idea/download/)
-and create a new project from the `qa-tests-backend` directory.
+    and create a new project from the `qa-tests-backend` directory.
+- If you plan to run tests pulling from quay.io (currently every test derived
+  from `BaseSpecification`), set `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` env
+  vars. Read-only credentials are available in 1Password's "Everyone at StackRox"
+  vault under `quay.io RO User robot`. 
 
 # Running Tests
 If protos have been changed or not generated: `make proto-generated-srcs`
