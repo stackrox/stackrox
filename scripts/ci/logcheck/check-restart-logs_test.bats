@@ -48,6 +48,16 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
     [ "$status" -eq 0 ]
 }
 
+@test "it handles collector restarts under openshift due to slow sensor start" {
+    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/slow-sensor-collector-previous.log"
+    [ "$status" -eq 0 ]
+}
+
+@test "it only allows this ^^ exception for openshift" {
+    run "$CMD" "banana-e2e-tests" "${TEST_FIXTURES}/slow-sensor-collector-previous.log"
+    [ "$status" -eq 2 ]
+}
+
 @test "it handles exceptions in > 1 logs" {
     run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
     [ "$status" -eq 0 ]

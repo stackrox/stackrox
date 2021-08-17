@@ -10,5 +10,11 @@
         "job": ".*",
         "logfile": "collector-previous",
         "logline": "All attempts to download the (kernel module|eBPF probe) have failed."
+    },
+    {
+        "comment": "collector restart due to slow sensor start",
+        "job": "openshift",
+        "logfile": "collector-previous",
+        "logline": "Failed to connect to sensor.stackrox port 443: No route to host"
     }
 ]
