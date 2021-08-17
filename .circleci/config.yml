@@ -539,14 +539,6 @@ executors:
           password: $QUAY_CGORMAN1_RO_PASSWORD
     working_directory: /go/src/github.com/stackrox/rox
 
-  binary-builder:
-    docker:
-      - image: docker.io/stackrox/main:testing-builder-ci
-        auth:
-          username: $DOCKER_IO_PULL_USERNAME
-          password: $DOCKER_IO_PULL_PASSWORD
-    working_directory: /go/src/github.com/stackrox/rox
-
 commands:
   build-liveness-check:
     description: "Ensure workflow is still live"
@@ -5236,7 +5228,6 @@ workflows:
           <<: *runOnlyOnReleaseBuilds
           context:
             - custom-executor-pull
-            - docker-io-pull
           requires:
             - build
             - go-unit-tests

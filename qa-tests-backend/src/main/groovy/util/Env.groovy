@@ -192,14 +192,6 @@ class Env {
         return mustGet("RESULTS_FILE_PATH")
     }
 
-    static String mustGetDockerIOUserName() {
-        return mustGet("DOCKER_IO_PULL_USERNAME")
-    }
-
-    static String mustGetDockerIOPassword() {
-        return mustGet("DOCKER_IO_PULL_PASSWORD")
-    }
-
     static String mustGetAWSAccessKeyID() {
         return mustGet("AWS_ACCESS_KEY_ID")
     }
