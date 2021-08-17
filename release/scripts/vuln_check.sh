@@ -46,26 +46,25 @@ function compare_fixable_vulns {
 
     # fail the check if fixable vulns are found that are not allowed
     if [[ -n "$CURRENT_FIXABLE" ]]; then
-      FAIL_SCRIPT=true
       echo "${image_name}:${image_tag} has fixable vulns!:"
           IFS='
 '
       for vuln in $CURRENT_FIXABLE; do
-        is_allowed=false
+        is_allowed=0
         for allowed in $ALLOWED_VULNS; do
           allowed_vuln=$(echo "$allowed" | jq -r '.vuln')
           allowed_image=$(echo "$allowed" | jq -r '.image')
           allowed_tag=$(echo "$allowed" | jq -r '.tag')
-          if [[ "${vuln}" == ${allowed_vuln} ]] &&
+          if [[ "${vuln}" == ${allowed_vuln} || "$allowed_vuln" == "*" ]] &&
              [[ "${image_name}" =~ ${allowed_image} ]] &&
              [[ "${image_tag}" =~ ${allowed_tag} ]]
           then
             echo "  Allowing ${vuln} because it matches ${allowed}."
-            is_allowed=true
+            is_allowed=1
             break
           fi
         done
-        if ! ${is_allowed}; then
+        if (( ! is_allowed )); then
           FAIL_SCRIPT=true
           echo "  ${vuln} is fixable and not in allowed_vulns.json"
         fi
