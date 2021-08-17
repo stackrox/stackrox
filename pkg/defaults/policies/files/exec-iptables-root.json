@@ -70,6 +70,20 @@
       ]
     }
   ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0004",
+      "techniques": [
+        "T1611"
+      ]
+    },
+    {
+      "tactic": "TA0005",
+      "techniques": [
+        "T1562.004"
+      ]
+    }
+  ],
   "criteriaLocked": true,
   "mitreVectorsLocked": true
 }
