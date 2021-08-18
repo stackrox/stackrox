@@ -1,5 +1,7 @@
 import groups.BAT
 import io.grpc.StatusRuntimeException
+import io.stackrox.proto.api.v1.GroupServiceOuterClass
+
 import org.junit.experimental.categories.Category
 import services.AuthProviderService
 import services.AuthService
@@ -70,6 +72,13 @@ class ClientCertAuthTest extends BaseSpecification {
         }
     }
 
+    private static GroupServiceOuterClass.GetGroupsResponse getAuthProviderGroups(String providerID) {
+        def request = GroupServiceOuterClass.GetGroupsRequest.newBuilder()
+                .setAuthProviderId(providerID)
+                .build()
+        return GroupService.getGroups(request)
+    }
+
     @Unroll
     def "Test authentication result with client cert: #useClientCert and auth header #authHeader"() {
         when:
@@ -126,6 +135,8 @@ class ClientCertAuthTest extends BaseSpecification {
         for (String providerID : providerIDs) {
             if (providerID) {
                 AuthProviderService.deleteAuthProvider(providerID)
+                def resp = getAuthProviderGroups(providerID)
+                assert resp.getGroupsCount() == 0
             }
         }
         providerIDs = []

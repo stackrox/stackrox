@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -105,4 +106,14 @@ func (ds *dataStoreImpl) Remove(ctx context.Context, props *storage.GroupPropert
 	}
 
 	return ds.storage.Remove(props)
+}
+
+func (ds *dataStoreImpl) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string) error {
+	groups, err := ds.GetFiltered(ctx, func(properties *storage.GroupProperties) bool {
+		return authProviderID == properties.GetAuthProviderId()
+	})
+	if err != nil {
+		return errors.Wrap(err, "collecting associated groups")
+	}
+	return ds.Mutate(ctx, groups, nil, nil)
 }

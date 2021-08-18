@@ -176,9 +176,6 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 		defer cancel()
 		_, err := authService.DeleteAuthProvider(ctx, &v1.ResourceByID{Id: createdAuthProvider.GetId()})
 		require.NoError(t, err)
-
-		_, err = groupService.DeleteGroup(ctx, &storage.GroupProperties{AuthProviderId: createdAuthProvider.GetId()})
-		require.NoError(t, err)
 	}()
 
 	// Test direct access using only client certs.

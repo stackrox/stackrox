@@ -54,6 +54,7 @@ import (
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
 	backupRestoreService "github.com/stackrox/rox/central/globaldb/v2backuprestore/service"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
+	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	helmHandler "github.com/stackrox/rox/central/helm/handler"
@@ -279,7 +280,7 @@ func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
 		authService.New(),
-		authProviderService.New(registry),
+		authProviderService.New(registry, groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
 		centralHealthService.Singleton(),

@@ -21,6 +21,7 @@ type DataStore interface {
 	Upsert(ctx context.Context, group *storage.Group) error
 	Mutate(ctx context.Context, remove, update, add []*storage.Group) error
 	Remove(ctx context.Context, props *storage.GroupProperties) error
+	RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string) error
 }
 
 // New returns a new DataStore instance.

@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/authprovider/datastore"
+	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -45,7 +46,8 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
-	registry authproviders.Registry
+	registry   authproviders.Registry
+	groupStore groupDataStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -201,8 +203,19 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Auth Provider id is required")
 	}
+
+	// Get auth provider.
+	authProvider := s.registry.GetProvider(request.GetId())
+	if authProvider == nil {
+		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Auth Provider %v not found", request.GetId())
+	}
+	// Delete auth provider.
 	if err := s.registry.DeleteProvider(ctx, request.GetId(), true); err != nil {
 		return nil, err
+	}
+	// Delete groups for auth provider.
+	if err := s.groupStore.RemoveAllWithAuthProviderID(ctx, request.GetId()); err != nil {
+		return nil, errors.Wrapf(err, "Failed to delete groups associated with Auth Provider %v", request.GetId())
 	}
 	return &v1.Empty{}, nil
 }

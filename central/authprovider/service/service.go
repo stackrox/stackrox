@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -23,8 +24,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(registry authproviders.Registry) Service {
+func New(registry authproviders.Registry, groupStore groupDataStore.DataStore) Service {
 	return &serviceImpl{
-		registry: registry,
+		registry:   registry,
+		groupStore: groupStore,
 	}
 }

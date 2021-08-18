@@ -163,3 +163,17 @@ func (mr *MockDataStoreMockRecorder) Remove(ctx, props interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockDataStore)(nil).Remove), ctx, props)
 }
+
+// RemoveAllWithAuthProviderID mocks base method
+func (m *MockDataStore) RemoveAllWithAuthProviderID(ctx context.Context, authProviderID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveAllWithAuthProviderID", ctx, authProviderID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveAllWithAuthProviderID indicates an expected call of RemoveAllWithAuthProviderID
+func (mr *MockDataStoreMockRecorder) RemoveAllWithAuthProviderID(ctx, authProviderID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAllWithAuthProviderID", reflect.TypeOf((*MockDataStore)(nil).RemoveAllWithAuthProviderID), ctx, authProviderID)
+}
