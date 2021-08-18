@@ -21,6 +21,7 @@ import RhelIntegrationForm from './Forms/RhelIntegrationForm';
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
+import SlackIntegrationForm from './Forms/SlackIntegrationForm';
 import SplunkIntegrationForm from './Forms/SplunkIntegrationForm';
 import SyslogIntegrationForm from './Forms/SyslogIntegrationForm';
 import TeamsIntegrationForm from './Forms/TeamsIntegrationForm';
@@ -67,6 +68,7 @@ const ComponentFormMap = {
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         cscc: GoogleCloudSccIntegrationForm,
         email: EmailIntegrationForm,
+        slack: SlackIntegrationForm,
         splunk: SplunkIntegrationForm,
         syslog: SyslogIntegrationForm,
         teams: TeamsIntegrationForm,

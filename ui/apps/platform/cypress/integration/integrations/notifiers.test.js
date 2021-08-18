@@ -147,7 +147,7 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.enabled').click();
         });
 
-        it('should create a new splunk integration', () => {
+        it('should create a new Splunk integration', () => {
             cy.get(selectors.splunkTile).click();
 
             // @TODO: only use the the click, and delete the direct URL visit after forms official launch
@@ -209,6 +209,53 @@ describe('Notifiers Test', () => {
             getInputByLabel('Enable audit logging').click();
             getInputByLabel('Source type for alert').clear().type('stackrox-alert');
             getInputByLabel('Source type for audit').clear().type('stackrox-audit-message');
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+
+        it('should create a new Slack integration', () => {
+            cy.get(selectors.slackTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/slack/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').click().blur();
+            getInputByLabel('Default Slack Webhook').click().blur();
+            getInputByLabel('Annotation key for Slack webhook').click().blur();
+
+            getHelperElementByLabel('Integration name').contains('Name is required');
+            getHelperElementByLabel('Default Slack Webhook').contains('Slack webhook is required');
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            getInputByLabel('Integration name')
+                .clear()
+                .type(`Nova Slack ${new Date().toISOString()}`);
+            getInputByLabel('Default Slack Webhook')
+                .clear()
+                .type('https://hooks.slack.com/services/')
+                .blur();
+
+            getHelperElementByLabel('Default Slack Webhook').contains(
+                'Must be a valid Slack webhook URL, like https://hooks.slack.com/services/EXAMPLE'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 3, check valid form and save
+            getInputByLabel('Annotation key for Slack webhook').clear().type('slack');
+            getInputByLabel('Default Slack Webhook')
+                .clear()
+                .type('https://hooks.slack.com/services/nova')
+                .blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
             cy.get(selectors.buttons.save).should('be.enabled').click();
