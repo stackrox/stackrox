@@ -9,7 +9,7 @@ Secured Cluster Configuration Summary:
   Kubernetes Namespace:                        {{ ._rox._namespace }}{{ if ne .Release.Namespace ._rox._namespace }} [NOTE: Helm release is attached to namespace {{ .Release.Namespace }}]{{ end }}
   Helm Release Name:                           {{ .Release.Name }}
   Central Endpoint:                            {{ ._rox.centralEndpoint }}
-  OpenShift Cluster:                           {{ ._rox.env.openshift }}
+  OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
   Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.listenOnCreates ._rox.admissionControl.dynamic.listenOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
   Admission Control Creates/Updates enforced:  {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
 
