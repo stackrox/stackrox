@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -110,6 +111,11 @@ func addDefaults(store Store) {
 		// fill multi-word sort helper field
 		FillSortHelperFields(p)
 
+		// TODO(@Mandar): ROX-7749: Remove sample data when feature is turned on by default
+		if features.SystemPolicyMitreFramework.Enabled() {
+			injectMitreTestData(p)
+		}
+
 		if _, err := store.AddPolicy(p); err != nil {
 			panic(err)
 		}
@@ -134,5 +140,18 @@ func FillSortHelperFields(policies ...*storage.Policy) {
 		if len(policy.GetEnforcementActions()) > 0 {
 			policy.SORTEnforcement = true
 		}
+	}
+}
+
+func injectMitreTestData(policy *storage.Policy) {
+	policy.MitreAttackVectors = []*storage.Policy_MitreAttackVectors{
+		{
+			Tactic:     "TA0005",
+			Techniques: []string{"T1562", "T1610"},
+		},
+		{
+			Tactic:     "TA0006",
+			Techniques: []string{"T1552"},
+		},
 	}
 }

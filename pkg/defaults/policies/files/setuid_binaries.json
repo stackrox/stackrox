@@ -28,20 +28,6 @@
       ]
     }
   ],
-  "mitreAttackVectors": [
-    {
-      "tactic": "TA0004",
-      "techniques": [
-        "T1053.003"
-      ]
-    },
-    {
-      "tactic": "TA0005",
-      "techniques": [
-        "T1053.003"
-      ]
-    }
-  ],
   "criteriaLocked": true,
   "mitreVectorsLocked": true
 }

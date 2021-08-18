@@ -86,4 +86,5 @@ func TestUnmarshal(t *testing.T) {
 			expectedLinuxMatrix,
 		},
 	}, bundles)
+
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"sort"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -339,7 +338,6 @@ func upgradePolicyJSON(json string) (string, error) {
 	}
 
 	ensureReadOnlySettings(&policy)
-	ensureMitreVectorSorted(&policy)
 
 	result, err = jsonutil.ProtoToJSON(&policy)
 	if err != nil {
@@ -359,18 +357,4 @@ func ensureReadOnlySettings(policy *storage.Policy) {
 			policy.CriteriaLocked = true
 		}
 	}
-}
-
-func ensureMitreVectorSorted(policy *storage.Policy) {
-	for _, vector := range policy.GetMitreAttackVectors() {
-		techniques := vector.GetTechniques()
-		sort.Slice(techniques, func(i, j int) bool {
-			return techniques[i] < techniques[j]
-		})
-	}
-
-	vectors := policy.GetMitreAttackVectors()
-	sort.Slice(vectors, func(i, j int) bool {
-		return vectors[i].GetTactic() < vectors[j].GetTactic()
-	})
 }

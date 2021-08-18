@@ -19,3 +19,9 @@ func Singleton() MitreAttackReadOnlyDataStore {
 	once.Do(initialize)
 	return store
 }
+
+// rwSingleton provides the singleton instance of the mitreAttackRWDataStore interface.
+func rwSingleton() mitreAttackRWDataStore {
+	once.Do(initialize)
+	return store
+}
