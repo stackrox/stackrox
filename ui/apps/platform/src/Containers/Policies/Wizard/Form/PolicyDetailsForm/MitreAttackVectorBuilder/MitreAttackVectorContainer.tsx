@@ -6,6 +6,7 @@ export type MitreAttackVectorContainerProps = {
     children: ReactNode;
     onDelete?: () => void;
     isLight?: boolean;
+    isReadOnly?: boolean;
 };
 
 function MitreAttackVectorContainer({
@@ -13,6 +14,7 @@ function MitreAttackVectorContainer({
     children,
     onDelete,
     isLight = false,
+    isReadOnly = false,
 }: MitreAttackVectorContainerProps): ReactElement {
     return (
         <div
@@ -22,7 +24,7 @@ function MitreAttackVectorContainer({
         >
             <div className="flex flex-1 items-center">
                 <div className="flex flex-1 p-3">{headerText}: </div>
-                {onDelete && (
+                {onDelete && !isReadOnly && (
                     <div className="border-l border-base-400">
                         <button type="button" className="p-3 hover:bg-alert-200" onClick={onDelete}>
                             <Trash2 className="h-4 w-4 text-base-500" />

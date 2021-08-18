@@ -12,9 +12,13 @@ import { FormSectionBody, FormSectionFooter } from '../FormSection';
 
 export type MitreAttackVectorBuilderProps = {
     fields: FieldArrayFieldsProps<MitreAttackVectorId>;
+    isReadOnly?: boolean;
 };
 
-function MitreAttackVectorBuilder({ fields }: MitreAttackVectorBuilderProps): ReactElement {
+function MitreAttackVectorBuilder({
+    fields,
+    isReadOnly = false,
+}: MitreAttackVectorBuilderProps): ReactElement {
     const { mitreAttackVectors, isLoading } = useFetchMitreAttackVectors();
 
     // @TODO: filter available options based on tactics already selected
@@ -50,13 +54,14 @@ function MitreAttackVectorBuilder({ fields }: MitreAttackVectorBuilderProps): Re
                                 <MitreAttackVectorContainer
                                     headerText="Tactic"
                                     onDelete={onDeleteTactic}
+                                    isReadOnly={isReadOnly}
                                 >
                                     <div className="p-3">
                                         <ReduxSelectField
                                             name={`${field}.tactic`}
                                             options={tacticOptions}
                                             value={tacticId}
-                                            disabled={isLoading}
+                                            disabled={isLoading || isReadOnly}
                                             placeholder="Select a tactic..."
                                         />
                                         <div className="mt-3">
@@ -71,6 +76,7 @@ function MitreAttackVectorBuilder({ fields }: MitreAttackVectorBuilderProps): Re
                                                 rerenderOnEveryChange
                                                 props={{
                                                     possibleTechniques: tacticDetail.techniques,
+                                                    isReadOnly,
                                                 }}
                                             />
                                         </div>
@@ -81,9 +87,11 @@ function MitreAttackVectorBuilder({ fields }: MitreAttackVectorBuilderProps): Re
                     </div>
                 </FormSectionBody>
             )}
-            <FormSectionFooter>
-                <AddTacticButton onClick={onAddTactic} />
-            </FormSectionFooter>
+            {!isReadOnly && (
+                <FormSectionFooter>
+                    <AddTacticButton onClick={onAddTactic} />
+                </FormSectionFooter>
+            )}
         </>
     );
 }

@@ -32,6 +32,7 @@ function PolicyDetailsForm({
     notifiers,
     images,
     policyCategories,
+    mitreVectorsLocked,
 }) {
     const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
     const isMitreEnabled = useFeatureFlagEnabled(
@@ -183,6 +184,9 @@ function PolicyDetailsForm({
                         name="mitreAttackVectors"
                         component={MitreAttackVectorBuilder}
                         rerenderOnEveryChange
+                        props={{
+                            isReadOnly: mitreVectorsLocked,
+                        }}
                     />
                 </FormSection>
             )}
@@ -198,12 +202,14 @@ PolicyDetailsForm.propTypes = {
     policyCategories: PropTypes.arrayOf(PropTypes.string),
     images: PropTypes.arrayOf(PropTypes.shape({})),
     notifiers: PropTypes.arrayOf(PropTypes.shape({})),
+    mitreVectorsLocked: PropTypes.bool,
 };
 
 PolicyDetailsForm.defaultProps = {
     policyCategories: [],
     images: [],
     notifiers: [],
+    mitreVectorsLocked: false,
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -226,6 +232,13 @@ const mapStateToProps = createStructuredSelector({
     notifiers: selectors.getNotifiers,
     images: selectors.getImages,
     policyCategories: selectors.getPolicyCategories,
+    mitreVectorsLocked: (state) => {
+        const mitreVectorsLocked = formValueSelector('policyCreationForm')(
+            state,
+            'mitreVectorsLocked'
+        );
+        return mitreVectorsLocked;
+    },
 });
 
 const mapDispatchToProps = (dispatch) => ({

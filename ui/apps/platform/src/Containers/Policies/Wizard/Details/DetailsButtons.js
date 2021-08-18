@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import cloneDeep from 'lodash/cloneDeep';
 import { Copy, Download, Edit } from 'react-feather';
+import { initialize } from 'redux-form';
 
 import { selectors } from 'reducers';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -12,7 +13,14 @@ import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import PanelButton from 'Components/PanelButton';
 import { exportPolicies } from 'services/PoliciesService';
 
-function DetailsButtons({ wizardPolicy, setWizardStage, setWizardPolicy, addToast, removeToast }) {
+function DetailsButtons({
+    wizardPolicy,
+    setWizardStage,
+    setWizardPolicy,
+    addToast,
+    removeToast,
+    initializeForm,
+}) {
     function goToEdit() {
         setWizardStage(wizardStages.edit);
     }
@@ -27,9 +35,17 @@ function DetailsButtons({ wizardPolicy, setWizardStage, setWizardPolicy, addToas
 
     function onPolicyClone() {
         const newPolicy = cloneDeep(wizardPolicy);
+        /*
+         * Default policies will have the "criteriaLocked" and "mitreVectorsLocked" fields set to true.
+         * When we clone these policies, we'll need to set them to false to allow users to edit
+         * both the policy criteria and mitre attack vectors
+         */
+        newPolicy.mitreVectorsLocked = false;
+        newPolicy.criteriaLocked = false;
         newPolicy.id = '';
         newPolicy.name += ' (COPY)';
         setWizardPolicy(newPolicy);
+        initializeForm('policyCreationForm', newPolicy);
         setWizardStage(wizardStages.edit);
     }
 
@@ -72,6 +88,7 @@ DetailsButtons.propTypes = {
     setWizardPolicy: PropTypes.func.isRequired,
     addToast: PropTypes.func.isRequired,
     removeToast: PropTypes.func.isRequired,
+    initializeForm: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -83,6 +100,7 @@ const mapDispatchToProps = {
     setWizardPolicy: wizardActions.setWizardPolicy,
     addToast: notificationActions.addNotification,
     removeToast: notificationActions.removeOldestNotification,
+    initializeForm: initialize,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(DetailsButtons);

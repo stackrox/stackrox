@@ -10,9 +10,14 @@ import AddTechniqueButton from './AddTechniqueButton';
 export type TechniqueProps = {
     fields: FieldArrayFieldsProps<string>;
     possibleTechniques: MitreAttackVector['techniques'];
+    isReadOnly?: boolean;
 };
 
-function Techniques({ fields, possibleTechniques }: TechniqueProps): ReactElement {
+function Techniques({
+    fields,
+    possibleTechniques,
+    isReadOnly = false,
+}: TechniqueProps): ReactElement {
     // @TODO: filter available options based on techniques already selected
     const techniqueOptions = possibleTechniques.map((technique) => ({
         label: `${technique.name} | ${technique.id}`,
@@ -42,6 +47,7 @@ function Techniques({ fields, possibleTechniques }: TechniqueProps): ReactElemen
                         headerText={headerText}
                         onDelete={onDeleteTechnique}
                         isLight
+                        isReadOnly={isReadOnly}
                     >
                         <div className="p-3">
                             <ReduxSelectField
@@ -49,13 +55,14 @@ function Techniques({ fields, possibleTechniques }: TechniqueProps): ReactElemen
                                 options={techniqueOptions}
                                 value={techniqueId}
                                 placeholder="Select a technique..."
+                                disabled={isReadOnly}
                             />
                             <div className="mt-3">{technique?.description}</div>
                         </div>
                     </MitreAttackVectorContainer>
                 );
             })}
-            <AddTechniqueButton onClick={onAddTechnique} />
+            {!isReadOnly && <AddTechniqueButton onClick={onAddTechnique} />}
         </div>
     );
 }
