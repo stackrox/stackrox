@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -98,13 +99,21 @@ var (
 		Help:      "A counter for the total number of typed k8s events processed by Sensor",
 	}, []string{"Action", "Resource"})
 
+	k8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "k8s_event_ingestion_to_send_duration",
+		Help:      "Time taken to fully process an event from Kubernetes",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Action", "Resource", "Dispatcher", "Type"})
+
 	k8sObjectProcessingDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "k8s_event_processing_duration",
 		Help:      "Time taken to fully process an event from Kubernetes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
-	}, []string{"Action", "Resource", "Dispatcher", "Type"})
+	}, []string{"Action", "Resource", "Dispatcher"})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -168,4 +177,9 @@ func IncK8sEventCount(action string, resource string) {
 		"Action":   action,
 		"Resource": resource,
 	}).Inc()
+}
+
+// SetResourceProcessingDurationForResource sets the duration for how long it takes to process the resource
+func SetResourceProcessingDurationForResource(event *central.SensorEvent) {
+	metrics.SetResourceProcessingDurationForEvent(k8sObjectProcessingDuration, event, "")
 }

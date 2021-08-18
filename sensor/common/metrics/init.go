@@ -21,5 +21,6 @@ func init() {
 		sensorEvents,
 		k8sObjectCounts,
 		k8sObjectProcessingDuration,
+		k8sObjectIngestionToSendDuration,
 	)
 }

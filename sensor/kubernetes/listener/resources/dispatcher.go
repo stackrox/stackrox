@@ -117,6 +117,7 @@ func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.R
 			Resource:   metricsPkg.GetResourceString(e),
 			Nanos:      start,
 		}
+		metrics.SetResourceProcessingDurationForResource(e)
 	}
 	metrics.IncK8sEventCount(action.String(), dispatcher)
 	return events
