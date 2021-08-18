@@ -48,8 +48,8 @@ func (k *listenerImpl) handleAllEvents() {
 	secretInformer := sif.Core().V1().Secrets().Informer()
 	saInformer := sif.Core().V1().ServiceAccounts().Informer()
 
-	roleInformer := resyncingSif.Rbac().V1().Roles().Informer()
-	clusterRoleInformer := resyncingSif.Rbac().V1().ClusterRoles().Informer()
+	roleInformer := sif.Rbac().V1().Roles().Informer()
+	clusterRoleInformer := sif.Rbac().V1().ClusterRoles().Informer()
 	roleBindingInformer := resyncingSif.Rbac().V1().RoleBindings().Informer()
 	clusterRoleBindingInformer := resyncingSif.Rbac().V1().ClusterRoleBindings().Informer()
 
