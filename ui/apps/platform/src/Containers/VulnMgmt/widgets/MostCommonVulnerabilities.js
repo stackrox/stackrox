@@ -9,6 +9,7 @@ import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
 import { cveSortFields } from 'constants/sortFields';
@@ -57,7 +58,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const queryObject = { ...entityContextObject, ...search }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
 
-    const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES, {
+    const { loading, data = {}, error } = useQuery(MOST_COMMON_VULNERABILITIES, {
         variables: {
             query,
             vulnPagination: queryService.getPagination(
@@ -75,13 +76,25 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState);
-        if (!processedData || processedData.length === 0) {
-            content = (
-                <NoResultsMessage message="No vulnerabilities found" className="p-3" icon="info" />
-            );
+        if (error) {
+            const defaultMessage = `An error occurred in retrieving vulnerabilities. Please refresh the page. If this problem continues, please contact support.`;
+
+            const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
+
+            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            content = <LabeledBarGraph data={processedData} title="Deployments" />;
+            const processedData = processData(data, workflowState);
+            if (!processedData || processedData.length === 0) {
+                content = (
+                    <NoResultsMessage
+                        message="No vulnerabilities found"
+                        className="p-3"
+                        icon="info"
+                    />
+                );
+            } else {
+                content = <LabeledBarGraph data={processedData} title="Deployments" />;
+            }
         }
     }
 

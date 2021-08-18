@@ -10,6 +10,7 @@ import LabelChip from 'Components/LabelChip';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 
 const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
@@ -111,19 +112,27 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
         // ])
         .toUrl();
 
-    if (!loading && !error) {
-        const processedData = processData(data, workflowState);
+    if (!loading) {
+        if (error) {
+            const defaultMessage = `An error occurred in retrieving deployments or policies. Please refresh the page. If this problem continues, please contact support.`;
 
-        if (!processedData || processedData.length === 0) {
-            content = (
-                <NoResultsMessage message="No deployments found" className="p-6" icon="info" />
-            );
+            const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
+
+            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            content = (
-                <div className="w-full">
-                    <NumberedList data={processedData} />
-                </div>
-            );
+            const processedData = processData(data, workflowState);
+
+            if (!processedData || processedData.length === 0) {
+                content = (
+                    <NoResultsMessage message="No deployments found" className="p-6" icon="info" />
+                );
+            } else {
+                content = (
+                    <div className="w-full">
+                        <NumberedList data={processedData} />
+                    </div>
+                );
+            }
         }
     }
 

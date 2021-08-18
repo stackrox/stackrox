@@ -13,7 +13,8 @@ import HoverHintListItem from 'Components/visuals/HoverHintListItem';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
-import { severityLabels } from 'messages/common';
+import { resourceLabels, severityLabels } from 'messages/common';
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 import { policySortFields } from 'constants/sortFields';
 
@@ -75,7 +76,7 @@ const processData = (data, workflowState, limit) => {
 };
 
 const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
-    const { loading, data = {} } = useQuery(FREQUENTLY_VIOLATED_POLICIES, {
+    const { loading, data = {}, error } = useQuery(FREQUENTLY_VIOLATED_POLICIES, {
         variables: {
             query: `${queryService.entityContextToQueryString(entityContext)}+
             ${queryService.objectToWhereClause({ Category: 'Vulnerability Management' })}`,
@@ -85,18 +86,26 @@ const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
     let content = <Loader />;
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState, limit);
+        if (error) {
+            const defaultMessage = `An error occurred in retrieving ${resourceLabels[entityContext]}s. Please refresh the page. If this problem continues, please contact support.`;
 
-        if (!processedData || processedData.length === 0) {
-            content = (
-                <NoResultsMessage
-                    message="No deployments with policy violations found"
-                    className="p-3"
-                    icon="info"
-                />
-            );
-        } else {
-            content = <LabeledBarGraph data={processedData} title="Failing Deployments" />;
+            const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
+
+            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
+        } else if (data) {
+            const processedData = processData(data, workflowState, limit);
+
+            if (!processedData || processedData.length === 0) {
+                content = (
+                    <NoResultsMessage
+                        message="No deployments with policy violations found"
+                        className="p-3"
+                        icon="info"
+                    />
+                );
+            } else {
+                content = <LabeledBarGraph data={processedData} title="Failing Deployments" />;
+            }
         }
     }
 

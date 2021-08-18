@@ -10,6 +10,7 @@ import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { cveSortFields } from 'constants/sortFields';
@@ -54,7 +55,7 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
     }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
 
-    const { loading, data = {} } = useQuery(RECENTLY_DETECTED_VULNERABILITIES, {
+    const { loading, data = {}, error } = useQuery(RECENTLY_DETECTED_VULNERABILITIES, {
         variables: {
             query,
             scopeQuery: queryService.objectToWhereClause(entityContextObject),
@@ -73,18 +74,30 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState);
+        if (error) {
+            const defaultMessage = `An error occurred in retrieving vulnerabilities. Please refresh the page. If this problem continues, please contact support.`;
 
-        if (!processedData || processedData.length === 0) {
-            content = (
-                <NoResultsMessage message="No vulnerabilities found" className="p-3" icon="info" />
-            );
+            const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
+
+            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            content = (
-                <div className="w-full">
-                    <NumberedList data={processedData} />
-                </div>
-            );
+            const processedData = processData(data, workflowState);
+
+            if (!processedData || processedData.length === 0) {
+                content = (
+                    <NoResultsMessage
+                        message="No vulnerabilities found"
+                        className="p-3"
+                        icon="info"
+                    />
+                );
+            } else {
+                content = (
+                    <div className="w-full">
+                        <NumberedList data={processedData} />
+                    </div>
+                );
+            }
         }
     }
 

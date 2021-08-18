@@ -12,6 +12,7 @@ import Widget from 'Components/Widget';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import NumberedList from 'Components/NumberedList';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
@@ -284,13 +285,11 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
 
     if (!loading) {
         if (error) {
-            content = (
-                <NoResultsMessage
-                    message={`An error occurred in retrieving ${resourceLabels[selectedEntity]}s. Please refresh the page. If this problem continues, please contact support.`}
-                    className="p-3"
-                    icon="warn"
-                />
-            );
+            const defaultMessage = `An error occurred in retrieving ${resourceLabels[selectedEntity]}s. Please refresh the page. If this problem continues, please contact support.`;
+
+            const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
+
+            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else if (data && data.results && data.results === 0) {
             content = (
                 <div className="flex mx-auto items-center">No scanner setup for this registry.</div>

@@ -4,12 +4,14 @@ import { gql, useQuery } from '@apollo/client';
 import { HelpCircle, AlertCircle } from 'react-feather';
 import sortBy from 'lodash/sortBy';
 
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import NumberedGrid from 'Components/NumberedGrid';
 import FixableCVECount from 'Components/FixableCVECount';
 import kubeSVG from 'images/kube.svg';
@@ -184,23 +186,44 @@ const processData = (data, workflowState, limit) => {
 };
 
 const ClustersWithMostOrchestratorVulnerabilities = ({ entityContext, limit }) => {
-    const { loading, data = {} } = useQuery(CLUSTER_WITH_MOST_ORCHESTRATOR_ISTIO_VULNERABILTIES, {
-        variables: {
-            query: queryService.entityContextToQueryString(entityContext),
-        },
-    });
+    const { loading, data = {}, error } = useQuery(
+        CLUSTER_WITH_MOST_ORCHESTRATOR_ISTIO_VULNERABILTIES,
+        {
+            variables: {
+                query: queryService.entityContextToQueryString(entityContext),
+            },
+        }
+    );
 
     let content = <Loader />;
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState, limit);
+        if (error) {
+            const defaultMessage = `An error occurred in retrieving vulnerabilities or clusters. Please refresh the page. If this problem continues, please contact support.`;
 
-        content = (
-            <div className="w-full">
-                <NumberedGrid data={processedData} />
-            </div>
-        );
+            const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
+
+            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
+        } else {
+            const processedData = processData(data, workflowState, limit);
+
+            if (!processedData || processedData.length === 0) {
+                content = (
+                    <NoResultsMessage
+                        message="No vulnerabilities found"
+                        className="p-3"
+                        icon="info"
+                    />
+                );
+            } else {
+                content = (
+                    <div className="w-full">
+                        <NumberedGrid data={processedData} />
+                    </div>
+                );
+            }
+        }
     }
 
     const viewAllURL = workflowState

@@ -20,6 +20,7 @@ import {
     severityTextColorMap,
     severityColorLegend,
 } from 'constants/severityColors';
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
@@ -345,7 +346,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
 
         return results;
     }
-    let results = [];
 
     const vulnQuery = cveFilter === 'Fixable' ? { Fixable: true } : '';
     const variables = {
@@ -373,40 +373,40 @@ const TopRiskyEntitiesByVulnerabilities = ({
 
     let content = <Loader />;
 
-    if (!loading && data) {
-        results = processData(data);
+    if (!loading) {
         if (error) {
-            content = (
-                <NoResultsMessage
-                    message={`An error occurred in retrieving ${pluralize(
-                        selectedEntityType.toLowerCase()
-                    )}. Please refresh the page. If this problem continues, please contact support.`}
-                    className="p-3"
-                    icon="warn"
-                />
-            );
-        } else if (results && results.length === 0) {
-            content = (
-                <NoResultsMessage
-                    message={`No ${pluralize(
-                        selectedEntityType.toLowerCase()
-                    )} with vulnerabilities found`}
-                    className="p-3"
-                    icon="info"
-                />
-            );
-        } else {
-            content = (
-                <Scatterplot
-                    data={results}
-                    lowerX={0}
-                    xMultiple={20}
-                    yMultiple={5}
-                    yAxisTitle="Weighted CVSS Score"
-                    xAxisTitle="Critical Vulnerabilities & Exposures"
-                    legendData={!small ? severityColorLegend : []}
-                />
-            );
+            const defaultMessage = `An error occurred in retrieving ${pluralize(
+                selectedEntityType.toLowerCase()
+            )}. Please refresh the page. If this problem continues, please contact support.`;
+
+            const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
+
+            content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
+        } else if (data) {
+            const results = processData(data);
+            if (!results || results.length === 0) {
+                content = (
+                    <NoResultsMessage
+                        message={`No ${pluralize(
+                            selectedEntityType.toLowerCase()
+                        )} with vulnerabilities found`}
+                        className="p-3"
+                        icon="info"
+                    />
+                );
+            } else {
+                content = (
+                    <Scatterplot
+                        data={results}
+                        lowerX={0}
+                        xMultiple={20}
+                        yMultiple={5}
+                        yAxisTitle="Weighted CVSS Score"
+                        xAxisTitle="Critical Vulnerabilities & Exposures"
+                        legendData={!small ? severityColorLegend : []}
+                    />
+                );
+            }
         }
     }
 

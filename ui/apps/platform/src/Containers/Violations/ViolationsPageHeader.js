@@ -11,6 +11,7 @@ import PageHeader from 'Components/PageHeader';
 import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
 
 import { pageSize } from 'Components/TableV2';
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 
 function runAfter5Seconds(fn) {
     return new Promise(() => {
@@ -73,15 +74,20 @@ function ViolationsPageHeader({
                 })
                 .catch((error) => {
                     setCurrentPageAlerts([]);
-                    setCurrentPageAlertsErrorMessage(
-                        error.message || 'An unknown error has occurred.'
-                    );
+                    const parsedMessage = checkForPermissionErrorMessage(error);
+                    setCurrentPageAlertsErrorMessage(parsedMessage);
                 })
                 .finally(() => {
                     setIsFetching(false);
                 });
             // Get the total count of alerts that match the search request.
-            fetchAlertCount(searchOptions).then(setAlertCount);
+            fetchAlertCount(searchOptions)
+                .then(setAlertCount)
+                .catch((error) => {
+                    setCurrentPageAlerts([]);
+                    const parsedMessage = checkForPermissionErrorMessage(error);
+                    setCurrentPageAlertsErrorMessage(parsedMessage);
+                });
         }
 
         // We will update the poll epoch after 5 seconds to force a refresh.
