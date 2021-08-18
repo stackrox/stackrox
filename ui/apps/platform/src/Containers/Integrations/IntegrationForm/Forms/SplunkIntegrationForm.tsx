@@ -194,14 +194,14 @@ function SplunkIntegrationForm({
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        isRequired
+                        isRequired={values.updatePassword}
                         label="HTTP event collector token"
                         fieldId="notifier.splunk.httpToken"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired
+                            isRequired={values.updatePassword}
                             type="password"
                             id="notifier.splunk.httpToken"
                             name="notifier.splunk.httpToken"
@@ -209,6 +209,11 @@ function SplunkIntegrationForm({
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
                         />
                     </FormLabelGroup>
                     <FormLabelGroup

@@ -1,8 +1,10 @@
+/* eslint-disable no-void */
 import React, { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, SelectOption, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import SelectSingle from 'Components/SelectSingle';
+import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -33,6 +35,11 @@ export type EmailIntegration = {
     enabled: boolean;
 };
 
+export type EmailIntegrationFormValues = {
+    notifier: EmailIntegration;
+    updatePassword: boolean;
+};
+
 const startTLSAuthMethods = [
     {
         label: 'Disabled',
@@ -51,56 +58,90 @@ const startTLSAuthMethods = [
 const validHostnameRegex = /^(([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])(:[0-9]+)?$/;
 
 export const validationSchema = yup.object().shape({
-    name: yup.string().trim().required('Required'),
-    labelDefault: yup
-        .string()
-        .trim()
-        .required('A default recipient email address is required')
-        .email('Must be a valid default recipient email address'),
-    labelKey: yup.string(),
-    email: yup.object().shape({
-        server: yup
+    notifier: yup.object().shape({
+        name: yup.string().trim().required('Required'),
+        labelDefault: yup
             .string()
             .trim()
-            .required('A server address is required')
-            .matches(validHostnameRegex, 'Must be a valid server address'),
-        username: yup.string().trim().required('A username is required'),
-        password: yup.string().trim().required('A password is required'),
-        from: yup.string(),
-        sender: yup
-            .string()
-            .trim()
-            .required('A valid sender email address is required')
-            .email('A valid sender email address is required'),
-        startTLSAuthMethod: yup.string(),
+            .required('A default recipient email address is required')
+            .email('Must be a valid default recipient email address'),
+        labelKey: yup.string(),
+        email: yup.object().shape({
+            server: yup
+                .string()
+                .trim()
+                .required('A server address is required')
+                .matches(validHostnameRegex, 'Must be a valid server address'),
+            username: yup.string().trim().required('A username is required'),
+            password: yup
+                .string()
+                .test(
+                    'password-test',
+                    'A password is required',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!requirePasswordField) {
+                            return true;
+                        }
+
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
+            from: yup.string(),
+            sender: yup
+                .string()
+                .trim()
+                .required('A sender email address is required')
+                .email('Must be a valid sender email address'),
+            startTLSAuthMethod: yup.string().when('disableTLS', {
+                is: true,
+                then: yup.string().required(),
+            }),
+        }),
     }),
+    updatePassword: yup.bool(),
 });
 
-export const defaultValues: EmailIntegration = {
-    name: '',
-    email: {
-        server: '',
-        username: '',
-        password: '',
-        from: '',
-        sender: '',
-        disableTLS: false,
-        startTLSAuthMethod: 'DISABLED',
+export const defaultValues: EmailIntegrationFormValues = {
+    notifier: {
+        name: '',
+        email: {
+            server: '',
+            username: '',
+            password: '',
+            from: '',
+            sender: '',
+            disableTLS: false,
+            startTLSAuthMethod: 'DISABLED',
+        },
+        labelDefault: '',
+        labelKey: '',
+        uiEndpoint: window.location.origin,
+        type: 'email',
+        enabled: true,
     },
-    labelDefault: '',
-    labelKey: '',
-    uiEndpoint: window.location.origin,
-    type: 'email',
-    enabled: true,
+    updatePassword: true,
 };
 
 function EmailIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<EmailIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? { ...defaultValues, ...initialValues }
-        : defaultValues;
+    const formInitialValues = defaultValues;
+    if (initialValues) {
+        formInitialValues.notifier = {
+            ...formInitialValues.notifier,
+            ...initialValues,
+        };
+        // We want to clear the password because backend returns '******' to represent that there
+        // are currently stored credentials
+        formInitialValues.notifier.email.password = '';
+    }
     const {
         values,
         touched,
@@ -115,13 +156,21 @@ function EmailIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<EmailIntegration, typeof validationSchema>({
+    } = useIntegrationForm<EmailIntegrationFormValues, typeof validationSchema>({
         initialValues: formInitialValues,
         validationSchema,
     });
+    const { isCreating } = usePageState();
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
+    }
+
+    function updateStartTLSAuthMethodOnChange(value, event) {
+        void setFieldValue(event.target.id, value);
+        if (value === false && values.notifier.email.startTLSAuthMethod !== 'DISABLED') {
+            void setFieldValue('notifier.email.startTLSAuthMethod', 'DISABLED');
+        }
     }
 
     return (
@@ -132,15 +181,15 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         label="Integration name"
                         isRequired
-                        fieldId="name"
+                        fieldId="notifier.name"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="name"
-                            value={values.name}
+                            id="notifier.name"
+                            value={values.notifier.name}
                             placeholder="(example, Email Integration)"
                             onChange={onChange}
                             onBlur={handleBlur}
@@ -150,15 +199,15 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         label="Email server"
                         isRequired
-                        fieldId="email.server"
+                        fieldId="notifier.email.server"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="email.server"
-                            value={values.email.server}
+                            id="notifier.email.server"
+                            value={values.notifier.email.server}
                             placeholder="example, smtp.example.com:465"
                             onChange={onChange}
                             onBlur={handleBlur}
@@ -168,41 +217,63 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         label="Username"
                         isRequired
-                        fieldId="email.username"
+                        fieldId="notifier.email.username"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="email.username"
-                            value={values.email.username}
+                            id="notifier.email.username"
+                            value={values.notifier.email.username}
                             placeholder="example, postmaster@example.com"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
+                    {!isCreating && (
+                        <FormLabelGroup
+                            label=""
+                            fieldId="updatePassword"
+                            helperText="Leave this off to use the currently stored credentials."
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Update token"
+                                id="updatePassword"
+                                isChecked={values.updatePassword}
+                                onChange={onChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                    )}
                     <FormLabelGroup
                         label="Password"
-                        isRequired
-                        fieldId="email.password"
+                        isRequired={values.updatePassword}
+                        fieldId="notifier.email.password"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired
+                            isRequired={values.updatePassword}
                             type="password"
-                            id="email.password"
-                            value={values.email.password}
+                            id="notifier.email.password"
+                            value={values.notifier.email.password}
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="From"
-                        fieldId="email.from"
+                        fieldId="notifier.email.from"
                         touched={touched}
                         errors={errors}
                         helperText={
@@ -213,8 +284,8 @@ function EmailIntegrationForm({
                     >
                         <TextInput
                             type="text"
-                            id="email.from"
-                            value={values.email.from}
+                            id="notifier.email.from"
+                            value={values.notifier.email.from}
                             placeholder="example, Advanced Cluster Management"
                             onChange={onChange}
                             onBlur={handleBlur}
@@ -224,7 +295,7 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Sender"
-                        fieldId="email.sender"
+                        fieldId="notifier.email.sender"
                         touched={touched}
                         errors={errors}
                         helperText={
@@ -236,8 +307,8 @@ function EmailIntegrationForm({
                         <TextInput
                             isRequired
                             type="text"
-                            id="email.sender"
-                            value={values.email.sender}
+                            id="notifier.email.sender"
+                            value={values.notifier.email.sender}
                             placeholder="example, acs-notifier@example.com"
                             onChange={onChange}
                             onBlur={handleBlur}
@@ -247,15 +318,15 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Default recipient"
-                        fieldId="labelDefault"
+                        fieldId="notifier.labelDefault"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="labelDefault"
-                            value={values.labelDefault}
+                            id="notifier.labelDefault"
+                            value={values.notifier.labelDefault}
                             placeholder="example, acs-alerts@example.com"
                             onChange={onChange}
                             onBlur={handleBlur}
@@ -265,40 +336,39 @@ function EmailIntegrationForm({
                     <FormLabelGroup
                         label="Annotation key for recipient"
                         labelIcon={<AnnotationKeyLabelIcon />}
-                        fieldId="labelKey"
+                        fieldId="notifier.labelKey"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
-                            id="labelKey"
-                            value={values.labelKey}
+                            id="notifier.labelKey"
+                            value={values.notifier.labelKey}
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup label="" fieldId="email.disableTLS" errors={errors}>
+                    <FormLabelGroup label="" fieldId="notifier.email.disableTLS" errors={errors}>
                         <Checkbox
                             label="Disable TLS certificate validation (insecure)"
-                            id="email.disableTLS"
-                            isChecked={values.email.disableTLS}
-                            onChange={onChange}
+                            id="notifier.email.disableTLS"
+                            isChecked={values.notifier.email.disableTLS}
+                            onChange={updateStartTLSAuthMethodOnChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Use STARTTLS (requires TLS to be disabled)"
-                        fieldId="email.startTLSAuthMethod"
-                        isRequired
+                        fieldId="notifier.email.startTLSAuthMethod"
                         errors={errors}
                     >
                         <SelectSingle
-                            id="email.startTLSAuthMethod"
-                            value={values.email.startTLSAuthMethod as string}
+                            id="notifier.email.startTLSAuthMethod"
+                            value={values.notifier.email.startTLSAuthMethod as string}
                             handleSelect={setFieldValue}
-                            isDisabled={!isEditable}
+                            isDisabled={!isEditable || !values.notifier.email.disableTLS}
                             direction="up"
                         >
                             {startTLSAuthMethods.map(({ value, label }) => (

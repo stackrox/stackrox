@@ -2,7 +2,7 @@ import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { editIntegration } from './integrationUtils';
-import { getInputByLabel, getEscapedId } from '../../helpers/formHelpers';
+import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
 
 describe('Notifiers Test', () => {
     withAuth();
@@ -39,14 +39,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('Sender').type(' ');
             getInputByLabel('Default recipient').type(' ').blur();
 
-            cy.get('#name-helper').contains('Required');
-            cy.get(getEscapedId('email.server-helper')).contains('A server address is required');
-            cy.get(getEscapedId('email.username-helper')).contains('A username is required');
-            cy.get(getEscapedId('email.password-helper')).contains('A password is required');
-            cy.get(getEscapedId('email.sender-helper')).contains(
-                'A valid sender email address is required'
-            );
-            cy.get(getEscapedId('labelDefault-helper')).contains(
+            getHelperElementByLabel('Integration name').contains('Required');
+            getHelperElementByLabel('Email server').contains('A server address is required');
+            getHelperElementByLabel('Username').contains('A username is required');
+            getHelperElementByLabel('Password').contains('A password is required');
+            getHelperElementByLabel('Sender').contains('A sender email address is required');
+            getHelperElementByLabel('Default recipient').contains(
                 'A default recipient email address is required'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -63,17 +61,15 @@ describe('Notifiers Test', () => {
                 })
                 .blur();
 
-            cy.get(getEscapedId('email.server-helper')).contains('Must be a valid server address');
-            cy.get(getEscapedId('email.sender-helper')).contains(
-                'A valid sender email address is required'
-            );
-            cy.get(getEscapedId('labelDefault-helper')).contains(
+            getHelperElementByLabel('Email server').contains('Must be a valid server address');
+            getHelperElementByLabel('Sender').contains('Must be a valid sender email address');
+            getHelperElementByLabel('Default recipient').contains(
                 'Must be a valid default recipient email address'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 3, check valid form form and save
+            // Step 3, check valid from and save
             getInputByLabel('Integration name')
                 .clear()
                 .type(`Nova Email ${new Date().toISOString()}`);
@@ -110,9 +106,9 @@ describe('Notifiers Test', () => {
             getInputByLabel('Cloud SCC Source ID').type(' ');
             getInputByLabel('Service Account Key (JSON)').type(' ').blur();
 
-            cy.get('#name-helper').contains('Required');
-            cy.get(getEscapedId('cscc.sourceId-helper')).contains('A source ID is required');
-            cy.get(getEscapedId('cscc.serviceAccount-helper')).contains(
+            getHelperElementByLabel('Integration name').contains('Required');
+            getHelperElementByLabel('Cloud SCC Source ID').contains('A source ID is required');
+            getHelperElementByLabel('Service Account Key (JSON)').contains(
                 'A service account is required'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -126,17 +122,16 @@ describe('Notifiers Test', () => {
                 })
                 .blur();
 
-            cy.get('#name-helper').contains('Required');
-            cy.get(getEscapedId('cscc.sourceId-helper')).contains(
+            getHelperElementByLabel('Cloud SCC Source ID').contains(
                 'SCC source ID must match the format: organizations/[0-9]+/sources/[0-9]+'
             );
-            cy.get(getEscapedId('cscc.serviceAccount-helper')).contains(
+            getHelperElementByLabel('Service Account Key (JSON)').contains(
                 'Service account must be valid JSON'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 3, check valid form form and save
+            // Step 3, check valid from and save
             getInputByLabel('Integration name')
                 .clear()
                 .type(`Nova Google Cloud SCC ${new Date().toISOString()}`);
@@ -171,20 +166,20 @@ describe('Notifiers Test', () => {
             getInputByLabel('Source type for alert').clear().type(' ');
             getInputByLabel('Source type for audit').clear().type(' ').blur();
 
-            cy.get(getEscapedId('notifier.name-helper')).contains('Name is required');
-            cy.get(getEscapedId('notifier.splunk.httpEndpoint-helper')).contains(
+            getHelperElementByLabel('Integration name').contains('Name is required');
+            getHelperElementByLabel('HTTP event collector URL').contains(
                 'HTTP event collector URL is required'
             );
-            cy.get(getEscapedId('notifier.splunk.httpToken-helper')).contains(
+            getHelperElementByLabel('HTTP event collector token').contains(
                 'HTTP token is required'
             );
-            cy.get(getEscapedId('notifier.splunk.truncate-helper')).contains(
+            getHelperElementByLabel('HEC truncate limit').contains(
                 'HEC truncate limit is required'
             );
-            cy.get(getEscapedId('notifier.splunk.sourceTypes.alert-helper')).contains(
+            getHelperElementByLabel('Source type for alert').contains(
                 'Source type for alert is required'
             );
-            cy.get(getEscapedId('notifier.splunk.sourceTypes.audit-helper')).contains(
+            getHelperElementByLabel('Source type for audit').contains(
                 'Source type for audit is required'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -193,16 +188,16 @@ describe('Notifiers Test', () => {
             // Step 2, check fields for invalid formats
             getInputByLabel('HTTP event collector URL').clear().type('https://input').blur();
 
-            cy.get(getEscapedId('notifier.splunk.httpEndpoint-helper')).contains(
+            getHelperElementByLabel('HTTP event collector URL').contains(
                 'Must be a valid server address'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 3, check valid form form and save
+            // Step 3, check valid from and save
             getInputByLabel('Integration name')
                 .clear()
-                .type(`Nova Email ${new Date().toISOString()}`);
+                .type(`Nova Splunk ${new Date().toISOString()}`);
             getInputByLabel('HTTP event collector URL')
                 .clear()
                 .type(

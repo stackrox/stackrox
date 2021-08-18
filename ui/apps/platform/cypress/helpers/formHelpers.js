@@ -7,6 +7,12 @@ export function getInputByLabel(label) {
         });
 }
 
-export function getEscapedId(id) {
-    return `#${CSS.escape(id)}`;
+export function getHelperElementByLabel(label) {
+    return cy
+        .contains('label', label)
+        .invoke('attr', 'for')
+        .then((id) => {
+            const helperTextId = `${id}-helper`;
+            cy.get(`#${CSS.escape(helperTextId)}`);
+        });
 }
