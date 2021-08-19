@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -70,6 +71,9 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 		return nil, false, err
 	}
 
+	if !features.SystemPolicyMitreFramework.Enabled() {
+		resetMitreFields(policy)
+	}
 	return policy, true, nil
 }
 
@@ -83,6 +87,9 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 		return nil, nil, nil, err
 	}
 
+	if !features.SystemPolicyMitreFramework.Enabled() {
+		resetMitreFields(policies...)
+	}
 	return policies, missingIndices, policyErrors, nil
 }
 
@@ -96,11 +103,14 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 		return nil, err
 	}
 
+	if !features.SystemPolicyMitreFramework.Enabled() {
+		resetMitreFields(policies...)
+	}
 	return policies, err
 }
 
 // GetPolicyByName returns policy with given name.
-func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (policy *storage.Policy, exists bool, err error) {
+func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*storage.Policy, bool, error) {
 	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
@@ -112,6 +122,9 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (poli
 
 	for _, p := range policies {
 		if p.GetName() == name {
+			if !features.SystemPolicyMitreFramework.Enabled() {
+				resetMitreFields(p)
+			}
 			return p, true, nil
 		}
 	}
@@ -399,4 +412,10 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 		}
 	}
 	return changedIndices, nil
+}
+
+func resetMitreFields(policies ...*storage.Policy) {
+	for _, policy := range policies {
+		policy.MitreAttackVectors = nil
+	}
 }

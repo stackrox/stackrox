@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -318,12 +319,9 @@ func (b *storeImpl) verifyLockFieldsState(newPolicy *storage.Policy) error {
 			return nil
 		}
 
-		if oldPolicy.GetCriteriaLocked() != newPolicy.GetCriteriaLocked() ||
-			oldPolicy.GetMitreVectorsLocked() != newPolicy.GetMitreVectorsLocked() {
-			log.Warnf("'criteriaLocked' and 'mitreVectorsLocked' are read-only fields. Setting them to previous values for policy %q.", newPolicy.GetName())
-
-			newPolicy.MitreVectorsLocked = oldPolicy.MitreVectorsLocked
-			newPolicy.CriteriaLocked = oldPolicy.CriteriaLocked
+		if oldPolicy.GetCriteriaLocked() != newPolicy.GetCriteriaLocked() {
+			log.Warnf("'criteriaLocked' is read-only fields. Setting it to previous value for policy %q.", newPolicy.GetName())
+			newPolicy.CriteriaLocked = oldPolicy.GetCriteriaLocked()
 		}
 
 		var errs errorhelpers.ErrorList
@@ -333,9 +331,18 @@ func (b *storeImpl) verifyLockFieldsState(newPolicy *storage.Policy) error {
 			}
 		}
 
-		if oldPolicy.GetMitreVectorsLocked() {
-			if !reflect.DeepEqual(oldPolicy.GetMitreAttackVectors(), newPolicy.GetMitreAttackVectors()) {
-				errs.AddString("policy's MITRE ATT&CK vectors cannot be updated since they are marked read-only (mitreVectorsLocked=true)")
+		if features.SystemPolicyMitreFramework.Enabled() {
+			if oldPolicy.GetMitreVectorsLocked() != newPolicy.GetMitreVectorsLocked() {
+				log.Warnf("'mitreVectorsLocked' is read-only field. Setting it to previous value for policy %q.", newPolicy.GetName())
+
+				newPolicy.MitreVectorsLocked = oldPolicy.GetMitreVectorsLocked()
+				newPolicy.CriteriaLocked = oldPolicy.GetCriteriaLocked()
+			}
+
+			if oldPolicy.GetMitreVectorsLocked() {
+				if !reflect.DeepEqual(oldPolicy.GetMitreAttackVectors(), newPolicy.GetMitreAttackVectors()) {
+					errs.AddString("policy's MITRE ATT&CK vectors cannot be updated since they are marked read-only (mitreVectorsLocked=true)")
+				}
 			}
 		}
 		return errs.ToError()

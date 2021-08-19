@@ -35,4 +35,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_74_to_m_75_severity_policy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_75_to_m_76_exclude_compliance_operator_dnf_policy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_76_to_m_77_move_roles_to_rocksdb"
+	_ "github.com/stackrox/rox/migrator/migrations/m_77_to_m_78_mitre"
 )

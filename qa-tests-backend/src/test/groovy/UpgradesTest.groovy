@@ -7,6 +7,7 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import org.junit.experimental.categories.Category
 import services.ClusterService
+import services.FeatureFlagService
 import services.GraphQLService
 import services.PolicyService
 import services.SummaryService
@@ -240,9 +241,7 @@ class UpgradesTest extends BaseSpecification {
             // All default policies are expected to have the following flags set to true.
             // Therefore, move to target by adding the known diff.
             builder.setCriteriaLocked(true)
-            // TODO(@Mandar): Once the migration to lock mitre vectors is in place, remove the following.
             builder.setMitreVectorsLocked(true)
-
             if (knownPolicyDifferences.containsKey(policy.id)) {
                 def diffs = knownPolicyDifferences[policy.id]
 
@@ -275,8 +274,8 @@ class UpgradesTest extends BaseSpecification {
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
             if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
                 builder.clearExclusions().addAllExclusions(
-                        // exclusionList is immutable, but .sort sees it's a list and assumes it's mutable
-                        // so force it not mutate otherwise this will throw
+                        // exclusionList is immutable, but .sort sees it as a list and assumes it's mutable
+                        // so force it to not mutate otherwise this will throw
                         policy.exclusionsList.sort(false) { it.name }
                 )
             }
@@ -290,6 +289,9 @@ class UpgradesTest extends BaseSpecification {
                         policy.exclusionsList.sort(false) { it.name }
                 )
             }
+            if (!FeatureFlagService.isFeatureFlagEnabled('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK')) {
+                builder.clearMitreAttackVectors()
+            }
             [id, builder.build()]
         } as Map<String, PolicyOuterClass.Policy>
 
@@ -299,9 +301,8 @@ class UpgradesTest extends BaseSpecification {
 
         and:
         "Upgraded policies should match the default policies in code"
-        def unmatchedPolicies = upgradedPolicies.findAll {
-            it != defaultPolicies[it.id]
+        upgradedPolicies.forEach {
+            assert it == defaultPolicies[it.id]
         }
-        assert unmatchedPolicies.size() == 0
     }
 }

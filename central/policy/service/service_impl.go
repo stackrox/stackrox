@@ -149,10 +149,6 @@ func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy
 	if len(policy.GetCategories()) == 0 {
 		policy.Categories = []string{uncategorizedCategory}
 	}
-
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		policy.MitreAttackVectors = nil
-	}
 	return policy, nil
 }
 
