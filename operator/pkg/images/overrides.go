@@ -3,7 +3,7 @@ package images
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/helmutil"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
@@ -19,7 +19,7 @@ func (o Overrides) ToValues() (chartutil.Values, error) {
 		if val == "" {
 			continue
 		}
-		newVals, err := helmutil.ValuesForKVPair(configPath, val)
+		newVals, err := helmUtil.ValuesForKVPair(configPath, val)
 		if err != nil {
 			return nil, errors.Wrapf(err, "applying image override from %s", setting.EnvVar())
 		}

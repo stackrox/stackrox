@@ -8,7 +8,7 @@ import (
 
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/helmutil"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -38,7 +38,7 @@ func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Cer
 
 	ch := helmImage.GetSensorChart(metaVals, certs)
 
-	m, err := helmutil.Render(ch, nil, helmutil.Options{})
+	m, err := helmUtil.Render(ch, nil, helmUtil.Options{})
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +63,11 @@ func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Cer
 }
 
 // RenderSensor renders the sensorchart and returns rendered files
-func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmutil.Options) ([]*zip.File, error) {
+func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmUtil.Options) ([]*zip.File, error) {
 	helmImage := image.GetDefaultImage()
 	ch := helmImage.GetSensorChart(values, certs)
 
-	m, err := helmutil.Render(ch, nil, opts)
+	m, err := helmUtil.Render(ch, nil, opts)
 	if err != nil {
 		return nil, err
 	}

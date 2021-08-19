@@ -10,9 +10,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
-	pkgCharts "github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	pkgCharts "github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc"
 )

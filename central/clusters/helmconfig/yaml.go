@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/helmconfig"
+	helmConfig "github.com/stackrox/rox/pkg/helm/config"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/zip"
@@ -55,7 +55,7 @@ func (h helmConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config, err := helmconfig.FromCluster(cluster)
+	config, err := helmConfig.FromCluster(cluster)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "deriving Helm configuration for cluster"))
 		return

@@ -9,8 +9,8 @@ import (
 	"github.com/joelanford/helm-operator/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 )

@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/charts"
-	"github.com/stackrox/rox/pkg/helmtpl"
-	"github.com/stackrox/rox/pkg/helmutil"
+	"github.com/stackrox/rox/pkg/helm/charts"
+	helmTemplate "github.com/stackrox/rox/pkg/helm/template"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
 	rendererUtils "github.com/stackrox/rox/pkg/renderer/utils"
@@ -95,12 +95,12 @@ func (i *Image) ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (
 	return tpl.Parse(contents)
 }
 
-func (i *Image) getChartTemplate(prefix string) (*helmtpl.ChartTemplate, error) {
+func (i *Image) getChartTemplate(prefix string) (*helmTemplate.ChartTemplate, error) {
 	chartTplFiles, err := i.GetFiles(prefix)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystem", prefix)
 	}
-	chartTpl, err := helmtpl.Load(chartTplFiles)
+	chartTpl, err := helmTemplate.Load(chartTplFiles)
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading %s helmtpl", prefix)
 	}
@@ -120,12 +120,12 @@ func (i *Image) GetSensorChart(values map[string]interface{}, certs *sensor.Cert
 }
 
 // GetCentralServicesChartTemplate retrieves the StackRox Central Services Helm chart template.
-func (i *Image) GetCentralServicesChartTemplate() (*helmtpl.ChartTemplate, error) {
+func (i *Image) GetCentralServicesChartTemplate() (*helmTemplate.ChartTemplate, error) {
 	return i.getChartTemplate(CentralServicesChartPrefix)
 }
 
 // GetSecuredClusterServicesChartTemplate retrieves the StackRox Secured Cluster Services Helm chart template.
-func (i *Image) GetSecuredClusterServicesChartTemplate() (*helmtpl.ChartTemplate, error) {
+func (i *Image) GetSecuredClusterServicesChartTemplate() (*helmTemplate.ChartTemplate, error) {
 	return i.getChartTemplate(SecuredClusterServicesChartPrefix)
 }
 
@@ -152,7 +152,7 @@ func (i *Image) LoadAndInstantiateChartTemplate(prefix string, metaVals map[stri
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystems", prefix)
 	}
-	chartTpl, err := helmtpl.Load(chartTplFiles)
+	chartTpl, err := helmTemplate.Load(chartTplFiles)
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading %s helmtpl", prefix)
 	}
@@ -164,7 +164,7 @@ func (i *Image) LoadAndInstantiateChartTemplate(prefix string, metaVals map[stri
 	}
 
 	// Apply .helmignore filtering rules, to be on the safe side (but keep .helmignore).
-	renderedChartFiles, err = helmutil.FilterFiles(renderedChartFiles)
+	renderedChartFiles, err = helmUtil.FilterFiles(renderedChartFiles)
 	if err != nil {
 		return nil, errors.Wrap(err, "filtering instantiated helm chart files")
 	}
@@ -218,13 +218,13 @@ func (i *Image) LoadChart(chartPrefix string, metaValues charts.MetaValues) (*ch
 }
 
 // GetSensorChartTemplate loads the Sensor helmtpl meta-template
-func (i *Image) GetSensorChartTemplate() (*helmtpl.ChartTemplate, error) {
+func (i *Image) GetSensorChartTemplate() (*helmTemplate.ChartTemplate, error) {
 	chartTplFiles, err := i.GetFiles(SecuredClusterServicesChartPrefix)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sensor chart files from embedded filesystem")
 	}
 
-	return helmtpl.Load(chartTplFiles)
+	return helmTemplate.Load(chartTplFiles)
 }
 
 func (i *Image) getSensorChart(values map[string]interface{}, certs *sensor.Certs) (*chart.Chart, error) {

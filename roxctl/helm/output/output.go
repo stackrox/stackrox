@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/charts"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )

@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/charts"
-	"github.com/stackrox/rox/pkg/helmutil"
+	"github.com/stackrox/rox/pkg/helm/charts"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/zip"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -37,7 +37,7 @@ func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles [
 		return nil, errors.Wrap(err, "loading generated values")
 	}
 
-	rendered, err := helmutil.Render(ch, values, helmutil.Options{
+	rendered, err := helmUtil.Render(ch, values, helmUtil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      "stackrox-central-services",
 			Namespace: "stackrox",

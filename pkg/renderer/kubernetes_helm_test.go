@@ -8,7 +8,7 @@ import (
 
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/helmutil"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -110,7 +110,7 @@ func TestRenderSensorHelm(t *testing.T) {
 				"secrets/admission-control-key.pem":  []byte("stu"),
 			}}
 
-			opts := helmutil.Options{
+			opts := helmUtil.Options{
 				ReleaseOptions: chartutil.ReleaseOptions{
 					Name:      "stackrox-secured-cluster-services",
 					Namespace: "stackrox",
@@ -121,7 +121,7 @@ func TestRenderSensorHelm(t *testing.T) {
 			if c.istioVersion != "" {
 				istioAPIResources, err := istioutils.GetAPIResourcesByVersion(c.istioVersion)
 				require.NoError(t, err)
-				opts.APIVersions = helmutil.VersionSetFromResources(istioAPIResources...)
+				opts.APIVersions = helmUtil.VersionSetFromResources(istioAPIResources...)
 			}
 
 			files, err := RenderSensor(fields, certs, opts)

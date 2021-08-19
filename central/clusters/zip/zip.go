@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/helmutil"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -51,7 +51,7 @@ func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}
 
-	opts := helmutil.Options{
+	opts := helmUtil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      "stackrox-secured-cluster-services",
 			Namespace: "stackrox",
@@ -63,7 +63,7 @@ func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to retrieve Istio API resources")
 		}
-		opts.APIVersions = helmutil.VersionSetFromResources(istioAPIResources...)
+		opts.APIVersions = helmUtil.VersionSetFromResources(istioAPIResources...)
 	}
 
 	baseFiles, err := renderer.RenderSensor(fields, &certs, opts)

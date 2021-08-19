@@ -14,7 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/pkg/helmutil"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
@@ -141,7 +141,7 @@ type Config struct {
 
 	ConfigFileOverrides map[string]string
 
-	RenderOpts *helmutil.Options // additional render options, if any (only legal in non-Helm mode).
+	RenderOpts *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
 }
 
 func executeRawTemplate(raw []byte, c *Config) ([]byte, error) {

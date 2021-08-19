@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/helmutil"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -69,7 +69,7 @@ func mainCmd(args []string) error {
 	}
 
 	// Apply .helmignore filtering rules, to be on the safe side (but keep .helmignore).
-	chartFiles, err = helmutil.FilterFiles(chartFiles)
+	chartFiles, err = helmUtil.FilterFiles(chartFiles)
 	if err != nil {
 		return errors.Wrap(err, "filtering instantiated helm chart files")
 	}

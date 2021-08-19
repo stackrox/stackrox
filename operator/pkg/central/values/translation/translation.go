@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
-	"github.com/stackrox/rox/pkg/helmutil"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -49,7 +49,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 		return nil, errors.Wrap(err, "computing image override values")
 	}
 
-	return helmutil.CoalesceTables(baseValues, imageOverrideVals, valsFromCR), nil
+	return helmUtil.CoalesceTables(baseValues, imageOverrideVals, valsFromCR), nil
 }
 
 // translate translates a Central CR into helm values.
