@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -42,10 +41,6 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 		}
 		if p.GetId() == "" {
 			errList.AddStringf("policy %s does not have an ID defined", p.GetName())
-			continue
-		}
-
-		if !features.NetworkDetectionBaselineViolation.Enabled() && p.GetId() == "1b74ffdd-8e67-444c-9814-1c23863c8ccb" {
 			continue
 		}
 
