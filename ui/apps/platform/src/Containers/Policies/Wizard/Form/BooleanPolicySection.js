@@ -39,7 +39,11 @@ function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource, cri
             <div>
                 {criteriaLocked && !readOnly && (
                     <div className="p-4">
-                        <Message>You can&apos;t edit Policy Criteria in default policies</Message>
+                        <Message>
+                            Editing Policy Criteria is disabled for default system policies. Please
+                            clone this system policy or create a new system policy to perform edits
+                            to Policy Criteria.
+                        </Message>
                     </div>
                 )}
                 <div className="w-full flex">

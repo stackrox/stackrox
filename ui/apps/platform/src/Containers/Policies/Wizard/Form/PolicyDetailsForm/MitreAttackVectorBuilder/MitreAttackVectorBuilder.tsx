@@ -43,7 +43,9 @@ function MitreAttackVectorBuilder({
                 {isReadOnly && (
                     <div className="mb-4">
                         <Message>
-                            You can&apos;t edit MITRE ATT&CK Vectors in default policies
+                            Editing MITRE ATT&CK is disabled for default system policies. Please
+                            clone this system policy or create a new system policy to perform edits
+                            to MITRE ATT&CK.
                         </Message>
                     </div>
                 )}
