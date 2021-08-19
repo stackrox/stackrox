@@ -72,9 +72,12 @@ func TestTranslateComplete(t *testing.T) {
 						ClusterName:     "test-cluster",
 						CentralEndpoint: "central.test:443",
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
-							ListenOnCreates: pointer.BoolPtr(true),
-							ListenOnUpdates: pointer.BoolPtr(true),
-							ListenOnEvents:  pointer.BoolPtr(true),
+							ListenOnCreates:      pointer.BoolPtr(true),
+							ListenOnUpdates:      pointer.BoolPtr(true),
+							ListenOnEvents:       pointer.BoolPtr(true),
+							ContactImageScanners: platform.ScanIfMissing.Pointer(),
+							TimeoutSeconds:       pointer.Int32Ptr(4),
+							Bypass:               platform.BypassBreakGlassAnnotation.Pointer(),
 							DeploymentSpec: platform.DeploymentSpec{
 								Resources: &v1.ResourceRequirements{
 									Limits: v1.ResourceList{
@@ -175,6 +178,9 @@ func TestTranslateComplete(t *testing.T) {
 					"dynamic": map[string]interface{}{
 						"enforceOnCreates": true,
 						"enforceOnUpdates": true,
+						"scanInline":       true,
+						"disableBypass":    false,
+						"timeout":          4,
 					},
 					"listenOnCreates": true,
 					"listenOnUpdates": true,

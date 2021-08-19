@@ -361,6 +361,19 @@ spec:
           events (port-forward and exec).
         displayName: Listen On Events
         path: admissionControl.listenOnEvents
+      - description: Should inline scanning be performed on previously unscanned images
+          during a deployments admission review.
+        displayName: Contact Image Scanners
+        path: admissionControl.contactImageScanners
+      - description: Maximum timeout period for admission review, upon which admission
+          review will fail open. Use it to set request timeouts when you enable inline
+          image scanning.
+        displayName: Timeout Seconds
+        path: admissionControl.timeoutSeconds
+      - description: Enables teams to bypass admission control in a monitored manner
+          in the event of an emergency.
+        displayName: Bypass
+        path: admissionControl.bypass
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.

@@ -177,6 +177,27 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	// no need to distinguish between the static and dynamic part.
 	dynamic.SetBool("enforceOnCreates", admissionControl.ListenOnCreates)
 	dynamic.SetBool("enforceOnUpdates", admissionControl.ListenOnUpdates)
+	if admissionControl.ContactImageScanners != nil {
+		switch *admissionControl.ContactImageScanners {
+		case platform.ScanIfMissing:
+			dynamic.SetBoolValue("scanInline", true)
+		case platform.DoNotScanInline:
+			dynamic.SetBoolValue("scanInline", false)
+		default:
+			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.contactImageScanners setting %q", *admissionControl.ContactImageScanners))
+		}
+	}
+	dynamic.SetInt32("timeout", admissionControl.TimeoutSeconds)
+	if admissionControl.Bypass != nil {
+		switch *admissionControl.Bypass {
+		case platform.BypassBreakGlassAnnotation:
+			dynamic.SetBoolValue("disableBypass", false)
+		case platform.BypassDisabled:
+			dynamic.SetBoolValue("disableBypass", true)
+		default:
+			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.bypass setting %q", *admissionControl.Bypass))
+		}
+	}
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 

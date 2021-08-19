@@ -45,6 +45,22 @@ spec:
                   necessary for preventive policy enforcement, and for Kubernetes
                   event monitoring.
                 properties:
+                  bypass:
+                    default: BreakGlassAnnotation
+                    description: Enables teams to bypass admission control in a monitored
+                      manner in the event of an emergency.
+                    enum:
+                    - BreakGlassAnnotation
+                    - Disabled
+                    type: string
+                  contactImageScanners:
+                    default: DoNotScanInline
+                    description: Should inline scanning be performed on previously
+                      unscanned images during a deployments admission review.
+                    enum:
+                    - ScanIfMissing
+                    - DoNotScanInline
+                    type: string
                   listenOnCreates:
                     default: false
                     description: Set this to 'true' to enable preventive policy enforcement
@@ -95,6 +111,15 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
+                  timeoutSeconds:
+                    default: 3
+                    description: Maximum timeout period for admission review, upon
+                      which admission review will fail open. Use it to set request
+                      timeouts when you enable inline image scanning.
+                    format: int32
+                    maximum: 10
+                    minimum: 1
+                    type: integer
                 type: object
               auditLogs:
                 description: Settings relating to the ingestion of Kubernetes audit

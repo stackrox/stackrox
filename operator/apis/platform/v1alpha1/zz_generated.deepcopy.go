@@ -73,6 +73,21 @@ func (in *AdmissionControlComponentSpec) DeepCopyInto(out *AdmissionControlCompo
 		*out = new(bool)
 		**out = **in
 	}
+	if in.ContactImageScanners != nil {
+		in, out := &in.ContactImageScanners, &out.ContactImageScanners
+		*out = new(ImageScanPolicy)
+		**out = **in
+	}
+	if in.TimeoutSeconds != nil {
+		in, out := &in.TimeoutSeconds, &out.TimeoutSeconds
+		*out = new(int32)
+		**out = **in
+	}
+	if in.Bypass != nil {
+		in, out := &in.Bypass, &out.Bypass
+		*out = new(BypassPolicy)
+		**out = **in
+	}
 	in.DeploymentSpec.DeepCopyInto(&out.DeploymentSpec)
 }
 

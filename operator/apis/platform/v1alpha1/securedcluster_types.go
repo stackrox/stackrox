@@ -108,8 +108,60 @@ type AdmissionControlComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 
+	// Should inline scanning be performed on previously unscanned images during a deployments admission review.
+	//+kubebuilder:default=DoNotScanInline
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	ContactImageScanners *ImageScanPolicy `json:"contactImageScanners,omitempty"`
+
+	// Maximum timeout period for admission review, upon which admission review will fail open.
+	// Use it to set request timeouts when you enable inline image scanning.
+	//+kubebuilder:default=3
+	//+kubebuilder:validation:Minimum=1
+	//+kubebuilder:validation:Maximum=10
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
+	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
+
+	// Enables teams to bypass admission control in a monitored manner in the event of an emergency.
+	//+kubebuilder:default=BreakGlassAnnotation
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6
+	Bypass *BypassPolicy `json:"bypass,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
 	DeploymentSpec `json:",inline"`
+}
+
+// ImageScanPolicy defines whether images should be scanned at admission control time.
+//+kubebuilder:validation:Enum=ScanIfMissing;DoNotScanInline
+type ImageScanPolicy string
+
+const (
+	// ScanIfMissing means that images which do not have a known scan result should be scanned in scope of an admission request.
+	ScanIfMissing ImageScanPolicy = "ScanIfMissing"
+	// DoNotScanInline means that images which do not have a known scan result will not be scanned when processing an admission request.
+	DoNotScanInline ImageScanPolicy = "DoNotScanInline"
+)
+
+// Pointer returns the given ImageScanPolicy as a pointer, needed in k8s resource structs.
+func (p ImageScanPolicy) Pointer() *ImageScanPolicy {
+	return &p
+}
+
+// BypassPolicy defines whether admission controller can be bypassed.
+//+kubebuilder:validation:Enum=BreakGlassAnnotation;Disabled
+type BypassPolicy string
+
+const (
+	// BypassBreakGlassAnnotation means that admission controller can be bypassed by adding an admission.stackrox.io/break-glass annotation to a resource.
+	// Bypassing the admission controller triggers a policy violation which includes deployment details.
+	// We recommend providing an issue-tracker link or some other reference as the value of this annotation so that others can understand why you bypassed the admission controller.
+	BypassBreakGlassAnnotation BypassPolicy = "BreakGlassAnnotation"
+	// BypassDisabled means that admission controller cannot be bypassed.
+	BypassDisabled BypassPolicy = "Disabled"
+)
+
+// Pointer returns the given BypassPolicy as a pointer, needed in k8s resource structs.
+func (p BypassPolicy) Pointer() *BypassPolicy {
+	return &p
 }
 
 // PerNodeSpec declares configuration settings for components which are deployed to all nodes.
@@ -145,6 +197,11 @@ const (
 	CollectionNone CollectionMethod = "NoCollection"
 )
 
+// Pointer returns the given CollectionMethod as a pointer, needed in k8s resource structs.
+func (c CollectionMethod) Pointer() *CollectionMethod {
+	return &c
+}
+
 // AuditLogsSpec configures settings related to audit log ingestion.
 type AuditLogsSpec struct {
 	// Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only
@@ -173,11 +230,6 @@ const (
 // Pointer returns a pointer with the given value.
 func (s AuditLogsCollectionSetting) Pointer() *AuditLogsCollectionSetting {
 	return &s
-}
-
-// Pointer returns the given CollectionMethod as a pointer, needed in k8s resource structs.
-func (c CollectionMethod) Pointer() *CollectionMethod {
-	return &c
 }
 
 // TaintTolerationPolicy is a type for values of spec.collector.taintToleration

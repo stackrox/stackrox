@@ -372,10 +372,23 @@ spec:
           for preventive policy enforcement, and for Kubernetes event monitoring.
         displayName: Admission Control Settings
         path: admissionControl
+      - description: Should inline scanning be performed on previously unscanned images
+          during a deployments admission review.
+        displayName: Contact Image Scanners
+        path: admissionControl.contactImageScanners
+      - description: Maximum timeout period for admission review, upon which admission
+          review will fail open. Use it to set request timeouts when you enable inline
+          image scanning.
+        displayName: Timeout Seconds
+        path: admissionControl.timeoutSeconds
       - description: Settings for the components running on each node in the cluster
           (Collector and Compliance).
         displayName: Per Node Settings
         path: perNode
+      - description: Enables teams to bypass admission control in a monitored manner
+          in the event of an emergency.
+        displayName: Bypass
+        path: admissionControl.bypass
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
