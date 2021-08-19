@@ -449,6 +449,11 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 					Kind:      v1.ServiceAccountKind,
 					Namespace: "n1",
 				},
+				{
+					Name:      "cluster-namespace-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
 			},
 		},
 		{
@@ -517,6 +522,11 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 					Kind:      v1.ServiceAccountKind,
 					Namespace: "n1",
 				},
+				{
+					Name:      "cluster-namespace-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
 			},
 		},
 	}
@@ -527,6 +537,7 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 	}{
 		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject-2", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-namespace-subject", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject"}},
 		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-admin-subject", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: storage.Deployment{ServiceAccount: "cluster-admin-subject"}},

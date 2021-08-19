@@ -24,7 +24,7 @@ type storeImpl struct {
 	bindingIDToRoleRef map[string]namespacedRoleRef
 	roleRefToBindings  map[namespacedRoleRef]map[string]*storage.K8SRoleBinding
 
-	bucketEvaluator *bucketEvaluator
+	bucketEvaluator *evaluator
 }
 
 type namespacedRoleRef struct {
@@ -49,7 +49,7 @@ func (rs *storeImpl) GetPermissionLevelForDeployment(d NamespacedServiceAccount)
 		}
 	}
 
-	return rs.bucketEvaluator.getBucketNoLock(subject)
+	return rs.bucketEvaluator.GetPermissionLevelForSubject(subject)
 }
 
 func (rs *storeImpl) UpsertRole(role *v1.Role) *storage.K8SRole {
@@ -112,15 +112,7 @@ func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() bool {
 	if !rs.syncedFlag.Get() {
 		return false
 	}
-	roles := make([]*storage.K8SRole, 0, len(rs.roles))
-	for _, r := range rs.roles {
-		roles = append(roles, r)
-	}
-	bindings := make([]*storage.K8SRoleBinding, 0, len(rs.bindingsByID))
-	for _, b := range rs.bindingsByID {
-		bindings = append(bindings, b)
-	}
-	rs.bucketEvaluator = newBucketEvaluator(roles, bindings)
+	rs.bucketEvaluator = newBucketEvaluator(rs.roles, rs.bindingsByID)
 	return true
 }
 
