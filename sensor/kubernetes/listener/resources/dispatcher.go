@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/concurrency"
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -47,7 +46,7 @@ type DispatcherRegistry interface {
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLister v1Listers.PodLister,
+func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister,
 	entityStore *clusterentities.Store, processFilter filter.Filter,
 	configHandler config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) DispatcherRegistry {
 	serviceStore := newServiceStore()
@@ -56,7 +55,7 @@ func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLi
 	nodeStore := newNodeStore()
 	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
-	rbacUpdater := rbac.NewStore(syncedRBAC)
+	rbacUpdater := rbac.NewStore()
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,

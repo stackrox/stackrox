@@ -2,7 +2,6 @@ package rbac
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -29,10 +28,9 @@ type Store interface {
 }
 
 // NewStore creates a new instance of Store
-func NewStore(syncedFlag *concurrency.Flag) Store {
+func NewStore() Store {
 	return &storeImpl{
-		syncedFlag: syncedFlag,
-		roles:      make(map[namespacedRoleRef]*storage.K8SRole),
+		roles: make(map[namespacedRoleRef]*storage.K8SRole),
 
 		bindingsByID:       make(map[string]*storage.K8SRoleBinding),
 		bindingIDToRoleRef: make(map[string]namespacedRoleRef),

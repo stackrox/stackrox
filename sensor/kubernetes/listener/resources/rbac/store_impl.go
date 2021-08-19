@@ -1,12 +1,9 @@
 package rbac
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -15,9 +12,8 @@ var (
 )
 
 type storeImpl struct {
-	lock                  sync.RWMutex
-	hasBuiltInitialBucket bool
-	syncedFlag            *concurrency.Flag
+	lock  sync.RWMutex
+	dirty bool
 
 	roles              map[namespacedRoleRef]*storage.K8SRole
 	bindingsByID       map[string]*storage.K8SRoleBinding
@@ -42,11 +38,8 @@ func (rs *storeImpl) GetPermissionLevelForDeployment(d NamespacedServiceAccount)
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
-	if !rs.hasBuiltInitialBucket {
-		rs.hasBuiltInitialBucket = rs.rebuildEvaluatorBucketsNoLock()
-		if !rs.hasBuiltInitialBucket {
-			utils.Should(errors.New("deployment permissions should not be evaluated if rbac has not been synced"))
-		}
+	if rs.dirty {
+		rs.rebuildEvaluatorBucketsNoLock()
 	}
 
 	return rs.bucketEvaluator.GetPermissionLevelForSubject(subject)
@@ -108,12 +101,9 @@ func (rs *storeImpl) RemoveClusterBinding(binding *v1.ClusterRoleBinding) *stora
 	return rs.removeRoleBindingGenericNoLock(clusterRoleBindingRefToNamespaceRef(binding), toRoxClusterRoleBinding(binding))
 }
 
-func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() bool {
-	if !rs.syncedFlag.Get() {
-		return false
-	}
+func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() {
 	rs.bucketEvaluator = newBucketEvaluator(rs.roles, rs.bindingsByID)
-	return true
+	rs.dirty = false
 }
 
 func (rs *storeImpl) updateBindingNoLock(roleID string, ref namespacedRoleRef, binding *storage.K8SRoleBinding) {
@@ -121,13 +111,15 @@ func (rs *storeImpl) updateBindingNoLock(roleID string, ref namespacedRoleRef, b
 	newBinding.RoleId = roleID
 	rs.bindingsByID[newBinding.GetId()] = newBinding
 	rs.roleRefToBindings[ref][newBinding.GetId()] = newBinding
+	rs.markDirtyNoLock()
 }
 
 func (rs *storeImpl) upsertRoleGenericNoLock(ref namespacedRoleRef, role *storage.K8SRole) *storage.K8SRole {
-	defer rs.rebuildEvaluatorBucketsNoLock()
-
 	// Clone the role
 	role = role.Clone()
+
+	// We do not need to check if role was changed since we are not syncing roles.
+	// Every role upsert changes the state (ROX-7837).
 
 	rs.roles[ref] = role
 
@@ -140,8 +132,6 @@ func (rs *storeImpl) upsertRoleGenericNoLock(ref namespacedRoleRef, role *storag
 }
 
 func (rs *storeImpl) removeRoleGenericNoLock(ref namespacedRoleRef, role *storage.K8SRole) *storage.K8SRole {
-	defer rs.rebuildEvaluatorBucketsNoLock()
-
 	delete(rs.roles, ref)
 	// Find all the bindings that are registered for this namespacedRoleRef and remove their role ID as the reference is now broken
 	for _, binding := range rs.roleRefToBindings[ref] {
@@ -151,14 +141,15 @@ func (rs *storeImpl) removeRoleGenericNoLock(ref namespacedRoleRef, role *storag
 }
 
 func (rs *storeImpl) upsertRoleBindingGenericNoLock(ref namespacedRoleRef, binding *storage.K8SRoleBinding) *storage.K8SRoleBinding {
-	defer rs.rebuildEvaluatorBucketsNoLock()
+	binding.RoleId = rs.roles[ref].GetId()
+	if binding.Equal(rs.bindingsByID[binding.GetId()]) {
+		return binding
+	}
 
 	// If this update has made it so that the binding points at a new ref, then this will clean up the old ref
 	if oldRef, oldRefExists := rs.bindingIDToRoleRef[binding.GetId()]; oldRefExists {
 		rs.removeBindingFromMapsNoLock(oldRef, binding)
 	}
-
-	binding.RoleId = rs.roles[ref].GetId()
 
 	rs.bindingsByID[binding.GetId()] = binding
 
@@ -170,17 +161,15 @@ func (rs *storeImpl) upsertRoleBindingGenericNoLock(ref namespacedRoleRef, bindi
 		rs.roleRefToBindings[ref] = make(map[string]*storage.K8SRoleBinding)
 	}
 	rs.roleRefToBindings[ref][binding.GetId()] = binding
-
+	rs.markDirtyNoLock()
 	return binding
 }
 
 func (rs *storeImpl) removeRoleBindingGenericNoLock(ref namespacedRoleRef, binding *storage.K8SRoleBinding) *storage.K8SRoleBinding {
-	defer rs.rebuildEvaluatorBucketsNoLock()
-
 	binding.RoleId = rs.roles[ref].GetId()
 	// Add or Replace the old binding if necessary.
 	rs.removeBindingFromMapsNoLock(ref, binding)
-
+	rs.markDirtyNoLock()
 	return binding
 }
 
@@ -189,4 +178,8 @@ func (rs *storeImpl) removeBindingFromMapsNoLock(ref namespacedRoleRef, roxBindi
 	delete(rs.bindingsByID, roxBinding.GetId())
 	delete(rs.bindingIDToRoleRef, roxBinding.GetId())
 	delete(rs.roleRefToBindings[ref], roxBinding.GetId())
+}
+
+func (rs *storeImpl) markDirtyNoLock() {
+	rs.dirty = true
 }

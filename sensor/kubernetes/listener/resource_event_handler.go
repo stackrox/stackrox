@@ -34,14 +34,12 @@ func (k *listenerImpl) handleAllEvents() {
 	var treatCreatesAsUpdates concurrency.Flag
 	treatCreatesAsUpdates.Set(true)
 
-	var syncedRBAC concurrency.Flag
-
 	// This might block if a cluster ID is initially unavailable, which is okay.
 	clusterID := clusterid.Get()
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
-	dispatchers := resources.NewDispatcherRegistry(&syncedRBAC, clusterID, podInformer.Lister(), clusterentities.StoreInstance(),
+	dispatchers := resources.NewDispatcherRegistry(clusterID, podInformer.Lister(), clusterentities.StoreInstance(),
 		processfilter.Singleton(), k.configHandler, k.detector, orchestratornamespaces.Singleton())
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
@@ -123,7 +121,6 @@ func (k *listenerImpl) handleAllEvents() {
 	if !concurrency.WaitInContext(prePodWaitGroup, stopSignal) {
 		return
 	}
-	syncedRBAC.Set(true)
 	log.Info("Successfully synced namespaces, secrets, service accounts, roles and role bindings")
 
 	// Wait for the pod informer to sync before processing other types.

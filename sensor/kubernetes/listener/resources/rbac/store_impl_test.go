@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -97,9 +96,7 @@ func TestStore(t *testing.T) {
 		},
 	}
 
-	var flag concurrency.Flag
-	flag.Set(true)
-	tested := NewStore(&flag).(*storeImpl)
+	tested := NewStore().(*storeImpl)
 	dispatcher := NewDispatcher(tested)
 
 	// Add a binding with no role, should get a binding update with no role id.
@@ -367,10 +364,12 @@ func TestStore(t *testing.T) {
 	}, tested.roleRefToBindings)
 }
 
-func runRBACBenchmark(b *testing.B, updater Store) {
+func BenchmarkRBACUpdater(b *testing.B) {
 	for n := 0; n < b.N; n++ {
+		// Create a new store and fill it with data
+		store := NewStore()
 		for i := 0; i < 700; i++ {
-			updater.UpsertRole(&v1.Role{
+			store.UpsertRole(&v1.Role{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("role%d", i),
 					Namespace: fmt.Sprintf("namespace%d", i%10),
@@ -379,7 +378,7 @@ func runRBACBenchmark(b *testing.B, updater Store) {
 			})
 		}
 		for i := 0; i < 11572; i++ {
-			updater.UpsertBinding(&v1.RoleBinding{
+			store.UpsertBinding(&v1.RoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("role%d", i),
 					Namespace: fmt.Sprintf("namespace%d", i%10),
@@ -390,6 +389,28 @@ func runRBACBenchmark(b *testing.B, updater Store) {
 				},
 			})
 		}
+		// Evaluate permissions
+		store.GetPermissionLevelForDeployment(&storage.Deployment{})
+	}
+}
+
+func BenchmarkRBACUpsertExistingBinding(b *testing.B) {
+	b.StopTimer()
+	store := NewStore()
+	binding := &v1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "role",
+			Namespace: "namespace",
+			UID:       types.UID(uuid.NewV4().String()),
+		},
+		RoleRef: v1.RoleRef{
+			Name: "role",
+		},
+	}
+	store.UpsertBinding(binding)
+	b.StartTimer()
+	for n := 0; n < b.N; n++ {
+		store.UpsertBinding(binding)
 	}
 }
 
@@ -490,6 +511,14 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 				Verbs:     []string{"get"},
 			}},
 		},
+		{
+			ObjectMeta: meta("cluster-elevated"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"get"},
+			}},
+		},
 	}
 	clusterBindings := []*v1.ClusterRoleBinding{
 		{
@@ -529,6 +558,27 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 				},
 			},
 		},
+		{
+			ObjectMeta: meta("b4"),
+			RoleRef:    clusterRole("cluster-elevated"),
+			Subjects: []v1.Subject{
+				{
+					Name:      "cluster-elevated-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+				{
+					Name:      "cluster-elevated-subject-2",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+				{
+					Name:      "cluster-namespace-subject",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+			},
+		},
 	}
 
 	testCases := []struct {
@@ -546,46 +596,44 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "default-subject"}},
 		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "admin-subject"}},
 	}
-	for _, synced := range []bool{true, false} {
-		updater := setupUpdater(roles, clusterRoles, bindings, clusterBindings, synced)
-		updaterWithNoRoles := setupUpdater(roles, clusterRoles, bindings, clusterBindings, synced)
-		for _, r := range roles {
-			updaterWithNoRoles.RemoveRole(r)
-		}
-		for _, r := range clusterRoles {
-			updaterWithNoRoles.RemoveClusterRole(r)
-		}
-		updaterWithNoBindings := setupUpdater(roles, clusterRoles, bindings, clusterBindings, synced)
-		for _, b := range bindings {
-			updaterWithNoBindings.RemoveBinding(b)
-		}
-		for _, b := range clusterBindings {
-			updaterWithNoBindings.RemoveClusterBinding(b)
-		}
-		for _, tc := range testCases {
-			tc := tc
+	updater := setupUpdater(roles, clusterRoles, bindings, clusterBindings)
+	updaterWithNoRoles := setupUpdater(roles, clusterRoles, bindings, clusterBindings)
+	for _, r := range roles {
+		updaterWithNoRoles.RemoveRole(r)
+	}
+	for _, r := range clusterRoles {
+		updaterWithNoRoles.RemoveClusterRole(r)
+	}
+	updaterWithNoBindings := setupUpdater(roles, clusterRoles, bindings, clusterBindings)
+	for _, b := range bindings {
+		updaterWithNoBindings.RemoveBinding(b)
+	}
+	for _, b := range clusterBindings {
+		updaterWithNoBindings.RemoveClusterBinding(b)
+	}
+	for _, tc := range testCases {
+		tc := tc
 
-			name := fmt.Sprintf("%s in namespace %q should have %s permision level, synced: %t",
-				tc.deployment.ServiceAccount, tc.deployment.Namespace, tc.expected, synced)
-			t.Run(name, func(t *testing.T) {
-				t.Parallel()
-				assert.Equal(t, tc.expected, updater.GetPermissionLevelForDeployment(&tc.deployment))
-			})
+		name := fmt.Sprintf("%s in namespace %q should have %s permision level",
+			tc.deployment.ServiceAccount, tc.deployment.Namespace, tc.expected)
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, updater.GetPermissionLevelForDeployment(&tc.deployment))
+		})
 
-			name = fmt.Sprintf("%s in namespace %q should have NO permisions after removing roles but keeping bindings, synced: %t",
-				tc.deployment.ServiceAccount, tc.deployment.Namespace, synced)
-			t.Run(name, func(t *testing.T) {
-				t.Parallel()
-				assert.Equal(t, storage.PermissionLevel_NONE, updaterWithNoRoles.GetPermissionLevelForDeployment(&tc.deployment))
-			})
+		name = fmt.Sprintf("%s in namespace %q should have NO permisions after removing roles but keeping bindings",
+			tc.deployment.ServiceAccount, tc.deployment.Namespace)
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, storage.PermissionLevel_NONE, updaterWithNoRoles.GetPermissionLevelForDeployment(&tc.deployment))
+		})
 
-			name = fmt.Sprintf("%s in namespace %q should have NO permisions after removing bindings but keeping roles, synced: %t",
-				tc.deployment.ServiceAccount, tc.deployment.Namespace, synced)
-			t.Run(name, func(t *testing.T) {
-				t.Parallel()
-				assert.Equal(t, storage.PermissionLevel_NONE, updaterWithNoBindings.GetPermissionLevelForDeployment(&tc.deployment))
-			})
-		}
+		name = fmt.Sprintf("%s in namespace %q should have NO permisions after removing bindings but keeping roles",
+			tc.deployment.ServiceAccount, tc.deployment.Namespace)
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, storage.PermissionLevel_NONE, updaterWithNoBindings.GetPermissionLevelForDeployment(&tc.deployment))
+		})
 	}
 }
 
@@ -609,10 +657,8 @@ func meta(name string) metav1.ObjectMeta {
 	}
 }
 
-func setupUpdater(roles []*v1.Role, clusterRoles []*v1.ClusterRole, bindings []*v1.RoleBinding, clusterBindings []*v1.ClusterRoleBinding, synced bool) Store {
-	var flagInitialRbacLoadDone concurrency.Flag
-	tested := NewStore(&flagInitialRbacLoadDone)
-	flagInitialRbacLoadDone.Set(synced)
+func setupUpdater(roles []*v1.Role, clusterRoles []*v1.ClusterRole, bindings []*v1.RoleBinding, clusterBindings []*v1.ClusterRoleBinding) Store {
+	tested := NewStore()
 	for _, r := range roles {
 		tested.UpsertRole(r)
 	}
@@ -625,19 +671,5 @@ func setupUpdater(roles []*v1.Role, clusterRoles []*v1.ClusterRole, bindings []*
 	for _, b := range clusterBindings {
 		tested.UpsertClusterBinding(b)
 	}
-	flagInitialRbacLoadDone.Set(true)
 	return tested
-}
-
-func BenchmarkRBACUpdater(b *testing.B) {
-	var flag concurrency.Flag
-
-	b.Run("flag-off", func(b *testing.B) {
-		runRBACBenchmark(b, NewStore(&flag))
-	})
-	flag.Set(true)
-
-	b.Run("flag-on", func(b *testing.B) {
-		runRBACBenchmark(b, NewStore(&flag))
-	})
 }
