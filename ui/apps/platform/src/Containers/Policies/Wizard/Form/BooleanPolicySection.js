@@ -8,6 +8,7 @@ import { createStructuredSelector } from 'reselect';
 
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
+import { Message } from '@stackrox/ui-components';
 import PolicyBuilderKeys from './PolicyBuilderKeys';
 import PolicySections from './PolicySections';
 import {
@@ -16,7 +17,7 @@ import {
     auditLogDescriptor,
 } from './descriptors';
 
-function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource }) {
+function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource, criteriaLocked }) {
     const [descriptor, setDescriptor] = useState([]);
     const networkDetectionBaselineViolationEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_VIOLATION
@@ -32,22 +33,31 @@ function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource }) {
             setDescriptor(policyConfigurationDescriptor);
         }
     }, [auditLogEnabled, hasAuditLogEventSource, networkDetectionBaselineViolationEnabled]);
-    if (readOnly) {
+
+    if (readOnly || criteriaLocked) {
         return (
-            <div className="w-full flex">
-                {descriptor.length > 0 && (
-                    <FieldArray
-                        name="policySections"
-                        component={PolicySections}
-                        hasHeader={hasHeader}
-                        readOnly
-                        className="w-full"
-                        descriptor={descriptor}
-                    />
+            <div>
+                {criteriaLocked && !readOnly && (
+                    <div className="p-4">
+                        <Message>You can&apos;t edit Policy Criteria in default policies</Message>
+                    </div>
                 )}
+                <div className="w-full flex">
+                    {descriptor.length > 0 && (
+                        <FieldArray
+                            name="policySections"
+                            component={PolicySections}
+                            hasHeader={hasHeader}
+                            readOnly
+                            className="w-full"
+                            descriptor={descriptor}
+                        />
+                    )}
+                </div>
             </div>
         );
     }
+
     return (
         <DndProvider backend={HTML5Backend}>
             <div className="w-full h-full flex">
@@ -71,17 +81,23 @@ BooleanPolicySection.propTypes = {
     readOnly: PropTypes.bool,
     hasHeader: PropTypes.bool,
     hasAuditLogEventSource: PropTypes.bool.isRequired,
+    criteriaLocked: PropTypes.bool,
 };
 
 BooleanPolicySection.defaultProps = {
     readOnly: false,
     hasHeader: true,
+    criteriaLocked: false,
 };
 
 const mapStateToProps = createStructuredSelector({
     hasAuditLogEventSource: (state) => {
         const eventSourceValue = formValueSelector('policyCreationForm')(state, 'eventSource');
         return eventSourceValue === 'AUDIT_LOG_EVENT';
+    },
+    criteriaLocked: (state) => {
+        const criteriaLocked = formValueSelector('policyCreationForm')(state, 'criteriaLocked');
+        return criteriaLocked;
     },
 });
 

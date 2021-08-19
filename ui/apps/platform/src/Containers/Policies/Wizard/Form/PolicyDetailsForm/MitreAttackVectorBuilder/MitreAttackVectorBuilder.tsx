@@ -3,7 +3,9 @@ import { FieldArray, FieldArrayFieldsProps } from 'redux-form';
 
 import { MitreAttackVectorId } from 'services/MitreService';
 
+import { Message } from '@stackrox/ui-components';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import useFetchMitreAttackVectors from './useFetchMitreAttackVectors';
 import MitreAttackVectorContainer from './MitreAttackVectorContainer';
 import AddTacticButton from './AddTacticButton';
@@ -37,10 +39,19 @@ function MitreAttackVectorBuilder({
 
     return (
         <>
-            {fields.length > 0 && (
-                <FormSectionBody>
-                    <div className="gap-4">
-                        {fields.map((field: string, index: number) => {
+            <FormSectionBody>
+                {isReadOnly && (
+                    <div className="mb-4">
+                        <Message>
+                            You can&apos;t edit MITRE ATT&CK Vectors in default policies
+                        </Message>
+                    </div>
+                )}
+                <div className="gap-4">
+                    {fields.length === 0 ? (
+                        <NoResultsMessage message="There are no MITRE ATT&CK vectors" />
+                    ) : (
+                        fields.map((field: string, index: number) => {
                             const tacticId = fields.get(index).tactic;
                             const tacticDetail = mitreAttackVectors.find((mitreAttackVector) => {
                                 return mitreAttackVector.tactic.id === tacticId;
@@ -83,10 +94,10 @@ function MitreAttackVectorBuilder({
                                     )}
                                 </MitreAttackVectorContainer>
                             );
-                        })}
-                    </div>
-                </FormSectionBody>
-            )}
+                        })
+                    )}
+                </div>
+            </FormSectionBody>
             {!isReadOnly && (
                 <FormSectionFooter>
                     <AddTacticButton onClick={onAddTactic} />
