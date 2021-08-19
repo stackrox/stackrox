@@ -59,3 +59,14 @@ $ kubectl -n stackrox delete pvc stackrox-db
 # To access central, forward port 443:
 $ kubectl -n stackrox port-forward svc/central 8000:443 &
 ```
+
+### Testing
+
+To test helm chart changes see `pkg/helm/charts/tests/{centralservices,securedclusterservices}`.
+
+e.g.
+```
+$ cdrox
+$ cd pkg/helm/charts/tests/centralservices
+# go test -v
+```

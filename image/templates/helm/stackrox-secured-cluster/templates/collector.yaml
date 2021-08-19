@@ -40,6 +40,11 @@ spec:
       - name: collector
         image: {{ quote ._rox.image.collector.fullRef }}
         imagePullPolicy: {{ ._rox.collector.imagePullPolicy }}
+        {{- if ._rox.collector.exposeMonitoring }}
+        ports:
+          - containerPort: 9090
+            name: monitoring
+        {{- end }}
         env:
         - name: COLLECTOR_CONFIG
           value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'

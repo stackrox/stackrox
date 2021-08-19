@@ -84,6 +84,10 @@ spec:
             name: api
           - containerPort: 9443
             name: webhook
+          {{- if ._rox.sensor.exposeMonitoring }}
+          - containerPort: 9090
+            name: monitoring
+          {{- end }}
         command:
           - kubernetes-sensor
         resources:
@@ -185,7 +189,7 @@ spec:
   {{- if ._rox.sensor.exposeMonitoring }}
   - name: monitoring
     port: 9090
-    targetPort: 9090
+    targetPort: monitoring
     protocol: TCP
   {{- end }}
   selector:

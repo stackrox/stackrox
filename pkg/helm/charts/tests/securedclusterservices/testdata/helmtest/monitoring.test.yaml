@@ -1,12 +1,20 @@
 defs: |
   def monitoringExposed(service):
-    [service.spec.ports[] | select(.port == 9090)] | (length == 1);
+    [service.spec.ports[] | select(.name == "monitoring" and .port == 9090 and .targetPort == "monitoring")]
+      | (length == 1);
+
+  def monitoringContainerPortExposed(container):
+    [container | if .ports != null then .ports[] else {} end
+      | select(.containerPort == 9090 and .name == "monitoring")]
+        | (length == 1);
 
 tests:
 - name: monitoring should not be exposed by default
   expect: |
     monitoringExposed(.services.sensor) | assertThat(not)
+    monitoringContainerPortExposed(container(.deployments.sensor; "sensor")) | assertThat(not)
     .networkpolicys["sensor-monitoring"] | assertThat(. == null)
+    monitoringContainerPortExposed(container(.daemonsets.collector; "collector")) | assertThat(not)
     .networkpolicys["collector-monitoring"] | assertThat(. == null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. == null)
 
@@ -15,7 +23,9 @@ tests:
     exposeMonitoring: true
   expect: |
     monitoringExposed(.services.sensor)
+    monitoringContainerPortExposed(container(.deployments.sensor; "sensor"))
     .networkpolicys["sensor-monitoring"] | assertThat(. != null)
+    monitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
     .networkpolicys["collector-monitoring"] | assertThat(. != null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
 
@@ -25,7 +35,9 @@ tests:
     sensor.exposeMonitoring: false
   expect: |
     monitoringExposed(.services.sensor) | assertThat(not)
+    monitoringContainerPortExposed(container(.deployments.sensor; "sensor")) | assertThat(not)
     .networkpolicys["sensor-monitoring"] | assertThat(. == null)
+    monitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
     .networkpolicys["collector-monitoring"] | assertThat(. != null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
 
@@ -35,7 +47,9 @@ tests:
     collector.exposeMonitoring: false
   expect: |
     monitoringExposed(.services.sensor)
+    monitoringContainerPortExposed(container(.deployments.sensor; "sensor"))
     .networkpolicys["sensor-monitoring"] | assertThat(. != null)
+    monitoringContainerPortExposed(container(.daemonsets.collector; "collector")) | assertThat(not)
     .networkpolicys["collector-monitoring"] | assertThat(. == null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
 
@@ -45,6 +59,8 @@ tests:
     admissionControl.exposeMonitoring: false
   expect: |
     monitoringExposed(.services.sensor)
+    monitoringContainerPortExposed(container(.deployments.sensor; "sensor"))
     .networkpolicys["sensor-monitoring"] | assertThat(. != null)
+    monitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
     .networkpolicys["collector-monitoring"] | assertThat(. != null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. == null)
