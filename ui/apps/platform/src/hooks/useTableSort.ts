@@ -22,8 +22,9 @@ export type UseTableSort = {
 };
 
 function useTableSort(columns: TableColumn[], defaultSort: SortOption): UseTableSort {
+    const defaultSortIndex = columns.findIndex((column) => column?.sortField === defaultSort.field);
     // index of the currently active column
-    const [activeSortIndex, setActiveSortIndex] = useState(0);
+    const [activeSortIndex, setActiveSortIndex] = useState(defaultSortIndex);
     // sort direction of the currently active column
     const [activeSortDirection, setActiveSortDirection] = useState<SortDirection>('desc');
 

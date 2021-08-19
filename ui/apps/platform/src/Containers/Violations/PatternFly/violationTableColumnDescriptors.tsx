@@ -1,18 +1,22 @@
 import React, { ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 import dateFns from 'date-fns';
-import { Flex, FlexItem } from '@patternfly/react-core';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Flex, FlexItem, Tooltip, Label } from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { severityColorMapPF } from 'constants/severityColors';
 import { severityLabels, lifecycleStageLabels } from 'messages/common';
 import {
     BLOCKING_ENFORCEMENT_ACTIONS,
     ENFORCEMENT_ACTIONS_AS_PAST_TENSE,
 } from 'constants/enforcementActions';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
+import { violationsPFBasePath } from 'routePaths';
+import { ListAlert } from './types/violationTypes';
 
 type EntityTableCellProps = {
+    // original: ListAlert;
     original: {
         commonEntityInfo: {
             namespace: string;
@@ -28,12 +32,11 @@ function EntityTableCell({ original }: EntityTableCellProps): ReactElement {
     const { name } = resource || deployment;
     const { namespace, clusterName } = commonEntityInfo;
     return (
-        <Flex
-            direction={{ default: 'column' }}
-            // justifyContent={{ default: 'justifyContentSpaceAround' }}
-        >
-            <FlexItem>{name}</FlexItem>
-            <FlexItem>{`in "${clusterName}/${namespace}"`}</FlexItem>
+        <Flex direction={{ default: 'column' }}>
+            <FlexItem className="pf-u-mb-0">{name}</FlexItem>
+            <FlexItem className="pf-u-color-400 pf-u-font-size-xs">
+                {`in "${clusterName}/${namespace}"`}
+            </FlexItem>
         </Flex>
     );
 }
@@ -44,8 +47,8 @@ type CategoriesTableCellProps = {
 
 function CategoriesTableCell({ value }: CategoriesTableCellProps): ReactElement {
     return value.length > 1 ? (
-        <Tooltip content={<TooltipOverlay>{value.join(' | ')}</TooltipOverlay>}>
-            <div>Multiple</div>
+        <Tooltip content={value.join(' | ')}>
+            <span>Multiple</span>
         </Tooltip>
     ) : (
         <span>{value[0]}</span>
@@ -53,21 +56,14 @@ function CategoriesTableCell({ value }: CategoriesTableCellProps): ReactElement 
 }
 
 type EnforcementTableCellProps = {
-    original: {
-        lifecycleStage: string;
-        enforcementCount: number;
-        enforcementAction: string;
-        state: string;
-    };
+    original: ListAlert;
 };
 
 // Display the enforcement.
 // ////////////////////////
 function EnforcementColumn({ original }: EnforcementTableCellProps): ReactElement {
     if (BLOCKING_ENFORCEMENT_ACTIONS.has(original.enforcementAction)) {
-        const message = `${
-            ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction] as string
-        }`;
+        const message = `${ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction]}`;
         return <div className="text-alert-700">{message}</div>;
     }
 
@@ -82,23 +78,20 @@ function EnforcementColumn({ original }: EnforcementTableCellProps): ReactElemen
     return <span>{message}</span>;
 }
 
-// Display the severity.
-// /////////////////////
-const getSeverityClassName = (severityValue: string): string => {
-    const severityClassMapping = {
-        Low: 'px-2 rounded-full bg-base-200 border-2 border-base-300 text-base-600',
-        Medium: 'px-2 rounded-full bg-warning-200 border-2 border-warning-300 text-warning-800',
-        High: 'px-2 rounded-full bg-caution-200 border-2 border-caution-300 text-caution-800',
-        Critical: 'px-2 rounded-full bg-alert-200 border-2 border-alert-300 text-alert-800',
-    };
-    const res = severityClassMapping[severityValue] as string;
-    if (res) {
-        return res;
-    }
-    throw new Error(`Unknown severity: ${severityValue}`);
-};
-
 const tableColumnDescriptor = [
+    {
+        Header: 'Policy',
+        accessor: 'policy.name',
+        sortField: 'Policy',
+        Cell: ({ original }) => {
+            const url = `${violationsPFBasePath}/${original.id as string}`;
+            return (
+                <Tooltip content={original?.policy?.description || 'No description available'}>
+                    <Link to={url}>{original?.policy?.name}</Link>
+                </Tooltip>
+            );
+        },
+    },
     {
         Header: 'Entity',
         accessor: 'resource.name',
@@ -107,25 +100,7 @@ const tableColumnDescriptor = [
     {
         Header: 'Type',
         accessor: 'commonEntityInfo.resourceType',
-        Cell: ({ value }) => <span className="capitalize">{value.toLowerCase()}</span>,
-    },
-    {
-        Header: 'Policy',
-        accessor: 'policy.name',
-        sortField: 'Policy',
-        Cell: ({ original }) => (
-            <Tooltip
-                content={
-                    <TooltipOverlay>
-                        {original?.policy?.description || 'No description available'}
-                    </TooltipOverlay>
-                }
-            >
-                <div className="inline-block hover:text-primary-700 underline">
-                    {original?.policy?.name}
-                </div>
-            </Tooltip>
-        ),
+        Cell: ({ value }): string => value.toLowerCase() as string,
     },
     {
         Header: 'Enforced',
@@ -139,7 +114,7 @@ const tableColumnDescriptor = [
         sortField: 'Severity',
         Cell: ({ value }) => {
             const severity = severityLabels[value];
-            return <div className={getSeverityClassName(severity)}>{severity}</div>;
+            return <Label color={severityColorMapPF[severity]}>{severity}</Label>;
         },
     },
     {
@@ -158,7 +133,7 @@ const tableColumnDescriptor = [
         Header: 'Time',
         accessor: 'time',
         sortField: 'Violation Time',
-        Cell: ({ value }) => dateFns.format(value, dateTimeFormat),
+        Cell: ({ value }): string => dateFns.format(value, dateTimeFormat),
     },
 ];
 

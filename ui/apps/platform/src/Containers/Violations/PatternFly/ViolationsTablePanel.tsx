@@ -10,25 +10,48 @@ import {
     Select,
     SelectOption,
 } from '@patternfly/react-core';
+import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import resolvePath from 'object-resolve-path';
 
 import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
-import ViolationsTable from './ViolationsTable';
-import { Violation } from './types/violationTypes';
-// import dialogues from './dialogues';
-// import ResolveConfirmation from './Dialogues/ResolveConfirmation';
-// import ExcludeConfirmation from './Dialogues/ExcludeConfirmation';
-// import TagConfirmation from './Dialogues/TagConfirmation';
+import { resolveAlert } from 'services/AlertsService';
+import { excludeDeployments } from 'services/PoliciesService';
+import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
+import VIOLATION_STATES from 'constants/violationStates';
+import LIFECYCLE_STAGES from 'constants/lifecycleStages';
+// import ResolveConfirmation from 'Containers/Violations/Dialogues/ResolveConfirmation';
+// import ExcludeConfirmation from 'Containers/Violations/Dialogues/ExcludeConfirmation';
+// import TagConfirmation from 'Containers/Violations/Dialogues/TagConfirmation';
+import { ListAlert } from './types/violationTypes';
+// import dialogues from '../dialogues';
+
+type TableCellProps = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    row: ListAlert;
+    column: TableColumn;
+};
+
+function TableCell({ row, column }: TableCellProps): React.ReactElement {
+    let value = resolvePath(row, column.accessor);
+    if (column.Cell) {
+        value = column.Cell({ original: row, value });
+    }
+    return <Td key={column.Header}>{value || '-'}</Td>;
+}
+
+type ActionItem = {
+    title: string | ReactElement;
+    onClick: (item) => void;
+};
 
 type ViolationsTablePanelProps = {
-    violations: Violation[];
+    violations: ListAlert[];
     violationsCount: number;
-    // selectedAlertId?: string;
-    setSelectedAlertId: (id) => void;
     currentPage: number;
     setCurrentPage: (page) => void;
     resolvableAlerts: Set<string>;
-    excludableAlerts: Violation[];
+    excludableAlerts: ListAlert[];
     perPage: number;
     setPerPage: (perPage) => void;
     activeSortIndex: number;
@@ -41,8 +64,6 @@ type ViolationsTablePanelProps = {
 function ViolationsTablePanel({
     violations,
     violationsCount,
-    // selectedAlertId,
-    setSelectedAlertId,
     currentPage,
     setCurrentPage,
     perPage,
@@ -55,9 +76,6 @@ function ViolationsTablePanel({
     setActiveSortDirection,
     columns,
 }: ViolationsTablePanelProps): ReactElement {
-    // // Handle confirmation dialogue being open.
-    // const [dialogue, setDialogue] = useState(null);
-
     // Handle Row Actions dropdown state.
     const [isSelectOpen, setIsSelectOpen] = useState(false);
     const {
@@ -66,23 +84,13 @@ function ViolationsTablePanel({
         hasSelections,
         onSelect,
         onSelectAll,
+        onClearAll,
         getSelectedIds,
     } = useTableSelection(violations);
 
     function onToggleSelect(toggleOpen) {
         setIsSelectOpen(toggleOpen);
     }
-
-    // // Handle dialogue pop ups.
-    // function showResolveConfirmationDialog() {
-    //     setDialogue(dialogues.resolve);
-    // }
-    // function showExcludeConfirmationDialog() {
-    //     setDialogue(dialogues.excludeScopes);
-    // }
-    // function showTagConfirmationDialog() {
-    //     setDialogue(dialogues.tag);
-    // }
 
     // Handle page changes.
     function changePage(e, newPage) {
@@ -93,6 +101,20 @@ function ViolationsTablePanel({
 
     function changePerPage(e, newPerPage) {
         setPerPage(newPerPage);
+    }
+
+    function closeSelect() {
+        setIsSelectOpen(false);
+    }
+
+    function resolveAlertAction(addToBaseline, violation) {
+        return () => {
+            resolveAlert(violation.id, addToBaseline).then(onClearAll, onClearAll);
+        };
+    }
+    function onSort(e, index, direction) {
+        setActiveSortIndex(index);
+        setActiveSortDirection(direction);
     }
 
     const excludableAlertIds: Set<string> = new Set(excludableAlerts.map((alert) => alert.id));
@@ -130,25 +152,25 @@ function ViolationsTablePanel({
                         onToggle={onToggleSelect}
                         isOpen={isSelectOpen}
                         placeholderText="Row Actions"
-                        // onSelect={null}
+                        onSelect={closeSelect}
                         isDisabled={!hasSelections}
                     >
                         <SelectOption
                             key="0"
                             value={`Add Tags for Violations (${numSelected})`}
-                            // onClick={showTagConfirmationDialog}
+                            // onClick={setDialogueHandler(dialogues.tag)}
                         />
                         <SelectOption
                             key="1"
                             value={`Mark as Resolved (${numResolveable})`}
                             isDisabled={numResolveable === 0}
-                            // onClick={showResolveConfirmationDialog}
+                            // onClick={setDialogueHandler(dialogues.resolve)}
                         />
                         <SelectOption
                             key="2"
                             value={`Exclude (${numScopesToExclude})`}
                             isDisabled={numScopesToExclude === 0}
-                            // onClick={showExcludeConfirmationDialog}
+                            // onClick={setDialogueHandler(dialogues.excludeScopes)}
                         />
                     </Select>
                 </FlexItem>
@@ -164,20 +186,98 @@ function ViolationsTablePanel({
             </Flex>
             <Divider component="div" />
             <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
-                <ViolationsTable
-                    violations={violations}
-                    // selectedAlertId={selectedAlertId}
-                    setSelectedAlertId={setSelectedAlertId}
-                    selected={selected}
-                    onSelect={onSelect}
-                    onSelectAll={onSelectAll}
-                    allRowsSelected={allRowsSelected}
-                    activeSortIndex={activeSortIndex}
-                    setActiveSortIndex={setActiveSortIndex}
-                    activeSortDirection={activeSortDirection}
-                    setActiveSortDirection={setActiveSortDirection}
-                    columns={columns}
-                />
+                <TableComposable variant="compact">
+                    <Thead>
+                        <Tr>
+                            <Th
+                                select={{
+                                    onSelect: onSelectAll,
+                                    isSelected: allRowsSelected,
+                                }}
+                            />
+                            {columns.map(({ Header, sortField }, idx) => {
+                                const sortParams = sortField
+                                    ? {
+                                          sort: {
+                                              sortBy: {
+                                                  index: activeSortIndex,
+                                                  direction: activeSortDirection,
+                                              },
+                                              onSort,
+                                              columnIndex: idx,
+                                          },
+                                      }
+                                    : {};
+                                return (
+                                    <Th modifier="wrap" {...sortParams}>
+                                        {Header}
+                                    </Th>
+                                );
+                            })}
+                            <Th />
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        {violations.map((violation, rowIndex) => {
+                            const {
+                                state,
+                                lifecycleStage,
+                                enforcementAction,
+                                policy,
+                                id,
+                            } = violation;
+                            const isAttemptedViolation = state === VIOLATION_STATES.ATTEMPTED;
+                            const isResolved = state === VIOLATION_STATES.RESOLVED;
+                            const isRuntimeAlert = lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
+                            const isDeployCreateAttemptedAlert =
+                                enforcementAction ===
+                                ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
+
+                            const actionItems: ActionItem[] = [];
+                            if (!isResolved) {
+                                if (isRuntimeAlert) {
+                                    actionItems.push({
+                                        title: 'Resolve and add to process baseline',
+                                        onClick: () => resolveAlertAction(true, violation),
+                                    });
+                                }
+                                if (isRuntimeAlert || isAttemptedViolation) {
+                                    actionItems.push({
+                                        title: 'Mark as resolved',
+                                        onClick: () => resolveAlertAction(false, violation),
+                                    });
+                                }
+                            }
+                            if (!isDeployCreateAttemptedAlert && 'deployment' in violation) {
+                                actionItems.push({
+                                    title: 'Exclude deployment',
+                                    onClick: () =>
+                                        excludeDeployments(policy.id, [violation.deployment.name]),
+                                });
+                            }
+                            return (
+                                <Tr key={id}>
+                                    <Td
+                                        key={id}
+                                        select={{
+                                            rowIndex,
+                                            onSelect,
+                                            isSelected: selected[rowIndex],
+                                        }}
+                                    />
+                                    {columns.map((column) => {
+                                        return <TableCell row={violation} column={column} />;
+                                    })}
+                                    <Td
+                                        actions={{
+                                            items: actionItems,
+                                        }}
+                                    />
+                                </Tr>
+                            );
+                        })}
+                    </Tbody>
+                </TableComposable>
             </PageSection>
             {/* {dialogue === dialogues.excludeScopes && (
                 <ExcludeConfirmation

@@ -10,6 +10,7 @@ export type UseTableSelection = {
         rowId: number
     ) => void;
     onSelectAll: (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => void;
+    onClearAll: () => void;
     getSelectedIds: () => string[];
 };
 
@@ -25,6 +26,11 @@ function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
     React.useEffect(() => {
         setSelected(data.map(() => false));
     }, [data]);
+
+    const onClearAll = () => {
+        setSelected([]);
+        setAllRowsSelected(false);
+    };
 
     const onSelect = (event, isSelected: boolean, rowId: number) => {
         setSelected(
@@ -68,6 +74,7 @@ function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
         hasSelections,
         onSelect,
         onSelectAll,
+        onClearAll,
         getSelectedIds,
     };
 }

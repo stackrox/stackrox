@@ -51,7 +51,7 @@ export function fetchSummaryAlertCounts(filters) {
  * @returns {Promise<Object, Error>} fulfilled with normalized response
  */
 export function fetchAlerts(options, sortOption, page, pageSize) {
-    const offset = page * pageSize;
+    const offset = page > 0 ? page * pageSize : 0;
     const query = searchOptionsToQuery(options);
     const params = queryString.stringify(
         {
