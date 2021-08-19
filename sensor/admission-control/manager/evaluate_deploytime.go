@@ -31,7 +31,7 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 	}
 
 	// Do not enforce on StackRox and system namespaces
-	if req.Namespace == namespaces.StackRox || req.Namespace == m.ownNamespace || kubernetes.SystemNamespaceSet.Contains(req.Namespace) {
+	if req.Namespace == namespaces.StackRox || req.Namespace == m.ownNamespace || kubernetes.IsSystemNamespace(req.Namespace) {
 		log.Debugf("Action affects system namespace, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}
@@ -51,7 +51,7 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 	// Allow the request if it comes from a service account in a system namespace
 	if strings.HasPrefix(req.UserInfo.Username, "system:serviceaccount:") {
 		saNamespace, _ := stringutils.Split2(req.UserInfo.Username[len("system:serviceaccount:"):], ":")
-		if kubernetes.SystemNamespaceSet.Contains(saNamespace) {
+		if kubernetes.IsSystemNamespace(saNamespace) {
 			log.Debugf("Request comes from a system service account %s, bypassing %s request on %s/%s [%s]", req.UserInfo.Username, req.Operation, req.Namespace, req.Name, req.Kind)
 			return true
 		}

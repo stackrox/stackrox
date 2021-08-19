@@ -1,29 +1,23 @@
 package kubernetes
 
-import "github.com/stackrox/rox/pkg/set"
+import (
+	"regexp"
+)
+
+const (
+	// excludedOperatorNamespace defines the constant for openshift-operators which is a default namespace for many
+	// third-party operators that we do *not* want to specify as system services
+	excludedOperatorNamespace = "openshift-operators"
+)
 
 var (
-	// SystemNamespaceSet is a frozen set of system-specific namespaces in different orchestrators.
-	SystemNamespaceSet = set.NewFrozenStringSet(
-		"kube-system",
-		"kube-public",
-
-		// Istio
-		"istio-system",
-
-		// OpenShift specific namespaces
-		"kube-service-catalog",
-		"management-infra",
-		"openshift",
-		"openshift-ansible-service-broker",
-		"openshift-console",
-		"openshift-cluster-version",
-		"openshift-infra",
-		"openshift-logging",
-		"openshift-monitoring",
-		"openshift-node",
-		"openshift-sdn",
-		"openshift-template-service-broker",
-		"openshift-web-console",
-	)
+	systemNamespaceRegex = regexp.MustCompile(`^kube.|^openshift.*|^redhat.*|^istio-system$`)
 )
+
+// IsSystemNamespace returns whether or not the namespace should be considered a system namespace
+func IsSystemNamespace(namespace string) bool {
+	if namespace == excludedOperatorNamespace {
+		return false
+	}
+	return systemNamespaceRegex.MatchString(namespace)
+}

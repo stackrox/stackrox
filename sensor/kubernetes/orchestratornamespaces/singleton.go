@@ -21,7 +21,7 @@ type OrchestratorNamespaces struct {
 func Singleton() *OrchestratorNamespaces {
 	once.Do(func() {
 		namespaces = OrchestratorNamespaces{
-			nsSet: set.NewStringSet(kubernetes.SystemNamespaceSet.AsSlice()...),
+			nsSet: set.NewStringSet(),
 		}
 	})
 	return &namespaces
@@ -40,5 +40,8 @@ func (n *OrchestratorNamespaces) IsOrchestratorNamespace(ns string) bool {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
 
-	return n.nsSet.Contains(ns)
+	if n.nsSet.Contains(ns) {
+		return true
+	}
+	return kubernetes.IsSystemNamespace(ns)
 }

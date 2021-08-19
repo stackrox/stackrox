@@ -7,7 +7,7 @@ import (
 )
 
 func isProtectedNamespace(ns string) bool {
-	return ns == namespaces.StackRox || kubernetes.SystemNamespaceSet.Contains(ns)
+	return ns == namespaces.StackRox || kubernetes.IsSystemNamespace(ns)
 }
 
 func isProtectedDeployment(deployment *storage.Deployment) bool {
