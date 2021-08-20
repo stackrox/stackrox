@@ -1,0 +1,19 @@
+defs: |
+  def labels(resource):
+    resource.metadata.labels;
+
+name: "Test default labels"
+tests:
+- name: Central
+  expect: |
+    labels(.services.central) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.services.central) | ."app.kubernetes.io/component" | assertThat(. == "central")
+    labels(.deployments.central) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.deployments.central) | ."app.kubernetes.io/component" | assertThat(. == "central")
+
+- name: Scanner
+  expect: |
+    labels(.services.scanner) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.services.scanner) | ."app.kubernetes.io/component" | assertThat(. == "scanner")
+    labels(.deployments.scanner) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.deployments.scanner) | ."app.kubernetes.io/component" | assertThat(. == "scanner")

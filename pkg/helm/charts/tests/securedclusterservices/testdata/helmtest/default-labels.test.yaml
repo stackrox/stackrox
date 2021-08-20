@@ -1,0 +1,25 @@
+defs: |
+  def labels(resource):
+    resource.metadata.labels;
+
+name: "Test default labels"
+tests:
+- name: Admission Controller
+  expect: |
+    labels(.services["admission-control"]) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.services["admission-control"]) | ."app.kubernetes.io/component" | assertThat(. == "admission-control")
+    labels(.deployments["admission-control"]) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.deployments["admission-control"]) | ."app.kubernetes.io/component" | assertThat(. == "admission-control")
+
+- name: Collector
+  expect: |
+    labels(.daemonsets.collector) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.daemonsets.collector) | ."app.kubernetes.io/component" | assertThat(. == "collector")
+
+- name: Sensor
+  expect: |
+    labels(.services.sensor) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.services.sensor) | ."app.kubernetes.io/component" | assertThat(. == "sensor")
+    labels(.deployments.sensor) | ."app.kubernetes.io/name" | assertThat(. == "stackrox")
+    labels(.deployments.sensor) | ."app.kubernetes.io/component" | assertThat(. == "sensor")
+

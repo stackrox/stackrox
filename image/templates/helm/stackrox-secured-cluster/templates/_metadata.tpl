@@ -83,7 +83,7 @@
 {{ $_ = set $labels "app.kubernetes.io/instance" $.Release.Name }}
 {{ $_ = set $labels "app.kubernetes.io/version" $.Chart.AppVersion }}
 {{ $_ = set $labels "app.kubernetes.io/part-of" "stackrox-secured-cluster-services" }}
-{{ $component := regexReplaceAll "^.*/\\d{2}-([a-z]+)-\\d{2}-[^/]+\\.yaml" $.Template.Name "${1}" }}
+{{ $component := regexReplaceAll "^.*/(admission-control|collector|sensor)[^/]*\\.yaml" $.Template.Name "${1}" }}
 {{ if not (contains "/" $component) }}
   {{ $_ = set $labels "app.kubernetes.io/component" $component }}
 {{ end }}
