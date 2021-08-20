@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -124,9 +123,7 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet, baselines
 	if err != nil {
 		return errors.Wrap(err, "upserting network baselines in manager")
 	}
-	if features.NetworkDetectionBaselineViolation.Enabled() {
-		m.sendNetworkBaselinesToSensor(baselines, baselinesUnlocked)
-	}
+	m.sendNetworkBaselinesToSensor(baselines, baselinesUnlocked)
 	return nil
 }
 

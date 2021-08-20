@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -40,7 +39,7 @@ func ValidateSourceIsAuditLogEvents() ValidateOption {
 
 // Validate validates the policy, to make sure it's a well-formed Boolean policy.
 func Validate(p *storage.Policy, options ...ValidateOption) error {
-	if features.K8sAuditLogDetection.Enabled() && p.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+	if p.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
 		options = append(options, ValidateSourceIsAuditLogEvents())
 	}
 	configuration := &validateConfiguration{}
@@ -98,14 +97,13 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			}
 		}
 
-		if features.K8sAuditLogDetection.Enabled() {
-			if !isApplicableToEventSource(m, eventSource) {
-				errorList.AddStringf("policy criteria %q is invalid for event source: %s", g.GetFieldName(), eventSource)
-			}
+		if !isApplicableToEventSource(m, eventSource) {
+			errorList.AddStringf("policy criteria %q is invalid for event source: %s", g.GetFieldName(), eventSource)
 		}
+
 	}
 
-	if features.K8sAuditLogDetection.Enabled() && eventSource == storage.EventSource_AUDIT_LOG_EVENT {
+	if eventSource == storage.EventSource_AUDIT_LOG_EVENT {
 		// For Audit Log source based policies, both the k8s resource and verb must be provided.
 		if !seenFields.Contains(fieldnames.KubeResource) {
 			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeResource)

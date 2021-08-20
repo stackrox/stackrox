@@ -8,8 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,12 +18,6 @@ func TestPolicyValueValidator(t *testing.T) {
 
 type PolicyValueValidator struct {
 	suite.Suite
-
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *PolicyValueValidator) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *PolicyValueValidator) TestRegex() {
@@ -249,10 +241,6 @@ func (s *PolicyValueValidator) TestValidateMultipleSections() {
 }
 
 func (s *PolicyValueValidator) TestValidateKubeResourceSpecifiedForAuditEventSource() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
 	assert.NoError(s.T(), Validate(&storage.Policy{
 		Name:            "runtime-policy-valid",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
@@ -305,10 +293,6 @@ func (s *PolicyValueValidator) TestValidateKubeResourceSpecifiedForAuditEventSou
 }
 
 func (s *PolicyValueValidator) TestValidateKubeAPIVerbSpecifiedForAuditEventSource() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
 	assert.NoError(s.T(), Validate(&storage.Policy{
 		Name:            "runtime-policy-valid",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
@@ -361,10 +345,6 @@ func (s *PolicyValueValidator) TestValidateKubeAPIVerbSpecifiedForAuditEventSour
 }
 
 func (s *PolicyValueValidator) TestValidatePolicyCriteriaForAuditEventSource() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
 	assert.NoError(s.T(), Validate(&storage.Policy{
 		Name:            "runtime-policy-valid-criteria",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
@@ -425,11 +405,6 @@ func (s *PolicyValueValidator) TestValidatePolicyCriteriaForAuditEventSource() {
 }
 
 func (s *PolicyValueValidator) TestValidatePolicyValueRegexForAuditEventSource() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-
 	cases := []struct {
 		name         string
 		resourceType string

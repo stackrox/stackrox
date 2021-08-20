@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 )
 
@@ -54,11 +53,6 @@ func (d *detectorImpl) DetectNetworkFlowForDeployment(
 	images []*storage.Image,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) []*storage.Alert {
-	if !features.NetworkDetectionBaselineViolation.Enabled() {
-		log.Error("Cannot detect network flow. Support for network flow policies is not enabled.")
-		return nil
-	}
-
 	alerts, err := d.runtimeDetector.DetectForDeploymentAndNetworkFlow(deployment, images, flow)
 	if err != nil {
 		log.Errorf("Error running runtime policies for network flow %v: %v", flow, err)

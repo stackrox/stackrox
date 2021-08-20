@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
@@ -677,9 +676,8 @@ func (suite *ManagerTestSuite) TestLockBaseline() {
 	beforeLockUpdateState := baseline1.GetLocked()
 	baseline1Copy := baseline1.Clone()
 	baseline1Copy.Locked = !beforeLockUpdateState
-	if features.NetworkDetectionBaselineViolation.Enabled() {
-		expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
-	}
+	expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
+
 	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), !beforeLockUpdateState))
 	afterLockUpdateState := suite.mustGetBaseline(1).GetLocked()
 	suite.NotEqual(beforeLockUpdateState, afterLockUpdateState)
@@ -739,9 +737,6 @@ func (suite *ManagerTestSuite) TestProcessPostClusterDelete() {
 }
 
 func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
-	if !features.NetworkDetectionBaselineViolation.Enabled() {
-		return
-	}
 	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	suite.mustInitManager(
 		baselineWithPeers(1, depPeer(2, properties(false, 52))),

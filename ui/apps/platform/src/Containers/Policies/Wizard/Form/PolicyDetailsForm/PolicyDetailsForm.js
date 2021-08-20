@@ -34,27 +34,19 @@ function PolicyDetailsForm({
     policyCategories,
     mitreVectorsLocked,
 }) {
-    const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
     const isMitreEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_SYSTEM_POLICY_MITRE_FRAMEWORK
     );
     useEffect(() => {
-        if (auditLogEnabled) {
-            // clear Event Source if Runtime lifecycle stage is not included
-            if (!includesRuntimeLifecycleStage) {
-                changeForm('eventSource', 'NOT_APPLICABLE');
-            }
-            // clear Excluded Images if Audit Log Event Source is selected
-            if (
-                includesRuntimeLifecycleStage &&
-                includesAuditLogEventSource &&
-                hasExcludedImageNames
-            ) {
-                changeForm(clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES, []);
-            }
+        // clear Event Source if Runtime lifecycle stage is not included
+        if (!includesRuntimeLifecycleStage) {
+            changeForm('eventSource', 'NOT_APPLICABLE');
+        }
+        // clear Excluded Images if Audit Log Event Source is selected
+        if (includesRuntimeLifecycleStage && includesAuditLogEventSource && hasExcludedImageNames) {
+            changeForm(clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES, []);
         }
     }, [
-        auditLogEnabled,
         includesAuditLogEventSource,
         includesRuntimeLifecycleStage,
         hasExcludedImageNames,
@@ -94,30 +86,28 @@ function PolicyDetailsForm({
                             }))}
                         />
                     </FormField>
-                    {auditLogEnabled && (
-                        <FormField
-                            label="Event Sources"
-                            required={includesRuntimeLifecycleStage}
-                            testId="event-sources"
-                        >
-                            <ReduxSelectField
-                                name="eventSource"
-                                options={[
-                                    {
-                                        label: 'Not applicable to selected lifecycle ',
-                                        value: 'NOT_APPLICABLE',
-                                    },
-                                    {
-                                        label: 'Deployment',
-                                        value: 'DEPLOYMENT_EVENT',
-                                    },
-                                    { label: 'Audit Log', value: 'AUDIT_LOG_EVENT' },
-                                ]}
-                                disabled={!includesRuntimeLifecycleStage}
-                                filterOption={filterEventSourceOptions}
-                            />
-                        </FormField>
-                    )}
+                    <FormField
+                        label="Event Sources"
+                        required={includesRuntimeLifecycleStage}
+                        testId="event-sources"
+                    >
+                        <ReduxSelectField
+                            name="eventSource"
+                            options={[
+                                {
+                                    label: 'Not applicable to selected lifecycle ',
+                                    value: 'NOT_APPLICABLE',
+                                },
+                                {
+                                    label: 'Deployment',
+                                    value: 'DEPLOYMENT_EVENT',
+                                },
+                                { label: 'Audit Log', value: 'AUDIT_LOG_EVENT' },
+                            ]}
+                            disabled={!includesRuntimeLifecycleStage}
+                            filterOption={filterEventSourceOptions}
+                        />
+                    </FormField>
                     <FormField label="Description">
                         <ReduxTextAreaField
                             name="description"
@@ -173,7 +163,7 @@ function PolicyDetailsForm({
                                 label: image.name,
                                 value: image.name,
                             }))}
-                            disabled={auditLogEnabled && includesAuditLogEventSource}
+                            disabled={includesAuditLogEventSource}
                         />
                     </FormField>
                 </FormSectionBody>

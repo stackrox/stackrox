@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -197,7 +196,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesAPIVerbCustomTag),
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
-			if features.K8sAuditLogDetection.Enabled() && c != nil && c.sourceIsAuditLogEvents {
+			if c != nil && c.sourceIsAuditLogEvents {
 				return auditEventAPIVerbValueRegex
 			}
 			return kubernetesAPIVerbValueRegex
@@ -208,7 +207,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceCustomTag),
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
-			if features.K8sAuditLogDetection.Enabled() && c != nil && c.sourceIsAuditLogEvents {
+			if c != nil && c.sourceIsAuditLogEvents {
 				return auditEventResourceValueRegex
 			}
 			return kubernetesResourceValueRegex
@@ -227,30 +226,29 @@ func initializeFieldMetadata() FieldMetadata {
 		kubernetesNameRegex, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
 	)
 
-	if features.K8sAuditLogDetection.Enabled() {
-		f.registerFieldMetadata(
-			fieldnames.KubeResourceName,
-			querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceNameCustomTag), nil, kubernetesNameRegex,
-			[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		)
+	f.registerFieldMetadata(
+		fieldnames.KubeResourceName,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceNameCustomTag), nil, kubernetesNameRegex,
+		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
+	)
 
-		f.registerFieldMetadata(
-			fieldnames.SourceIPAddress,
-			querybuilders.ForFieldLabel(augmentedobjs.KubernetesSourceIPAddressCustomTag), nil,
-			ipAddressValueRegex, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		)
-		f.registerFieldMetadata(
-			fieldnames.UserAgent,
-			querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserAgentCustomTag), nil,
-			stringValueRegex, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		)
+	f.registerFieldMetadata(
+		fieldnames.SourceIPAddress,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesSourceIPAddressCustomTag), nil,
+		ipAddressValueRegex, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
+	)
+	f.registerFieldMetadata(
+		fieldnames.UserAgent,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesUserAgentCustomTag), nil,
+		stringValueRegex, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
+	)
 
-		f.registerFieldMetadata(
-			fieldnames.IsImpersonatedUser,
-			querybuilders.ForFieldLabel(augmentedobjs.KubernetesIsImpersonatedCustomTag), nil,
-			booleanValueRegex, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT}, negationForbidden,
-			operatorsForbidden,
-		)
-	}
+	f.registerFieldMetadata(
+		fieldnames.IsImpersonatedUser,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesIsImpersonatedCustomTag), nil,
+		booleanValueRegex, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT}, negationForbidden,
+		operatorsForbidden,
+	)
+
 	return f
 }

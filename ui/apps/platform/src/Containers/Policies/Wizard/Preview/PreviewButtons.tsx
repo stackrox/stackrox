@@ -4,8 +4,6 @@ import { ArrowLeft, ArrowRight } from 'react-feather';
 import { createStructuredSelector } from 'reselect';
 import { formValueSelector } from 'redux-form';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { actions as wizardActions } from 'reducers/policies/wizard';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import PanelButton from 'Components/PanelButton';
@@ -20,8 +18,6 @@ function PreviewButtons({
     hasAuditLogEventSource,
     setWizardStage,
 }: PreviewButtonsProps): ReactElement {
-    const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
-
     function goBackToEditBPL() {
         setWizardStage(wizardStages.editBPL);
     }
@@ -30,7 +26,7 @@ function PreviewButtons({
         setWizardStage(wizardStages.enforcement);
     }
 
-    const skipEnforcement = auditLogEnabled && hasAuditLogEventSource;
+    const skipEnforcement = hasAuditLogEventSource;
 
     return (
         <>

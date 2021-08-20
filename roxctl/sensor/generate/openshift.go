@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -67,8 +66,7 @@ func openshift() *cobra.Command {
 	}
 	c.PersistentFlags().IntVar(&openshiftVersion, "openshift-version", 0, "OpenShift major version to generate deployment files for")
 	flags.OptBoolFlagVarPF(c.PersistentFlags(), &admissionControllerEvents, "admission-controller-listen-on-events", "", "enable admission controller webhook to listen on Kubernetes events", "auto")
-	if features.K8sAuditLogDetection.Enabled() {
-		flags.OptBoolFlagVarPF(c.PersistentFlags(), &disableAuditLogCollection, "disable-audit-logs", "", "disable audit log collection for runtime detection", "auto")
-	}
+	flags.OptBoolFlagVarPF(c.PersistentFlags(), &disableAuditLogCollection, "disable-audit-logs", "", "disable audit log collection for runtime detection", "auto")
+
 	return c
 }

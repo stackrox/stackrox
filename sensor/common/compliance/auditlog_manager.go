@@ -3,7 +3,6 @@ package compliance
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -80,11 +79,6 @@ func (a *AuditLogCollectionManager) setAuditCollectionFlag(val bool) bool {
 
 // EnableCollection enables audit log collection on all the nodes who are eligible
 func (a *AuditLogCollectionManager) EnableCollection() {
-	if !features.K8sAuditLogDetection.Enabled() {
-		log.Error("Request to enable audit log collection when feature is disabled!")
-		return
-	}
-
 	if shouldEnable := a.setAuditCollectionFlag(true); shouldEnable {
 		a.lock.RLock() // locked because we will need to read state when enabling collection
 		defer a.lock.RUnlock()
@@ -126,22 +120,12 @@ func (a *AuditLogCollectionManager) startCollectionOnNodeNoLock(node string, ser
 
 // DisableCollection disables audit log collection on all the nodes who are eligible
 func (a *AuditLogCollectionManager) DisableCollection() {
-	if !features.K8sAuditLogDetection.Enabled() {
-		log.Error("Request to enable audit log collection when feature is disabled!")
-		return
-	}
-
 	if shouldDisable := a.setAuditCollectionFlag(false); shouldDisable {
 		a.stopAuditLogCollectionOnAllNodes()
 	}
 }
 
 func (a *AuditLogCollectionManager) stopAuditLogCollectionOnAllNodes() {
-	if !features.K8sAuditLogDetection.Enabled() {
-		log.Error("Request to disable audit log collection when feature is disabled!")
-		return
-	}
-
 	a.forEachNode(func(node string, server sensor.ComplianceService_CommunicateServer) {
 		log.Infof("Sending stop audit log collection message to node %s", node)
 		msg := &sensor.MsgToCompliance{
@@ -165,10 +149,6 @@ func (a *AuditLogCollectionManager) stopAuditLogCollectionOnAllNodes() {
 // UpdateAuditLogFileState updates the location at which each node collects audit logs
 // If the feature is already enabled and there are eligible nodes, then this will restart collection on those nodes from this state
 func (a *AuditLogCollectionManager) UpdateAuditLogFileState(fileStates map[string]*storage.AuditLogFileState) {
-	if !features.K8sAuditLogDetection.Enabled() {
-		log.Error("Request to enable audit log collection when feature is disabled!")
-		return
-	}
 	a.lock.Lock()
 	a.fileStates = fileStates
 	a.lock.Unlock()

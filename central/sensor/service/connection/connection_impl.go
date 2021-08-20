@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -402,15 +401,14 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			return errors.Wrapf(err, "unable to sync initial process baselines to cluster %q", c.clusterID)
 		}
 
-		if features.NetworkDetectionBaselineViolation.Enabled() {
-			msg, err = c.getNetworkBaselineSyncMsg(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "unable to get network baseline sync msg for %q", c.clusterID)
-			}
-			if err := server.Send(msg); err != nil {
-				return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
-			}
+		msg, err = c.getNetworkBaselineSyncMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get network baseline sync msg for %q", c.clusterID)
 		}
+		if err := server.Send(msg); err != nil {
+			return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
+		}
+
 	}
 
 	go c.runSend(server)
@@ -422,7 +420,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
-	if features.K8sAuditLogDetection.Enabled() && connectionCapabilities.Contains(centralsensor.AuditLogEventsCap) {
+	if connectionCapabilities.Contains(centralsensor.AuditLogEventsCap) {
 		msg, err := c.getAuditLogSyncMsg(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get audit log file state sync msg for %q", c.clusterID)

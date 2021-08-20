@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -59,10 +58,6 @@ func TestGetPolicySyncMsgFromPolicies(t *testing.T) {
 func TestSendsAuditLogSyncMessageIfEnabledOnRun(t *testing.T) {
 	envIsolator := envisolator.NewEnvIsolator(t)
 	defer envIsolator.RestoreAll()
-	envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		t.Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
 
 	ctx := context.Background()
 	clusterID := "this-cluster"

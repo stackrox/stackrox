@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -100,11 +99,6 @@ func (u *updaterImpl) updateFileState(node string, latestTime *types.Timestamp, 
 }
 
 func (u *updaterImpl) runUpdater() {
-	if !features.K8sAuditLogDetection.Enabled() {
-		log.Info("Stopping audit log file state updater since the flag is disabled")
-		return
-	}
-
 	ticker := time.NewTicker(u.updateInterval)
 	defer ticker.Stop()
 

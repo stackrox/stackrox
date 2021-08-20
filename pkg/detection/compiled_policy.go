@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
@@ -33,20 +32,19 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	compiled := &compiledPolicy{
 		policy: policy,
 	}
-	if features.K8sAuditLogDetection.Enabled() {
-		if policies.AppliesAtRunTime(policy) &&
-			policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
-			filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-				return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.AuditLogEventsFields)
-			})
-			if len(filtered.GetPolicySections()) > 0 {
-				compiled.hasAuditEventsSection = true
-				auditLogEventMatcher, err := booleanpolicy.BuildAuditLogEventMatcher(filtered)
-				if err != nil {
-					return nil, errors.Wrapf(err, "building audit log event matcher for policy %q", policy.GetName())
-				}
-				compiled.auditLogEventMatcher = auditLogEventMatcher
+
+	if policies.AppliesAtRunTime(policy) &&
+		policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.AuditLogEventsFields)
+		})
+		if len(filtered.GetPolicySections()) > 0 {
+			compiled.hasAuditEventsSection = true
+			auditLogEventMatcher, err := booleanpolicy.BuildAuditLogEventMatcher(filtered)
+			if err != nil {
+				return nil, errors.Wrapf(err, "building audit log event matcher for policy %q", policy.GetName())
 			}
+			compiled.auditLogEventMatcher = auditLogEventMatcher
 		}
 	}
 
@@ -80,18 +78,16 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 			compiled.kubeEventsMatcher = kubeEventsMatcher
 		}
 
-		if features.NetworkDetectionBaselineViolation.Enabled() {
-			filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-				return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.NetworkFlowFields)
-			})
-			if len(filtered.GetPolicySections()) > 0 {
-				compiled.hasNetworkFlowSection = true
-				deploymentWithNetworkFlowMatcher, err := booleanpolicy.BuildDeploymentWithNetworkFlowMatcher(filtered)
-				if err != nil {
-					return nil, errors.Wrapf(err, "building network baseline matcher for policy %q", policy.GetName())
-				}
-				compiled.deploymentWithNetworkFlowMatcher = deploymentWithNetworkFlowMatcher
+		filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.NetworkFlowFields)
+		})
+		if len(filtered.GetPolicySections()) > 0 {
+			compiled.hasNetworkFlowSection = true
+			deploymentWithNetworkFlowMatcher, err := booleanpolicy.BuildDeploymentWithNetworkFlowMatcher(filtered)
+			if err != nil {
+				return nil, errors.Wrapf(err, "building network baseline matcher for policy %q", policy.GetName())
 			}
+			compiled.deploymentWithNetworkFlowMatcher = deploymentWithNetworkFlowMatcher
 		}
 
 		// There should be exactly one defined
@@ -143,7 +139,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 
 	if policies.AppliesAtDeployTime(policy) || policies.AppliesAtRunTime(policy) {
 		compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
-		if features.K8sAuditLogDetection.Enabled() && policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+		if policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
 			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
 		}
 	}
@@ -165,6 +161,9 @@ func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
 		numMatchers++
 	}
 	if cp.deploymentWithNetworkFlowMatcher != nil {
+		numMatchers++
+	}
+	if cp.auditLogEventMatcher != nil {
 		numMatchers++
 	}
 

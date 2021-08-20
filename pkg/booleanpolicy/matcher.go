@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -123,10 +122,6 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 
 // BuildAuditLogEventMatcher builds a AuditLogEventMatcher.
 func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (AuditLogEventMatcher, error) {
-	if !features.K8sAuditLogDetection.Enabled() {
-		return nil, errors.Errorf("please enable %q feature", features.K8sAuditLogDetection.EnvVar())
-	}
-
 	sectionsAndEvals, err := getSectionsAndEvals(&kubeEventFactory, p, storage.LifecycleStage_RUNTIME, options...)
 	if err != nil {
 		return nil, err
@@ -187,9 +182,6 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 
 // BuildDeploymentWithNetworkFlowMatcher builds a DeploymentWithNetworkFlowMatcher
 func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithNetworkFlowMatcher, error) {
-	if !features.NetworkDetectionBaselineViolation.Enabled() {
-		return nil, errors.Errorf("please enable %q feature", features.NetworkDetectionBaselineViolation.EnvVar())
-	}
 	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err

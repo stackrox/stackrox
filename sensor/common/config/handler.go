@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -69,7 +68,7 @@ func (c *configHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	if features.K8sAuditLogDetection.Enabled() && msg.GetAuditLogSync() != nil {
+	if msg.GetAuditLogSync() != nil {
 		err := c.parseMessage(func() {
 			log.Infof("Received audit log sync state from Central: %s", protoutils.NewWrapper(msg.GetAuditLogSync()))
 			// This will restart collection only if it's already started. If it's the first time, it just saves the state and does nothing (until it is started eventually)
@@ -89,9 +88,7 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 			if c.admCtrlSettingsMgr != nil {
 				c.admCtrlSettingsMgr.UpdateConfig(config.GetConfig())
 			}
-			if !features.K8sAuditLogDetection.Enabled() {
-				return
-			}
+
 			if c.config.DisableAuditLogs {
 				log.Infof("Stopping audit log collection")
 				c.auditLogCollectionManager.DisableCollection()

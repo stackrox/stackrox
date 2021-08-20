@@ -30,9 +30,6 @@ function BaselineSettings({
     const isBaselineSimulationFeatureEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_SIMULATION
     );
-    const isBaselineViolationEnabled = useFeatureFlagEnabled(
-        'ROX_NETWORK_DETECTION_BASELINE_VIOLATION'
-    );
     const {
         data: { networkBaselines, isAlertingEnabled },
         isLoading,
@@ -43,7 +40,7 @@ function BaselineSettings({
         entityIdToNamespaceMap,
     });
 
-    const headerComponents = isBaselineViolationEnabled && (
+    const headerComponents = (
         <AlertBaselineViolations deploymentId={deploymentId} isEnabled={isAlertingEnabled} />
     );
 

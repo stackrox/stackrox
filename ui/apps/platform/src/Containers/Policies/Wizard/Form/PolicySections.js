@@ -4,8 +4,6 @@ import { PlusCircle } from 'react-feather';
 import { FieldArray } from 'redux-form';
 
 import reduxFormPropTypes from 'constants/reduxFormPropTypes';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { policyConfigurationDescriptor } from './descriptors';
 import { addFieldArrayHandler, removeFieldArrayHandler } from './utils';
 import PolicySection from './PolicySection';
@@ -46,11 +44,10 @@ function PolicySections({
     hasAuditLogEventSource: shouldHaveAuditLogFields,
 }) {
     const newPolicySection = getNewPolicySection(fields.length);
-    const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
 
     useEffect(() => {
         // clear policy sections if user toggles between event source options
-        if (auditLogEnabled && fields.length > 0 && !readOnly) {
+        if (fields.length > 0 && !readOnly) {
             const field = fields.get(0);
             if (!meta.pristine) {
                 if (field?.policyGroups.length > 0) {
@@ -65,7 +62,7 @@ function PolicySections({
                 }
             }
         }
-    }, [fields, auditLogEnabled, shouldHaveAuditLogFields, descriptor, readOnly, meta]);
+    }, [fields, shouldHaveAuditLogFields, descriptor, readOnly, meta]);
     return (
         <div className={`p-3 ${className} overflow-y-scroll`}>
             {hasHeader && <h2 className="text-2xl pb-2">Policy Criteria</h2>}

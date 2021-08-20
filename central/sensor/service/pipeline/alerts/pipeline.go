@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -85,7 +84,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	// All alerts in an `alertResults` message will correspond to just one source (ie, either audit event or deployment), by construction.
-	if features.K8sAuditLogDetection.Enabled() && alertResults.GetSource() == central.AlertResults_AUDIT_EVENT {
+	if alertResults.GetSource() == central.AlertResults_AUDIT_EVENT {
 		if err := s.lifecycleManager.HandleResourceAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
 			return errors.Wrap(err, "error handling resource alerts")
 		}

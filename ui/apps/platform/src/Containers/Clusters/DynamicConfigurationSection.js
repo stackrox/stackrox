@@ -2,8 +2,7 @@ import React from 'react';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
+
 import {
     labelClassName,
     sublabelClassName,
@@ -18,9 +17,6 @@ import HelmValueWarning from './Components/HelmValueWarning';
 
 const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, clusterType }) => {
     const { registryOverride, admissionControllerConfig } = dynamicConfig;
-    const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
-    );
 
     const isLoggingSupported = clusterType === clusterTypes.OPENSHIFT_4;
     // @TODO, replace open prop with dynamic logic, based on clusterType
@@ -167,37 +163,31 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                         }
                     />
                 </div>
-                {isK8sAuditLoggingEnabled && (
-                    <div className={wrapperMarginClassName}>
-                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
-                            <label
-                                htmlFor="dynamicConfig.disableAuditLogs"
-                                className={labelClassName}
-                            >
-                                Enable Cluster Audit Logging
-                            </label>
-                            <ToggleSwitch
-                                id="dynamicConfig.disableAuditLogs"
-                                name="dynamicConfig.disableAuditLogs"
-                                disabled={!isLoggingSupported}
-                                toggleHandler={handleChange}
-                                enabled={dynamicConfig.disableAuditLogs}
-                                flipped
-                            />
-                        </div>
-                        {!isLoggingSupported && (
-                            <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
-                                This setting will not work for Kubernetes or OpenShift 3.x. To
-                                enable logging, you must upgrade your cluster to OpenShift 4 or
-                                higher.
-                            </div>
-                        )}
-                        <HelmValueWarning
-                            currentValue={dynamicConfig.disableAuditLogs}
-                            helmValue={helmConfig?.dynamicConfig?.disableAuditLogs}
+                <div className={wrapperMarginClassName}>
+                    <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                        <label htmlFor="dynamicConfig.disableAuditLogs" className={labelClassName}>
+                            Enable Cluster Audit Logging
+                        </label>
+                        <ToggleSwitch
+                            id="dynamicConfig.disableAuditLogs"
+                            name="dynamicConfig.disableAuditLogs"
+                            disabled={!isLoggingSupported}
+                            toggleHandler={handleChange}
+                            enabled={dynamicConfig.disableAuditLogs}
+                            flipped
                         />
                     </div>
-                )}
+                    {!isLoggingSupported && (
+                        <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
+                            This setting will not work for Kubernetes or OpenShift 3.x. To enable
+                            logging, you must upgrade your cluster to OpenShift 4 or higher.
+                        </div>
+                    )}
+                    <HelmValueWarning
+                        currentValue={dynamicConfig.disableAuditLogs}
+                        helmValue={helmConfig?.dynamicConfig?.disableAuditLogs}
+                    />
+                </div>
             </div>
         </CollapsibleSection>
     );

@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -129,7 +128,7 @@ func (d *detectorImpl) detectForDeployment(
 			}
 		}
 
-		if flow != nil && features.NetworkDetectionBaselineViolation.Enabled() {
+		if flow != nil {
 			violation, err := compiled.MatchAgainstDeploymentAndNetworkFlow(&cacheReceptable, deployment, images, flow)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; network flow %+v",

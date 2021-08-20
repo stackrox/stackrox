@@ -9,9 +9,6 @@ var (
 	// ComplianceInRocksDB switches compliance over to using RocksDB instead of Bolt
 	ComplianceInRocksDB = registerFeature("Switch compliance to using RocksDB", "ROX_COMPLIANCE_IN_ROCKSDB", true)
 
-	// NetworkDetectionBaselineViolation enables new features related to the baseline violation part of the network detection experience.
-	NetworkDetectionBaselineViolation = registerFeature("Enable network detection baseline violation", "ROX_NETWORK_DETECTION_BASELINE_VIOLATION", true)
-
 	// NetworkDetectionBaselineSimulation enables new features related to the baseline simulation part of the network detection experience.
 	NetworkDetectionBaselineSimulation = registerFeature("Enable network detection baseline simulation", "ROX_NETWORK_DETECTION_BASELINE_SIMULATION", true)
 
@@ -23,9 +20,6 @@ var (
 
 	// ScopedAccessControl enables scoped access control in core product
 	ScopedAccessControl = registerFeature("Enable scoped access control in core product", "ROX_SCOPED_ACCESS_CONTROL_V2", true)
-
-	// K8sAuditLogDetection enables detection of kubernetes audit log based event detection.
-	K8sAuditLogDetection = registerFeature("Enable detection of kubernetes audit log based event detection", "ROX_K8S_AUDIT_LOG_DETECTION", true)
 
 	// InactiveImageScanningUI enables UI to facilitate scanning of inactive images.
 	InactiveImageScanningUI = registerFeature("Enable UI to facilitate scanning of inactive images", "ROX_INACTIVE_IMAGE_SCANNING_UI", true)

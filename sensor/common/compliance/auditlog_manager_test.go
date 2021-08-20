@@ -6,8 +6,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,22 +29,6 @@ func TestAuditLogCollectionManager(t *testing.T) {
 
 type AuditLogCollectionManagerTestSuite struct {
 	suite.Suite
-
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *AuditLogCollectionManagerTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-
-	// Some test runs (e.g. go-unit-tests-release will force the flag to be disabled, so skip these tests in those cases)
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-}
-
-func (s *AuditLogCollectionManagerTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[string]sensor.ComplianceService_CommunicateServer, map[string]*storage.AuditLogFileState) {

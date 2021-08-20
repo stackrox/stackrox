@@ -6,8 +6,6 @@ import { FieldArray, reduxForm, formValueSelector } from 'redux-form';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { Message } from '@stackrox/ui-components';
 import PolicyBuilderKeys from './PolicyBuilderKeys';
 import PolicySections from './PolicySections';
@@ -19,20 +17,13 @@ import {
 
 function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource, criteriaLocked }) {
     const [descriptor, setDescriptor] = useState([]);
-    const networkDetectionBaselineViolationEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_VIOLATION
-    );
-    const auditLogEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION);
-
     useEffect(() => {
-        if (auditLogEnabled && hasAuditLogEventSource) {
+        if (hasAuditLogEventSource) {
             setDescriptor(auditLogDescriptor);
-        } else if (networkDetectionBaselineViolationEnabled) {
-            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
         } else {
-            setDescriptor(policyConfigurationDescriptor);
+            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
         }
-    }, [auditLogEnabled, hasAuditLogEventSource, networkDetectionBaselineViolationEnabled]);
+    }, [hasAuditLogEventSource]);
 
     if (readOnly || criteriaLocked) {
         return (
@@ -61,7 +52,6 @@ function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource, cri
             </div>
         );
     }
-
     return (
         <DndProvider backend={HTML5Backend}>
             <div className="w-full h-full flex">

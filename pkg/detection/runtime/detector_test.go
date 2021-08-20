@@ -9,8 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -21,23 +19,9 @@ func TestRuntimeDetector(t *testing.T) {
 
 type RuntimeDetectorTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *RuntimeDetectorTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-}
-
-func (s *RuntimeDetectorTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *RuntimeDetectorTestSuite) TestUpdateSecrets() {
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-
 	policySet := detection.NewPolicySet()
 
 	err := policySet.UpsertPolicy(s.getUpdateSecretPolicy())
@@ -56,9 +40,6 @@ func (s *RuntimeDetectorTestSuite) TestUpdateSecrets() {
 }
 
 func (s *RuntimeDetectorTestSuite) TestCreateConfigMap() {
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
 	policySet := detection.NewPolicySet()
 
 	err := policySet.UpsertPolicy(s.getCreateConfigmapPolicy())

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
@@ -277,12 +276,6 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 }
 
 func (suite *AlertManagerTestSuite) TestNewResourceAlertIsAdded() {
-	// Required because the test policies are covered under this feature
-	suite.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		suite.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-
 	alerts := getResourceAlerts()
 	newAlert := fixtures.GetResourceAlert()
 
@@ -306,12 +299,6 @@ func (suite *AlertManagerTestSuite) TestNewResourceAlertIsAdded() {
 }
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
-	// Required because the test policies are covered under this feature
-	suite.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		suite.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].Clone()
 	newAlert.Violations[0].Message = "new-violation"
@@ -340,12 +327,6 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 }
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfMoreThanMax() {
-	// Required because the test policies are covered under this feature
-	suite.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		suite.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].Clone()
 	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
@@ -377,12 +358,6 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 }
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolations() {
-	// Required because the test policies are covered under this feature
-	suite.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		suite.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-
 	alerts := getResourceAlerts()
 	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {

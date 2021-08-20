@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -135,6 +134,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		upgradeCmdHandler,
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
+		auditLogUpdaterComponent,
 	}
 
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()
@@ -151,10 +151,6 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
-	}
-
-	if features.K8sAuditLogDetection.Enabled() {
-		components = append(components, auditLogUpdaterComponent)
 	}
 
 	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())

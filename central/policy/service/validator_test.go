@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -197,10 +196,6 @@ func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, eventSource 
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping ...", features.K8sAuditLogDetection.EnvVar())
-	}
 	testCases := []struct {
 		description string
 		p           *storage.Policy
@@ -509,10 +504,6 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 }
 
 func (s *PolicyValidatorTestSuite) TestAllDefaultPoliciesValidate() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping ...", features.K8sAuditLogDetection.EnvVar())
-	}
 	defaultPolicies, err := policies.DefaultPolicies()
 	s.Require().NoError(err)
 
@@ -523,10 +514,6 @@ func (s *PolicyValidatorTestSuite) TestAllDefaultPoliciesValidate() {
 }
 
 func (s *PolicyValidatorTestSuite) TestNoScopeLabelsForAuditEventSource() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
 	validPolicy := &storage.Policy{
 		Name:            "runtime-policy-valid",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
@@ -605,11 +592,6 @@ func (s *PolicyValidatorTestSuite) TestNoScopeLabelsForAuditEventSource() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping ...", features.K8sAuditLogDetection.EnvVar())
-	}
-
 	assert.Error(s.T(), s.validator.validateEventSource(&storage.Policy{
 		Name:            "deploy-policy",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},

@@ -3,7 +3,6 @@ import selectors from '../../selectors';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { clickOnNodeByName } from '../../helpers/networkGraph';
-import checkFeatureFlag from '../../helpers/features';
 
 const tableDataRows = 'table tr[data-testid="data-row"]';
 const tableStatusHeaders = 'table tr[data-testid="subhead-row"]';
@@ -189,12 +188,6 @@ describe('Network Baseline Flows', () => {
         });
 
         describe('Cluster with Helm management', () => {
-            before(function beforeHook() {
-                if (checkFeatureFlag('ROX_NETWORK_DETECTION_BASELINE_VIOLATION', false)) {
-                    this.skip();
-                }
-            });
-
             it('should toggle the alert on baseline violations toggle', () => {
                 cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                     const baselineViolationsToggle = '[data-testid="toggle-switch-checkbox"]';

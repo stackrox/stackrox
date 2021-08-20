@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -227,10 +226,8 @@ func (m *networkFlowManager) enrichAndSend() {
 	}
 
 	// Before sending, run the flows through policies asynchronously
-	if features.NetworkDetectionBaselineViolation.Enabled() {
-		for _, flow := range updatedConns {
-			m.policyDetector.ProcessNetworkFlow(flow)
-		}
+	for _, flow := range updatedConns {
+		m.policyDetector.ProcessNetworkFlow(flow)
 	}
 
 	metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))

@@ -8,8 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -27,24 +25,9 @@ func TestUpdater(t *testing.T) {
 
 type UpdaterTestSuite struct {
 	suite.Suite
-
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *UpdaterTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *UpdaterTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *UpdaterTestSuite) TestUpdater() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-
 	now := time.Now()
 	node1Msg := s.getMsgFromCompliance("node-one", []*storage.KubernetesEvent{
 		s.getKubeEvent(s.getAsProtoTime(now.Add(-10 * time.Minute))),
@@ -79,11 +62,6 @@ func (s *UpdaterTestSuite) TestUpdater() {
 }
 
 func (s *UpdaterTestSuite) TestUpdaterDoesNotSendWhenNoFileStates() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping...", features.K8sAuditLogDetection.Name())
-	}
-
 	updater := NewUpdater(updateInterval, make(chan *sensor.MsgFromCompliance, 5))
 
 	err := updater.Start()

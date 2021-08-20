@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
@@ -123,12 +122,10 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 	}
 
 	// Set up this node to start collecting audit log events if it's a master node. It may send a message if the feature is already enabled
-	if features.K8sAuditLogDetection.Enabled() {
-		if conf.GetIsMasterNode() {
-			log.Infof("Adding node %s to list of eligible compliance nodes for audit log collection because it is on a master node", hostname)
-			s.auditLogCollectionManager.AddEligibleComplianceNode(hostname, server)
-			defer s.auditLogCollectionManager.RemoveEligibleComplianceNode(hostname)
-		}
+	if conf.GetIsMasterNode() {
+		log.Infof("Adding node %s to list of eligible compliance nodes for audit log collection because it is on a master node", hostname)
+		s.auditLogCollectionManager.AddEligibleComplianceNode(hostname, server)
+		defer s.auditLogCollectionManager.RemoveEligibleComplianceNode(hostname)
 	}
 
 	for {

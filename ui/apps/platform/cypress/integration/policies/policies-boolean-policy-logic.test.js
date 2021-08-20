@@ -362,16 +362,14 @@ describe('Boolean Policy Logic Section', () => {
         });
 
         it('should filter keys based on Event Source value', () => {
-            if (checkFeatureFlag('ROX_K8S_AUDIT_LOG_DETECTION', true)) {
-                goToPrevWizardStage();
-                cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
-                cy.get(selectors.eventSourceField.selectArrow).click();
-                cy.get(`${selectors.eventSourceField.options}:contains("Audit Log")`).click();
-                goToNextWizardStage();
-                cy.get(selectors.booleanPolicySection.policyKeyGroupBtn).should((values) => {
-                    expect(values).to.have.length(1);
-                });
-            }
+            goToPrevWizardStage();
+            cy.get(selectors.lifecycleStageField.input).type(`Runtime{enter}`);
+            cy.get(selectors.eventSourceField.selectArrow).click();
+            cy.get(`${selectors.eventSourceField.options}:contains("Audit Log")`).click();
+            goToNextWizardStage();
+            cy.get(selectors.booleanPolicySection.policyKeyGroupBtn).should((values) => {
+                expect(values).to.have.length(1);
+            });
         });
 
         it('should collapse categories when clicking the carrot', () => {

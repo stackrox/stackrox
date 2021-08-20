@@ -6,9 +6,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -62,31 +60,18 @@ func TestDefaultEventSourceMigration(t *testing.T) {
 
 type defaultEventSourceTestSuite struct {
 	suite.Suite
-	db          *bolt.DB
-	envIsolator *envisolator.EnvIsolator
+	db *bolt.DB
 }
 
 func (s *defaultEventSourceTestSuite) SetupSuite() {
 	s.db = testutils.DBForT(s.T())
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *defaultEventSourceTestSuite) TearDownSuite() {
 	testutils.TearDownDB(s.db)
 }
 
-func (s *defaultEventSourceTestSuite) SetupTest() {
-	s.envIsolator.Setenv(features.K8sAuditLogDetection.EnvVar(), "true")
-}
-
-func (s *defaultEventSourceTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
 func (s *defaultEventSourceTestSuite) TestEventSourceMigration() {
-	if !features.K8sAuditLogDetection.Enabled() {
-		s.T().Skipf("%s feature flag not enabled, skipping ...", features.K8sAuditLogDetection.EnvVar())
-	}
 	err := s.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(policyBucket)
 		if err != nil {

@@ -59,6 +59,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		rolebindings.GetPipeline(),
 		reprocessing.GetPipeline(),
 		alerts.GetPipeline(),
+		auditlogstateupdate.GetPipeline(),
 	}
 	if features.ComplianceOperatorCheckResults.Enabled() {
 		pipelines = append(pipelines,
@@ -67,9 +68,6 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 			complianceoperatorscansettingbinding.GetPipeline(),
 			complianceoperatorrules.GetPipeline(),
 		)
-	}
-	if features.K8sAuditLogDetection.Enabled() {
-		pipelines = append(pipelines, auditlogstateupdate.GetPipeline())
 	}
 
 	return NewClusterPipeline(clusterID, pipelines...), nil

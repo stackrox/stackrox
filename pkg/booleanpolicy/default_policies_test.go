@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -2449,12 +2448,8 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
-			var policy *storage.Policy
-			if features.K8sAuditLogDetection.Enabled() {
-				policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
-			} else {
-				policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, c.groups...)
-			}
+			policy := policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
+
 			m, err := BuildDeploymentWithProcessMatcher(policy)
 			require.NoError(t, err)
 
@@ -2534,12 +2529,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 		},
 	} {
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
-			var policy *storage.Policy
-			if features.K8sAuditLogDetection.Enabled() {
-				policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
-			} else {
-				policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, c.groups...)
-			}
+			policy := policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
 			if c.withProcessSection {
 				policy.PolicySections = append(policy.PolicySections,
 					&storage.PolicySection{PolicyGroups: []*storage.PolicyGroup{aptGetGroup}})
@@ -2642,23 +2632,13 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
-	suite.envIsolator.Setenv(features.NetworkDetectionBaselineViolation.EnvVar(), "true")
-	if !features.NetworkDetectionBaselineViolation.Enabled() {
-		return
-	}
-
 	deployment := fixtures.GetDeployment().Clone()
 	suite.addDepAndImages(deployment)
 
 	// Create a policy for triggering flows that are not in baseline
 	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedNetworkFlowDetected, "true", false)
 
-	var policy *storage.Policy
-	if features.K8sAuditLogDetection.Enabled() {
-		policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, whitelistGroup)
-	} else {
-		policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, whitelistGroup)
-	}
+	policy := policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, whitelistGroup)
 	m, err := BuildDeploymentWithNetworkFlowMatcher(policy)
 	suite.NoError(err)
 
@@ -2833,12 +2813,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 	} {
 		c := testCase
 		b.Run(fmt.Sprintf("%+v", c.groups), func(b *testing.B) {
-			var policy *storage.Policy
-			if features.K8sAuditLogDetection.Enabled() {
-				policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
-			} else {
-				policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, c.groups...)
-			}
+			policy := policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
 			m, err := BuildDeploymentWithProcessMatcher(policy)
 			require.NoError(b, err)
 
@@ -2853,12 +2828,8 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			}
 		})
 	}
-	var policy *storage.Policy
-	if features.K8sAuditLogDetection.Enabled() {
-		policy = policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, aptGetGroup, privilegedGroup, baselineGroup)
-	} else {
-		policy = policyWithGroups(storage.EventSource_NOT_APPLICABLE, aptGetGroup, privilegedGroup, baselineGroup)
-	}
+
+	policy := policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, aptGetGroup, privilegedGroup, baselineGroup)
 	m, err := BuildDeploymentWithProcessMatcher(policy)
 	require.NoError(b, err)
 	for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {

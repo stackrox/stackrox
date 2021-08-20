@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
@@ -141,15 +140,13 @@ func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage
 }
 
 func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
-	if features.K8sAuditLogDetection.Enabled() {
-		if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_NOT_APPLICABLE {
-			return errors.New("event source must be deployment or audit event for runtime policies")
-		}
+	if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_NOT_APPLICABLE {
+		return errors.New("event source must be deployment or audit event for runtime policies")
+	}
 
-		if (policies.AppliesAtBuildTime(policy) || policies.AppliesAtDeployTime(policy)) &&
-			policy.GetEventSource() != storage.EventSource_NOT_APPLICABLE {
-			return errors.New("event source must not be set for build or deploy time policies")
-		}
+	if (policies.AppliesAtBuildTime(policy) || policies.AppliesAtDeployTime(policy)) &&
+		policy.GetEventSource() != storage.EventSource_NOT_APPLICABLE {
+		return errors.New("event source must not be set for build or deploy time policies")
 	}
 
 	if s.isAuditEventPolicy(policy) {
@@ -377,6 +374,5 @@ func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.Lifecyc
 }
 
 func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {
-	return features.K8sAuditLogDetection.Enabled() &&
-		policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT
+	return policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT
 }

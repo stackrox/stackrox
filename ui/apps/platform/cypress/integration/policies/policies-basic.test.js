@@ -1,7 +1,6 @@
 import { selectors, text, url } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import checkFeatureFlag from '../../helpers/features';
 
 describe('Policies basic tests', () => {
     withAuth();
@@ -262,12 +261,6 @@ describe('Policies basic tests', () => {
     });
 
     describe('audit log tests', () => {
-        before(function beforeHook() {
-            if (checkFeatureFlag('ROX_K8S_AUDIT_LOG_DETECTION', false)) {
-                this.skip();
-            }
-        });
-
         it('should show Event Source as disabled if Lifecycle Stage is NOT Runtime', () => {
             addPolicy();
             cy.get(selectors.eventSourceField.select).should(
