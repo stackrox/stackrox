@@ -25,6 +25,7 @@ import objects.StackroxScannerIntegration
 import objects.SyslogNotifier
 import objects.TeamsNotifier
 import objects.Deployment
+import org.apache.commons.lang.RandomStringUtils
 import services.ClusterService
 import services.CreatePolicyService
 import services.ExternalBackupService
@@ -282,7 +283,7 @@ class IntegrationsTest extends BaseSpecification {
                 .addScope(ScopeOuterClass.Scope.newBuilder()
                         .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
                                 .setKey("app")
-                                .setValue(deployment.name)
+                                .setValue(deployment.getLabels()["app"])
                         )
                 )
         for (Notifier notifier : notifierTypes) {
@@ -325,7 +326,8 @@ class IntegrationsTest extends BaseSpecification {
 
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
-                        .setName("policy-violation-email-notification")
+                        // add random id to name to make it easier to search for when validating
+                        .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
                         .setImage("nginx:latest")
 
@@ -362,7 +364,7 @@ class IntegrationsTest extends BaseSpecification {
                 .addScope(ScopeOuterClass.Scope.newBuilder()
                         .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
                                 .setKey("app")
-                                .setValue(deployment.name)
+                                .setValue(deployment.getLabels()["app"])
                         )
                 )
                 .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
@@ -432,7 +434,8 @@ class IntegrationsTest extends BaseSpecification {
 
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
-                        .setName("policy-violation-email-notification")
+                        // add random id to name to make it easier to search for when validating
+                        .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
                         .setImage("nginx:latest")
          /*
@@ -507,7 +510,7 @@ class IntegrationsTest extends BaseSpecification {
                 .addScope(ScopeOuterClass.Scope.newBuilder()
                         .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
                                 .setKey("app")
-                                .setValue(deployment.name)
+                                .setValue(deployment.getLabels()["app"])
                         )
                 )
         policy.addNotifiers(notifier.getId())
@@ -555,7 +558,8 @@ class IntegrationsTest extends BaseSpecification {
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt1@gmail.com")   |
                 null   |
                 new Deployment()
-                        .setName("policy-violation-email-notification-deploy-override")
+                        // add random id to name to make it easier to search for when validating
+                        .setName(uniqueName("policy-violation-email-notification-deploy-override"))
                         .addLabel("app", "policy-violation-email-notification-deploy-override")
                         .addAnnotation("mailgun", "stackrox.qa+alt1@gmail.com")
                         .setImage("nginx:latest")
@@ -564,8 +568,9 @@ class IntegrationsTest extends BaseSpecification {
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt2@gmail.com")   |
                 [key: "mailgun", value: "stackrox.qa+alt2@gmail.com"]   |
                 new Deployment()
-                        .setName("policy-violation-email-notification-namespace-override")
-                        .addLabel("app", "policy-violation-email-notification-namespace-override")
+                        // add random id to name to make it easier to search for when validating
+                        .setName(uniqueName("policy-violation-email-notification-ns-override"))
+                        .addLabel("app", "policy-violation-email-notification-ns-override")
                         .setImage("nginx:latest")
         "Slack deploy override"   |
                 new SlackNotifier("slack test", "slack-key")   |
@@ -725,5 +730,9 @@ class IntegrationsTest extends BaseSpecification {
         "remove splunk and syslog notifier integration"
         SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
         notifier.deleteNotifier()
+    }
+
+    def uniqueName(String name) {
+        return name + RandomStringUtils.randomAlphanumeric(5).toLowerCase()
     }
 }

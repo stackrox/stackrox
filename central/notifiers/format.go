@@ -144,9 +144,11 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 func SummaryForAlert(alert *storage.Alert) string {
 	switch entity := alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
-		return fmt.Sprintf("Deployment %s (%s) violates '%s' Policy", entity.Deployment.GetName(), entity.Deployment.GetId(), alert.GetPolicy().GetName())
+		return fmt.Sprintf("Deployment %s (in cluster %s) violates '%s' Policy", entity.Deployment.GetName(), entity.Deployment.GetClusterName(), alert.GetPolicy().GetName())
 	case *storage.Alert_Image:
 		return fmt.Sprintf("Image %s violates '%s' Policy", types.Wrapper{GenericImage: entity.Image}.FullName(), alert.GetPolicy().GetName())
+	case *storage.Alert_Resource_:
+		return fmt.Sprintf("Policy '%s' violated in cluster %s", alert.GetPolicy().GetName(), alert.GetResource().GetClusterName())
 	}
 	return fmt.Sprintf("Policy '%s' violated", alert.GetPolicy().GetName())
 }

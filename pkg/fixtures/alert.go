@@ -98,6 +98,14 @@ func GetResourceAlert() *storage.Alert {
 	}
 }
 
+// GetImageAlert returns a Mock alert with an image for entity
+func GetImageAlert() *storage.Alert {
+	imageAlert := GetAlert()
+	imageAlert.Entity = &storage.Alert_Image{Image: types.ToContainerImage(GetImage())}
+
+	return imageAlert
+}
+
 // GetAlertWithID returns a mock alert with the specified id.
 func GetAlertWithID(id string) *storage.Alert {
 	alert := GetAlert()

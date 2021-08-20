@@ -2,7 +2,9 @@ package pagerduty
 
 import (
 	"context"
+	"encoding/json"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -62,4 +64,30 @@ func TestPagerDutyResolveAlert(t *testing.T) {
 	alert := fixtures.GetAlert()
 	alert.State = storage.ViolationState_RESOLVED
 	assert.NoError(t, p.ResolveAlert(context.Background(), alert))
+}
+
+func TestMarshalingAlert(t *testing.T) {
+	cases := []struct {
+		name  string
+		alert *storage.Alert
+	}{
+		{"regular alert", fixtures.GetAlert()},
+		{"image alert", fixtures.GetImageAlert()},
+		{"resource alert", fixtures.GetResourceAlert()},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			alert := (*marshalableAlert)(c.alert)
+
+			data, err := json.Marshal(alert)
+			require.NoError(t, err)
+			require.NotNil(t, data)
+
+			var unmarshaledAlert *marshalableAlert
+			require.NoError(t, json.Unmarshal(data, &unmarshaledAlert))
+
+			require.True(t, reflect.DeepEqual(alert, unmarshaledAlert))
+		})
+	}
 }

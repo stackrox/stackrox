@@ -87,7 +87,7 @@ func (*pagerDuty) Close(context.Context) error {
 }
 
 func (p *pagerDuty) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	return p.postAlert(ctx, alert, newAlert)
+	return p.postAlert(alert, newAlert)
 }
 
 func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
@@ -95,14 +95,16 @@ func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
 }
 
 func (p *pagerDuty) Test(ctx context.Context) error {
-	return p.postAlert(ctx, &storage.Alert{
+	return p.postAlert(&storage.Alert{
 		Id: uuid.NewDummy().String(),
 		Policy: &storage.Policy{
-			Description: "Test PagerDuty Policy",
+			Name:        "Test PagerDuty Policy",
+			Description: "Sample policy used to test PagerDuty integration",
 			Severity:    storage.Severity_HIGH_SEVERITY,
 			Categories:  []string{"Privileges"},
 		},
 		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
+			Id:          uuid.NewDummy().String(),
 			Name:        "Test Deployment",
 			ClusterName: "Test Cluster",
 		}},
@@ -114,14 +116,14 @@ func (p *pagerDuty) Test(ctx context.Context) error {
 }
 
 func (p *pagerDuty) AckAlert(ctx context.Context, alert *storage.Alert) error {
-	return p.postAlert(ctx, alert, ackAlert)
+	return p.postAlert(alert, ackAlert)
 }
 
 func (p *pagerDuty) ResolveAlert(ctx context.Context, alert *storage.Alert) error {
-	return p.postAlert(ctx, alert, resolveAlert)
+	return p.postAlert(alert, resolveAlert)
 }
 
-func (p *pagerDuty) postAlert(ctx context.Context, alert *storage.Alert, eventType string) error {
+func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 	pagerDutyEvent, err := p.createPagerDutyEvent(alert, eventType)
 	if err != nil {
 		log.Error(err)
@@ -129,6 +131,7 @@ func (p *pagerDuty) postAlert(ctx context.Context, alert *storage.Alert, eventTy
 	}
 
 	resp, err := p.pdClient.ManageEvent(&pagerDutyEvent)
+
 	if err != nil {
 		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
 
@@ -152,27 +155,24 @@ func (p *pagerDuty) postAlert(ctx context.Context, alert *storage.Alert, eventTy
 // More details on V2 API: https://v2.developer.pagerduty.com/docs/events-api-v2
 // PagerDuty has stopped supporting V1 API.
 func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string) (pd.V2Event, error) {
-	var jsonPayload bytes.Buffer
-	err := new(jsonpb.Marshaler).Marshal(&jsonPayload, alert)
-	if err != nil {
-		return pd.V2Event{}, err
-	}
-
 	payload := &pd.V2Payload{
-		Summary:   alert.GetPolicy().GetDescription(),
+		Summary:   notifiers.SummaryForAlert(alert),
 		Severity:  severityMap[alert.GetPolicy().GetSeverity()],
 		Timestamp: alert.GetTime().String(),
 		Class:     strings.Join(alert.GetPolicy().GetCategories(), " "),
-		Details:   jsonPayload,
+		Details:   (*marshalableAlert)(alert),
 	}
 
 	switch entity := alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
-		payload.Source = fmt.Sprintf("Cluster %s", entity.Deployment.GetClusterName())
+		payload.Source = fmt.Sprintf("%s/%s", entity.Deployment.GetClusterName(), entity.Deployment.GetNamespace())
 		payload.Component = fmt.Sprintf("Deployment %s", entity.Deployment.GetName())
 	case *storage.Alert_Image:
 		payload.Source = fmt.Sprintf("Image from %s/%s", entity.Image.GetName().GetRemote(), entity.Image.GetName().GetRegistry())
 		payload.Component = fmt.Sprintf("Image %s", imagesTypes.Wrapper{GenericImage: entity.Image}.FullName())
+	case *storage.Alert_Resource_:
+		payload.Source = fmt.Sprintf("%s/%s", entity.Resource.GetClusterName(), entity.Resource.GetNamespace())
+		payload.Component = fmt.Sprintf("%s %s", entity.Resource.GetResourceType(), entity.Resource.GetName())
 	}
 	return pd.V2Event{
 		Action:     eventType,
@@ -182,4 +182,21 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 		DedupKey:   alert.GetId(),
 		Payload:    payload,
 	}, nil
+}
+
+// marshalableAlert type encapsulates the Alert type and adds Marshal method.
+type marshalableAlert storage.Alert
+
+// MarshalJSON marshals alert data to bytes, following jsonpb rules.
+func (a *marshalableAlert) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	if err := (&jsonpb.Marshaler{}).Marshal(&buf, (*storage.Alert)(a)); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// UnmarshalJSON unmarshals alert JSON bytes into an Alert object, following jsonpb rules.
+func (a *marshalableAlert) UnmarshalJSON(data []byte) error {
+	return jsonpb.Unmarshal(bytes.NewReader(data), (*storage.Alert)(a))
 }

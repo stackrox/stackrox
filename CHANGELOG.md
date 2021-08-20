@@ -8,7 +8,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 
   included in fresh install of 65.0 and later, and new default system policies added since 65.0. Policy criteria fields 
   for user-defined policies, including policies created through 'Clone' operation, will continue to be editable.
-
+- Alert titles for the PagerDuty, Slack, Microsoft Teams, JIRA and email notifiers now contain the cluster and policy names
+  in addition to the deployment or image name if it exists.
+- PagerDuty alerts for violations now include the full alert JSON as a custom detail.
 - Message attribute keys for audit log based violation messages shortened to be more readable
 
 ## [64.0]

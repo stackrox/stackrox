@@ -166,3 +166,42 @@ func TestFormatAlert(t *testing.T) {
 	imageAlert.Entity = &storage.Alert_Image{Image: types.ToContainerImage(fixtures.GetImage())}
 	testFormat(imageAlert, expectedFormatImageAlert)
 }
+
+func TestSummaryForAlert(t *testing.T) {
+	alertWithNoEntity := fixtures.GetAlert()
+	alertWithNoEntity.Entity = nil
+
+	cases := []struct {
+		name            string
+		alert           *storage.Alert
+		expectedSummary string
+	}{
+		{
+			name:            "Deployment alert summary",
+			alert:           fixtures.GetAlert(),
+			expectedSummary: "Deployment nginx_server (in cluster prod cluster) violates 'Vulnerable Container' Policy",
+		},
+		{
+			name:            "Image alert summary",
+			alert:           fixtures.GetImageAlert(),
+			expectedSummary: "Image stackrox.io/srox/mongo:latest violates 'Vulnerable Container' Policy",
+		},
+		{
+			name:            "Resource alert summary",
+			alert:           fixtures.GetResourceAlert(),
+			expectedSummary: "Policy 'Vulnerable Container' violated in cluster prod cluster",
+		},
+		{
+			name:            "Unexpected entity alert summary",
+			alert:           alertWithNoEntity,
+			expectedSummary: "Policy 'Vulnerable Container' violated",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			summary := SummaryForAlert(c.alert)
+
+			assert.Equal(t, c.expectedSummary, summary)
+		})
+	}
+}

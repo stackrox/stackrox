@@ -86,14 +86,14 @@ class EmailNotifier extends Notifier {
             Assume.assumeNoException("Failed to login to GMAIL service... skipping test!: ", e)
         }
 
-        println "looking for a message with subject containing: ${deployment.deploymentUid}"
+        println "looking for a message with subject containing: ${deployment.name}"
         Timer t = new Timer(30, 3)
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
             println "checking for messages..."
             SearchTerm term = new AndTerm(
                     new FromTerm(new InternetAddress(Constants.EMAIL_NOTIFER_SENDER)),
-                    new SubjectTerm(deployment.deploymentUid))
+                    new SubjectTerm(deployment.name))
             notifications = mail.searchMessages(term)
             println notifications*.subject.toString()
             println "matching messages: ${notifications.size()}"
