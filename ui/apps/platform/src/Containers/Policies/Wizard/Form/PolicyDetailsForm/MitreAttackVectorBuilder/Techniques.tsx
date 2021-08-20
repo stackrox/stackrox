@@ -4,7 +4,7 @@ import { FieldArrayFieldsProps } from 'redux-form';
 import { MitreAttackVector } from 'services/MitreService';
 
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
-import MitreAttackVectorContainer from './MitreAttackVectorContainer';
+import MitreAttackVectorContainer from 'Components/MitreAttackVectorContainer';
 import AddTechniqueButton from './AddTechniqueButton';
 
 export type TechniqueProps = {
@@ -29,7 +29,7 @@ function Techniques({
     }
 
     return (
-        <div className="p-3">
+        <>
             {fields.map((field: string, index: number) => {
                 const techniqueId = fields.get(index);
                 const technique = possibleTechniques.find((possibleTechnique) => {
@@ -49,7 +49,7 @@ function Techniques({
                         isLight
                         isReadOnly={isReadOnly}
                     >
-                        <div className="p-3">
+                        <div className="p-3 space-y-3">
                             <ReduxSelectField
                                 name={field}
                                 options={techniqueOptions}
@@ -57,13 +57,13 @@ function Techniques({
                                 placeholder="Select a technique..."
                                 disabled={isReadOnly}
                             />
-                            <div className="mt-3">{technique?.description}</div>
+                            <div>{technique?.description}</div>
                         </div>
                     </MitreAttackVectorContainer>
                 );
             })}
             {!isReadOnly && <AddTechniqueButton onClick={onAddTechnique} />}
-        </div>
+        </>
     );
 }
 

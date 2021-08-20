@@ -6,8 +6,8 @@ import { MitreAttackVectorId } from 'services/MitreService';
 import { Message } from '@stackrox/ui-components';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import MitreAttackVectorContainer from 'Components/MitreAttackVectorContainer';
 import useFetchMitreAttackVectors from './useFetchMitreAttackVectors';
-import MitreAttackVectorContainer from './MitreAttackVectorContainer';
 import AddTacticButton from './AddTacticButton';
 import Techniques from './Techniques';
 import { FormSectionBody, FormSectionFooter } from '../FormSection';
@@ -69,7 +69,7 @@ function MitreAttackVectorBuilder({
                                     onDelete={onDeleteTactic}
                                     isReadOnly={isReadOnly}
                                 >
-                                    <div className="p-3">
+                                    <div className="p-3 space-y-3">
                                         <ReduxSelectField
                                             name={`${field}.tactic`}
                                             options={tacticOptions}
@@ -77,12 +77,10 @@ function MitreAttackVectorBuilder({
                                             disabled={isLoading || isReadOnly}
                                             placeholder="Select a tactic..."
                                         />
-                                        <div className="mt-3">
-                                            {tacticDetail?.tactic.description}
-                                        </div>
+                                        <div>{tacticDetail?.tactic.description}</div>
                                     </div>
                                     {tacticDetail?.techniques && (
-                                        <div className="border-t border-base-300">
+                                        <div className="border-t border-base-300 p-3">
                                             <FieldArray
                                                 name={`${field}.techniques`}
                                                 component={Techniques}

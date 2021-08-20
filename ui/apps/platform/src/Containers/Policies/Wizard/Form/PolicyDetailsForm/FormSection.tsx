@@ -3,7 +3,7 @@ import React, { ReactElement, ReactNode } from 'react';
 export type FormCardProps = {
     dataTestId?: string | null;
     headerText: string;
-    headerComponents: ReactNode;
+    headerComponents?: ReactNode;
     children: ReactNode;
     showInnerPadding?: boolean;
 };
@@ -23,7 +23,7 @@ export function FormSectionBody({ children }: FormSectionChildProps): ReactEleme
 export function FormSection({
     dataTestId = null,
     headerText,
-    headerComponents,
+    headerComponents = null,
     children,
 }: FormCardProps): ReactElement {
     return (

@@ -23,7 +23,7 @@ function MitreAttackVectorContainer({
             } rounded`}
         >
             <div className="flex flex-1 items-center">
-                <div className="flex flex-1 p-3">{headerText}: </div>
+                <div className="flex flex-1 p-3 text-base-600 font-700">{headerText}</div>
                 {onDelete && !isReadOnly && (
                     <div className="border-l border-base-400">
                         <button type="button" className="p-3 hover:bg-alert-200" onClick={onDelete}>
