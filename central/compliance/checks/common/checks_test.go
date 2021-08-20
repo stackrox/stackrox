@@ -34,16 +34,17 @@ func TestCheckSecretsInEnv(t *testing.T) {
 			},
 			shouldPass: true,
 		},
+		"another policy with secrets in env, enforced": {
+			policies: []testutils.LightPolicy{
+				{Name: "Definitely about secrets", EnvKey: ".*SECRET.*|.*PASSWORD.*", EnvValue: "", Enforced: true},
+				{Name: "Random other"},
+			},
+			shouldPass: true,
+		},
+
 		"one policy with secrets in env, enforced but disabled": {
 			policies: []testutils.LightPolicy{
 				{Name: "Definitely about secrets", EnvKey: "this_is_secret", EnvValue: "DONTLOOKATME", Disabled: true, Enforced: true},
-				{Name: "Random other"},
-			},
-			shouldPass: false,
-		},
-		"one policy with secrets in env, enforced but no value": {
-			policies: []testutils.LightPolicy{
-				{Name: "Definitely about secrets", EnvKey: "this_is_secret", Enforced: true},
 				{Name: "Random other"},
 			},
 			shouldPass: false,

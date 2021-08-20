@@ -472,7 +472,7 @@ func CheckSecretsInEnv(ctx framework.ComplianceContext) {
 		enforced := IsPolicyEnforced(policy)
 		var matchingPairFoundInPolicy bool
 		for _, kvPair := range envKeyValues {
-			if secretRegexp.MatchString(kvPair.Key) && kvPair.Value != "" {
+			if secretRegexp.MatchString(kvPair.Key) {
 				matchingPairFoundInPolicy = true
 				break
 			}
