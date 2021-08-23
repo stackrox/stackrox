@@ -57,8 +57,8 @@ func updatePoliciesWithMitre(db *bolt.DB) error {
 			key := []byte(policy.ID)
 			val := bucket.Get(key)
 			if val == nil {
-				log.WriteToStderrf("no policy exists for ID %s in policy migration. Continuing", key)
-				return nil
+				log.WriteToStderrf("default system policy with ID %s not found in DB. Continuing", key)
+				continue
 			}
 
 			storedPolicy := &storage.Policy{}

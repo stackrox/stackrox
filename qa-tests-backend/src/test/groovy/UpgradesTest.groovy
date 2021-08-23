@@ -241,7 +241,6 @@ class UpgradesTest extends BaseSpecification {
             // All default policies are expected to have the following flags set to true.
             // Therefore, move to target by adding the known diff.
             builder.setCriteriaLocked(true)
-            builder.setMitreVectorsLocked(true)
             if (knownPolicyDifferences.containsKey(policy.id)) {
                 def diffs = knownPolicyDifferences[policy.id]
 
@@ -302,7 +301,8 @@ class UpgradesTest extends BaseSpecification {
         and:
         "Upgraded policies should match the default policies in code"
         upgradedPolicies.forEach {
-            assert it == defaultPolicies[it.id]
+            def defaultPolicy = defaultPolicies[it.id]
+            assert it == defaultPolicy
         }
     }
 }

@@ -34,5 +34,5 @@ var (
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", false)
 
 	// SystemPolicyMitreFramework enables MITRE ATT&CK framework for RHACS System Policies.
-	SystemPolicyMitreFramework = registerFeature("Enable MITRE ATT&CK framework for RHACS System Policies", "ROX_SYSTEM_POLICY_MITRE_FRAMEWORK", false)
+	SystemPolicyMitreFramework = registerFeature("Enable MITRE ATT&CK framework for RHACS System Policies", "ROX_SYSTEM_POLICY_MITRE_FRAMEWORK", true)
 )
