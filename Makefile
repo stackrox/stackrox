@@ -747,3 +747,9 @@ policyutil:
 	@echo "+ $@"
 	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/policyutil
 	go install ./tools/policyutil
+
+.PHONY: mitre
+mitre:
+	@echo "+ $@"
+	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/mitre
+	go install ./tools/mitre
