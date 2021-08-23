@@ -147,6 +147,45 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.enabled').click();
         });
 
+        it('should create a new Sumo Logic integration', () => {
+            cy.get(selectors.sumologicTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/sumologic/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Name').type(' ');
+            getInputByLabel('HTTP Collector Source Address').type(' ').blur();
+
+            getHelperElementByLabel('Name').contains('Name is required');
+            getHelperElementByLabel('HTTP Collector Source Address').contains(
+                'HTTP Collector Source Address is required'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            /*
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+            */
+
+            // Step 3, check valid from and save
+            const isoString = new Date().toISOString();
+            getInputByLabel('Name').clear().type(`Test new Sumo Logic ${isoString}`);
+            getInputByLabel('HTTP Collector Source Address')
+                .clear()
+                .type('https://endpoint.sumologic.com/receiver/v1/http/');
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+
         it('should create a new Splunk integration', () => {
             cy.get(selectors.splunkTile).click();
 

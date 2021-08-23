@@ -23,6 +23,7 @@ import EmailIntegrationForm from './Forms/EmailIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import SlackIntegrationForm from './Forms/SlackIntegrationForm';
 import SplunkIntegrationForm from './Forms/SplunkIntegrationForm';
+import SumoLogicIntegrationForm from './Forms/SumoLogicIntegrationForm';
 import SyslogIntegrationForm from './Forms/SyslogIntegrationForm';
 import TeamsIntegrationForm from './Forms/TeamsIntegrationForm';
 // external backups
@@ -70,6 +71,7 @@ const ComponentFormMap = {
         email: EmailIntegrationForm,
         slack: SlackIntegrationForm,
         splunk: SplunkIntegrationForm,
+        sumologic: SumoLogicIntegrationForm,
         syslog: SyslogIntegrationForm,
         teams: TeamsIntegrationForm,
     },

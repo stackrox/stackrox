@@ -33,6 +33,7 @@ export const selectors = {
     splunkTile: 'a[data-testid="integration-tile"]:contains("Splunk")',
     pagerDutyTile: 'a[data-testid="integration-tile"]:contains("PagerDuty")',
     awsSecurityHubTile: 'a[data-testid="integration-tile"]:contains("AWS Security Hub")',
+    sumologicTile: 'a[data-testid="integration-tile"]:contains("Sumo Logic")',
     syslogTile: 'a[data-testid="integration-tile"]:contains("Syslog")',
     genericWebhookTile: 'a[data-testid="integration-tile"]:contains("Generic Webhook")',
     amazonS3Tile: 'a[data-testid="integration-tile"]:contains("Amazon S3")',
