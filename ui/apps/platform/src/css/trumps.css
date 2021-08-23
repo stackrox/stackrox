@@ -85,6 +85,16 @@ body {
     height: calc(100% - 112px) !important;
 }
 
+/* override to make launcher menu stay above a sticky main section header */
+/* lift the launch menu just above the sticky header level */
+.pf-c-app-launcher {
+    --pf-c-app-launcher__menu--ZIndex: 301 !important;
+}
+/* also requires that the sticky header get out of the higher stacking context */
+.pf-c-page__main-section.pf-m-sticky-top {
+    z-index: auto !important;
+}
+
 /* For classic components to equal or exceed z-index of PatternFly elements. */
 
 .z-xs-100 {
