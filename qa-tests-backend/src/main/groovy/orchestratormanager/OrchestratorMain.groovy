@@ -2,7 +2,6 @@ package orchestratormanager
 
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.Pod
-import io.fabric8.kubernetes.client.KubernetesClient
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.ConfigMap
 import objects.DaemonSet
@@ -20,12 +19,6 @@ import objects.Service
 interface OrchestratorMain {
     def setup()
     def cleanup()
-
-    /**
-     * Will be removed in further iterations, introduce new abstractions instead of using the client directly
-     */
-    @Deprecated
-    KubernetesClient getK8sClient()
 
     // Pods
     List<Pod> getPods(String ns, String appName)
@@ -61,6 +54,7 @@ interface OrchestratorMain {
     def createPortForward(int port, Deployment deployment)
     def updateDeploymentEnv(String ns, String name, String key, String value)
     EnvVar getDeploymentEnv(String ns, String name, String key)
+    def scaleDeployment(String ns, String name, Integer replicas)
 
     //DaemonSets
     def createDaemonSet(DaemonSet daemonSet)

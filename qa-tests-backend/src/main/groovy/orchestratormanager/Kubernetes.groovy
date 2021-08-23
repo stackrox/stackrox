@@ -164,11 +164,6 @@ class Kubernetes implements OrchestratorMain {
     def cleanup() {
     }
 
-    @Deprecated
-    KubernetesClient getK8sClient() {
-        return this.client
-    }
-
     /*
         Deployment Methods
     */
@@ -521,6 +516,28 @@ class Kubernetes implements OrchestratorMain {
                 .endTemplate()
                 .endSpec()
                 .done()
+    }
+
+    def scaleDeployment(String ns, String name, Integer replicas) {
+        Exception mostRecentException
+        Timer t = new Timer(30, 5)
+        while (t.IsValid()) {
+            try {
+                client.apps().deployments().inNamespace(ns).withName(name).scale(replicas)
+                mostRecentException = null
+                break
+            } catch (Exception e) {
+                println "Failed to scale the deployment: ${e}"
+                mostRecentException = e
+            }
+        }
+        if (mostRecentException) {
+            println "Giving up trying to scale the deployment ${name} to ${replicas}"
+            throw mostRecentException
+        }
+        else {
+            println "Scaled the deployment ${name} to ${replicas}"
+        }
     }
 
     /*

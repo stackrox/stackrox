@@ -20,15 +20,15 @@ main() {
       if [[ "$(jq '.status.replicas' <<<"${sensor_json}")" == 1 && "$(jq '.status.readyReplicas' <<<"${sensor_json}")" == 1 ]]; then
         break
       fi
-      echo $sensor_json
+      echo "Sensor replicas: $(jq '.status.replicas' <<<"${sensor_json}")"
+      echo "Sensor readyReplicas: $(jq '.status.readyReplicas' <<<"${sensor_json}")"
       if (( $(date '+%s') - start_time > 300 )); then
         kubectl -n stackrox get pod -o wide
         kubectl -n stackrox get deploy -o wide
         echo >&2 "Timed out after 5m"
         exit 1
       fi
-      echo -n .
-      sleep 1
+      sleep 5
     done
     echo "Sensor is running"
 
@@ -39,12 +39,15 @@ main() {
     echo "Waiting for collectors to start"
     start_time="$(date '+%s')"
     until [ "$(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $2}')" -eq "$(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $4}')" ]; do
-      if (( $(date '+%s') - start_time > 300 )); then
-        echo >&2 "Timed out after 5m"
+      echo "Desired collectors: $(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $2}')"
+      echo "Ready collectors: $(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $4}')"
+      if (( $(date '+%s') - start_time > 600 )); then
+        kubectl -n stackrox get pod -o wide
+        kubectl -n stackrox get ds -o wide
+        echo >&2 "Timed out after 10m"
         exit 1
       fi
-      echo -n .
-      sleep 1
+      sleep 5
     done
     echo "Collectors are running"
 }

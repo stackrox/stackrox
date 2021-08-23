@@ -522,7 +522,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Sensor is unavailable"
-        orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("sensor").scale(0)
+        orchestrator.scaleDeployment("stackrox", "sensor", 0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 1)
         printlnDated "Sensor is now scaled to 0"
 
@@ -530,11 +530,10 @@ class AdmissionControllerTest extends BaseSpecification {
         "Admission controller is started from scratch w/o cached scans"
         def admCtrlDeploy = orchestrator.getOrchestratorDeployment("stackrox", "admission-control")
         def originalAdmCtrlReplicas = admCtrlDeploy.spec.replicas
-        orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("admission-control").scale(0)
+        orchestrator.scaleDeployment("stackrox", "admission-control", 0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", admCtrlDeploy.spec.selector.matchLabels, 30, 1)
         printlnDated "Admission controller scaled to 0, was ${originalAdmCtrlReplicas}"
-        orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("admission-control")
-                .scale(originalAdmCtrlReplicas)
+        orchestrator.scaleDeployment("stackrox", "admission-control", originalAdmCtrlReplicas)
         orchestrator.waitForPodsReady("stackrox", admCtrlDeploy.spec.selector.matchLabels,
                 originalAdmCtrlReplicas, 30, 1)
         printlnDated "Admission controller scaled back to ${originalAdmCtrlReplicas}"
@@ -548,7 +547,7 @@ class AdmissionControllerTest extends BaseSpecification {
         assert !created
 
         cleanup:
-        orchestrator.k8sClient.apps().deployments().inNamespace("stackrox").withName("sensor").scale(1)
+        orchestrator.scaleDeployment("stackrox", "sensor", 1)
         orchestrator.waitForPodsReady("stackrox", ["app": "sensor"], 1, 30, 1)
         if (created) {
             deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
