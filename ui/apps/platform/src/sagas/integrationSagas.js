@@ -4,6 +4,7 @@ import Raven from 'raven-js';
 import { integrationsPath, policiesPath, networkPath } from 'routePaths';
 import * as service from 'services/IntegrationsService';
 import * as AuthService from 'services/AuthService';
+import * as BackupIntegrationsService from 'services/BackupIntegrationsService';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions, types } from 'reducers/integrations';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -201,7 +202,7 @@ function* testIntegration(action) {
 function* triggerBackup(action) {
     const { id } = action;
     try {
-        yield call(service.triggerBackup, id);
+        yield call(BackupIntegrationsService.triggerBackup, id);
         yield put(notificationActions.addNotification('Backup was successful'));
         yield put(notificationActions.removeOldestNotification());
     } catch (error) {

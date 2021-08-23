@@ -3,6 +3,7 @@ import {
     styleUnhealthy,
     styleUninitialized,
 } from 'Containers/Clusters/cluster.helpers';
+import { IntegrationBase } from 'services/IntegrationsService';
 
 import { CategoryStyle } from './health';
 
@@ -21,11 +22,6 @@ export interface IntegrationHealthItem extends IdNameInterface {
 export interface IntegrationMergedItem extends IntegrationHealthItem {
     label: string;
 }
-
-export interface Integration extends IdNameInterface {
-    type: string;
-}
-
 interface IntegrationsListItem {
     type: string;
     label: string;
@@ -50,7 +46,7 @@ export const integrationStyleMap: Record<IntegrationStatus, CategoryStyle> = {
  */
 export const mergeIntegrationResponses = (
     integrationsHealth: IntegrationHealthItem[],
-    integrations: Integration[],
+    integrations: IntegrationBase[],
     integrationsList: IntegrationsListItem[]
 ): IntegrationMergedItem[] => {
     const typeMap: Record<string, string> = {};

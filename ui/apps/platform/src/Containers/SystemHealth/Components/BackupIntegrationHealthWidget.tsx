@@ -1,7 +1,7 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 
 import { fetchBackupIntegrationsHealth } from 'services/IntegrationHealthService';
-import { fetchIntegration } from 'services/IntegrationsService';
+import { fetchBackupIntegrations } from 'services/BackupIntegrationsService';
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
@@ -15,12 +15,12 @@ const BackupIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElem
     const [backupsRequestHasError, setBackupsRequestHasError] = useState(false);
 
     useEffect(() => {
-        Promise.all([fetchBackupIntegrationsHealth(), fetchIntegration('backups')])
-            .then(([integrationsHealth, { response }]) => {
+        Promise.all([fetchBackupIntegrationsHealth(), fetchBackupIntegrations()])
+            .then(([integrationsHealth, externalBackups]) => {
                 setBackupsMerged(
                     mergeIntegrationResponses(
                         integrationsHealth,
-                        response.externalBackups,
+                        externalBackups,
                         integrationsList.backups
                     )
                 );

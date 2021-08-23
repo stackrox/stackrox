@@ -1,7 +1,7 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 
 import { fetchImageIntegrationsHealth } from 'services/IntegrationHealthService';
-import { fetchIntegration } from 'services/IntegrationsService';
+import { fetchImageIntegrations } from 'services/ImageIntegrationsService';
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
@@ -17,12 +17,12 @@ const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEleme
     const [imageIntegrationsRequestHasError, setImageIntegrationsRequestHasError] = useState(false);
 
     useEffect(() => {
-        Promise.all([fetchImageIntegrationsHealth(), fetchIntegration('imageIntegrations')])
-            .then(([integrationsHealth, { response }]) => {
+        Promise.all([fetchImageIntegrationsHealth(), fetchImageIntegrations()])
+            .then(([integrationsHealth, integrations]) => {
                 setImageIntegrationsMerged(
                     mergeIntegrationResponses(
                         integrationsHealth,
-                        response.integrations,
+                        integrations,
                         integrationsList.imageIntegrations
                     )
                 );
