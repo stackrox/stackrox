@@ -2972,9 +2972,11 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
-      - check-label-exists-or-skip:
+      - check-to-run:
           label: ci-upgrade-tests
           run-on-master: true
+          run-on-tags: true
+          changed-path: '^migrator/.*$'
 
       - provision-gke-cluster:
           cluster-id: upgrade-test
@@ -3835,9 +3837,11 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
-      - check-label-exists-or-skip:
+      - check-to-run:
           label: ci-upgrade-tests
           run-on-master: true
+          run-on-tags: true
+          changed-path: '^migrator/.*$'
       - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
