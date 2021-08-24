@@ -20,6 +20,7 @@ import RhelIntegrationForm from './Forms/RhelIntegrationForm';
 // notifiers
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
+import GenericWebhookIntegrationForm from './Forms/GenericWebhookIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import SlackIntegrationForm from './Forms/SlackIntegrationForm';
 import SplunkIntegrationForm from './Forms/SplunkIntegrationForm';
@@ -69,6 +70,7 @@ const ComponentFormMap = {
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         cscc: GoogleCloudSccIntegrationForm,
         email: EmailIntegrationForm,
+        generic: GenericWebhookIntegrationForm,
         slack: SlackIntegrationForm,
         splunk: SplunkIntegrationForm,
         sumologic: SumoLogicIntegrationForm,

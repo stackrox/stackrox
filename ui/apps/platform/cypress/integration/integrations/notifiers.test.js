@@ -1,8 +1,10 @@
+/* eslint-disable no-multi-str */
 import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { editIntegration } from './integrationUtils';
 import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
+import sampleCert from '../../helpers/sampleCert';
 
 describe('Notifiers Test', () => {
     withAuth();
@@ -85,6 +87,59 @@ describe('Notifiers Test', () => {
             });
             getInputByLabel('Annotation key for recipient').clear().type('email');
             getInputByLabel('Disable TLS certificate validation (insecure)').click();
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+
+        it('should create a new generic webhook integration', () => {
+            cy.get(selectors.genericWebhookTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/generic/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').type(' ');
+            getInputByLabel('Endpoint').type(' ').blur();
+            getHelperElementByLabel('Integration name').contains('Name is required');
+            getHelperElementByLabel('Endpoint').contains('Endpoint is required');
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats, or conditional validation
+            getInputByLabel('Endpoint').type('example').blur();
+            getHelperElementByLabel('Endpoint').contains('Endpoint must be a valid URL');
+
+            getInputByLabel('Username').type('neo').blur();
+            getInputByLabel('Password').type(' ').blur();
+            getHelperElementByLabel('Password').contains(
+                'A password is required if the integration has a username'
+            );
+
+            getInputByLabel('Password').clear().type('monkey').blur();
+            getInputByLabel('Username').clear().type(' ').blur();
+            getHelperElementByLabel('Username').contains(
+                'A username is required if the integration has a password'
+            );
+
+            // Step 3, check valid from and save
+            getInputByLabel('Integration name')
+                .clear()
+                .type(`Nova Generic Webhook ${new Date().toISOString()}`);
+            getInputByLabel('Endpoint').clear().type('example.com:3000/hooks/123');
+            getInputByLabel('CA certificate (optional)').type(sampleCert, { delay: 1 });
+            getInputByLabel('Skip TLS verification').click();
+            getInputByLabel('Enable audit logging').click();
+            getInputByLabel('Username').clear().type('neo');
+            getInputByLabel('Password').clear().type('spoon').blur();
+            cy.get('button:contains("Add new header")').click();
+            getInputByLabel('Key').type('x-org');
+            getInputByLabel('Value').type('mysteryinc').blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
             cy.get(selectors.buttons.save).should('be.enabled').click();
