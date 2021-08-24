@@ -1,8 +1,13 @@
 package policymigrationhelper
 
 import (
+	"bytes"
+	"embed"
+	"fmt"
+	"path/filepath"
 	"reflect"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -113,6 +118,28 @@ func DescriptionComparator(first, second *storage.Policy) bool {
 var (
 	policyBucketName = []byte("policies")
 )
+
+// MigratePoliciesWithPreMigrationFS is a variant of MigratePolicies that takes in an embed.FS with the pre migration policies.
+// `preMigFS` is expected to have a directory called `preMigDirName`, which has one JSON file per policy.
+// Each JSON file is expected to have the filename <policy_id>.json.
+func MigratePoliciesWithPreMigrationFS(db *bolt.DB, policiesToMigrate map[string]PolicyChanges, preMigFS embed.FS, preMigDirName string) error {
+	comparisonPolicies := make(map[string]*storage.Policy)
+	for policyID := range policiesToMigrate {
+		path := filepath.Join(preMigDirName, fmt.Sprintf("%s.json", policyID))
+		contents, err := preMigFS.ReadFile(path)
+		if err != nil {
+			return errors.Wrapf(err, "unable to read file %s", path)
+		}
+
+		var policy storage.Policy
+		err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+		if err != nil {
+			return errors.Wrapf(err, "unable to unmarshal policy (%s) json", policyID)
+		}
+		comparisonPolicies[policyID] = &policy
+	}
+	return MigratePolicies(db, policiesToMigrate, comparisonPolicies)
+}
 
 // MigratePolicies will migrate all policies in the db as specified by policiesToMigrate assuming the policies in the db
 // matches the policies within comparisonPolicies.

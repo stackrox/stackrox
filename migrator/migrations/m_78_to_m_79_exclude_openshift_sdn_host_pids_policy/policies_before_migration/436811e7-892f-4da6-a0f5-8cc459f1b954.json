@@ -10,16 +10,6 @@
   "lifecycleStages": [
     "DEPLOY"
   ],
-  "exclusions": [
-    {
-      "name": "Don't alert on the openshift-sdn namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-sdn"
-        }
-      }
-    }
-  ],
   "severity": "MEDIUM_SEVERITY",
   "policyVersion": "1.1",
   "policySections": [
