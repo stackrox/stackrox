@@ -1,10 +1,6 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 
-const baseURL = '/main/system-health';
-
-export const url = {
-    dashboard: baseURL,
-};
+export const systemHealthUrl = '/main/system-health';
 
 export const selectors = {
     bundle: {

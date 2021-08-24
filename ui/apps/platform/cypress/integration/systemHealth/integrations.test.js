@@ -1,4 +1,4 @@
-import { url, selectors } from '../../constants/SystemHealth';
+import { selectors, systemHealthUrl } from '../../constants/SystemHealth';
 import {
     integrationHealth as integrationHealthApi,
     integrations as integrationsApi,
@@ -49,7 +49,7 @@ describe('System Health Integrations local deployment', () => {
     });
 
     it('should go to Image Integrations anchor on Integrations page via click View All', () => {
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetImageIntegrations');
 
         cy.get(
@@ -62,7 +62,7 @@ describe('System Health Integrations local deployment', () => {
     });
 
     it('should go to Notifier Integrations anchor on Integrations page via click View All', () => {
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetNotifiers');
 
         cy.get(
@@ -75,7 +75,7 @@ describe('System Health Integrations local deployment', () => {
     });
 
     it('should go to Backup Integrations anchor on Integrations page via click View All', () => {
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetExternalBackups');
 
         cy.get(
@@ -168,7 +168,7 @@ describe('System Health Integrations fixtures', () => {
             ],
         }).as('GetNotifiers');
 
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait([
             '@GetImageIntegrationsHealth',
             '@GetNotifiersHealth',
@@ -212,7 +212,7 @@ describe('System Health Integrations fixtures', () => {
             ],
         }).as('GetImageIntegrations');
 
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait(['@GetImageIntegrationsHealth', '@GetImageIntegrations']);
 
         const widgetSelector = integrations.widgets.imageIntegrations;

@@ -48,25 +48,30 @@ describe('Clusters page', () => {
 describe('Cluster Certificate Expiration', () => {
     withAuth();
 
-    let clustersFixture;
+    let clusters;
 
     before(() => {
-        cy.fixture('clusters/health.json').then((clustersArg) => {
-            clustersFixture = clustersArg;
+        cy.fixture('clusters/health.json').then((response) => {
+            clusters = response.clusters;
         });
     });
+
+    const metadata = {
+        version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
+        buildFlavor: 'release',
+        releaseBuild: true,
+        licenseStatus: 'VALID',
+    };
 
     // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
     const currentDatetime = new Date('2020-08-31T13:01:00Z');
 
     beforeEach(() => {
-        cy.server();
-        cy.route('GET', clustersApi.list, clustersFixture).as('GetClusters');
-        cy.route('GET', metadataApi, {
-            version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
-            buildFlavor: 'release',
-            releaseBuild: true,
-            licenseStatus: 'VALID',
+        cy.intercept('GET', clustersApi.list, {
+            body: { clusters },
+        }).as('GetClusters');
+        cy.intercept('GET', metadataApi, {
+            body: metadata,
         }).as('GetMetadata');
 
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
@@ -77,11 +82,12 @@ describe('Cluster Certificate Expiration', () => {
 
     describe('Credential Expiration status is Healthy', () => {
         it('should not show link or form', () => {
-            const { clusters } = clustersFixture;
             const n = clusters.findIndex((cluster) => cluster.name === 'kappa-kilogramme-10');
             const cluster = clusters[n];
 
-            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.intercept('GET', clustersApi.single, {
+                body: { cluster },
+            }).as('GetCluster');
             cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
             cy.wait('@GetCluster');
 
@@ -97,11 +103,12 @@ describe('Cluster Certificate Expiration', () => {
         const expectedExpiration = 'in 6 days on Monday'; // Unhealthy
 
         it('should disable the upgrade option', () => {
-            const { clusters } = clustersFixture;
             const n = clusters.findIndex((cluster) => cluster.name === 'epsilon-edison-5');
             const cluster = clusters[n];
 
-            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.intercept('GET', clustersApi.single, {
+                body: { cluster },
+            }).as('GetCluster');
             cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
             cy.wait('@GetCluster');
 
@@ -124,11 +131,12 @@ describe('Cluster Certificate Expiration', () => {
         const expectedExpiration = 'in 29 days on 09/29/2020'; // Degraded
 
         it('should enable the upgrade option', () => {
-            const { clusters } = clustersFixture;
             const n = clusters.findIndex((cluster) => cluster.name === 'eta-7');
             const cluster = clusters[n];
 
-            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.intercept('GET', clustersApi.single, {
+                body: { cluster },
+            }).as('GetCluster');
             cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
             cy.wait('@GetCluster');
 
@@ -145,7 +153,6 @@ describe('Cluster Certificate Expiration', () => {
         });
 
         it('should display a message for success instead of the form', () => {
-            const { clusters } = clustersFixture;
             const n = clusters.findIndex((cluster) => cluster.name === 'eta-7');
             const cluster = cloneDeep(clusters[n]);
 
@@ -158,7 +165,9 @@ describe('Cluster Certificate Expiration', () => {
                 },
             };
 
-            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.intercept('GET', clustersApi.single, {
+                body: { cluster },
+            }).as('GetCluster');
             cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
             cy.wait('@GetCluster');
 
@@ -273,9 +282,9 @@ describe('Cluster with Helm management', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.fixture('clusters/health.json').as('clusters');
-        cy.route('GET', clustersApi.list, '@clusters').as('GetClusters');
+        cy.intercept('GET', clustersApi.list, {
+            fixture: 'clusters/health.json',
+        }).as('GetClusters');
 
         cy.visit(clustersUrl);
         cy.wait(['@GetClusters']);
@@ -297,22 +306,27 @@ describe('Cluster with Helm management', () => {
 describe('Cluster Health', () => {
     withAuth();
 
-    let clustersFixture;
+    let clusters;
 
     before(() => {
-        cy.fixture('clusters/health.json').then((clustersArg) => {
-            clustersFixture = clustersArg;
+        cy.fixture('clusters/health.json').then((response) => {
+            clusters = response.clusters;
         });
     });
 
+    const metadata = {
+        version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
+        buildFlavor: 'release',
+        releaseBuild: true,
+        licenseStatus: 'VALID',
+    };
+
     beforeEach(() => {
-        cy.server();
-        cy.route('GET', clustersApi.list, clustersFixture).as('GetClusters');
-        cy.route('GET', metadataApi, {
-            version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
-            buildFlavor: 'release',
-            releaseBuild: true,
-            licenseStatus: 'VALID',
+        cy.intercept('GET', clustersApi.list, {
+            body: { clusters },
+        }).as('GetClusters');
+        cy.intercept('GET', metadataApi, {
+            body: metadata,
         }).as('GetMetadata');
 
         // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
@@ -537,8 +551,10 @@ describe('Cluster Health', () => {
         } = expectedInSide;
 
         it(`should appear in the form for ${clusterName}`, () => {
-            const cluster = clustersFixture.clusters[i];
-            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            const cluster = clusters[i];
+            cy.intercept('GET', clustersApi.single, {
+                body: { cluster },
+            }).as('GetCluster');
             cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${i + 1})`).click();
             cy.wait('@GetCluster');
 

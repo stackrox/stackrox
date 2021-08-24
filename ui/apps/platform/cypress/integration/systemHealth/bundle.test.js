@@ -1,5 +1,5 @@
 import { clusters as clustersApi, extensions as extensionsApi } from '../../constants/apiEndpoints';
-import { selectors, url } from '../../constants/SystemHealth';
+import { selectors, systemHealthUrl } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import selectSelectors from '../../selectors/select';
 
@@ -19,12 +19,11 @@ describe('Download Diagnostic Data', () => {
         const currentTime = new Date('2020-10-20T21:22:00.000Z');
 
         beforeEach(() => {
-            cy.server();
-            cy.route('GET', clustersApi.list).as('getClusters');
+            cy.intercept('GET', clustersApi.list).as('getClusters');
 
             cy.clock(currentTime.getTime());
 
-            cy.visit(url.dashboard);
+            cy.visit(systemHealthUrl);
             cy.wait('@getClusters');
 
             cy.get(generateDiagnosticBundleButton).click();
@@ -81,55 +80,81 @@ describe('Download Diagnostic Data', () => {
         );
 
         beforeEach(() => {
-            cy.server();
-            cy.route('GET', clustersApi.list).as('getClusters');
-            cy.route('GET', `${extensionsApi.diagnostics}*`).as('getDiagnostics');
-            cy.route({
-                method: 'GET',
-                url: `${extensionsApi.diagnostics}*`,
-                response: '',
-                onResponse: (xhr) => {
-                    xhr.response.body = emptyZipFileBlob; // eslint-disable-line no-param-reassign
-                },
-                headers: {
-                    'content-disposition':
-                        'attachment; filename="stackrox_diagnostic_2020_10_20_21_22_23.zip"',
-                },
-            }).as('getDiagnostics');
+            cy.intercept('GET', clustersApi.list).as('getClusters');
 
             cy.clock(currentTime.getTime());
 
-            cy.visit(url.dashboard);
+            cy.visit(systemHealthUrl);
             cy.wait('@getClusters');
 
             cy.get(generateDiagnosticBundleButton).click();
         });
 
         it('should not have params for initial defaults', () => {
-            cy.get(downloadDiagnosticBundleButton).click();
+            const url = extensionsApi.diagnostics;
+            cy.intercept('GET', url, {
+                headers: {
+                    'content-disposition':
+                        'attachment; filename="stackrox_diagnostic_2020_10_20_21_22_23.zip"',
+                    'content-type': 'application/zip',
+                },
+                body: emptyZipFileBlob,
+            }).as('GetDiagnostics');
 
-            const urlRegExp = new RegExp(`${extensionsApi.diagnostics}$`);
-            cy.wait('@getDiagnostics').its('url').should('match', urlRegExp);
+            cy.get(downloadDiagnosticBundleButton).click();
+            cy.wait('@GetDiagnostics');
         });
 
         it('should have param for valid starting time', () => {
+            cy.intercept(
+                {
+                    method: 'GET',
+                    url: `${extensionsApi.diagnostics}*`, // wildcard because query string
+                    query: {
+                        since: startingTime,
+                    },
+                },
+                {
+                    headers: {
+                        'content-disposition':
+                            'attachment; filename="stackrox_diagnostic_2020_10_20_21_22_23.zip"',
+                        'content-type': 'application/zip',
+                    },
+                    body: emptyZipFileBlob,
+                }
+            ).as('GetDiagnostics');
+
             cy.get(filterByStartingTime).type(startingTime);
             cy.get(downloadDiagnosticBundleButton).click();
-
-            const urlSubstring = `${extensionsApi.diagnostics}?since=${startingTime}`;
-            cy.wait('@getDiagnostics').its('url').should('contain', urlSubstring);
+            cy.wait('@GetDiagnostics');
         });
 
         it('should have params for one selected cluster and valid starting time', () => {
             const clusterName = 'remote';
-            const urlSubstring = `${extensionsApi.diagnostics}?cluster=${clusterName}&since=${startingTime}`;
+            cy.intercept(
+                {
+                    method: 'GET',
+                    url: `${extensionsApi.diagnostics}*`, // wildcard because query string
+                    query: {
+                        cluster: clusterName,
+                        since: startingTime,
+                    },
+                },
+                {
+                    headers: {
+                        'content-disposition':
+                            'attachment; filename="stackrox_diagnostic_2020_10_20_21_22_23.zip"',
+                        'content-type': 'application/zip',
+                    },
+                    body: emptyZipFileBlob,
+                }
+            ).as('GetDiagnostics');
 
             cy.get(`${filterByClusters} ${multiSelect.dropdown}`).click();
             cy.get(`${filterByClusters} ${multiSelect.options}:contains("${clusterName}")`).click();
             cy.get(filterByStartingTime).type(startingTime);
             cy.get(downloadDiagnosticBundleButton).click();
-
-            cy.wait('@getDiagnostics').its('url').should('contain', urlSubstring);
+            cy.wait('@GetDiagnostics');
         });
     });
 });

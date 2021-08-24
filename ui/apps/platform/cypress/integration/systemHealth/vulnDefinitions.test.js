@@ -1,4 +1,4 @@
-import { url, selectors } from '../../constants/SystemHealth';
+import { selectors, systemHealthUrl } from '../../constants/SystemHealth';
 import { integrationHealth as integrationHealthApi } from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 
@@ -13,7 +13,7 @@ describe('System Health Vulnerability Definitions local deployment', () => {
     });
 
     it('should have widget and up to date text', () => {
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetVulnerabilityDefinitionsInfo');
 
         const { vulnDefinitions } = selectors;
@@ -37,7 +37,7 @@ describe('System Health Vulnerability Definitions fixtures', () => {
             lastUpdatedTimestamp: '2020-12-09T03:04:59.377369440Z',
         }).as('GetVulnerabilityDefinitionsInfo');
 
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetVulnerabilityDefinitionsInfo');
 
         const { vulnDefinitions } = selectors;

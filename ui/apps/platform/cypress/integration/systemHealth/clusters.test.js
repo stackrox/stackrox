@@ -1,4 +1,4 @@
-import { url, selectors } from '../../constants/SystemHealth';
+import { selectors, systemHealthUrl } from '../../constants/SystemHealth';
 import { clusters as clustersApi } from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import navigationSelectors from '../../selectors/navigation';
@@ -7,8 +7,7 @@ describe('System Health Clusters local deployment', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.route('GET', clustersApi.list).as('GetClusters');
+        cy.intercept('GET', clustersApi.list).as('GetClusters');
     });
 
     it('should go from left navigation to Dashboard and have widgets', () => {
@@ -34,7 +33,7 @@ describe('System Health Clusters local deployment', () => {
     });
 
     it('should go from Dashboard to Clusters via click View All', () => {
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetClusters');
 
         cy.get(selectors.clusters.viewAllButton).click();
@@ -62,11 +61,11 @@ describe('System Health Clusters health fixture', () => {
     beforeEach(() => {
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-        cy.server();
-        cy.fixture('clusters/health.json').as('clusters');
-        cy.route('GET', clustersApi.list, '@clusters').as('GetClusters');
+        cy.intercept('GET', clustersApi.list, {
+            fixture: 'clusters/health.json',
+        }).as('GetClusters');
 
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetClusters');
     });
 
@@ -208,19 +207,23 @@ describe('System Health Clusters subset 3', () => {
     // For comparison to `sensorCertExpiry` in clusters fixture.
     const currentDatetime = new Date('2020-08-31T13:01:00Z');
 
+    let clusters;
+
+    before(() => {
+        cy.fixture('clusters/health.json').then((response) => {
+            // Return eta-7, kappa-kilogramme-10, lambda-liverpool-11.
+            clusters = response.clusters.slice(2, 5);
+        });
+    });
+
     beforeEach(() => {
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-        cy.server();
-        cy.fixture('clusters/health.json')
-            .then((response) => {
-                // Return eta-7, kappa-kilogramme-10, lambda-liverpool-11.
-                response.clusters = response.clusters.slice(2, 5);
-            })
-            .as('clusters');
-        cy.route('GET', clustersApi.list, '@clusters').as('GetClusters');
+        cy.intercept('GET', clustersApi.list, {
+            body: { clusters },
+        }).as('GetClusters');
 
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetClusters');
     });
 
@@ -347,17 +350,21 @@ describe('System Health Clusters subset 1 Uninitialized', () => {
         problemCount,
     } = selectors.clusters;
 
-    beforeEach(() => {
-        cy.server();
-        cy.fixture('clusters/health.json')
-            .then((response) => {
-                // Return only alpha-amsterdam-1, which has Uninitialized status.
-                response.clusters = response.clusters.slice(0, 1);
-            })
-            .as('clusters');
-        cy.route('GET', clustersApi.list, '@clusters').as('GetClusters');
+    let clusters;
 
-        cy.visit(url.dashboard);
+    before(() => {
+        cy.fixture('clusters/health.json').then((response) => {
+            // Return only alpha-amsterdam-1, which has Uninitialized status.
+            clusters = response.clusters.slice(0, 1);
+        });
+    });
+
+    beforeEach(() => {
+        cy.intercept('GET', clustersApi.list, {
+            body: { clusters },
+        }).as('GetClusters');
+
+        cy.visit(systemHealthUrl);
         cy.wait('@GetClusters');
     });
 
@@ -421,19 +428,23 @@ describe('System Health Clusters subset 1 Healthy', () => {
     // For comparison to `sensorCertExpiry` in clusters fixture.
     const currentDatetime = new Date('2020-08-31T13:01:00Z');
 
+    let clusters;
+
+    before(() => {
+        cy.fixture('clusters/health.json').then((response) => {
+            // Return only nu-york-13, which has Healthy status.
+            clusters = response.clusters.slice(6, 7);
+        });
+    });
+
     beforeEach(() => {
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-        cy.server();
-        cy.fixture('clusters/health.json')
-            .then((response) => {
-                // Return only nu-york-13, which has Healthy status.
-                response.clusters = response.clusters.slice(6, 7);
-            })
-            .as('clusters');
-        cy.route('GET', clustersApi.list, '@clusters').as('GetClusters');
+        cy.intercept('GET', clustersApi.list, {
+            body: { clusters },
+        }).as('GetClusters');
 
-        cy.visit(url.dashboard);
+        cy.visit(systemHealthUrl);
         cy.wait('@GetClusters');
     });
 
