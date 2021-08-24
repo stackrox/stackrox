@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	scannerEndpoint = fmt.Sprintf("scanner.%s", env.Namespace.Setting())
+	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
 )
 
 // DefaultImageIntegrations are the default public registries

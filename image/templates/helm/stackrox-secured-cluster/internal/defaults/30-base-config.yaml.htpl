@@ -1,6 +1,6 @@
 # This file contains basic configuration options for all services
 
-centralEndpoint: "central.{{ required "unknown namespace" ._rox._namespace }}:443"
+centralEndpoint: "central.{{ required "unknown namespace" ._rox._namespace }}.svc:443"
 createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
 
 {{- if .Release.IsInstall }}
@@ -20,7 +20,7 @@ imagePullSecrets:
   useFromDefaultServiceAccount: true
 
 sensor:
-  endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}:443"
+  endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}.svc:443"
 
 admissionControl:
   listenOnCreates: false

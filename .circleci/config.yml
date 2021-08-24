@@ -4713,7 +4713,6 @@ jobs:
         changed-path: '^operator/'
     - check-backend-changes
 
-
     - setup_remote_docker
 
     - attach_workspace:

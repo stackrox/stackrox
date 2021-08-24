@@ -4,8 +4,8 @@ cluster:
   type: [< default "KUBERNETES_CLUSTER" .ClusterType >]
 
 endpoint:
-  central: [< default "central.stackrox:443" .PublicEndpoint >]
-  advertised: [< default "sensor.stackrox:443" .AdvertisedEndpoint >]
+  central: [< default "central.stackrox.svc:443" .PublicEndpoint >]
+  advertised: [< default "sensor.stackrox.svc:443" .AdvertisedEndpoint >]
 
 image:
   repository:
