@@ -70,7 +70,11 @@ const ViolationFindings = ({ data, message }) => {
         );
     } else {
         content = (
-            <NoResultsMessage message={message} className="p-3 shadow mb-4 mx-4" icon="info" />
+            <NoResultsMessage
+                message={message}
+                className="p-3 shadow mb-4 mx-4 bg-base-100 rounded"
+                icon="info"
+            />
         );
     }
     return <div className="flex w-full bg-transparent">{content}</div>;

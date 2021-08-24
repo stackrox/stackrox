@@ -14,19 +14,17 @@ const transition = {
 function CollapsibleAnimatedDiv({ dataTestId, defaultOpen, isOpen, children }) {
     return (
         <AnimatePresence initial={defaultOpen}>
-            {isOpen && (
-                <motion.div
-                    data-testid={dataTestId}
-                    className="overflow-hidden"
-                    initial="collapsed"
-                    animate="open"
-                    exit="collapsed"
-                    variants={variants}
-                    transition={transition}
-                >
-                    {children}
-                </motion.div>
-            )}
+            <motion.div
+                data-testid={dataTestId}
+                className="overflow-hidden"
+                initial="collapsed"
+                animate={isOpen ? 'open' : 'collapsed'}
+                exit="collapsed"
+                variants={variants}
+                transition={transition}
+            >
+                {children}
+            </motion.div>
         </AnimatePresence>
     );
 }

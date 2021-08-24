@@ -22,6 +22,11 @@ import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicyS
 import { getExcludedNamesByType } from 'utils/policyUtils';
 import { pluralizeHas } from 'utils/textUtils';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
+import MitreAttackVectors from 'Containers/MitreAttackVectors';
+import {
+    FormSection,
+    FormSectionBody,
+} from 'Containers/Policies/Wizard/Form/PolicyDetailsForm/FormSection';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -235,54 +240,103 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <CollapsibleSection title="Policy Summary" headerComponents={policyActionButtons}>
-                    {/* using a different container class here because we want default 3 columns instead of 2 */}
-                    <div
-                        className={`${entityGridContainerBaseClassName} grid-columns-2 lg:grid-columns-3`}
-                    >
-                        <div className="sx-2">
-                            <Widget
-                                header="Description, Rationale, & Remediation"
-                                className="bg-base-100 min-h-48 w-full h-full pdf-page pdf-stretch"
+                <div className="grid grid-cols-3">
+                    <div className="border-b border-base-300 col-span-3 flex flex-1 justify-end p-3">
+                        {policyActionButtons}
+                    </div>
+                    <div className="col-span-2 border-r border-base-300">
+                        <CollapsibleSection
+                            title="Policy Summary"
+                            // headerComponents={policyActionButtons}
+                        >
+                            {/* using a different container class here because we want default 3 columns instead of 2 */}
+                            <div
+                                className={`${entityGridContainerBaseClassName} grid-columns-2 lg:grid-columns-3`}
                             >
-                                <div className="flex flex-col w-full">
-                                    <div className="w-full bg-primary-200 text-2xl text-base-500 flex flex-col md:flex-row items-start md:items-center justify-between mb-2">
-                                        <div className="w-full flex-grow p-4">
-                                            <span>{name}</span>
+                                <div className="sx-3">
+                                    <Widget
+                                        header="Description, Rationale, & Remediation"
+                                        className="bg-base-100 min-h-48 w-full h-full pdf-page pdf-stretch"
+                                    >
+                                        <div className="flex flex-col w-full">
+                                            <div className="w-full bg-primary-200 text-2xl text-base-500 flex flex-col md:flex-row items-start md:items-center justify-between mb-2">
+                                                <div className="w-full flex-grow p-4">
+                                                    <span>{name}</span>
+                                                </div>
+                                                <div className="w-full flex border-t border-base-400 md:border-t-0 justify-end items-center">
+                                                    <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
+                                                        <span className="mb-2 text-xl">
+                                                            Severity:
+                                                        </span>
+                                                        <SeverityLabel severity={severity} />
+                                                    </span>
+                                                    <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
+                                                        <span className="mb-2 text-xl">
+                                                            Status:
+                                                        </span>
+                                                        <StatusChip status={policyStatus} />
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <ul className="w-full flex-1 border-base-300">
+                                                {descriptionBlockMetadata.map(
+                                                    ({ key, value }, index) => (
+                                                        <li
+                                                            className={`${
+                                                                index ===
+                                                                descriptionBlockMetadata.length - 1
+                                                                    ? ''
+                                                                    : 'border-b'
+                                                            } border-base-300 px-4 py-2 leading-normal`}
+                                                            key={key}
+                                                        >
+                                                            <span className="text-base-700 mr-2 font-700">
+                                                                {key}:
+                                                            </span>
+                                                            {value}
+                                                        </li>
+                                                    )
+                                                )}
+                                            </ul>
                                         </div>
-                                        <div className="w-full flex border-t border-base-400 md:border-t-0 justify-end items-center">
-                                            <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
-                                                <span className="mb-2 text-xl">Severity:</span>
-                                                <SeverityLabel severity={severity} />
-                                            </span>
-                                            <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
-                                                <span className="mb-2 text-xl">Status:</span>
-                                                <StatusChip status={policyStatus} />
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <ul className="w-full flex-1 border-base-300">
-                                        {descriptionBlockMetadata.map(({ key, value }, index) => (
-                                            <li
-                                                className={`${
-                                                    index === descriptionBlockMetadata.length - 1
-                                                        ? ''
-                                                        : 'border-b'
-                                                } border-base-300 px-4 py-2 leading-normal`}
-                                                key={key}
-                                            >
-                                                <span className="text-base-700 mr-2 font-700">
-                                                    {key}:
-                                                </span>
-                                                {value}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    </Widget>
                                 </div>
-                            </Widget>
-                        </div>
+                                <div className="sx-2 sy-2">
+                                    <Metadata
+                                        className="h-full w-full min-w-43 bg-base-100 pdf-page"
+                                        keyValuePairs={details}
+                                        title="Details"
+                                    />
+                                </div>
+                                <div className="sx-1 sy-1">
+                                    <Metadata
+                                        className="flex-1 bg-base-100 min-h-43 pdf-page h-full"
+                                        keyValuePairs={scopeDetails}
+                                        title="Scope"
+                                    />
+                                </div>
+                                <div className="sx-1 sy-1">
+                                    <Metadata
+                                        className="flex-1 bg-base-100 min-h-43 pdf-page h-full"
+                                        keyValuePairs={excludedScopesDetails}
+                                        title="Excluded Scopes"
+                                    />
+                                </div>
+                            </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="MITRE ATT&CK" dataTestId="mitre-attack-section">
+                            <div className="p-4">
+                                <FormSection dataTestId="mitreAttackVectorDetails">
+                                    <FormSectionBody>
+                                        <MitreAttackVectors policyId={id} />
+                                    </FormSectionBody>
+                                </FormSection>
+                            </div>
+                        </CollapsibleSection>
+                    </div>
+                    <div className="col-span-1 border-b border-base-300">
                         {!!policySections.length && (
-                            <div className="sy-2">
+                            <div className="p-4 mt-10">
                                 <Widget
                                     header="Policy Criteria"
                                     className="pdf-page pdf-stretch h-full"
@@ -295,32 +349,16 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                 </Widget>
                             </div>
                         )}
-                        <div className="sx-1">
-                            <Metadata
-                                className="h-full w-full min-w-48 bg-base-100 pdf-page"
-                                keyValuePairs={details}
-                                title="Details"
-                            />
-                        </div>
-                        <div className="s-1">
-                            <Metadata
-                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page h-full"
-                                keyValuePairs={scopeDetails}
-                                title="Scope"
-                            />
-                        </div>
-                        <div className="s-1">
-                            <Metadata
-                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page h-full"
-                                keyValuePairs={excludedScopesDetails}
-                                title="Excluded Scopes"
-                            />
-                        </div>
                     </div>
-                </CollapsibleSection>
-                <CollapsibleSection title="Policy Findings" dataTestId="policy-findings-section">
-                    {policyFindingsContent}
-                </CollapsibleSection>
+                    <div className="col-span-3 w-full">
+                        <CollapsibleSection
+                            title="Policy Findings"
+                            dataTestId="policy-findings-section"
+                        >
+                            {policyFindingsContent}
+                        </CollapsibleSection>
+                    </div>
+                </div>
             </div>
             <RelatedEntitiesSideList
                 entityType={entityTypes.POLICY}

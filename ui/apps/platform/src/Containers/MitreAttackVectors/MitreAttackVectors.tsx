@@ -3,7 +3,7 @@ import { useQuery, gql } from '@apollo/client';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import MitreAttackVectorContainer from 'Components/MitreAttackVectorContainer';
-import LoadingSection from 'Components/LoadingSection';
+import Loader from 'Components/Loader';
 
 export type MitreAttackVectorsProps = {
     policyId: string;
@@ -36,7 +36,7 @@ function MitreAttackVectors({ policyId }: MitreAttackVectorsProps): ReactElement
     });
 
     if (isLoading) {
-        return <LoadingSection />;
+        return <Loader message={null} />;
     }
 
     if (error) {
