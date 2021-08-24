@@ -6,6 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	converter "github.com/stackrox/rox/central/activecomponent/converter"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -78,4 +79,36 @@ func (m *MockStore) GetBatch(ids []string) ([]*storage.ActiveComponent, []int, e
 func (mr *MockStoreMockRecorder) GetBatch(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockStore)(nil).GetBatch), ids)
+}
+
+// UpsertBatch mocks base method
+func (m *MockStore) UpsertBatch(activeComponents []*converter.CompleteActiveComponent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertBatch", activeComponents)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertBatch indicates an expected call of UpsertBatch
+func (mr *MockStoreMockRecorder) UpsertBatch(activeComponents interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBatch", reflect.TypeOf((*MockStore)(nil).UpsertBatch), activeComponents)
+}
+
+// DeleteBatch mocks base method
+func (m *MockStore) DeleteBatch(ids ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range ids {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteBatch", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteBatch indicates an expected call of DeleteBatch
+func (mr *MockStoreMockRecorder) DeleteBatch(ids ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBatch", reflect.TypeOf((*MockStore)(nil).DeleteBatch), ids...)
 }

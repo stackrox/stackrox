@@ -45,6 +45,7 @@ func main() {
 }
 
 var bucketToProtoInterface = map[string]proto.Message{
+	"active_components":                    (*storage.ActiveComponent)(nil),
 	"alerts":                               (*storage.Alert)(nil),
 	"alerts_list":                          (*storage.ListAlert)(nil),
 	"apiTokens":                            (*storage.TokenMetadata)(nil),

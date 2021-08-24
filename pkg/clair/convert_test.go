@@ -32,7 +32,8 @@ func componentWithLayerIndex(name string, idx int32) *storage.EmbeddedImageScanC
 	c := &storage.EmbeddedImageScanComponent{
 		Name: name,
 
-		Vulns: []*storage.EmbeddedVulnerability{},
+		Vulns:       []*storage.EmbeddedVulnerability{},
+		Executables: []*storage.EmbeddedImageScanComponent_Executable{},
 	}
 	if idx != -1 {
 		c.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{

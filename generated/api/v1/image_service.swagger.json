@@ -408,6 +408,14 @@
       ],
       "default": "UI_NONE"
     },
+    "EmbeddedImageScanComponentExecutable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
     "EmbeddedVulnerabilityVulnerabilityType": {
       "type": "string",
       "enum": [
@@ -690,8 +698,15 @@
         "fixedBy": {
           "type": "string",
           "description": "Component version that fixes all the fixable vulnerabilities in this component."
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EmbeddedImageScanComponentExecutable"
+          }
         }
-      }
+      },
+      "title": "Next Tag: 13"
     },
     "storageEmbeddedVulnerability": {
       "type": "object",

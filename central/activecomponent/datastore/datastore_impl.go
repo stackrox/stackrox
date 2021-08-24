@@ -3,14 +3,22 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
 	sacFilters "github.com/stackrox/rox/central/activecomponent/sac"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
+)
+
+var (
+	deploymentSAC = sac.ForResource(resources.Deployment)
 )
 
 type datastoreImpl struct {
@@ -73,4 +81,32 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
+}
+
+// UpsertBatch inserts active components
+func (ds *datastoreImpl) UpsertBatch(ctx context.Context, acs []*converter.CompleteActiveComponent) error {
+	if ok, err := deploymentSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ds.storage.UpsertBatch(acs); err != nil {
+		return errors.Wrap(err, "upserting active components to store")
+	}
+	return nil
+}
+
+// DeleteBatch deletes active components
+func (ds *datastoreImpl) DeleteBatch(ctx context.Context, ids ...string) error {
+	if ok, err := deploymentSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ds.storage.DeleteBatch(ids...); err != nil {
+		return errors.Wrap(err, "deleting active components")
+	}
+	return nil
 }

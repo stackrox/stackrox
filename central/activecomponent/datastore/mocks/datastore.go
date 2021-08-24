@@ -7,6 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	converter "github.com/stackrox/rox/central/activecomponent/converter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -34,6 +35,25 @@ func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
+}
+
+// DeleteBatch mocks base method
+func (m *MockDataStore) DeleteBatch(arg0 context.Context, arg1 ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteBatch", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteBatch indicates an expected call of DeleteBatch
+func (mr *MockDataStoreMockRecorder) DeleteBatch(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBatch", reflect.TypeOf((*MockDataStore)(nil).DeleteBatch), varargs...)
 }
 
 // Exists mocks base method
@@ -110,4 +130,18 @@ func (m *MockDataStore) SearchRawActiveComponents(arg0 context.Context, arg1 *v1
 func (mr *MockDataStoreMockRecorder) SearchRawActiveComponents(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawActiveComponents", reflect.TypeOf((*MockDataStore)(nil).SearchRawActiveComponents), arg0, arg1)
+}
+
+// UpsertBatch mocks base method
+func (m *MockDataStore) UpsertBatch(arg0 context.Context, arg1 []*converter.CompleteActiveComponent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertBatch", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertBatch indicates an expected call of UpsertBatch
+func (mr *MockDataStoreMockRecorder) UpsertBatch(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBatch", reflect.TypeOf((*MockDataStore)(nil).UpsertBatch), arg0, arg1)
 }

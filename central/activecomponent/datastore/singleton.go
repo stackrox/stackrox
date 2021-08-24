@@ -18,7 +18,7 @@ var (
 )
 
 func initialize() {
-	storage := dackbox.New(globaldb.GetGlobalDackBox())
+	storage := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
 	searcher := search.New(storage, globaldb.GetGlobalDackBox(),
 		cveIndexer.New(globalindex.GetGlobalIndex()),
 		componentIndexer.New(globalindex.GetGlobalIndex()),

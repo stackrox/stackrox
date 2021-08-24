@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -20,6 +21,9 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ActiveComponent, error)
+
+	UpsertBatch(ctx context.Context, activeComponents []*converter.CompleteActiveComponent) error
+	DeleteBatch(ctx context.Context, ids ...string) error
 }
 
 // New returns a new instance of a DataStore.

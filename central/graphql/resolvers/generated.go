@@ -548,6 +548,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"username: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Email_AuthMethod(0)))
+	utils.Must(builder.AddType("EmbeddedImageScanComponent_Executable", []string{
+		"path: String!",
+	}))
 	utils.Must(builder.AddType("EmbeddedSecret", []string{
 		"name: String!",
 		"path: String!",
@@ -5473,6 +5476,35 @@ func toEmail_AuthMethods(values *[]string) []storage.Email_AuthMethod {
 		output[i] = toEmail_AuthMethod(&v)
 	}
 	return output
+}
+
+type embeddedImageScanComponent_ExecutableResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.EmbeddedImageScanComponent_Executable
+}
+
+func (resolver *Resolver) wrapEmbeddedImageScanComponent_Executable(value *storage.EmbeddedImageScanComponent_Executable, ok bool, err error) (*embeddedImageScanComponent_ExecutableResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &embeddedImageScanComponent_ExecutableResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEmbeddedImageScanComponent_Executables(values []*storage.EmbeddedImageScanComponent_Executable, err error) ([]*embeddedImageScanComponent_ExecutableResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*embeddedImageScanComponent_ExecutableResolver, len(values))
+	for i, v := range values {
+		output[i] = &embeddedImageScanComponent_ExecutableResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *embeddedImageScanComponent_ExecutableResolver) Path(ctx context.Context) string {
+	value := resolver.data.GetPath()
+	return value
 }
 
 type embeddedSecretResolver struct {

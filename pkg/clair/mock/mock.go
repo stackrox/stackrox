@@ -130,14 +130,16 @@ func GetTestFeatures() ([]clairV1.Feature, []*storage.EmbeddedImageScanComponent
 	}
 	protoComponents := []*storage.EmbeddedImageScanComponent{
 		{
-			Name:    "nginx-module-geoip",
-			Version: "1.10.3-1~jessie",
-			Vulns:   []*storage.EmbeddedVulnerability{},
+			Name:        "nginx-module-geoip",
+			Version:     "1.10.3-1~jessie",
+			Vulns:       []*storage.EmbeddedVulnerability{},
+			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
 		},
 		{
-			Name:    "pcre3",
-			Version: "2:8.35-3.3+deb8u4",
-			Vulns:   protoVulns[1:], // cut out the nil value
+			Name:        "pcre3",
+			Version:     "2:8.35-3.3+deb8u4",
+			Vulns:       protoVulns[1:], // cut out the nil value
+			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
 		},
 	}
 	return quayFeatures, protoComponents

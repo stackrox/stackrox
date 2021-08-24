@@ -1783,11 +1783,13 @@ github.com/stackrox/rox v0.0.0-20191128130813-ae51554fc242/go.mod h1:Qshd7p6Hw8x
 github.com/stackrox/rox v0.0.0-20200813232042-403e0ab8a77e/go.mod h1:X/6FdUgnl7zcQX+YgQt1tJHRU8joAifnMAj9pefVjrI=
 github.com/stackrox/rox v0.0.0-20200902200840-183e12662c50/go.mod h1:U3X7wnmLK3TQbM0jAf5SvKLnVsq/neyQNTEc23X8zkY=
 github.com/stackrox/rox v0.0.0-20201222223839-042406f3664c/go.mod h1:i2w/bSJhyytJ8xQNcjBIHZWyLhoI4BgZ/1BfgFgGv54=
+github.com/stackrox/rox v0.0.0-20210604075136-10ae82b81f29/go.mod h1:zVhifB3UTVZsqW0DiA3rdBJLTEjvghZyfw2Y7S2JI9E=
 github.com/stackrox/scanner v0.0.0-20191202203519-a2a15f33f41a/go.mod h1:2GKn2VH/P+4lsFJG8NlpTdgrU+nelhk8Ogtdx6XjaI0=
 github.com/stackrox/scanner v0.0.0-20200828185353-f2362ea7df99/go.mod h1:9EZi1lP1jHMkAdDEQKymiBSqH5Auma8DZiWcUrh7L0U=
 github.com/stackrox/scanner v0.0.0-20201218051228-bb42033af91b/go.mod h1:EQhODmCL9hcTgyjvh8YovNfn3cFNlUSAFCMl+34aezk=
-github.com/stackrox/scanner v0.0.0-20210602003504-057b882c8d87 h1:AWM3Yv+VFp3R9I9T5t4QHdWIFT0yGsbDH3IAUyjh2nY=
 github.com/stackrox/scanner v0.0.0-20210602003504-057b882c8d87/go.mod h1:PhJN0RifIi+uF2VHzD9jeTmQnbDLVwcAfDRscYJOR5Y=
+github.com/stackrox/scanner v0.0.0-20210817231857-4acbccb682b8 h1:aE5+QUJ/hNgOVJ/1AhAYme5uYpU9g5x7RndQnFchtf8=
+github.com/stackrox/scanner v0.0.0-20210817231857-4acbccb682b8/go.mod h1:bMNCrv38vOauEWjHAOtXyb4bvobydRcQ0TdT8s7upO8=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f h1:Ofa3PAa609eSHcHP2kCJDUWUnuEWfiqXhsuppk/QtOE=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980/go.mod h1:AO3tvPzVZ/ayst6UlUKUv6rcPQInYe3IknH3jYhAKu8=
@@ -2021,6 +2023,7 @@ golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPh
 golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
+golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b/go.mod h1:T9bdIzuCu7OtxOm1hfPfRQxPLYneinmdGuTeoZ9dtd4=
 golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a h1:kr2P4QFmQr29mSLA43kwrOcgcReGTfbE9N577tCTuBc=
 golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a/go.mod h1:P+XmwS30IXTQdn5tA2iutPOUgjI07+tq3H3K9MVA1s8=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
