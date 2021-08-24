@@ -8,7 +8,6 @@ import (
 	context "context"
 	types "github.com/gogo/protobuf/types"
 	gomock "github.com/golang/mock/gomock"
-	converter "github.com/stackrox/rox/central/cve/converter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -223,23 +222,4 @@ func (mr *MockDataStoreMockRecorder) Unsuppress(arg0 interface{}, arg1 ...interf
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsuppress", reflect.TypeOf((*MockDataStore)(nil).Unsuppress), varargs...)
-}
-
-// UpsertClusterCVEs mocks base method
-func (m *MockDataStore) UpsertClusterCVEs(arg0 context.Context, arg1 ...converter.ClusterCVEParts) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0}
-	for _, a := range arg1 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "UpsertClusterCVEs", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertClusterCVEs indicates an expected call of UpsertClusterCVEs
-func (mr *MockDataStoreMockRecorder) UpsertClusterCVEs(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0}, arg1...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertClusterCVEs", reflect.TypeOf((*MockDataStore)(nil).UpsertClusterCVEs), varargs...)
 }

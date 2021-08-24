@@ -4,18 +4,13 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
-	clusterCVEEdgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
-	"github.com/stackrox/rox/central/cve/converter"
 	vulnDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	"github.com/stackrox/rox/central/cve/store"
-	cveUtil "github.com/stackrox/rox/central/cve/utils"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -180,71 +175,6 @@ func (b *storeImpl) upsertNoBatch(cves ...*storage.CVE) error {
 	return nil
 }
 
-func (b *storeImpl) UpsertClusterCVEs(parts ...converter.ClusterCVEParts) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "CVE")
-
-	keysToUpdate := gatherKeysForCVEParts(parts...)
-	lockedKeySet := concurrency.DiscreteKeySet(keysToUpdate...)
-
-	return b.keyFence.DoStatusWithLock(lockedKeySet, func() error {
-		batch := batcher.New(len(parts), batchSize)
-		for {
-			start, end, ok := batch.Next()
-			if !ok {
-				break
-			}
-
-			if err := b.upsertClusterCVEsNoBatch(parts[start:end]...); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-func (b *storeImpl) upsertClusterCVEsNoBatch(parts ...converter.ClusterCVEParts) error {
-	dackTxn, err := b.dacky.NewTransaction()
-	if err != nil {
-		return err
-	}
-	defer dackTxn.Discard()
-
-	for _, clusterCVE := range parts {
-		for _, child := range clusterCVE.Children {
-			if err := clusterCVEEdgeDackBox.Upserter.UpsertIn(nil, child.Edge, dackTxn); err != nil {
-				return err
-			}
-
-			dackTxn.Graph().AddRefs(clusterDackBox.BucketHandler.GetKey(child.ClusterID), vulnDackBox.KeyFunc(clusterCVE.CVE))
-		}
-
-		currCVEMsg, err := vulnDackBox.Reader.ReadIn(vulnDackBox.BucketHandler.GetKey(clusterCVE.CVE.GetId()), dackTxn)
-		if err != nil {
-			return err
-		}
-		if currCVEMsg == nil {
-			// Populate the types slice for the new CVE.
-			clusterCVE.CVE.Types = []storage.CVE_CVEType{clusterCVE.CVE.GetType()}
-		} else {
-			currCVE := currCVEMsg.(*storage.CVE)
-			clusterCVE.CVE.Suppressed = currCVE.GetSuppressed()
-			clusterCVE.CVE.CreatedAt = currCVE.GetCreatedAt()
-			clusterCVE.CVE.SuppressActivation = currCVE.GetSuppressActivation()
-			clusterCVE.CVE.SuppressExpiry = currCVE.GetSuppressExpiry()
-
-			clusterCVE.CVE.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), clusterCVE.CVE.GetType())
-		}
-
-		clusterCVE.CVE.Type = storage.CVE_UNKNOWN_CVE
-
-		if err := vulnDackBox.Upserter.UpsertIn(nil, clusterCVE.CVE, dackTxn); err != nil {
-			return err
-		}
-	}
-
-	return dackTxn.Commit()
-}
-
 func (b *storeImpl) Delete(ids ...string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
 
@@ -287,15 +217,4 @@ func (b *storeImpl) deleteNoBatch(ids ...string) error {
 		return err
 	}
 	return nil
-}
-
-func gatherKeysForCVEParts(parts ...converter.ClusterCVEParts) [][]byte {
-	var allKeys [][]byte
-	for _, part := range parts {
-		allKeys = append(allKeys, vulnDackBox.KeyFunc(part.CVE))
-		for _, child := range part.Children {
-			allKeys = append(allKeys, clusterDackBox.BucketHandler.GetKey(child.ClusterID))
-		}
-	}
-	return sortedkeys.Sort(allKeys)
 }

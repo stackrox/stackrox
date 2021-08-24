@@ -10,6 +10,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	mockClusterEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore/mocks"
 	"github.com/stackrox/rox/central/cve/converter"
 	mockCVEDataStore "github.com/stackrox/rox/central/cve/datastore/mocks"
 	"github.com/stackrox/rox/central/cve/matcher"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -193,6 +195,7 @@ func TestReconcileCVEsInDB(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockClusters := mockClusterDataStore.NewMockDataStore(ctrl)
+	mockClusterCveEdge := mockClusterEdgeDataStore.NewMockDataStore(ctrl)
 	mockNamespaces := mockNSDataStore.NewMockDataStore(ctrl)
 	mockImages := mockImageDataStore.NewMockDataStore(ctrl)
 	mockCVEs := mockCVEDataStore.NewMockDataStore(ctrl)
@@ -202,10 +205,10 @@ func TestReconcileCVEsInDB(t *testing.T) {
 
 	cveManager := &orchestratorIstioCVEManagerImpl{
 		orchestratorCVEMgr: &orchestratorCVEManager{
-			embeddedCVEIdToClusters: make(map[converter.CVEType]map[string][]*storage.Cluster),
-			clusterDataStore:        mockClusters,
-			cveDataStore:            mockCVEs,
-			cveMatcher:              cveMatcher,
+			clusterCVEDataStore: mockClusterCveEdge,
+			clusterDataStore:    mockClusters,
+			cveDataStore:        mockCVEs,
+			cveMatcher:          cveMatcher,
 		},
 	}
 
@@ -213,9 +216,10 @@ func TestReconcileCVEsInDB(t *testing.T) {
 	mockClusters.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{cluster}, nil).AnyTimes()
 	mockNamespaces.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
-	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), cvesToUpsert).Return(nil)
+	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), cvesToUpsert).Return(nil)
 	mockCVEs.EXPECT().Delete(gomock.Any(), []*storage.CVE{}).Return(nil)
 
+	mockClusterCveEdge.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
 	err = cveManager.orchestratorCVEMgr.updateCVEs(embeddedCVEs, embeddedCVEToClusters, converter.K8s)
 	assert.NoError(t, err)
 }
@@ -225,6 +229,7 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockClusters := mockClusterDataStore.NewMockDataStore(ctrl)
+	mockClusterCveEdge := mockClusterEdgeDataStore.NewMockDataStore(ctrl)
 	mockNamespaces := mockNSDataStore.NewMockDataStore(ctrl)
 	mockImages := mockImageDataStore.NewMockDataStore(ctrl)
 	mockCVEs := mockCVEDataStore.NewMockDataStore(ctrl)
@@ -262,8 +267,9 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 	}
 
 	mockCVEs.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).Times(4)
+	mockClusterCveEdge.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).Times(4)
 
-	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
+	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
 		assert.Equal(t, len(cves), 3)
 		for _, cve := range cves {
 			switch cve.CVE.GetId() {
@@ -430,19 +436,18 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 	}
 
 	orchestratorCVEMgr := &orchestratorCVEManager{
-		embeddedCVEIdToClusters: make(map[converter.CVEType]map[string][]*storage.Cluster),
-		clusterDataStore:        mockClusters,
-		cveDataStore:            mockCVEs,
-		cveMatcher:              cveMatcher,
-		scanners:                make(map[string]types.OrchestratorScanner),
+		clusterCVEDataStore: mockClusterCveEdge,
+		clusterDataStore:    mockClusters,
+		cveDataStore:        mockCVEs,
+		cveMatcher:          cveMatcher,
+		scanners:            make(map[string]types.OrchestratorScanner),
 	}
 	orchestratorCVEMgr.scanners["someName"] = &scanner
 
 	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.K8s)
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(orchestratorCVEMgr.embeddedCVEIdToClusters[converter.K8s]))
 
-	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
+	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
 		assert.Equal(t, 1, len(cves))
 		assert.Equal(t, "CVE-4", cves[0].CVE.GetId())
 		assert.Equal(t, 1, len(cves[0].Children))
@@ -450,22 +455,53 @@ func TestOrchestratorManager_ReconcileCVEs(t *testing.T) {
 	})
 	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.OpenShift)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(orchestratorCVEMgr.embeddedCVEIdToClusters[converter.OpenShift]))
 
-	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
+	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
 		assert.Equal(t, 2, len(cves)) // CVE 1, 3
 	})
 
 	clusters = clusters[1:2]
 	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.K8s)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(orchestratorCVEMgr.embeddedCVEIdToClusters[converter.K8s]))
 
-	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
-		assert.Equal(t, 0, len(cves)) // CVE 1, 3
+	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
+		assert.Empty(t, cves)
 	})
 
 	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.OpenShift)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(orchestratorCVEMgr.embeddedCVEIdToClusters[converter.OpenShift]))
+
+	cves := []string{"to_be_removed_0", "to_be_removed_1", "CVE-1", "CVE-3"}
+	var existingCVEs []search.Result
+	for _, cve := range cves {
+		existingCVEs = append(existingCVEs, search.Result{ID: cve})
+	}
+	mockCVEs.EXPECT().Search(gomock.Any(), gomock.Any()).Return(existingCVEs, nil)
+
+	edges := []edges.EdgeID{
+		{ParentID: "cluster1", ChildID: cves[0]},
+		{ParentID: "cluster2", ChildID: cves[1]},
+		{ParentID: "cluster1", ChildID: cves[1]},
+		{ParentID: clusters[0].Id, ChildID: cves[2]},
+		{ParentID: clusters[0].Id, ChildID: cves[3]},
+	}
+
+	var existingEdges []search.Result
+	for _, edge := range edges {
+		existingEdges = append(existingEdges, search.Result{ID: edge.ToString()})
+	}
+	mockClusterCveEdge.EXPECT().Search(gomock.Any(), gomock.Any()).Return(existingEdges, nil)
+	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, cves ...converter.ClusterCVEParts) {
+		assert.Equal(t, 2, len(cves))
+	})
+	mockClusterCveEdge.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, ids ...string) {
+		assert.Equal(t, 3, len(ids))
+	})
+	mockCVEs.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1).Do(func(arg0 context.Context, ids ...string) {
+		assert.Equal(t, 2, len(ids))
+		assert.Contains(t, ids, cves[0])
+		assert.Contains(t, ids, cves[1])
+	})
+	err = orchestratorCVEMgr.reconcileCVEs(clusters, converter.K8s)
+	assert.NoError(t, err)
 }

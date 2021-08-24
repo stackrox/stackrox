@@ -6,6 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	converter "github.com/stackrox/rox/central/cve/converter"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -108,4 +109,40 @@ func (m *MockStore) GetBatch(ids []string) ([]*storage.ClusterCVEEdge, []int, er
 func (mr *MockStoreMockRecorder) GetBatch(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockStore)(nil).GetBatch), ids)
+}
+
+// Upsert mocks base method
+func (m *MockStore) Upsert(cveParts ...converter.ClusterCVEParts) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range cveParts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Upsert", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Upsert indicates an expected call of Upsert
+func (mr *MockStoreMockRecorder) Upsert(cveParts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), cveParts...)
+}
+
+// Delete mocks base method
+func (m *MockStore) Delete(ids ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range ids {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Delete", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete
+func (mr *MockStoreMockRecorder) Delete(ids ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ids...)
 }

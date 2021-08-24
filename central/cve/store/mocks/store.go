@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	converter "github.com/stackrox/rox/central/cve/converter"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -127,24 +126,6 @@ func (m *MockStore) Upsert(cves ...*storage.CVE) error {
 func (mr *MockStoreMockRecorder) Upsert(cves ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), cves...)
-}
-
-// UpsertClusterCVEs mocks base method
-func (m *MockStore) UpsertClusterCVEs(cveParts ...converter.ClusterCVEParts) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range cveParts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "UpsertClusterCVEs", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertClusterCVEs indicates an expected call of UpsertClusterCVEs
-func (mr *MockStoreMockRecorder) UpsertClusterCVEs(cveParts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertClusterCVEs", reflect.TypeOf((*MockStore)(nil).UpsertClusterCVEs), cveParts...)
 }
 
 // Delete mocks base method

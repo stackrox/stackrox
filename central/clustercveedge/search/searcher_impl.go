@@ -4,19 +4,26 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/clustercveedge/index"
-	pkgClusterCVEEdgeSAC "github.com/stackrox/rox/central/clustercveedge/sac"
+	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
+	clusterCVEEdgeSAC "github.com/stackrox/rox/central/clustercveedge/sac"
 	"github.com/stackrox/rox/central/clustercveedge/store"
+	cveMappings "github.com/stackrox/rox/central/cve/mappings"
+	"github.com/stackrox/rox/central/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/compound"
 	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/rox/pkg/search/scoped"
 )
 
 type searcherImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage       store.Store
+	indexer       index.Indexer
+	searcher      search.Searcher
+	graphProvider graph.Provider
 }
 
 // SearchClusterCVEEdges returns the search results from indexed cves for the query.
@@ -29,8 +36,11 @@ func (ds *searcherImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.Sea
 }
 
 // Search returns the raw search results from the query
-func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.getSearchResults(ctx, q)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
+	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
+		res, err = ds.searcher.Search(inner, q)
+	})
+	return res, err
 }
 
 // Count returns the number of search results from the query
@@ -81,8 +91,33 @@ func convertOne(cve *storage.ClusterCVEEdge, result *search.Result) *v1.SearchRe
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	return filtered.UnsafeSearcher(unsafeSearcher, pkgClusterCVEEdgeSAC.GetSACFilter())
+func formatSearcher(clusterCVEEdgeIndexer blevesearch.UnsafeSearcher,
+	cveIndexer blevesearch.UnsafeSearcher) search.Searcher {
+	clusterCVEEdgeSearcher := filtered.UnsafeSearcher(clusterCVEEdgeIndexer, clusterCVEEdgeSAC.GetSACFilter())
+	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
+	compoundSearcher := getCompoundCVESearcher(
+		clusterCVEEdgeSearcher,
+		cveSearcher,
+	)
+	return compoundSearcher
+}
+
+func getCompoundCVESearcher(
+	clusterCVEEdgeSearcher search.Searcher,
+	cveSearcher search.Searcher) search.Searcher {
+	// The ordering of these is important, so do not change.
+	return compound.NewSearcher([]compound.SearcherSpec{
+		{
+			Searcher:       scoped.WithScoping(cveSearcher, dackbox.ToCategory(v1.SearchCategory_VULNERABILITIES)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_VULNERABILITIES][v1.SearchCategory_CLUSTER_VULN_EDGE],
+			Options:        cveMappings.OptionsMap,
+		},
+		{
+			IsDefault: true,
+			Searcher:  scoped.WithScoping(clusterCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_CLUSTER_VULN_EDGE)),
+			Options:   clusterCVEEdgeMappings.OptionsMap,
+		},
+	})
 }
 
 func (ds *searcherImpl) searchClusterCVEEdges(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVEEdge, error) {

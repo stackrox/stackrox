@@ -9,12 +9,12 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -22,9 +22,10 @@ type istioCVEManager struct {
 	nvdCVEs      map[string]*schema.NVDCVEFeedJSON10DefCVEItem
 	embeddedCVEs []*storage.EmbeddedVulnerability
 
-	clusterDataStore clusterDataStore.DataStore
-	cveDataStore     cveDataStore.DataStore
-	cveMatcher       *cveMatcher.CVEMatcher
+	clusterDataStore    clusterDataStore.DataStore
+	cveDataStore        cveDataStore.DataStore
+	clusterCVEDataStore clusterCVEEdgeDataStore.DataStore
+	cveMatcher          *cveMatcher.CVEMatcher
 
 	mutex sync.Mutex
 }
@@ -73,7 +74,6 @@ func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEIte
 func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnerability) error {
 	cves := converter.EmbeddedCVEsToProtoCVEs("", embeddedCVEs...)
 	newCVEs := make([]converter.ClusterCVEParts, 0, len(cves))
-	newCVEIDs := set.NewStringSet()
 	for _, cve := range cves {
 		clusters, err := m.cveMatcher.GetAffectedClusters(cveElevatedCtx, m.getNVDCVE(cve.GetId()))
 		if err != nil {
@@ -83,16 +83,15 @@ func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnera
 		if len(clusters) == 0 {
 			continue
 		}
-		newCVEIDs.Add(cve.GetId())
 
 		fixVersions := strings.Join(converter.GetFixedVersions(m.getNVDCVE(cve.GetId())), ",")
 		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, clusters, fixVersions))
 	}
 
-	if err := m.cveDataStore.UpsertClusterCVEs(cveElevatedCtx, newCVEs...); err != nil {
+	if err := m.clusterCVEDataStore.Upsert(cveElevatedCtx, newCVEs...); err != nil {
 		return err
 	}
-	return reconcileCVEsInDB(m.cveDataStore, storage.CVE_ISTIO_CVE, newCVEIDs)
+	return reconcileCVEsInDB(m.cveDataStore, m.clusterCVEDataStore, storage.CVE_ISTIO_CVE, newCVEs)
 }
 
 // reconcileOnlineModeCVEs fetches new CVEs from definitions.stackrox.io and reconciles them

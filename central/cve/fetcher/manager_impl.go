@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
@@ -18,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/throttle"
 )
 
@@ -218,18 +218,38 @@ func unzip(src, dest string) error {
 	return nil
 }
 
-func reconcileCVEsInDB(cveDataStore cveDataStore.DataStore, cveType storage.CVE_CVEType, newCVEs set.StringSet) error {
-	results, err := cveDataStore.Search(cveElevatedCtx,
-		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVEType, cveType.String()).ProtoQuery())
+func reconcileCVEsInDB(cveDataStore cveDataStore.DataStore, edgeDataStore clusterCVEEdgeDataStore.DataStore, cveType storage.CVE_CVEType, newCVEs []converter.ClusterCVEParts) error {
+	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVEType, cveType.String()).ProtoQuery()
+	cveResults, err := cveDataStore.Search(cveElevatedCtx, query)
 	if err != nil {
 		return err
 	}
 
-	// Identify the cluster cves that do not affect the infra
-	discardCVEs := pkgSearch.ResultsToIDSet(results).Difference(newCVEs)
-	if len(discardCVEs) == 0 {
+	edgeResults, err := edgeDataStore.Search(cveElevatedCtx, query)
+	if err != nil {
+		return err
+	}
+
+	// Identify the cves and cluster cve edges that do not affect the infra
+	discardEdgeIds := pkgSearch.ResultsToIDSet(edgeResults)
+	discardCVEs := pkgSearch.ResultsToIDSet(cveResults)
+
+	for _, newCVE := range newCVEs {
+		for _, edge := range newCVE.Children {
+			discardEdgeIds.Remove(edge.Edge.GetId())
+		}
+		discardCVEs.Remove(newCVE.CVE.GetId())
+	}
+
+	if len(discardCVEs) == 0 && len(discardEdgeIds) == 0 {
 		return nil
 	}
+
+	err = edgeDataStore.Delete(cveElevatedCtx, discardEdgeIds.AsSlice()...)
+	if err != nil {
+		return err
+	}
+
 	// delete all the cluster cves that do not affect the infra
 	return cveDataStore.Delete(cveElevatedCtx, discardCVEs.AsSlice()...)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/clustercveedge/index"
 	"github.com/stackrox/rox/central/clustercveedge/search"
 	"github.com/stackrox/rox/central/clustercveedge/store"
+	"github.com/stackrox/rox/central/cve/converter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -23,6 +24,9 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ClusterCVEEdge, bool, error)
 	Count(ctx context.Context) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ClusterCVEEdge, error)
+
+	Upsert(ctx context.Context, cves ...converter.ClusterCVEParts) error
+	Delete(ctx context.Context, ids ...string) error
 }
 
 // New returns a new instance of a DataStore.

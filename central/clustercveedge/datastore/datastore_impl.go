@@ -7,11 +7,18 @@ import (
 	sacFilters "github.com/stackrox/rox/central/clustercveedge/sac"
 	"github.com/stackrox/rox/central/clustercveedge/search"
 	"github.com/stackrox/rox/central/clustercveedge/store"
+	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
+)
+
+var (
+	clustersSAC = sac.ForResource(resources.Cluster)
 )
 
 type datastoreImpl struct {
@@ -90,4 +97,29 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
+}
+
+func (ds *datastoreImpl) Upsert(ctx context.Context, parts ...converter.ClusterCVEParts) error {
+	if len(parts) == 0 {
+		return nil
+	}
+
+	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	// Store the new CVE data.
+	return ds.storage.Upsert(parts...)
+}
+
+func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
+	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	return ds.storage.Delete(ids...)
 }

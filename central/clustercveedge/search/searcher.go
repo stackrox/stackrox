@@ -5,8 +5,10 @@ import (
 
 	"github.com/stackrox/rox/central/clustercveedge/index"
 	"github.com/stackrox/rox/central/clustercveedge/store"
+	cveIndex "github.com/stackrox/rox/central/cve/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -20,10 +22,11 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage store.Store, indexer index.Indexer) Searcher {
+func New(storage store.Store, clusterCVEEdgeIndexer index.Indexer, cveIndexer cveIndex.Indexer, graphProvider graph.Provider) Searcher {
 	return &searcherImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: formatSearcher(indexer),
+		storage:       storage,
+		indexer:       clusterCVEEdgeIndexer,
+		searcher:      formatSearcher(clusterCVEEdgeIndexer, cveIndexer),
+		graphProvider: graphProvider,
 	}
 }

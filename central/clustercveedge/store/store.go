@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -13,4 +14,7 @@ type Store interface {
 	GetAll() ([]*storage.ClusterCVEEdge, error)
 	Get(id string) (*storage.ClusterCVEEdge, bool, error)
 	GetBatch(ids []string) ([]*storage.ClusterCVEEdge, []int, error)
+
+	Upsert(cveParts ...converter.ClusterCVEParts) error
+	Delete(ids ...string) error
 }

@@ -7,6 +7,10 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	edgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
+	edgeIndexMocks "github.com/stackrox/rox/central/clustercveedge/index/mocks"
+	edgeSearchMocks "github.com/stackrox/rox/central/clustercveedge/search/mocks"
+	edgeStore "github.com/stackrox/rox/central/clustercveedge/store/dackbox"
 	"github.com/stackrox/rox/central/cve/converter"
 	indexMocks "github.com/stackrox/rox/central/cve/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/cve/search/mocks"
@@ -260,6 +264,10 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 	suite.searcher.EXPECT().SearchRawCVEs(getCVECtx, testSuppressionQuery).Return([]*storage.CVE{}, nil)
 	datastore, err := New(dacky, store.New(dacky, concurrency.NewKeyFence()), suite.indexer, suite.searcher)
 	suite.Require().NoError(err)
+	edgeStore, err := edgeStore.New(dacky, concurrency.NewKeyFence())
+	suite.Require().NoError(err)
+	edgeDataStore, err := edgeDataStore.New(dacky, edgeStore, edgeIndexMocks.NewMockIndexer(suite.mockCtrl), edgeSearchMocks.NewMockSearcher(suite.mockCtrl))
+	suite.Require().NoError(err)
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -267,7 +275,7 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1234",
 		Type: storage.CVE_NODE_CVE,
 	}
-	suite.NoError(datastore.UpsertClusterCVEs(ctx, converter.ClusterCVEParts{CVE: cve}))
+	suite.NoError(edgeDataStore.Upsert(ctx, converter.ClusterCVEParts{CVE: cve}))
 
 	expectedCVE := &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -283,7 +291,7 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1234",
 		Type: storage.CVE_IMAGE_CVE,
 	}
-	suite.NoError(datastore.UpsertClusterCVEs(ctx, converter.ClusterCVEParts{CVE: cve}))
+	suite.NoError(edgeDataStore.Upsert(ctx, converter.ClusterCVEParts{CVE: cve}))
 
 	expectedCVE = &storage.CVE{
 		Id:    "CVE-2021-1234",
@@ -303,8 +311,8 @@ func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
 		Id:   "CVE-2021-1235",
 		Type: storage.CVE_IMAGE_CVE,
 	}
-	suite.NoError(datastore.UpsertClusterCVEs(ctx, converter.ClusterCVEParts{CVE: cve}))
-	suite.NoError(datastore.UpsertClusterCVEs(ctx, converter.ClusterCVEParts{CVE: cve2}))
+	suite.NoError(edgeDataStore.Upsert(ctx, converter.ClusterCVEParts{CVE: cve}))
+	suite.NoError(edgeDataStore.Upsert(ctx, converter.ClusterCVEParts{CVE: cve2}))
 
 	expectedCVE = &storage.CVE{
 		Id:    "CVE-2021-1234",

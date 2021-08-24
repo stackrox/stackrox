@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/cve/search"
 	"github.com/stackrox/rox/central/cve/store"
@@ -31,7 +30,6 @@ type DataStore interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 	EnrichNodeWithSuppressedCVEs(node *storage.Node)
 
-	UpsertClusterCVEs(ctx context.Context, cves ...converter.ClusterCVEParts) error
 	Delete(ctx context.Context, ids ...string) error
 }
 

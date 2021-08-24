@@ -3,7 +3,6 @@ package dackbox
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -85,52 +84,4 @@ func (suite *CVEStoreTestSuite) TestCVES() {
 	count, err := suite.store.Count()
 	suite.NoError(err)
 	suite.Equal(len(cves), count)
-}
-
-func (suite *CVEStoreTestSuite) TestClusterCVES() {
-	cveParts := []converter.ClusterCVEParts{
-		{
-			CVE: &storage.CVE{
-				Id:   "CVE-2019-02-14",
-				Cvss: 1.3,
-			},
-		},
-		{
-			CVE: &storage.CVE{
-				Id:   "CVE-2019-03-14",
-				Cvss: 5.0,
-			},
-		},
-	}
-
-	// Test Add
-	for _, d := range cveParts {
-		suite.NoError(suite.store.UpsertClusterCVEs(d))
-	}
-
-	for _, d := range cveParts {
-		got, exists, err := suite.store.Get(d.CVE.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(got, d.CVE)
-	}
-
-	// Test Update
-	for _, d := range cveParts {
-		d.CVE.Cvss += 1.0
-	}
-
-	suite.NoError(suite.store.UpsertClusterCVEs(cveParts...))
-
-	for _, d := range cveParts {
-		got, exists, err := suite.store.Get(d.CVE.GetId())
-		suite.NoError(err)
-		suite.True(exists)
-		suite.Equal(got, d.CVE)
-	}
-
-	// Test Count
-	count, err := suite.store.Count()
-	suite.NoError(err)
-	suite.Equal(len(cveParts), count)
 }

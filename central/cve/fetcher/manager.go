@@ -6,6 +6,7 @@ import (
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
@@ -37,21 +38,22 @@ type orchestratorIstioCVEManagerImpl struct {
 }
 
 // NewOrchestratorIstioCVEManagerImpl returns new instance of orchestratorIstioCVEManagerImpl
-func NewOrchestratorIstioCVEManagerImpl(clusterDataStore clusterDataStore.DataStore, cveDataStore cveDataStore.DataStore, cveMatcher *cveMatcher.CVEMatcher) (OrchestratorIstioCVEManager, error) {
+func NewOrchestratorIstioCVEManagerImpl(clusterDataStore clusterDataStore.DataStore, cveDataStore cveDataStore.DataStore, clusterCVEDataStore clusterCVEEdgeDataStore.DataStore, cveMatcher *cveMatcher.CVEMatcher) (OrchestratorIstioCVEManager, error) {
 	m := &orchestratorIstioCVEManagerImpl{
 		orchestratorCVEMgr: &orchestratorCVEManager{
-			embeddedCVEIdToClusters: make(map[converter.CVEType]map[string][]*storage.Cluster),
-			clusterDataStore:        clusterDataStore,
-			cveDataStore:            cveDataStore,
-			cveMatcher:              cveMatcher,
-			creators:                make(map[string]pkgScanners.OrchestratorScannerCreator),
-			scanners:                make(map[string]types.OrchestratorScanner),
+			clusterDataStore:    clusterDataStore,
+			cveDataStore:        cveDataStore,
+			clusterCVEDataStore: clusterCVEDataStore,
+			cveMatcher:          cveMatcher,
+			creators:            make(map[string]pkgScanners.OrchestratorScannerCreator),
+			scanners:            make(map[string]types.OrchestratorScanner),
 		},
 		istioCVEMgr: &istioCVEManager{
-			nvdCVEs:          make(map[string]*schema.NVDCVEFeedJSON10DefCVEItem),
-			clusterDataStore: clusterDataStore,
-			cveDataStore:     cveDataStore,
-			cveMatcher:       cveMatcher,
+			nvdCVEs:             make(map[string]*schema.NVDCVEFeedJSON10DefCVEItem),
+			clusterDataStore:    clusterDataStore,
+			cveDataStore:        cveDataStore,
+			clusterCVEDataStore: clusterCVEDataStore,
+			cveMatcher:          cveMatcher,
 		},
 		updateSignal: concurrency.NewSignal(),
 	}

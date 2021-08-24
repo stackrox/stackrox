@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -30,11 +32,10 @@ var (
 )
 
 type orchestratorCVEManager struct {
-	embeddedCVEIdToClusters map[converter.CVEType]map[string][]*storage.Cluster
-
-	clusterDataStore clusterDataStore.DataStore
-	cveDataStore     cveDataStore.DataStore
-	cveMatcher       *cveMatcher.CVEMatcher
+	clusterDataStore    clusterDataStore.DataStore
+	cveDataStore        cveDataStore.DataStore
+	clusterCVEDataStore clusterCVEEdgeDataStore.DataStore
+	cveMatcher          *cveMatcher.CVEMatcher
 
 	creators map[string]pkgScanners.OrchestratorScannerCreator
 	scanners map[string]types.OrchestratorScanner
@@ -87,23 +88,20 @@ func (m *orchestratorCVEManager) Scan(version string, cveType converter.CVEType)
 }
 
 func (m *orchestratorCVEManager) updateCVEs(embeddedCVEs []*storage.EmbeddedVulnerability, embeddedCVEToClusters map[string][]*storage.Cluster, cveType converter.CVEType) error {
-	newCVEIDs := set.NewStringSet()
 	var newCVEs []converter.ClusterCVEParts
 	for _, embeddedCVE := range embeddedCVEs {
 		cve := converter.EmbeddedCVEToProtoCVE("", embeddedCVE)
-		newCVEIDs.Add(cve.GetId())
 		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, embeddedCVEToClusters[embeddedCVE.GetCve()], embeddedCVE.GetFixedBy()))
 	}
 
-	m.embeddedCVEIdToClusters[cveType] = embeddedCVEToClusters
-	return m.updateCVEsInDB(newCVEIDs, newCVEs, cveType)
+	return m.updateCVEsInDB(newCVEs, cveType)
 }
 
-func (m *orchestratorCVEManager) updateCVEsInDB(cveIds set.StringSet, cves []converter.ClusterCVEParts, cveType converter.CVEType) error {
-	if err := m.cveDataStore.UpsertClusterCVEs(cveElevatedCtx, cves...); err != nil {
+func (m *orchestratorCVEManager) updateCVEsInDB(cves []converter.ClusterCVEParts, cveType converter.CVEType) error {
+	if err := m.clusterCVEDataStore.Upsert(cveElevatedCtx, cves...); err != nil {
 		return err
 	}
-	return reconcileCVEsInDB(m.cveDataStore, cveType.ToStorageCVEType(), cveIds)
+	return reconcileCVEsInDB(m.cveDataStore, m.clusterCVEDataStore, cveType.ToStorageCVEType(), cves)
 }
 
 // createOrchestratorScanner creates a types.OrchestratorScanner out of the given storage.OrchestratorIntegration.
@@ -217,21 +215,22 @@ func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveT
 	if err != nil {
 		return err
 	}
-	log.Infof("Successfully fetched %d %s CVEs", len(m.embeddedCVEIdToClusters[cveType]), cveType)
+	log.Infof("Successfully fetched %d %s CVEs", len(embeddedCVEIDToClusters), cveType)
 	return nil
 }
 
 func (m *orchestratorCVEManager) getAffectedClusters(ctx context.Context, cveID string, cveType converter.CVEType) ([]*storage.Cluster, error) {
-	if cveToClusters, ok := m.embeddedCVEIdToClusters[cveType]; ok {
-		if clusters, ok := cveToClusters[cveID]; ok {
-			filteredClusters, err := sac.FilterSliceReflect(ctx, clustersSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS), clusters, func(c *storage.Cluster) sac.ScopePredicate {
-				return sac.ScopeSuffix{sac.ClusterScopeKey(c.GetId())}
-			})
-			if err != nil {
-				return nil, err
-			}
-			return filteredClusters.([]*storage.Cluster), nil
-		}
+	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVEType, cveType.String()).AddExactMatches(pkgSearch.CVE, cveID).ProtoQuery()
+	clusters, err := m.clusterDataStore.SearchRawClusters(ctx, query)
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.Errorf("Cannot find cve with type %v id %s", cveType, cveID)
+
+	filteredClusters, err := sac.FilterSliceReflect(ctx, clustersSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS), clusters, func(c *storage.Cluster) sac.ScopePredicate {
+		return sac.ScopeSuffix{sac.ClusterScopeKey(c.GetId())}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return filteredClusters.([]*storage.Cluster), nil
 }

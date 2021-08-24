@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/pkg/sync"
@@ -17,7 +18,7 @@ var (
 func SingletonManager() OrchestratorIstioCVEManager {
 	var err error
 	once.Do(func() {
-		manager, err = NewOrchestratorIstioCVEManagerImpl(clusterDataStore.Singleton(), cveDataStore.Singleton(), cveMatcher.Singleton())
+		manager, err = NewOrchestratorIstioCVEManagerImpl(clusterDataStore.Singleton(), cveDataStore.Singleton(), clusterCVEEdgeDataStore.Singleton(), cveMatcher.Singleton())
 		utils.CrashOnError(err)
 	})
 

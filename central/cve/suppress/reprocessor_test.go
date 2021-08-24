@@ -7,7 +7,10 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/types"
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
+	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	clusterCVEEdgeIndexer "github.com/stackrox/rox/central/clustercveedge/index"
+	clusterCVEEdgeSearcher "github.com/stackrox/rox/central/clustercveedge/search"
+	clusterCVEEdgeStore "github.com/stackrox/rox/central/clustercveedge/store/dackbox"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
@@ -91,7 +94,7 @@ func TestUnsuppressCVEs(t *testing.T) {
 	dacky, reg, indexQ := testDackBoxInstance(t, db, bleveIndex)
 	reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
 
-	ds := createDataStore(t, dacky, bleveIndex)
+	cveDataStore, edgeDataStore := createDataStore(t, dacky, bleveIndex)
 
 	parts := make([]converter.ClusterCVEParts, 0, len(expiredCVEs)+len(unexpiredCVEs))
 	for _, expiredCVE := range expiredCVEs {
@@ -100,7 +103,7 @@ func TestUnsuppressCVEs(t *testing.T) {
 	for _, unexpiredCVE := range unexpiredCVEs {
 		parts = append(parts, converter.ClusterCVEParts{CVE: unexpiredCVE})
 	}
-	err = ds.UpsertClusterCVEs(reprocessorCtx, parts...)
+	err = edgeDataStore.Upsert(reprocessorCtx, parts...)
 	require.NoError(t, err)
 
 	// ensure the cves are indexed
@@ -108,17 +111,17 @@ func TestUnsuppressCVEs(t *testing.T) {
 	indexQ.PushSignal(&indexingDone)
 	indexingDone.Wait()
 
-	loop := NewLoop(ds).(*cveUnsuppressLoopImpl)
+	loop := NewLoop(cveDataStore).(*cveUnsuppressLoopImpl)
 	loop.unsuppressCVEsWithExpiredSuppressState()
 
 	for _, cve := range expiredCVEs {
-		actual, _, err := ds.Get(reprocessorCtx, cve.Id)
+		actual, _, err := cveDataStore.Get(reprocessorCtx, cve.Id)
 		assert.NoError(t, err)
 		assert.False(t, actual.Suppressed)
 	}
 
 	for _, cve := range unexpiredCVEs {
-		actual, _, err := ds.Get(reprocessorCtx, cve.Id)
+		actual, _, err := cveDataStore.Get(reprocessorCtx, cve.Id)
 		assert.NoError(t, err)
 		assert.True(t, actual.Suppressed)
 	}
@@ -128,11 +131,11 @@ func TestUnsuppressCVEs(t *testing.T) {
 	newSig.Wait()
 }
 
-func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, bleveIndex bleve.Index) cveDataStore.DataStore {
-	store := cveStore.New(dacky, concurrency.NewKeyFence())
+func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, bleveIndex bleve.Index) (cveDataStore.DataStore, clusterCVEEdgeDataStore.DataStore) {
+	cveStorage := cveStore.New(dacky, concurrency.NewKeyFence())
 
 	cveIndexer := cveIndex.New(bleveIndex)
-	searcher := cveSearch.New(store, dacky, cveIndexer,
+	cveSearcher := cveSearch.New(cveStorage, dacky, cveIndexer,
 		clusterCVEEdgeIndexer.New(bleveIndex),
 		componentCVEEdgeIndexer.New(bleveIndex),
 		componentIndexer.New(bleveIndex),
@@ -143,9 +146,16 @@ func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, bleveIndex bleve.I
 		deploymentIndexer.New(bleveIndex, bleveIndex),
 		clusterIndexer.New(bleveIndex))
 
-	ds, err := cveDataStore.New(dacky, store, cveIndexer, searcher)
+	cveDataStore, err := cveDataStore.New(dacky, cveStorage, cveIndexer, cveSearcher)
 	require.NoError(t, err)
-	return ds
+
+	edgeStorage, err := clusterCVEEdgeStore.New(dacky, concurrency.NewKeyFence())
+	require.NoError(t, err)
+	edgeIndexer := clusterCVEEdgeIndexer.New(bleveIndex)
+	edgeSearcher := clusterCVEEdgeSearcher.New(edgeStorage, edgeIndexer, cveIndexer, dacky)
+	edgeDataStore, err := clusterCVEEdgeDataStore.New(dacky, edgeStorage, edgeIndexer, edgeSearcher)
+	require.NoError(t, err)
+	return cveDataStore, edgeDataStore
 }
 
 func testDackBoxInstance(t *testing.T, db *rocksdb.RocksDB, index bleve.Index) (*pkgDackBox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {

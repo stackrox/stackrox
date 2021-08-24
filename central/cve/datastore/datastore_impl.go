@@ -5,7 +5,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/index"
 	sacFilters "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/cve/search"
@@ -125,21 +124,6 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return cves, nil
-}
-
-func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...converter.ClusterCVEParts) error {
-	if len(parts) == 0 {
-		return nil
-	}
-
-	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	// Store the new CVE data.
-	return ds.storage.UpsertClusterCVEs(parts...)
 }
 
 func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error {
