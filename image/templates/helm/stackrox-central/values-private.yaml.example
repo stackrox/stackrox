@@ -132,7 +132,7 @@
 #   dbPassword:
 #     value: <scanner database password value>
 #
-#   # Internal "scanner.stackrox" service TLS certificate for the Scanner deployment.
+#   # Internal "scanner.stackrox.svc" service TLS certificate for the Scanner deployment.
 #   # Omit to auto-generate (initial deployment) or use existing (upgrade).
 #   serviceTLS:
 #     cert: |

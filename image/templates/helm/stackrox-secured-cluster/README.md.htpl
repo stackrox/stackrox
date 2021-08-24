@@ -121,7 +121,7 @@ and their default values.
 |:---------|:-----------|:--------------|
 |`cluster.name`| Name of your cluster. | |
 |`cluster.type`| Type of your cluster. Use `KUBERNETES_CLUSTER` for Kubernetes, `OPENSHIFT4_CLUSTER` for OpenShift version `4.x`, or `OPENSHIFT_CLUSTER` for OpenShift version `3.x`. |  `KUBERNETES_CLUSTER` |
-|`endpoint.central`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox:443` |
+|`endpoint.central`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox.svc:443` |
 |`endpoint.advertised`| Address of the Sensor endpoint including port number.No trailing slash.|`sensor.stackrox:443` |
 |`image.repository.main`|Repository from which to download the main image. |`main` |
 |`image.repository.collector`|Repository from which to download the collector image.  |`collector` |
@@ -503,7 +503,7 @@ chart and their default values:
 |:---------|:-----------|:--------------|
 |`clusterName`| Name of your cluster. | |
 |`confirmNewClusterName`| You don't need to change this unless you upgrade and change the value for `clusterName`. In this case, set it to the new value of `clusterName`. This option exists to prevent you from [accidentally creating a new cluster with a different name](#changing-cluster-after-deployment). | `null` |
-|`centralEndpoint`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox:443` |
+|`centralEndpoint`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox.svc:443` |
 |`clusterLabels`| Custom labels associated with a secured cluster | `{}` |
 |`additionalCAs`| Use it to add (named) PEM-encoded CA certificates for Sensor. | `{}` |
 |`imagePullSecrets.username`| Specify username for accessing image registry. |`null`|
@@ -516,7 +516,7 @@ chart and their default values:
 |`image.collector.name`|Repository from which to download the collector image.  |`collector` |
 |`image.main.registry`| Address of the registry you are using for main image.|`[< .MainRegistry >]` |
 |`image.collector.registry`| Address of the registry you are using for collector image.|`[< if eq .MainRegistry "stackrox.io" >]collector.stackrox.io[< else >][< .MainRegistry >][< end >]` |
-|`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox:443` |
+|`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox.svc:443` |
 |`collector.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. |`KERNEL_MODULE` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
 |`collector.slimMode`| Specify `true` if you want to use a slim Collector image for deploying Collector. Using slim Collector images requires Central to provide the matching kernel module or eBPF probe. If you are running the StackRox Kubernetes Security Platform in offline mode, you must download a kernel support package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html) and upload it to Central for slim Collectors to function. Otherwise, you must ensure that Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.|`false` |

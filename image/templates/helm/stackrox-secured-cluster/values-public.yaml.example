@@ -30,7 +30,7 @@
 #clusterLabels: {}
 #
 ## The gRPC endpoint for accessing StackRox Central.
-#centralEndpoint: central.{{ .Release.Namespace }}:443
+#centralEndpoint: central.{{ .Release.Namespace }}.svc:443
 #
 ## A dictionary of additional CA certificates to include (PEM encoded).
 ## For example:
@@ -141,7 +141,7 @@
 #
 #  # Address of the Sensor endpoint including port number. No trailing slash.
 #  # Rarely needs to be changed.
-#  endpoint: sensor.stackrox:443
+#  endpoint: sensor.stackrox.svc:443
 #
 ## Admission Control specific configuration.
 #admissionControl:

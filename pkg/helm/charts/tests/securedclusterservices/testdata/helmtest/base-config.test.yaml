@@ -5,20 +5,20 @@ tests:
   tests:
   - name: default settings
     expect: |
-      verifySensorEndpoint("sensor.stackrox:443")
-      verifyCentralEndpoint("central.stackrox:443")
+      verifySensorEndpoint("sensor.stackrox.svc:443")
+      verifyCentralEndpoint("central.stackrox.svc:443")
 
   - name: different sensor endpoint
     set:
       sensor.endpoint: stackrox-sensor.example.com:8443
     expect: |
       verifySensorEndpoint("stackrox-sensor.example.com:8443")
-      verifyCentralEndpoint("central.stackrox:443")
+      verifyCentralEndpoint("central.stackrox.svc:443")
   - name: different central endpoint
     set:
       centralEndpoint: stackrox-central.example.com:8443
     expect: |
-      verifySensorEndpoint("sensor.stackrox:443")
+      verifySensorEndpoint("sensor.stackrox.svc:443")
       verifyCentralEndpoint("stackrox-central.example.com:8443")
 
 - name: different namespace
@@ -32,8 +32,8 @@ tests:
       allowNonstandardNamespace: true
     expect: |
       verifyNamespace("custom-ns")
-      verifyCentralEndpoint("central.custom-ns:443")
-      verifySensorEndpoint("sensor.custom-ns:443")
+      verifyCentralEndpoint("central.custom-ns.svc:443")
+      verifySensorEndpoint("sensor.custom-ns.svc:443")
 
 - name: different release name
   release:

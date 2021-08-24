@@ -8,16 +8,14 @@
 # Configuration file for scanner.
 
 scanner:
-  {{- if ne .Release.Namespace "stackrox" }}
-  centralEndpoint: https://central.{{ .Release.Namespace }}
-  {{- end }}
+  centralEndpoint: https://central.{{ .Release.Namespace }}.svc
   database:
     # Database driver
     type: pgsql
     options:
       # PostgreSQL Connection string
       # https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
-      source: host=scanner-db.{{ .Release.Namespace }} port=5432 user=postgres sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }} statement_timeout=60000
+      source: host=scanner-db.{{ .Release.Namespace }}.svc port=5432 user=postgres sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }} statement_timeout=60000
 
       # Number of elements kept in the cache
       # Values unlikely to change (e.g. namespaces) are cached in order to save prevent needless roundtrips to the database.

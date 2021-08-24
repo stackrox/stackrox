@@ -14,6 +14,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   in addition to the deployment or image name if it exists.
 - PagerDuty alerts for violations now include the full alert JSON as a custom detail.
 - Message attribute keys for audit log based violation messages shortened to be more readable
+- Cluster internal endpoints set to `*.svc` to be respected by OpenShift's cluster wide `noProxy` configuration
+  - `sensor.stackrox` changed to `sensor.stackrox.svc`
+  - `central.stackrox` changed to `central.stackrox.svc`
+  - `scanner.stackrox` changed to `scanner.stackrox.svc`
+  - `scanner-db.stackrox` changed to `scanner-db.stackrox.svc`
 - Increased Operator memory requests from 80 MiB to 200 MiB and memory limits from 300 MiB to 1 GiB. The latter is to prevent operator restarts due to OOM on certain deployments.
 
 ## [64.0]

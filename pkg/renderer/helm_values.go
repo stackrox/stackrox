@@ -220,7 +220,7 @@ scanner:
   {{- end }}
  
   {{- if ne (index .SecretsBase64Map "scanner-cert.pem") "" }}
-  # Internal "scanner.stackrox" service TLS certificate.
+  # Internal "scanner.stackrox.svc" service TLS certificate.
   serviceTLS:
     cert: |
       {{- index .SecretsBase64Map "scanner-cert.pem" | b64dec | nindent 6 }}
