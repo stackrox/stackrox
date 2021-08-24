@@ -4,6 +4,7 @@ import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
 import { Bell, BellOff, Plus, RefreshCw, Trash2, Upload } from 'react-feather';
+import { initialize } from 'redux-form';
 
 import { selectors } from 'reducers';
 import { actions as backendActions } from 'reducers/policies/backend';
@@ -31,6 +32,7 @@ class Buttons extends Component {
         setWizardStage: PropTypes.func.isRequired,
         setWizardPolicy: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
+        initializeForm: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -41,7 +43,9 @@ class Buttons extends Component {
         this.props.history.push({
             pathname: `/main/policies`,
         });
-        this.props.setWizardPolicy({ name: '' });
+        const newPolicy = { name: '' };
+        this.props.setWizardPolicy(newPolicy);
+        this.props.initializeForm('policyCreationForm', newPolicy);
         this.props.setWizardStage(wizardStages.edit);
         this.props.openWizard();
     };
@@ -141,9 +145,9 @@ const mapDispatchToProps = {
     setPoliciesAction: pageActions.setPoliciesAction,
     openWizard: pageActions.openWizard,
     reassessPolicies: backendActions.reassessPolicies,
-
     setWizardStage: wizardActions.setWizardStage,
     setWizardPolicy: wizardActions.setWizardPolicy,
+    initializeForm: initialize,
 };
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(Buttons));

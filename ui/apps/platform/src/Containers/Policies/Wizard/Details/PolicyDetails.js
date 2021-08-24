@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import Fields from 'Containers/Policies/Wizard/Details/Fields';
 import ConfigurationFields from 'Containers/Policies/Wizard/Details/ConfigurationFields';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
@@ -11,6 +13,9 @@ import {
 import MitreAttackVectors from 'Containers/MitreAttackVectors';
 
 function PolicyDetails({ policy }) {
+    const isMitreEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_SYSTEM_POLICY_MITRE_FRAMEWORK
+    );
     if (!policy) {
         return null;
     }
@@ -25,13 +30,18 @@ function PolicyDetails({ policy }) {
                 <Fields policy={policy} />
                 {!isLegacyPolicy && <BooleanPolicySection readOnly initialValues={policy} />}
                 {isLegacyPolicy && <ConfigurationFields policy={policy} />}
-                <div className="p-4">
-                    <FormSection dataTestId="mitreAttackVectorDetails" headerText="MITRE ATT&CK">
-                        <FormSectionBody>
-                            <MitreAttackVectors policyId={policy.id} />
-                        </FormSectionBody>
-                    </FormSection>
-                </div>
+                {isMitreEnabled && (
+                    <div className="p-4">
+                        <FormSection
+                            dataTestId="mitreAttackVectorDetails"
+                            headerText="MITRE ATT&CK"
+                        >
+                            <FormSectionBody>
+                                <MitreAttackVectors policyId={policy.id} />
+                            </FormSectionBody>
+                        </FormSection>
+                    </div>
+                )}
             </div>
         </div>
     );

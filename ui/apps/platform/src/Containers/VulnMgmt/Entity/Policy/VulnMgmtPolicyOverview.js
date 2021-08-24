@@ -27,6 +27,8 @@ import {
     FormSection,
     FormSectionBody,
 } from 'Containers/Policies/Wizard/Form/PolicyDetailsForm/FormSection';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -55,6 +57,9 @@ const emptyPolicy = {
 const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
+    const isMitreEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_SYSTEM_POLICY_MITRE_FRAMEWORK
+    );
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyPolicy, ...data };
@@ -324,15 +329,20 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                 </div>
                             </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="MITRE ATT&CK" dataTestId="mitre-attack-section">
-                            <div className="p-4">
-                                <FormSection dataTestId="mitreAttackVectorDetails">
-                                    <FormSectionBody>
-                                        <MitreAttackVectors policyId={id} />
-                                    </FormSectionBody>
-                                </FormSection>
-                            </div>
-                        </CollapsibleSection>
+                        {isMitreEnabled && (
+                            <CollapsibleSection
+                                title="MITRE ATT&CK"
+                                dataTestId="mitre-attack-section"
+                            >
+                                <div className="p-4">
+                                    <FormSection dataTestId="mitreAttackVectorDetails">
+                                        <FormSectionBody>
+                                            <MitreAttackVectors policyId={id} />
+                                        </FormSectionBody>
+                                    </FormSection>
+                                </div>
+                            </CollapsibleSection>
+                        )}
                     </div>
                     <div className="col-span-1 border-b border-base-300">
                         {!!policySections.length && (
