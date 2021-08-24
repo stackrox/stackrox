@@ -28,7 +28,7 @@ function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
     }, [data]);
 
     const onClearAll = () => {
-        setSelected([]);
+        setSelected(data.map(() => false));
         setAllRowsSelected(false);
     };
 

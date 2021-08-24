@@ -20,11 +20,10 @@ import { excludeDeployments } from 'services/PoliciesService';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import VIOLATION_STATES from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-// import ResolveConfirmation from 'Containers/Violations/Dialogues/ResolveConfirmation';
-// import ExcludeConfirmation from 'Containers/Violations/Dialogues/ExcludeConfirmation';
-// import TagConfirmation from 'Containers/Violations/Dialogues/TagConfirmation';
+import ResolveConfirmation from './Modals/ResolveConfirmation';
+import ExcludeConfirmation from './Modals/ExcludeConfirmation';
+import TagConfirmation from './Modals/TagConfirmation';
 import { ListAlert } from './types/violationTypes';
-// import dialogues from '../dialogues';
 
 type TableCellProps = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +43,8 @@ type ActionItem = {
     title: string | ReactElement;
     onClick: (item) => void;
 };
+
+type ModalType = 'resolve' | 'excludeScopes' | 'tag';
 
 type ViolationsTablePanelProps = {
     violations: ListAlert[];
@@ -76,6 +77,9 @@ function ViolationsTablePanel({
     setActiveSortDirection,
     columns,
 }: ViolationsTablePanelProps): ReactElement {
+    // Handle confirmation modal being open.
+    const [modalType, setModalType] = useState<ModalType>();
+
     // Handle Row Actions dropdown state.
     const [isSelectOpen, setIsSelectOpen] = useState(false);
     const {
@@ -90,6 +94,28 @@ function ViolationsTablePanel({
 
     function onToggleSelect(toggleOpen) {
         setIsSelectOpen(toggleOpen);
+    }
+
+    // Handle setting confirmation modals for bulk actions
+    function showResolveConfirmationDialog() {
+        setModalType('resolve');
+    }
+    function showExcludeConfirmationDialog() {
+        setModalType('excludeScopes');
+    }
+    function showTagConfirmationDialog() {
+        setModalType('tag');
+    }
+
+    // Handle closing confirmation modals for bulk actions;
+    function cancelModal() {
+        setModalType(undefined);
+    }
+
+    // Handle closing confirmation modal and clearing selection;
+    function closeModal() {
+        setModalType(undefined);
+        onClearAll();
     }
 
     // Handle page changes.
@@ -158,19 +184,19 @@ function ViolationsTablePanel({
                         <SelectOption
                             key="0"
                             value={`Add Tags for Violations (${numSelected})`}
-                            // onClick={setDialogueHandler(dialogues.tag)}
+                            onClick={showTagConfirmationDialog}
                         />
                         <SelectOption
                             key="1"
                             value={`Mark as Resolved (${numResolveable})`}
                             isDisabled={numResolveable === 0}
-                            // onClick={setDialogueHandler(dialogues.resolve)}
+                            onClick={showResolveConfirmationDialog}
                         />
                         <SelectOption
                             key="2"
                             value={`Exclude (${numScopesToExclude})`}
                             isDisabled={numScopesToExclude === 0}
-                            // onClick={setDialogueHandler(dialogues.excludeScopes)}
+                            onClick={showExcludeConfirmationDialog}
                         />
                     </Select>
                 </FlexItem>
@@ -279,29 +305,26 @@ function ViolationsTablePanel({
                     </Tbody>
                 </TableComposable>
             </PageSection>
-            {/* {dialogue === dialogues.excludeScopes && (
-                <ExcludeConfirmation
-                    setDialogue={setDialogue}
-                    excludableAlerts={excludableAlerts}
-                    checkedAlertIds={selectedIds}
-                    setCheckedAlertIds={onSelect}
-                />
-            )}
-            {dialogue === dialogues.resolve && (
-                <ResolveConfirmation
-                    setDialogue={setDialogue}
-                    checkedAlertIds={selectedIds}
-                    setCheckedAlertIds={onSelect}
-                    resolvableAlerts={resolvableAlerts}
-                />
-            )}
-            {dialogue === dialogues.tag && (
-                <TagConfirmation
-                    setDialogue={setDialogue}
-                    checkedAlertIds={selectedIds}
-                    setCheckedAlertIds={onSelect}
-                />
-            )} */}
+            <ExcludeConfirmation
+                isOpen={modalType === 'excludeScopes'}
+                excludableAlerts={excludableAlerts}
+                selectedAlertIds={selectedIds}
+                closeModal={closeModal}
+                cancelModal={cancelModal}
+            />
+            <ResolveConfirmation
+                isOpen={modalType === 'resolve'}
+                selectedAlertIds={selectedIds}
+                resolvableAlerts={resolvableAlerts}
+                closeModal={closeModal}
+                cancelModal={cancelModal}
+            />
+            <TagConfirmation
+                isOpen={modalType === 'tag'}
+                selectedAlertIds={selectedIds}
+                closeModal={closeModal}
+                cancelModal={cancelModal}
+            />
         </>
     );
 }
