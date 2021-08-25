@@ -15,6 +15,6 @@
         "comment": "collector restart due to slow sensor start",
         "job": "openshift",
         "logfile": "collector-previous",
-        "logline": "Failed to connect to sensor.stackrox port 443: No route to host"
+        "logline": "Failed to connect to sensor.stackrox.* port 443: No route to host"
     }
 ]
