@@ -140,3 +140,8 @@ test {
     // https://stackoverflow.com/questions/42175235/force-gradle-to-run-task-even-if-it-is-up-to-date/42185919
     outputs.upToDateWhen { false }
 }
+
+task checkSensorCollectorHealth(dependsOn: 'classes', type: JavaExec) {
+    main = 'checkSensorCollectorHealth'
+    classpath = sourceSets.main.runtimeClasspath
+}

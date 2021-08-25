@@ -280,6 +280,40 @@ class Kubernetes implements OrchestratorMain {
         client.pods().inNamespace(ns).withLabels(labels).delete()
     }
 
+    void deleteAllPodsAndWait(String ns, Map<String, String> labels) {
+        println "Will delete all pods in ${ns} with labels ${labels} and wait for deletion"
+
+        List<Pod> beforePods = evaluateWithRetry(2, 3) {
+            client.pods().inNamespace(ns).withLabels(labels).list().getItems()
+        }
+        beforePods.each { pod ->
+            evaluateWithRetry(2, 3) {
+                client.pods().inNamespace(ns).withName(pod.metadata.name).delete()
+            }
+        }
+
+        Timer t = new Timer(30, 5)
+        Boolean allDeleted = false
+        while (!allDeleted && t.IsValid()) {
+            allDeleted = true
+            beforePods.each { deleted ->
+                Pod pod = evaluateWithRetry(2, 3) {
+                    client.pods().inNamespace(ns).withName(deleted.metadata.name).get()
+                }
+                if (pod == null) {
+                    println "${deleted.metadata.name} is deleted"
+                }
+                else {
+                    println "${deleted.metadata.name} is not deleted"
+                    allDeleted = false
+                }
+            }
+        }
+        if (!allDeleted) {
+            throw new OrchestratorManagerException("Gave up trying to delete all pods")
+        }
+    }
+
     Boolean deletePodAndWait(String ns, String name, int retries, int intervalSeconds) {
         deletePod(ns, name, null)
         println "Deleting pod ${name}"
@@ -731,21 +765,8 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    def getContainerlogs(Deployment deployment) {
-        withRetry(2, 3) {
-            PodList pods = client.pods().inNamespace(deployment.namespace).list()
-            Pod pod = pods.getItems().find { it.getMetadata().getName().startsWith(deployment.name) }
-
-            try {
-                println client.pods()
-                        .inNamespace(pod.metadata.namespace)
-                        .withName(pod.metadata.name)
-                        .tailingLines(5000)
-                        .watchLog(System.out)
-            } catch (Exception e) {
-                println "Error getting container logs: ${e}"
-            }
-        }
+    String getContainerlogs(String ns, String podName, String containerName) {
+        return client.pods().inNamespace(ns).withName(podName).inContainer(containerName).getLog()
     }
 
     def getStaticPodCount(String ns = null) {

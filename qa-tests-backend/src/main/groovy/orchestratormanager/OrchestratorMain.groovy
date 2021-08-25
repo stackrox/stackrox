@@ -24,8 +24,9 @@ interface OrchestratorMain {
     List<Pod> getPods(String ns, String appName)
     List<Pod> getPodsByLabel(String ns, Map<String, String> label)
     Boolean deletePod(String ns, String podName, Long gracePeriodSecs)
-    def deleteAllPods(String ns, Map<String, String> labels)
     Boolean deletePodAndWait(String ns, String podName, int retries, int intervalSeconds)
+    def deleteAllPods(String ns, Map<String, String> labels)
+    void deleteAllPodsAndWait(String ns, Map<String, String> labels)
     Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels)
     def restartPodByLabels(String ns, Map<String, String> labels, int retries, int intervalSecond)
     def waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int iterations, int intervalSeconds)
@@ -75,7 +76,7 @@ interface OrchestratorMain {
     def wasContainerKilled(String containerName, String namespace)
     def isKubeProxyPresent()
     def isKubeDashboardRunning()
-    def getContainerlogs(Deployment deployment)
+    String getContainerlogs(String ns, String podName, String containerName)
     def getStaticPodCount(String ns)
 
     //Services

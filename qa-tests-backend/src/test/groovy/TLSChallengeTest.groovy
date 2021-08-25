@@ -9,6 +9,7 @@ import objects.Deployment
 import objects.Secret
 import org.junit.experimental.categories.Category
 import spock.lang.Retry
+import util.ApplicationHealth
 import util.Timer
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -49,13 +50,18 @@ class TLSChallengeTest extends BaseSpecification {
         orchestrator.restartPodByLabelWithExecKill("stackrox", [app: "central"])
         orchestrator.waitForPodsReady("stackrox", [app: "central"], 1, 50, 3)
 
-        // Setting env variable also restarts sensor. This is necessary to reset the gRPC connection to central.
+        // Restart sensor to reset the gRPC connection to central.
+        // Scale to 0 and back to 1 so that the check for sensor healthiness is based on the restarted sensor pod.
+        orchestrator.scaleDeployment("stackrox", "sensor", 0)
+        orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 5)
         orchestrator.updateDeploymentEnv("stackrox", "sensor",
                 originalCentralEndpoint.name, originalCentralEndpoint.value)
-        orchestrator.waitForPodsReady("stackrox", [app: "sensor"], 1, 15, 3)
+        orchestrator.scaleDeployment("stackrox", "sensor", 1)
+        ApplicationHealth ah = new ApplicationHealth(orchestrator, 600)
+        ah.waitForSensorHealthiness()
 
-        orchestrator.deleteAllPods("stackrox", [app: "collector"])
-        orchestrator.waitForDaemonSetReady("stackrox", "collector", 10, 3)
+        orchestrator.deleteAllPodsAndWait("stackrox", [app: "collector"])
+        ah.waitForCollectorHealthiness()
 
         withRetry(30, 1) { Services.getMetadataClient().getMetadata() }
         waitUntilCentralSensorConnectionIs(HealthStatusLabel.HEALTHY)
