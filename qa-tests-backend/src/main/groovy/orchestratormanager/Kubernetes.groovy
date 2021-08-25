@@ -1669,6 +1669,14 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    def deleteConfigMap(String name, String namespace) {
+        withRetry(2, 3) {
+            client.configMaps().inNamespace(namespace).withName(name).delete()
+        }
+        sleep(sleepDurationSeconds * 1000)
+        println name + ": ConfigMap removed."
+    }
+
     /*
         Misc/Helper Methods
     */

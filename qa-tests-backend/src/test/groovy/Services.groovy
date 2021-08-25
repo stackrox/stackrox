@@ -184,6 +184,12 @@ class Services extends BaseService {
         return getViolationsHelper("Deployment:${deploymentName}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
+    static getResourceViolationsWithTimeout(String resourceType, String resourceName,
+                                           String policyName, int timeoutSeconds) {
+        return getViolationsHelper("Resource Type:${resourceType}+Resource:${resourceName}+Policy:${policyName}",
+                policyName, timeoutSeconds)
+    }
+
     static getViolationsByDeploymentID(String deploymentID, String policyName, boolean includeAttempted,
                                        int timeoutSeconds) {
         if (!includeAttempted) {

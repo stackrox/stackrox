@@ -156,6 +156,7 @@ interface OrchestratorMain {
     def createConfigMap(ConfigMap configMap)
     def createConfigMap(String name, Map<String,String> data, String namespace)
     ConfigMap getConfigMap(String name, String namespace)
+    def deleteConfigMap(String name, String namespace)
 
     //Misc
     def execInContainer(Deployment deployment, String cmd)
