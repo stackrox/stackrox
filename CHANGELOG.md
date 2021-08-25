@@ -21,6 +21,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `scanner-db.stackrox` changed to `scanner-db.stackrox.svc`
 - Increased Operator memory requests from 80 MiB to 200 MiB and memory limits from 300 MiB to 1 GiB. The latter is to prevent operator restarts due to OOM on certain deployments.
 
+## [64.1]
+
+- Cluster internal endpoints set to `*.svc` to be respected by OpenShift's cluster wide `noProxy` configuration
+  - `sensor.stackrox` changed to `sensor.stackrox.svc`
+  - `central.stackrox` changed to `central.stackrox.svc`
+  - `scanner.stackrox` changed to `scanner.stackrox.svc`
+  - `scanner-db.stackrox` changed to `scanner-db.stackrox.svc`
+- Increased Operator memory requests from 80 MiB to 200 MiB and memory limits from 300 MiB to 1 GiB. The latter is to prevent operator restarts due to OOM on certain deployments.
+
 ## [64.0]
 
 - Support for BadgerDB is being completely removed. Users running a version less than 48.0 will need to upgrade to 63.0
@@ -28,6 +37,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `/v1/namespaces` endpoint now accepts pagination query parameters.
 - Message attribute keys for audit log based violations changed to use capital case instead of lowercase in API response.
 - On OpenShift, the names of all `SecurityContextConstraint` (SCC) resources are now prefixed with `stackrox-`.
+
+## [63.1]
+
+- Cluster internal endpoints set to `*.svc` to be respected by OpenShift's cluster wide `noProxy` configuration
+  - `sensor.stackrox` changed to `sensor.stackrox.svc`
+  - `central.stackrox` changed to `central.stackrox.svc`
+  - `scanner.stackrox` changed to `scanner.stackrox.svc`
+  - `scanner-db.stackrox` changed to `scanner-db.stackrox.svc`
+- Increased Operator memory requests from 80 MiB to 200 MiB and memory limits from 300 MiB to 1 GiB. The latter is to prevent operator restarts due to OOM on certain deployments.
 
 ## [63.0]
 
@@ -45,6 +63,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - In the GraphQL API, `Role { globalAccess: Access! }` is deprecated with no replacement intended.
 - The operator now sets dynamic admission control settings (`enforceOnCreates`, `enforceOnUpdates`)
   based on `spec.admissionControl.listenOn*` in the `SecuredCluster` resource.
+
+## [62.2]
+
+- Cluster internal endpoints set to `*.svc` to be respected by OpenShift's cluster wide `noProxy` configuration
+  - `sensor.stackrox` changed to `sensor.stackrox.svc`
+  - `central.stackrox` changed to `central.stackrox.svc`
+  - `scanner.stackrox` changed to `scanner.stackrox.svc`
+  - `scanner-db.stackrox` changed to `scanner-db.stackrox.svc`
+- Increased Operator memory requests from 80 MiB to 200 MiB and memory limits from 300 MiB to 1 GiB. The latter is to prevent operator restarts due to OOM on certain deployments.
+
+## [62.1]
+
+- Fixed RHSA-2021:2569, RHSA-2021:2574, RHSA-2021:2575, RHSA-2021:2717, RHBA-2021:2581 in RHEL images.
 
 ## [62.0]
 
