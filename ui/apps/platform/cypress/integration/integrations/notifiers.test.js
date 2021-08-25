@@ -202,6 +202,60 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.enabled').click();
         });
 
+        it('should create a new Jira integration', () => {
+            // mocking create needed b/c backend Save actually pings your Jira on Save,
+            //   not just on test
+            cy.intercept('POST', api.integrations.notifiers, {
+                body: { id: 'abcdefgh' },
+            }).as('CreateJira');
+
+            cy.get(selectors.jiraTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/jira/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').click();
+            getInputByLabel('Username').click();
+            getInputByLabel('Password or API token').click();
+            getInputByLabel('Issue type').click();
+            getInputByLabel('Jira URL').click();
+            getInputByLabel('Default project').click().blur();
+
+            getHelperElementByLabel('Integration name').contains('Name is required');
+            getHelperElementByLabel('Username').contains('Username is required');
+            getHelperElementByLabel('Password or API token').contains(
+                'Password or API token is required'
+            );
+            getHelperElementByLabel('Issue type').contains('Issue type is required');
+            getHelperElementByLabel('Jira URL').contains('Jira URL is required');
+            getHelperElementByLabel('Default project').contains('A default project is required');
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            // not certain if any fields have invalid formats at this time
+
+            // Step 3, check valid form and save
+            const isoString = new Date().toISOString();
+            getInputByLabel('Integration name').clear().type(`Test new Jira ${isoString}`);
+            getInputByLabel('Username').clear().type('socrates');
+            getInputByLabel('Password or API token').clear().type('monkey');
+            getInputByLabel('Issue type').clear().type('Bug');
+            getInputByLabel('Jira URL').clear().type('https://example.atlassian.net');
+            getInputByLabel('Default project').clear().type('Unicorn').blur();
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+
+            cy.wait(['@CreateJira']);
+        });
+
         it('should create a new Sumo Logic integration', () => {
             cy.get(selectors.sumologicTile).click();
 
