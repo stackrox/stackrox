@@ -45,7 +45,7 @@ describe('Clusters page', () => {
     });
 });
 
-describe('Cluster Certificate Expiration', () => {
+describe.skip('Cluster Certificate Expiration', () => {
     withAuth();
 
     let clusters;
