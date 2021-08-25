@@ -9,9 +9,7 @@ import fieldsMap from 'Containers/Policies/Wizard/Details/descriptors';
 class Fields extends Component {
     static propTypes = {
         clustersById: PropTypes.shape({}).isRequired,
-        policy: PropTypes.shape({
-            fields: PropTypes.shape({}),
-        }).isRequired,
+        policy: PropTypes.shape({}).isRequired,
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired,
@@ -66,9 +64,10 @@ class Fields extends Component {
                                         {Object.keys(value).map((key) => (
                                             <div className="mb-4" key={field}>
                                                 <div className="text-base-600 font-700">{key}:</div>
-                                                {value[key].map((v) => (
+                                                {value[key].map((v, i) => (
                                                     <div
-                                                        key={v}
+                                                        // eslint-disable-next-line react/no-array-index-key
+                                                        key={i}
                                                         className="flex pt-1 leading-normal"
                                                     >
                                                         {v}
