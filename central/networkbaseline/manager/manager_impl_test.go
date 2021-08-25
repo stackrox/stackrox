@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 )
@@ -81,7 +80,6 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
-	envIsolator       *envisolator.EnvIsolator
 	ds                *fakeDS
 	networkEntities   *networkEntityDSMock.MockEntityDataStore
 	deploymentDS      *deploymentMocks.MockDataStore
@@ -94,8 +92,6 @@ type ManagerTestSuite struct {
 }
 
 func (suite *ManagerTestSuite) SetupTest() {
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv("ROX_NETWORK_DETECTION_BASELINE_VIOLATION", "true")
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkEntities = networkEntityDSMock.NewMockEntityDataStore(suite.mockCtrl)
 	suite.currTestStart = timestamp.Now()
