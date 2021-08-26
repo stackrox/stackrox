@@ -177,7 +177,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         String srcType = coalesce(
                 extractNestedString(originalEvent, "networkFlowInfo.source.deploymentType"),
                 extractNestedString(originalEvent, "networkFlowInfo.source.entityType"),
-                extractNestedString(originalEvent, "deploymentInfo.deploymentType")
+                extractNestedString(originalEvent, "deploymentInfo.deploymentType"),
+                extractNestedString(originalEvent, "resourceInfo.resourceType")
         )
         verifyRequiredResultKey(result, "src_type", srcType)
 
@@ -192,7 +193,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         String src = coalesce(
                 extractDestOrSrc(originalEvent, "source"),
                 extractNestedString(originalEvent, "networkFlowInfo.source.name"),
-                extractSourceViaDeploymentInfo(originalEvent)
+                extractSourceViaDeploymentInfo(originalEvent),
+                extractSourceViaResourceInfo(originalEvent)
         )
         verifyRequiredResultKey(result, "src", src)
     }
@@ -263,6 +265,28 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             ? " > ${deploymentType}:${deploymentName}"
             : "/${deploymentType}:${deploymentName}${podPart}"
         return "${clusterName}/${deploymentNamespace}${podDescription}${containerPart}"
+    }
+
+    @SuppressWarnings(["IfStatementCouldBeTernary"]) // much more readable this way
+    static String extractSourceViaResourceInfo(JsonPath originalEvent) {
+        String clusterName = extractNestedString(originalEvent, "resourceInfo.clusterName")
+        if (clusterName == null) {
+            return null
+        }
+        String namespace = extractNestedString(originalEvent, "resourceInfo.namespace")
+        if (namespace == null) {
+            return null
+        }
+        String resourceType = extractNestedString(originalEvent, "resourceInfo.resourceType")
+        if (resourceType == null) {
+            return null
+        }
+        String resourceName = extractNestedString(originalEvent, "resourceInfo.name")
+        if (resourceName == null) {
+            return null
+        }
+
+        return "${clusterName}/${namespace}/${resourceType}:${resourceName}"
     }
 
     def triggerProcessViolation(SplunkUtil.SplunkDeployment splunkDeployment) {
