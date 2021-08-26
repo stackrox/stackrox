@@ -41,6 +41,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
     async function onSave(data) {
         try {
             let responseData;
+
             if (isEditing) {
                 responseData = await saveIntegrationV2(source, data);
             } else if (type === 'apitoken') {
@@ -49,7 +50,10 @@ function useIntegrationActions(): UseIntegrationActionsResult {
                 responseData = await generateClusterInitBundle(data);
             } else {
                 responseData = await createIntegration(source, data);
+                // we only want to redirect when creating a new (non-apitoken and non-clusterinitbundle) integration
+                history.push(integrationsListPath);
             }
+
             fetchIntegrations();
             return { message: 'Integration was saved successfully', isError: false, responseData };
         } catch (error) {
