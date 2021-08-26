@@ -102,7 +102,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 
-	auditLogUpdaterComponent := auditlog.NewUpdater(0, complianceService.AuditMessages())
+	auditLogUpdaterComponent := auditlog.NewUpdater(0, auditLogCollectionManager)
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogUpdaterComponent)
 
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector))
@@ -134,6 +134,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		upgradeCmdHandler,
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
+		auditLogCollectionManager,
 		auditLogUpdaterComponent,
 	}
 

@@ -5,17 +5,19 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/compliance/mocks"
+	"github.com/stackrox/rox/sensor/common/updater"
 	"github.com/stretchr/testify/suite"
 )
 
 const (
 	// Max time to receive health info status. You may want to increase it if you plan to step through the code with debugger.
 	updateTimeout = 3 * time.Second
-	// How frequently should updater provide health info during tests.
+	// How frequently should updater should send updates during tests.
 	updateInterval = 1 * time.Millisecond
 )
 
@@ -25,44 +27,25 @@ func TestUpdater(t *testing.T) {
 
 type UpdaterTestSuite struct {
 	suite.Suite
+
+	auditLogCollectionMgr *mocks.MockAuditLogCollectionManager
+	mockCtrl              *gomock.Controller
 }
 
-func (s *UpdaterTestSuite) TestUpdater() {
-	now := time.Now()
-	node1Msg := s.getMsgFromCompliance("node-one", []*storage.KubernetesEvent{
-		s.getKubeEvent(s.getAsProtoTime(now.Add(-10 * time.Minute))),
-		s.getKubeEvent(s.getAsProtoTime(now.Add(-30 * time.Minute))),
-	})
-	node2Msg := s.getMsgFromCompliance("node-two", []*storage.KubernetesEvent{
-		s.getKubeEvent(s.getAsProtoTime(now.Add(-30 * time.Second))),
-	})
-	latestNode2Msg := s.getMsgFromCompliance("node-two", []*storage.KubernetesEvent{
-		s.getKubeEvent(s.getAsProtoTime(now.Add(-10 * time.Second))),
-	})
+func (s *UpdaterTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
+	s.auditLogCollectionMgr = mocks.NewMockAuditLogCollectionManager(s.mockCtrl)
+}
 
-	auditEventMsgs := make(chan *sensor.MsgFromCompliance, 5)
-	auditEventMsgs <- node1Msg
-	auditEventMsgs <- node2Msg
-	auditEventMsgs <- latestNode2Msg
-
-	expectedStatus := map[string]*storage.AuditLogFileState{
-		"node-one": {
-			CollectLogsSince: node1Msg.GetAuditEvents().Events[0].Timestamp,
-			LastAuditId:      node1Msg.GetAuditEvents().Events[0].Id,
-		},
-		"node-two": {
-			CollectLogsSince: latestNode2Msg.GetAuditEvents().Events[0].Timestamp,
-			LastAuditId:      latestNode2Msg.GetAuditEvents().Events[0].Id,
-		},
-	}
-
-	status := s.getUpdaterStatusMsg(10, auditEventMsgs)
-
-	s.Equal(expectedStatus, status.GetNodeAuditLogFileStates())
+func (s *UpdaterTestSuite) TearDownTest() {
+	s.mockCtrl.Finish()
 }
 
 func (s *UpdaterTestSuite) TestUpdaterDoesNotSendWhenNoFileStates() {
-	updater := NewUpdater(updateInterval, make(chan *sensor.MsgFromCompliance, 5))
+	updater := NewUpdater(updateInterval, s.auditLogCollectionMgr)
+	emptyStates := make(map[string]*storage.AuditLogFileState)
+
+	s.auditLogCollectionMgr.EXPECT().GetLatestFileStates().Return(emptyStates).AnyTimes()
 
 	err := updater.Start()
 	s.Require().NoError(err)
@@ -78,16 +61,63 @@ func (s *UpdaterTestSuite) TestUpdaterDoesNotSendWhenNoFileStates() {
 	}
 }
 
-func (s *UpdaterTestSuite) getUpdaterStatusMsg(times int, auditEventMsgs <-chan *sensor.MsgFromCompliance) *central.AuditLogStatusInfo {
-	timer := time.NewTimer(updateTimeout)
-	updater := NewUpdater(updateInterval, auditEventMsgs)
+func (s *UpdaterTestSuite) TestUpdaterSendsUpdateWithLatestFileStates() {
+	now := time.Now()
+	expectedStatus := map[string]*storage.AuditLogFileState{
+		"node-one": {
+			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Minute)),
+			LastAuditId:      uuid.NewV4().String(),
+		},
+		"node-two": {
+			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Second)),
+			LastAuditId:      uuid.NewV4().String(),
+		},
+	}
 
-	err := updater.Start()
+	s.auditLogCollectionMgr.EXPECT().GetLatestFileStates().Return(expectedStatus).AnyTimes()
+
+	fileStateUpdater := NewUpdater(updateInterval, s.auditLogCollectionMgr)
+
+	err := fileStateUpdater.Start()
 	s.Require().NoError(err)
-	defer updater.Stop(nil)
+	defer fileStateUpdater.Stop(nil)
+
+	status := s.getUpdaterStatusMsg(fileStateUpdater, 10)
+	s.Equal(expectedStatus, status.GetNodeAuditLogFileStates())
+}
+
+func (s *UpdaterTestSuite) TestUpdaterSendsUpdateWhenForced() {
+	now := time.Now()
+	expectedStatus := map[string]*storage.AuditLogFileState{
+		"node-one": {
+			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Minute)),
+			LastAuditId:      uuid.NewV4().String(),
+		},
+		"node-two": {
+			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Second)),
+			LastAuditId:      uuid.NewV4().String(),
+		},
+	}
+
+	s.auditLogCollectionMgr.EXPECT().GetLatestFileStates().Return(expectedStatus).AnyTimes()
+
+	// The updater will update a duration that is less than the test timeout, so the update will not be naturally sent until forced
+	fileStateUpdater := NewUpdater(1*time.Minute, s.auditLogCollectionMgr)
+
+	err := fileStateUpdater.Start()
+	s.Require().NoError(err)
+	defer fileStateUpdater.Stop(nil)
+
+	fileStateUpdater.ForceUpdate()
+
+	status := s.getUpdaterStatusMsg(fileStateUpdater, 1)
+	s.Equal(expectedStatus, status.GetNodeAuditLogFileStates())
+}
+
+func (s *UpdaterTestSuite) getUpdaterStatusMsg(updater updater.Component, times int) *central.AuditLogStatusInfo {
+	timer := time.NewTimer(updateTimeout)
 
 	var status *central.AuditLogStatusInfo
-
 	for i := 0; i < times; i++ {
 		select {
 		case response := <-updater.ResponsesC():
@@ -104,39 +134,4 @@ func (s *UpdaterTestSuite) getAsProtoTime(now time.Time) *types.Timestamp {
 	protoTime, err := types.TimestampProto(now)
 	s.NoError(err)
 	return protoTime
-}
-
-func (s *UpdaterTestSuite) getMsgFromCompliance(nodeName string, events []*storage.KubernetesEvent) *sensor.MsgFromCompliance {
-	return &sensor.MsgFromCompliance{
-		Node: nodeName,
-		Msg: &sensor.MsgFromCompliance_AuditEvents{
-			AuditEvents: &sensor.AuditEvents{
-				Events: events,
-			},
-		},
-	}
-}
-
-func (s *UpdaterTestSuite) getKubeEvent(timestamp *types.Timestamp) *storage.KubernetesEvent {
-	return &storage.KubernetesEvent{
-		Id: uuid.NewV4().String(),
-		Object: &storage.KubernetesEvent_Object{
-			Name:      "my-secret",
-			Resource:  storage.KubernetesEvent_Object_SECRETS,
-			ClusterId: uuid.NewV4().String(),
-			Namespace: "my-namespace",
-		},
-		Timestamp: timestamp,
-		ApiVerb:   storage.KubernetesEvent_CREATE,
-		User: &storage.KubernetesEvent_User{
-			Username: "username",
-			Groups:   []string{"groupA", "groupB"},
-		},
-		SourceIps: []string{"192.168.1.1", "127.0.0.1"},
-		UserAgent: "curl",
-		ResponseStatus: &storage.KubernetesEvent_ResponseStatus{
-			StatusCode: 200,
-			Reason:     "cause",
-		},
-	}
 }

@@ -18,11 +18,10 @@ import (
 
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
-	output        chan *compliance.ComplianceReturn
-	auditEvents   chan *sensor.AuditEvents
-	auditMessages chan *sensor.MsgFromCompliance
+	output      chan *compliance.ComplianceReturn
+	auditEvents chan *sensor.AuditEvents
 
-	auditLogCollectionManager *AuditLogCollectionManager
+	auditLogCollectionManager AuditLogCollectionManager
 
 	orchestrator orchestrator.Orchestrator
 
@@ -140,7 +139,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			s.output <- t.Return
 		case *sensor.MsgFromCompliance_AuditEvents:
 			s.auditEvents <- t.AuditEvents
-			s.auditMessages <- msg
+			s.auditLogCollectionManager.AuditMessagesChan() <- msg
 		}
 	}
 }
@@ -166,8 +165,4 @@ func (s *serviceImpl) Output() chan *compliance.ComplianceReturn {
 
 func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 	return s.auditEvents
-}
-
-func (s *serviceImpl) AuditMessages() <-chan *sensor.MsgFromCompliance {
-	return s.auditMessages
 }

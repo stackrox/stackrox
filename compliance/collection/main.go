@@ -72,6 +72,7 @@ func runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateCli
 				auditReader = startAuditLogCollection(ctx, client, r.StartReq)
 			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StopReq:
 				if auditReader != nil {
+					log.Infof("Stopping audit log reader on node %s.", getNode())
 					auditReader.StopReader()
 					auditReader = nil
 				} else {

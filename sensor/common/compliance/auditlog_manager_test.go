@@ -1,11 +1,15 @@
 package compliance
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -56,15 +60,14 @@ func (s *AuditLogCollectionManagerTestSuite) getClusterID() string {
 
 func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionEnablesOnAllAvailableNodes() {
 	servers, _ := s.getFakeServersAndStates()
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
-		enabled:                 false,
 	}
 
 	manager.EnableCollection()
 
-	s.True(manager.enabled, "Collection should be in an enabled state if EnableCollection() is called")
+	s.True(manager.enabled.Get(), "Collection should be in an enabled state if EnableCollection() is called")
 
 	for node, server := range servers {
 		sentMsgs := server.(*mockServer).sentList
@@ -77,11 +80,10 @@ func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionEnablesOnAllAva
 
 func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionSendsFileStateIfAvailable() {
 	servers, fileStates := s.getFakeServersAndStates()
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
 		fileStates:              fileStates,
-		enabled:                 false,
 	}
 
 	manager.EnableCollection()
@@ -94,15 +96,15 @@ func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionSendsFileStateI
 
 func (s *AuditLogCollectionManagerTestSuite) TestEnabledDoesntSendMessageIfAlreadyEnabled() {
 	servers, _ := s.getFakeServersAndStates()
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
-		enabled:                 true,
 	}
+	manager.enabled.Set(true) // start out enabled
 
 	manager.EnableCollection()
 
-	s.True(manager.enabled, "Collection should be in an enabled state if EnableCollection() is called")
+	s.True(manager.enabled.Get(), "Collection should be in an enabled state if EnableCollection() is called")
 
 	for node, server := range servers {
 		sentMsgs := server.(*mockServer).sentList
@@ -112,15 +114,15 @@ func (s *AuditLogCollectionManagerTestSuite) TestEnabledDoesntSendMessageIfAlrea
 
 func (s *AuditLogCollectionManagerTestSuite) TestDisableCollectionDisablesOnAllAvailableNodes() {
 	servers, _ := s.getFakeServersAndStates()
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
-		enabled:                 true,
 	}
+	manager.enabled.Set(true) // start out enabled
 
 	manager.DisableCollection()
 
-	s.False(manager.enabled, "Collection should be in a disabled state if DisableCollection() is called")
+	s.False(manager.enabled.Get(), "Collection should be in a disabled state if DisableCollection() is called")
 
 	for node, server := range servers {
 		sentMsgs := server.(*mockServer).sentList
@@ -133,15 +135,14 @@ func (s *AuditLogCollectionManagerTestSuite) TestDisableCollectionDisablesOnAllA
 
 func (s *AuditLogCollectionManagerTestSuite) TestDisableDoesntSendMessageIfAlreadyDisabled() {
 	servers, _ := s.getFakeServersAndStates()
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
-		enabled:                 false,
 	}
 
 	manager.DisableCollection()
 
-	s.False(manager.enabled, "Collection should be in a disabled state if DisableCollection() is called")
+	s.False(manager.enabled.Get(), "Collection should be in a disabled state if DisableCollection() is called")
 
 	for node, server := range servers {
 		sentMsgs := server.(*mockServer).sentList
@@ -151,11 +152,11 @@ func (s *AuditLogCollectionManagerTestSuite) TestDisableDoesntSendMessageIfAlrea
 
 func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateSendsFileStateToAllAvailableNodes() {
 	servers, fileStates := s.getFakeServersAndStates()
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
-		enabled:                 true,
 	}
+	manager.enabled.Set(true) // start out enabled
 
 	manager.UpdateAuditLogFileState(fileStates)
 
@@ -170,10 +171,9 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateSendsFil
 
 func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateDoesNotSendIfDisabled() {
 	servers, fileStates := s.getFakeServersAndStates()
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
-		enabled:                 false,
 	}
 
 	manager.UpdateAuditLogFileState(fileStates)
@@ -186,11 +186,11 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateDoesNotS
 }
 
 func (s *AuditLogCollectionManagerTestSuite) TestAddNodeSendsStartIfEnabled() {
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: make(map[string]sensor.ComplianceService_CommunicateServer),
-		enabled:                 true,
 	}
+	manager.enabled.Set(true) // start out enabled
 
 	server := &mockServer{
 		sentList: make([]*sensor.MsgToCompliance, 0),
@@ -206,10 +206,9 @@ func (s *AuditLogCollectionManagerTestSuite) TestAddNodeSendsStartIfEnabled() {
 }
 
 func (s *AuditLogCollectionManagerTestSuite) TestAddNodeDoesNotSendIfDisabled() {
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: make(map[string]sensor.ComplianceService_CommunicateServer),
-		enabled:                 false,
 	}
 
 	server := &mockServer{
@@ -224,13 +223,179 @@ func (s *AuditLogCollectionManagerTestSuite) TestAddNodeDoesNotSendIfDisabled() 
 
 func (s *AuditLogCollectionManagerTestSuite) TestRemoveNodeRemovesNodeFromList() {
 	servers, _ := s.getFakeServersAndStates()
-	manager := &AuditLogCollectionManager{
+	manager := &auditLogCollectionManagerImpl{
 		clusterIDGetter:         s.getClusterID,
 		eligibleComplianceNodes: servers,
-		enabled:                 false,
 	}
 
 	manager.RemoveEligibleComplianceNode("node-b")
 
 	s.Nil(manager.eligibleComplianceNodes["node-b"], "The removed node should no longer be present")
+}
+
+func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyOfState() {
+	manager := &auditLogCollectionManagerImpl{
+		clusterIDGetter: s.getClusterID,
+		auditEventMsgs:  make(chan *sensor.MsgFromCompliance),
+		stopSig:         concurrency.NewSignal(),
+		fileStates:      make(map[string]*storage.AuditLogFileState),
+	}
+	manager.enabled.Set(true) // start out enabled
+
+	firstState := s.getAuditLogFileState(types.TimestampNow(), "first-id-a")
+	// add a state manually
+	manager.updateFileState("node-a", firstState.CollectLogsSince, firstState.LastAuditId)
+
+	states := manager.GetLatestFileStates()
+	s.Equal(
+		map[string]*storage.AuditLogFileState{"node-a": firstState},
+		states,
+	)
+
+	// Update the state and add a new node
+	secondState := s.getAuditLogFileState(types.TimestampNow(), "second-id-a")
+	manager.updateFileState("node-a", secondState.CollectLogsSince, secondState.LastAuditId)
+
+	altNodeState := s.getAuditLogFileState(types.TimestampNow(), "first-id-b")
+	manager.updateFileState("node-b", altNodeState.CollectLogsSince, altNodeState.LastAuditId)
+
+	// The originally retrieved state should not have changed
+	s.Equal(
+		map[string]*storage.AuditLogFileState{"node-a": firstState},
+		states,
+	)
+
+	// But when fetched again, the new states should be shown
+	s.Equal(
+		map[string]*storage.AuditLogFileState{"node-a": secondState, "node-b": altNodeState},
+		manager.GetLatestFileStates(),
+	)
+}
+
+func (s *AuditLogCollectionManagerTestSuite) getAuditLogFileState(time *types.Timestamp, lastID string) *storage.AuditLogFileState {
+	return &storage.AuditLogFileState{
+		CollectLogsSince: time,
+		LastAuditId:      lastID,
+	}
+}
+
+func (s *AuditLogCollectionManagerTestSuite) getAsProtoTime(now time.Time) *types.Timestamp {
+	protoTime, err := types.TimestampProto(now)
+	s.NoError(err)
+	return protoTime
+}
+
+func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
+	manager := &auditLogCollectionManagerImpl{
+		clusterIDGetter: s.getClusterID,
+		auditEventMsgs:  make(chan *sensor.MsgFromCompliance, 5), // Buffered for the test only
+		stopSig:         concurrency.NewSignal(),
+		fileStates:      make(map[string]*storage.AuditLogFileState),
+	}
+	manager.enabled.Set(true) // start out enabled
+
+	s.NoError(manager.Start())
+	defer manager.Stop(nil)
+
+	// Now pass in a few messages and wait for the state to get updated asynchronously
+	expectedFileStates := make(map[string]*storage.AuditLogFileState)
+	startTime := time.Now()
+	for node := 0; node < 2; node++ {
+		for i := 0; i < 2; i++ {
+			nodeName := fmt.Sprintf("node-%d", node)
+			ts := s.getAsProtoTime(startTime.Add(time.Duration(i*10) * time.Minute))
+			msg := s.getMsgFromCompliance(nodeName, ts)
+			state := s.getAuditLogFileState(ts, msg.GetAuditEvents().Events[0].Id)
+			expectedFileStates[nodeName] = state
+
+			manager.AuditMessagesChan() <- msg
+		}
+	}
+
+	// One more just to ensure that by the point we get the file state, all message before this one has been processed
+	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", s.getAsProtoTime(startTime.Add(30*time.Minute)))
+
+	// Wait until the buffer is empty, at which point we know all messages were consumed
+	for len(manager.auditEventMsgs) > 0 { // should be safe to do since we are the only reader and because it's a buffered channel
+		time.Sleep(5 * time.Second)
+	}
+
+	states := manager.GetLatestFileStates()
+	delete(states, "node-X") // Just in case the test ran fast, and the message added to flush the channel exists, remove it
+	s.Equal(expectedFileStates, states)
+
+}
+
+func (s *AuditLogCollectionManagerTestSuite) TestStateSaverDoesNotSaveIfMsgHasNoEvents() {
+	manager := &auditLogCollectionManagerImpl{
+		clusterIDGetter: s.getClusterID,
+		auditEventMsgs:  make(chan *sensor.MsgFromCompliance, 5), // Buffered for the test only
+		stopSig:         concurrency.NewSignal(),
+		fileStates:      make(map[string]*storage.AuditLogFileState),
+	}
+	manager.enabled.Set(true) // start out enabled
+
+	s.NoError(manager.Start())
+	defer manager.Stop(nil)
+
+	// Now pass in a few messages and wait for the state to get updated asynchronously
+	startTime := time.Now()
+	for node := 0; node < 2; node++ {
+		for i := 0; i < 2; i++ {
+			msg := &sensor.MsgFromCompliance{
+				Node: fmt.Sprintf("node-%d", node),
+				Msg: &sensor.MsgFromCompliance_AuditEvents{
+					AuditEvents: &sensor.AuditEvents{Events: []*storage.KubernetesEvent{}},
+				},
+			}
+
+			manager.AuditMessagesChan() <- msg
+		}
+	}
+
+	// One more just to ensure that by the point we get the file state, all message before this one has been processed
+	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", s.getAsProtoTime(startTime.Add(30*time.Minute)))
+
+	// Wait until the buffer is empty, at which point we know all messages were consumed
+	for len(manager.auditEventMsgs) > 0 { // should be safe to do since we are the only reader and because it's a buffered channel
+		time.Sleep(5 * time.Second)
+	}
+
+	states := manager.GetLatestFileStates()
+	delete(states, "node-X") // Just in case the test ran fast, and the message added to flush the channel exists, remove it
+	s.True(len(states) == 0) // state shouldn't have been updated
+
+}
+
+func (s *AuditLogCollectionManagerTestSuite) getMsgFromCompliance(nodeName string, timestamp *types.Timestamp) *sensor.MsgFromCompliance {
+	return &sensor.MsgFromCompliance{
+		Node: nodeName,
+		Msg: &sensor.MsgFromCompliance_AuditEvents{
+			AuditEvents: &sensor.AuditEvents{
+				Events: []*storage.KubernetesEvent{
+					{
+						Id: uuid.NewV4().String(),
+						Object: &storage.KubernetesEvent_Object{
+							Name:      "my-secret",
+							Resource:  storage.KubernetesEvent_Object_SECRETS,
+							ClusterId: uuid.NewV4().String(),
+							Namespace: "my-namespace",
+						},
+						Timestamp: timestamp,
+						ApiVerb:   storage.KubernetesEvent_CREATE,
+						User: &storage.KubernetesEvent_User{
+							Username: "username",
+							Groups:   []string{"groupA", "groupB"},
+						},
+						SourceIps: []string{"192.168.1.1", "127.0.0.1"},
+						UserAgent: "curl",
+						ResponseStatus: &storage.KubernetesEvent_ResponseStatus{
+							StatusCode: 200,
+							Reason:     "cause",
+						},
+					},
+				},
+			},
+		},
+	}
 }

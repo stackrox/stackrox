@@ -29,7 +29,7 @@ type Handler interface {
 }
 
 // NewCommandHandler returns a new instance of a Handler.
-func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, deploymentIdentification *storage.SensorDeploymentIdentification, helmManagedConfig *central.HelmManagedConfigInit, auditLogCollectionManager *compliance.AuditLogCollectionManager) Handler {
+func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, deploymentIdentification *storage.SensorDeploymentIdentification, helmManagedConfig *central.HelmManagedConfigInit, auditLogCollectionManager compliance.AuditLogCollectionManager) Handler {
 	return &configHandlerImpl{
 		stopC:                     concurrency.NewErrorSignal(),
 		admCtrlSettingsMgr:        admCtrlSettingsMgr,
@@ -47,7 +47,7 @@ type configHandlerImpl struct {
 	lock   sync.RWMutex
 
 	admCtrlSettingsMgr        admissioncontroller.SettingsManager
-	auditLogCollectionManager *compliance.AuditLogCollectionManager
+	auditLogCollectionManager compliance.AuditLogCollectionManager
 	stopC                     concurrency.ErrorSignal
 }
 
