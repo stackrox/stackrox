@@ -320,17 +320,18 @@ func (s *policyValidator) compilesForDeployTime(policy *storage.Policy, options 
 }
 
 func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
+	// Runtime policies must contain one or more runtime fields, but can have deploy time fields as well
 	var err error
 	if s.isAuditEventPolicy(policy) {
 		_, err = booleanpolicy.BuildAuditLogEventMatcher(policy, booleanpolicy.ValidateSourceIsAuditLogEvents())
 	} else {
+		// build a deployment matcher to check for all runtime fields that are evaluated against a deployment
 		_, err = booleanpolicy.BuildDeploymentMatcher(policy, options...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "policy configuration is invalid for runtime")
 	}
 
-	// TODO: Verify the default policies test failure and remove this.
 	if !booleanpolicy.ContainsRuntimeFields(policy) {
 		return errors.New("run time policy must contain runtime specific constraints")
 	}

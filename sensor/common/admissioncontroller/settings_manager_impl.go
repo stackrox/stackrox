@@ -55,7 +55,8 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	var filtered []*storage.Policy
 	var runtime []*storage.Policy
 	for _, policy := range policies {
-		if pkgPolicies.AppliesAtRunTime(policy) && booleanpolicy.ContainsOneOf(policy, booleanpolicy.KubeEventsFields) {
+		if pkgPolicies.AppliesAtRunTime(policy) &&
+			booleanpolicy.ContainsOneOf(policy, booleanpolicy.KubeEvent) {
 			runtime = append(runtime, policy.Clone())
 		} else if !isEnforcedDeployTimePolicy(policy) {
 			continue

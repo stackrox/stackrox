@@ -11,7 +11,7 @@ func sectionToQuery(section *storage.PolicySection, stage storage.LifecycleStage
 	if len(section.GetPolicyGroups()) == 0 {
 		return nil, errors.New("no groups")
 	}
-	fieldQueries, err := sectionToFieldQueries(section, nil)
+	fieldQueries, err := sectionToFieldQueries(section)
 	if err != nil {
 		return nil, err
 	}
@@ -21,12 +21,24 @@ func sectionToQuery(section *storage.PolicySection, stage storage.LifecycleStage
 	return &query.Query{FieldQueries: fieldQueries}, nil
 }
 
-func sectionToFieldQueries(section *storage.PolicySection, allowedGroups *set.FrozenStringSet) ([]*query.FieldQuery, error) {
+func sectionTypeToFieldQueries(section *storage.PolicySection, fieldType RuntimeFieldType) ([]*query.FieldQuery, error) {
 	fieldQueries := make([]*query.FieldQuery, 0, len(section.GetPolicyGroups()))
 	for _, group := range section.GetPolicyGroups() {
-		if allowedGroups != nil && !allowedGroups.Contains(group.GetFieldName()) {
+		if !FieldMetadataSingleton().FieldIsOfType(group.GetFieldName(), fieldType) {
 			continue
 		}
+		fqs, err := policyGroupToFieldQueries(group)
+		if err != nil {
+			return nil, errors.Wrapf(err, "constructing query for group %s", group.GetFieldName())
+		}
+		fieldQueries = append(fieldQueries, fqs...)
+	}
+	return fieldQueries, nil
+}
+
+func sectionToFieldQueries(section *storage.PolicySection) ([]*query.FieldQuery, error) {
+	fieldQueries := make([]*query.FieldQuery, 0, len(section.GetPolicyGroups()))
+	for _, group := range section.GetPolicyGroups() {
 		fqs, err := policyGroupToFieldQueries(group)
 		if err != nil {
 			return nil, errors.Wrapf(err, "constructing query for group %s", group.GetFieldName())
@@ -41,11 +53,11 @@ func policyGroupToFieldQueries(group *storage.PolicyGroup) ([]*query.FieldQuery,
 		return nil, errors.New("no values")
 	}
 
-	f, err := fieldMetadataSingleton().findField(group.GetFieldName())
+	metadata, err := FieldMetadataSingleton().findField(group.GetFieldName())
 	if err != nil {
 		return nil, errors.Errorf("no QB known for group %q", group.GetFieldName())
 	}
-	metadata := f(nil)
+
 	if metadata == nil || metadata.qb == nil {
 		return nil, errors.Errorf("no QB known for group %q", group.GetFieldName())
 	}
@@ -80,8 +92,7 @@ func constructRemainingContextQueries(stage storage.LifecycleStage, section *sto
 	}
 	contextFieldSet := set.NewStringSet()
 	for _, group := range section.GetPolicyGroups() {
-		if f, err := fieldMetadataSingleton().findField(group.GetFieldName()); err == nil {
-			metadata := f(nil)
+		if metadata, err := FieldMetadataSingleton().findField(group.GetFieldName()); err == nil {
 			if contextFieldsToAdd, ok := metadata.contextFields[stage]; ok {
 				for _, contextField := range contextFieldsToAdd.AsSlice() {
 					contextFieldSet.Add(contextField)

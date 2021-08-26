@@ -943,17 +943,13 @@ func (s *serviceImpl) makePolicyFromFieldMap(ctx context.Context, fieldMap map[s
 
 	// We have to add and remove a policy name because the BPL validator requires a policy name for these checks
 	policy.Name = "Policy from Search"
-	var hasDeploymentEventFields bool
+
 	for _, group := range policyGroups {
 		// Only check for Deployment event fields since audit log fields are not searchable anyways.
-		if booleanpolicy.DeploymentEventFields.Contains(group.GetFieldName()) {
-			hasDeploymentEventFields = true
+		if booleanpolicy.FieldMetadataSingleton().IsDeploymentEventField(group.GetFieldName()) {
+			policy.EventSource = storage.EventSource_DEPLOYMENT_EVENT
 			break
 		}
-	}
-
-	if hasDeploymentEventFields {
-		policy.EventSource = storage.EventSource_DEPLOYMENT_EVENT
 	}
 
 	if lifecycleStages := s.validator.getAllowedLifecyclesForPolicy(policy); len(lifecycleStages) > 0 {

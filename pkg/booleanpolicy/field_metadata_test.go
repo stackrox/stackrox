@@ -24,5 +24,5 @@ func TestAllFieldsMetadata(t *testing.T) {
 }
 
 func (s *FieldMetadataValidationSuite) ValidateAllFieldMetadata() {
-	assert.Equal(s.T(), fieldnames.Count(), len(fieldMetadataSingleton().fieldsToQB))
+	assert.Equal(s.T(), fieldnames.Count(), len(FieldMetadataSingleton().fieldsToQB))
 }

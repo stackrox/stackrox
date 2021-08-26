@@ -110,7 +110,14 @@ var (
 // ContainsPortOrPortExposureFields returns whether the policy contains any port or port exposure fields.
 func ContainsPortOrPortExposureFields(p *storage.Policy) bool {
 	if policyversion.IsBooleanPolicy(p) {
-		return booleanpolicy.ContainsOneOf(p, portOrPortExposureFields)
+		for _, section := range p.GetPolicySections() {
+			for _, group := range section.GetPolicyGroups() {
+				if portOrPortExposureFields.Contains(group.GetFieldName()) {
+					return true
+				}
+			}
+		}
+		return false
 	}
 
 	return p.GetFields().GetPortPolicy() != nil || len(p.GetFields().GetPortExposurePolicy().GetExposureLevels()) > 0

@@ -2,59 +2,13 @@ package booleanpolicy
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/set"
 )
 
-// Following fields represents all runtime policy fields.
-var (
-	ProcessFields = set.NewFrozenStringSet(
-		fieldnames.ProcessName,
-		fieldnames.ProcessArguments,
-		fieldnames.ProcessAncestor,
-		fieldnames.ProcessUID,
-		fieldnames.UnexpectedProcessExecuted,
-	)
-
-	KubeEventsFields = set.NewFrozenStringSet(
-		fieldnames.KubeResource,
-		fieldnames.KubeAPIVerb,
-	)
-
-	AuditLogEventsFields = set.NewFrozenStringSet(
-		fieldnames.IsImpersonatedUser,
-		fieldnames.KubeAPIVerb,
-		fieldnames.KubeResource,
-		fieldnames.KubeResourceName,
-		fieldnames.KubeUserName,
-		fieldnames.KubeUserGroups,
-		fieldnames.SourceIPAddress,
-		fieldnames.UserAgent,
-	)
-
-	NetworkFlowFields = set.NewFrozenStringSet(
-		fieldnames.UnexpectedNetworkFlowDetected,
-	)
-
-	DeploymentEventFields = set.NewFrozenStringSet(
-		fieldnames.ProcessName,
-		fieldnames.ProcessArguments,
-		fieldnames.ProcessAncestor,
-		fieldnames.ProcessUID,
-		fieldnames.UnexpectedProcessExecuted,
-		fieldnames.KubeResource,
-		fieldnames.KubeAPIVerb,
-		fieldnames.UnexpectedNetworkFlowDetected,
-	)
-)
-
-// ContainsOneOf returns whether the policy contains at least one group with a field in fieldSet.
-func ContainsOneOf(policy *storage.Policy, fieldSet set.FrozenStringSet) bool {
+// ContainsOneOf returns whether the policy contains at least one group with a field of specified type.
+func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 	for _, section := range policy.GetPolicySections() {
-		for _, group := range section.GetPolicyGroups() {
-			if fieldSet.Contains(group.GetFieldName()) {
-				return true
-			}
+		if SectionContainsFieldOfType(section, fieldType) {
+			return true
 		}
 	}
 	return false
@@ -62,15 +16,16 @@ func ContainsOneOf(policy *storage.Policy, fieldSet set.FrozenStringSet) bool {
 
 // ContainsRuntimeFields returns whether the policy contains runtime specific fields.
 func ContainsRuntimeFields(policy *storage.Policy) bool {
-	return ContainsOneOf(policy, DeploymentEventFields) || ContainsOneOf(policy, AuditLogEventsFields)
+	return ContainsOneOf(policy, AuditLogEvent) || ContainsOneOf(policy, Process) ||
+		ContainsOneOf(policy, KubeEvent) || ContainsOneOf(policy, NetworkFlow)
 }
 
 // ContainsDeployTimeFields returns whether the policy contains deploy-time specific fields.
 func ContainsDeployTimeFields(policy *storage.Policy) bool {
 	for _, section := range policy.GetPolicySections() {
 		for _, group := range section.GetPolicyGroups() {
-			if !DeploymentEventFields.Contains(group.GetFieldName()) &&
-				!AuditLogEventsFields.Contains(group.GetFieldName()) {
+			if !FieldMetadataSingleton().IsDeploymentEventField(group.GetFieldName()) &&
+				!FieldMetadataSingleton().IsAuditLogEventField(group.GetFieldName()) {
 				return true
 			}
 		}
@@ -128,13 +83,13 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		//	continue
 		//}
 		var numRuntimeCategories int
-		if SectionContainsOneOf(section, KubeEventsFields) {
+		if SectionContainsFieldOfType(section, KubeEvent) {
 			numRuntimeCategories++
 		}
-		if SectionContainsOneOf(section, ProcessFields) {
+		if SectionContainsFieldOfType(section, Process) {
 			numRuntimeCategories++
 		}
-		if SectionContainsOneOf(section, NetworkFlowFields) {
+		if SectionContainsFieldOfType(section, NetworkFlow) {
 			numRuntimeCategories++
 		}
 		if numRuntimeCategories > 1 {
@@ -145,10 +100,11 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	return true
 }
 
-// SectionContainsOneOf returns true if the policy section contains at least one field from provided field set.
-func SectionContainsOneOf(section *storage.PolicySection, fieldSet set.FrozenStringSet) bool {
+// SectionContainsFieldOfType returns true if the policy section contains at least one field
+// of provided field type.
+func SectionContainsFieldOfType(section *storage.PolicySection, fieldType RuntimeFieldType) bool {
 	for _, group := range section.GetPolicyGroups() {
-		if fieldSet.Contains(group.GetFieldName()) {
+		if FieldMetadataSingleton().FieldIsOfType(group.GetFieldName(), fieldType) {
 			return true
 		}
 	}

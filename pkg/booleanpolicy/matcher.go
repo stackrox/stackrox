@@ -95,7 +95,7 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
 		}
 
-		fieldQueries, err := sectionToFieldQueries(section, &KubeEventsFields)
+		fieldQueries, err := sectionTypeToFieldQueries(section, KubeEvent)
 		if err != nil {
 			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
 		}
@@ -151,7 +151,7 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
 		}
 
-		fieldQueries, err := sectionToFieldQueries(section, &ProcessFields)
+		fieldQueries, err := sectionTypeToFieldQueries(section, Process)
 		if err != nil {
 			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
 		}
@@ -198,7 +198,7 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
 		}
 
-		fieldQueries, err := sectionToFieldQueries(section, &NetworkFlowFields)
+		fieldQueries, err := sectionTypeToFieldQueries(section, NetworkFlow)
 		if err != nil {
 			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
 		}

@@ -67,7 +67,7 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 
 	seenFields := set.NewStringSet()
 	for _, g := range s.GetPolicyGroups() {
-		m, err := fieldMetadataSingleton().findFieldMetadata(g.GetFieldName(), configuration)
+		m, err := FieldMetadataSingleton().findFieldMetadata(g.GetFieldName(), configuration)
 		switch err {
 		case nil:
 			// All good, proceed
@@ -92,15 +92,10 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			errorList.AddStringf("policy criteria %q does not support more than one value %q", g.GetFieldName(), g.GetValues())
 		}
 		for idx, v := range g.GetValues() {
-			if !m.valueRegex.MatchString(v.GetValue()) {
-				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must match regex %q", g.GetFieldName(), idx, v.GetValue(), m.valueRegex)
+			if !m.valueRegex(configuration).MatchString(v.GetValue()) {
+				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must match regex %q", g.GetFieldName(), idx, v.GetValue(), m.valueRegex(configuration).String())
 			}
 		}
-
-		if !isApplicableToEventSource(m, eventSource) {
-			errorList.AddStringf("policy criteria %q is invalid for event source: %s", g.GetFieldName(), eventSource)
-		}
-
 	}
 
 	if eventSource == storage.EventSource_AUDIT_LOG_EVENT {

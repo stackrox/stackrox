@@ -36,7 +36,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	if policies.AppliesAtRunTime(policy) &&
 		policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
 		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.AuditLogEventsFields)
+			return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.AuditLogEvent)
 		})
 		if len(filtered.GetPolicySections()) > 0 {
 			compiled.hasAuditEventsSection = true
@@ -51,8 +51,8 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT {
 		// TODO: Change inverse filter to filter by process fields once section validation is added to prohibit deploy time only fields.
 		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return !booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields) &&
-				!booleanpolicy.SectionContainsOneOf(section, booleanpolicy.NetworkFlowFields)
+			return !booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.KubeEvent) &&
+				!booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.NetworkFlow)
 		})
 		if len(filtered.GetPolicySections()) > 0 {
 			compiled.hasProcessSection = true
@@ -67,7 +67,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		// all runtime policies), we do not want to allow such sections. If a section does not contain a kube event
 		// field, it implies it does not apply to kubernetes event.
 		filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
+			return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.KubeEvent)
 		})
 		if len(filtered.GetPolicySections()) > 0 {
 			compiled.hasKubeEventsSection = true
@@ -79,7 +79,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		}
 
 		filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.NetworkFlowFields)
+			return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.NetworkFlow)
 		})
 		if len(filtered.GetPolicySections()) > 0 {
 			compiled.hasNetworkFlowSection = true
