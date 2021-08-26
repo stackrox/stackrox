@@ -22,6 +22,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `scanner.stackrox` changed to `scanner.stackrox.svc`
   - `scanner-db.stackrox` changed to `scanner-db.stackrox.svc`
 - Increased Operator memory requests from 80 MiB to 200 MiB and memory limits from 300 MiB to 1 GiB. The latter is to prevent operator restarts due to OOM on certain deployments.
+- Customer advisory: Default system policy `DockerHub NGINX 1.10` will be deprecated starting release `66.0`.
 
 ## [64.1]
 
