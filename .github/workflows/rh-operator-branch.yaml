@@ -2,8 +2,8 @@ name: Prepare Operator Release Branch
 on:
   push:
     tags:
-    - '[1-9][0-9]*.[0-9]+.[0-9]+' # Matches release tags, e.g. 3.62.1
-    - '[1-9][0-9]*.[0-9]+.[0-9]+-rc.[0-9]+' # Matches release candidate tags, e.g. 3.62.1-rc.4
+    - '[0-9]+.[0-9]+.[0-9]+' # Matches release tags, e.g. 3.62.1
+    - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+' # Matches release candidate tags, e.g. 3.62.1-rc.4
     # These tags filters should be in sync with filters in CircleCI, see
     # https://github.com/stackrox/rox/blob/a434dd34a8aad5ce33dac86282c4f02cdb90b7d5/.circleci/config.yml#L6-L22
     # Keep in mind that GitHub filter patterns are not regexes. Info on syntax here:
