@@ -17,9 +17,9 @@ describe('Dashboard page', () => {
     });
 
     it('should display system violations tiles', () => {
-        cy.server();
-        cy.fixture('alerts/countsByCluster-single.json').as('countsByCluster');
-        cy.route('GET', api.alerts.countsByCluster, '@countsByCluster').as('alertsByCluster');
+        cy.intercept('GET', api.alerts.countsByCluster, {
+            fixture: 'alerts/countsByCluster-single.json',
+        }).as('alertsByCluster');
 
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCluster');
@@ -35,6 +35,7 @@ describe('Dashboard page', () => {
     });
 
     it('should not navigate to the violations page when clicking the critical severity risk tile', () => {
+        cy.visit(dashboardUrl);
         cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
         cy.get('@riskTiles').first().click();
@@ -44,6 +45,7 @@ describe('Dashboard page', () => {
     });
 
     it('should navigate to violations page when clicking the low severity tile', () => {
+        cy.visit(dashboardUrl);
         cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
         cy.get('@riskTiles').last().click();
@@ -64,9 +66,9 @@ describe('Dashboard page', () => {
     });
 
     it('should display violations by cluster chart for single cluster', () => {
-        cy.server();
-        cy.fixture('alerts/countsByCluster-single.json').as('countsByCluster');
-        cy.route('GET', api.alerts.countsByCluster, '@countsByCluster').as('alertsByCluster');
+        cy.intercept('GET', api.alerts.countsByCluster, {
+            fixture: 'alerts/countsByCluster-single.json',
+        }).as('alertsByCluster');
 
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCluster');
@@ -91,9 +93,9 @@ describe('Dashboard page', () => {
     });
 
     it('should display violations by cluster chart for two clusters', () => {
-        cy.server();
-        cy.fixture('alerts/countsByCluster-couple.json').as('countsByCluster');
-        cy.route('GET', api.alerts.countsByCluster, '@countsByCluster').as('alertsByCluster');
+        cy.intercept('GET', api.alerts.countsByCluster, {
+            fixture: 'alerts/countsByCluster-couple.json',
+        }).as('alertsByCluster');
 
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCluster');
@@ -105,18 +107,18 @@ describe('Dashboard page', () => {
     });
 
     it('should display events by time charts', () => {
-        cy.server();
-        cy.fixture('alerts/alertsByTimeseries.json').as('alertsByTimeseries');
-        cy.route('GET', api.dashboard.timeseries, '@alertsByTimeseries').as('alertsByTimeseries');
+        cy.intercept('GET', api.dashboard.timeseries, {
+            fixture: 'alerts/alertsByTimeseries.json',
+        }).as('alertsByTimeseries');
         cy.visit(dashboardUrl);
         cy.wait('@alertsByTimeseries');
         cy.get(selectors.sectionHeaders.eventsByTime).next().find(selectors.timeseries);
     });
 
     it('should display violations category chart', () => {
-        cy.server();
-        cy.fixture('alerts/countsByCategory.json').as('countsByCategory');
-        cy.route('GET', api.alerts.countsByCategory, '@countsByCategory').as('alertsByCategory');
+        cy.intercept('GET', api.alerts.countsByCategory, {
+            fixture: 'alerts/countsByCategory.json',
+        }).as('alertsByCategory');
 
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCategory');
@@ -128,9 +130,9 @@ describe('Dashboard page', () => {
     });
 
     it('should display top risky deployments', () => {
-        cy.server();
-        cy.fixture('risks/riskyDeployments.json').as('riskyDeployments');
-        cy.route('GET', api.risks.riskyDeployments, '@riskyDeployments').as('riskyDeployments');
+        cy.intercept('GET', api.risks.riskyDeployments, {
+            fixture: 'risks/riskyDeployments.json',
+        }).as('riskyDeployments');
 
         cy.visit(dashboardUrl);
         cy.wait('@riskyDeployments');
@@ -153,9 +155,12 @@ describe('Dashboard page', () => {
     });
 
     it('should show the proper empty states', () => {
-        cy.server();
-        cy.route('GET', api.alerts.countsByCategory, { groups: [] }).as('alertsByCategory');
-        cy.route('GET', api.alerts.countsByCluster, { groups: [] }).as('alertsByCluster');
+        cy.intercept('GET', api.alerts.countsByCategory, {
+            body: { groups: [] },
+        }).as('alertsByCategory');
+        cy.intercept('GET', api.alerts.countsByCluster, {
+            body: { groups: [] },
+        }).as('alertsByCluster');
 
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCategory');
