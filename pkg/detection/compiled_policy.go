@@ -33,123 +33,174 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		policy: policy,
 	}
 
-	if policies.AppliesAtRunTime(policy) &&
-		policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
-		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.AuditLogEvent)
-		})
-		if len(filtered.GetPolicySections()) > 0 {
-			compiled.hasAuditEventsSection = true
-			auditLogEventMatcher, err := booleanpolicy.BuildAuditLogEventMatcher(filtered)
-			if err != nil {
-				return nil, errors.Wrapf(err, "building audit log event matcher for policy %q", policy.GetName())
-			}
-			compiled.auditLogEventMatcher = auditLogEventMatcher
-		}
-	}
-
-	if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT {
-		// TODO: Change inverse filter to filter by process fields once section validation is added to prohibit deploy time only fields.
-		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return !booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.KubeEvent) &&
-				!booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.NetworkFlow)
-		})
-		if len(filtered.GetPolicySections()) > 0 {
-			compiled.hasProcessSection = true
-			deploymentWithProcessMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(filtered)
-			if err != nil {
-				return nil, errors.Wrapf(err, "building process matcher for policy %q", policy.GetName())
-			}
-			compiled.deploymentWithProcessMatcher = deploymentWithProcessMatcher
-		}
-
-		// Historically deploy time only field sections in policy were allowed. For kube event policies (and eventually
-		// all runtime policies), we do not want to allow such sections. If a section does not contain a kube event
-		// field, it implies it does not apply to kubernetes event.
-		filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.KubeEvent)
-		})
-		if len(filtered.GetPolicySections()) > 0 {
-			compiled.hasKubeEventsSection = true
-			kubeEventsMatcher, err := booleanpolicy.BuildKubeEventMatcher(filtered)
-			if err != nil {
-				return nil, errors.Wrapf(err, "building kubernetes event matcher for policy %q", policy.GetName())
-			}
-			compiled.kubeEventsMatcher = kubeEventsMatcher
-		}
-
-		filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.NetworkFlow)
-		})
-		if len(filtered.GetPolicySections()) > 0 {
-			compiled.hasNetworkFlowSection = true
-			deploymentWithNetworkFlowMatcher, err := booleanpolicy.BuildDeploymentWithNetworkFlowMatcher(filtered)
-			if err != nil {
-				return nil, errors.Wrapf(err, "building network baseline matcher for policy %q", policy.GetName())
-			}
-			compiled.deploymentWithNetworkFlowMatcher = deploymentWithNetworkFlowMatcher
-		}
-
-		// There should be exactly one defined
-		if !compiled.exactlyOneRuntimeMatcherDefined() {
-			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have exactly "+
-				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
-		}
-	}
-
-	if policies.AppliesAtDeployTime(policy) {
-		deploymentMatcher, err := booleanpolicy.BuildDeploymentMatcher(policy)
-		if err != nil {
-			return nil, errors.Wrapf(err, "building deployment matcher for policy %q", policy.GetName())
-		}
-		compiled.deploymentMatcher = deploymentMatcher
-	}
-
-	if policies.AppliesAtBuildTime(policy) {
-		imageMatcher, err := booleanpolicy.BuildImageMatcher(policy)
-		if err != nil {
-			return nil, errors.Wrapf(err, "building image matcher for policy %q", policy.GetName())
-		}
-		compiled.imageMatcher = imageMatcher
-	}
-
-	if compiled.auditLogEventMatcher == nil && compiled.deploymentMatcher == nil && compiled.imageMatcher == nil &&
-		compiled.deploymentWithProcessMatcher == nil && compiled.kubeEventsMatcher == nil &&
-		compiled.deploymentWithNetworkFlowMatcher == nil {
-		return nil, errors.Errorf("no known lifecycle stage in policy %q", policy.GetName())
-	}
-
 	exclusions := make([]*compiledExclusion, 0, len(policy.GetExclusions()))
 	for _, w := range policy.GetExclusions() {
 		w, err := newCompiledExclusion(w)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "compiling exclusion list %+v for policy %s", w, policy.GetName())
 		}
 		exclusions = append(exclusions, w)
 	}
 
 	scopes := make([]*scopecomp.CompiledScope, 0, len(policy.GetScope()))
 	for _, s := range policy.GetScope() {
-		compiled, err := scopecomp.CompileScope(s)
+		compiledScope, err := scopecomp.CompileScope(s)
 		if err != nil {
 			return nil, errors.Wrapf(err, "compiling scope %+v for policy %q", s, policy.GetName())
 		}
-		scopes = append(scopes, compiled)
+		scopes = append(scopes, compiledScope)
 	}
 
-	if policies.AppliesAtDeployTime(policy) || policies.AppliesAtRunTime(policy) {
+	if policies.AppliesAtRunTime(policy) {
+		if err := compiled.setRuntimeMatchers(policy); err != nil {
+			return nil, err
+		}
+		// There should be exactly one defined
+		if !compiled.exactlyOneRuntimeMatcherDefined() {
+			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have exactly "+
+				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
+		}
+		// set predicates
 		compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
 		if policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
 			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
 		}
 	}
+
+	if policies.AppliesAtDeployTime(policy) {
+		if err := compiled.setDeployTimeMatchers(policy); err != nil {
+			return nil, errors.Wrapf(err, "building deployment matcher for policy %q", policy.GetName())
+		}
+		// set predicates
+		compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
+	}
+
 	if policies.AppliesAtBuildTime(policy) {
+		if err := compiled.setBuildTimeMatchers(policy); err != nil {
+			return nil, errors.Wrapf(err, "building image matcher for policy %q", policy.GetName())
+		}
 		compiled.predicates = append(compiled.predicates, &imagePredicate{
 			policy: policy,
 		})
 	}
 
+	if compiled.noMatchersSet() {
+		return nil, errors.Errorf("no valid policy criteria fields in policy %q, unable to set matchers", policy.GetName())
+	}
 	return compiled, nil
+}
+
+func (cp *compiledPolicy) noMatchersSet() bool {
+	return cp.auditLogEventMatcher == nil &&
+		cp.deploymentMatcher == nil &&
+		cp.imageMatcher == nil &&
+		cp.deploymentWithProcessMatcher == nil &&
+		cp.kubeEventsMatcher == nil &&
+		cp.deploymentWithNetworkFlowMatcher == nil
+}
+
+func (cp *compiledPolicy) setBuildTimeMatchers(policy *storage.Policy) error {
+	imageMatcher, err := booleanpolicy.BuildImageMatcher(policy)
+	if err != nil {
+		return err
+	}
+	cp.imageMatcher = imageMatcher
+	return nil
+}
+
+func (cp *compiledPolicy) setDeployTimeMatchers(policy *storage.Policy) error {
+	deploymentMatcher, err := booleanpolicy.BuildDeploymentMatcher(policy)
+	if err != nil {
+		return err
+	}
+	cp.deploymentMatcher = deploymentMatcher
+	return nil
+}
+
+func (cp *compiledPolicy) setRuntimeMatchers(policy *storage.Policy) error {
+	if policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+		err := cp.setAuditLogEventMatcher(policy)
+		if err != nil {
+			return errors.Wrapf(err, "building audit log event matcher for policy %q", policy.GetName())
+		}
+		return nil
+	}
+
+	if policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT {
+		err := cp.setProcessEventMatcher(policy)
+		if err != nil {
+			return errors.Wrapf(err, "building process event matcher for policy %q", policy.GetName())
+		}
+		err = cp.setKubeEventEventMatcher(policy)
+		if err != nil {
+			return errors.Wrapf(err, "building kube event matcher for policy %q", policy.GetName())
+		}
+		err = cp.setNetworkFlowEventMatcher(policy)
+		if err != nil {
+			return errors.Wrapf(err, "building network baseline matcher for policy %q", policy.GetName())
+		}
+	}
+	return nil
+}
+
+func (cp *compiledPolicy) setAuditLogEventMatcher(policy *storage.Policy) error {
+	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.AuditLogEvent)
+	})
+	if len(filtered.GetPolicySections()) > 0 {
+		cp.hasAuditEventsSection = true
+		auditLogEventMatcher, err := booleanpolicy.BuildAuditLogEventMatcher(filtered)
+		if err != nil {
+			return err
+		}
+		cp.auditLogEventMatcher = auditLogEventMatcher
+	}
+	return nil
+}
+
+func (cp *compiledPolicy) setProcessEventMatcher(policy *storage.Policy) error {
+	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process)
+	})
+	if len(filtered.GetPolicySections()) > 0 {
+		cp.hasProcessSection = true
+		deploymentWithProcessMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(filtered)
+		if err != nil {
+			return err
+		}
+		cp.deploymentWithProcessMatcher = deploymentWithProcessMatcher
+	}
+	return nil
+}
+
+func (cp *compiledPolicy) setKubeEventEventMatcher(policy *storage.Policy) error {
+	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.KubeEvent)
+	})
+	if len(filtered.GetPolicySections()) > 0 {
+		cp.hasKubeEventsSection = true
+		kubeEventsMatcher, err := booleanpolicy.BuildKubeEventMatcher(filtered)
+		if err != nil {
+			return err
+		}
+		cp.kubeEventsMatcher = kubeEventsMatcher
+	}
+	return nil
+}
+
+func (cp *compiledPolicy) setNetworkFlowEventMatcher(policy *storage.Policy) error {
+	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.NetworkFlow)
+	})
+	if len(filtered.GetPolicySections()) > 0 {
+		cp.hasNetworkFlowSection = true
+		deploymentWithNetworkFlowMatcher, err := booleanpolicy.BuildDeploymentWithNetworkFlowMatcher(filtered)
+		if err != nil {
+			return err
+		}
+		cp.deploymentWithNetworkFlowMatcher = deploymentWithNetworkFlowMatcher
+	}
+	return nil
 }
 
 func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
