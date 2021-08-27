@@ -2,8 +2,11 @@ import { useHistory } from 'react-router-dom';
 import { integrationsPath } from 'routePaths';
 
 import {
+    IntegrationOptions,
     createIntegration,
+    saveIntegration,
     saveIntegrationV2,
+    testIntegration,
     testIntegrationV2,
 } from 'services/IntegrationsService';
 import { IntegrationSource, IntegrationType } from 'Containers/Integrations/utils/integrationUtils';
@@ -24,8 +27,8 @@ export type UseIntegrationActions = {
 };
 
 export type UseIntegrationActionsResult = {
-    onSave: (data) => Promise<FormResponseMessage>;
-    onTest: (data) => Promise<FormResponseMessage>;
+    onSave: (data, options?: IntegrationOptions) => Promise<FormResponseMessage>;
+    onTest: (data, options?: IntegrationOptions) => Promise<FormResponseMessage>;
     onCancel: () => void;
 };
 
@@ -38,12 +41,15 @@ function useIntegrationActions(): UseIntegrationActionsResult {
     const fetchIntegrations = useFetchIntegrations(source);
     const integrationsListPath = `${integrationsPath}/${source}/${type}`;
 
-    async function onSave(data) {
+    async function onSave(data, { updatePassword }: IntegrationOptions = {}) {
         try {
             let responseData;
 
             if (isEditing) {
-                responseData = await saveIntegrationV2(source, data);
+                responseData =
+                    typeof updatePassword === 'boolean'
+                        ? await saveIntegration(source, data, { updatePassword })
+                        : await saveIntegrationV2(source, data);
             } else if (type === 'apitoken') {
                 responseData = await generateAPIToken(data);
             } else if (type === 'clusterInitBundle') {
@@ -61,9 +67,13 @@ function useIntegrationActions(): UseIntegrationActionsResult {
         }
     }
 
-    async function onTest(data) {
+    async function onTest(data, { updatePassword }: IntegrationOptions = {}) {
         try {
-            await testIntegrationV2(source, data);
+            if (typeof updatePassword === 'boolean') {
+                await testIntegration(source, data, { updatePassword });
+            } else {
+                await testIntegrationV2(source, data);
+            }
             return { message: 'Test was successful', isError: false };
         } catch (error) {
             return { message: error?.response?.data?.error || error, isError: true };

@@ -256,6 +256,43 @@ describe('Notifiers Test', () => {
             cy.wait(['@CreateJira']);
         });
 
+        it('should create a new PagerDuty integration', () => {
+            cy.get(selectors.pagerDutyTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/pagerduty/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Name').type(' ').blur();
+            getInputByLabel('PagerDuty integration key').type(' ').clear().blur();
+
+            getHelperElementByLabel('Name').contains('Name is required');
+            getHelperElementByLabel('PagerDuty integration key').contains(
+                'PagerDuty integration key is required'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            /*
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+            */
+
+            // Step 3, check valid form and save
+            const isoString = new Date().toISOString();
+            getInputByLabel('Name').clear().type(`Test new PagerDuty ${isoString}`);
+            getInputByLabel('PagerDuty Integration Key').type('key');
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+
         it('should create a new Sumo Logic integration', () => {
             cy.get(selectors.sumologicTile).click();
 

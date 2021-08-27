@@ -1,3 +1,7 @@
+import set from 'lodash/set';
+
+import { IntegrationBase } from 'services/IntegrationsService';
+
 import integrationsList from './integrationsList';
 
 export type IntegrationSource =
@@ -68,4 +72,23 @@ export function getIsAPIToken(source: IntegrationSource, type: IntegrationType):
 
 export function getIsClusterInitBundle(source: IntegrationSource, type: IntegrationType): boolean {
     return source === 'authProviders' && type === 'clusterInitBundle';
+}
+
+/*
+ * Return mutated integration with cleared stored credential string properties.
+ *
+ * Response has '******' for stored credentials, but form values must be empty string unless updating.
+ *
+ * clearStoredCredentials(integration, ['s3.accessKeyId', 's3.secretAccessKey']);
+ * clearStoredCredentials(integration, ['docker.password']);
+ * clearStoredCredentials(integration, ['pagerduty.apiKey']);
+ */
+export function clearStoredCredentials<I extends IntegrationBase>(
+    integration: I,
+    keyPaths: string[]
+): I {
+    keyPaths.forEach((keyPath) => {
+        set(integration, keyPath, '');
+    });
+    return integration;
 }

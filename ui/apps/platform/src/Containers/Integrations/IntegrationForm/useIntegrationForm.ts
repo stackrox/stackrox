@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useFormik, FormikProps } from 'formik';
 
+import { IntegrationOptions } from 'services/IntegrationsService';
+
 import useIntegrationActions from '../hooks/useIntegrationActions';
 
 export type FormResponseMessage = {
@@ -16,8 +18,8 @@ export type UseIntegrationForm<T, V> = {
 
 export type UseIntegrationFormResult<T> = FormikProps<T> & {
     isTesting: boolean;
-    onSave: () => void;
-    onTest: () => void;
+    onSave: (options?: IntegrationOptions) => void;
+    onTest: (options?: IntegrationOptions) => void;
     onCancel: () => void;
     message: FormResponseMessage;
 };
@@ -30,6 +32,7 @@ function useIntegrationForm<T, V>({
     // we will submit the form when clicking "Test" or "Create" so this value will distinguish
     // between the two
     const [isTesting, setIsTesting] = useState(false);
+    const [options, setOptions] = useState<IntegrationOptions>({});
     // This message will be displayed in a banner using the response we get from either creating
     // or testing an integration
     const [message, setMessage] = useState<FormResponseMessage>(null);
@@ -37,10 +40,10 @@ function useIntegrationForm<T, V>({
         initialValues,
         onSubmit: (formValues) => {
             if (isTesting) {
-                const response = onTest(formValues);
+                const response = onTest(formValues, options);
                 return response;
             }
-            const response = onSave(formValues);
+            const response = onSave(formValues, options);
             return response;
         },
         validationSchema,
@@ -49,14 +52,16 @@ function useIntegrationForm<T, V>({
 
     const { submitForm } = formik;
 
-    async function onTestHandler() {
+    async function onTestHandler(optionsArg = {}) {
         setIsTesting(true);
+        setOptions(optionsArg);
         const response = await submitForm();
         setMessage(response);
     }
 
-    async function onSaveHandler() {
+    async function onSaveHandler(optionsArg = {}) {
         setIsTesting(false);
+        setOptions(optionsArg);
         const response = await submitForm();
         setMessage(response);
     }
