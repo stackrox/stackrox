@@ -1,6 +1,10 @@
 package errorhelpers
 
-import "github.com/pkg/errors"
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+)
 
 var (
 	// ErrAlreadyExists indicates that a object already exists.
@@ -19,4 +23,20 @@ var (
 	// ErrInvariantViolation indicates that some internal invariant has been
 	// violated and the underlying component is in an inconsistent state.
 	ErrInvariantViolation = errors.New("invariant violation")
+
+	// ErrNoCredentials occurs if no credentials can be found.
+	ErrNoCredentials = errors.New("credentials not found")
+
+	// ErrNotAuthorized occurs if credentials are found, but they are
+	// insufficiently authorized.
+	ErrNotAuthorized = errors.New("not authorized")
+
+	// ErrNoAuthzConfigured occurs if authorization is not implemented for a
+	// service. This is a programming error.
+	ErrNoAuthzConfigured = errors.New("service authorization is misconfigured")
 )
+
+// NewErrNotAuthorized wraps ErrNotAuthorized into an explanation.
+func NewErrNotAuthorized(explanation string) error {
+	return fmt.Errorf("%w: %s", ErrNotAuthorized, explanation)
+}

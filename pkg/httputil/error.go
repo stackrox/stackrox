@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/pkg/grpc/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -43,11 +44,10 @@ func StatusFromError(err error) int {
 	if he, ok := err.(HTTPStatus); ok {
 		return he.HTTPStatusCode()
 	}
-	if spb, ok := status.FromError(err); ok {
-		return runtime.HTTPStatusFromCode(spb.Code())
-	}
 
-	return http.StatusInternalServerError
+	// `errors.ErrToHTTPStatus()` must handle both gRPC known internal
+	// sentinel errors.
+	return errors.ErrToHTTPStatus(err)
 }
 
 // ErrorFromStatus returns a HTTP error for the given status, or nil if the status does not indicate an error.
@@ -74,13 +74,20 @@ func WriteGRPCStyleErrorf(w http.ResponseWriter, c codes.Code, format string, ar
 	WriteGRPCStyleError(w, c, fmt.Errorf(format, args...))
 }
 
-// WriteError writes the given error to the stream. If the error is a grpc status, the respective status proto will
-// be generated with the adequate response code. Otherwise, if the error is an HTTPStatus, the HTTP status code will
-// be used with a gRPC code of `Unknown`. If neither applies, a 200 OK with an empty message will be sent for `nil`,
-// and 500 Internal Server Error with the appropriate message for other, non-nil errors.
+// WriteError writes the given error to the stream. HTTP status code, gRPC code,
+// and message are deduced based on the error type:
+//   - nil error => 200 OK with an empty message (no gRPC code);
+//   - the error is a grpc status => the adequate HTTP status code is selected
+//     and the respective status proto is generated;
+//   - the error is an `HTTPStatus` => `HTTPStatus.code` is used, gRPC code is
+//     `Unknown`, message is the status proto with the error;
+//   - the error is one of the known internal sentinel errors => HTTP status
+//     code is selected based on the error class, gRPC code is `Unknown`,
+//     message is the status proto with the error;
+//   - else => 500 Internal Server Error with the appropriate message.
 func WriteError(w http.ResponseWriter, err error) {
-	st, _ := status.FromError(err)
 	w.WriteHeader(StatusFromError(err))
+	st, _ := status.FromError(err)
 	_ = new(jsonpb.Marshaler).Marshal(w, st.Proto())
 }
 

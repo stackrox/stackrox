@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
@@ -22,12 +23,12 @@ func (p *anyRoleChecker) Authorized(ctx context.Context, _ string) error {
 	// Pull the identity from the context.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return authz.ErrNoCredentials
+		return errorhelpers.ErrNoCredentials
 	}
 	for _, r := range id.Roles() {
 		if r.GetRoleName() != NoneRole {
 			return nil
 		}
 	}
-	return authz.ErrNotAuthorized("The only role user has is None")
+	return errorhelpers.NewErrNotAuthorized("The only role user has is None")
 }

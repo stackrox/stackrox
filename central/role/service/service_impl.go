@@ -170,7 +170,7 @@ func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
 	// Get the perms from the current user context.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return nil, authz.ErrNoCredentials
+		return nil, errorhelpers.ErrNoCredentials
 	}
 	return &v1.GetPermissionsResponse{
 		ResourceToAccess: id.Permissions(),

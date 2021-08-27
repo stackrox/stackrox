@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -65,12 +64,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	// Get the source cluster's ID.
 	identity := authn.IdentityFromContext(server.Context())
 	if identity == nil {
-		return authz.ErrNotAuthorized("only sensor may access this API")
+		return errorhelpers.NewErrNotAuthorized("only sensor may access this API")
 	}
 
 	svc := identity.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return authz.ErrNotAuthorized("only sensor may access this API")
+		return errorhelpers.NewErrNotAuthorized("only sensor may access this API")
 	}
 
 	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)

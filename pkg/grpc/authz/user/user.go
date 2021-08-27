@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
@@ -31,7 +32,7 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	// Pull the identity from the context.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return authz.ErrNoCredentials
+		return errorhelpers.ErrNoCredentials
 	}
 
 	// If sac scope checker is configured, skip role check.
@@ -71,18 +72,18 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootS
 		return err
 	}
 	if !allowed {
-		return authz.ErrNotAuthorized("scoped access")
+		return errorhelpers.NewErrNotAuthorized("scoped access")
 	}
 	return nil
 }
 
 func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access) error {
 	if rolePerms == nil {
-		return authz.ErrNoCredentials
+		return errorhelpers.ErrNoCredentials
 	}
 	for _, requiredPerm := range p.requiredPermissions {
 		if !evaluateAgainstPermissions(rolePerms, requiredPerm) {
-			return authz.ErrNotAuthorized(fmt.Sprintf("%q for %q", requiredPerm.Access, requiredPerm.Resource))
+			return errorhelpers.NewErrNotAuthorized(fmt.Sprintf("%q for %q", requiredPerm.Access, requiredPerm.Resource))
 		}
 	}
 	return nil

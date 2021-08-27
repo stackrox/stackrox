@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -32,17 +31,17 @@ type service struct {
 func clusterIDFromCtx(ctx context.Context) (string, error) {
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return "", authz.ErrNoCredentials
+		return "", errorhelpers.ErrNoCredentials
 	}
 
 	svc := id.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return "", authz.ErrNotAuthorized("only sensor/upgrader may access this API")
+		return "", errorhelpers.NewErrNotAuthorized("only sensor/upgrader may access this API")
 	}
 
 	clusterID := svc.GetId()
 	if clusterID == "" {
-		return "", authz.ErrNotAuthorized("only sensors with a valid cluster ID may access this API")
+		return "", errorhelpers.NewErrNotAuthorized("only sensors with a valid cluster ID may access this API")
 	}
 	return clusterID, nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
@@ -22,7 +23,7 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 	// Pull the identity from the context.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		return authz.ErrNoCredentials
+		return errorhelpers.ErrNoCredentials
 	}
 
 	return p.checkRole(utils.RoleNames(id.Roles()))
@@ -31,7 +32,7 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 func (p *roleChecker) checkRole(roleNames []string) error {
 	if len(roleNames) == 0 {
 		// A user with no roles is an invalid user.
-		return authz.ErrNoCredentials
+		return errorhelpers.ErrNoCredentials
 	}
 
 	for _, roleName := range roleNames {
@@ -40,5 +41,5 @@ func (p *roleChecker) checkRole(roleNames []string) error {
 		}
 	}
 
-	return authz.ErrNotAuthorized(fmt.Sprintf("role %q is required", p.roleName))
+	return errorhelpers.NewErrNotAuthorized(fmt.Sprintf("role %q is required", p.roleName))
 }

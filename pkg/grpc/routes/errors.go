@@ -3,8 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"google.golang.org/grpc/status"
+	"github.com/stackrox/rox/pkg/grpc/errors"
 )
 
 func writeHTTPStatus(w http.ResponseWriter, err error) {
@@ -12,6 +11,5 @@ func writeHTTPStatus(w http.ResponseWriter, err error) {
 		return
 	}
 
-	s := status.Convert(err)
-	http.Error(w, s.Message(), runtime.HTTPStatusFromCode(s.Code()))
+	http.Error(w, err.Error(), errors.ErrToHTTPStatus(err))
 }
