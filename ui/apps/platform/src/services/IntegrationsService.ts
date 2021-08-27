@@ -70,13 +70,15 @@ export function fetchIntegration(
 export function saveIntegration(
     source: IntegrationSource,
     data: IntegrationBase,
-    { updatePassword }: IntegrationOptions = {}
+    options: IntegrationOptions = {} // TODO can destructure { updatePassword } for new forms
 ): Promise<Record<string, never>> {
     const { id } = data;
 
     if (!id) {
         throw new Error('Integration entity must have an id to be saved');
     }
+
+    const updatePassword = options?.updatePassword; // ROX-7884 because setFormSubmissionOptions can return null
 
     // if the integration is not one that could possibly have stored credentials, use the previous API
     if (updatePassword === undefined) {
@@ -126,8 +128,10 @@ export function createIntegration(
 export function testIntegration(
     source: IntegrationSource,
     data: IntegrationBase,
-    { updatePassword }: IntegrationOptions = {}
+    options: IntegrationOptions = {} // TODO can destructure { updatePassword } for new forms
 ): Promise<Record<string, never>> {
+    const updatePassword = options?.updatePassword; // ROX-7884 because setFormSubmissionOptions can return null
+
     // if the integration is not one that could possibly have stored credentials, use the previous API
     if (updatePassword === undefined) {
         return axios.post(`${getPath(source, 'test')}/test`, data);
