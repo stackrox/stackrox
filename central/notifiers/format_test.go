@@ -64,7 +64,7 @@ Policy Definition:
 			- Drop Capabilities: DROP1 OR DROP2
 			- Add Capabilities: ADD1 OR ADD2
 
-	Deployment:
+Deployment:
 	 - ID: s79mdvmb6dsl
 	 - Name: nginx_server
 	 - Cluster: prod cluster
@@ -121,7 +121,7 @@ Policy Definition:
 			- Drop Capabilities: DROP1 OR DROP2
 			- Add Capabilities: ADD1 OR ADD2
 
-	Image:
+Image:
 	 - Name: stackrox.io/srox/mongo:latest
 `
 )

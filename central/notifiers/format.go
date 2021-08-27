@@ -62,26 +62,26 @@ const bplPolicyFormat = `
 		{{end}}
 	{{end}}
 
-	{{if .GetDeployment}}{{line ""}}{{subheader "Deployment:"}}
-		{{stringify "ID:" .GetDeployment.Id | list}}
-		{{stringify "Name:" .GetDeployment.Name | list}}
-		{{stringify "Cluster:" .GetDeployment.ClusterName | list}}
-		{{stringify "ClusterId:" .GetDeployment.ClusterId | list}}
-		{{if .GetDeployment.Namespace }}{{stringify "Namespace:" .GetDeployment.Namespace | list}}{{end}}
-		{{stringify "Images:"  .DeploymentCommaSeparatedImages | list}}
-	{{end}}
+{{if .GetDeployment}}{{line ""}}{{header "Deployment:"}}
+	{{stringify "ID:" .GetDeployment.Id | list}}
+	{{stringify "Name:" .GetDeployment.Name | list}}
+	{{stringify "Cluster:" .GetDeployment.ClusterName | list}}
+	{{stringify "ClusterId:" .GetDeployment.ClusterId | list}}
+	{{if .GetDeployment.Namespace }}{{stringify "Namespace:" .GetDeployment.Namespace | list}}{{end}}
+	{{stringify "Images:" .DeploymentCommaSeparatedImages | list}}
+{{end}}
 
-	{{if .GetResource}}{{line ""}}{{subheader "Resource:"}}
-		{{stringify "Name:" .GetResource.Name | list}}
-		{{stringify "Type:" .GetResource.ResourceType | list}}
-		{{stringify "Cluster:" .GetResource.ClusterName | list}}
-		{{stringify "ClusterId:" .GetResource.ClusterId | list}}
-		{{stringify "Namespace:" .GetResource.Namespace | list}}
-	{{end}}
+{{if .GetResource}}{{line ""}}{{header "Resource:"}}
+	{{stringify "Name:" .GetResource.Name | list}}
+	{{stringify "Type:" .GetResource.ResourceType | list}}
+	{{stringify "Cluster:" .GetResource.ClusterName | list}}
+	{{stringify "ClusterId:" .GetResource.ClusterId | list}}
+	{{stringify "Namespace:" .GetResource.Namespace | list}}
+{{end}}
 
-	{{if .GetImage}}{{line ""}}{{subheader "Image:"}}
-		{{stringify "Name:" .Image | list}}
-	{{end}}
+{{if .GetImage}}{{line ""}}{{header "Image:"}}
+	{{stringify "Name:" .Image | list}}
+{{end}}
 `
 
 var requiredFunctions = set.NewFrozenStringSet(
