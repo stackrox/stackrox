@@ -199,7 +199,10 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 	// Please be VERY prudent about adding to this list, since everything that's added to this list
 	// will need to be protected by strict compatibility guarantees.
 	if validImportRoot == "migrator" {
-		allowedPackages = append(allowedPackages, "pkg/env", "pkg/rocksdb", "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher", "pkg/config", "pkg/features", "pkg/grpc/routes", "pkg/logging", "pkg/set", "pkg/version", "pkg/uuid", "pkg/utils", "pkg/fileutils", "pkg/buildinfo", "pkg/fsutils")
+		allowedPackages = append(allowedPackages,
+			"pkg/env", "pkg/rocksdb", "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher",
+			"pkg/config", "pkg/features", "pkg/grpc/routes", "pkg/logging", "pkg/set", "pkg/version", "pkg/uuid",
+			"pkg/utils", "pkg/fileutils", "pkg/buildinfo", "pkg/fsutils", "pkg/sliceutils")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {

@@ -76,51 +76,11 @@
       }
     },
     {
-      "name": "Don't alert on node-ca DaemonSet in the openshift-image-registry namespace",
+      "name": "Don't alert on node-ca dameonset in the openshift-image-registry namespace",
       "deployment": {
         "name": "node-ca",
         "scope": {
           "namespace": "openshift-image-registry"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on host network usage within the openshift-etcd namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-etcd"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on host network usage within the openshift-machine-config-operator namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-machine-config-operator"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on host network usage within the openshift-monitoring namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-monitoring"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on host network usage within the openshift-machine-api namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-machine-api"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on host network usage within the openshift-cluster-node-tuning-operator namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "openshift-cluster-node-tuning-operator"
         }
       }
     }

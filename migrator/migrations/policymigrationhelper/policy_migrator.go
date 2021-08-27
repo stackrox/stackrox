@@ -13,8 +13,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/pkg/set"
 	bolt "go.etcd.io/bbolt"
 )
+
+// PolicyDiff is an alternative to PolicyChanges that automatically constructs migrations based on diffs of policies.
+type PolicyDiff struct {
+	FieldsToCompare []FieldComparator
+	PolicyFileName  string
+}
 
 // PolicyChanges lists the fields that must match before a policy is updated and what it should be updated to
 type PolicyChanges struct {
@@ -119,6 +126,92 @@ var (
 	policyBucketName = []byte("policies")
 )
 
+func readPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
+	contents, err := fs.ReadFile(filePath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to read file %s", filePath)
+	}
+	var policy storage.Policy
+	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to unmarshal policy json at path %s", filePath)
+	}
+	return &policy, nil
+}
+
+func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, error) {
+	// Clone policies because we mutate them.
+	beforePolicy = beforePolicy.Clone()
+	afterPolicy = afterPolicy.Clone()
+
+	var updates PolicyUpdates
+
+	matchedAfterExclusionsIdxs := set.NewIntSet()
+	for _, beforeExclusion := range beforePolicy.GetExclusions() {
+		var found bool
+		for afterExclusionIdx, afterExclusion := range afterPolicy.GetExclusions() {
+			if reflect.DeepEqual(beforeExclusion, afterExclusion) {
+				found = true
+				matchedAfterExclusionsIdxs.Add(afterExclusionIdx)
+				break
+			}
+		}
+		if !found {
+			updates.ExclusionsToRemove = append(updates.ExclusionsToRemove, beforeExclusion)
+		}
+	}
+	for i, exclusion := range afterPolicy.GetExclusions() {
+		if !matchedAfterExclusionsIdxs.Contains(i) {
+			updates.ExclusionsToAdd = append(updates.ExclusionsToAdd, exclusion)
+		}
+	}
+	beforePolicy.Exclusions = nil
+	afterPolicy.Exclusions = nil
+	if !reflect.DeepEqual(beforePolicy, afterPolicy) {
+		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
+			"to be able to diff more fields")
+	}
+	return updates, nil
+}
+
+const (
+	policyDiffParentDirName = "policies_before_and_after"
+	beforeDirName           = policyDiffParentDirName + "/before"
+	afterDirName            = policyDiffParentDirName + "/after"
+)
+
+// MigratePoliciesWithDiffs migrates policies with the given diffs.
+// The policyDiffFS should be an embedded FS that satisfies the following conditions:
+// 1. It must contain a top-level directory called "policies_before_and_after".
+// 2. That directory must contain two subdirectories: "before" and "after".
+// 3. For each policy being migrated, there must be one copy in the "before" directory and one in the "after" directory.
+// 4. The file names for a policy should match the PolicyFileName in the corresponding PolicyDiff passed in the third argument.
+// This function then automatically computes the diff for each policy, and executes the migration.
+func MigratePoliciesWithDiffs(db *bolt.DB, policyDiffFS embed.FS, policyDiffs []PolicyDiff) error {
+	policiesToMigrate := make(map[string]PolicyChanges, len(policyDiffs))
+	preMigrationPolicies := make(map[string]*storage.Policy, len(policyDiffs))
+	for _, diff := range policyDiffs {
+		beforePolicy, err := readPolicyFromFile(policyDiffFS, filepath.Join(beforeDirName, diff.PolicyFileName))
+		if err != nil {
+			return err
+		}
+		afterPolicy, err := readPolicyFromFile(policyDiffFS, filepath.Join(afterDirName, diff.PolicyFileName))
+		if err != nil {
+			return err
+		}
+		if beforePolicy.GetId() == "" || beforePolicy.GetId() != afterPolicy.GetId() {
+			return errors.Errorf("policies in file %s don't both have the same, non-empty, id", diff.PolicyFileName)
+		}
+		updates, err := diffPolicies(beforePolicy, afterPolicy)
+		if err != nil {
+			return err
+		}
+		policiesToMigrate[beforePolicy.GetId()] = PolicyChanges{FieldsToCompare: diff.FieldsToCompare, ToChange: updates}
+		preMigrationPolicies[beforePolicy.GetId()] = beforePolicy
+	}
+	return MigratePolicies(db, policiesToMigrate, preMigrationPolicies)
+}
+
 // MigratePoliciesWithPreMigrationFS is a variant of MigratePolicies that takes in an embed.FS with the pre migration policies.
 // `preMigFS` is expected to have a directory called `preMigDirName`, which has one JSON file per policy.
 // Each JSON file is expected to have the filename <policy_id>.json.
@@ -126,17 +219,11 @@ func MigratePoliciesWithPreMigrationFS(db *bolt.DB, policiesToMigrate map[string
 	comparisonPolicies := make(map[string]*storage.Policy)
 	for policyID := range policiesToMigrate {
 		path := filepath.Join(preMigDirName, fmt.Sprintf("%s.json", policyID))
-		contents, err := preMigFS.ReadFile(path)
+		policy, err := readPolicyFromFile(preMigFS, path)
 		if err != nil {
-			return errors.Wrapf(err, "unable to read file %s", path)
+			return err
 		}
-
-		var policy storage.Policy
-		err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
-		if err != nil {
-			return errors.Wrapf(err, "unable to unmarshal policy (%s) json", policyID)
-		}
-		comparisonPolicies[policyID] = &policy
+		comparisonPolicies[policyID] = policy
 	}
 	return MigratePolicies(db, policiesToMigrate, comparisonPolicies)
 }
