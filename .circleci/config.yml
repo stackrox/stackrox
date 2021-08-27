@@ -339,21 +339,6 @@ storeDiagnosticBundle: &storeDiagnosticBundle
     path: /tmp/diagnostic-bundle
     destination: diagnostic-bundle
 
-collectK8sLogs: &collectK8sLogs
-  run:
-    name: Collect k8s logs and metrics
-
-    command: |
-      set +e
-      ./scripts/ci/collect-service-logs.sh stackrox
-      ./scripts/ci/collect-service-logs.sh kube-system
-      ./scripts/ci/collect-service-logs.sh proxies
-      ./scripts/ci/collect-service-logs.sh squid
-      ./scripts/ci/collect-qa-service-logs.sh
-      ./scripts/ci/collect-infrastructure-logs.sh
-      ./scripts/ci/collect-collector-metrics.sh stackrox
-    when: always
-
 connectToMonitoring: &connectToMonitoring
   run:
     name: Connect to monitoring via port-forward on 9443
@@ -540,6 +525,36 @@ executors:
     working_directory: /go/src/github.com/stackrox/rox
 
 commands:
+  collect-k8s-logs:
+    description: "Collect k8s logs and metrics"
+    parameters:
+      orchestrator-flavor:
+        type: string
+        default: "k8s"
+    steps:
+      - run:
+          name: Collect k8s logs and metrics
+          command: |
+            set +e
+            echo "Collecting k8s logs"
+            ./scripts/ci/collect-service-logs.sh stackrox
+            ./scripts/ci/collect-service-logs.sh kube-system
+            ./scripts/ci/collect-service-logs.sh proxies
+            ./scripts/ci/collect-service-logs.sh squid
+            ./scripts/ci/collect-service-logs.sh squid
+            ./scripts/ci/collect-infrastructure-logs.sh
+            ./scripts/ci/collect-collector-metrics.sh stackrox
+
+            if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
+              echo "Collecting openshift logs"
+              ./scripts/ci/collect-service-logs.sh openshift-dns
+              ./scripts/ci/collect-service-logs.sh openshift-apiserver
+              ./scripts/ci/collect-service-logs.sh openshift-authentication
+              ./scripts/ci/collect-service-logs.sh openshift-etcd
+              ./scripts/ci/collect-service-logs.sh openshift-controller-manager
+            fi
+          when: always
+
   build-liveness-check:
     description: "Ensure workflow is still live"
     steps:
@@ -756,7 +771,7 @@ commands:
   check-stackrox-logs:
     parameters:
       collect:
-        # In most jobs the logs are already grabbed by collectK8sLogs
+        # In most jobs the logs are already grabbed by collect-k8s-logs
         type: boolean
         default: false
 
@@ -774,7 +789,7 @@ commands:
           name: Verify that StackRox services did not restart during the runs
           command: |
             if [[ ! -d "/tmp/k8s-service-logs/stackrox/pods" ]]; then
-              echo >&2 "StackRox logs were not collected. (Use collect: true or collectK8sLogs.)"
+              echo >&2 "StackRox logs were not collected. (Use collect: true or collect-k8s-logs.)"
               exit 1
             fi
             previous_logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log || true)
@@ -790,7 +805,7 @@ commands:
           name: Verify that StackRox service logs contain no suspicious entries
           command: |
             if [[ ! -d "/tmp/k8s-service-logs/stackrox/pods" ]]; then
-              echo >&2 "StackRox logs were not collected. (Use collect: true or collectK8sLogs.)"
+              echo >&2 "StackRox logs were not collected. (Use collect: true or collect-k8s-logs.)"
               exit 1
             fi
             logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*.log)
@@ -1440,7 +1455,7 @@ commands:
               make -C qa-tests-backend bat-test || touch FAIL
             fi
 
-      - *collectK8sLogs
+      - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -1470,7 +1485,8 @@ commands:
       - *storeQATestResults
       - *storeQASpockReports
 
-      - *collectK8sLogs
+      - collect-k8s-logs:
+          orchestrator-flavor: << parameters.orchestrator-flavor >>
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data:
@@ -1746,7 +1762,8 @@ commands:
               make -C qa-tests-backend bat-test || touch FAIL
             fi
 
-      - *collectK8sLogs
+      - collect-k8s-logs:
+          orchestrator-flavor: openshift
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -1775,7 +1792,8 @@ commands:
       - *backupCentral
       - *storeCentralBackupArtifact
 
-      - *collectK8sLogs
+      - collect-k8s-logs:
+          orchestrator-flavor: openshift
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data:
@@ -2475,7 +2493,7 @@ jobs:
       - *storeQATestResults
       - *storeQASpockReports
 
-      - *collectK8sLogs
+      - collect-k8s-logs
       - *backupCentral
       - *storeCentralBackupArtifact
       - check-stackrox-logs
@@ -3592,7 +3610,7 @@ jobs:
               exit 1
             fi
 
-      - *collectK8sLogs
+      - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -3691,7 +3709,7 @@ jobs:
       - *downloadDiagnosticBundle
       - *storeDiagnosticBundle
 
-      - *collectK8sLogs
+      - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -4274,7 +4292,7 @@ jobs:
             export CLUSTER=K8S
             make -C qa-tests-backend smoke-test
 
-      - *collectK8sLogs
+      - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -4337,7 +4355,7 @@ jobs:
       - *collectMonitoringImages
       - *storeMonitoringImages
       - *storeMonitoringMetrics
-      - *collectK8sLogs
+      - collect-k8s-logs
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
@@ -4493,7 +4511,7 @@ jobs:
       - *storeQATestResults
       - *storeQASpockReports
 
-      - *collectK8sLogs
+      - collect-k8s-logs
       - *backupCentral
       - *storeCentralBackupArtifact
       - *restoreDB
@@ -4591,7 +4609,7 @@ jobs:
       - *storeQATestResults
       - *storeQASpockReports
 
-      - *collectK8sLogs
+      - collect-k8s-logs
       - *backupCentral
       - *storeCentralBackupArtifact
       - *restoreDB
@@ -4747,7 +4765,8 @@ jobs:
         name: Run Operator Bundle Scorecard tests
         command: make -C operator bundle-test-image
 
-    - *collectK8sLogs
+    - collect-k8s-logs:
+        orchestrator-flavor: openshift
     - store-k8s-logs:
         destination: operator-e2e-test-k8s-service-logs
 
