@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -42,7 +43,8 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.clusterDatastore = clusterMocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
-	s.datastore = New(s.store, s.indexer, nil, s.clusterDatastore, s.notifierDatastore)
+
+	s.datastore = newWithoutDefaults(s.store, s.indexer, nil, s.clusterDatastore, s.notifierDatastore)
 
 	s.ctx = sac.WithAllAccess(context.Background())
 }
@@ -398,4 +400,26 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	s.True(resp.GetSucceeded())
 	s.Equal(resp.GetPolicy(), policy)
 	s.Empty(resp.GetErrors())
+}
+
+func TestRmDefaultPolicy(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+
+	store := storeMocks.NewMockStore(mockCtrl)
+	indexer := indexMocks.NewMockIndexer(mockCtrl)
+
+	// addDefaults()
+	store.EXPECT().GetAllPolicies()
+	store.EXPECT().AddPolicy(gomock.Any()).AnyTimes()
+
+	// buildIndex()
+	store.EXPECT().GetAllPolicies()
+	indexer.EXPECT().AddPolicies(gomock.Any())
+
+	ds := New(store, indexer, nil, nil, nil)
+
+	// OpenShift: Advanced Cluster Security Central Admin Secret Accessed
+	err := ds.RemovePolicy(sac.WithAllAccess(context.Background()), "da4e0776-159b-42a3-90a9-18cdd9b485ba")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Default system policies cannot be removed")
 }

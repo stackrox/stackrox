@@ -38,11 +38,32 @@ type DataStore interface {
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
 func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore) DataStore {
+	ds := &datastoreImpl{
+		storage:           storage,
+		indexer:           indexer,
+		searcher:          searcher,
+		clusterDatastore:  clusterDatastore,
+		notifierDatastore: notifierDatastore,
+
+		defaultPolicies: make(map[string]struct{}),
+	}
+
+	ds.addDefaults()
+	if err := ds.buildIndex(); err != nil {
+		panic("unable to load search index for policies")
+	}
+	return ds
+}
+
+// newWithoutDefaults should be used only for testing purposes.
+func newWithoutDefaults(storage store.Store, indexer index.Indexer, searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore) DataStore {
 	return &datastoreImpl{
 		storage:           storage,
 		indexer:           indexer,
 		searcher:          searcher,
 		clusterDatastore:  clusterDatastore,
 		notifierDatastore: notifierDatastore,
+
+		defaultPolicies: make(map[string]struct{}),
 	}
 }

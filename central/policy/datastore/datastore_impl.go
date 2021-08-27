@@ -13,16 +13,20 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
+	log       = logging.LoggerForModule()
 	policySAC = sac.ForResource(resources.Policy)
 )
 
@@ -34,6 +38,53 @@ type datastoreImpl struct {
 
 	clusterDatastore  clusterDS.DataStore
 	notifierDatastore notifierDS.DataStore
+
+	defaultPolicies map[string]struct{}
+}
+
+func (ds *datastoreImpl) addDefaults() {
+	policyIDSet, policyNameSet := set.NewStringSet(), set.NewStringSet()
+	storedPolicies, err := ds.storage.GetAllPolicies()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, p := range storedPolicies {
+		policyIDSet.Add(p.GetId())
+		policyNameSet.Add(p.GetName())
+	}
+
+	// Preload the default policies.
+	defaultPolicies, err := policies.DefaultPolicies()
+	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policies out.
+	utils.CrashOnError(err)
+
+	var count int
+	for _, p := range defaultPolicies {
+		ds.defaultPolicies[p.GetId()] = struct{}{}
+
+		// If the ID or Name already exists then ignore
+		if policyIDSet.Contains(p.GetId()) || policyNameSet.Contains(p.GetName()) {
+			continue
+		}
+		count++
+
+		// fill multi-word sort helper field
+		fillSortHelperFields(p)
+
+		if _, err := ds.storage.AddPolicy(p); err != nil {
+			panic(err)
+		}
+	}
+	log.Infof("Loaded %d new default Policies", count)
+}
+
+func (ds *datastoreImpl) buildIndex() error {
+	policies, err := ds.storage.GetAllPolicies()
+	if err != nil {
+		return err
+	}
+	return ds.indexer.AddPolicies(policies)
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -139,7 +190,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		return "", sac.ErrResourceAccessDenied
 	}
 
-	store.FillSortHelperFields(policy)
+	fillSortHelperFields(policy)
 
 	// No need to lock here because nobody can update the policy
 	// until this function returns and they receive the id.
@@ -158,7 +209,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 		return sac.ErrResourceAccessDenied
 	}
 
-	store.FillSortHelperFields(policy)
+	fillSortHelperFields(policy)
 
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
@@ -178,6 +229,11 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
+
+	if _, found := ds.defaultPolicies[id]; found {
+		return errorsPkg.Errorf("policy %s is a default policy. Default system policies cannot be removed", id)
+	}
+
 	if err := ds.storage.RemovePolicy(id); err != nil {
 		return err
 	}
@@ -217,7 +273,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 		return nil, false, errorsPkg.Wrap(err, "removing cluster scopes and notifiers")
 	}
 
-	store.FillSortHelperFields(importPolicies...)
+	fillSortHelperFields(importPolicies...)
 
 	// Store the policies and report any errors
 	ds.policyMutex.Lock()

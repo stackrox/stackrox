@@ -8,6 +8,7 @@ export const selectors = {
     newPolicyButton: 'button:contains("New")',
     importPolicyButton: 'button[data-testid="import-policy-btn"]:contains("Import Policy")',
     singlePolicyExportButton: 'button[data-testid="single-policy-export"]',
+    clonePolicyButton: 'button:contains("Clone")',
     editPolicyButton: 'button:contains("Edit")',
     savePolicyButton: 'button:contains("Save")',
     nextButton: '.btn:contains("Next")',

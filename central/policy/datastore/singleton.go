@@ -20,13 +20,10 @@ var (
 func initialize() {
 	storage := store.New(globaldb.GetGlobalDB())
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
+	searcher := search.New(storage, indexer)
+
 	clusterDatastore := clusterDS.Singleton()
 	notiferDatastore := notifierDS.Singleton()
-
-	searcher, err := search.New(storage, indexer)
-	if err != nil {
-		panic("unable to load search index for alerts")
-	}
 
 	ad = New(storage, indexer, searcher, clusterDatastore, notiferDatastore)
 }

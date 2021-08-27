@@ -30,14 +30,6 @@ type searcherImpl struct {
 	searcher search.Searcher
 }
 
-func (ds *searcherImpl) buildIndex() error {
-	policies, err := ds.storage.GetAllPolicies()
-	if err != nil {
-		return err
-	}
-	return ds.indexer.AddPolicies(policies)
-}
-
 // SearchRawPolicies retrieves Policies from the indexer and storage
 func (ds *searcherImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
 	policies, _, err := ds.searchPolicies(ctx, q)

@@ -33,7 +33,7 @@ func (suite *PolicyStoreTestSuite) SetupTest() {
 	}
 
 	suite.db = db
-	suite.store = newWithoutDefaults(db)
+	suite.store = New(db)
 }
 
 // Do teardown after each test because we're doing setup before each test

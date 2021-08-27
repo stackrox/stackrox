@@ -218,8 +218,10 @@ func TestAutocompleteForEnums(t *testing.T) {
 	require.NoError(t, err)
 	policyIndexer := policyIndex.New(idx)
 	require.NoError(t, policyIndexer.AddPolicy(fixtures.GetPolicy()))
-	policySearcher, err := policySearcher.New(policyStore, policyIndexer)
+	policySearcher := policySearcher.New(policyStore, policyIndexer)
 	require.NoError(t, err)
+	policyStore.EXPECT().GetAllPolicies()
+	policyStore.EXPECT().AddPolicy(gomock.Any()).AnyTimes()
 	ds := policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
 
 	service := NewBuilder().

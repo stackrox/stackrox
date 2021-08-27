@@ -113,6 +113,7 @@ export const network = {
 };
 
 export const policies = {
+    policies: 'v1/policies?*',
     policy: 'v1/policies/*',
     dryrun: 'v1/policies/dryrunjob',
 };

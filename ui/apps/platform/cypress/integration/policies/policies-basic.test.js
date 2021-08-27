@@ -29,6 +29,17 @@ describe('Policies basic tests', () => {
         cy.get(selectors.nextButton).click();
     };
 
+    const clonePolicy = () => {
+        cy.get(selectors.clonePolicyButton).click();
+    };
+
+    const searchPolicyByName = (policyName) => {
+        cy.route(`/v1/policies?query=Policy:${policyName}`).as('newSearchQuery');
+        cy.get(selectors.searchInput).type('Policy:{enter}');
+        cy.get(selectors.searchInput).type(`${policyName}{enter}`);
+        cy.wait('@newSearchQuery');
+    };
+
     const savePolicy = () => {
         // Next will dryrun and show the policy effects preview.
         cy.route('POST', api.policies.dryrun).as('dryrunPolicy');
@@ -225,7 +236,7 @@ describe('Policies basic tests', () => {
             cy.get(selectors.newPolicyButton).should('not.exist');
         });
 
-        it('should delete a policy when the hover delete policy clicked', () => {
+        it('should not delete a policy when the hover delete policy clicked for default policy', () => {
             cy.get(selectors.tableFirstRow).click({ force: true });
             cy.get(selectors.sidePanel).should('exist');
             cy.get(selectors.tableFirstRowName)
@@ -233,6 +244,48 @@ describe('Policies basic tests', () => {
                 .then((policyName) => {
                     cy.get(selectors.tableFirstRow).should('contain', policyName);
                     cy.get(selectors.hoverActionButtons).eq(1).click({ force: true });
+                    cy.get(selectors.tableFirstRow).should('contain', policyName);
+                    cy.get(selectors.tableFirstRow).click({ force: true });
+                    cy.get(selectors.sidePanel).should('exist');
+                    cy.get(selectors.sidePanelHeader).should('have.text', policyName);
+                });
+        });
+
+        // eslint-disable-next-line jest/no-focused-tests
+        it.only('should delete a policy when the hover delete policy clicked for custom policy', () => {
+            const clonedPolicyName = 'TEST DELETE POLICY';
+
+            searchPolicyByName(text.policyLatestTagName);
+
+            // Create a custom policy.
+            cy.get(selectors.tableFirstRow).click({ force: true });
+            cy.get(selectors.sidePanel).should('exist');
+            clonePolicy();
+            cy.get(selectors.form.nameInput).clear();
+            cy.get(selectors.form.nameInput).type(clonedPolicyName);
+            // This will take you to policy fields page.
+            goToNextWizardStage();
+            // Next will dryrun and show the policy effects preview.
+            cy.route('POST', api.policies.dryrun).as('dryrunPolicy');
+            goToNextWizardStage();
+            cy.wait('@dryrunPolicy');
+            // Next will now take you to the enforcement page.
+            goToNextWizardStage();
+            // Save will POST the policy, then GET it.
+            cy.route('POST', api.policies.policies).as('newPolicy');
+            cy.route('GET', api.policies.policy).as('getPolicy');
+            cy.get(selectors.savePolicyButton).click();
+            cy.wait('@newPolicy');
+            cy.wait('@getPolicy');
+
+            cy.get(selectors.searchInput).type('{backspace}{backspace}');
+            searchPolicyByName(clonedPolicyName);
+            cy.get(selectors.tableFirstRowName)
+                .invoke('text')
+                .then((policyName) => {
+                    cy.get(selectors.tableFirstRow).should('contain', policyName);
+                    cy.get(selectors.hoverActionButtons).eq(1).click({ force: true });
+                    cy.get(selectors.searchInput).type('{backspace}{backspace}');
                     cy.get(selectors.tableFirstRow).should('not.contain', policyName);
                     cy.get(selectors.tableFirstRow).click({ force: true });
                     cy.get(selectors.sidePanel).should('exist');
