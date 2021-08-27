@@ -20,14 +20,6 @@
           "namespace": "stackrox"
         }
       }
-    },
-    {
-      "name": "Don't alert on system namespaces",
-      "deployment": {
-        "scope": {
-          "namespace": "^kube.*|^openshift.*|^redhat.*|^istio-system$"
-        }
-      }
     }
   ],
   "severity": "LOW_SEVERITY",

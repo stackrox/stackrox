@@ -4,19 +4,166 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
+	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )
 
+func insertPolicy(t *testing.T, bucket bolthelpers.BucketRef, policy *storage.Policy) {
+	require.NoError(t, bucket.Update(func(b *bolt.Bucket) error {
+		policyBytes, err := proto.Marshal(policy)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(policy.GetId()), policyBytes)
+	}))
+}
+
+func getAndNormalizePolicies(t *testing.T, bucket bolthelpers.BucketRef, policy *storage.Policy) (normalizedExpected, normalizedFromDB *storage.Policy) {
+	normalizedFromDB = &storage.Policy{}
+	assert.NoError(t, bucket.View(func(b *bolt.Bucket) error {
+		v := b.Get([]byte(policy.GetId()))
+		return proto.Unmarshal(v, normalizedFromDB)
+	}))
+
+	normalizedExpected = policy.Clone()
+	sort.Slice(normalizedExpected.Exclusions, func(i, j int) bool {
+		return normalizedExpected.Exclusions[i].Name < normalizedExpected.Exclusions[j].Name
+	})
+	sort.Slice(normalizedFromDB.Exclusions, func(i, j int) bool {
+		return normalizedFromDB.Exclusions[i].Name < normalizedFromDB.Exclusions[j].Name
+	})
+	return normalizedExpected, normalizedFromDB
+}
+
+func checkPolicyMatches(t *testing.T, bucket bolthelpers.BucketRef, policy *storage.Policy) {
+	normalizedExpected, normalizedFromDB := getAndNormalizePolicies(t, bucket, policy)
+	assert.EqualValues(t, normalizedExpected, normalizedFromDB)
+}
+
+func checkPolicyNotMatches(t *testing.T, bucket bolthelpers.BucketRef, policy *storage.Policy) {
+	normalizedExpected, normalizedFromDB := getAndNormalizePolicies(t, bucket, policy)
+	assert.NotEqualValues(t, normalizedExpected, normalizedFromDB)
+}
+
+// DiffTestSuite is a helper suite that can be embedded for tests that use the PolicyDiff functionality to migrate policies.
+type DiffTestSuite struct {
+	suite.Suite
+	PolicyDiffFS embed.FS
+
+	beforePolicies, afterPolicies map[string]*storage.Policy
+
+	db *bolt.DB
+}
+
+// SetupSuite implements the suite contract.
+func (suite *DiffTestSuite) SetupSuite() {
+	beforePolicyFiles, err := fs.ReadDir(suite.PolicyDiffFS, beforeDirName)
+	suite.Require().NoError(err)
+	afterPolicyFiles, err := fs.ReadDir(suite.PolicyDiffFS, afterDirName)
+	suite.Require().NoError(err)
+
+	// Ensure we have the same file names.
+	suite.ElementsMatch(sliceutils.Map(beforePolicyFiles, func(d fs.DirEntry) string {
+		return d.Name()
+	}), sliceutils.Map(afterPolicyFiles, func(d fs.DirEntry) string {
+		return d.Name()
+	}))
+
+	suite.beforePolicies = make(map[string]*storage.Policy)
+	suite.afterPolicies = make(map[string]*storage.Policy)
+	for _, f := range beforePolicyFiles {
+		policy, err := readPolicyFromFile(suite.PolicyDiffFS, filepath.Join(beforeDirName, f.Name()))
+		suite.Require().NoError(err)
+		suite.Require().NotEmpty(policy.GetId())
+		suite.beforePolicies[policy.GetId()] = policy
+	}
+	for _, f := range afterPolicyFiles {
+		policy, err := readPolicyFromFile(suite.PolicyDiffFS, filepath.Join(afterDirName, f.Name()))
+		suite.Require().NoError(err)
+		suite.Require().NotEmpty(policy.GetId())
+		suite.afterPolicies[policy.GetId()] = policy
+	}
+}
+
+// SetupTest implements the Suite contract.
+func (suite *DiffTestSuite) SetupTest() {
+	db, err := bolthelpers.NewTemp(testutils.DBFileName(suite))
+	suite.Require().NoError(err)
+	suite.NoError(db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(policyBucketName)
+		return err
+	}))
+	suite.db = db
+}
+
+// RunTests runs the common tests we would expect to run for policy updates.
+func (suite *DiffTestSuite) RunTests(migrationFunc func(db *bolt.DB) error) {
+	suite.Run("TestUnmodifiedPoliciesAreMigrated", func() {
+		suite.testUnmodifiedPolicies(migrationFunc)
+	})
+	suite.Run("TestModifiedPoliciesAreNotMigrated", func() {
+		suite.testModifiedPolicies(migrationFunc)
+	})
+}
+
+func (suite *DiffTestSuite) testUnmodifiedPolicies(migrationFunc func(db *bolt.DB) error) {
+	bucket := bolthelpers.TopLevelRef(suite.db, policyBucketName)
+
+	for _, policy := range suite.beforePolicies {
+		insertPolicy(suite.T(), bucket, policy)
+	}
+
+	suite.NoError(migrationFunc(suite.db))
+
+	for policyID := range suite.beforePolicies {
+		expectedPolicy, ok := suite.afterPolicies[policyID]
+		suite.True(ok)
+		checkPolicyMatches(suite.T(), bucket, expectedPolicy)
+	}
+}
+
+func (suite *DiffTestSuite) testModifiedPolicies(migrationFunc func(db *bolt.DB) error) {
+	bucket := bolthelpers.TopLevelRef(suite.db, policyBucketName)
+
+	modifiedPolicies := make(map[string]*storage.Policy)
+
+	for _, policy := range suite.beforePolicies {
+		modifiedPolicy := policy.Clone()
+		modifiedPolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "assfasdf"
+		modifiedPolicies[modifiedPolicy.GetId()] = modifiedPolicy
+		insertPolicy(suite.T(), bucket, modifiedPolicy)
+	}
+
+	suite.NoError(migrationFunc(suite.db))
+
+	for policyID := range suite.beforePolicies {
+		expectedPolicy, ok := suite.afterPolicies[policyID]
+		suite.True(ok)
+
+		modifiedPolicy, ok := modifiedPolicies[policyID]
+		suite.True(ok)
+
+		checkPolicyMatches(suite.T(), bucket, modifiedPolicy)
+		checkPolicyNotMatches(suite.T(), bucket, expectedPolicy)
+	}
+}
+
 // TestSuite is a helper suite that can be embedded for tests involving migrations of policies.
+// Deprecated: New migrations should strive to use DiffTestSuite (and the PolicyDiff) approach instead.
 type TestSuite struct {
 	suite.Suite
 
@@ -27,35 +174,6 @@ type TestSuite struct {
 
 	DB               *bolt.DB
 	ExpectedPolicies map[string]*storage.Policy
-}
-
-func (suite *TestSuite) insertPolicy(bucket bolthelpers.BucketRef, policy *storage.Policy) {
-	suite.Require().NoError(bucket.Update(func(b *bolt.Bucket) error {
-		policyBytes, err := proto.Marshal(policy)
-		if err != nil {
-			return err
-		}
-		return b.Put([]byte(policy.GetId()), policyBytes)
-	}))
-}
-
-func (suite *TestSuite) checkPolicyMatches(bucket bolthelpers.BucketRef, policy *storage.Policy) {
-	var newPolicy storage.Policy
-	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
-		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
-	}))
-
-	suite.EqualValues(policy, &newPolicy)
-}
-
-func (suite *TestSuite) checkPolicyNotMatches(bucket bolthelpers.BucketRef, policy *storage.Policy) {
-	var newPolicy storage.Policy
-	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
-		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
-	}))
-	suite.NotEqualValues(policy, &newPolicy)
 }
 
 // SetupSuite implements the Suite contract.
@@ -113,7 +231,7 @@ func (suite *TestSuite) testUnmodifiedPolicies(migrationFunc func(db *bolt.DB) e
 		var policy storage.Policy
 		err = jsonpb.Unmarshal(bytes.NewReader(policyBytes), &policy)
 		suite.Require().NoError(err)
-		suite.insertPolicy(bucket, &policy)
+		insertPolicy(suite.T(), bucket, &policy)
 	}
 
 	suite.NoError(migrationFunc(suite.DB))
@@ -122,7 +240,7 @@ func (suite *TestSuite) testUnmodifiedPolicies(migrationFunc func(db *bolt.DB) e
 		expectedPolicy, ok := suite.ExpectedPolicies[policyID]
 		suite.True(ok)
 
-		suite.checkPolicyMatches(bucket, expectedPolicy)
+		checkPolicyMatches(suite.T(), bucket, expectedPolicy)
 	}
 
 }
@@ -141,7 +259,7 @@ func (suite *TestSuite) testModifiedPolicies(migrationFunc func(db *bolt.DB) err
 		modifiedPolicy := policy.Clone()
 		modifiedPolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "assfasdf"
 		modifiedPolicies[modifiedPolicy.GetId()] = modifiedPolicy
-		suite.insertPolicy(bucket, modifiedPolicy)
+		insertPolicy(suite.T(), bucket, modifiedPolicy)
 	}
 
 	suite.NoError(migrationFunc(suite.DB))
@@ -153,7 +271,7 @@ func (suite *TestSuite) testModifiedPolicies(migrationFunc func(db *bolt.DB) err
 		modifiedPolicy, ok := modifiedPolicies[policyID]
 		suite.True(ok)
 
-		suite.checkPolicyMatches(bucket, modifiedPolicy)
-		suite.checkPolicyNotMatches(bucket, expectedPolicy)
+		checkPolicyMatches(suite.T(), bucket, modifiedPolicy)
+		checkPolicyNotMatches(suite.T(), bucket, expectedPolicy)
 	}
 }

@@ -37,4 +37,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_76_to_m_77_move_roles_to_rocksdb"
 	_ "github.com/stackrox/rox/migrator/migrations/m_77_to_m_78_mitre"
 	_ "github.com/stackrox/rox/migrator/migrations/m_78_to_m_79_exclude_openshift_sdn_host_pids_policy"
+	_ "github.com/stackrox/rox/migrator/migrations/m_79_to_m_80_more_openshift_exclusions"
 )

@@ -41,7 +41,7 @@ func (suite *policyMigratorTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 }
 
-func insertPolicy(bucket bolthelpers.BucketRef, id string, pb proto.Message) error {
+func insertPolicyIntoBucket(bucket bolthelpers.BucketRef, id string, pb proto.Message) error {
 	return bucket.Update(func(b *bolt.Bucket) error {
 		bytes, err := proto.Marshal(pb)
 		if err != nil {
@@ -100,7 +100,7 @@ func (suite *policyMigratorTestSuite) TestUnrelatedPolicyIsNotUpdated() {
 		policyID: &policy,
 	}
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 	suite.NoError(MigratePolicies(suite.db, policiesToMigrate, comparisonPolicies))
 
 	comparePolicyWithDB(suite, bucket, &policy)
@@ -122,7 +122,7 @@ func (suite *policyMigratorTestSuite) TestUnmodifiedAndMatchingPolicyIsUpdated()
 		policyID: &policy,
 	}
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 	suite.NoError(MigratePolicies(suite.db, policiesToMigrate, comparisonPolicies))
 
 	// Policy should've had description changed, but nothing else
@@ -142,7 +142,7 @@ func (suite *policyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() {
 	for i := 0; i < 10; i++ {
 		policy := testPolicy(fmt.Sprintf("policy%d", i))
 		policiesToTest[i] = &policy
-		suite.NoError(insertPolicy(bucket, policy.Id, &policy))
+		suite.NoError(insertPolicyIntoBucket(bucket, policy.Id, &policy))
 		policy.Description = "sfasdf"
 
 		comparisonPolicy := testPolicy(policy.Id)
@@ -166,7 +166,7 @@ func (suite *policyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() {
 func (suite *policyMigratorTestSuite) TestMissingPoliciesDontReturnError() {
 	bucket := bolthelpers.TopLevelRef(suite.db, policyBucketName)
 	policy := testPolicy(policyID)
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 
 	policiesToMigrate := map[string]PolicyChanges{
 		policyID: {
@@ -209,7 +209,7 @@ func (suite *policyMigratorTestSuite) TestUnmodifiedPolicyThatDoesntMatchIsNotUp
 		policyID: &comparisonPolicy,
 	}
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 	suite.NoError(MigratePolicies(suite.db, policiesToMigrate, comparisonPolicies))
 
 	comparePolicyWithDB(suite, bucket, &policy)
@@ -229,7 +229,7 @@ func (suite *policyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNecessary
 		{Name: "exclusion4", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-4"}}},
 	}
 
-	suite.NoError(insertPolicy(bucket, policy.Id, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policy.Id, &policy))
 
 	comparisonPolicies := map[string]*storage.Policy{
 		policyID: &policy,
@@ -276,7 +276,7 @@ func (suite *policyMigratorTestSuite) TestExclusionAreAddedEvenIfPolicyHadNoneBe
 	// Remove all exclusions to start with
 	policy.Exclusions = nil
 
-	suite.NoError(insertPolicy(bucket, policy.Id, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policy.Id, &policy))
 
 	comparisonPolicies := map[string]*storage.Policy{
 		policyID: &policy,
@@ -313,7 +313,7 @@ func (suite *policyMigratorTestSuite) TestPolicyWithModifiedExclusionIsNotUpdate
 		{Name: "alt excl", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "alt ns"}}},
 	}
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 
 	comparisonPolicy := testPolicy(policyID)
 	comparisonPolicies := map[string]*storage.Policy{
@@ -341,7 +341,7 @@ func (suite *policyMigratorTestSuite) TestPolicySectionComparison() {
 	for i := 0; i < 3; i++ {
 		policy := testPolicy(fmt.Sprintf("policy%d", i))
 		policiesToTest[i] = &policy
-		suite.NoError(insertPolicy(bucket, policy.Id, &policy))
+		suite.NoError(insertPolicyIntoBucket(bucket, policy.Id, &policy))
 	}
 
 	comparisonPolicies := map[string]*storage.Policy{
@@ -401,7 +401,7 @@ func (suite *policyMigratorTestSuite) TestStringFieldsAreUpdatedIfNecessary() {
 		policyID: &policy,
 	}
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 	suite.NoError(MigratePolicies(suite.db, policiesToMigrate, comparisonPolicies))
 
 	// Policy should've had description, rationale and remediation changed, but nothing else
@@ -439,7 +439,7 @@ func (suite *policyMigratorTestSuite) TestPolicySectionIsUpdatedIfNecessary() {
 		policyID: &policy,
 	}
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 	suite.NoError(MigratePolicies(suite.db, policiesToMigrate, comparisonPolicies))
 
 	// Policy section should have been updated
@@ -458,7 +458,7 @@ func (suite *policyMigratorTestSuite) TestPolicyIsUpdatedOnlyIfStringFieldCompar
 	for i := 0; i < 3; i++ {
 		policy := testPolicy(fmt.Sprintf("policy%d", i))
 		policiesToTest[i] = &policy
-		suite.NoError(insertPolicy(bucket, policy.Id, &policy))
+		suite.NoError(insertPolicyIntoBucket(bucket, policy.Id, &policy))
 	}
 
 	comparisonPolicy0 := testPolicy("policy0")
@@ -519,7 +519,7 @@ func (suite *policyMigratorTestSuite) TestPolicyIsNotUpdatedIfStringFieldCompari
 		policy.Rationale = "alt rationale"
 
 		policiesToTest[i] = &policy
-		suite.NoError(insertPolicy(bucket, policy.Id, &policy))
+		suite.NoError(insertPolicyIntoBucket(bucket, policy.Id, &policy))
 
 		// Use the default policy for comparison
 		comparisonPolicy := testPolicy(policy.Id)
@@ -557,7 +557,7 @@ func (suite *policyMigratorTestSuite) TestPolicyIsNotUpdatedIfEvenOneFieldIsModi
 	// Modify just one of the fields
 	policy.Exclusions = append(policy.Exclusions, &storage.Exclusion{Name: "another excl", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "another ns"}}})
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 
 	policiesToMigrate := map[string]PolicyChanges{
 		policyID: {
@@ -571,7 +571,7 @@ func (suite *policyMigratorTestSuite) TestPolicyIsNotUpdatedIfEvenOneFieldIsModi
 		policyID: &comparisonPolicy,
 	}
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 	suite.NoError(MigratePolicies(suite.db, policiesToMigrate, comparisonPolicies))
 
 	// Policy should be unaltered
@@ -599,7 +599,7 @@ func (suite *policyMigratorTestSuite) TestPolicyWithMismatchIsUpdatedIfNoFieldsT
 		policyID: &comparisonPolicy,
 	}
 
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 	suite.NoError(MigratePolicies(suite.db, policiesToMigrate, comparisonPolicies))
 
 	// Policy should've been updated
@@ -611,7 +611,7 @@ func (suite *policyMigratorTestSuite) TestPolicyWithMismatchIsUpdatedIfNoFieldsT
 func (suite *policyMigratorTestSuite) TestMissingComparisonPolicyResultsInError() {
 	bucket := bolthelpers.TopLevelRef(suite.db, policyBucketName)
 	policy := testPolicy(policyID)
-	suite.NoError(insertPolicy(bucket, policyID, &policy))
+	suite.NoError(insertPolicyIntoBucket(bucket, policyID, &policy))
 
 	policiesToMigrate := map[string]PolicyChanges{
 		policyID: {
