@@ -27,7 +27,7 @@ import objects.TeamsNotifier
 import objects.Deployment
 import org.apache.commons.lang.RandomStringUtils
 import services.ClusterService
-import services.CreatePolicyService
+import services.PolicyService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
@@ -182,7 +182,7 @@ class IntegrationsTest extends BaseSpecification {
                   .setKey("app")
                   .setValue(nginxName)))
               .addNotifiers(notifier.getId())
-        def policyId = CreatePolicyService.createNewPolicy(policy.build())
+        def policyId = PolicyService.createNewPolicy(policy.build())
 
         and:
         "Create a new deployment to trigger the violation against the policy"
@@ -204,7 +204,7 @@ class IntegrationsTest extends BaseSpecification {
             orchestrator.deleteDeployment(nginxdeployment)
         }
         if (policy != null) {
-            CreatePolicyService.deletePolicy(policyId)
+            PolicyService.deletePolicy(policyId)
         }
         SplunkUtil.tearDownSplunk(orchestrator, parts)
         notifier.deleteNotifier()
@@ -289,7 +289,7 @@ class IntegrationsTest extends BaseSpecification {
         for (Notifier notifier : notifierTypes) {
             policy.addNotifiers(notifier.getId())
         }
-        String policyId = CreatePolicyService.createNewPolicy(policy.build())
+        String policyId = PolicyService.createNewPolicy(policy.build())
         assert policyId
 
         and:
@@ -310,7 +310,7 @@ class IntegrationsTest extends BaseSpecification {
             orchestrator.deleteDeployment(deployment)
         }
         if (policyId != null) {
-            CreatePolicyService.deletePolicy(policyId)
+            PolicyService.deletePolicy(policyId)
         }
         for (Notifier notifier : notifierTypes) {
             notifier.validateViolationResolution()
@@ -371,7 +371,7 @@ class IntegrationsTest extends BaseSpecification {
         for (Notifier notifier : notifierTypes) {
             policy.addNotifiers(notifier.getId())
         }
-        String policyId = CreatePolicyService.createNewPolicy(policy.build())
+        String policyId = PolicyService.createNewPolicy(policy.build())
         assert policyId
 
         and:
@@ -418,7 +418,7 @@ class IntegrationsTest extends BaseSpecification {
             orchestrator.deleteDeployment(deployment)
         }
         if (policyId != null) {
-            CreatePolicyService.deletePolicy(policyId)
+            PolicyService.deletePolicy(policyId)
         }
         for (Notifier notifier : notifierTypes) {
             notifier.cleanup()
@@ -514,7 +514,7 @@ class IntegrationsTest extends BaseSpecification {
                         )
                 )
         policy.addNotifiers(notifier.getId())
-        String policyId = CreatePolicyService.createNewPolicy(policy.build())
+        String policyId = PolicyService.createNewPolicy(policy.build())
         assert policyId
 
         and:
@@ -534,7 +534,7 @@ class IntegrationsTest extends BaseSpecification {
             orchestrator.deleteDeployment(deployment)
         }
         if (policyId != null) {
-            CreatePolicyService.deletePolicy(policyId)
+            PolicyService.deletePolicy(policyId)
         }
 
         notifier.validateViolationResolution()

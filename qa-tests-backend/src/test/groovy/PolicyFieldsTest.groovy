@@ -18,7 +18,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 import services.AlertService
-import services.CreatePolicyService
+import services.PolicyService
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -772,7 +772,7 @@ class PolicyFieldsTest extends BaseSpecification {
         createdPolicyIds = []
         for (policyBuilder in POLICY_BUILDERS) {
             Policy policy = policyBuilder.build()
-            String policyID = CreatePolicyService.createNewPolicy(policy)
+            String policyID = PolicyService.createNewPolicy(policy)
             assert policyID
             createdPolicyIds.add(policyID)
         }
@@ -811,7 +811,7 @@ class PolicyFieldsTest extends BaseSpecification {
         }
 
         for (policyID in createdPolicyIds) {
-            CreatePolicyService.deletePolicy(policyID)
+            PolicyService.deletePolicy(policyID)
         }
     }
 

@@ -9,7 +9,7 @@ import objects.Secret
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
-import services.CreatePolicyService
+import services.PolicyService
 import spock.lang.Stepwise
 import spock.lang.Unroll
 
@@ -53,7 +53,7 @@ class AuditLogAlertsTest extends BaseSpecification {
                                         .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(resName))
                         )
                 ).build()
-        def policyId = CreatePolicyService.createNewPolicy(policy)
+        def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
 
         and:
@@ -72,7 +72,7 @@ class AuditLogAlertsTest extends BaseSpecification {
 
         cleanup:
         if (policyId) {
-            CreatePolicyService.deletePolicy(policyId)
+            PolicyService.deletePolicy(policyId)
         }
 
         where:

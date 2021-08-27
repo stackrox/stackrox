@@ -8,7 +8,7 @@ import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AlertService
-import services.CreatePolicyService
+import services.PolicyService
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -41,7 +41,7 @@ class K8sEventDetectionTest extends BaseSpecification {
 
         // If MITRE feature is enabled, work on the cloned policy instead of default policy.
         def policy = Services.getPolicyByName(KUBECTL_EXEC_POLICY_NAME)
-        policy = CreatePolicyService.createNewPolicy(
+        policy = PolicyService.createNewPolicy(
                 PolicyOuterClass.Policy.newBuilder(policy)
                         .setId("")
                         .setName(CLONED_KUBECTL_EXEC_POLICY_NAME)
@@ -61,7 +61,7 @@ class K8sEventDetectionTest extends BaseSpecification {
 
         def policy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
         if (policy) {
-            CreatePolicyService.deletePolicy(policy.getId())
+            PolicyService.deletePolicy(policy.getId())
         }
         Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, false)
     }

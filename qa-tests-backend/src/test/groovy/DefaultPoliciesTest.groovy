@@ -5,7 +5,7 @@ import io.grpc.StatusRuntimeException
 import spock.lang.Retry
 import spock.lang.Shared
 import services.AlertService
-import services.CreatePolicyService
+import services.PolicyService
 import services.FeatureFlagService
 import services.ImageIntegrationService
 import common.Constants
@@ -121,7 +121,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                                         .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(".*"))
                         )
                 ).build()
-        anyFixedPolicyId = CreatePolicyService.createNewPolicy(anyFixedPolicy)
+        anyFixedPolicyId = PolicyService.createNewPolicy(anyFixedPolicy)
         assert anyFixedPolicyId
 
         gcrId = GCRImageIntegration.createDefaultIntegration()
@@ -143,7 +143,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
         assert ImageIntegrationService.deleteImageIntegration(gcrId)
         if (anyFixedPolicyId) {
-            CreatePolicyService.deletePolicy(anyFixedPolicyId)
+            PolicyService.deletePolicy(anyFixedPolicyId)
         }
     }
 
@@ -166,7 +166,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         if (policy.disabled) {
             // Use patchPolicy instead of Services.setPolicyDisabled since this already has a reference to policy id.
             // No need to find policy id and refetch it this way.
-            CreatePolicyService.patchPolicy(
+            PolicyService.patchPolicy(
                     PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(false).build()
             )
             println "Temporarily enabled policy '${policyName}'"
@@ -181,7 +181,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         cleanup:
         if (policyEnabled) {
-            CreatePolicyService.patchPolicy(
+            PolicyService.patchPolicy(
                     PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(true).build()
             )
             println "Re-disabled policy '${policyName}'"

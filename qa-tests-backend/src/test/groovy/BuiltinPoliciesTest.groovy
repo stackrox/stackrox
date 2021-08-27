@@ -8,7 +8,7 @@ import objects.Volume
 import org.junit.experimental.categories.Category
 import spock.lang.Shared
 import spock.lang.Unroll
-import services.CreatePolicyService
+import services.PolicyService
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
 
 class BuiltinPoliciesTest extends BaseSpecification {
@@ -59,7 +59,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
             policy ->
             if (policy.disabled) {
                 println "Temporarily enabling a disabled policy for testing: ${policy.name}"
-                CreatePolicyService.patchPolicy(
+                PolicyService.patchPolicy(
                         PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(false).build()
                 )
                 disabledPolicyIds.add(policy.id)
@@ -84,7 +84,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         disabledPolicyIds.forEach {
             id ->
             println "Re-disabling a policy after test"
-            CreatePolicyService.patchPolicy(
+            PolicyService.patchPolicy(
                     PatchPolicyRequest.newBuilder().setId(id).setDisabled(true).build()
             )
         }

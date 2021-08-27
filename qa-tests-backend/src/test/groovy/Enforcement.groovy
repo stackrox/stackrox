@@ -15,7 +15,7 @@ import objects.Deployment
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
-import services.CreatePolicyService
+import services.PolicyService
 import services.ProcessBaselineService
 import spock.lang.Shared
 import spock.lang.Unroll
@@ -79,7 +79,7 @@ class Enforcement extends BaseSpecification {
                                         .build())
                                 .build())
                         .build()
-                CreatePolicyService.createNewPolicy(policy)
+                PolicyService.createNewPolicy(policy)
             },
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) : {
                 duplicatePolicyForTest(
@@ -252,7 +252,7 @@ class Enforcement extends BaseSpecification {
 
     def cleanupSpec() {
         CREATED_POLICIES.each {
-            unused, policyId -> CreatePolicyService.deletePolicy(policyId)
+            unused, policyId -> PolicyService.deletePolicy(policyId)
         }
         DEPLOYMENTS.each {
             label, d -> orchestrator.deleteDeployment(d)
@@ -825,6 +825,6 @@ class Enforcement extends BaseSpecification {
 
         def policyDef = builder.build()
 
-        return CreatePolicyService.createNewPolicy(policyDef)
+        return PolicyService.createNewPolicy(policyDef)
     }
 }

@@ -2,7 +2,7 @@ import static Services.getPolicies
 import static Services.waitForViolation
 import static Services.waitForResolvedViolation
 import io.stackrox.proto.storage.PolicyOuterClass
-import services.CreatePolicyService
+import services.PolicyService
 import groups.BAT
 import groups.SMOKE
 import objects.Deployment
@@ -94,13 +94,13 @@ class RuntimePolicyTest extends BaseSpecification  {
                     )
                 ).build())
                 .build()
-        def policyID = CreatePolicyService.createNewPolicy(policy)
+        def policyID = PolicyService.createNewPolicy(policy)
         orchestrator.createDeployment(DEPLOYMENTREMOVAL)
 
         when:
         "Verify violation triggered then remove the policy"
         assert waitForViolation(DEPLOYMENTREMOVAL.name, policy.name, 66)
-        CreatePolicyService.deletePolicy(policyID)
+        PolicyService.deletePolicy(policyID)
 
         then:
         "Verify Violation is removed"

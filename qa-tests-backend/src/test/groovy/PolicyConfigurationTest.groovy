@@ -33,7 +33,7 @@ import objects.Deployment
 import org.junit.experimental.categories.Category
 import org.junit.Assume
 import services.ClusterService
-import services.CreatePolicyService
+import services.PolicyService
 import services.NodeService
 import spock.lang.Unroll
 import spock.lang.Shared
@@ -197,7 +197,7 @@ class PolicyConfigurationTest extends BaseSpecification {
         policy.setName(name)
                 .setId("") // set ID to empty so that a new policy is created and not overwrite the original latest tag
                 .build()
-        def policyId = CreatePolicyService.createNewPolicy(policy.build())
+        def policyId = PolicyService.createNewPolicy(policy.build())
         assert policyId != null
         when:
         "Update a policy description"
@@ -217,7 +217,7 @@ class PolicyConfigurationTest extends BaseSpecification {
         assert policy1.lastUpdated.seconds >= beforeTime && policy1.lastUpdated.seconds <= afterTime
         cleanup:
         "Remove the policy"
-        policyId == null ?: CreatePolicyService.deletePolicy(policyId)
+        policyId == null ?: PolicyService.deletePolicy(policyId)
     }
 
     @Unroll
@@ -227,7 +227,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         when:
         "Create a Policy"
-        String policyID = CreatePolicyService.createNewPolicy(policy)
+        String policyID = PolicyService.createNewPolicy(policy)
         assert policyID != null
 
         then:
@@ -236,7 +236,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         cleanup:
         "Remove Policy #policyName"
-        CreatePolicyService.deletePolicy(policyID)
+        PolicyService.deletePolicy(policyID)
 
         where:
         "Data inputs are :"
@@ -590,7 +590,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     @Category([BAT, SMOKE])
     def "Verify env var policy configuration for source #envVarSource fails validation"() {
         expect:
-        assert !CreatePolicyService.createNewPolicy(Policy.newBuilder()
+        assert !PolicyService.createNewPolicy(Policy.newBuilder()
                         .setName("TestEnvironmentPolicy")
                         .setDescription("TestEnvironment")
                         .setRationale("TestEnvironment")
@@ -620,7 +620,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     def "Verify policy scopes are triggered appropriately: #policyName"() {
         when:
         "Create a Policy"
-        String policyID = CreatePolicyService.createNewPolicy(policy)
+        String policyID = PolicyService.createNewPolicy(policy)
         assert policyID != null
 
         and:
@@ -645,7 +645,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         cleanup:
         "Remove Policy #policyName"
-        policyID == null ?: CreatePolicyService.deletePolicy(policyID)
+        policyID == null ?: PolicyService.deletePolicy(policyID)
         violatedDeployments.each {
             orchestrator.deleteDeployment(it)
         }

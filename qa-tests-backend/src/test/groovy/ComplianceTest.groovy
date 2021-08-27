@@ -30,7 +30,7 @@ import services.BaseService
 import services.ClusterService
 import services.ComplianceManagementService
 import services.ComplianceService
-import services.CreatePolicyService
+import services.PolicyService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
 import services.NodeService
@@ -938,7 +938,7 @@ class ComplianceTest extends BaseSpecification {
             def prior = Services.updatePolicyEnforcement(policyName, enforcements)
             priorEnforcement.put(policyName, prior)
         }
-        def policyId = CreatePolicyService.createNewPolicy(PolicyOuterClass.Policy.newBuilder()
+        def policyId = PolicyService.createNewPolicy(PolicyOuterClass.Policy.newBuilder()
                 .setName("XYZ Compliance Secrets")
                 .setDescription("Test Secrets in Compliance")
                 .setRationale("Test Secrets in Compliance")
@@ -987,7 +987,7 @@ class ComplianceTest extends BaseSpecification {
                 "Fixable CVSS >= 7",
                 [PolicyOuterClass.LifecycleStage.DEPLOY])
         if (policyId) {
-            CreatePolicyService.deletePolicy(policyId)
+            PolicyService.deletePolicy(policyId)
         }
     }
 
