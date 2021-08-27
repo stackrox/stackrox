@@ -215,8 +215,6 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Shellshock: Multiple CVEs"                     | SSL_TERMINATOR | "C948"
 
         "Curl in Image"                                 | STRUTS         | "C948"
-
-        "DockerHub NGINX 1.10"                          | NGINX_1_10     | "C823"
     }
 
     @Category([BAT, SMOKE])

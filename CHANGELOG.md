@@ -5,6 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- Default system policy `DockerHub NGINX 1.10` has been deprecated.
 
 ## [65.0]
 - Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 

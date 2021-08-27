@@ -784,21 +784,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "DockerHub NGINX 1.10",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetId(): {
-					{
-						Message: "Container 'nginx110container' has image with registry 'docker.io', remote 'library/nginx', and tag '1.10'",
-					},
-				},
-				nginx110Dep.GetId(): {
-					{
-						Message: "Container 'nginx' has image with registry 'docker.io', remote 'library/nginx', and tag '1.10'",
-					},
-				},
-			},
-		},
-		{
 			policyName: "Alpine Linux Package Manager (apk) in Image",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				apkDep.GetId(): {
@@ -1462,21 +1447,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {
 					{Message: "Image has tag 'latest'"},
-				},
-			},
-		},
-		{
-			policyName: "DockerHub NGINX 1.10",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetContainers()[0].GetImage().GetId(): {
-					{
-						Message: "Image has registry 'docker.io', remote 'library/nginx', and tag '1.10'",
-					},
-				},
-				suite.imageIDFromDep(nginx110Dep): {
-					{
-						Message: "Image has registry 'docker.io', remote 'library/nginx', and tag '1.10'",
-					},
 				},
 			},
 		},
