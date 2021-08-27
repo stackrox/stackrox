@@ -13,15 +13,14 @@ describe('General sanity checks', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.route('GET', api.alerts.countsByCluster).as('alertsByCluster');
+        cy.intercept('GET', api.alerts.countsByCluster).as('alertsByCluster');
     });
 
     describe('should have correct page titles based on URL', () => {
         const baseTitleText = 'Red Hat Advanced Cluster Security';
 
         it('for Dashboard', () => {
-            cy.route('GET', api.dashboard.timeseries).as('dashboardTimeseries');
+            cy.intercept('GET', api.dashboard.timeseries).as('dashboardTimeseries');
 
             cy.visit('/main');
             cy.wait('@dashboardTimeseries');
@@ -30,7 +29,7 @@ describe('General sanity checks', () => {
         });
 
         it('for Network Graph', () => {
-            cy.route('GET', api.network.networkGraph).as('networkGraph');
+            cy.intercept('GET', api.network.networkGraph).as('networkGraph');
 
             cy.visit('/main/network');
             cy.wait('@networkGraph');
@@ -39,7 +38,7 @@ describe('General sanity checks', () => {
         });
 
         it('for Violations', () => {
-            cy.route('GET', api.alerts.alerts).as('alerts');
+            cy.intercept('GET', api.alerts.alerts).as('alerts');
 
             cy.visit('/main/violations');
             cy.wait('@alerts');
@@ -48,7 +47,7 @@ describe('General sanity checks', () => {
         });
 
         it('for Violations with side panel open', () => {
-            cy.route('GET', api.alerts.alertById).as('alertById');
+            cy.intercept('GET', api.alerts.alertById).as('alertById');
 
             cy.visit('/main/violations/1234');
             cy.wait('@alertById');
@@ -60,7 +59,7 @@ describe('General sanity checks', () => {
             const getAggregatedResults = api.graphql(
                 api.compliance.graphqlOps.getAggregatedResults
             );
-            cy.route('POST', getAggregatedResults).as('getAggregatedResults');
+            cy.intercept('POST', getAggregatedResults).as('getAggregatedResults');
 
             cy.visit('/main/compliance');
             cy.wait('@getAggregatedResults');
@@ -70,7 +69,7 @@ describe('General sanity checks', () => {
 
         it('for Compliance Namespaces', () => {
             const namespaces = api.graphql(api.compliance.graphqlOps.namespaces);
-            cy.route('POST', namespaces).as('namespaces');
+            cy.intercept('POST', namespaces).as('namespaces');
 
             cy.visit('/main/compliance/namespaces');
             cy.wait('@namespaces');
@@ -79,7 +78,7 @@ describe('General sanity checks', () => {
         });
 
         it('for API Docs', () => {
-            cy.route('GET', api.apiDocs.docs).as('apiDocs');
+            cy.intercept('GET', api.apiDocs.docs).as('apiDocs');
 
             cy.visit('/main/apidocs');
             cy.wait('@apiDocs', { timeout: 10000 }); // api docs are sloooooow
@@ -89,7 +88,7 @@ describe('General sanity checks', () => {
 
         it('for User Profile', () => {
             const { mypermissions } = api.roles;
-            cy.route('GET', mypermissions).as('mypermissions');
+            cy.intercept('GET', mypermissions).as('mypermissions');
 
             cy.visit('/main/user');
             cy.wait('@mypermissions');
@@ -140,8 +139,9 @@ describe('General sanity checks', () => {
     });
 
     it('should allow to navigate to another page after exception happens on a page', () => {
-        cy.server();
-        cy.route('GET', api.alerts.alerts, { alerts: [{ id: 'broken one' }] }).as('alerts');
+        cy.intercept('GET', api.alerts.alerts, {
+            body: { alerts: [{ id: 'broken one' }] },
+        }).as('alerts');
 
         cy.visit(violationsUrl);
         cy.wait('@alerts');
