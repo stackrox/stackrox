@@ -76,6 +76,8 @@ defaults:
   system:
     createSCCs: [< not .Operator >]
 
+  enableOpenShiftMonitoring: false
+
 pvcDefaults:
   claimName: "stackrox-db"
   size: "100Gi"

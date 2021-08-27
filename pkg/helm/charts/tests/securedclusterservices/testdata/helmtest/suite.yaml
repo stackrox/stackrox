@@ -29,6 +29,16 @@ defs: |
       (envVars(.daemonsets.collector; "compliance")["ROX_ADVERTISED_ENDPOINT"]
         | assertThat(. == ep))
     ][];
+
+  def verifyMonitoringExposed(service):
+    [service.spec.ports[] | select(.name == "monitoring" and .port == 9090 and .targetPort == "monitoring")]
+      | (length == 1);
+
+  def verifyMonitoringContainerPortExposed(container):
+    [container | if .ports != null then .ports[] else {} end
+      | select(.containerPort == 9090 and .name == "monitoring")]
+        | (length == 1);
+
 server:
   visibleSchemas:
   - kubernetes-1.20.2

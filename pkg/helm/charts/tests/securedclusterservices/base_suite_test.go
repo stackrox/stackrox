@@ -44,7 +44,7 @@ var (
 	allValuesExplicit = `
 cluster:
   name: foo
-  type: OPENSHIFT_CLUSTER
+  type: OPENSHIFT4_CLUSTER
 
 ca:
   cert: "DUMMY CA CERTIFICATE"
@@ -100,6 +100,8 @@ config:
   offlineMode: true
   slimCollector: true
   exposeMonitoring: true
+
+enableOpenShiftMonitoring: true
 `
 )
 

@@ -1,0 +1,94 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.enableOpenShiftMonitoring -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secured-cluster-prometheus-k8s
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "secured-cluster-prometheus-k8s") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "secured-cluster-prometheus-k8s") | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: secured-cluster-prometheus-k8s
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "secured-cluster-prometheus-k8s") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "secured-cluster-prometheus-k8s") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: secured-cluster-prometheus-k8s
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: openshift-monitoring
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sensor-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "servicemonitor" "sensor-monitor") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "servicemonitor" "sensor-monitor") | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 30s
+    port: monitoring
+    scheme: http
+    path: metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: sensor
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: collector-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "podmonitor" "collector-monitor") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "podmonitor" "collector-monitor") | nindent 4 }}
+spec:
+  podMetricsEndpoints:
+  - interval: 30s
+    port: monitoring
+    scheme: http
+    path: metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: collector
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+
+{{- end }}

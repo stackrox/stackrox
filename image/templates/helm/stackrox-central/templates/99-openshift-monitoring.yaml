@@ -1,0 +1,70 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.enableOpenShiftMonitoring -}}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: central-prometheus-k8s
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "central-prometheus-k8s") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "central-prometheus-k8s") | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-prometheus-k8s
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "central-prometheus-k8s") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "central-prometheus-k8s") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: central-prometheus-k8s
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: openshift-monitoring
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: central-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "servicemonitor" "central-monitor") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "servicemonitor" "central-monitor") | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 30s
+    port: monitoring
+    scheme: http
+    path: metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: central
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+
+{{- end }}

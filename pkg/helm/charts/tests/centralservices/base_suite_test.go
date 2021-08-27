@@ -43,7 +43,7 @@ var (
 licenseKey: "my license key"
 env:
   platform: gke
-  openshift: true
+  openshift: 4
   istio: true
   proxyConfig: "proxy config"
 imagePullSecrets:
@@ -78,6 +78,7 @@ scanner:
   dbServiceTLS:
     cert: "scanner-db tls cert pem"
     key: "scanner-db tls key pem"
+enableOpenShiftMonitoring: true
 `
 	autogenerateAll = `
 licenseKey: "my license key"
@@ -86,7 +87,7 @@ additionalCAs:
     Extra CA certificate
 env:
   platform: gke
-  openshift: true
+  openshift: 4
   istio: true
   proxyConfig: "proxy config"
 imagePullSecrets:
@@ -99,6 +100,7 @@ central:
   exposure:
     loadBalancer:
       enabled: true
+enableOpenShiftMonitoring: true
 `
 )
 
