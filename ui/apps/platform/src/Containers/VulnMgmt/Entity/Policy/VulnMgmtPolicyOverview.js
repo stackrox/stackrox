@@ -329,7 +329,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                 </div>
                             </div>
                         </CollapsibleSection>
-                        {isMitreEnabled && (
+                        {isMitreEnabled && !!id && (
                             <CollapsibleSection
                                 title="MITRE ATT&CK"
                                 dataTestId="mitre-attack-section"

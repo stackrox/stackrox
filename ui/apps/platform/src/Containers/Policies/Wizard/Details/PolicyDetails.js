@@ -30,7 +30,7 @@ function PolicyDetails({ policy }) {
                 <Fields policy={policy} />
                 {!isLegacyPolicy && <BooleanPolicySection readOnly initialValues={policy} />}
                 {isLegacyPolicy && <ConfigurationFields policy={policy} />}
-                {isMitreEnabled && (
+                {isMitreEnabled && !!policy.id && (
                     <div className="p-4">
                         <FormSection
                             dataTestId="mitreAttackVectorDetails"
