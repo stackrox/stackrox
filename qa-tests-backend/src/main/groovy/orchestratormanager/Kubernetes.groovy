@@ -895,6 +895,18 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    def addOrUpdateServiceLabel(String serviceName, String ns, String name, String value) {
+        Map<String, String> label = [:]
+        label.put(name, value)
+        evaluateWithRetry(2, 3) {
+            client.services().inNamespace(ns).withName(serviceName).edit()
+                    .editMetadata()
+                    .addToLabels(label)
+                    .endMetadata()
+                    .done()
+        }
+    }
+
     def waitForLoadBalancer(Deployment deployment) {
         "Creating a load balancer"
         if (deployment.createLoadBalancer) {
