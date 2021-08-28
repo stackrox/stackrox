@@ -85,6 +85,7 @@ interface OrchestratorMain {
     def deleteService(String serviceName, String namespace)
     def waitForServiceDeletion(Service service)
     def getServiceIP(String serviceName, String ns)
+    def addOrUpdateServiceLabel(String serviceName, String ns, String name, String value)
 
     //Routes
     def createRoute(String routeName, String namespace)

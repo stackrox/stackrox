@@ -7,6 +7,7 @@ import io.stackrox.proto.storage.ClusterOuterClass
 import objects.ConfigMap
 import objects.Deployment
 import objects.Secret
+import services.ClusterService
 import org.junit.experimental.categories.Category
 import spock.lang.Retry
 import util.ApplicationHealth
@@ -59,6 +60,11 @@ class TLSChallengeTest extends BaseSpecification {
         orchestrator.scaleDeployment("stackrox", "sensor", 1)
         ApplicationHealth ah = new ApplicationHealth(orchestrator, 600)
         ah.waitForSensorHealthiness()
+        if (ClusterService.isOpenShift3()) {
+            // OpenShift 3.11 networking needs a kick to ensure sensor is reachable (ROX-7869)
+            orchestrator.addOrUpdateServiceLabel("sensor", "stackrox", "kick",
+                    System.currentTimeSeconds().toString())
+        }
 
         orchestrator.deleteAllPodsAndWait("stackrox", [app: "collector"])
         ah.waitForCollectorHealthiness()
