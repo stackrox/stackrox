@@ -29,7 +29,7 @@ function compare_fixable_vulns {
 
   echo "Getting scan status"
   scan_present=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq '.status')
-  until [ "$(echo "$scan_present" | tr -d '\"')" = "scanned" ] || [ "$count" -gt 60 ]; do
+  until [ "$(echo "$scan_present" | tr -d '\"')" = "scanned" ] || [ "$count" -gt 100 ]; do
     echo "Waiting for scan to complete..."
     scan_present=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq '.status')
     count=$((count+1))
