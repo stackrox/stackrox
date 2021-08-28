@@ -7,12 +7,9 @@ describe('Image Integrations Test', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.route(
-            'GET',
-            api.integrations.imageIntegrations,
-            'fixture:integrations/imageIntegrations.json'
-        ).as('getImageIntegrations');
+        cy.intercept('GET', api.integrations.imageIntegrations, {
+            fixture: 'integrations/imageIntegrations.json',
+        }).as('getImageIntegrations');
 
         cy.visit('/');
         cy.get(selectors.configure).click();

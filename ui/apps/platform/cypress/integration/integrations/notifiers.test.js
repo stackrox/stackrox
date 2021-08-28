@@ -10,10 +10,9 @@ describe('Notifiers Test', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.route('GET', api.integrations.notifiers, 'fixture:integrations/notifiers.json').as(
-            'getNotifiers'
-        );
+        cy.intercept('GET', api.integrations.notifiers, {
+            fixture: 'integrations/notifiers.json',
+        }).as('getNotifiers');
 
         cy.visit('/');
         cy.get(selectors.configure).click();
@@ -580,11 +579,9 @@ describe('Notifiers Test', () => {
         });
 
         it('should allow you to configure a new Syslog integration when none exists', () => {
-            cy.route(
-                'POST',
-                api.integrations.notifiers,
-                'fixture:integrations/syslogResponse.json'
-            ).as('saveSyslogNotifier');
+            cy.intercept('POST', api.integrations.notifiers, {
+                fixture: 'integrations/syslogResponse.json',
+            }).as('saveSyslogNotifier');
             cy.get(selectors.syslogTile).click();
 
             cy.get(selectors.buttons.new).click();

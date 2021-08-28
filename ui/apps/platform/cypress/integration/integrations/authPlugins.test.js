@@ -7,10 +7,9 @@ describe('Auth Plugins Test', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.route('GET', api.integrations.authPlugins, 'fixture:integrations/authPlugins.json').as(
-            'getAuthPlugins'
-        );
+        cy.intercept('GET', api.integrations.authPlugins, {
+            fixture: 'integrations/authPlugins.json',
+        }).as('getAuthPlugins');
 
         cy.visit('/');
         cy.get(selectors.configure).click();

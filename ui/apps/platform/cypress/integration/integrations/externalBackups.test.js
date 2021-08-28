@@ -7,12 +7,9 @@ describe('External Backups Test', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.route(
-            'GET',
-            api.integrations.externalBackups,
-            'fixture:integrations/externalBackups.json'
-        ).as('getExternalBackups');
+        cy.intercept('GET', api.integrations.externalBackups, {
+            fixture: 'integrations/externalBackups.json',
+        }).as('getExternalBackups');
 
         cy.visit('/');
         cy.get(selectors.configure).click();
