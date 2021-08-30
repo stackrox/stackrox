@@ -144,7 +144,7 @@ describe('Access Control Permission sets', () => {
         });
     });
 
-    it('direct link to default Analyst has all read and no write accesss', () => {
+    it('direct link to default Analyst has all (but DebugLogs) read and no write access', () => {
         visitPermissionSet('io.stackrox.authz.permissionset.analyst');
 
         cy.get(selectors.form.inputName).should('have.value', 'Analyst');
@@ -159,22 +159,37 @@ describe('Access Control Permission sets', () => {
             const resourceCount = String($tds.length);
 
             cy.get(selectors.form.permissionSet.resourceCount).should('have.text', resourceCount);
-            cy.get(selectors.form.permissionSet.readCount).should('have.text', resourceCount);
+            cy.get(selectors.form.permissionSet.readCount).should('have.text', resourceCount - 1);
             cy.get(selectors.form.permissionSet.writeCount).should('have.text', '0');
 
             $tds.get().forEach((td) => {
                 const resource = td.textContent;
-                cy.get(getReadAccessIconForResource(resource)).should(
-                    'have.attr',
-                    'aria-label',
-                    'permitted'
-                );
+                if (resource === 'DebugLogs') {
+                    cy.get(getReadAccessIconForResource(resource)).should(
+                        'have.attr',
+                        'aria-label',
+                        'forbidden'
+                    );
+                    cy.get(getAccessLevelSelectForResource(resource)).should(
+                        'contain',
+                        'No Access'
+                    );
+                } else {
+                    cy.get(getReadAccessIconForResource(resource)).should(
+                        'have.attr',
+                        'aria-label',
+                        'permitted'
+                    );
+                    cy.get(getAccessLevelSelectForResource(resource)).should(
+                        'contain',
+                        'Read Access'
+                    );
+                }
                 cy.get(getWriteAccessIconForResource(resource)).should(
                     'have.attr',
                     'aria-label',
                     'forbidden'
                 );
-                cy.get(getAccessLevelSelectForResource(resource)).should('contain', 'Read Access');
             });
         });
     });

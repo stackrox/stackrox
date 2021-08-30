@@ -22,7 +22,7 @@ const resourceDescriptions: Record<string, string> = {
     Config:
         'Read: View options for data retention, security notices, and other related configurations. Write: Modify options for data retention, security notices, and other related configurations.',
     DebugLogs:
-        'Read: View the current logging verbosity level in Red Hat Advanced Cluster Security for Kubernetes components. Write: Modify the logging verbosity level.',
+        "Read: View the current logging verbosity level in Red Hat Advanced Cluster Security for Kubernetes components. Download diagnostic bundle. Note: diagnostic bundle contains information about all clusters and namespaces regardless of user's access scope. Don't give this permission to users with limited access scope. Write: Modify the logging verbosity level.",
     Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A',
     Detection: 'Read: Check build-time policies against images or deployment YAMLs. Write: N/A',
     Group:

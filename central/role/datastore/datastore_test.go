@@ -28,6 +28,20 @@ func TestAllDefaultRolesAreCovered(t *testing.T) {
 	}
 }
 
+func TestAnalystRoleDoesNotContainDebugLogs(t *testing.T) {
+	analystRole, found := defaultRoles[role.Analyst]
+	// Analyst is one of the default roles.
+	assert.True(t, found)
+
+	resourceToAccess := analystRole.resourceWithAccess
+	// Contains all resources except one.
+	assert.Len(t, resourceToAccess, len(resources.ListAll())-1)
+	// Does not contain DebugLogs resource.
+	for _, resource := range resourceToAccess {
+		assert.NotEqual(t, resource.Resource.GetResource(), resources.DebugLogs.GetResource())
+	}
+}
+
 func TestRoleDataStore(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(roleDataStoreTestSuite))

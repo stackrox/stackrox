@@ -56,7 +56,7 @@ var defaultRoles = map[string]roleAttributes{
 	},
 	rolePkg.Analyst: {
 		idSuffix:           "analyst",
-		resourceWithAccess: resources.AllResourcesViewPermissions(),
+		resourceWithAccess: rolePkg.GetAnalystPermissions(),
 		description:        "For users: use it to give read-only access to all the resources",
 	},
 	rolePkg.ContinuousIntegration: {

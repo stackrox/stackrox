@@ -1,7 +1,9 @@
 package role
 
 import (
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -45,4 +47,15 @@ func IsDefaultRoleName(name string) bool {
 // default access scope.
 func IsDefaultAccessScope(name string) bool {
 	return AccessScopeExcludeAll.GetName() == name
+}
+
+// GetAnalystPermissions returns permissions for `Analyst` role.
+func GetAnalystPermissions() []permissions.ResourceWithAccess {
+	resourceToAccess := resources.AllResourcesViewPermissions()
+	for i, resourceWithAccess := range resourceToAccess {
+		if resourceWithAccess.Resource.GetResource() == resources.DebugLogs.GetResource() {
+			return append(resourceToAccess[:i], resourceToAccess[i+1:]...)
+		}
+	}
+	panic("DebugLogs resource was not found amongst all resources.")
 }
