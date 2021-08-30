@@ -16,7 +16,8 @@ DASHBOARD_ID=${DASHBOARD_ID:-Q0AZXCdZk}
 
 DASHBOARD_FETCH_URL="https://${ENDPOINT}/api/dashboards/uid/${DASHBOARD_ID}"
 
-PANEL_LIST_JSON=$(curl -u admin:stackrox -sk "${DASHBOARD_FETCH_URL}" | jq '[.dashboard.panels[] | {id: .id, title: .title, queries: [.targets[].query]}]')
+# Skip panels without `.targets`, e.g., those with `"type": "row"`.
+PANEL_LIST_JSON=$(curl -u admin:stackrox -sk "${DASHBOARD_FETCH_URL}" | jq '[.dashboard.panels[] | select(.targets != null) | {id: .id, title: .title, queries: [.targets[].query]}]')
 
 echo "${PANEL_LIST_JSON}" | jq -c '.[]' | while read -r panel_json; do
     panel_id=$(echo "${panel_json}" | jq .id)
@@ -32,12 +33,14 @@ kubectl -n stackrox port-forward $(kubectl -n stackrox get po -l app=monitoring 
 PID=$!
 sleep 5
 
+# Not all targets are backed by an explicit query, sometimes, e.g., when
+# `"rawQuery": false`, the query is constructed by Grafana. Skip such targets.
 echo "${PANEL_LIST_JSON}" | jq -c '.[]' | while read -r panel_json; do
     queries=$(echo "${panel_json}" | jq .queries)
     panel_title_file=$(echo "${panel_json}" | jq -r .title | sed -e "s/[^A-Za-z0-9._-]/_/g" | tr "[:upper:]" "[:lower:]")
 
     count=0
-    echo ${queries} | jq -rc '.[]' | while read -r query; do
+    echo ${queries} | jq -rc '.[] | select(. != null)' | while read -r query; do
         count=$(( count + 1))
         query=$(echo "${query}" | sed "s/\$timeFilter/time > now() - ${DURATION_MIN}m/g" | sed 's/\$__interval/1s/g')
         curl -s localhost:8086/query?db=telegraf_2w --data-urlencode "q=$query" > "$DIR/rawcaptures/${panel_title_file}_${count}.json"
