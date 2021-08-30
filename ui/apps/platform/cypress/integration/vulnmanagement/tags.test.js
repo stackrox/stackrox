@@ -10,11 +10,10 @@ describe('Vuln Management Violation Tags', () => {
     withAuth();
 
     it('should add and save tag', () => {
-        cy.server();
-        cy.route('POST', api.graphql(api.vulnMgmt.graphqlOps.getPolicies)).as('getPolicies');
-        cy.route('POST', api.graphql(api.vulnMgmt.graphqlOps.getPolicy)).as('getPolicy');
-        cy.route('POST', api.graphql(api.alerts.graphqlOps.getTags)).as('getTags');
-        cy.route('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as(
+        cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.getPolicies)).as('getPolicies');
+        cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.getPolicy)).as('getPolicy');
+        cy.intercept('POST', api.graphql(api.alerts.graphqlOps.getTags)).as('getTags');
+        cy.intercept('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as(
             'tagsAutocomplete'
         );
 

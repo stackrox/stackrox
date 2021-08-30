@@ -7,11 +7,9 @@ describe('Image Overview', () => {
 
     it('should show a message when image scan data is incomplete', () => {
         // arrange
-        cy.server();
-        cy.fixture('images/vmImageOverview.json').as('imageJSON');
-        cy.route('POST', api.graphql(api.vulnMgmt.graphqlOps.getImage), '@imageJSON').as(
-            'getImage'
-        );
+        cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.getImage), {
+            fixture: 'images/vmImageOverview.json',
+        }).as('getImage');
 
         // act
         cy.visit(url.sidepanel.image);

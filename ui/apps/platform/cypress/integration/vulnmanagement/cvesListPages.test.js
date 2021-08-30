@@ -140,8 +140,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
 
     describe('adding selected CVEs to policy', () => {
         beforeEach(() => {
-            cy.server();
-            cy.route('POST', api.graphql(api.vulnMgmt.graphqlOps.getCves)).as('getCves');
+            cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.getCves)).as('getCves');
         });
 
         it('should add CVEs to new policies', () => {
