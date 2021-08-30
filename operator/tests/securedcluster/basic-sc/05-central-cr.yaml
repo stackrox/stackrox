@@ -2,7 +2,6 @@ apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:
   name: stackrox-central-services
-  namespace: stackrox
 spec:
   # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
   central:

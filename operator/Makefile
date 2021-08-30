@@ -193,7 +193,7 @@ test: manifests generate fmt vet ## Run tests.
 
 test-e2e: build install kuttl ensure-rox-main-image-exists ## Run e2e tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	$(KUTTL) test --namespace stackrox
+	$(KUTTL) test
 
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on DockerHub. Used by Helm chart.
 # Create stackrox namespace if not exists.
