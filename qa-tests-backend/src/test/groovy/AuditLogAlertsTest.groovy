@@ -1,3 +1,4 @@
+import static Services.getAllResourceViolationsWithTimeout
 import static Services.getResourceViolationsWithTimeout
 
 import common.Constants
@@ -8,10 +9,12 @@ import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Secret
 import org.junit.Assume
 import org.junit.experimental.categories.Category
+import services.AlertService
 import services.ClusterService
 import services.PolicyService
 import spock.lang.Stepwise
 import spock.lang.Unroll
+import util.Helpers
 
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
@@ -23,12 +26,231 @@ class AuditLogAlertsTest extends BaseSpecification {
         Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
 
         when:
+        "Audit log collection is enabled"
+        def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
+        if (previouslyDisabled) {
+            assert ClusterService.updateAuditLogDynamicConfig(false)
+        }
+
+        and:
         "An audit log event source policy is created"
 
         // add some randomness so that an older test run doesn't poison the result (because the audit log entries
         // may still exist on the cluster.)
         def resName = "e2e-test-rez" + UUID.randomUUID()
-        def policy = PolicyOuterClass.Policy.newBuilder()
+        def policy = createAuditLogSourcePolicy(resName, verb, resourceType)
+        def policyId = PolicyService.createNewPolicy(policy)
+        assert policyId
+
+        and:
+        "The resource is created, accessed and deleted"
+        if (resourceType == "SECRETS") {
+            createGetAndDeleteSecret(resName, Constants.ORCHESTRATOR_NAMESPACE)
+        } else if (resourceType == "CONFIGMAPS") {
+            createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
+        }
+
+        then:
+        "Verify that policy was violated"
+        def violations =  getResourceViolationsWithTimeout(resourceType, resName, policy.getName(), 60)
+        // There should be exactly one violation because we are testing only verb at a time
+        assert violations != null && violations.size() == 1
+
+        cleanup:
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+        }
+        // set the feature back to what it was
+        assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
+
+        where:
+        "Data inputs are:"
+
+        resourceType | verb
+
+        "SECRETS"    | "CREATE"
+        "SECRETS"    | "GET"
+        "SECRETS"    | "DELETE"
+        "CONFIGMAPS" | "CREATE"
+        "CONFIGMAPS" | "GET"
+        "CONFIGMAPS" | "DELETE"
+    }
+
+    @Unroll
+    @Category([BAT, RUNTIME])
+    def "Verify collection continues even after ACS components restarts: #component"() {
+        given:
+        "Running on an OpenShift 4 cluster"
+        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
+
+        when:
+        "Audit log collection is enabled"
+        def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
+        if (previouslyDisabled) {
+            assert ClusterService.updateAuditLogDynamicConfig(false)
+        }
+
+        and:
+        "An audit log event source policy is created"
+
+        // add some randomness so that an older test run doesn't poison the result (because the audit log entries
+        // may still exist on the cluster.)
+        def resName = "e2e-test-rez" + UUID.randomUUID()
+        def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
+        def policyId = PolicyService.createNewPolicy(policy)
+        assert policyId
+
+        and:
+        "A violation is generated and resolved"
+        createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
+        def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
+                policy.getName(), 60)
+        // There should be exactly one violation
+        assert violations != null && violations.size() == 1
+
+        AlertService.resolveAlert(violations[0].getId())
+
+        and:
+        "${component} is restarted thus collection is restarted"
+        orchestrator.restartPodByLabels("stackrox", [app: component], 30, 5)
+
+        and:
+        "Another violation is generated"
+        def altResourceName = resName + "-2"
+        createGetAndDeleteConfigMap(altResourceName, Constants.ORCHESTRATOR_NAMESPACE)
+
+        then:
+        "Verify that only the access after restart triggers a violation"
+        def allViolations =  getAllResourceViolationsWithTimeout("CONFIGMAPS",
+                policy.getName(), 60)
+
+        // There should only be one violation - the new one
+        assert allViolations != null &&
+                allViolations.size() == 1 &&
+                allViolations[0].resource.name == altResourceName
+
+        cleanup:
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+        }
+        // set the feature back to what it was
+        assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
+
+        where:
+        "Data inputs are:"
+
+        component   | _
+
+        "sensor"    | _
+        "collector" | _
+        // Note: central restart isn't being tested here because unfortunately killing the central pod stops
+        // the port forward and fails the rest of the test suite.
+    }
+
+    @Category([BAT, RUNTIME])
+    def "Verify collection continues when it is disabled and then re-enabled"() {
+        given:
+        "Running on an OpenShift 4 cluster"
+        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
+
+        when:
+        "Audit log collection is enabled"
+        def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
+        if (previouslyDisabled) {
+            assert ClusterService.updateAuditLogDynamicConfig(false)
+        }
+
+        and:
+        "An audit log event source policy is created"
+
+        // add some randomness so that an older test run doesn't poison the result (because the audit log entries
+        // may still exist on the cluster.)
+        def resName = "e2e-test-rez" + UUID.randomUUID()
+        def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
+        def policyId = PolicyService.createNewPolicy(policy)
+        assert policyId
+
+        and:
+        "A violation is generated and resolved"
+        createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
+        def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
+                policy.getName(), 60)
+        // There should be exactly one violation
+        assert violations != null && violations.size() == 1
+
+        AlertService.resolveAlert(violations[0].getId())
+
+        and:
+        "Feature is disabled and then re-enabled"
+        assert ClusterService.updateAuditLogDynamicConfig(true)
+        Helpers.sleepWithRetryBackoff(5000) // wait 5s for it to propagate to sensor before re-enabling
+        assert ClusterService.updateAuditLogDynamicConfig(false)
+        Helpers.sleepWithRetryBackoff(5000) // wait 5s for it to propagate again
+
+        and:
+        "Another violation is generated"
+        def altResourceName = resName + "-2"
+        createGetAndDeleteConfigMap(altResourceName, Constants.ORCHESTRATOR_NAMESPACE)
+
+        then:
+        "Verify that only the access after restart triggers a violation"
+        def allViolations =  getAllResourceViolationsWithTimeout("CONFIGMAPS",
+                policy.getName(), 60)
+
+        // There should only be one violation - the new one
+        assert allViolations != null &&
+                allViolations.size() == 1 &&
+                allViolations[0].resource.name == altResourceName
+
+        cleanup:
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+        }
+        // set the feature back to what it was
+        assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
+    }
+
+    @Category([BAT, RUNTIME])
+    def "Verify collection stops when feature is is disabled"() {
+        given:
+        "Running on an OpenShift 4 cluster"
+        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
+
+        when:
+        "Audit log collection is disabled"
+        def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
+        assert ClusterService.updateAuditLogDynamicConfig(true)
+
+        and:
+        "An audit log event source policy is created"
+
+        // add some randomness so that an older test run doesn't poison the result (because the audit log entries
+        // may still exist on the cluster.)
+        def resName = "e2e-test-rez" + UUID.randomUUID()
+        def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
+        def policyId = PolicyService.createNewPolicy(policy)
+        assert policyId
+
+        and:
+        "The resource is accessed"
+        createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
+
+        then:
+        "Verify that no violations were generated"
+        def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
+                policy.getName(), 60)
+        assert violations == null || violations.size() == 0
+
+        cleanup:
+        if (policyId) {
+            PolicyService.deletePolicy(policyId)
+        }
+        // set the feature back to what it was
+        assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
+    }
+
+    def createAuditLogSourcePolicy(String resName, String verb, String resourceType) {
+        return PolicyOuterClass.Policy.newBuilder()
                 .setName("e2e-test-detect-${verb}-${resourceType}")
                 .addLifecycleStages(PolicyOuterClass.LifecycleStage.RUNTIME)
                 .setEventSource(PolicyOuterClass.EventSource.AUDIT_LOG_EVENT)
@@ -53,39 +275,6 @@ class AuditLogAlertsTest extends BaseSpecification {
                                         .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(resName))
                         )
                 ).build()
-        def policyId = PolicyService.createNewPolicy(policy)
-        assert policyId
-
-        and:
-        "The resource is created, accessed and deleted"
-        if (resourceType == "SECRETS") {
-            createGetAndDeleteSecret(resName, Constants.ORCHESTRATOR_NAMESPACE)
-        } else if (resourceType == "CONFIGMAPS") {
-            createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
-        }
-
-        then:
-        "Verify that policy was violated"
-        def violations =  getResourceViolationsWithTimeout(resourceType, resName, policy.getName(), 60)
-        // There should be exactly one violation because we are testing only verb at a time
-        assert violations != null && violations.size() == 1
-
-        cleanup:
-        if (policyId) {
-            PolicyService.deletePolicy(policyId)
-        }
-
-        where:
-        "Data inputs are:"
-
-        resourceType | verb
-
-        "SECRETS"    | "CREATE"
-        "SECRETS"    | "GET"
-        "SECRETS"    | "DELETE"
-        "CONFIGMAPS" | "CREATE"
-        "CONFIGMAPS" | "GET"
-        "CONFIGMAPS" | "DELETE"
     }
 
     def createGetAndDeleteSecret(String name, String namespace) {

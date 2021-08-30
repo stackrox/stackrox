@@ -62,12 +62,28 @@ class ClusterService extends BaseService {
         return updateCluster(cluster)
     }
 
+    static Boolean updateAuditLogDynamicConfig(boolean disableAuditLogs) {
+        Cluster currentCluster = getCluster()
+        if (currentCluster == null) {
+            return false
+        }
+        Cluster.Builder builder = currentCluster.toBuilder()
+
+        Cluster cluster = builder.setDynamicConfig(
+                DynamicClusterConfig.newBuilder()
+                        .setDisableAuditLogs(disableAuditLogs)
+                        .build()
+        ).build()
+
+        return updateCluster(cluster)
+    }
+
     static Boolean updateCluster(Cluster cluster)  {
         try {
             getClusterServiceClient().putCluster(cluster)
             return true
         } catch (Exception e) {
-            println "Error creating cluster: ${e}"
+            println "Error updating cluster: ${e}"
             return false
         }
     }
