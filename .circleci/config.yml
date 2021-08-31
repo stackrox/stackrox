@@ -1723,6 +1723,12 @@ commands:
             - *setupClientTLSCerts
             - setup-egress-proxies
 
+      # OpenShift 3.11 networking needs a kick to ensure sensor is reachable (ROX-7869)
+      - run:
+          name: Kick OpenShift 3.11
+          command: |
+            oc -n stackrox label --overwrite svc sensor kicked="$(date +'%s')"
+
       - deploy-webhook-server
       - deploy-authz-plugin
 
