@@ -235,7 +235,7 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "error parsing since timestamp")
 	}
-	return k8sintrospect.Collect(ctx, k8sintrospect.DefaultConfig, restCfg, fileCb, sinceTs)
+	return k8sintrospect.Collect(ctx, k8sintrospect.DefaultConfigWithSecrets(), restCfg, fileCb, sinceTs)
 }
 
 func (h *commandHandler) handleClusterInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {

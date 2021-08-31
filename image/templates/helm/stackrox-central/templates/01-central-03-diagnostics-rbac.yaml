@@ -13,7 +13,11 @@ rules:
 - apiGroups:
   - '*'
   resources:
-  - '*'
+  - "deployments"
+  - "daemonsets"
+  - "replicasets"
+  - "configmaps"
+  - "services"
   verbs:
   - get
   - list

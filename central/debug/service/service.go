@@ -67,7 +67,7 @@ var (
 		},
 	})
 
-	mainClusterConfig = k8sintrospect.DefaultConfig
+	mainClusterConfig = k8sintrospect.DefaultConfig()
 )
 
 func init() {
