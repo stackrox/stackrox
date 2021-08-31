@@ -23,11 +23,6 @@ type storeImpl struct {
 	bucketEvaluator *evaluator
 }
 
-type namespacedRoleRef struct {
-	roleRef   v1.RoleRef
-	namespace string
-}
-
 func (rs *storeImpl) GetPermissionLevelForDeployment(d NamespacedServiceAccount) storage.PermissionLevel {
 	subject := &storage.Subject{
 		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
