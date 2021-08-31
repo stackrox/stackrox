@@ -31,6 +31,10 @@ func CompileScope(scope *storage.Scope) (*CompiledScope, error) {
 		if err != nil {
 			return nil, errors.Errorf("label key regex %q could not be compiled", err)
 		}
+		if cs.LabelKey == nil {
+			return nil, errors.Errorf("label %q=%q is invalid", scope.GetLabel().GetKey(), scope.GetLabel().GetValue())
+		}
+
 		cs.LabelValue, err = regexutils.CompileWholeStringMatcher(scope.GetLabel().GetValue(), regexutils.Flags{CaseInsensitive: true})
 		if err != nil {
 			return nil, errors.Errorf("label value regex %q could not be compiled", err)

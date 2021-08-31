@@ -501,6 +501,63 @@ func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	}
 	err = s.validator.validateExclusions(policy)
 	s.Error(err, "excluded scope requires either container or deployment configuration")
+
+	emptyLabelExclusion := &storage.Exclusion{
+		Deployment: &storage.Exclusion_Deployment{
+			Scope: &storage.Scope{
+				Label: &storage.Scope_Label{
+					Key: "",
+				},
+			},
+		},
+	}
+	policy = &storage.Policy{
+		Exclusions: []*storage.Exclusion{
+			emptyLabelExclusion,
+		},
+	}
+	err = s.validator.validateExclusions(policy)
+	s.Error(err, "label regex in excluded scope, if not nil, must be non-empty")
+
+	anyKeyLabelExclusion := &storage.Exclusion{
+		Deployment: &storage.Exclusion_Deployment{
+			Scope: &storage.Scope{
+				Label: &storage.Scope_Label{
+					Key:   ".*",
+					Value: "",
+				},
+			},
+		},
+	}
+	policy = &storage.Policy{
+		LifecycleStages: []storage.LifecycleStage{
+			storage.LifecycleStage_DEPLOY,
+		},
+		Exclusions: []*storage.Exclusion{
+			anyKeyLabelExclusion,
+		},
+	}
+	s.NoError(s.validator.validateExclusions(policy))
+
+	anyLabelExclusion := &storage.Exclusion{
+		Deployment: &storage.Exclusion_Deployment{
+			Scope: &storage.Scope{
+				Label: &storage.Scope_Label{
+					Key:   ".*",
+					Value: ".*",
+				},
+			},
+		},
+	}
+	policy = &storage.Policy{
+		LifecycleStages: []storage.LifecycleStage{
+			storage.LifecycleStage_DEPLOY,
+		},
+		Exclusions: []*storage.Exclusion{
+			anyLabelExclusion,
+		},
+	}
+	s.NoError(s.validator.validateExclusions(policy))
 }
 
 func (s *PolicyValidatorTestSuite) TestAllDefaultPoliciesValidate() {

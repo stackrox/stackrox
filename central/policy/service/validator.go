@@ -280,11 +280,11 @@ func (s *policyValidator) validateExclusion(policy *storage.Policy, exclusion *s
 func (s *policyValidator) validateDeploymentExclusion(exclusion *storage.Exclusion) error {
 	deployment := exclusion.GetDeployment()
 	if deployment.GetScope() == nil && deployment.GetName() == "" {
-		return errors.New("at least one field of deployment excluded scope must be defined")
+		return errors.New("at least one field of deployment exclusion scope must be defined")
 	}
 	if deployment.GetScope() != nil {
 		if err := s.validateScope(deployment.GetScope()); err != nil {
-			return err
+			return errors.Wrap(err, "deployment exclusion scope is invalid")
 		}
 	}
 	return nil
