@@ -5,9 +5,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var (
-	// DefaultConfig is the default configuration for the StackRox platform.
-	DefaultConfig = Config{
+// DefaultConfig defines the default objects to pull in the diagnostic bundles
+func DefaultConfig() Config {
+	return Config{
 		Namespaces: []string{env.Namespace.Setting()},
 		Objects: []ObjectConfig{
 			{
@@ -20,11 +20,6 @@ var (
 				GVK: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "ReplicaSet"},
 			},
 			{
-				GVK:           schema.GroupVersionKind{Version: "v1", Kind: "Secret"},
-				RedactionFunc: RedactSecret,
-				FilterFunc:    FilterOutServiceAccountSecrets,
-			},
-			{
 				GVK: schema.GroupVersionKind{Version: "v1", Kind: "ConfigMap"},
 			},
 			{
@@ -32,4 +27,15 @@ var (
 			},
 		},
 	}
-)
+}
+
+// DefaultConfigWithSecrets add secrets to the default objects to pull in the diagnostic bundles
+func DefaultConfigWithSecrets() Config {
+	cfg := DefaultConfig()
+	cfg.Objects = append(cfg.Objects, ObjectConfig{
+		GVK:           schema.GroupVersionKind{Version: "v1", Kind: "Secret"},
+		RedactionFunc: RedactSecret,
+		FilterFunc:    FilterOutServiceAccountSecrets,
+	})
+	return cfg
+}
