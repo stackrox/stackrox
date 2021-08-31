@@ -11,7 +11,6 @@ function ReduxRadioButtonGroup({ input, buttons, groupClassName, useBoolean, dis
     return (
         <RadioButtonGroup
             buttons={buttons}
-            // eslint-disable-next-line react/jsx-no-bind
             onClick={onChangeEnabled}
             selected={value}
             groupClassName={groupClassName}

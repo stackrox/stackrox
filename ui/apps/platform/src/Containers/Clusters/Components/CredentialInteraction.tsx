@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useState } from 'react';
 
 import { generateSecuredClusterCertSecret } from 'services/CertGenerationService';

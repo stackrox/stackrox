@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useRef, useState } from 'react';
 import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import {

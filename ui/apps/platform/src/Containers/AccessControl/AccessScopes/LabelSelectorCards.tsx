@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
 import { Button, Label, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';

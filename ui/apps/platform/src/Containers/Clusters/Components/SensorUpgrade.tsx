@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement } from 'react';
 
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';

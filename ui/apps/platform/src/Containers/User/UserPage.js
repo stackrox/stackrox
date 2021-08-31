@@ -102,7 +102,6 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         <Switch>
                             <Route
                                 path={userRolePath}
-                                // eslint-disable-next-line react/jsx-no-bind
                                 render={({
                                     match: {
                                         params: { roleName },

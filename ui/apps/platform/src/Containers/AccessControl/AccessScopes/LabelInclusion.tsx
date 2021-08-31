@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useState } from 'react';
 import { Badge, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
 

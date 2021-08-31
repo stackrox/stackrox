@@ -94,16 +94,6 @@ const commonReactRules = {
             extensions: ['.js', '.tsx'],
         },
     ],
-    // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-no-bind.md
-    // forbid arrow functions as well
-    'react/jsx-no-bind': [
-        'error',
-        {
-            ignoreRefs: true,
-            allowArrowFunctions: false, // Airbnb code style doesn't support ES7 property initializers
-            allowBind: false,
-        },
-    ],
     // stepping away from Airbnb and into more inconsistent world to avoid huge refactoring
     'react/destructuring-assignment': 'off',
     // forbid 'data-test-id' in preference of 'data-testid'

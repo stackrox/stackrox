@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { CSSProperties, ReactElement, useState } from 'react';
 import { Badge, Button, Flex, FlexItem, Switch, TextInput } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';

@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement, useState } from 'react';
 import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import merge from 'lodash/merge';

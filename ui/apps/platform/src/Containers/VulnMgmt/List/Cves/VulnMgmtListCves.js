@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';

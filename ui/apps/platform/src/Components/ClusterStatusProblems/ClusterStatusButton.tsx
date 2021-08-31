@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { CSSProperties, ReactElement } from 'react';
 import { Activity } from 'react-feather';
 import { useHistory } from 'react-router-dom';
