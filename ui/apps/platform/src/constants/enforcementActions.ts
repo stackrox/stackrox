@@ -1,4 +1,6 @@
-export const ENFORCEMENT_ACTIONS = Object.freeze({
+import { EnforcementAction } from 'Containers/Violations/PatternFly/types/violationTypes';
+
+export const ENFORCEMENT_ACTIONS: Record<EnforcementAction, string> = Object.freeze({
     UNSET_ENFORCEMENT: 'UNSET_ENFORCEMENT',
     SCALE_TO_ZERO_ENFORCEMENT: 'SCALE_TO_ZERO_ENFORCEMENT',
     UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT',
@@ -9,7 +11,7 @@ export const ENFORCEMENT_ACTIONS = Object.freeze({
     FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: 'FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT',
 });
 
-export const ENFORCEMENT_ACTIONS_AS_STRING = Object.freeze({
+export const ENFORCEMENT_ACTIONS_AS_STRING: Record<EnforcementAction, string> = Object.freeze({
     UNSET_ENFORCEMENT: 'No enforcement',
     SCALE_TO_ZERO_ENFORCEMENT: 'Scale to 0',
     UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: 'Unsatisfiable Node Constraint "BlockedByStackRox"',
@@ -20,7 +22,7 @@ export const ENFORCEMENT_ACTIONS_AS_STRING = Object.freeze({
     FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: 'Block Deployment Update',
 });
 
-export const ENFORCEMENT_ACTIONS_AS_PAST_TENSE = Object.freeze({
+export const ENFORCEMENT_ACTIONS_AS_PAST_TENSE: Record<EnforcementAction, string> = Object.freeze({
     UNSET_ENFORCEMENT: 'No enforcement',
     SCALE_TO_ZERO_ENFORCEMENT: 'Scaled to 0',
     UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT:

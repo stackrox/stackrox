@@ -1,4 +1,4 @@
-type EnforcementAction =
+export type EnforcementAction =
     | 'UNSET_ENFORCEMENT'
     | 'SCALE_TO_ZERO_ENFORCEMENT'
     | 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'

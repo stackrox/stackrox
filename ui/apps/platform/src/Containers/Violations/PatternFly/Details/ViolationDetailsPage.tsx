@@ -9,18 +9,19 @@ import {
     Title,
     PageSection,
     Spinner,
+    Bullseye,
 } from '@patternfly/react-core';
 
 import { violationsPFBasePath } from 'routePaths';
 import { fetchAlert } from 'services/AlertsService';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
-import ViolationsDetails from 'Containers/Violations/SidePanel/ViolationsDetails';
-import EnforcementDetails from 'Containers/Violations/Enforcement/Details';
-import PolicyDetails from 'Containers/Policies/Wizard/Details/PolicyDetails';
-import DeploymentDetails from 'Containers/Risk/DeploymentDetails';
+import DeploymentDetails from './DeploymentDetails';
+import PolicyDetails from './PolicyDetails';
+import EnforcementDetails from './EnforcementDetails';
 import { Alert } from '../types/violationTypes';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
+import ViolationDetails from './ViolationDetails';
 
 function ViolationDetailsPage(): ReactElement {
     const [activeTabKey, setActiveTabKey] = useState(0);
@@ -50,7 +51,11 @@ function ViolationDetailsPage(): ReactElement {
 
     if (!alert) {
         if (isFetchingSelectedAlert) {
-            return <Spinner isSVG />;
+            return (
+                <Bullseye>
+                    <Spinner isSVG />
+                </Bullseye>
+            );
         }
         return <ViolationNotFoundPage />;
     }
@@ -72,7 +77,7 @@ function ViolationDetailsPage(): ReactElement {
             }" ${resourceType}`}</Title>
             <Tabs mountOnEnter activeKey={activeTabKey} onSelect={handleTabClick}>
                 <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
-                    <ViolationsDetails
+                    <ViolationDetails
                         violationId={alert.id}
                         violations={alert.violations}
                         processViolation={alert.processViolation}
