@@ -6,6 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 - Default system policy `DockerHub NGINX 1.10` has been deprecated.
+- Default system policy deletion is prohibited.
 - `Analyst` permission set and corresponding role will no longer have `DebugLogs` permission. The only default role with this permission will be `Admin` role.
 
 ## [65.0]
