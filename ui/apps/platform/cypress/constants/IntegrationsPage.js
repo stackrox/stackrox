@@ -35,6 +35,7 @@ export const selectors = {
     awsSecurityHubTile: 'a[data-testid="integration-tile"]:contains("AWS Security Hub")',
     sumologicTile: 'a[data-testid="integration-tile"]:contains("Sumo Logic")',
     syslogTile: 'a[data-testid="integration-tile"]:contains("Syslog")',
+    teamsTile: 'a[data-testid="integration-tile"]:contains("Teams")',
     genericWebhookTile: 'a[data-testid="integration-tile"]:contains("Generic Webhook")',
     amazonS3Tile: 'a[data-testid="integration-tile"]:contains("Amazon S3")',
     googleCloudStorageTile: 'a[data-testid="integration-tile"]:contains("Google Cloud Storage")',

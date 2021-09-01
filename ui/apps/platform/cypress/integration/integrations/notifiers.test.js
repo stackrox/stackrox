@@ -444,6 +444,52 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.test).should('be.enabled');
             cy.get(selectors.buttons.save).should('be.enabled').click();
         });
+
+        it('should create a new Teams integration', () => {
+            cy.get(selectors.teamsTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/teams/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').click().blur();
+            getInputByLabel('Default Teams webhook').click().blur();
+
+            getHelperElementByLabel('Integration name').contains('Integration name is required');
+            getHelperElementByLabel('Default Teams webhook').contains('Webhook is required');
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            getInputByLabel('Integration name')
+                .clear()
+                .type(`Nova Teams ${new Date().toISOString()}`);
+            getInputByLabel('Default Teams webhook')
+                .clear()
+                .type('https://outlook.office365.com/webhook')
+                .blur();
+
+            getHelperElementByLabel('Default Teams webhook').contains(
+                'Must be a valid Teams webhook URL, like https://outlook.office365.com/webhook/EXAMPLE'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 3, check valid form and save
+            getInputByLabel('Default Teams webhook')
+                .clear()
+                .type('https://outlook.office365.com/webhook/nova')
+                .blur();
+            getInputByLabel('Annotation key for Teams webhook').clear().type('teams');
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
     });
 
     // @DEPRECATED: change this test after migrating forms to PatternFly

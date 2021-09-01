@@ -16,35 +16,38 @@ import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 export type TeamsIntegration = {
     id?: string;
     name: string;
-    categories: string[];
     labelDefault: string;
     labelKey: string;
     uiEndpoint: string;
     type: 'teams';
     enabled: boolean;
-    clusterIds: string[];
 };
 
+const validTeamsWebhookRegex = /^((https?):\/\/)?(outlook.office365.com\/webhook\/)([a-zA-Z0-9-]+)$/;
+
 export const validationSchema = yup.object().shape({
-    name: yup.string().required('Required'),
-    categories: yup.array().of(yup.string()),
-    labelDefault: yup.string().required('Required'),
-    labelKey: yup.string().required('Required'),
+    name: yup.string().trim().required('Integration name is required'),
+    labelDefault: yup
+        .string()
+        .trim()
+        .required('Webhook is required')
+        .matches(
+            validTeamsWebhookRegex,
+            'Must be a valid Teams webhook URL, like https://outlook.office365.com/webhook/EXAMPLE'
+        ),
+    labelKey: yup.string().trim(),
     uiEndpoint: yup.string(),
     type: yup.string().matches(/teams/),
     enabled: yup.bool(),
-    clusterIds: yup.array().of(yup.string()),
 });
 
 export const defaultValues: TeamsIntegration = {
     name: '',
-    categories: [],
     labelDefault: '',
     labelKey: '',
     uiEndpoint: window.location.origin,
     type: 'teams',
     enabled: true,
-    clusterIds: [],
 };
 
 function TeamsIntegrationForm({
@@ -56,8 +59,12 @@ function TeamsIntegrationForm({
         : defaultValues;
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -78,37 +85,44 @@ function TeamsIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="name" errors={errors}>
-                        <TextInput
-                            isRequired
-                            type="text"
-                            id="name"
-                            name="name"
-                            value={values.name}
-                            placeholder="(ex. Teams Integration)"
-                            onChange={onChange}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
                     <FormLabelGroup
-                        label="Default Teams Webhook"
+                        label="Integration name"
                         isRequired
-                        fieldId="labelDefault"
+                        fieldId="name"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="labelDefault"
-                            name="labelDefault"
-                            value={values.labelDefault}
-                            placeholder="(ex. https://outlook.office365.com/webhook/EXAMPLE)"
+                            id="name"
+                            value={values.name}
+                            placeholder="(example, Teams Integration)"
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Annotation key for recipient"
+                        label="Default Teams webhook"
+                        isRequired
+                        fieldId="labelDefault"
+                        touched={touched}
+                        errors={errors}
+                        helperText="For example, https://outlook.office365.com/webhook/EXAMPLE"
+                    >
+                        <TextInput
+                            isRequired
+                            type="text"
+                            id="labelDefault"
+                            value={values.labelDefault}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Annotation key for Teams webhook"
                         labelIcon={<AnnotationKeyLabelIcon />}
                         fieldId="labelKey"
                         errors={errors}
@@ -129,6 +143,7 @@ function TeamsIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -136,6 +151,7 @@ function TeamsIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>
