@@ -12,8 +12,7 @@ var (
 )
 
 type storeImpl struct {
-	lock  sync.RWMutex
-	dirty bool
+	lock sync.RWMutex
 
 	roles              map[namespacedRoleRef]*storage.K8SRole
 	bindingsByID       map[string]*storage.K8SRoleBinding
@@ -21,6 +20,7 @@ type storeImpl struct {
 	roleRefToBindings  map[namespacedRoleRef]map[string]*storage.K8SRoleBinding
 
 	bucketEvaluator *evaluator
+	dirty           bool
 }
 
 func (rs *storeImpl) GetPermissionLevelForDeployment(d NamespacedServiceAccount) storage.PermissionLevel {
