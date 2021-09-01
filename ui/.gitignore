@@ -16,5 +16,10 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log
 
+# test
+
+# certexpiration.test.js
+apps/platform/cypress/downloads/
+
 # misc
 .DS_Store

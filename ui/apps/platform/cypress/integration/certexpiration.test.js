@@ -7,8 +7,9 @@ describe('Cert Expiration Banner', () => {
     withAuth();
 
     const mockCertExpiryAndVisitHomepage = (endpoint, expiry) => {
-        cy.server();
-        cy.route('GET', endpoint, { expiry }).as('certExpiry');
+        cy.intercept('GET', endpoint, {
+            body: { expiry },
+        }).as('certExpiry');
         cy.visit('/');
         cy.wait('@certExpiry');
     };
@@ -21,11 +22,10 @@ describe('Cert Expiration Banner', () => {
             cy.get(selectors.centralCertExpiryBanner).should('not.exist');
         });
 
-        it("should display banner without download button if user doesn't have the required permission", () => {
-            cy.server();
-            cy.route('GET', api.permissions.mypermissions, { globalAccess: 'READ_ACCESS' }).as(
-                'permissions'
-            );
+        it('should display banner without download button if user does not have the required permission', () => {
+            cy.intercept('GET', api.permissions.mypermissions, {
+                body: { globalAccess: 'READ_ACCESS' },
+            }).as('permissions');
             const expiry = dateFns.addMinutes(dateFns.addHours(new Date(), 23), 30);
             mockCertExpiryAndVisitHomepage(api.certExpiry.central, expiry);
             cy.wait('@permissions');
@@ -56,7 +56,7 @@ describe('Cert Expiration Banner', () => {
             const expiry = dateFns.addDays(new Date(), 1);
             mockCertExpiryAndVisitHomepage(api.certExpiry.central, expiry);
 
-            cy.route('POST', api.certGen.central).as('download');
+            cy.intercept('POST', api.certGen.central).as('download');
             const downloadYAMLButton = cy.get(selectors.centralCertExpiryBanner).find('button');
             downloadYAMLButton.click();
             cy.wait('@download');
@@ -71,10 +71,9 @@ describe('Cert Expiration Banner', () => {
         });
 
         it("should display banner without download button if user doesn't have the required permission", () => {
-            cy.server();
-            cy.route('GET', api.permissions.mypermissions, { globalAccess: 'READ_ACCESS' }).as(
-                'permissions'
-            );
+            cy.intercept('GET', api.permissions.mypermissions, {
+                body: { globalAccess: 'READ_ACCESS' },
+            }).as('permissions');
             const expiry = dateFns.addMinutes(dateFns.addHours(new Date(), 23), 30);
             mockCertExpiryAndVisitHomepage(api.certExpiry.scanner, expiry);
             cy.wait('@permissions');
@@ -105,7 +104,7 @@ describe('Cert Expiration Banner', () => {
             const expiry = dateFns.addDays(new Date(), 1);
             mockCertExpiryAndVisitHomepage(api.certExpiry.scanner, expiry);
 
-            cy.route('POST', api.certGen.scanner).as('download');
+            cy.intercept('POST', api.certGen.scanner).as('download');
             const downloadYAMLButton = cy.get(selectors.scannerCertExpiryBanner).find('button');
             downloadYAMLButton.click();
             cy.wait('@download');
