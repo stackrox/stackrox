@@ -1,7 +1,17 @@
 package orchestratormanager
 
-import common.YamlGenerator
+import static io.fabric8.kubernetes.client.utils.InputStreamPumper.pump
+
+import java.nio.file.Paths
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
+
 import io.fabric8.kubernetes.api.model.Capabilities
+import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
 import io.fabric8.kubernetes.api.model.ConfigMapEnvSource
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource
@@ -17,8 +27,9 @@ import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
 import io.fabric8.kubernetes.api.model.LocalObjectReference
 import io.fabric8.kubernetes.api.model.Namespace
-import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.kubernetes.api.model.NamespaceBuilder
 import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder
+import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
@@ -26,6 +37,7 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ResourceRequirements
+import io.fabric8.kubernetes.api.model.Secret as K8sSecret
 import io.fabric8.kubernetes.api.model.SecretEnvSource
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder
 import io.fabric8.kubernetes.api.model.SecretVolumeSource
@@ -36,30 +48,25 @@ import io.fabric8.kubernetes.api.model.ServicePort
 import io.fabric8.kubernetes.api.model.ServiceSpec
 import io.fabric8.kubernetes.api.model.Volume
 import io.fabric8.kubernetes.api.model.VolumeMount
-import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
-import io.fabric8.kubernetes.api.model.batch.Job as K8sJob
-import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
-import io.fabric8.kubernetes.api.model.Secret as K8sSecret
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
+import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
-import io.fabric8.kubernetes.api.model.apps.DoneableDaemonSet
-import io.fabric8.kubernetes.api.model.apps.DoneableDeployment
-import io.fabric8.kubernetes.api.model.batch.DoneableJob
-import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet
-import io.fabric8.kubernetes.api.model.apps.StatefulSetList
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
-import io.fabric8.kubernetes.api.model.batch.JobList
-import io.fabric8.kubernetes.api.model.batch.JobSpec
-import io.fabric8.kubernetes.api.model.policy.HostPortRange
-import io.fabric8.kubernetes.api.model.policy.PodSecurityPolicy
-import io.fabric8.kubernetes.api.model.policy.PodSecurityPolicyBuilder
+import io.fabric8.kubernetes.api.model.apps.StatefulSetList
+import io.fabric8.kubernetes.api.model.batch.v1.Job as K8sJob
+import io.fabric8.kubernetes.api.model.batch.v1.JobList
+import io.fabric8.kubernetes.api.model.batch.v1.JobSpec
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyEgressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder
+import io.fabric8.kubernetes.api.model.policy.v1beta1.HostPortRange
+import io.fabric8.kubernetes.api.model.policy.v1beta1.PodSecurityPolicy
+import io.fabric8.kubernetes.api.model.policy.v1beta1.PodSecurityPolicyBuilder
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule
@@ -67,7 +74,6 @@ import io.fabric8.kubernetes.api.model.rbac.Role
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding
 import io.fabric8.kubernetes.api.model.rbac.RoleRef
 import io.fabric8.kubernetes.api.model.rbac.Subject
-import io.fabric8.kubernetes.client.Callback
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientException
@@ -76,9 +82,13 @@ import io.fabric8.kubernetes.client.dsl.ExecListener
 import io.fabric8.kubernetes.client.dsl.ExecWatch
 import io.fabric8.kubernetes.client.dsl.MixedOperation
 import io.fabric8.kubernetes.client.dsl.Resource
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
-import io.fabric8.kubernetes.client.utils.BlockingInputStreamPumper
+import io.fabric8.kubernetes.client.utils.InputStreamPumper
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
+import okhttp3.Response
+
+import common.YamlGenerator
 import objects.ConfigMap
 import objects.ConfigMapKeyRef
 import objects.DaemonSet
@@ -94,16 +104,7 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
-import okhttp3.Response
 import util.Timer
-
-import java.nio.file.Paths
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
 
 class Kubernetes implements OrchestratorMain {
 
@@ -114,16 +115,16 @@ class Kubernetes implements OrchestratorMain {
     String namespace
     KubernetesClient client
 
-    MixedOperation<K8sDaemonSet, DaemonSetList, DoneableDaemonSet, Resource<K8sDaemonSet, DoneableDaemonSet>> daemonsets
+    MixedOperation<K8sDaemonSet, DaemonSetList, Resource<K8sDaemonSet>> daemonsets
 
-    MixedOperation<K8sDeployment, DeploymentList, DoneableDeployment,
-            ScalableResource<K8sDeployment, DoneableDeployment>> deployments
+    MixedOperation<K8sDeployment, DeploymentList,
+            RollableScalableResource<K8sDeployment>> deployments
 
-    MixedOperation<K8sStatefulSet, StatefulSetList, DoneableStatefulSet,
-            ScalableResource<K8sStatefulSet, DoneableStatefulSet>> statefulsets
+    MixedOperation<K8sStatefulSet, StatefulSetList,
+            RollableScalableResource<K8sStatefulSet>> statefulsets
 
-    MixedOperation<K8sJob, JobList, DoneableJob,
-            ScalableResource<K8sJob, DoneableJob>> jobs
+    MixedOperation<K8sJob, JobList,
+            ScalableResource<K8sJob>> jobs
 
     Kubernetes(String ns) {
         this.namespace = ns
@@ -135,7 +136,7 @@ class Kubernetes implements OrchestratorMain {
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
         this.statefulsets = this.client.apps().statefulSets()
-        this.jobs = this.client.batch().jobs()
+        this.jobs = this.client.batch().v1().jobs()
     }
 
     Kubernetes() {
@@ -229,8 +230,8 @@ class Kubernetes implements OrchestratorMain {
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             def list = client.pods().inNamespace(ns).withLabelSelector(selector).list()
-            def numReady = list.items.sum {
-                it.status.containerStatuses.every { it.ready } ? 1 : 0
+            def numReady = list.items.sum { Pod p ->
+                p.status.containerStatuses.every { it.ready } ? 1 : 0
             }
             if (numReady >= minReady) {
                 return true
@@ -268,7 +269,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     Boolean deletePod(String ns, String podName, Long gracePeriodSecs) {
-        Deletable<Boolean> podClient = client.pods().inNamespace(ns).withName(podName)
+        Deletable podClient = client.pods().inNamespace(ns).withName(podName)
         if (gracePeriodSecs != null) {
             podClient = podClient.withGracePeriod(gracePeriodSecs)
         }
@@ -496,7 +497,7 @@ class Kubernetes implements OrchestratorMain {
             throw new KubernetesClientException(
                     "Error creating port-forward: Could not get pod details from deployment.")
         }
-        if (deployment.pods.size() > 1 && podName.equals("")) {
+        if (deployment.pods.size() > 1 && podName == "") {
             throw new KubernetesClientException(
                     "Error creating port-forward: Deployment contains more than 1 pod, but no pod was specified.")
         }
@@ -519,7 +520,7 @@ class Kubernetes implements OrchestratorMain {
 
         List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
                 .spec.containers.get(0).env
-        int index = envVars.findIndexOf { it.name == key }
+        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
         if (index < 0) {
             throw new OrchestratorManagerException("Did not find env variable ${key} in ${ns}/${name}")
         }
@@ -531,7 +532,7 @@ class Kubernetes implements OrchestratorMain {
         List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
                 .spec.containers.get(0).env
 
-        int index = envVars.findIndexOf { it.name == key }
+        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
         if (index < 0) {
             throw new OrchestratorManagerException(
                     "Could not update env var, did not find env variable ${key} in ${ns}/${name}")
@@ -539,7 +540,7 @@ class Kubernetes implements OrchestratorMain {
         envVars.get(index).value = value
 
         client.apps().deployments().inNamespace(ns).withName(name)
-                .edit()
+            .edit { d -> new DeploymentBuilder(d)
                 .editSpec()
                 .editTemplate()
                 .editSpec()
@@ -549,7 +550,7 @@ class Kubernetes implements OrchestratorMain {
                 .endSpec()
                 .endTemplate()
                 .endSpec()
-                .done()
+            .build() }
     }
 
     def scaleDeployment(String ns, String name, Integer replicas) {
@@ -734,7 +735,7 @@ class Kubernetes implements OrchestratorMain {
                     return true
                 }
             } catch (Exception e) {
-                println "wasContainerKilled: error fetching pod details - retrying"
+                println "wasContainerKilled: error fetching pod details ${e} - retrying"
             }
         }
         println "wasContainerKilled: did not determine container was killed before 60s timeout"
@@ -876,7 +877,7 @@ class Kubernetes implements OrchestratorMain {
     def waitForServiceDeletion(objects.Service service) {
         boolean beenDeleted = false
 
-        int retries = maxWaitTimeSeconds / sleepDurationSeconds
+        int retries = (maxWaitTimeSeconds / sleepDurationSeconds).intValue()
         Timer t = new Timer(retries, sleepDurationSeconds)
         while (!beenDeleted && t.IsValid()) {
             Service s = client.services().inNamespace(service.namespace).withName(service.name).get()
@@ -923,7 +924,7 @@ class Kubernetes implements OrchestratorMain {
     String waitForLoadBalancer(String serviceName, String namespace) {
         Service service
         String loadBalancerIP
-        int iterations = lbWaitTimeSeconds / intervalTime
+        int iterations = (lbWaitTimeSeconds / intervalTime).intValue()
         println "Waiting for LB external IP for " + serviceName
         Timer t = new Timer(iterations, intervalTime)
         while (t.IsValid()) {
@@ -960,8 +961,8 @@ class Kubernetes implements OrchestratorMain {
     /*
         Secrets Methods
     */
-    def waitForSecretCreation(String secretName, String namespace = this.namespace) {
-        int retries = maxWaitTimeSeconds / sleepDurationSeconds
+    K8sSecret waitForSecretCreation(String secretName, String namespace = this.namespace) {
+        int retries = (maxWaitTimeSeconds / sleepDurationSeconds).intValue()
         Timer t = new Timer(retries, sleepDurationSeconds)
         while (t.IsValid()) {
             K8sSecret secret = client.secrets().inNamespace(namespace).withName(secretName).get()
@@ -971,6 +972,7 @@ class Kubernetes implements OrchestratorMain {
             }
         }
         println "Timed out waiting for secret ${secretName} to be created"
+        return null
     }
 
     String createImagePullSecret(String name, String username, String password,
@@ -1056,8 +1058,8 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    String updateSecret(K8sSecret secret) {
-        return withRetry(2, 3) {
+    def updateSecret(K8sSecret secret) {
+        withRetry(2, 3) {
             client.secrets().inNamespace(secret.metadata.namespace).createOrReplace(secret)
         }
     }
@@ -1178,7 +1180,7 @@ class Kubernetes implements OrchestratorMain {
         return evaluateWithRetry(2, 3) {
             List<Node> gkeNodes = client.nodes().list().getItems().findAll {
                 it.getStatus().getNodeInfo().getKubeletVersion().contains("gke")
-            }
+            } as List<Node>
             return gkeNodes.size() > 0
         }
     }
@@ -1207,11 +1209,15 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def addNamespaceAnnotation(String ns, String key, String value) {
-        client.namespaces().withName(ns).edit().editMetadata().addToAnnotations(key, value).endMetadata().done()
+        client.namespaces().withName(ns).edit {
+            n -> new NamespaceBuilder(n).editMetadata().addToAnnotations(key, value).endMetadata().build()
+        }
     }
 
     def removeNamespaceAnnotation(String ns, String key) {
-        client.namespaces().withName(ns).edit().editMetadata().removeFromAnnotations(key).endMetadata().done()
+        client.namespaces().withName(ns).edit {
+            n -> new NamespaceBuilder(n).editMetadata().removeFromAnnotations(key).endMetadata().build()
+        }
     }
 
     /*
@@ -1253,7 +1259,7 @@ class Kubernetes implements OrchestratorMain {
                     ),
                     secrets: serviceAccount.secrets,
                     imagePullSecrets: serviceAccount.imagePullSecrets.collect {
-                        name -> new LocalObjectReference(name) }
+                        String name -> new LocalObjectReference(name) }
             )
             client.serviceAccounts().inNamespace(sa.metadata.namespace).createOrReplace(sa)
         }
@@ -1381,13 +1387,13 @@ class Kubernetes implements OrchestratorMain {
                             labels: role.labels,
                             annotations: role.annotations
                     ),
-                    rules: role.rules.collect {
+                    rules: role.rules.collect { K8sPolicyRule r ->
                         new PolicyRule(
-                                verbs: it.verbs,
-                                apiGroups: it.apiGroups,
-                                resources: it.resources,
-                                nonResourceURLs: it.nonResourceUrls,
-                                resourceNames: it.resourceNames
+                                verbs: r.verbs,
+                                apiGroups: r.apiGroups,
+                                resources: r.resources,
+                                nonResourceURLs: r.nonResourceUrls,
+                                resourceNames: r.resourceNames
                         )
                     }
             )
@@ -1470,7 +1476,7 @@ class Kubernetes implements OrchestratorMain {
     List<K8sRole> getClusterRoles() {
         return evaluateWithRetry(2, 3) {
             def clusterRoles = []
-            client.rbac().clusterRoles().inAnyNamespace().list().items.each {
+            client.rbac().clusterRoles().list().items.each {
                 clusterRoles.add(new K8sRole(
                         name: it.metadata.name,
                         namespace: "",
@@ -1527,7 +1533,7 @@ class Kubernetes implements OrchestratorMain {
     List<K8sRoleBinding> getClusterRoleBindings() {
         return evaluateWithRetry(2, 3) {
             def clusterBindings = []
-            client.rbac().clusterRoleBindings().inAnyNamespace().list().items.each {
+            client.rbac().clusterRoleBindings().list().items.each {
                 def b = new K8sRoleBinding(
                         new K8sRole(
                                 name: it.metadata.name,
@@ -1629,7 +1635,7 @@ class Kubernetes implements OrchestratorMain {
                 .withNewFsGroup().withRule("RunAsAny").endFsGroup()
                 .endSpec()
                 .build()
-        client.policy().podSecurityPolicies().createOrReplace(psp)
+        client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
         createClusterRole(generatePspRole())
         createClusterRoleBinding(generatePspRoleBinding(namespace))
     }
@@ -1640,7 +1646,7 @@ class Kubernetes implements OrchestratorMain {
 
     def getJobCount(String ns = null) {
         return evaluateWithRetry(2, 3) {
-            return client.batch().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+            return client.batch().v1().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
         }
     }
 
@@ -1729,13 +1735,12 @@ class Kubernetes implements OrchestratorMain {
                     latch.countDown()
                 }
             }).exec(cmd.split(" "))
-            BlockingInputStreamPumper pump = new BlockingInputStreamPumper(watch.getOutput(), new SystemOutCallback())
-            Future<String> outPumpFuture = executorService.submit(pump, "Done")
-            executorService.scheduleAtFixedRate(new FutureChecker("Exec", cmd, outPumpFuture), 0, 2, TimeUnit.SECONDS)
+            Future<?> outPumpFuture = pump(watch.getOutput(), new SystemOutCallback(), executorService)
+            executorService.scheduleAtFixedRate(
+                    new FutureChecker("Exec", cmd, outPumpFuture), 0, 2, TimeUnit.SECONDS)
 
             latch.await(30, TimeUnit.SECONDS)
             watch.close()
-            pump.close()
         } catch (Exception e) {
             println "Error exec'ing in pod: ${e}"
             return false
@@ -2238,19 +2243,19 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
-    private static class SystemOutCallback implements Callback<byte[]> {
+    private static class SystemOutCallback implements InputStreamPumper.Writable {
         @Override
-        void call(byte[] data) {
-            System.out.print(new String(data))
+        void write(byte[] b, int off, int len) throws IOException {
+            System.out.print(new String(b))
         }
     }
 
     private static class FutureChecker implements Runnable {
         private final String name
         private final String cmd
-        private final Future<String> future
+        private final Future<?> future
 
-        private FutureChecker(String name, String cmd, Future<String> future) {
+        private FutureChecker(String name, String cmd, Future<?> future) {
             this.name = name
             this.cmd = cmd
             this.future = future

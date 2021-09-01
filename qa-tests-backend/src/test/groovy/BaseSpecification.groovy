@@ -111,9 +111,6 @@ class BaseSpecification extends Specification {
                     "Set CLUSTER=K8S when testing non OpenShift"
         }
 
-        // ROX-6260: pre scan the image to avoid different risk scores
-        Services.scanImage(TEST_IMAGE)
-
         withRetry(30, 1) {
             def allResources = RoleService.getResources()
             Map<String, RoleOuterClass.Access> resourceAccess = [:]

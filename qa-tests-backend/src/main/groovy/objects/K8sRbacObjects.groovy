@@ -1,12 +1,12 @@
 package objects
 
 class K8sRole {
-    def name
-    def namespace = ""
+    String name
+    String namespace = ""
     def clusterRole = false
     Map<String, String> labels = [:]
     Map<String, String> annotations = [:]
-    def rules = []
+    List<K8sPolicyRule> rules = []
     def uid
 }
 
@@ -19,8 +19,8 @@ class K8sPolicyRule {
 }
 
 class K8sRoleBinding  {
-    def name
-    def namespace
+    String name
+    String namespace
     Map<String, String> labels = [:]
     Map<String, String> annotations = [:]
     List<K8sSubject> subjects = []

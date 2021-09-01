@@ -19,6 +19,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.17.3'
 def protobufVersion = '3.17.3'
 def nettyTcNativeVersion = '2.0.25.Final'
+def fabric8Version = '5.6.0'
 
 protobuf {
     protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
@@ -75,8 +76,8 @@ dependencies {
     implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: "${protobufVersion}"
 
     // Use the Kubernetes API
-    implementation 'io.fabric8:kubernetes-client:4.13.0'
-    implementation 'io.fabric8:openshift-client:4.13.0'
+    implementation "io.fabric8:kubernetes-client:${fabric8Version}"
+    implementation "io.fabric8:openshift-client:${fabric8Version}"
 
     implementation 'io.kubernetes:client-java:2.0.0-beta1'
 

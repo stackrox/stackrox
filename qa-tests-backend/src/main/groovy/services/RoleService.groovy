@@ -32,7 +32,7 @@ class RoleService extends BaseService {
         if (role.permissionSetId == "" &&
                 FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
             def permissionSet = createPermissionSet(
-                    "Test Automation Permission Set for ${role.name}", role.resourceToAccess)
+                    "Test Automation Permission Set ${UUID.randomUUID()} for ${role.name}", role.resourceToAccess)
             r = Role.newBuilder(role)
                     .clearResourceToAccess()
                     .setPermissionSetId(permissionSet.id).build()

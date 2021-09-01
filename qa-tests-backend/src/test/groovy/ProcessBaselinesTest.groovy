@@ -325,8 +325,8 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         // Add the process to the baseline
         ProcessBaselineOuterClass.ProcessBaselineKey [] keys = [
-                new ProcessBaselineOuterClass
-                .ProcessBaselineKey().newBuilderForType().setContainerName(containerName)
+                ProcessBaselineOuterClass.ProcessBaselineKey
+                .newBuilder().setContainerName(containerName)
                 .setDeploymentId(deploymentId).setClusterId(clusterId).setNamespace(namespace).build(),
         ]
         String [] toBeAddedProcesses = ["/bin/pwd"]

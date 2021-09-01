@@ -25,8 +25,8 @@ class Helpers {
         return closure()
     }
 
-    static void withRetry(Object ignored, int retries, int pauseSecs, Closure<?> closure) {
-        evaluateWithRetry(retries, pauseSecs, closure)
+    static <V> void withRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithRetry(ignored, retries, pauseSecs, closure)
     }
 
     static boolean determineRetry(Throwable failure) {

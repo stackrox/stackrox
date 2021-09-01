@@ -50,6 +50,9 @@ class RiskTest extends BaseSpecification {
     def setupSpec() {
         clusterId = ClusterService.getClusterId()
 
+        // ROX-6260: pre scan the image to avoid different risk scores
+        Services.scanImage(TEST_IMAGE)
+
         for (int i = 0; i < 2; i++) {
             DEPLOYMENTS.push(
                     new Deployment()
