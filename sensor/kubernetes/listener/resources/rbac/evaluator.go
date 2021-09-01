@@ -32,27 +32,22 @@ func (e *evaluator) GetPermissionLevelForSubject(subject *storage.Subject) stora
 	return level
 }
 
-func newBucketEvaluator(roles map[namespacedRoleRef]*storage.K8SRole, bindings map[string]*storage.K8SRoleBinding) *evaluator {
-	return evaluateRules(groupRulesBySubject(bindings, extractRulesByRoleID(roles)))
+func newBucketEvaluator(roles map[namespacedRoleRef]*namespacedRole, bindings map[namespacedBindingID]*namespacedBinding) *evaluator {
+	return evaluateRules(groupRulesBySubject(roles, bindings))
 }
 
-func extractRulesByRoleID(roles map[namespacedRoleRef]*storage.K8SRole) map[string][]*storage.PolicyRule {
-	rulesForRoleID := make(map[string][]*storage.PolicyRule, len(roles))
-	for _, r := range roles {
-		rulesForRoleID[r.GetId()] = r.GetRules()
-	}
-	return rulesForRoleID
-}
-
-func groupRulesBySubject(bindings map[string]*storage.K8SRoleBinding, rulesForRoleID map[string][]*storage.PolicyRule) (namespaceSubjectToRules, clusterSubjectToRules map[namespacedSubject]k8srbac.PolicyRuleSet) {
+func groupRulesBySubject(roles map[namespacedRoleRef]*namespacedRole, bindings map[namespacedBindingID]*namespacedBinding) (namespaceSubjectToRules, clusterSubjectToRules map[namespacedSubject]k8srbac.PolicyRuleSet) {
 	namespaceSubjectToRules = make(map[namespacedSubject]k8srbac.PolicyRuleSet, len(bindings))
 	clusterSubjectToRules = make(map[namespacedSubject]k8srbac.PolicyRuleSet, len(bindings))
-	for _, b := range bindings {
-		rules := rulesForRoleID[b.GetRoleId()]
-		for _, s := range b.GetSubjects() {
-			subject := nsSubjectFromSubject(s)
+	for bID, b := range bindings {
+		role, ok := roles[b.roleRef]
+		if !ok {
+			continue // This roleRef is dangling, no rules for us to use.
+		}
+
+		for _, subject := range b.subjects {
 			subjectToRules := namespaceSubjectToRules
-			if b.GetClusterRole() {
+			if bID.IsClusterBinding() {
 				subjectToRules = clusterSubjectToRules
 			}
 			ruleSet, ok := subjectToRules[subject]
@@ -60,9 +55,7 @@ func groupRulesBySubject(bindings map[string]*storage.K8SRoleBinding, rulesForRo
 				ruleSet = k8srbac.NewPolicyRuleSet(k8srbac.CoreFields()...)
 				subjectToRules[subject] = ruleSet
 			}
-			for _, r := range rules {
-				ruleSet.Add(r)
-			}
+			ruleSet.Add(role.rules...)
 		}
 	}
 	return namespaceSubjectToRules, clusterSubjectToRules

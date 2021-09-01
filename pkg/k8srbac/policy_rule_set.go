@@ -7,6 +7,8 @@ import (
 
 // PolicyRuleSet represents a combined set of PolicyRules.
 type PolicyRuleSet interface {
+	// Add method *takes ownership* of the storage.PolicyRule! It sometimes "merges" on top of the
+	// provided pointer. If you don't want a modification to happen, be sure to Clone before call.
 	Add(prs ...*storage.PolicyRule)
 	Grants(prs ...*storage.PolicyRule) bool
 	GetPermissionMap() map[string]set.StringSet
@@ -28,10 +30,13 @@ type policyRuleSet struct {
 	granted []*storage.PolicyRule
 }
 
-// AddAll adds all of the inputs to the set.
+// Add adds all the policy rules to the set.
 func (p *policyRuleSet) Add(prs ...*storage.PolicyRule) {
 	for _, pr := range prs {
-		p.add(pr)
+		// policyRuleSet can *take ownership of and later modify* its
+		// parameter on subsequent calls. It is better to play it safe and Clone the rules
+		// before adding.
+		p.add(pr.Clone())
 	}
 }
 

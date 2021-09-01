@@ -30,11 +30,8 @@ type Store interface {
 // NewStore creates a new instance of Store
 func NewStore() Store {
 	return &storeImpl{
-		roles: make(map[namespacedRoleRef]*storage.K8SRole),
-
-		bindingsByID:       make(map[string]*storage.K8SRoleBinding),
-		bindingIDToRoleRef: make(map[string]namespacedRoleRef),
-		roleRefToBindings:  make(map[namespacedRoleRef]map[string]*storage.K8SRoleBinding),
+		roles:    make(map[namespacedRoleRef]*namespacedRole),
+		bindings: make(map[namespacedBindingID]*namespacedBinding),
 
 		// Incredibly unlikely that there are no roles and no bindings, but for safety initialize empty buckets
 		bucketEvaluator: newBucketEvaluator(nil, nil),
