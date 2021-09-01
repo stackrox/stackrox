@@ -62,6 +62,7 @@ class TLSChallengeTest extends BaseSpecification {
         ah.waitForSensorHealthiness()
         if (ClusterService.isOpenShift3()) {
             // OpenShift 3.11 networking needs a kick to ensure sensor is reachable (ROX-7869)
+            sleep(5000)
             orchestrator.addOrUpdateServiceLabel("sensor", "stackrox", "kick",
                     System.currentTimeSeconds().toString())
         }
