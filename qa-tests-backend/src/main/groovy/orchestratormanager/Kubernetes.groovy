@@ -44,6 +44,7 @@ import io.fabric8.kubernetes.api.model.SecretVolumeSource
 import io.fabric8.kubernetes.api.model.SecurityContext
 import io.fabric8.kubernetes.api.model.Service
 import io.fabric8.kubernetes.api.model.ServiceAccount
+import io.fabric8.kubernetes.api.model.ServiceBuilder
 import io.fabric8.kubernetes.api.model.ServicePort
 import io.fabric8.kubernetes.api.model.ServiceSpec
 import io.fabric8.kubernetes.api.model.Volume
@@ -900,11 +901,10 @@ class Kubernetes implements OrchestratorMain {
         Map<String, String> label = [:]
         label.put(name, value)
         evaluateWithRetry(2, 3) {
-            client.services().inNamespace(ns).withName(serviceName).edit()
-                    .editMetadata()
-                    .addToLabels(label)
-                    .endMetadata()
-                    .done()
+            client.services().inNamespace(ns).withName(serviceName).edit {
+                s ->
+                    new ServiceBuilder(s).editMetadata().addToLabels(label).endMetadata().build()
+            }
         }
     }
 

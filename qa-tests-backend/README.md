@@ -80,3 +80,17 @@ New tests are added with a `@Category` annotation to indicate which to which
 group the test belongs. The default test group that runs in CI is the `BAT`
 group.
 
+# Running Bits of Groovy
+
+Developing groovy code in a test specification context has a lot of 
+overhead and can often be a pain. Sometimes you may want to run a bit 
+of kubernetes code for example. One way to do that is to use a 
+standalone gradle task.
+
+See for example: 
+[build.gradle](https://github.com/stackrox/rox/blob/2995f06927248966665a546881db2e4d233bf487/qa-tests-backend/build.gradle#L145)
+the task `checkSensorCollectorHealth` corresponds to [checkSensorCollectorHealth.groovy](https://github.com/stackrox/rox/blob/2995f06927248966665a546881db2e4d233bf487/qa-tests-backend/src/main/groovy/checkSensorCollectorHealth.groovy). This can be executed with: 
+```
+./gradlew checkSensorCollectorHealth
+```
+
