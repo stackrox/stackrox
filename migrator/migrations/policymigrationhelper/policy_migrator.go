@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
@@ -126,7 +127,37 @@ var (
 	policyBucketName = []byte("policies")
 )
 
-func readPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
+// ReadPolicyFromDir reads policies from file given the path and the dir.
+func ReadPolicyFromDir(fs embed.FS, dir string) ([]*storage.Policy, error) {
+	files, err := fs.ReadDir(dir)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read default system policies JSON")
+	}
+
+	var multiErr *multierror.Error
+	var policies []*storage.Policy
+	for _, f := range files {
+		p, err := ReadPolicyFromFile(fs, filepath.Join(dir, f.Name()))
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+			continue
+		}
+
+		if p.GetId() == "" {
+			multiErr = multierror.Append(multiErr, errors.Errorf("policy %s does not have an ID defined", p.GetName()))
+			continue
+		}
+		policies = append(policies, p)
+	}
+	if multiErr != nil {
+		return nil, multiErr
+	}
+
+	return policies, nil
+}
+
+// ReadPolicyFromFile reads policies from file given the path and the collection of files.
+func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 	contents, err := fs.ReadFile(filePath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to read file %s", filePath)
@@ -191,11 +222,11 @@ func MigratePoliciesWithDiffs(db *bolt.DB, policyDiffFS embed.FS, policyDiffs []
 	policiesToMigrate := make(map[string]PolicyChanges, len(policyDiffs))
 	preMigrationPolicies := make(map[string]*storage.Policy, len(policyDiffs))
 	for _, diff := range policyDiffs {
-		beforePolicy, err := readPolicyFromFile(policyDiffFS, filepath.Join(beforeDirName, diff.PolicyFileName))
+		beforePolicy, err := ReadPolicyFromFile(policyDiffFS, filepath.Join(beforeDirName, diff.PolicyFileName))
 		if err != nil {
 			return err
 		}
-		afterPolicy, err := readPolicyFromFile(policyDiffFS, filepath.Join(afterDirName, diff.PolicyFileName))
+		afterPolicy, err := ReadPolicyFromFile(policyDiffFS, filepath.Join(afterDirName, diff.PolicyFileName))
 		if err != nil {
 			return err
 		}
@@ -219,7 +250,7 @@ func MigratePoliciesWithPreMigrationFS(db *bolt.DB, policiesToMigrate map[string
 	comparisonPolicies := make(map[string]*storage.Policy)
 	for policyID := range policiesToMigrate {
 		path := filepath.Join(preMigDirName, fmt.Sprintf("%s.json", policyID))
-		policy, err := readPolicyFromFile(preMigFS, path)
+		policy, err := ReadPolicyFromFile(preMigFS, path)
 		if err != nil {
 			return err
 		}

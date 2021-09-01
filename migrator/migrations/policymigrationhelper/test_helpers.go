@@ -86,13 +86,13 @@ func (suite *DiffTestSuite) SetupSuite() {
 	suite.beforePolicies = make(map[string]*storage.Policy)
 	suite.afterPolicies = make(map[string]*storage.Policy)
 	for _, f := range beforePolicyFiles {
-		policy, err := readPolicyFromFile(suite.PolicyDiffFS, filepath.Join(beforeDirName, f.Name()))
+		policy, err := ReadPolicyFromFile(suite.PolicyDiffFS, filepath.Join(beforeDirName, f.Name()))
 		suite.Require().NoError(err)
 		suite.Require().NotEmpty(policy.GetId())
 		suite.beforePolicies[policy.GetId()] = policy
 	}
 	for _, f := range afterPolicyFiles {
-		policy, err := readPolicyFromFile(suite.PolicyDiffFS, filepath.Join(afterDirName, f.Name()))
+		policy, err := ReadPolicyFromFile(suite.PolicyDiffFS, filepath.Join(afterDirName, f.Name()))
 		suite.Require().NoError(err)
 		suite.Require().NotEmpty(policy.GetId())
 		suite.afterPolicies[policy.GetId()] = policy

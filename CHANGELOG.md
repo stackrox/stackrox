@@ -5,7 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
-- Default system policy `DockerHub NGINX 1.10` has been deprecated.
+- Default system policies `DockerHub NGINX 1.10`, `Shellshock: Multiple CVEs`, and `Heartbleed: CVE-2014-0160` have been deprecated.
 - Default system policy deletion is prohibited.
 - `Analyst` permission set and corresponding role will no longer have `DebugLogs` permission. The only default role with this permission will be `Admin` role.
 
