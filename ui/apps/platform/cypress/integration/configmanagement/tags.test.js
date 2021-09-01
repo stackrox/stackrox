@@ -10,11 +10,10 @@ describe('Config Management Violation Tags', () => {
     withAuth();
 
     it('should add and save tag', () => {
-        cy.server();
-        cy.route('POST', api.graphql(api.configMgmt.graphqlOps.policies)).as('getPolicies');
-        cy.route('POST', api.graphql(api.configMgmt.graphqlOps.getPolicy)).as('getPolicy');
-        cy.route('POST', api.graphql(api.alerts.graphqlOps.getTags)).as('getTags');
-        cy.route('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as(
+        cy.intercept('POST', api.graphql(api.configMgmt.graphqlOps.policies)).as('getPolicies');
+        cy.intercept('POST', api.graphql(api.configMgmt.graphqlOps.getPolicy)).as('getPolicy');
+        cy.intercept('POST', api.graphql(api.alerts.graphqlOps.getTags)).as('getTags');
+        cy.intercept('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as(
             'tagsAutocomplete'
         );
         cy.visit(url.list.policies);

@@ -156,12 +156,9 @@ describe('Config Management Dashboard Page', () => {
     });
 
     it('clicking a specific user in the "Users with most Cluster Admin Roles" widget should take you to a single subject page', () => {
-        cy.server();
-        cy.route(
-            'POST',
-            api.graphql('usersWithClusterAdminRoles'),
-            'fixture:subjects/subjects.json'
-        ).as('subjects');
+        cy.intercept('POST', api.graphql('usersWithClusterAdminRoles'), {
+            fixture: 'subjects/subjects.json',
+        }).as('subjects');
         cy.visit(url.dashboard);
         cy.wait('@subjects');
         cy.get(selectors.getWidget('Users with most Cluster Admin Roles'))
