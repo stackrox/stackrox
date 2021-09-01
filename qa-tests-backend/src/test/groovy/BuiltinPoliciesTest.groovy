@@ -124,7 +124,6 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Curl in Image"                                              | TRIGGER_MOST
         "Emergency Deployment Annotation"                            | TRIGGER_MOST
         "Fixable CVSS >= 6 and Privileged"                           | TRIGGER_MOST
-        // "Heartbleed: CVE-2014-0160" <- Not covered
         "Images with no scans"                                       | TRIGGER_UNSCANNED
         // "Improper Usage of Orchestrator Secrets Volume"          | TRIGGER_MOST  // ROX-5098 does not trigger
         "Insecure specified in CMD"                                  | TRIGGER_MOST

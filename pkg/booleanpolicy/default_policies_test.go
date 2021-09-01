@@ -1040,36 +1040,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Shellshock: Multiple CVEs",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				shellshockDep.GetId(): {
-					{
-						Message: "CVE-2014-6271 (CVSS 6) (severity Unknown) found in component 'shellshock' (version 1.2) in container 'ASFASF'",
-					},
-				},
-				fixtureDep.GetId(): {
-					{
-						Message: "CVE-2014-6271 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4) in container 'supervulnerable'",
-					},
-				},
-			},
-		},
-		{
 			policyName: "Apache Struts: CVE-2017-5638",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				strutsDep.GetId(): {
 					{
 						Message: "CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF'",
-					},
-				},
-			},
-		},
-		{
-			policyName: "Heartbleed: CVE-2014-0160",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				heartbleedDep.GetId(): {
-					{
-						Message: "CVE-2014-0160 (CVSS 6) (severity Unknown) found in component 'heartbleed' (version 1.2) in container 'nginx'",
 					},
 				},
 			},
@@ -1590,36 +1565,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations:        map[string][]*storage.Alert_Violation{},
 		},
 		{
-			policyName: "Shellshock: Multiple CVEs",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(shellshockDep): {
-					{
-						Message: "CVE-2014-6271 (CVSS 6) (severity Unknown) found in component 'shellshock' (version 1.2)",
-					},
-				},
-				fixtureDep.GetContainers()[1].GetImage().GetId(): {
-					{
-						Message: "CVE-2014-6271 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4)",
-					},
-				},
-			},
-		},
-		{
 			policyName: "Apache Struts: CVE-2017-5638",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(strutsDep): {
 					{
 						Message: "CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2)",
-					},
-				},
-			},
-		},
-		{
-			policyName: "Heartbleed: CVE-2014-0160",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(heartbleedDep): {
-					{
-						Message: "CVE-2014-0160 (CVSS 6) (severity Unknown) found in component 'heartbleed' (version 1.2)",
 					},
 				},
 			},
