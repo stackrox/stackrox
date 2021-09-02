@@ -146,12 +146,24 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5
 	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20210706005254-7857f66cf95e
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
+
+	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
+	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
+	// so dependabot is not able to check dependecies.
+	// See https://github.com/go-yaml/yaml/issues/772
+	// Therefore we point all to our fork of `go-yaml` - github.com/stackrox/yaml/v2|v3
+	// where we provide the actual `go.sum`.
+	github.com/mikefarah/yaml/v2 => gopkg.in/yaml.v2 v2.4.0
+
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20200208204620-d153c71f6b8d
+
+	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
+	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 
 	honnef.co/go/tools => honnef.co/go/tools v0.0.1-2020.1.5
 	k8s.io/api => k8s.io/api v0.20.4
