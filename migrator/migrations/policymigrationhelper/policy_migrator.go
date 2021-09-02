@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -40,12 +41,16 @@ type PolicyUpdates struct {
 	ExclusionsToAdd []*storage.Exclusion
 	// ExclusionsToRemove is a list of exclusions to remove from policy
 	ExclusionsToRemove []*storage.Exclusion
+	// Name is the new name for the policy
+	Name *string
 	// Remediation is the new remediation string
 	Remediation *string
 	// Rationale is the new rationale string
 	Rationale *string
 	// Description is the new description string
 	Description *string
+	// Disable is true if the policy should be disabled, false if it should be enabled and nil for no change
+	Disable *bool
 }
 
 func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
@@ -72,7 +77,15 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 		policy.PolicySections = u.PolicySections
 	}
 
+	// Check if policy should be enabled or disabled
+	if u.Disable != nil {
+		policy.Disabled = *u.Disable
+	}
+
 	// Update string fields as needed
+	if u.Name != nil {
+		policy.Name = *u.Name
+	}
 	if u.Rationale != nil {
 		policy.Rationale = *u.Rationale
 	}
@@ -108,19 +121,24 @@ func ExclusionComparator(first, second *storage.Policy) bool {
 	return reflect.DeepEqual(first.GetExclusions(), second.GetExclusions())
 }
 
+// NameComparator compares both policies' names and returns true if they are equal
+func NameComparator(first, second *storage.Policy) bool {
+	return strings.TrimSpace(first.GetName()) == strings.TrimSpace(second.GetName())
+}
+
 // RemediationComparator compares the Remediation section of both policies and returns true if they are equal
 func RemediationComparator(first, second *storage.Policy) bool {
-	return first.GetRemediation() == second.GetRemediation()
+	return strings.TrimSpace(first.GetRemediation()) == strings.TrimSpace(second.GetRemediation())
 }
 
 // RationaleComparator compares the Rationale section of both policies and returns true if they are equal
 func RationaleComparator(first, second *storage.Policy) bool {
-	return first.GetRationale() == second.GetRationale()
+	return strings.TrimSpace(first.GetRationale()) == strings.TrimSpace(second.GetRationale())
 }
 
 // DescriptionComparator compares the Description of both policies and returns true if they are equal
 func DescriptionComparator(first, second *storage.Policy) bool {
-	return first.GetDescription() == second.GetDescription()
+	return strings.TrimSpace(first.GetDescription()) == strings.TrimSpace(second.GetDescription())
 }
 
 var (
@@ -177,6 +195,63 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 
 	var updates PolicyUpdates
 
+	// Diff exclusions and clear out if they are similar
+	getExclusionsUpdates(beforePolicy, afterPolicy, &updates)
+	beforePolicy.Exclusions = nil
+	afterPolicy.Exclusions = nil
+
+	// Policy section
+	if !reflect.DeepEqual(beforePolicy.GetPolicySections(), afterPolicy.GetPolicySections()) {
+		updates.PolicySections = afterPolicy.PolicySections
+	}
+	beforePolicy.PolicySections = nil
+	afterPolicy.PolicySections = nil
+
+	// Name
+	if beforePolicy.GetName() != afterPolicy.GetName() {
+		updates.Name = strPtr(afterPolicy.Name)
+	}
+	beforePolicy.Name = ""
+	afterPolicy.Name = ""
+
+	// Description
+	if beforePolicy.GetDescription() != afterPolicy.GetDescription() {
+		updates.Description = strPtr(afterPolicy.Description)
+	}
+	beforePolicy.Description = ""
+	afterPolicy.Description = ""
+
+	// Rationale
+	if beforePolicy.GetRationale() != afterPolicy.GetRationale() {
+		updates.Rationale = strPtr(afterPolicy.Rationale)
+	}
+	beforePolicy.Rationale = ""
+	afterPolicy.Rationale = ""
+
+	// Remediation
+	if beforePolicy.GetRemediation() != afterPolicy.GetRemediation() {
+		updates.Remediation = strPtr(afterPolicy.Remediation)
+	}
+	beforePolicy.Remediation = ""
+	afterPolicy.Remediation = ""
+
+	// Enable/Disable
+	if beforePolicy.GetDisabled() != afterPolicy.GetDisabled() {
+		updates.Disable = boolPtr(afterPolicy.GetDisabled())
+	}
+	beforePolicy.Disabled = false
+	afterPolicy.Disabled = false
+
+	// TODO: Add others as needed
+
+	if !reflect.DeepEqual(beforePolicy, afterPolicy) {
+		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
+			"to be able to diff more fields")
+	}
+	return updates, nil
+}
+
+func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Policy, updates *PolicyUpdates) {
 	matchedAfterExclusionsIdxs := set.NewIntSet()
 	for _, beforeExclusion := range beforePolicy.GetExclusions() {
 		var found bool
@@ -196,13 +271,6 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 			updates.ExclusionsToAdd = append(updates.ExclusionsToAdd, exclusion)
 		}
 	}
-	beforePolicy.Exclusions = nil
-	afterPolicy.Exclusions = nil
-	if !reflect.DeepEqual(beforePolicy, afterPolicy) {
-		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
-			"to be able to diff more fields")
-	}
-	return updates, nil
 }
 
 const (
@@ -321,4 +389,12 @@ func checkIfPoliciesMatch(fieldsToCompare []FieldComparator, first *storage.Poli
 		}
 	}
 	return true
+}
+
+func strPtr(s string) *string {
+	return &s
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

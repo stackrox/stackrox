@@ -483,6 +483,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.addDepAndImages(dockerSockDep)
 
+	crioSockDep := &storage.Deployment{
+		Id: "CRIOSOCDEP",
+		Containers: []*storage.Container{
+			{
+				Name: "criosock",
+				Volumes: []*storage.Volume{
+					{Source: "/run/crio/crio.sock", Name: "CRIOSOCK", Type: "HostPath", ReadOnly: true},
+					{Source: "NOTCRIORSOCK"},
+				}},
+		},
+	}
+	suite.addDepAndImages(crioSockDep)
+
 	containerPort22Dep := &storage.Deployment{
 		Id: "CONTAINERPORT22DEP",
 		Ports: []*storage.PortConfig{
@@ -834,11 +847,16 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Mount Docker Socket",
+			policyName: "Mount Container Runtime Socket",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				dockerSockDep.GetId(): {
 					{
 						Message: "Read-only volume 'DOCKERSOCK' has source '/var/run/docker.sock' and type 'HostPath'",
+					},
+				},
+				crioSockDep.GetId(): {
+					{
+						Message: "Read-only volume 'CRIOSOCK' has source '/run/crio/crio.sock' and type 'HostPath'",
 					},
 				},
 			},
@@ -979,6 +997,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				"FAKEID":                                          {},
 				containerPort22Dep.GetId():                        {},
 				dockerSockDep.GetId():                             {},
+				crioSockDep.GetId():                               {},
 				secretEnvDep.GetId():                              {},
 				secretEnvSrcUnsetDep.GetId():                      {},
 				secretKeyRefDep.GetId():                           {},
@@ -1317,6 +1336,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				dockerSockDep.GetId(): {
 					{Message: "Read-only volume 'DOCKERSOCK' has source '/var/run/docker.sock' and type 'HostPath'"},
+				},
+				crioSockDep.GetId(): {
+					{Message: "Read-only volume 'CRIOSOCK' has source '/run/crio/crio.sock' and type 'HostPath'"},
 				},
 				hostMountDep.GetId(): {
 					{Message: "Read-only volume 'KUBELET' has source '/var/lib/kubelet' and type 'HostPath'"},

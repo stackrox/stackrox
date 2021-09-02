@@ -15,6 +15,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "trigger-most"
     static final private String TRIGGER_ALPINE = "trigger-alpine"
     static final private String TRIGGER_DOCKER_MOUNT = "trigger-docker-mount"
+    static final private String TRIGGER_CRIO_MOUNT = "trigger-crio-mount"
     static final private String TRIGGER_UNSCANNED = "trigger-unscanned"
     static final private String TEST_PASSWORD = "test-password"
 
@@ -45,6 +46,12 @@ class BuiltinPoliciesTest extends BaseSpecification {
                     .addVolume(new Volume(name: "docker-sock",
                             hostPath: "/var/run/docker.sock",
                             mountPath: "/var/run/docker.sock")),
+            new Deployment()
+                    .setName(TRIGGER_CRIO_MOUNT)
+                    .setImage("nginx:latest")
+                    .addVolume(new Volume(name: "crio-sock",
+                            hostPath: "/run/crio/crio.sock",
+                            mountPath: "/run/crio/crio.sock")),
             new Deployment()
                     .setName(TRIGGER_UNSCANNED)
                     .setImage("non-existent:image"),
@@ -132,7 +139,8 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Linux Group Add Execution"                                  | TRIGGER_MOST
         "Linux User Add Execution"                                   | TRIGGER_MOST
         "Login Binaries"                                             | TRIGGER_MOST
-        "Mount Docker Socket"                                        | TRIGGER_DOCKER_MOUNT
+        "Mount Container Runtime Socket"                             | TRIGGER_DOCKER_MOUNT
+        "Mount Container Runtime Socket"                             | TRIGGER_CRIO_MOUNT
         "Mounting Sensitive Host Directories"                        | TRIGGER_MOST
         "Netcat Execution Detected"                                  | TRIGGER_MOST
         "Network Management Execution"                               | TRIGGER_MOST

@@ -39,4 +39,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_78_to_m_79_exclude_openshift_sdn_host_pids_policy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_79_to_m_80_more_openshift_exclusions"
 	_ "github.com/stackrox/rox/migrator/migrations/m_80_to_m_81_rm_demo_policies"
+	_ "github.com/stackrox/rox/migrator/migrations/m_81_to_m_82_modify_docker_policies"
 )

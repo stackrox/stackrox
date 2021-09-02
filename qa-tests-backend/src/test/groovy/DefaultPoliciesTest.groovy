@@ -60,7 +60,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             "Red Hat Package Manager in Image",
             "Curl in Image",
             "Wget in Image",
-            "Mount Docker Socket",
+            "Mount Container Runtime Socket",
             "Docker CIS 5.15: Ensure that the host's process namespace is not shared",
             "Docker CIS 5.7: Ensure privileged ports are not mapped within containers",
             Constants.ANY_FIXED_VULN_POLICY,
