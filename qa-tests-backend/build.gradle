@@ -19,7 +19,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.17.3'
 def protobufVersion = '3.17.3'
 def nettyTcNativeVersion = '2.0.25.Final'
-def fabric8Version = '5.6.0'
+def fabric8Version = '5.7.0'
 
 protobuf {
     protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
