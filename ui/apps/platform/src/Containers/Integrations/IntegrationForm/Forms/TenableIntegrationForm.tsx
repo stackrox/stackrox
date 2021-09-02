@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Switch, SelectOption } from '@patternfly/react-core';
+import { TextInput, PageSection, Form, Checkbox, SelectOption } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import FormMultiSelect from 'Components/FormMultiSelect';
@@ -35,15 +35,51 @@ export type TenableIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     config: yup.object().shape({
-        name: yup.string().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         categories: yup
             .array()
-            .of(yup.string().oneOf(['REGISTRY', 'SCANNER']))
+            .of(yup.string().trim().oneOf(['REGISTRY', 'SCANNER']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         tenable: yup.object().shape({
-            accessKey: yup.string(),
-            secretKey: yup.string(),
+            accessKey: yup
+                .string()
+                .test(
+                    'accessKey-test',
+                    'An access key is required',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!requirePasswordField) {
+                            return true;
+                        }
+
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
+            secretKey: yup
+                .string()
+                .test(
+                    'secretKey-test',
+                    'A secret key is required',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!requirePasswordField) {
+                            return true;
+                        }
+
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
         }),
         skipTestIntegration: yup.bool(),
         type: yup.string().matches(/tenable/),
@@ -83,8 +119,12 @@ function TenableIntegrationForm({
     }
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -98,11 +138,11 @@ function TenableIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     function onCustomChange(id, value) {
-        return setFieldValue(id, value, false);
+        return setFieldValue(id, value);
     }
 
     return (
@@ -110,14 +150,20 @@ function TenableIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="config.name" errors={errors}>
+                    <FormLabelGroup
+                        label="Integration name"
+                        isRequired
+                        fieldId="config.name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             isRequired
                             type="text"
                             id="config.name"
-                            name="config.name"
                             value={values.config.name}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -125,6 +171,7 @@ function TenableIntegrationForm({
                         label="Type"
                         isRequired
                         fieldId="config.categories"
+                        touched={touched}
                         errors={errors}
                     >
                         <FormMultiSelect
@@ -143,66 +190,77 @@ function TenableIntegrationForm({
                     </FormLabelGroup>
                     {!isCreating && (
                         <FormLabelGroup
-                            label="Update Password"
                             fieldId="updatePassword"
                             helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            touched={touched}
                             errors={errors}
                         >
-                            <Switch
+                            <Checkbox
                                 id="updatePassword"
-                                name="updatePassword"
-                                aria-label="update password"
+                                label="Update stored credentials"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
-                    {values.updatePassword && (
-                        <>
-                            <FormLabelGroup
-                                label="Access Key"
-                                fieldId="config.tenable.accessKey"
-                                errors={errors}
-                            >
-                                <TextInput
-                                    isRequired
-                                    type="text"
-                                    id="config.tenable.accessKey"
-                                    name="config.tenable.accessKey"
-                                    value={values.config.tenable.accessKey}
-                                    onChange={onChange}
-                                    isDisabled={!isEditable}
-                                />
-                            </FormLabelGroup>
-                            <FormLabelGroup
-                                label="Secret Key"
-                                fieldId="config.tenable.secretKey"
-                                errors={errors}
-                            >
-                                <TextInput
-                                    isRequired
-                                    type="password"
-                                    id="config.tenable.secretKey"
-                                    name="config.tenable.secretKey"
-                                    value={values.config.tenable.secretKey}
-                                    onChange={onChange}
-                                    isDisabled={!isEditable}
-                                />
-                            </FormLabelGroup>
-                        </>
-                    )}
                     <FormLabelGroup
-                        label="Create Integration Without Testing"
-                        fieldId="config.skipTestIntegration"
+                        isRequired
+                        label="Access key"
+                        fieldId="config.tenable.accessKey"
+                        touched={touched}
                         errors={errors}
                     >
-                        <Switch
+                        <TextInput
+                            isRequired={values.updatePassword}
+                            type="text"
+                            id="config.tenable.accessKey"
+                            value={values.config.tenable.accessKey}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        isRequired
+                        label="Secret key"
+                        fieldId="config.tenable.secretKey"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            isRequired={values.updatePassword}
+                            type="password"
+                            id="config.tenable.secretKey"
+                            value={values.config.tenable.secretKey}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        fieldId="config.skipTestIntegration"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
                             id="config.skipTestIntegration"
-                            name="config.skipTestIntegration"
+                            label="Create integration without testing"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -214,6 +272,7 @@ function TenableIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -221,6 +280,7 @@ function TenableIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

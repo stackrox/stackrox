@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, FormSelect, Switch } from '@patternfly/react-core';
+import { TextInput, PageSection, Form, FormSelect, Checkbox } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
@@ -37,13 +37,49 @@ export type AwsSecurityHubIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
-        name: yup.string().required('Required'),
+        name: yup.string().required('An integration name is required'),
         awsSecurityHub: yup.object().shape({
-            accountId: yup.string().required('Required'),
-            region: yup.string().required('Required'),
+            accountId: yup.string().required('An AWS account number is required'),
+            region: yup.string().required('An AWS region is required'),
             credentials: yup.object().shape({
-                accessKeyId: yup.string(),
-                secretAccessKey: yup.string(),
+                accessKeyId: yup
+                    .string()
+                    .test(
+                        'accessKeyId-test',
+                        'An access key ID is required',
+                        (value, context: yup.TestContext) => {
+                            const requirePasswordField =
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                // @ts-ignore
+                                context?.from[2]?.value?.updatePassword || false;
+
+                            if (!requirePasswordField) {
+                                return true;
+                            }
+
+                            const trimmedValue = value?.trim();
+                            return !!trimmedValue;
+                        }
+                    ),
+                secretAccessKey: yup
+                    .string()
+                    .test(
+                        'secretAccessKey-test',
+                        'A secret access key is required',
+                        (value, context: yup.TestContext) => {
+                            const requirePasswordField =
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                // @ts-ignore
+                                context?.from[2]?.value?.updatePassword || false;
+
+                            if (!requirePasswordField) {
+                                return true;
+                            }
+
+                            const trimmedValue = value?.trim();
+                            return !!trimmedValue;
+                        }
+                    ),
             }),
         }),
         uiEndpoint: yup.string(),
@@ -88,8 +124,12 @@ function AwsSecurityHubIntegrationForm({
     }
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -103,7 +143,7 @@ function AwsSecurityHubIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     return (
@@ -111,41 +151,50 @@ function AwsSecurityHubIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup isRequired label="Name" fieldId="notifier.name" errors={errors}>
+                    <FormLabelGroup
+                        isRequired
+                        label="Name"
+                        fieldId="notifier.name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             type="text"
                             id="notifier.name"
-                            name="notifier.name"
                             value={values.notifier.name}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
-                        label="AWS Account Number"
+                        label="AWS account number"
                         fieldId="notifier.awsSecurityHub.accountId"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
                             id="notifier.awsSecurityHub.accountId"
-                            name="notifier.awsSecurityHub.accountId"
                             value={values.notifier.awsSecurityHub.accountId}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
-                        label="AWS Region"
+                        label="AWS region"
                         fieldId="notifier.awsSecurityHub.region"
+                        touched={touched}
                         errors={errors}
                     >
                         <FormSelect
                             id="notifier.awsSecurityHub.region"
                             value={values.notifier.awsSecurityHub.region}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
                             <AwsRegionOptions />
@@ -153,55 +202,65 @@ function AwsSecurityHubIntegrationForm({
                     </FormLabelGroup>
                     {!isCreating && (
                         <FormLabelGroup
-                            label="Update Password"
+                            label=""
                             fieldId="updatePassword"
-                            helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            helperText="Leave this off to use the currently stored credentials."
                             errors={errors}
                         >
-                            <Switch
+                            <Checkbox
+                                label="Update password"
                                 id="updatePassword"
-                                name="updatePassword"
-                                aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
-                    {values.updatePassword && (
-                        <>
-                            <FormLabelGroup
-                                label="Access Key ID"
-                                fieldId="notifier.awsSecurityHub.credentials.accessKeyId"
-                                errors={errors}
-                            >
-                                <TextInput
-                                    type="password"
-                                    id="notifier.awsSecurityHub.credentials.accessKeyId"
-                                    name="notifier.awsSecurityHub.credentials.accessKeyId"
-                                    value={values.notifier.awsSecurityHub.credentials.accessKeyId}
-                                    onChange={onChange}
-                                    isDisabled={!isEditable}
-                                />
-                            </FormLabelGroup>
-                            <FormLabelGroup
-                                label="Secret Access Key"
-                                fieldId="notifier.awsSecurityHub.credentials.secretAccessKey"
-                                errors={errors}
-                            >
-                                <TextInput
-                                    type="password"
-                                    id="notifier.awsSecurityHub.credentials.secretAccessKey"
-                                    name="notifier.awsSecurityHub.credentials.secretAccessKey"
-                                    value={
-                                        values.notifier.awsSecurityHub.credentials.secretAccessKey
-                                    }
-                                    onChange={onChange}
-                                    isDisabled={!isEditable}
-                                />
-                            </FormLabelGroup>
-                        </>
-                    )}
+                    <FormLabelGroup
+                        isRequired={values.updatePassword}
+                        label="Access key ID"
+                        fieldId="notifier.awsSecurityHub.credentials.accessKeyId"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            isRequired={values.updatePassword}
+                            type="password"
+                            id="notifier.awsSecurityHub.credentials.accessKeyId"
+                            value={values.notifier.awsSecurityHub.credentials.accessKeyId}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        isRequired={values.updatePassword}
+                        label="Secret access key"
+                        fieldId="notifier.awsSecurityHub.credentials.secretAccessKey"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            isRequired={values.updatePassword}
+                            type="password"
+                            id="notifier.awsSecurityHub.credentials.secretAccessKey"
+                            value={values.notifier.awsSecurityHub.credentials.secretAccessKey}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
                 </Form>
             </PageSection>
             {isEditable && (
@@ -210,6 +269,7 @@ function AwsSecurityHubIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -217,6 +277,7 @@ function AwsSecurityHubIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

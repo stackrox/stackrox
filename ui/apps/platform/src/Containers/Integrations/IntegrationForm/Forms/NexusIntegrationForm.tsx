@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Switch } from '@patternfly/react-core';
+import { TextInput, PageSection, Form, Checkbox } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
@@ -36,16 +36,34 @@ export type NexusIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     config: yup.object().shape({
-        name: yup.string().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         categories: yup
             .array()
-            .of(yup.string().oneOf(['REGISTRY']))
+            .of(yup.string().trim().oneOf(['REGISTRY']))
             .min(1, 'Must have at least one type selected')
             .required('Required'),
         docker: yup.object().shape({
-            endpoint: yup.string().required('Required').min(1),
+            endpoint: yup.string().trim().required('An endpoint is required'),
             username: yup.string(),
-            password: yup.string(),
+            password: yup
+                .string()
+                .test(
+                    'password-test',
+                    'A password is required',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!requirePasswordField) {
+                            return true;
+                        }
+
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
             insecure: yup.bool(),
         }),
         skipTestIntegration: yup.bool(),
@@ -87,8 +105,12 @@ function NexusIntegrationForm({
     }
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -102,7 +124,7 @@ function NexusIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     return (
@@ -110,14 +132,20 @@ function NexusIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="config.name" errors={errors}>
+                    <FormLabelGroup
+                        label="Name"
+                        isRequired
+                        fieldId="config.name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             isRequired
                             type="text"
                             id="config.name"
-                            name="config.name"
                             value={values.config.name}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -125,92 +153,89 @@ function NexusIntegrationForm({
                         label="Endpoint"
                         isRequired
                         fieldId="config.docker.endpoint"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
                             id="config.docker.endpoint"
-                            name="config.docker.endpoint"
                             value={values.config.docker.endpoint}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Username"
                         fieldId="config.docker.username"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
                             id="config.docker.username"
-                            name="config.docker.username"
                             value={values.config.docker.username}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
                         <FormLabelGroup
-                            label="Update Password"
                             fieldId="updatePassword"
                             helperText="Setting this to false will use the currently stored credentials, if they exist."
                             errors={errors}
                         >
-                            <Switch
+                            <Checkbox
+                                label="Update stored credentials"
                                 id="updatePassword"
-                                name="updatePassword"
-                                aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
-                    {values.updatePassword && (
-                        <FormLabelGroup
-                            label="Password"
-                            fieldId="config.docker.password"
-                            errors={errors}
-                        >
-                            <TextInput
-                                isRequired
-                                type="password"
-                                id="config.docker.password"
-                                name="config.docker.password"
-                                value={values.config.docker.password}
-                                onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        label="Disable TLS Certificate Validation (Insecure)"
-                        fieldId="config.docker.insecure"
+                        label="Password"
+                        fieldId="config.docker.password"
+                        touched={touched}
                         errors={errors}
                     >
-                        <Switch
+                        <TextInput
+                            isRequired
+                            type="password"
+                            id="config.docker.password"
+                            value={values.config.docker.password}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup fieldId="config.docker.insecure" errors={errors}>
+                        <Checkbox
+                            label="Disable TLS certificate validation (insecure)"
                             id="config.docker.insecure"
-                            name="config.docker.insecure"
-                            aria-label="disable tls certificate validation"
                             isChecked={values.config.docker.insecure}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Create Integration Without Testing"
-                        fieldId="config.skipTestIntegration"
-                        errors={errors}
-                    >
-                        <Switch
+                    <FormLabelGroup fieldId="config.skipTestIntegration" errors={errors}>
+                        <Checkbox
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
-                            name="config.skipTestIntegration"
-                            aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -222,6 +247,7 @@ function NexusIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -229,6 +255,7 @@ function NexusIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Switch } from '@patternfly/react-core';
+import { TextInput, PageSection, Form, Checkbox } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
@@ -33,15 +33,33 @@ export type IbmIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     config: yup.object().shape({
-        name: yup.string().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         categories: yup
             .array()
-            .of(yup.string().oneOf(['REGISTRY']))
+            .of(yup.string().trim().oneOf(['REGISTRY']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         ibm: yup.object().shape({
-            endpoint: yup.string().required('Required'),
-            apiKey: yup.string(),
+            endpoint: yup.string().trim().required('An endpoint is required'),
+            apiKey: yup
+                .string()
+                .test(
+                    'apiKey-test',
+                    'An API key is required',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!requirePasswordField) {
+                            return true;
+                        }
+
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
         }),
         type: yup.string().matches(/ibm/),
         enabled: yup.bool(),
@@ -78,8 +96,12 @@ function IbmIntegrationForm({
     }
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -93,7 +115,7 @@ function IbmIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     return (
@@ -101,13 +123,19 @@ function IbmIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="config.name" errors={errors}>
+                    <FormLabelGroup
+                        label="Integration name"
+                        isRequired
+                        fieldId="config.name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             type="text"
                             id="config.name"
-                            name="config.name"
                             value={values.config.name}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -115,47 +143,57 @@ function IbmIntegrationForm({
                         label="Endpoint"
                         fieldId="config.ibm.endpoint"
                         isRequired
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
                             id="config.ibm.endpoint"
-                            name="config.ibm.endpoint"
                             value={values.config.ibm.endpoint}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
                         <FormLabelGroup
-                            label="Update Password"
                             fieldId="updatePassword"
                             isRequired
                             helperText="Setting this to false will use the currently stored credentials, if they exist."
                             errors={errors}
                         >
-                            <Switch
+                            <Checkbox
                                 id="updatePassword"
-                                name="updatePassword"
-                                aria-label="update password"
+                                label="Update stored credentials"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
-                    {values.updatePassword && (
-                        <FormLabelGroup label="API Key" fieldId="config.ibm.apiKey" errors={errors}>
-                            <TextInput
-                                type="password"
-                                id="config.ibm.apiKey"
-                                name="config.ibm.apiKey"
-                                value={values.config.ibm.apiKey}
-                                onChange={onChange}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
+                    <FormLabelGroup
+                        isRequired={values.updatePassword}
+                        label="API Key"
+                        fieldId="config.ibm.apiKey"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            isRequired={values.updatePassword}
+                            type="password"
+                            id="config.ibm.apiKey"
+                            value={values.config.ibm.apiKey}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
                 </Form>
             </PageSection>
             {isEditable && (
@@ -164,6 +202,7 @@ function IbmIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -171,6 +210,7 @@ function IbmIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

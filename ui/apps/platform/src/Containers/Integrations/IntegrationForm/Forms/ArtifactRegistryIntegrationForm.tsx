@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Switch } from '@patternfly/react-core';
+import { TextInput, PageSection, Form, Checkbox, TextArea } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
@@ -35,16 +35,34 @@ export type ArtifactRegistryIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     config: yup.object().shape({
-        name: yup.string().required('Required'),
+        name: yup.string().required('An integration name is required'),
         categories: yup
             .array()
             .of(yup.string().oneOf(['REGISTRY']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         google: yup.object().shape({
-            endpoint: yup.string().required('Required'),
-            project: yup.string().required('Required'),
-            serviceAccount: yup.string(),
+            endpoint: yup.string().required('An endpoint is required'),
+            project: yup.string().required('A project is required'),
+            serviceAccount: yup
+                .string()
+                .test(
+                    'serviceAccount-test',
+                    'A service account key is required',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!requirePasswordField) {
+                            return true;
+                        }
+
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
         }),
         skipTestIntegration: yup.bool(),
         type: yup.string().matches(/artifactregistry/),
@@ -84,8 +102,12 @@ function ArtifactRegistryIntegrationForm({
     }
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -100,7 +122,7 @@ function ArtifactRegistryIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     return (
@@ -108,30 +130,37 @@ function ArtifactRegistryIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="config.name" errors={errors}>
+                    <FormLabelGroup
+                        label="Integration name"
+                        isRequired
+                        fieldId="config.name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             type="text"
                             id="config.name"
-                            name="config.name"
                             placeholder="(ex. Google Artifact Registry)"
                             value={values.config.name}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Registry Endpoint"
+                        label="Registry endpoint"
                         isRequired
                         fieldId="config.google.endpoint"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
                             id="config.google.endpoint"
-                            name="config.google.endpoint"
                             placeholder="(ex. us-west1-docker.pkg.dev)"
                             value={values.config.google.endpoint}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -139,63 +168,66 @@ function ArtifactRegistryIntegrationForm({
                         label="Project"
                         isRequired
                         fieldId="config.google.project"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
                             id="config.google.project"
-                            name="config.google.project"
                             value={values.config.google.project}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
                         <FormLabelGroup
-                            label="Update Password"
                             fieldId="updatePassword"
                             helperText="Setting this to false will use the currently stored credentials, if they exist."
                             errors={errors}
                         >
-                            <Switch
+                            <Checkbox
+                                label="Update stored credentials"
                                 id="updatePassword"
-                                name="updatePassword"
-                                aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
-                    {values.updatePassword && (
-                        <FormLabelGroup
-                            label="Service Account Key (JSON)"
-                            isRequired
-                            fieldId="config.google.serviceAccount"
-                            errors={errors}
-                        >
-                            <TextInput
-                                type="text"
-                                id="config.google.serviceAccount"
-                                name="config.google.serviceAccount"
-                                value={values.config.google.serviceAccount}
-                                onChange={onChange}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
-
                     <FormLabelGroup
-                        label="Create Integration Without Testing"
-                        fieldId="config.skipTestIntegration"
+                        label="Service account key (JSON)"
+                        isRequired={values.updatePassword}
+                        fieldId="config.google.serviceAccount"
+                        touched={touched}
                         errors={errors}
                     >
-                        <Switch
+                        <TextArea
+                            isRequired={values.updatePassword}
+                            id="config.google.serviceAccount"
+                            value={values.config.google.serviceAccount}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        fieldId="config.skipTestIntegration"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
-                            name="config.skipTestIntegration"
-                            aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -207,6 +239,7 @@ function ArtifactRegistryIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -214,6 +247,7 @@ function ArtifactRegistryIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

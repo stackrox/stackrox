@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Switch } from '@patternfly/react-core';
+import { TextInput, PageSection, Form, Checkbox } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
@@ -38,22 +38,61 @@ export type EcrIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     config: yup.object().shape({
-        name: yup.string().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         categories: yup
             .array()
-            .of(yup.string().oneOf(['REGISTRY']))
+            .of(yup.string().trim().oneOf(['REGISTRY']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         ecr: yup.object().shape({
-            registryId: yup.string().required('Required'),
-            endpoint: yup.string().required('Required'),
-            region: yup.string().required('Required'),
+            registryId: yup.string().trim().required('A registry id is required'),
+            endpoint: yup.string().trim().required('An endpoint is required'),
+            region: yup.string().trim().required('An AWS region is required'),
             useIam: yup.bool(),
             accessKeyId: yup.string().when('useIam', {
                 is: false,
-                then: yup.string().required('Required if not using IAM'),
+                then: yup
+                    .string()
+                    .test(
+                        'acessKeyId-test',
+                        'An access key id is required',
+                        (value, context: yup.TestContext) => {
+                            const requirePasswordField =
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                // @ts-ignore
+                                context?.from[2]?.value?.updatePassword || false;
+
+                            if (!requirePasswordField) {
+                                return true;
+                            }
+
+                            const trimmedValue = value?.trim();
+                            return !!trimmedValue;
+                        }
+                    ),
             }),
-            secretAccessKey: yup.string(),
+            secretAccessKey: yup.string().when('useIam', {
+                is: false,
+                then: yup
+                    .string()
+                    .test(
+                        'secretAccessKey-test',
+                        'A secret access key is required',
+                        (value, context: yup.TestContext) => {
+                            const requirePasswordField =
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                // @ts-ignore
+                                context?.from[2]?.value?.updatePassword || false;
+
+                            if (!requirePasswordField) {
+                                return true;
+                            }
+
+                            const trimmedValue = value?.trim();
+                            return !!trimmedValue;
+                        }
+                    ),
+            }),
         }),
         skipTestIntegration: yup.bool(),
         type: yup.string().matches(/ecr/),
@@ -97,8 +136,12 @@ function EcrIntegrationForm({
     }
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -112,7 +155,7 @@ function EcrIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     return (
@@ -120,28 +163,35 @@ function EcrIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="config.name" errors={errors}>
+                    <FormLabelGroup
+                        label="Integration name"
+                        isRequired
+                        fieldId="config.name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             type="text"
                             id="config.name"
-                            name="config.name"
                             value={values.config.name}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Registry ID"
+                        label="Registry id"
                         isRequired
                         fieldId="config.ecr.registryId"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
                             id="config.ecr.registryId"
-                            name="config.ecr.registryId"
                             value={values.config.ecr.registryId}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -149,14 +199,15 @@ function EcrIntegrationForm({
                         label="Endpoint"
                         isRequired
                         fieldId="config.ecr.endpoint"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             type="text"
                             id="config.ecr.endpoint"
-                            name="config.ecr.endpoint"
                             value={values.config.ecr.endpoint}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -164,94 +215,96 @@ function EcrIntegrationForm({
                         label="Region"
                         isRequired
                         fieldId="config.ecr.region"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
                             id="config.ecr.region"
-                            name="config.ecr.region"
                             value={values.config.ecr.region}
                             onChange={onChange}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Use Container IAM Role"
-                        fieldId="config.ecr.useIam"
-                        errors={errors}
-                    >
-                        <Switch
-                            id="config.ecr.useIam"
-                            name="config.ecr.useIam"
-                            aria-label="use container iam role"
-                            isChecked={values.config.ecr.useIam}
-                            onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
                         <FormLabelGroup
-                            label="Update Password"
                             fieldId="updatePassword"
-                            helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            helperText="Leave this off to use the currently stored credentials."
                             errors={errors}
                         >
-                            <Switch
+                            <Checkbox
+                                label="Update stored credentials"
                                 id="updatePassword"
-                                name="updatePassword"
-                                aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
-                    {values.updatePassword && !values.config.ecr.useIam && (
+                    <FormLabelGroup fieldId="config.ecr.useIam" touched={touched} errors={errors}>
+                        <Checkbox
+                            label="Use container IAM role"
+                            id="config.ecr.useIam"
+                            aria-label="use container iam role"
+                            isChecked={values.config.ecr.useIam}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
+                    {!values.config.ecr.useIam && (
                         <>
                             <FormLabelGroup
-                                label="Access Key ID"
+                                isRequired={values.updatePassword}
+                                label="Access key id"
                                 fieldId="config.ecr.accessKeyId"
-                                isRequired
+                                touched={touched}
                                 errors={errors}
                             >
                                 <TextInput
+                                    isRequired={values.updatePassword}
                                     type="password"
                                     id="config.ecr.accessKeyId"
-                                    name="config.ecr.accessKeyId"
                                     value={values.config.ecr.accessKeyId}
                                     onChange={onChange}
+                                    onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
                             </FormLabelGroup>
                             <FormLabelGroup
-                                label="Secret Access Key"
+                                isRequired={values.updatePassword}
+                                label="Secret access key"
                                 fieldId="config.ecr.secretAccessKey"
-                                isRequired
+                                touched={touched}
                                 errors={errors}
                             >
                                 <TextInput
+                                    isRequired={values.updatePassword}
                                     type="password"
                                     id="config.ecr.secretAccessKey"
-                                    name="config.ecr.secretAccessKey"
                                     value={values.config.ecr.secretAccessKey}
                                     onChange={onChange}
+                                    onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
                             </FormLabelGroup>
                         </>
                     )}
                     <FormLabelGroup
-                        label="Create Integration Without Testing"
                         fieldId="config.skipTestIntegration"
+                        touched={touched}
                         errors={errors}
                     >
-                        <Switch
+                        <Checkbox
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
-                            name="config.skipTestIntegration"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -263,6 +316,7 @@ function EcrIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -270,6 +324,7 @@ function EcrIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

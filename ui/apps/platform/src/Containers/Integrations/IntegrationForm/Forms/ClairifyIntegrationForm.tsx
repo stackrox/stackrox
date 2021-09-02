@@ -28,16 +28,16 @@ export type ClairifyIntegration = {
 };
 
 export const validationSchema = yup.object().shape({
-    name: yup.string().required('Required'),
+    name: yup.string().trim().required('An integration name is required'),
     categories: yup
         .array()
-        .of(yup.string().oneOf(['NODE_SCANNER', 'SCANNER']))
+        .of(yup.string().trim().oneOf(['NODE_SCANNER', 'SCANNER']))
         .min(1, 'Must have at least one type selected')
         .required('Required'),
     clairify: yup.object().shape({
-        endpoint: yup.string().required('Required').min(1),
-        grpcEndpoint: yup.string(),
-        numConcurrentScans: yup.string(),
+        endpoint: yup.string().trim().required('An endpoint is required'),
+        grpcEndpoint: yup.string().trim(),
+        numConcurrentScans: yup.string().trim(),
     }),
     type: yup.string().matches(/clairify/),
     enabled: yup.bool(),
@@ -66,8 +66,12 @@ function ClairifyIntegrationForm({
         : defaultValues;
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -80,7 +84,7 @@ function ClairifyIntegrationForm({
     });
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     function onCustomChange(id, value) {
@@ -92,18 +96,31 @@ function ClairifyIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="name" errors={errors}>
+                    <FormLabelGroup
+                        label="Integration name"
+                        isRequired
+                        fieldId="name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             isRequired
                             type="text"
                             id="name"
-                            name="name"
                             value={values.name}
+                            placeholder="(example, StackRox Scanner Integration)"
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup label="Type" isRequired fieldId="categories" errors={errors}>
+                    <FormLabelGroup
+                        label="Type"
+                        isRequired
+                        fieldId="categories"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <FormMultiSelect
                             id="categories"
                             values={values.categories}
@@ -122,47 +139,50 @@ function ClairifyIntegrationForm({
                         label="Endpoint"
                         isRequired
                         fieldId="clairify.endpoint"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
                             id="clairify.endpoint"
-                            name="clairify.endpoint"
                             value={values.clairify.endpoint}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="GRPC Endpoint"
+                        label="GRPC endpoint"
                         fieldId="clairify.grpcEndpoint"
                         helperText="Used For Node Scanning"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
                             id="clairify.grpcEndpoint"
-                            name="clairify.grpcEndpoint"
                             value={values.clairify.grpcEndpoint}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Max Concurrent Image Scans"
+                        label="Max concurrent image scans"
                         fieldId="clairify.numConcurrentScans"
                         helperText="0 for default"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="number"
                             id="clairify.numConcurrentScans"
-                            name="clairify.numConcurrentScans"
                             value={values.clairify.numConcurrentScans}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -174,6 +194,7 @@ function ClairifyIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -181,6 +202,7 @@ function ClairifyIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

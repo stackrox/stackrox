@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, SelectOption, PageSection, Form, Switch } from '@patternfly/react-core';
+import { TextInput, SelectOption, PageSection, Form, Checkbox } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import FormMultiSelect from 'Components/FormMultiSelect';
@@ -27,14 +27,14 @@ export type ClairIntegration = {
 };
 
 export const validationSchema = yup.object().shape({
-    name: yup.string().required('Required'),
+    name: yup.string().required('An integration name is required'),
     categories: yup
         .array()
         .of(yup.string().oneOf(['SCANNER']))
         .min(1, 'Must have at least one type selected')
-        .required('Required'),
+        .required('A category is required'),
     clair: yup.object().shape({
-        endpoint: yup.string().required('Required').min(1),
+        endpoint: yup.string().required('An endpoint is required').min(1),
         insecure: yup.bool(),
     }),
     type: yup.string().matches(/clair/),
@@ -63,8 +63,12 @@ function ClairIntegrationForm({
         : defaultValues;
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -77,11 +81,11 @@ function ClairIntegrationForm({
     });
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     function onCustomChange(id, value) {
-        return setFieldValue(id, value, false);
+        return setFieldValue(id, value);
     }
 
     return (
@@ -89,18 +93,30 @@ function ClairIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="name" errors={errors}>
+                    <FormLabelGroup
+                        label="Integration name"
+                        isRequired
+                        fieldId="name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             isRequired
                             type="text"
                             id="name"
-                            name="name"
                             value={values.name}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup label="Type" isRequired fieldId="categories" errors={errors}>
+                    <FormLabelGroup
+                        label="Type"
+                        isRequired
+                        fieldId="categories"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <FormMultiSelect
                             id="categories"
                             values={values.categories}
@@ -119,25 +135,26 @@ function ClairIntegrationForm({
                         label="Endpoint"
                         isRequired
                         fieldId="clair.endpoint"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
                             id="clair.endpoint"
-                            name="clair.endpoint"
                             value={values.clair.endpoint}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup label="Insecure" fieldId="clair.insecure" errors={errors}>
-                        <Switch
+                    <FormLabelGroup fieldId="clair.insecure" touched={touched} errors={errors}>
+                        <Checkbox
+                            label="Disable TLS certificate validation (insecure)"
                             id="clair.insecure"
-                            name="clair.insecure"
-                            aria-label="insecure"
                             isChecked={values.clair.insecure}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -149,6 +166,7 @@ function ClairIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -156,10 +174,10 @@ function ClairIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>
-
                     <FormCancelButton onCancel={onCancel}>Cancel</FormCancelButton>
                 </IntegrationFormActions>
             )}

@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Switch, SelectOption } from '@patternfly/react-core';
+import { TextInput, PageSection, Form, Checkbox, SelectOption } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import FormMultiSelect from 'Components/FormMultiSelect';
@@ -36,15 +36,33 @@ export type QuayIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     config: yup.object().shape({
-        name: yup.string().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         categories: yup
             .array()
-            .of(yup.string().oneOf(['REGISTRY', 'SCANNER']))
+            .of(yup.string().trim().oneOf(['REGISTRY', 'SCANNER']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         quay: yup.object().shape({
-            endpoint: yup.string().required('Required').min(1),
-            oauthToken: yup.string(),
+            endpoint: yup.string().trim().required('An endpoint is required'),
+            oauthToken: yup
+                .string()
+                .test(
+                    'oauthToken-test',
+                    'An OAuth token is required',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!requirePasswordField) {
+                            return true;
+                        }
+
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
             insecure: yup.bool(),
         }),
         skipTestIntegration: yup.bool(),
@@ -85,8 +103,12 @@ function QuayIntegrationForm({
     }
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -100,11 +122,11 @@ function QuayIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     function onCustomChange(id, value) {
-        return setFieldValue(id, value, false);
+        return setFieldValue(id, value);
     }
 
     return (
@@ -112,15 +134,21 @@ function QuayIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup label="Name" isRequired fieldId="config.name" errors={errors}>
+                    <FormLabelGroup
+                        label="Name"
+                        isRequired
+                        fieldId="config.name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
                             isRequired
                             type="text"
                             id="config.name"
-                            name="config.name"
                             placeholder="(ex. Quay)"
                             value={values.config.name}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -128,6 +156,7 @@ function QuayIntegrationForm({
                         label="Type"
                         isRequired
                         fieldId="config.categories"
+                        touched={touched}
                         errors={errors}
                     >
                         <FormMultiSelect
@@ -148,79 +177,85 @@ function QuayIntegrationForm({
                         label="Endpoint"
                         isRequired
                         fieldId="config.quay.endpoint"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
                             id="config.quay.endpoint"
-                            name="config.quay.endpoint"
                             placeholder="(ex. quay.io)"
                             value={values.config.quay.endpoint}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
                         <FormLabelGroup
-                            label="Update Password"
                             fieldId="updatePassword"
-                            helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            helperText="Leave this off to use the currently stored credentials."
                             errors={errors}
                         >
-                            <Switch
+                            <Checkbox
+                                label="Update stored credentials"
                                 id="updatePassword"
-                                name="updatePassword"
-                                aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
-                    {values.updatePassword && (
-                        <FormLabelGroup
-                            label="OAuth Token"
-                            fieldId="config.quay.oauthToken"
-                            isRequired
-                            errors={errors}
-                        >
-                            <TextInput
-                                isRequired
-                                type="text"
-                                id="config.quay.oauthToken"
-                                name="config.quay.oauthToken"
-                                value={values.config.quay.oauthToken}
-                                onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        label="Disable TLS Certificate Validation (Insecure)"
-                        fieldId="config.quay.insecure"
+                        isRequired={values.updatePassword}
+                        label="OAuth Token"
+                        fieldId="config.quay.oauthToken"
+                        touched={touched}
                         errors={errors}
                     >
-                        <Switch
+                        <TextInput
+                            isRequired={values.updatePassword}
+                            type="text"
+                            id="config.quay.oauthToken"
+                            value={values.config.quay.oauthToken}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable || !values.updatePassword}
+                            placeholder={
+                                values.updatePassword
+                                    ? ''
+                                    : 'Currently-stored password will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        fieldId="config.quay.insecure"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Disable TLS Certificate Validation (Insecure)"
                             id="config.quay.insecure"
-                            name="config.quay.insecure"
                             aria-label="disable tls certificate validation"
                             isChecked={values.config.quay.insecure}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Create Integration Without Testing"
                         fieldId="config.skipTestIntegration"
+                        touched={touched}
                         errors={errors}
                     >
-                        <Switch
+                        <Checkbox
+                            label="Create Integration Without Testing"
                             id="config.skipTestIntegration"
-                            name="config.skipTestIntegration"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -232,6 +267,7 @@ function QuayIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -239,6 +275,7 @@ function QuayIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>
