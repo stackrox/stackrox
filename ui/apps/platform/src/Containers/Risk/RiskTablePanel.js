@@ -5,12 +5,14 @@ import { withRouter } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import TableHeader from 'Components/TableHeader';
+import MessageCentered from 'Components/MessageCentered';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { fetchDeployments, fetchDeploymentsCount } from 'services/DeploymentsService';
+import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import {
     filterAllowedSearch,
     convertToRestSearch,
@@ -34,6 +36,7 @@ function RiskTablePanel({
     const currentPage = workflowState.paging[pagingParams.page];
 
     const [currentDeployments, setCurrentDeployments] = useState([]);
+    const [errorMessageDeployments, setErrorMessageDeployments] = useState('');
     const [deploymentCount, setDeploymentsCount] = useState(0);
 
     function setPage(newPage) {
@@ -55,10 +58,17 @@ function RiskTablePanel({
         const restSearch = convertToRestSearch(filteredSearch || {});
         const restSort = convertSortToRestFormat(sortOption);
 
-        fetchDeployments(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE).then(
-            setCurrentDeployments
-        );
-        fetchDeploymentsCount(restSearch).then(setDeploymentsCount);
+        fetchDeployments(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
+            .then(setCurrentDeployments)
+            .catch((error) => {
+                setCurrentDeployments([]);
+                setErrorMessageDeployments(checkForPermissionErrorMessage(error));
+            });
+        fetchDeploymentsCount(restSearch)
+            .then(setDeploymentsCount)
+            .catch(() => {
+                setDeploymentsCount(0);
+            });
 
         if (restSearch.length) {
             setIsViewFiltered(true);
@@ -85,12 +95,16 @@ function RiskTablePanel({
                 </PanelHeadEnd>
             </PanelHead>
             <PanelBody>
-                <RiskTable
-                    currentDeployments={currentDeployments}
-                    setSelectedDeploymentId={setSelectedDeploymentId}
-                    selectedDeploymentId={selectedDeploymentId}
-                    setSortOption={setSortOption}
-                />
+                {errorMessageDeployments ? (
+                    <MessageCentered type="error">{errorMessageDeployments}</MessageCentered>
+                ) : (
+                    <RiskTable
+                        currentDeployments={currentDeployments}
+                        setSelectedDeploymentId={setSelectedDeploymentId}
+                        selectedDeploymentId={selectedDeploymentId}
+                        setSortOption={setSortOption}
+                    />
+                )}
             </PanelBody>
         </PanelNew>
     );
