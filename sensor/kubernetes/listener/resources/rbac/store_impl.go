@@ -38,113 +38,76 @@ func (rs *storeImpl) GetPermissionLevelForDeployment(d NamespacedServiceAccount)
 	return rs.bucketEvaluator.GetPermissionLevelForSubject(subject)
 }
 
-func (rs *storeImpl) UpsertRole(role *v1.Role) *storage.K8SRole {
+func (rs *storeImpl) GetNamespacedRoleIDOrEmpty(roleRef namespacedRoleRef) string {
+	rs.lock.Lock()
+	defer rs.lock.Unlock()
+	role, ok := rs.roles[roleRef]
+	if ok {
+		return role.latestUID
+	}
+	return ""
+}
+
+func (rs *storeImpl) UpsertRole(role *v1.Role) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
 	rs.upsertRoleGenericNoLock(roleAsRef(role), roleAsNamespacedRole(role))
-
-	// TODO: Move the kubernetes-to-storage proto conversion out to the Dispatcher.
-	return toRoxRole(role)
 }
 
-func (rs *storeImpl) RemoveRole(role *v1.Role) *storage.K8SRole {
+func (rs *storeImpl) RemoveRole(role *v1.Role) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
 	rs.removeRoleGenericNoLock(roleAsRef(role))
-
-	// TODO: Move the kubernetes-to-storage proto conversion out to the Dispatcher.
-	return toRoxRole(role)
 }
 
-func (rs *storeImpl) UpsertClusterRole(role *v1.ClusterRole) *storage.K8SRole {
+func (rs *storeImpl) UpsertClusterRole(role *v1.ClusterRole) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
 	rs.upsertRoleGenericNoLock(clusterRoleAsRef(role), clusterRoleAsNamespacedRole(role))
-
-	// TODO: Move the kubernetes-to-storage proto conversion out to the Dispatcher.
-	return toRoxClusterRole(role)
 }
 
-func (rs *storeImpl) RemoveClusterRole(role *v1.ClusterRole) *storage.K8SRole {
+func (rs *storeImpl) RemoveClusterRole(role *v1.ClusterRole) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
 	rs.removeRoleGenericNoLock(clusterRoleAsRef(role))
-
-	// TODO: Move the kubernetes-to-storage proto conversion out to the Dispatcher.
-	return toRoxClusterRole(role)
 }
 
-func (rs *storeImpl) UpsertBinding(binding *v1.RoleBinding) *storage.K8SRoleBinding {
+func (rs *storeImpl) UpsertBinding(binding *v1.RoleBinding) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
 	bindingID := roleBindingToNamespacedBindingID(binding)
 	namespacedBinding := roleBindingToNamespacedBinding(binding)
 	rs.upsertRoleBindingGenericNoLock(bindingID, namespacedBinding)
-
-	// TODO: Move the kubernetes-to-storage proto conversion out to the Dispatcher,
-	// add a Get method for the latest RoleID.
-	roxRoleBinding := toRoxRoleBinding(binding)
-	if namespacedRole, ok := rs.roles[namespacedBinding.roleRef]; ok {
-		roxRoleBinding.RoleId = namespacedRole.latestUID
-	}
-
-	return roxRoleBinding
 }
 
-func (rs *storeImpl) RemoveBinding(binding *v1.RoleBinding) *storage.K8SRoleBinding {
+func (rs *storeImpl) RemoveBinding(binding *v1.RoleBinding) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
 	bindingID := roleBindingToNamespacedBindingID(binding)
-	namespacedBinding := roleBindingToNamespacedBinding(binding)
 	rs.removeRoleBindingGenericNoLock(bindingID)
-
-	// TODO: Move the kubernetes-to-storage proto conversion out to the Dispatcher,
-	// add a Get method for the latest RoleID.
-	roxRoleBinding := toRoxRoleBinding(binding)
-	if namespacedRole, ok := rs.roles[namespacedBinding.roleRef]; ok {
-		roxRoleBinding.RoleId = namespacedRole.latestUID
-	}
-	return roxRoleBinding
 }
 
-func (rs *storeImpl) UpsertClusterBinding(binding *v1.ClusterRoleBinding) *storage.K8SRoleBinding {
+func (rs *storeImpl) UpsertClusterBinding(binding *v1.ClusterRoleBinding) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
 	bindingID := clusterRoleBindingToNamespacedBindingID(binding)
 	namespacedBinding := clusterRoleBindingToNamespacedBinding(binding)
 	rs.upsertRoleBindingGenericNoLock(bindingID, namespacedBinding)
-
-	// TODO: Move the kubernetes-to-storage proto conversion out to the Dispatcher,
-	// add a Get method for the latest RoleID.
-	roxClusterRoleBinding := toRoxClusterRoleBinding(binding)
-	if namespacedRole, ok := rs.roles[namespacedBinding.roleRef]; ok {
-		roxClusterRoleBinding.RoleId = namespacedRole.latestUID
-	}
-	return roxClusterRoleBinding
 }
 
-func (rs *storeImpl) RemoveClusterBinding(binding *v1.ClusterRoleBinding) *storage.K8SRoleBinding {
+func (rs *storeImpl) RemoveClusterBinding(binding *v1.ClusterRoleBinding) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
 	bindingID := clusterRoleBindingToNamespacedBindingID(binding)
-	namespacedBinding := clusterRoleBindingToNamespacedBinding(binding)
 	rs.removeRoleBindingGenericNoLock(bindingID)
-
-	// TODO: Move the kubernetes-to-storage proto conversion out to the Dispatcher,
-	// add a Get method for the latest RoleID.
-	roxClusterRoleBinding := toRoxClusterRoleBinding(binding)
-	if namespacedRole, ok := rs.roles[namespacedBinding.roleRef]; ok {
-		roxClusterRoleBinding.RoleId = namespacedRole.latestUID
-	}
-	return roxClusterRoleBinding
 }
 
 func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() {

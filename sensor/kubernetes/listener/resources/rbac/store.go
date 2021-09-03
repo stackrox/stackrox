@@ -13,17 +13,19 @@ type NamespacedServiceAccount interface {
 
 // Store handles correlating updates to K8s rbac types and generates events from them.
 type Store interface {
-	UpsertRole(role *v1.Role) *storage.K8SRole
-	RemoveRole(role *v1.Role) *storage.K8SRole
+	GetNamespacedRoleIDOrEmpty(roleRef namespacedRoleRef) string
 
-	UpsertClusterRole(role *v1.ClusterRole) *storage.K8SRole
-	RemoveClusterRole(role *v1.ClusterRole) *storage.K8SRole
+	UpsertRole(role *v1.Role)
+	RemoveRole(role *v1.Role)
 
-	UpsertBinding(binding *v1.RoleBinding) *storage.K8SRoleBinding
-	RemoveBinding(binding *v1.RoleBinding) *storage.K8SRoleBinding
+	UpsertClusterRole(role *v1.ClusterRole)
+	RemoveClusterRole(role *v1.ClusterRole)
 
-	UpsertClusterBinding(binding *v1.ClusterRoleBinding) *storage.K8SRoleBinding
-	RemoveClusterBinding(binding *v1.ClusterRoleBinding) *storage.K8SRoleBinding
+	UpsertBinding(binding *v1.RoleBinding)
+	RemoveBinding(binding *v1.RoleBinding)
+
+	UpsertClusterBinding(binding *v1.ClusterRoleBinding)
+	RemoveClusterBinding(binding *v1.ClusterRoleBinding)
 	GetPermissionLevelForDeployment(deployment NamespacedServiceAccount) storage.PermissionLevel
 }
 

@@ -57,9 +57,10 @@ func toRoxClusterRole(role *v1.ClusterRole) *storage.K8SRole {
 	return roxRole.Clone() // Clone the labels, annotations, and policy rules.
 }
 
-func toRoxRoleBinding(roleBinding *v1.RoleBinding) *storage.K8SRoleBinding {
+func toRoxRoleBinding(roleBinding *v1.RoleBinding, roleID string) *storage.K8SRoleBinding {
 	roxBinding := &storage.K8SRoleBinding{
 		Id:          string(roleBinding.GetUID()),
+		RoleId:      roleID,
 		Name:        roleBinding.GetName(),
 		Namespace:   roleBinding.GetNamespace(),
 		ClusterName: roleBinding.GetClusterName(),
@@ -72,9 +73,10 @@ func toRoxRoleBinding(roleBinding *v1.RoleBinding) *storage.K8SRoleBinding {
 	return roxBinding.Clone() // Clone the labels and annotations.
 }
 
-func toRoxClusterRoleBinding(clusterRoleBinding *v1.ClusterRoleBinding) *storage.K8SRoleBinding {
+func toRoxClusterRoleBinding(clusterRoleBinding *v1.ClusterRoleBinding, roleID string) *storage.K8SRoleBinding {
 	roxBinding := &storage.K8SRoleBinding{
 		Id:          string(clusterRoleBinding.GetUID()),
+		RoleId:      roleID, // may be empty in case the named role referenced in the k8s object could not be found
 		Name:        clusterRoleBinding.GetName(),
 		Namespace:   clusterRoleBinding.GetNamespace(),
 		ClusterName: clusterRoleBinding.GetClusterName(),

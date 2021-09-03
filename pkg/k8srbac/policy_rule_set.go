@@ -7,8 +7,6 @@ import (
 
 // PolicyRuleSet represents a combined set of PolicyRules.
 type PolicyRuleSet interface {
-	// Add method *takes ownership* of the storage.PolicyRule! It sometimes "merges" on top of the
-	// provided pointer. If you don't want a modification to happen, be sure to Clone before call.
 	Add(prs ...*storage.PolicyRule)
 	Grants(prs ...*storage.PolicyRule) bool
 	GetPermissionMap() map[string]set.StringSet
