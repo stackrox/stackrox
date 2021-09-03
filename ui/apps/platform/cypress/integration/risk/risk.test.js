@@ -11,9 +11,11 @@ describe('Risk page', () => {
             cy.intercept('GET', api.risks.riskyDeployments, {
                 fixture: 'risks/riskyDeployments.json',
             }).as('deployments');
+            cy.intercept('GET', api.risks.deploymentsCount).as('deploymentsCount');
 
             cy.visit(url);
             cy.wait('@deployments');
+            cy.wait('@deploymentsCount');
         });
 
         const mockGetDeployment = () => {
@@ -114,7 +116,12 @@ describe('Risk page', () => {
 
     describe('search with URL parameters, actual API', () => {
         beforeEach(() => {
+            cy.intercept('GET', api.risks.riskyDeployments).as('deployments');
+            cy.intercept('GET', api.risks.deploymentsCount).as('deploymentsCount');
+
             cy.visit(url);
+            cy.wait('@deployments');
+            cy.wait('@deploymentsCount');
         });
 
         it('should not have anything in search bar when URL has no search params', () => {
