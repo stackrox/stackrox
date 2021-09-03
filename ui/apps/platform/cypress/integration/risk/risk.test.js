@@ -8,19 +8,18 @@ describe('Risk page', () => {
 
     describe('with mock API', () => {
         beforeEach(() => {
-            cy.server();
-            cy.fixture('risks/riskyDeployments.json').as('deploymentJson');
-            cy.route('GET', api.risks.riskyDeployments, '@deploymentJson').as('deployments');
+            cy.intercept('GET', api.risks.riskyDeployments, {
+                fixture: 'risks/riskyDeployments.json',
+            }).as('deployments');
 
             cy.visit(url);
             cy.wait('@deployments');
         });
 
         const mockGetDeployment = () => {
-            cy.fixture('risks/firstDeployment.json').as('firstDeploymentJson');
-            cy.route('GET', api.risks.fetchDeploymentWithRisk, '@firstDeploymentJson').as(
-                'firstDeployment'
-            );
+            cy.intercept('GET', api.risks.fetchDeploymentWithRisk, {
+                fixture: 'risks/firstDeployment.json',
+            }).as('firstDeployment');
         };
 
         it('should have selected item in nav bar', () => {
@@ -189,50 +188,18 @@ describe('Risk page', () => {
         });
 
         it('should not use invalid URL search param key/value pair in its search bar', () => {
-            cy.server();
-            cy.route('GET', api.risks.riskyDeploymentsWithPagination).as(
-                'deploymentsWithProcessInfo'
-            );
-            cy.route('GET', api.risks.deploymentsCount).as('deploymentsCount');
+            const sillyOption = 'Wingardium';
+            const sillyValue = 'leviosa';
+            cy.get(RiskPageSelectors.table.dataRows).then((stackroxDeps) => {
+                const allCount = stackroxDeps.length;
 
-            cy.route('GET', api.risks.riskyDeploymentsWithPagination).as(
-                'deploymentsWithProcessInfo'
-            );
+                const urlWithSearch = `${url}?s[${sillyOption}]=${sillyValue}`;
+                cy.visit(urlWithSearch);
 
-            cy.wait('@deploymentsWithProcessInfo');
-            cy.wait('@deploymentsCount');
+                cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
 
-            // first, make sure the deployments API calls returned some number of rows
-            cy.get(RiskPageSelectors.table.dataRows);
-
-            // second, save the "n Deployments" number in the table header
-            cy.get(RiskPageSelectors.table.header)
-                .invoke('text')
-                .then((headerText) => {
-                    // third, try to search for an unallowed search option
-                    const sillyOption = 'Wingardium';
-                    const sillyValue = 'leviosa';
-                    const urlWithSearch = `${url}?s[${sillyOption}]=${sillyValue}`;
-
-                    cy.visit(urlWithSearch);
-
-                    cy.wait('@deploymentsWithProcessInfo');
-                    cy.wait('@deploymentsCount');
-
-                    cy.wait('@deploymentsWithProcessInfo');
-                    cy.wait('@deploymentsCount');
-
-                    cy.get(RiskPageSelectors.search.searchLabels).should('have.length', 0);
-
-                    // fourth, ensure that no search was performed by matching the same "n Deployments" in table header
-                    cy.get(RiskPageSelectors.table.dataRows);
-
-                    cy.get(RiskPageSelectors.table.header)
-                        .invoke('text')
-                        .then((newHeaderText) => {
-                            expect(newHeaderText).to.equal(headerText);
-                        });
-                });
+                cy.get(RiskPageSelectors.table.dataRows).should('have.length', allCount);
+            });
         });
     });
 });

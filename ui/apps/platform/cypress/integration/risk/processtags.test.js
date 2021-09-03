@@ -9,11 +9,10 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 
 function setRoutes() {
-    cy.server();
-    cy.route('GET', api.risks.riskyDeployments).as('deployments');
-    cy.route('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
-    cy.route('POST', api.graphql(api.risks.graphqlOps.getProcessTags)).as('getTags');
-    cy.route('POST', api.graphql(api.risks.graphqlOps.autocomplete)).as('tagsAutocomplete');
+    cy.intercept('GET', api.risks.riskyDeployments).as('deployments');
+    cy.intercept('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
+    cy.intercept('POST', api.graphql(api.risks.graphqlOps.getProcessTags)).as('getTags');
+    cy.intercept('POST', api.graphql(api.risks.graphqlOps.autocomplete)).as('tagsAutocomplete');
 }
 
 function openDeployment(deploymentName) {

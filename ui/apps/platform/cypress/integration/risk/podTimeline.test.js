@@ -7,13 +7,12 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 
 function setRoutes() {
-    cy.server();
-    cy.route('GET', api.risks.riskyDeployments).as('deployments');
-    cy.route('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
-    cy.route('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline)).as(
+    cy.intercept('GET', api.risks.riskyDeployments).as('deployments');
+    cy.intercept('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
+    cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline)).as(
         'getDeploymentEventTimeline'
     );
-    cy.route('POST', api.graphql(api.risks.graphqlOps.getPodEventTimeline)).as(
+    cy.intercept('POST', api.graphql(api.risks.graphqlOps.getPodEventTimeline)).as(
         'getPodEventTimeline'
     );
 }
@@ -37,11 +36,9 @@ function openEventTimeline() {
 function openMockedPodEventTimelineView() {
     setRoutes();
     // mocking data to thoroughly test the event details
-    cy.route(
-        'POST',
-        api.graphql(api.risks.graphqlOps.getPodEventTimeline),
-        'fixture:risks/eventTimeline/podEventTimeline.json'
-    ).as('getPodEventTimeline');
+    cy.intercept('POST', api.graphql(api.risks.graphqlOps.getPodEventTimeline), {
+        fixture: 'risks/eventTimeline/podEventTimeline.json',
+    }).as('getPodEventTimeline');
 
     openEventTimeline();
 
@@ -60,11 +57,9 @@ describe('Risk Page Pod Event Timeline', () => {
         it('should show the clustered event markers', () => {
             setRoutes();
             // mocking data to thoroughly test the clustering
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getPodEventTimeline),
-                'fixture:risks/eventTimeline/clusteredPodEventTimeline.json'
-            ).as('getPodEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getPodEventTimeline), {
+                fixture: 'risks/eventTimeline/clusteredPodEventTimeline.json',
+            }).as('getPodEventTimeline');
 
             openEventTimeline();
 
@@ -92,11 +87,9 @@ describe('Risk Page Pod Event Timeline', () => {
         it('should show the clustered event tooltip', () => {
             setRoutes();
             // mocking data to thoroughly test the filtering
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getPodEventTimeline),
-                'fixture:risks/eventTimeline/clusteredPodEventTimeline.json'
-            ).as('getPodEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getPodEventTimeline), {
+                fixture: 'risks/eventTimeline/clusteredPodEventTimeline.json',
+            }).as('getPodEventTimeline');
 
             openEventTimeline();
 
@@ -420,11 +413,9 @@ describe('Risk Page Pod Event Timeline', () => {
         it('should be able to page between sets of pods when there are 10+', () => {
             setRoutes();
             // mocking data to thoroughly test the pagination
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getPodEventTimeline),
-                'fixture:risks/eventTimeline/podEventTimelineWithManyContainers.json'
-            ).as('getPodEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getPodEventTimeline), {
+                fixture: 'risks/eventTimeline/podEventTimelineWithManyContainers.json',
+            }).as('getPodEventTimeline');
 
             openEventTimeline();
 

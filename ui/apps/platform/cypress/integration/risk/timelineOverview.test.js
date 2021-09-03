@@ -5,9 +5,8 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 
 function setRoutes() {
-    cy.server();
-    cy.route('GET', api.risks.riskyDeployments).as('deployments');
-    cy.route('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
+    cy.intercept('GET', api.risks.riskyDeployments).as('deployments');
+    cy.intercept('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
 }
 
 function openDeployment(deploymentName) {

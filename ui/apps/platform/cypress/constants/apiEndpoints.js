@@ -55,12 +55,12 @@ export const clusters = {
 
 export const risks = {
     // The * at the end exists because sometimes we add ?query= at the end.
-    riskyDeployments: 'v1/deploymentswithprocessinfo*',
+    riskyDeployments: '/v1/deploymentswithprocessinfo*',
     riskyDeploymentsWithPagination:
-        'v1/deploymentswithprocessinfo?pagination.offset=0&pagination.limit=50&pagination.sortOption.field=Priority&pagination.sortOption.reversed=false*',
-    deploymentsCount: 'v1/deploymentscount*',
-    getDeployment: 'v1/deployments/*',
-    fetchDeploymentWithRisk: 'v1/deploymentswithrisk/*',
+        '/v1/deploymentswithprocessinfo?pagination.offset=0&pagination.limit=50&pagination.sortOption.field=Priority&pagination.sortOption.reversed=false*',
+    deploymentsCount: '/v1/deploymentscount*',
+    getDeployment: '/v1/deployments/*',
+    fetchDeploymentWithRisk: '/v1/deploymentswithrisk/*',
     graphqlOps: {
         autocomplete: 'autocomplete',
         getProcessTags: 'getProcessTags',

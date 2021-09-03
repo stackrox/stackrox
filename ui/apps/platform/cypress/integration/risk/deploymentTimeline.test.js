@@ -7,13 +7,12 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 
 function setRoutes() {
-    cy.server();
-    cy.route('GET', api.risks.riskyDeployments).as('deployments');
-    cy.route('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
-    cy.route('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline)).as(
+    cy.intercept('GET', api.risks.riskyDeployments).as('deployments');
+    cy.intercept('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
+    cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline)).as(
         'getDeploymentEventTimeline'
     );
-    cy.route('POST', api.graphql(api.risks.graphqlOps.getPodEventTimeline)).as(
+    cy.intercept('POST', api.graphql(api.risks.graphqlOps.getPodEventTimeline)).as(
         'getPodEventTimeline'
     );
 }
@@ -40,11 +39,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('should show the clustered event markers', () => {
             setRoutes();
             // mocking data to thoroughly test the clustering
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/clusteredDeploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/clusteredDeploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -67,11 +64,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('should show the clustered event tooltip', () => {
             setRoutes();
             // mocking data to thoroughly test the filtering
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/clusteredDeploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/clusteredDeploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -103,11 +98,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('should filter policy violation events', () => {
             setRoutes();
             // mocking data to thoroughly test the filtering
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -132,11 +125,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('should filter process activity events and process in baseline activity events', () => {
             setRoutes();
             // mocking data to thoroughly test the filtering
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -165,11 +156,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('should filter container restart events', () => {
             setRoutes();
             // mocking data to thoroughly test the filtering
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -192,11 +181,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('should filter container termination events', () => {
             setRoutes();
             // mocking data to thoroughly test the filtering
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -266,11 +253,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('shows the policy violation event details', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -296,11 +281,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('shows the process activity event details for a process with no parent', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -332,11 +315,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('shows the process activity event details for a process with a parent and unknown parent uid', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -371,11 +352,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('shows the process activity event details for a process with a uid change', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -409,11 +388,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('shows the process activity event details for a process with no uid change', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -447,11 +424,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('shows the process in baseline activity event details', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -479,11 +454,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('shows the container restart event details', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -507,11 +480,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('shows the container termination event details', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -540,11 +511,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('should be able to page between sets of pods when there are 10+', () => {
             setRoutes();
             // mocking data to thoroughly test the pagination
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimelineForFirstSetOfPods.json'
-            ).as('getFirstHalfOfDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimelineForFirstSetOfPods.json',
+            }).as('getFirstHalfOfDeploymentEventTimeline');
 
             openEventTimeline();
 
@@ -556,11 +525,9 @@ describe('Risk Page Deployment Event Timeline', () => {
                 10
             );
 
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimelineForSecondSetOfPods.json'
-            ).as('getSecondHalfOfDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimelineForSecondSetOfPods.json',
+            }).as('getSecondHalfOfDeploymentEventTimeline');
 
             // go to the next page
             cy.get(selectors.eventTimeline.timeline.pagination.nextPage).click({ force: true });
@@ -621,11 +588,9 @@ describe('Risk Page Deployment Event Timeline', () => {
         it('should show a tooltip with the number of containers for a pod, when you hover over the drill down button', () => {
             setRoutes();
             // mocking data to test the drill down button tooltip
-            cy.route(
-                'POST',
-                api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline),
-                'fixture:risks/eventTimeline/deploymentEventTimeline.json'
-            ).as('getDeploymentEventTimeline');
+            cy.intercept('POST', api.graphql(api.risks.graphqlOps.getDeploymentEventTimeline), {
+                fixture: 'risks/eventTimeline/deploymentEventTimeline.json',
+            }).as('getDeploymentEventTimeline');
 
             openEventTimeline();
 

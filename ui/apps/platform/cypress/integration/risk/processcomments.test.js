@@ -9,10 +9,9 @@ import withAuth from '../../helpers/basicAuth';
 const commentsSelectors = selectors.sidePanel.firstProcessCard.comments;
 
 function setRoutes() {
-    cy.server();
-    cy.route('GET', api.risks.riskyDeployments).as('deployments');
-    cy.route('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
-    cy.route('POST', api.graphql(api.risks.graphqlOps.getProcessComments)).as('getComments');
+    cy.intercept('GET', api.risks.riskyDeployments).as('deployments');
+    cy.intercept('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
+    cy.intercept('POST', api.graphql(api.risks.graphqlOps.getProcessComments)).as('getComments');
 }
 
 function openDeploymentFirstProcess(deploymentName) {
@@ -101,11 +100,9 @@ describe('Risk Page Process Comments', () => {
 
     it('should not show edit and delete buttons if no permissions', () => {
         setRoutes();
-        cy.route(
-            'POST',
-            api.graphql(api.risks.graphqlOps.getProcessComments),
-            'fixture:risks/processComments.json'
-        ).as('getComments');
+        cy.intercept('POST', api.graphql(api.risks.graphqlOps.getProcessComments), {
+            fixture: 'risks/processComments.json',
+        }).as('getComments');
 
         openDeploymentFirstProcess('central');
 
