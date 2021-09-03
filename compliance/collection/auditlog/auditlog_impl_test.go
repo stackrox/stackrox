@@ -88,7 +88,6 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsErrorIfReaderIsAlre
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
-	s.T().Skip("Skipping test until the potential race condition is resolved")
 	tempDir, err := ioutil.TempDir("", "")
 	s.NoError(err)
 	defer func() {
@@ -412,7 +411,6 @@ func (s *ComplianceAuditLogReaderTestSuite) getMocks(logPath string) (*mockSende
 	return sender, reader
 }
 
-//lint:ignore U1000 Unused functions are due to test skip.
 func (s *ComplianceAuditLogReaderTestSuite) writeToNewFile(logPath string, lines ...string) {
 	err := ioutil.WriteFile(logPath, []byte(strings.Join(lines, "\n")), 0600)
 	s.NoError(err)

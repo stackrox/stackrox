@@ -155,6 +155,8 @@ replace (
 	github.com/mikefarah/yaml/v2 => gopkg.in/yaml.v2 v2.4.0
 
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
+
+	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
