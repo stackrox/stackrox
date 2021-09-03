@@ -878,10 +878,6 @@ commands:
         type: boolean
         default: true
 
-      use-main-rhel:
-        type: boolean
-        default: false
-
       use-websocket:
         type: boolean
         default: false
@@ -907,13 +903,6 @@ commands:
             cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
             cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-
-            if [[ "<< parameters.use-main-rhel >>" == "true" ]]; then
-              cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main-rhel"
-              cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector-rhel"
-              cci-export SCANNER_IMAGE "quay.io/$REPO/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-              cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            fi
 
   setup-gcp:
     steps:
@@ -1358,10 +1347,6 @@ commands:
       determine-whether-to-run:
         type: steps
 
-      use-main-rhel:
-        type: boolean
-        default: false
-
       sensor-deploy-flavor:
         type: string
         default: kubectl
@@ -1401,7 +1386,6 @@ commands:
       - *setupRoxctl
       - setup-gcp
       - setup-dep-env:
-          use-main-rhel: << parameters.use-main-rhel >>
           use-websocket: << parameters.use-websocket >>
       - when:
           condition: << parameters.is-gke-cluster >>
@@ -1649,9 +1633,6 @@ commands:
         default: ""
       version:
         type: string
-      use-main-rhel:
-        type: boolean
-        default: false
       sensor-deploy-flavor:
         type: string
         default: kubectl
@@ -1717,13 +1698,6 @@ commands:
             cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
             cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-
-            if [[ "<< parameters.use-main-rhel >>" == "true" ]]; then
-              cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main-rhel"
-              cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector-rhel"
-              cci-export SCANNER_IMAGE "quay.io/$REPO/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-              cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            fi
 
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
@@ -2660,7 +2634,13 @@ jobs:
 
       - run:
           name: Build the main Go binaries
-          command: make main-build
+          command: |
+            if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+              # build race images and then overwrite
+              RACE=true make main-build
+            else
+              make main-build
+            fi
 
       - *saveGoBuildBinaryCache
       - *saveGoModBinaryCache
@@ -2780,69 +2760,6 @@ jobs:
 
       - cleanup-clusters-on-fail
 
-  build-rhel:
-    executor: custom
-    resource_class: large
-    environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
-    steps:
-      - checkout
-      - setup_remote_docker
-
-      - install-ossls
-
-      - *restoreGoModCache
-      - setup-go-build-env
-
-      - restore-npm-deps-cache
-      - fetch-ui-deps
-
-      - run:
-          name: Generate OSS notice
-          command: |
-            make ossls-notice
-
-      - setup-dep-env:
-          docker-login: true
-
-      - run:
-          name: Build main image for RHEL which includes building the binaries because they need to be built specifically for RHEL
-          command: |
-            if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
-              # build race images and then overwrite
-              RACE=true make main-image-rhel
-            else
-              make main-image-rhel
-            fi
-
-      - run:
-          name: Push new image
-          command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-
-            TAG="$(make --quiet tag)"
-            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main-rhel:${TAG}" | cat
-            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              docker tag "docker.io/stackrox/main-rhel:${TAG}" docker.io/stackrox/main-rhel:latest
-              ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/main-rhel:latest
-            fi
-
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
-            QUAY_REPO="cgorman1"
-            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main-rhel:$(make --quiet tag)" | cat
-            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              docker tag "quay.io/$QUAY_REPO/main-rhel:$(make --quiet tag)" "quay.io/$QUAY_REPO/main-rhel:latest"
-              ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main-rhel:latest"
-            fi
-
-      - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
-          paths:
-            - image/rhel/bundle.tar.gz
-
-      - cleanup-clusters-on-fail
-
   build-operator:
     executor: custom
     resource_class: large
@@ -2942,40 +2859,6 @@ jobs:
 
       - provision-gke-cluster:
           cluster-id: api-e2e-tests
-
-  provision-openshift-rhel-api-e2e-tests:
-    machine: true
-    environment:
-      - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-to-run:
-          label: ci-rhel-tests,ci-race-tests
-          run-on-master: false
-          run-on-tags: true
-
-      - provision-openshift-cluster:
-          crio: false
-          suffix: -rhel
-          version: 0.2.11-1-geb3414898d
-
-  provision-gke-rhel-api-e2e-tests:
-    executor: custom
-    environment:
-      - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-to-run:
-          label: ci-rhel-tests,ci-race-tests
-          run-on-master: false
-          run-on-tags: true
-
-      - provision-gke-cluster:
-          cluster-id: rhel-api-e2e-tests
 
   provision-gke-kernel-api-e2e-tests:
     executor: custom
@@ -3758,68 +3641,6 @@ jobs:
                 label: ci-no-qa-tests
           use-websocket: true
 
-  openshift-rhel-api-e2e-tests:
-    executor: custom
-    environment:
-      - LOCAL_PORT: 8000
-      - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
-      - SCANNER_SUPPORT: true
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ROX_SENSOR_DETECTION: true
-      - ADMISSION_CONTROLLER: true
-      - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
-      - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
-
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-to-run:
-          label: ci-rhel-tests,ci-race-tests
-          run-on-master: false
-          run-on-tags: true
-      - run-openshift-tests:
-          suffix: -rhel
-          version: 0.2.11-1-geb3414898d
-          use-main-rhel: true
-          sensor-deploy-flavor: helm
-
-  gke-rhel-api-e2e-tests:
-    executor: custom
-    environment:
-      - LOCAL_PORT: 443
-      - COLLECTION_METHOD: ebpf
-      - GCP_IMAGE_TYPE: "COS"
-      - MONITORING_SUPPORT: true
-      - SCANNER_SUPPORT: true
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-      - LOAD_BALANCER: lb
-      - ADMISSION_CONTROLLER: true
-      - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
-      - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
-
-    steps:
-      - run-qa-tests:
-          cluster-id: rhel-api-e2e-tests
-          # sensor-deploy-flavor: helm TODO(ROX-4606)
-          determine-whether-to-run:
-            - check-to-run:
-                label: ci-rhel-tests,ci-race-tests
-                run-on-master: false
-                run-on-tags: true
-          use-main-rhel: true
-          use-websocket: true
-
   gke-kernel-api-e2e-tests:
     executor: custom
     environment:
@@ -4164,6 +3985,11 @@ jobs:
             kubectl -n stackrox set image deploy/scanner-db "*=quay.io/$QUAY_REPO/scanner-db:$(cat SCANNER_VERSION)"
 
       - *waitForAPI
+      - run:
+          name: Wait for Scanner to be ready
+          command: |
+            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
+
       - validate-upgrade:
           upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
           desc: "Validate upgrade again after rollback"
@@ -4184,72 +4010,6 @@ jobs:
       - validate-upgrade-and-check-logs-with-bouncing:
           upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
           desc: "Validate RocksDB after backup + restore"
-
-      - run:
-          name: Restore 56.1 backup to current HEAD
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
-
-      - *waitForAPI
-      - validate-upgrade-and-check-logs-with-bouncing:
-          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-          desc: "Validate 56.1 restore to current HEAD"
-
-      - remove-existing-stackrox-resources
-
-      - run:
-          name: Deploy RHEL-based Central 56.1
-          command: |
-            git checkout 3.0.56.1
-
-            cci-export MAIN_IMAGE_REPO quay.io/$QUAY_REPO/main-rhel
-            cci-export SCANNER_IMAGE "quay.io/$QUAY_REPO/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            cci-export SCANNER_DB_IMAGE "quay.io/$QUAY_REPO/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-
-            cci-export MAIN_IMAGE_TAG 3.0.56.1
-            ./deploy/k8s/central.sh
-
-            # Remove the scanner HPA for these tests to avoid resource throttling
-            kubectl -n stackrox delete hpa/scanner
-
-            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cci-export ROX_USERNAME "$ROX_USERNAME"
-            cci-export ROX_PASSWORD "$ROX_PASSWORD"
-
-      - *waitForAPI
-
-      - run:
-          name: Restore 56.1 backup to 56.1
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
-
-      - *waitForAPI
-
-      - run:
-          name: Set Central + Scanner images to most recent commit
-          command: |
-            git reset --hard "${CIRCLE_SHA1}"
-            kubectl -n stackrox set image deploy/central "central=quay.io/$QUAY_REPO/main-rhel:$(make --quiet tag)"
-            kubectl -n stackrox set image deploy/scanner "scanner=quay.io/$QUAY_REPO/scanner-rhel:$(cat SCANNER_VERSION)"
-            kubectl -n stackrox set image deploy/scanner-db "*=quay.io/$QUAY_REPO/scanner-db-rhel:$(cat SCANNER_VERSION)"
-
-      - *waitForAPI
-
-      - run:
-          name: Wait for Scanner to be ready
-          command: |
-            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
-
-      - validate-upgrade-and-check-logs-with-bouncing:
-          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-          desc: "Validate 56.1 migration to current HEAD on RHEL-based image"
-
-      - run:
-          name: Set images back to base and checkout HEAD again
-          command: |
-            cci-export MAIN_IMAGE_REPO quay.io/$QUAY_REPO/main
-            cci-export SCANNER_IMAGE "quay.io/$QUAY_REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-            cci-export SCANNER_DB_IMAGE "quay.io/$QUAY_REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 
       - run:
           name: Fetch bundle for the "remote" cluster in the DB
@@ -4903,7 +4663,7 @@ jobs:
             COLLECTOR_TAG=$(make --quiet collector-tag)
 
             docker pull docker.io/stackrox/main:$MAIN_TAG | cat
-            docker tag  docker.io/stackrox/main:$MAIN_TAG stackrox.io/main:$MAIN_TAG
+            docker tag docker.io/stackrox/main:$MAIN_TAG stackrox.io/main:$MAIN_TAG
             ./scripts/ci/push-as-manifest-list.sh stackrox.io/main:$MAIN_TAG | cat
 
             # The docs image uses the same tag as main for releases.
@@ -4926,8 +4686,8 @@ jobs:
             ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim" | cat
 
             # RHEL images
-            docker pull docker.io/stackrox/main-rhel:$MAIN_TAG | cat
-            docker tag  docker.io/stackrox/main-rhel:$MAIN_TAG stackrox.io/main-rhel:$MAIN_TAG
+            # For simplicity for customers, tag main as main-rhel as well
+            docker tag stackrox.io/main:$MAIN_TAG stackrox.io/main-rhel:$MAIN_TAG
             ./scripts/ci/push-as-manifest-list.sh stackrox.io/main-rhel:$MAIN_TAG | cat
 
             docker pull    docker.io/stackrox/collector-rhel:$COLLECTOR_TAG | cat
@@ -4939,7 +4699,6 @@ jobs:
             ./scripts/ci/push-as-manifest-list.sh collector.stackrox.io/collector-rhel:$COLLECTOR_TAG | cat
             ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
             ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim" | cat
-
 
       - run:
           name: Push image into quay.io repository backing registry.redhat.io
@@ -5134,8 +4893,6 @@ workflows:
             - pre-build-ui
             - pre-build-cli
             - pre-build-go-binaries
-      - build-rhel:
-          <<: *runOnAllTagsWithPushCtx
       - build-operator:
           <<: *runOnAllTagsWithPushCtx
       - build-scale-monitoring-and-mock-server:
@@ -5180,7 +4937,6 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-upgrade-tests
-            - build-rhel
       - provision-gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-api-scale-tests:
@@ -5258,26 +5014,6 @@ workflows:
             - go-unit-tests
             - ui-unit-tests
             - push-release
-      - provision-openshift-rhel-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - openshift-rhel-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-rhel
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-rhel-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
-      - provision-gke-rhel-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-rhel-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-rhel
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-rhel-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
@@ -5287,7 +5023,6 @@ workflows:
             - quay-rh-registry-push
           requires:
             - build
-            - build-rhel
             - go-unit-tests
             - ui-unit-tests
 
@@ -5296,7 +5031,6 @@ workflows:
           context: custom-executor-pull
           requires:
             - build
-            - build-rhel
 
       - retrigger-master-workflow:
           context: custom-executor-pull

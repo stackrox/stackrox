@@ -15,15 +15,13 @@ endif
 # modified files), along with the SHAs, and `git hash-object` just computes the SHA of that.
 BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
 
-BUILD_IMAGE := stackrox/main:rocksdb-builder-$(BUILD_DIR_HASH)
-RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
 MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE := stackrox/docs:embed-$(shell cat DOCS_VERSION)
 
 ifdef CI
     QUAY_REPO := cgorman1
-    BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-$(BUILD_DIR_HASH)
-    RHEL_BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+    BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
     MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
     DOCS_IMAGE := quay.io/$(QUAY_REPO)/docs:embed-$(shell cat DOCS_VERSION)
 endif
@@ -372,32 +370,14 @@ build-volumes:
 .PHONY: main-builder-image
 main-builder-image: build-volumes
 	@echo "+ $@"
-	scripts/ensure_image.sh $(BUILD_IMAGE) build/Dockerfile build/
-	@# Ensure that the go version in the image matches the expected version
-	# If the next line fails, you need to update the go version in build/Dockerfile.
-	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
-
-.PHONY: main-builder-image-rhel
-main-builder-image-rhel:
-	@echo "+ $@"
-	scripts/ensure_image.sh $(RHEL_BUILD_IMAGE) build/Dockerfile_rhel build/
+	scripts/ensure_image.sh $(BUILD_IMAGE) build/Dockerfile_rhel build/
 	@# Ensure that the go version in the image matches the expected version
 	# If the next line fails, you need to update the go version in build/Dockerfile_rhel.
-	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(RHEL_BUILD_IMAGE)" go version)
-
+	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
 	@echo "+ $@"
-
-.PHONY: main-rhel-build
-main-rhel-build: build-prep main-rhel-build-dockerized
-	@echo "+ $@"
-
-.PHONY: main-build-dockerized
-main-build-dockerized: main-builder-image
-	@echo "+ $@"
-	docker run --rm -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: main-builder-image
@@ -418,17 +398,10 @@ sensor-build:
 sensor-kubernetes-build:
 	$(GOBUILD) sensor/kubernetes
 
-.PHONY: main-rhel-dockerized
-main-rhel-build-dockerized: main-builder-image-rhel
+.PHONY: main-build-dockerized
+main-build-dockerized: main-builder-image
 	@echo "+ $@"
-ifdef CI
-	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --name builder $(RHEL_BUILD_IMAGE) make main-build-nodeps
-	docker cp $(GOPATH) builder:/
-	docker start -i builder
-	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
-else
-	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(RHEL_BUILD_IMAGE) make main-build-nodeps
-endif
+	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps:
@@ -533,44 +506,21 @@ monitoring-image: monitoring-build-context
 .PHONY: all-builds
 all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
 
-.PHONY: all-rhel-builds
-all-rhel-builds: cli main-rhel-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
-
 .PHONY: main-image
 main-image: all-builds
 	make docker-build-main-image
 
-.PHONY: main-image-rhel
-main-image-rhel: all-rhel-builds
-	make docker-build-main-image-rhel
+$(CURDIR)/image/rhel/bundle.tar.gz:
+	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
-# The following targets copy compiled artifacts into the expected locations and
-# runs the docker build.
-# Please DO NOT invoke this target directly unless you know what you're doing;
-# you probably want to run `make main-image`. This target is only in Make for convenience;
-# it assumes the caller has taken care of the dependencies, and does not
-# declare its dependencies explicitly.
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image
-	docker build -t stackrox/main:$(TAG) --build-arg BUILD_IMAGE=$(BUILD_IMAGE) --build-arg DATA_IMAGE_TAG=$(TAG) --build-arg DEBUG_BUILD=$(DEBUG_BUILD) image/
-	@echo "Built main image with tag: $(TAG)"
+docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz
+	docker build -t stackrox/main:$(TAG) --file image/rhel/Dockerfile --label version=$(TAG) --label release=$(TAG) image/rhel
+	@echo "Built main image for RHEL with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 ifdef CI
 	docker tag stackrox/main:$(TAG) quay.io/$(QUAY_REPO)/main:$(TAG)
 endif
-
-$(CURDIR)/image/rhel/bundle.tar.gz:
-	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(RHEL_BUILD_IMAGE) $(CURDIR)/image/rhel
-
-.PHONY: docker-build-main-image-rhel
-docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz
-	docker build -t stackrox/main-rhel:$(TAG) --file image/rhel/Dockerfile --label version=$(TAG) --label release=$(TAG) image/rhel
-	@echo "Built main image for RHEL with tag: $(TAG)"
-	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
-ifdef CI
-	docker tag stackrox/main-rhel:$(TAG) quay.io/$(QUAY_REPO)/main-rhel:$(TAG)
-endif
-
 
 .PHONY: docker-build-data-image
 docker-build-data-image:

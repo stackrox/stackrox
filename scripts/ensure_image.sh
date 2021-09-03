@@ -15,6 +15,7 @@ dir="$3"
 
 [[ -n "${image}" && -n "${dockerfile}" && -n "${dir}" ]] || die "Usage $0 <image> <dockerfile_path> <dir>"
 
+echo "Potentially pulling image ${image}"
 docker_pull_output="$(docker pull "${image}" 2>&1)"
 if [[ "$?" -eq 0 ]]; then
   echo "Image exists. Exiting..."

@@ -102,7 +102,7 @@ curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_
 if tar --version | grep -q "gnu" ; then
   tar_chown_args=("--owner=root:0" "--group=root:0")
 else
-  tar_chown_args=("--uid=root:0" "--gid=root:0")
+  tar_chown_args=("--disable-copyfile")
 fi
 
 # Create output bundle of all files in $bundle_root

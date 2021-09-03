@@ -10,7 +10,7 @@ RUN tar -zxf /bundle.tar.gz
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
-LABEL name="main-rhel" \
+LABEL name="main" \
       vendor="StackRox" \
       maintainer="support@stackrox.com" \
       summary="The StackRox Kubernetes Security Platform" \

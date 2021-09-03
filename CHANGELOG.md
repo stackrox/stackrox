@@ -11,6 +11,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The "Mount Docker Socket" policy has been renamed to "Mount Container Runtime Socket" and will now also detect if a deployment 
   mounts the CRI-O socket for both Kubernetes and OpenShift.
 - The policy "Docker CIS 4.4: Ensure images are scanned and rebuilt to include security patches" is now disabled by default
+- Alpine-based images are now deprecated and all images will be based on UBI. main-rhel will continue to be pushed for consistency.
 
 ## [65.0]
 - Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 
