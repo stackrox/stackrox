@@ -38,6 +38,18 @@ const commonJavaScriptRules = {
 };
 
 const commonTypeScriptReactRules = {
+    // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-no-bind.md
+    'react/jsx-no-bind': [
+        'error',
+        {
+            ignoreRefs: true,
+            allowArrowFunctions: true,
+            allowFunctions: true, // override eslint-config-airbnb to allow as alternative to arrow functions
+            allowBind: false,
+            ignoreDOMComponents: true,
+        },
+    ],
+
     // Neither require nor forbid destructuring assignment for props, state, context.
     'react/destructuring-assignment': ['off'],
 
