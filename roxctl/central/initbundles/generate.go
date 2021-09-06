@@ -15,8 +15,8 @@ import (
 )
 
 type output struct {
-	filename string
 	format   func(request *v1.InitBundleGenResponse) []byte
+	filename string
 }
 
 func generateInitBundle(name string, outputs []output) error {
@@ -101,7 +101,7 @@ func generateCommand() *cobra.Command {
 
 	c := &cobra.Command{
 		Use:  "generate <init bundle name>",
-		Args: cobra.ExactArgs(1),
+		Args: common.ExactArgsWithCustomErrMessage(1, "No name for the init bundle specified"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 			if outputFile != "" {

@@ -75,7 +75,7 @@ func Command() *cobra.Command {
 
 	c := &cobra.Command{
 		Use:  "generate-certs <cluster-name-or-id>",
-		Args: cobra.ExactArgs(1),
+		Args: common.ExactArgsWithCustomErrMessage(1, "No cluster name or ID specified"),
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := downloadCerts(outputDir, args[0], flags.Timeout(c)); err != nil {
 				return errors.Wrap(err, "error downloading regenerated certs")
