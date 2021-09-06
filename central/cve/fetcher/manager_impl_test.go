@@ -8,7 +8,6 @@ import (
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	mockClusterEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore/mocks"
 	"github.com/stackrox/rox/central/cve/converter"
@@ -34,7 +33,7 @@ const (
 func TestUnmarshalCorrectCVEs(t *testing.T) {
 	dat, err := ioutil.ReadFile(correctCVEFile)
 	require.Nil(t, err)
-	var cveEntries []nvd.CVEEntry
+	var cveEntries []schema.NVDCVEFeedJSON10DefCVEItem
 	err = json.Unmarshal(dat, &cveEntries)
 	assert.Nil(t, err)
 	assert.Len(t, cveEntries, 2)
