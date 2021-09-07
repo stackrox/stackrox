@@ -112,6 +112,12 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 // invocation of `multiplexedPush` with a previously seen (from the perspective of the caller)
 // event type.
 func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.MsgFromSensor, queues map[string]*dedupingQueue) {
+	if msg.GetMsg() == nil {
+		// This is likely because sensor is a newer version than central and is sending a message that this central doesn't know about
+		// This is already logged, so it's fine to just ignore it for now
+		return
+	}
+
 	typ := reflectutils.Type(msg.Msg)
 	queue := queues[typ]
 	if queue == nil {
