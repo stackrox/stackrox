@@ -36,9 +36,12 @@ main() {
     log_dir="${log_dir}/${namespace}"
     mkdir -p "${log_dir}"
 
+    echo
+    echo ">>> Collecting from namespace ${namespace} <<<"
+    echo
     set +e
 
-    for object in deployments services pods secrets serviceaccounts validatingwebhookconfigurations; do
+    for object in deployments services pods secrets serviceaccounts validatingwebhookconfigurations catalogsources subscriptions clusterserviceversions; do
         # A feel good command before pulling logs
         echo ">>> ${object} <<<"
         kubectl -n "${namespace}" get "${object}" -o wide

@@ -538,6 +538,7 @@ commands:
             set +e
             echo "Collecting k8s logs"
             ./scripts/ci/collect-service-logs.sh stackrox
+            ./scripts/ci/collect-service-logs.sh stackrox-operator
             ./scripts/ci/collect-service-logs.sh kube-system
             ./scripts/ci/collect-service-logs.sh proxies
             ./scripts/ci/collect-service-logs.sh squid
@@ -4521,8 +4522,12 @@ jobs:
     - *setupGoogleAppCreds
 
     - run:
+        name: Start operator manager on cluster
+        command: make -C operator deploy-via-olm
+
+    - run:
         name: Run Operator e2e tests
-        command: make -C operator test-e2e
+        command: make -C operator test-e2e-deployed
 
     - store-test-results-and-artifacts:
         path: operator/build/kuttl-test-artifacts

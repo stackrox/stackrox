@@ -191,9 +191,13 @@ test: manifests generate fmt vet ## Run tests.
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
-test-e2e: build install kuttl ensure-rox-main-image-exists ## Run e2e tests.
+test-e2e: build install kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	$(KUTTL) test
+
+test-e2e-deployed: kuttl ## Run e2e tests with manager deployed on cluster.
+	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
+	SKIP_MANAGER_START=1 $(KUTTL) test
 
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on DockerHub. Used by Helm chart.
 # Create stackrox namespace if not exists.
@@ -246,6 +250,11 @@ deploy: manifests kustomize ## Deploy operator image to the K8s cluster specifie
 
 undeploy: kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
+
+deploy-via-olm: ## Deploy operator image to the cluster using OLM.
+# This requires operator, bundle and index images to already be pushed, but we do not depend on the
+# target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
+	./hack/olm-operator-install.sh stackrox-operator $(VERSION)
 
 ##@ Bundle and Index build
 
