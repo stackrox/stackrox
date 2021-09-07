@@ -108,7 +108,7 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 		}
 	}
 	if len(filteredRoles) == 0 {
-		sac.DenyAllAccessScopeChecker()
+		return sac.DenyAllAccessScopeChecker()
 	}
 
 	return &resourceLevelScopeCheckerCore{
