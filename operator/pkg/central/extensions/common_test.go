@@ -27,9 +27,10 @@ type secretReconciliationTestCase struct {
 	Deleted  bool
 	Existing []*v1.Secret
 
-	ExpectedCreatedSecrets map[string]secretVerifyFunc
-	ExpectedError          string
-	VerifyStatus           statusVerifyFunc
+	ExpectedCreatedSecrets     map[string]secretVerifyFunc
+	ExpectedError              string
+	ExpectedNotExistingSecrets []string
+	VerifyStatus               statusVerifyFunc
 }
 
 func basicSpecWithScanner(scannerEnabled bool) platform.CentralSpec {
@@ -105,6 +106,11 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 		}
 		assert.Equalf(t, existingSecret.Data, found.Data, "data of pre-existing secret %s has changed", existingSecret.Name)
 		delete(secretsByName, existingSecret.Name)
+	}
+
+	for _, notExistingSecret := range c.ExpectedNotExistingSecrets {
+		_, ok := secretsByName[notExistingSecret]
+		assert.Falsef(t, ok, "secret %s was created", notExistingSecret)
 	}
 
 	for name, verifyFunc := range c.ExpectedCreatedSecrets {

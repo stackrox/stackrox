@@ -87,6 +87,11 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	AdminPasswordSecret *LocalSecretReference `json:"adminPasswordSecret,omitempty"`
 
+	// Disable admin password generation. Do not use this for first-time installations,
+	// as you will have no way to perform initial setup and configuration of alternative authentication methods.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	AdminPasswordGenerationDisabled *bool `json:"adminPasswordGenerationDisabled,omitempty"`
+
 	// Here you can configure if you want to expose central through a node port, a load balancer, or an OpenShift
 	// route.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
@@ -145,6 +150,14 @@ func (c *CentralComponentSpec) GetAdminPasswordSecret() *LocalSecretReference {
 		return nil
 	}
 	return c.AdminPasswordSecret
+}
+
+// GetAdminPasswordGenerationDisabled provides a way to retrieve the AdminPasswordEnabled setting that is safe to use on a nil receiver object.
+func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
+	if c == nil {
+		return false
+	}
+	return pointer.BoolPtrDerefOr(c.AdminPasswordGenerationDisabled, false)
 }
 
 // Persistence defines persistence settings for central.

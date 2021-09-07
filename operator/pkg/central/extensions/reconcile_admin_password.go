@@ -21,6 +21,8 @@ const (
 	adminPasswordKey = `password`
 
 	htpasswdKey = `htpasswd`
+
+	shouldNotExist = false
 )
 
 // ReconcileAdminPasswordExtension returns an extension that takes care of reconciling the central-htpasswd secret.
@@ -74,7 +76,18 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret() 
 
 func (r *reconcileAdminPasswordExtensionRun) Execute() error {
 	if r.centralObj.DeletionTimestamp != nil {
-		return r.reconcileSecret("central-htpasswd", false, nil, nil, false)
+		return r.reconcileSecret("central-htpasswd", shouldNotExist, nil, nil, false)
+	}
+
+	if r.centralObj.Spec.Central.GetAdminPasswordGenerationDisabled() && r.centralObj.Spec.Central.GetAdminPasswordSecret() == nil {
+		err := r.reconcileSecret("central-htpasswd", shouldNotExist, nil, nil, false)
+		if err != nil {
+			return err
+		}
+		r.infoUpdate = "Password generation has been disabled, if you want to enable it set spec.central.adminPasswordGenerationDisabled to false."
+		r.statusUpdater(r.updateStatus)
+
+		return nil
 	}
 
 	if err := r.readPasswordFromReferencedSecret(); err != nil {
@@ -86,22 +99,24 @@ func (r *reconcileAdminPasswordExtensionRun) Execute() error {
 	}
 
 	if r.infoUpdate != "" {
-		r.statusUpdater(func(status *platform.CentralStatus) bool {
-			if status.Central == nil {
-				status.Central = &platform.CentralComponentStatus{}
-			}
-			if status.Central.AdminPassword == nil {
-				status.Central.AdminPassword = &platform.AdminPasswordStatus{}
-			}
-			if r.infoUpdate == status.Central.AdminPassword.Info {
-				return false
-			}
-			status.Central.AdminPassword.Info = r.infoUpdate
-			return true
-		})
+		r.statusUpdater(r.updateStatus)
 	}
 
 	return nil
+}
+
+func (r *reconcileAdminPasswordExtensionRun) updateStatus(status *platform.CentralStatus) bool {
+	if status.Central == nil {
+		status.Central = &platform.CentralComponentStatus{}
+	}
+	if status.Central.AdminPassword == nil {
+		status.Central.AdminPassword = &platform.AdminPasswordStatus{}
+	}
+	if r.infoUpdate == status.Central.AdminPassword.Info {
+		return false
+	}
+	status.Central.AdminPassword.Info = r.infoUpdate
+	return true
 }
 
 func (r *reconcileAdminPasswordExtensionRun) validateHtpasswdSecretData(data secretDataMap, controllerOwned bool) error {

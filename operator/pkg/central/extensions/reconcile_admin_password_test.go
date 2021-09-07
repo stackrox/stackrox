@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 func TestReconcileAdminPassword(t *testing.T) {
@@ -100,6 +101,35 @@ func TestReconcileAdminPassword(t *testing.T) {
 
 					assert.True(t, hf.Check(basic.DefaultUsername, "foobarbaz"))
 				},
+			},
+		},
+		"If a secret is referenced and password generation is disabled create central-htpasswd": {
+			Spec: platform.CentralSpec{
+				Central: &platform.CentralComponentSpec{
+					AdminPasswordSecret: &platform.LocalSecretReference{
+						Name: plaintextPasswordSecret.Name,
+					},
+					AdminPasswordGenerationDisabled: pointer.BoolPtr(true),
+				},
+			},
+			Existing: []*v1.Secret{plaintextPasswordSecret},
+			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+				"central-htpasswd": func(t *testing.T, data secretDataMap) {
+					require.NotNil(t, data)
+				},
+			},
+		},
+		"If password generation is disabled no secret should be created": {
+			Spec: platform.CentralSpec{
+				Central: &platform.CentralComponentSpec{
+					AdminPasswordGenerationDisabled: pointer.BoolPtr(true),
+				},
+			},
+			ExpectedNotExistingSecrets: []string{"central-htpasswd"},
+			VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Equal(t, status.Central.AdminPassword.Info, "Password generation has been disabled, if you want to enable it set spec.central.adminPasswordGenerationDisabled to false.")
 			},
 		},
 	}

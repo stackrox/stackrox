@@ -156,6 +156,11 @@ func (in *CentralComponentSpec) DeepCopyInto(out *CentralComponentSpec) {
 		*out = new(LocalSecretReference)
 		**out = **in
 	}
+	if in.AdminPasswordGenerationDisabled != nil {
+		in, out := &in.AdminPasswordGenerationDisabled, &out.AdminPasswordGenerationDisabled
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Exposure != nil {
 		in, out := &in.Exposure, &out.Exposure
 		*out = new(Exposure)
