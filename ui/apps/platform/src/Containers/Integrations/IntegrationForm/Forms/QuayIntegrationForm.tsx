@@ -135,7 +135,7 @@ function QuayIntegrationForm({
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
                     <FormLabelGroup
-                        label="Name"
+                        label="Integration name"
                         isRequired
                         fieldId="config.name"
                         touched={touched}
@@ -209,7 +209,7 @@ function QuayIntegrationForm({
                     )}
                     <FormLabelGroup
                         isRequired={values.updatePassword}
-                        label="OAuth Token"
+                        label="OAuth token"
                         fieldId="config.quay.oauthToken"
                         touched={touched}
                         errors={errors}

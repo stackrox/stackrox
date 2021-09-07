@@ -40,7 +40,7 @@ export const validationSchema = yup.object().shape({
             .array()
             .of(yup.string().trim().oneOf(['REGISTRY']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         docker: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
             username: yup.string(),
@@ -130,7 +130,7 @@ function ClairifyIntegrationForm({
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
                     <FormLabelGroup
-                        label="Name"
+                        label="Integration name"
                         isRequired
                         fieldId="config.name"
                         touched={touched}

@@ -33,7 +33,7 @@ export const validationSchema = yup.object().shape({
         .array()
         .of(yup.string().trim().oneOf(['NODE_SCANNER', 'SCANNER']))
         .min(1, 'Must have at least one type selected')
-        .required('Required'),
+        .required('A category is required'),
     clairify: yup.object().shape({
         endpoint: yup.string().trim().required('An endpoint is required'),
         grpcEndpoint: yup.string().trim(),
@@ -88,7 +88,7 @@ function ClairifyIntegrationForm({
     }
 
     function onCustomChange(id, value) {
-        return setFieldValue(id, value, false);
+        return setFieldValue(id, value);
     }
 
     return (

@@ -41,7 +41,7 @@ export const validationSchema = yup.object().shape({
             .array()
             .of(yup.string().trim().oneOf(['REGISTRY']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         docker: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
             username: yup.string(),
@@ -115,7 +115,7 @@ function DockerIntegrationForm({
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
                     <FormLabelGroup
-                        label="Name"
+                        label="Integration name"
                         isRequired
                         fieldId="config.name"
                         touched={touched}
@@ -206,7 +206,7 @@ function DockerIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Disable TLS Certificate Validation (Insecure)"
+                            label="Disable TLS certificate validation (insecure)"
                             id="config.docker.insecure"
                             isChecked={values.config.docker.insecure}
                             onChange={onChange}
@@ -220,7 +220,7 @@ function DockerIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Create Integration Without Testing"
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
                             isChecked={values.config.skipTestIntegration}
                             onChange={onChange}

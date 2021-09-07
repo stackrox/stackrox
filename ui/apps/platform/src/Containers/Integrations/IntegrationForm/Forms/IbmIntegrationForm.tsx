@@ -174,7 +174,7 @@ function IbmIntegrationForm({
                     )}
                     <FormLabelGroup
                         isRequired={values.updatePassword}
-                        label="API Key"
+                        label="API key"
                         fieldId="config.ibm.apiKey"
                         touched={touched}
                         errors={errors}

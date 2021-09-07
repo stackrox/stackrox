@@ -12,7 +12,7 @@ export const selectors = {
     dockerRegistryTile: 'a[data-testid="integration-tile"]:contains("Generic Docker Registry")',
     tiles: 'a[data-testid="integration-tile"]',
     clairTile: 'a[data-testid="integration-tile"]:contains("CoreOS Clair")',
-    clairifyTile: 'a[data-testid="integration-tile"]:contains("Clairify")',
+    clairifyTile: 'a[data-testid="integration-tile"]:contains("StackRox Scanner")',
     slackTile: 'a[data-testid="integration-tile"]:contains("Slack")',
     dockerTrustedRegistryTile:
         'a[data-testid="integration-tile"]:contains("Docker Trusted Registry")',

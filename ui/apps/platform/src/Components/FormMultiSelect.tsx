@@ -49,6 +49,7 @@ const FormMultiSelect = ({
             onClear={onClearHandler}
             isOpen={isOpen}
             isDisabled={isDisabled}
+            toggleId={id}
         >
             {children}
         </Select>

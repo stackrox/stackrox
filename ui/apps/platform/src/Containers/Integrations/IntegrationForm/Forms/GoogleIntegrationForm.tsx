@@ -43,15 +43,15 @@ export type GoogleIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     config: yup.object().shape({
-        name: yup.string().trim().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         categories: yup
             .array()
             .of(yup.string().trim().oneOf(['REGISTRY', 'SCANNER']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         google: yup.object().shape({
-            endpoint: yup.string().trim().required('Required'),
-            project: yup.string().trim().required('Required'),
+            endpoint: yup.string().trim().required('An endpoint is required'),
+            project: yup.string().trim().required('A project is required'),
             serviceAccount: yup
                 .string()
                 .test(

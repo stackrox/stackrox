@@ -136,7 +136,7 @@ function AnchoreIntegrationForm({
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
                     <FormLabelGroup
-                        label="Name"
+                        label="Integration name"
                         isRequired
                         fieldId="config.name"
                         touched={touched}
@@ -230,7 +230,7 @@ function AnchoreIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Disable TLS Certificate Validation (Insecure)"
+                            label="Disable TLS certificate validation (insecure)"
                             id="config.anchore.insecure"
                             isChecked={Boolean(values.config.anchore.insecure)}
                             onChange={onChange}
@@ -244,7 +244,7 @@ function AnchoreIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Create Integration Without Testing"
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
                             isChecked={Boolean(values.config.skipTestIntegration)}
                             onChange={onChange}

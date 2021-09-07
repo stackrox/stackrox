@@ -41,7 +41,7 @@ export const validationSchema = yup.object().shape({
             .array()
             .of(yup.string().trim().oneOf(['REGISTRY']))
             .min(1, 'Must have at least one type selected')
-            .required('Required'),
+            .required('A category is required'),
         docker: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
             username: yup.string(),
@@ -133,7 +133,7 @@ function NexusIntegrationForm({
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
                     <FormLabelGroup
-                        label="Name"
+                        label="Integration name"
                         isRequired
                         fieldId="config.name"
                         touched={touched}
@@ -199,13 +199,14 @@ function NexusIntegrationForm({
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
+                        isRequired={values.updatePassword}
                         label="Password"
                         fieldId="config.docker.password"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired
+                            isRequired={values.updatePassword}
                             type="password"
                             id="config.docker.password"
                             value={values.config.docker.password}

@@ -27,14 +27,14 @@ export type ClairIntegration = {
 };
 
 export const validationSchema = yup.object().shape({
-    name: yup.string().required('An integration name is required'),
+    name: yup.string().trim().required('An integration name is required'),
     categories: yup
         .array()
-        .of(yup.string().oneOf(['SCANNER']))
+        .of(yup.string().trim().oneOf(['SCANNER']))
         .min(1, 'Must have at least one type selected')
         .required('A category is required'),
     clair: yup.object().shape({
-        endpoint: yup.string().required('An endpoint is required').min(1),
+        endpoint: yup.string().trim().required('An endpoint is required').min(1),
         insecure: yup.bool(),
     }),
     type: yup.string().matches(/clair/),
