@@ -53,17 +53,26 @@ function RiskTablePanel({
         [history, workflowState]
     );
 
-    useDeepCompareEffect(() => {
-        const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
-        const restSearch = convertToRestSearch(filteredSearch || {});
-        const restSort = convertSortToRestFormat(sortOption);
+    /*
+     * Compute outside hook to avoid double requests if no page search options
+     * before and after response to request for searchOptions.
+     */
+    const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
+    const restSearch = convertToRestSearch(filteredSearch || {});
+    const restSort = convertSortToRestFormat(sortOption);
 
+    useDeepCompareEffect(() => {
         fetchDeployments(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
             .then(setCurrentDeployments)
             .catch((error) => {
                 setCurrentDeployments([]);
                 setErrorMessageDeployments(checkForPermissionErrorMessage(error));
             });
+
+        /*
+         * Although count does not depend on change to sort option or page offset,
+         * request in case of change to count of deployments in Kubernetes environment.
+         */
         fetchDeploymentsCount(restSearch)
             .then(setDeploymentsCount)
             .catch(() => {
@@ -75,7 +84,7 @@ function RiskTablePanel({
         } else {
             setIsViewFiltered(false);
         }
-    }, [pageSearch, sortOption, currentPage, searchOptions]);
+    }, [restSearch, restSort, currentPage]);
 
     return (
         <PanelNew testid="panel">

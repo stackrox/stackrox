@@ -1,7 +1,7 @@
 import { normalize } from 'normalizr';
 import qs from 'qs';
 
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { saveFile } from 'services/DownloadService';
 import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
@@ -37,7 +37,7 @@ export function fetchClusters() {
 /**
  * Fetches list of registered clusters.
  */
-export function fetchClustersAsArray(options?: unknown[]): Promise<Cluster[]> {
+export function fetchClustersAsArray(options?: RestSearchOption[]): Promise<Cluster[]> {
     let queryString = '';
     if (options && options.length !== 0) {
         const query = searchOptionsToQuery(options);
