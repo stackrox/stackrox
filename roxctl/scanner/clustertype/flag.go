@@ -18,7 +18,7 @@ func Get() storage.ClusterType {
 // Value returns the cluster type as a cobra value. Whatever that value is set to,
 // it can be retrieved using Get.
 // The caller must specify the default.
-func Value(defaul storage.ClusterType) pflag.Value {
-	w.ClusterType = &defaul
+func Value(defaultClusterType storage.ClusterType) pflag.Value {
+	w.ClusterType = &defaultClusterType
 	return w
 }

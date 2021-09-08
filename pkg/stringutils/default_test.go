@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDefault(t *testing.T) {
+func TestOrDefault(t *testing.T) {
 	for _, testCase := range []struct {
-		s        string
-		defaul   string
-		expected string
+		s            string
+		defaultValue string
+		expected     string
 	}{
 		{"blah", "default", "blah"},
 		{"blah", "", "blah"},
@@ -20,18 +20,18 @@ func TestDefault(t *testing.T) {
 	} {
 		c := testCase
 		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			assert.Equal(t, c.expected, OrDefault(c.s, c.defaul))
+			assert.Equal(t, c.expected, OrDefault(c.s, c.defaultValue))
 		})
 	}
 }
 
-func TestPointerDefault(t *testing.T) {
+func TestPointerOrDefault(t *testing.T) {
 	blah := "blah"
 	empty := ""
 	for _, testCase := range []struct {
-		s        *string
-		defaul   string
-		expected string
+		s            *string
+		defaultValue string
+		expected     string
 	}{
 		{&blah, "default", "blah"},
 		{&blah, "", "blah"},
@@ -42,7 +42,7 @@ func TestPointerDefault(t *testing.T) {
 	} {
 		c := testCase
 		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			assert.Equal(t, c.expected, PointerOrDefault(c.s, c.defaul))
+			assert.Equal(t, c.expected, PointerOrDefault(c.s, c.defaultValue))
 		})
 	}
 }
