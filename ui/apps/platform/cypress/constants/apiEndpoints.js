@@ -187,8 +187,13 @@ export const integrations = {
     clusterInitBundles: '/v1/cluster-init/init-bundles',
 };
 
-export const apiToken = {
-    generate: 'v1/apitokens/generate',
+export const integration = {
+    apiToken: {
+        generate: 'v1/apitokens/generate',
+    },
+    clusterInitBundle: {
+        generate: 'v1/cluster-init/init-bundles',
+    },
 };
 
 export const system = {

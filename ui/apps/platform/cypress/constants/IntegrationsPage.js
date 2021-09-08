@@ -41,6 +41,7 @@ export const selectors = {
     googleCloudStorageTile: 'a[data-testid="integration-tile"]:contains("Google Cloud Storage")',
     scopedAccessPluginTile: 'a[data-testid="integration-tile"]:contains("Scoped Access Plugin")',
     apiTokenTile: 'a[data-testid="integration-tile"]:contains("API Token")',
+    clusterInitBundleTile: 'a[data-testid="integration-tile"]:contains("Cluster Init Bundle")',
     clusters: {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
     },

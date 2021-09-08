@@ -26,6 +26,38 @@ function getGeneratedAPIToken(name) {
     };
 }
 
+function getGeneratedClusterInitBundle(name) {
+    return {
+        meta: {
+            id: 'f8694cb5-66bf-4e82-a03a-6665ae556321',
+            name,
+            impactedClusters: [],
+            createdAt: '2021-09-03T19:03:16.794525437Z',
+            createdBy: {
+                id: 'sso:fbe77f87-6664-47e7-a84b-96e681aab2f5:google-oauth2|114513146969073096269',
+                authProviderId: 'fbe77f87-6664-47e7-a84b-96e681aab2f5',
+                attributes: [
+                    {
+                        key: 'email',
+                        value: 'sc@stackrox.com',
+                    },
+                    {
+                        key: 'name',
+                        value: 'Saif Chaudhry',
+                    },
+                    {
+                        key: 'userid',
+                        value: 'google-oauth2|114513146969073096269',
+                    },
+                ],
+            },
+            expiresAt: '2022-09-03T19:03:00Z',
+        },
+        helmValuesBundle: 'IyBUaGlzIGlzIGEgU3RhY2tSb3ggY2x1c3RlciBpbml0IG',
+        kubectlBundle: 'IyBUaGlzIGlzIGEgU3RhY2tSb3ggY2x1c3RlciBp',
+    };
+}
+
 describe('Authorization Plugin Test', () => {
     withAuth();
 
@@ -71,7 +103,9 @@ describe('Authentication Plugins Forms', () => {
     it('should create a new API Token integration', () => {
         const apiTokenName = generateUniqueName('API Token Test');
         const generatedToken = getGeneratedAPIToken(apiTokenName);
-        cy.intercept('POST', api.apiToken.generate, generatedToken).as('generateAPIToken');
+        cy.intercept('POST', api.integration.apiToken.generate, generatedToken).as(
+            'generateAPIToken'
+        );
 
         cy.get(selectors.apiTokenTile).click();
 
@@ -100,5 +134,47 @@ describe('Authentication Plugins Forms', () => {
             expect(loc.pathname).to.eq('/main/integrations/authProviders/apitoken/create');
         });
         cy.get('[aria-label="Success Alert"]').should('contain', generatedToken.token);
+    });
+
+    it('should create a new Cluster Init Bundle integration', () => {
+        const clusterInitBundleName = generateUniqueName('Cluster Init Bundle Test');
+        const generatedClusterInitBundle = getGeneratedClusterInitBundle(clusterInitBundleName);
+        cy.intercept(
+            'POST',
+            api.integration.clusterInitBundle.generate,
+            generatedClusterInitBundle
+        ).as('generateClusterInitBundle');
+
+        cy.get(selectors.clusterInitBundleTile).click();
+
+        // @TODO: only use the click, and delete the direct URL visit after forms official launch
+        cy.get(selectors.buttons.new).click();
+        cy.visit('/main/integrations/authProviders/clusterInitBundle/create');
+
+        // Step 0, should start out with disabled Generate button
+        cy.get(selectors.buttons.generate).should('be.disabled');
+
+        // Step 1, check empty fields
+        getInputByLabel('Cluster init bundle name').type(' ').blur();
+
+        getHelperElementByLabel('Cluster init bundle name').contains(
+            'A cluster init bundle name is required'
+        );
+        cy.get(selectors.buttons.generate).should('be.disabled');
+
+        // Step 2, check valid from and generate
+        getInputByLabel('Cluster init bundle name').clear().type(clusterInitBundleName);
+
+        cy.get(selectors.buttons.generate).should('be.enabled').click();
+        cy.wait('@generateClusterInitBundle');
+
+        cy.location().should((loc) => {
+            expect(loc.pathname).to.eq('/main/integrations/authProviders/clusterInitBundle/create');
+        });
+        cy.get('[aria-label="Success Alert"]').should('contain', 'Download Helm values file');
+        cy.get('[aria-label="Success Alert"]').should(
+            'contain',
+            'Download Kubernetes secrets file'
+        );
     });
 });

@@ -28,7 +28,7 @@ export type ClusterInitBundleIntegrationFormProps = {
 };
 
 export const validationSchema = yup.object().shape({
-    name: yup.string().required('Required'),
+    name: yup.string().trim().required('A cluster init bundle name is required'),
 });
 
 export const defaultValues: ClusterInitBundleIntegrationFormValues = {
@@ -42,8 +42,12 @@ function ClusterInitBundleIntegrationForm({
     const formInitialValues = initialValues ? { ...initialValues, defaultValues } : defaultValues;
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -57,7 +61,7 @@ function ClusterInitBundleIntegrationForm({
     const isGenerated = Boolean(message?.responseData);
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
     // The edit flow doesn't make sense for Cluster Init Bundles so we'll show an empty state message here
@@ -85,18 +89,19 @@ function ClusterInitBundleIntegrationForm({
                 ) : (
                     <Form isWidthLimited>
                         <FormLabelGroup
-                            label="Cluster Init Bundle Name"
+                            label="Cluster init bundle name"
                             isRequired
                             fieldId="name"
+                            touched={touched}
                             errors={errors}
                         >
                             <TextInput
                                 isRequired
                                 type="text"
                                 id="name"
-                                name="name"
                                 value={values.name}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable || isGenerated}
                             />
                         </FormLabelGroup>
@@ -110,6 +115,7 @@ function ClusterInitBundleIntegrationForm({
                             onSave={onSave}
                             isSubmitting={isSubmitting}
                             isTesting={isTesting}
+                            isDisabled={!dirty || !isValid}
                         >
                             Generate
                         </FormSaveButton>
