@@ -113,9 +113,11 @@ export const network = {
 };
 
 export const policies = {
-    policies: 'v1/policies?*',
-    policy: 'v1/policies/*',
-    dryrun: 'v1/policies/dryrunjob',
+    policies: '/v1/policies',
+    policy: '/v1/policies/*',
+    dryrun: '/v1/policies/dryrunjob',
+    export: '/v1/policies/export',
+    import: '/v1/policies/import',
 };
 
 export const roles = {

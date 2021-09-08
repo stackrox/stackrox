@@ -6,19 +6,16 @@ describe('policy import and export', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.fixture('search/metadataOptions.json').as('metadataOptionsJson');
-        cy.route('GET', api.search.options, '@metadataOptionsJson').as('metadataOptions');
+        cy.intercept('GET', api.search.options, {
+            fixture: 'search/metadataOptions.json',
+        }).as('metadataOptions');
         cy.visit(url);
         cy.wait('@metadataOptions');
     });
 
     describe('policy export', () => {
         it('should start an API call to get the policy in the detail panel', () => {
-            cy.route({
-                method: 'POST',
-                url: 'v1/policies/export',
-            }).as('policyExport');
+            cy.intercept('POST', api.policies.export).as('policyExport');
 
             cy.get(selectors.tableFirstRow).click();
 
@@ -36,11 +33,9 @@ describe('policy import and export', () => {
         });
 
         it('should display an error when the export fails', () => {
-            cy.route({
-                method: 'POST',
-                url: 'v1/policies/export',
-                status: 400,
-                response: {
+            cy.intercept('POST', api.policies.export, {
+                statusCode: 400,
+                body: {
                     message: 'Some policies could not be retrieved.',
                 },
             }).as('policyExport');
@@ -121,10 +116,8 @@ describe('policy import and export', () => {
                 ],
                 allSucceeded: false,
             };
-            cy.route({
-                method: 'POST',
-                url: 'v1/policies/import',
-                response: mockDupeNameResponse,
+            cy.intercept('POST', api.policies.import, {
+                body: mockDupeNameResponse,
             }).as('dupeImportName');
 
             cy.get(selectors.importPolicyButton).click();
@@ -185,10 +178,8 @@ describe('policy import and export', () => {
                 ],
                 allSucceeded: false,
             };
-            cy.route({
-                method: 'POST',
-                url: 'v1/policies/import',
-                response: mockDupeNameResponse,
+            cy.intercept('POST', api.policies.import, {
+                body: mockDupeNameResponse,
             }).as('dupeImportId');
 
             cy.get(selectors.importPolicyButton).click();
@@ -250,10 +241,8 @@ describe('policy import and export', () => {
                 ],
                 allSucceeded: false,
             };
-            cy.route({
-                method: 'POST',
-                url: 'v1/policies/import',
-                response: mockDupeNameResponse,
+            cy.intercept('POST', api.policies.import, {
+                body: mockDupeNameResponse,
             }).as('dupeImportNameAndId');
 
             cy.get(selectors.importPolicyButton).click();

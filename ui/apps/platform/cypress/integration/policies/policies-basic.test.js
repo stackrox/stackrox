@@ -6,9 +6,9 @@ describe('Policies basic tests', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.fixture('search/metadataOptions.json').as('metadataOptionsJson');
-        cy.route('GET', api.search.options, '@metadataOptionsJson').as('metadataOptions');
+        cy.intercept('GET', api.search.options, {
+            fixture: 'search/metadataOptions.json',
+        }).as('metadataOptions');
         cy.visit(url);
         cy.wait('@metadataOptions');
     });
@@ -33,23 +33,29 @@ describe('Policies basic tests', () => {
         cy.get(selectors.clonePolicyButton).click();
     };
 
-    const searchPolicyByName = (policyName) => {
-        cy.route(`/v1/policies?query=Policy:${policyName}`).as('newSearchQuery');
-        cy.get(selectors.searchInput).type('Policy:{enter}');
-        cy.get(selectors.searchInput).type(`${policyName}{enter}`);
-        cy.wait('@newSearchQuery');
+    const searchPolicies = (category, value) => {
+        cy.intercept({
+            method: 'GET',
+            pathname: api.policies.policies,
+            query: {
+                query: `${category}:${value}`,
+            },
+        }).as('GetPoliciesWithSearchQuery');
+        cy.get(selectors.searchInput).type(`${category}:{enter}`);
+        cy.get(selectors.searchInput).type(`${value}{enter}`);
+        cy.wait('@GetPoliciesWithSearchQuery');
     };
 
     const savePolicy = () => {
         // Next will dryrun and show the policy effects preview.
-        cy.route('POST', api.policies.dryrun).as('dryrunPolicy');
+        cy.intercept('POST', api.policies.dryrun).as('dryrunPolicy');
         goToNextWizardStage();
         cy.wait('@dryrunPolicy');
         // Next will now take you to the enforcement page.
         goToNextWizardStage();
         // Save will PUT the policy (assuming it is not new), then GET it.
-        cy.route('PUT', api.policies.policy).as('savePolicy');
-        cy.route('GET', api.policies.policy).as('getPolicy');
+        cy.intercept('PUT', api.policies.policy).as('savePolicy');
+        cy.intercept('GET', api.policies.policy).as('getPolicy');
         cy.get(selectors.savePolicyButton).click();
         cy.wait('@savePolicy');
         cy.wait('@getPolicy');
@@ -64,15 +70,9 @@ describe('Policies basic tests', () => {
         });
 
         it('should display and send a query using the search input', () => {
-            cy.route('/v1/policies?query=Category:DevOps Best Practices').as('newSearchQuery');
-            cy.get(selectors.searchInput).type('Category:{enter}');
-            cy.get(selectors.searchInput).type('DevOps Best Practices{enter}');
-            cy.wait('@newSearchQuery');
+            searchPolicies('Category', 'DevOps Best Practices');
             cy.get(selectors.searchInput).type('{backspace}{backspace}');
-            cy.route('/v1/policies?query=Cluster:remote').as('newSearchQuery');
-            cy.get(selectors.searchInput).type('Cluster:{enter}');
-            cy.get(selectors.searchInput).type('remote{enter}');
-            cy.wait('@newSearchQuery');
+            searchPolicies('Cluster', 'remote');
         });
 
         it('should show the required "*" next to the required fields', () => {
@@ -161,7 +161,7 @@ describe('Policies basic tests', () => {
         // TODO(ROX-1580): Re-enable this test.
         xit('should de-highlight a row on panel close', () => {
             // Select a row.
-            cy.route('GET', api.policies.policy).as('getPolicy');
+            cy.intercept('GET', api.policies.policy).as('getPolicy');
             cy.get(selectors.policies.scanImage).click({ force: true });
             cy.wait('@getPolicy'); // Wait for the panel to be loaded before closing.
 
@@ -251,11 +251,10 @@ describe('Policies basic tests', () => {
                 });
         });
 
-        // eslint-disable-next-line jest/no-focused-tests
-        it.only('should delete a policy when the hover delete policy clicked for custom policy', () => {
+        it('should delete a policy when the hover delete policy clicked for custom policy', () => {
             const clonedPolicyName = 'TEST DELETE POLICY';
 
-            searchPolicyByName(text.policyLatestTagName);
+            searchPolicies('Policy', text.policyLatestTagName);
 
             // Create a custom policy.
             cy.get(selectors.tableFirstRow).click({ force: true });
@@ -266,20 +265,22 @@ describe('Policies basic tests', () => {
             // This will take you to policy fields page.
             goToNextWizardStage();
             // Next will dryrun and show the policy effects preview.
-            cy.route('POST', api.policies.dryrun).as('dryrunPolicy');
+            cy.intercept('POST', api.policies.dryrun).as('dryrunPolicy');
             goToNextWizardStage();
             cy.wait('@dryrunPolicy');
             // Next will now take you to the enforcement page.
             goToNextWizardStage();
             // Save will POST the policy, then GET it.
-            cy.route('POST', api.policies.policies).as('newPolicy');
-            cy.route('GET', api.policies.policy).as('getPolicy');
+            cy.intercept('POST', `${api.policies.policies}?enableStrictValidation=true`).as(
+                'newPolicy'
+            );
+            cy.intercept('GET', api.policies.policy).as('getPolicy');
             cy.get(selectors.savePolicyButton).click();
             cy.wait('@newPolicy');
             cy.wait('@getPolicy');
 
             cy.get(selectors.searchInput).type('{backspace}{backspace}');
-            searchPolicyByName(clonedPolicyName);
+            searchPolicies('Policy', clonedPolicyName);
             cy.get(selectors.tableFirstRowName)
                 .invoke('text')
                 .then((policyName) => {

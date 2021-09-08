@@ -8,9 +8,9 @@ describe('Boolean Policy Logic Section', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.server();
-        cy.fixture('search/metadataOptions.json').as('metadataOptionsJson');
-        cy.route('GET', api.search.options, '@metadataOptionsJson').as('metadataOptions');
+        cy.intercept('GET', api.search.options, {
+            fixture: 'search/metadataOptions.json',
+        }).as('metadataOptions');
         cy.visit(url);
         cy.wait('@metadataOptions');
     });
@@ -33,14 +33,14 @@ describe('Boolean Policy Logic Section', () => {
 
     const savePolicy = () => {
         // Next will dryrun and show the policy effects preview.
-        cy.route('POST', api.policies.dryrun).as('dryrunPolicy');
+        cy.intercept('POST', api.policies.dryrun).as('dryrunPolicy');
         goToNextWizardStage();
         cy.wait('@dryrunPolicy');
         // Next will now take you to the enforcement page.
         goToNextWizardStage();
         // Save will PUT the policy (assuming it is not new), then GET it.
-        cy.route('PUT', api.policies.policy).as('savePolicy');
-        cy.route('GET', api.policies.policy).as('getPolicy');
+        cy.intercept('PUT', api.policies.policy).as('savePolicy');
+        cy.intercept('GET', api.policies.policy).as('getPolicy');
         cy.get(selectors.savePolicyButton).click();
         cy.wait('@savePolicy');
         cy.wait('@getPolicy');
