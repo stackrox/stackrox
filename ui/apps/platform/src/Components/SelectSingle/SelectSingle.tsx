@@ -46,6 +46,7 @@ function SelectSingle({
             direction={direction}
             isCreatable={isCreatable}
             placeholderText={placeholderText}
+            toggleId={id}
         >
             {children}
         </Select>

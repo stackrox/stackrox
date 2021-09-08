@@ -53,7 +53,7 @@ export const selectors = {
         create: 'button:contains("Create")',
         save: 'button:contains("Save")',
         confirm: 'button:contains("Confirm")',
-        generate: 'button:contains("Generate"):not([disabled])',
+        generate: 'button:contains("Generate")',
         revoke: 'button:contains("Revoke")',
         closePanel: 'button[data-testid="cancel"]',
         newIntegration: 'button:contains("New integration")',

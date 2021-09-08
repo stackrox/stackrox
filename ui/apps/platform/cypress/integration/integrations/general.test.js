@@ -130,7 +130,7 @@ describe('API Token Creation Flow', () => {
         cy.get(selectors.apiTokenForm.nameInput).type(randomTokenName);
         cy.get(`${selectors.apiTokenForm.roleSelect} .react-select__dropdown-indicator`).click();
         cy.get('.react-select__menu-list > div:contains("Admin")').click();
-        cy.get(selectors.buttons.generate).click();
+        cy.get(`${selectors.buttons.generate}:not([disabled])`).click();
         cy.get(selectors.apiTokenBox);
         cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
         cy.get(selectors.apiTokenDetailsDiv).contains('Roles:Admin');

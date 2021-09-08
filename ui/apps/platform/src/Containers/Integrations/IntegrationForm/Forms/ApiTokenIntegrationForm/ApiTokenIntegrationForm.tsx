@@ -3,16 +3,16 @@ import {
     TextInput,
     PageSection,
     Form,
-    FormSelect,
-    FormSelectOption,
     DescriptionList,
     DescriptionListTerm,
     DescriptionListGroup,
     DescriptionListDescription,
+    SelectOption,
 } from '@patternfly/react-core';
 
 import * as yup from 'yup';
 
+import SelectSingle from 'Components/SelectSingle';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import { getDateTime } from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
@@ -44,8 +44,12 @@ export type ApiTokenIntegrationFormProps = {
 };
 
 export const validationSchema = yup.object().shape({
-    name: yup.string().required('Required'),
-    roles: yup.array().of(yup.string()).min(1, 'Must have a role selected').required('Required'),
+    name: yup.string().trim().required('A token name is required'),
+    roles: yup
+        .array()
+        .of(yup.string().trim())
+        .min(1, 'Must have a role selected')
+        .required('A role is required'),
 });
 
 export const defaultValues: ApiTokenIntegrationFormValues = {
@@ -60,8 +64,12 @@ function ApiTokenIntegrationForm({
     const formInitialValues = initialValues ? { ...initialValues, defaultValues } : defaultValues;
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -76,11 +84,11 @@ function ApiTokenIntegrationForm({
     const isGenerated = Boolean(message?.responseData);
 
     function onChange(value, event) {
-        return setFieldValue(event.target.id, value, false);
+        return setFieldValue(event.target.id, value);
     }
 
-    function onRoleChange(value, event) {
-        return setFieldValue(event.target.id, [value], false);
+    function onRoleChange(id, selection) {
+        return setFieldValue(id, [selection]);
     }
 
     // The edit flow doesn't make sense for API Tokens so we'll show an empty state message here
@@ -139,39 +147,43 @@ function ApiTokenIntegrationForm({
                 ) : (
                     <Form isWidthLimited>
                         <FormLabelGroup
-                            label="Token Name"
+                            label="Token name"
                             isRequired
                             fieldId="name"
+                            touched={touched}
                             errors={errors}
                         >
                             <TextInput
-                                isRequired
                                 type="text"
                                 id="name"
-                                name="name"
                                 value={values.name}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable || isGenerated}
                             />
                         </FormLabelGroup>
-                        <FormLabelGroup isRequired label="Role" fieldId="roles" errors={errors}>
-                            <FormSelect
+                        <FormLabelGroup
+                            isRequired
+                            label="Role"
+                            fieldId="roles"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <SelectSingle
                                 id="roles"
-                                value={values.roles}
-                                onChange={onRoleChange}
+                                value={values.roles[0]}
+                                handleSelect={onRoleChange}
                                 isDisabled={!isEditable || isRolesLoading || isGenerated}
+                                placeholderText="Choose role..."
                             >
-                                <FormSelectOption label="Choose one..." value="" isDisabled />
                                 {roles.map((role) => {
                                     return (
-                                        <FormSelectOption
-                                            key={role.name}
-                                            label={role.name}
-                                            value={role.name}
-                                        />
+                                        <SelectOption key={role.name} value={role.name}>
+                                            {role.name}
+                                        </SelectOption>
                                     );
                                 })}
-                            </FormSelect>
+                            </SelectSingle>
                         </FormLabelGroup>
                     </Form>
                 )}
@@ -183,6 +195,7 @@ function ApiTokenIntegrationForm({
                             onSave={onSave}
                             isSubmitting={isSubmitting}
                             isTesting={isTesting}
+                            isDisabled={!dirty || !isValid}
                         >
                             Generate
                         </FormSaveButton>

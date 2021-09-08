@@ -7,7 +7,7 @@ export function getInputByLabel(label) {
         });
 }
 
-export function getMultiSelectButtonByLabel(label) {
+export function getSelectButtonByLabel(label) {
     return cy
         .contains('label', label)
         .invoke('attr', 'for')
@@ -16,8 +16,8 @@ export function getMultiSelectButtonByLabel(label) {
         });
 }
 
-export function getMultiSelectOption(option) {
-    return cy.get(`.pf-c-select__menu-item:contains("${option}")`);
+export function getSelectOption(option) {
+    return cy.get(`.pf-c-select__menu button:contains("${option}")`);
 }
 
 export function getHelperElementByLabel(label) {

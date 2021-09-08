@@ -6,8 +6,8 @@ import {
     getHelperElementByLabel,
     getInputByLabel,
     generateUniqueName,
-    getMultiSelectButtonByLabel,
-    getMultiSelectOption,
+    getSelectButtonByLabel,
+    getSelectOption,
 } from '../../helpers/formHelpers';
 
 describe('Image Integrations Test', () => {
@@ -47,8 +47,8 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(generateUniqueName('Clairify Test'));
-        getMultiSelectButtonByLabel('Type').click();
-        getMultiSelectOption('Image Scanner').click();
+        getSelectButtonByLabel('Type').click();
+        getSelectOption('Image Scanner').click();
         getInputByLabel('Endpoint').clear().type('https://scanner.stackrox:8080');
 
         cy.get(selectors.buttons.test).should('be.enabled');
@@ -197,8 +197,8 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(generateUniqueName('ECR Test'));
-        getMultiSelectButtonByLabel('Type').click();
-        getMultiSelectOption('Registry').click();
+        getSelectButtonByLabel('Type').click();
+        getSelectOption('Registry').click();
         getInputByLabel('Registry endpoint').clear().type('test.endpoint');
         getInputByLabel('Project').clear().type('test');
         getInputByLabel('Service account key (JSON)').type('{"key":"value"}', {
@@ -314,8 +314,8 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(generateUniqueName('DTR Test'));
-        getMultiSelectButtonByLabel('Type').click();
-        getMultiSelectOption('Registry').click();
+        getSelectButtonByLabel('Type').click();
+        getSelectOption('Registry').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').type('password');
@@ -353,8 +353,8 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(generateUniqueName('Quay Test'));
-        getMultiSelectButtonByLabel('Type').click();
-        getMultiSelectOption('Registry').click();
+        getSelectButtonByLabel('Type').click();
+        getSelectOption('Registry').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('OAuth token').clear().type('12345');
 
@@ -389,8 +389,8 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(generateUniqueName('Clair Test'));
-        getMultiSelectButtonByLabel('Type').click();
-        getMultiSelectOption('Image Scanner').click();
+        getSelectButtonByLabel('Type').click();
+        getSelectOption('Image Scanner').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
 
         cy.get(selectors.buttons.test).should('be.enabled');
@@ -463,8 +463,8 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(generateUniqueName('Tenable Test'));
-        getMultiSelectButtonByLabel('Type').click();
-        getMultiSelectOption('Registry').click();
+        getSelectButtonByLabel('Type').click();
+        getSelectOption('Registry').click();
         getInputByLabel('Access key').clear().type('12345');
         getInputByLabel('Secret key').clear().type('12345');
 

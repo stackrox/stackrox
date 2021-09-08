@@ -183,6 +183,12 @@ export const integrations = {
     notifiers: '/v1/notifiers',
     externalBackups: '/v1/externalbackups',
     authPlugins: '/v1/scopedaccessctrl/configs',
+    apiTokens: 'v1/apitokens?revoked=false',
+    clusterInitBundles: '/v1/cluster-init/init-bundles',
+};
+
+export const apiToken = {
+    generate: 'v1/apitokens/generate',
 };
 
 export const system = {
