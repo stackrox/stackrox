@@ -63,6 +63,8 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DebugLogs)): {
 			"/v1.DebugService/GetLogLevel",
+		},
+		user.With(permissions.Modify(resources.DebugLogs)): {
 			"/v1.DebugService/SetLogLevel",
 		},
 	})
