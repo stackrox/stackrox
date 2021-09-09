@@ -12,7 +12,7 @@ import {
     ENFORCEMENT_ACTIONS_AS_PAST_TENSE,
 } from 'constants/enforcementActions';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { violationsPFBasePath } from 'routePaths';
+import { violationsBasePath } from 'routePaths';
 import { ListAlert } from './types/violationTypes';
 
 type EntityTableCellProps = {
@@ -84,7 +84,7 @@ const tableColumnDescriptor = [
         accessor: 'policy.name',
         sortField: 'Policy',
         Cell: ({ original }) => {
-            const url = `${violationsPFBasePath}/${original.id as string}`;
+            const url = `${violationsBasePath}/${original.id as string}`;
             return (
                 <Tooltip content={original?.policy?.description || 'No description available'}>
                     <Link to={url}>{original?.policy?.name}</Link>

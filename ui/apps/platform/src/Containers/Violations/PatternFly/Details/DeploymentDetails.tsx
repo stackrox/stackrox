@@ -6,7 +6,7 @@ import { portExposureLabels } from 'messages/common';
 import ObjectDescriptionList from 'Components/ObjectDescriptionList';
 import DeploymentOverview from './Deployment/DeploymentOverview';
 import SecurityContext from './Deployment/SecurityContext';
-import ContainerConfigurations from './Deployment/ContainerConfigurations';
+import ContainerConfiguration from './Deployment/ContainerConfiguration';
 
 type PortExposure = 'EXTERNAL' | 'NODE' | 'HOST' | 'INTERNAL' | 'UNSET';
 
@@ -73,12 +73,18 @@ const DeploymentDetails = ({ deployment }) => {
     const deploymentObj = relatedDeployment || deployment;
 
     return (
-        <Flex className="pf-u-mt-md">
+        <Flex
+            className="pf-u-mt-md"
+            direction={{ default: 'column' }}
+            flex={{ default: 'flex_1' }}
+            data-testid="deployment-details"
+        >
             {!relatedDeployment && (
                 <Alert
                     variant="warning"
                     isInline
                     title="This data is a snapshot of a deployment that no longer exists."
+                    data-testid="deployment-snapshot-warning"
                 />
             )}
             <Flex flex={{ default: 'flex_1' }}>
@@ -87,7 +93,7 @@ const DeploymentDetails = ({ deployment }) => {
                         <Title headingLevel="h3">Overview</Title>
                     </FlexItem>
                     <FlexItem>
-                        <Card isFlat>
+                        <Card isFlat data-testid="deployment-overview">
                             <CardBody>
                                 <DeploymentOverview deployment={deploymentObj} />
                             </CardBody>
@@ -97,7 +103,7 @@ const DeploymentDetails = ({ deployment }) => {
                         <Title headingLevel="h3">Port Configuration</Title>
                     </FlexItem>
                     <FlexItem>
-                        <Card isFlat>
+                        <Card isFlat data-testid="port-configuration">
                             <CardBody>
                                 {deploymentObj?.ports?.length > 0
                                     ? formatDeploymentPorts(deploymentObj.ports).map((port) => (
@@ -114,14 +120,14 @@ const DeploymentDetails = ({ deployment }) => {
                         <SecurityContext deployment={relatedDeployment} />
                     </FlexItem>
                 </Flex>
-            </Flex>
-            <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
-                <FlexItem>
-                    <Title headingLevel="h3">Container Configuration</Title>
-                </FlexItem>
-                <FlexItem>
-                    <ContainerConfigurations deployment={relatedDeployment} />
-                </FlexItem>
+                <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
+                    <FlexItem>
+                        <Title headingLevel="h3">Container Configuration</Title>
+                    </FlexItem>
+                    <FlexItem>
+                        <ContainerConfiguration deployment={relatedDeployment} />
+                    </FlexItem>
+                </Flex>
             </Flex>
         </Flex>
     );

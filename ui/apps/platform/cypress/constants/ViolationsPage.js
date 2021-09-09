@@ -1,65 +1,72 @@
 import { violationTagsSelectors } from '../selectors/tags';
 import { violationCommentsSelectors, commentsDialogSelectors } from '../selectors/comments';
-import selectSelectors from '../selectors/select';
 import navigationSelectors from '../selectors/navigation';
-import scopeSelectors from '../helpers/scopeSelectors';
 
 export const url = '/main/violations';
 
 export const selectors = {
     navLink: `${navigationSelectors.navLinks}:contains("Violations")`,
-    rows: '.rt-tbody .rt-tr',
-    activeRow: '.row-active',
-    firstTableRow: '.rt-tbody :nth-child(1) > .rt-tr',
-    tableRowContains: (text) => `.rt-tbody .rt-tr:contains("${text}")`,
-    firstPanelTableRow: '.rt-tbody > :nth-child(1) > .rt-tr',
-    lastTableRow: '.rt-tr:last',
-    panels: '[data-testid="panel"]',
-    sidePanel: {
-        header: '[data-testid="panel-header"]',
-        tabs: 'button[data-testid="tab"]',
-        getTabByIndex: (index) => `button[data-testid="tab"]:nth(${index})`,
-        getTabByName: (name) => `button[data-testid="tab"]:contains("${name}")`,
-        enforcementDetailMessage: '[data-testid="enforcement-detail-message"]',
-        enforcementExplanationMessage: '[data-testid="enforcement-explanation-message"]',
-        deploymentContainerConfiguration: scopeSelectors(
-            '[data-testid="deployment-container-configuration"]',
-            {
-                commands: '[data-testid="Commands"]',
-            }
-        ),
-        ...scopeSelectors('div[data-testid="panel"]:eq(1)', {
-            enforcementTab: 'button[data-testid="tab"]:contains("Enforcement")',
-            deploymentTab: 'button[data-testid="tab"]:contains("Deployment")',
-            policyTab: 'button[data-testid="tab"]:contains("Policy")',
-            getPropertyValue: (propertyName) =>
-                ` div:not(:has(*)):contains("${propertyName}:"):first + *`,
-            tags: violationTagsSelectors,
-            comments: violationCommentsSelectors,
-        }),
-        closeButton: '[data-testid="cancel"]',
+    firstTableRow: 'tbody tr:nth(0)',
+    tableRowContains: (text) => `tbody tr:contains("${text}")`,
+    firstTableRowLink: 'tbody tr:nth(0) a',
+    lastTableRow: 'tbody tr:last',
+    lastTableRowLink: 'tbody tr:last a',
+    actions: {
+        btn: 'td.pf-c-table__action button',
+        excludeDeploymentBtn: 'button:contains("Exclude deployment")',
+        resolveBtn: 'button:contains("Mark as resolved")',
+        resolveAndAddToBaselineBtn: 'button:contains("Resolve and add to process baseline")',
+        dropdown: '[data-testid="violations-bulk-actions-dropdown"]',
+        addTagsBtn: '[data-testid="bulk-add-tags-btn"]',
     },
-    entityTableHeader: '.rt-thead > .rt-tr > div:contains("Entity")',
-    typeTableHeader: '.rt-thead > .rt-tr > div:contains("Type")',
-    policyTableHeader: '.rt-thead > .rt-tr > div:contains("Policy")',
+    details: {
+        page: '[data-testid="violation-details-page"]',
+        title: 'h1.pf-c-title',
+        subtitle: 'h2.pf-c-title',
+        tabs: 'li.pf-c-tabs__item',
+        violationTab: 'li.pf-c-tabs__item:contains("Violation")',
+        enforcementTab: 'li.pf-c-tabs__item:contains("Enforcement")',
+        deploymentTab: 'li.pf-c-tabs__item:contains("Deployment")',
+        policyTab: 'li.pf-c-tabs__item:contains("Policy")',
+        tags: violationTagsSelectors,
+        comments: violationCommentsSelectors,
+    },
+    enforcement: {
+        detailMessage: '[data-testid="enforcement-detail-message"]',
+        explanationMessage: '[data-testid="enforcement-explanation-message"]',
+    },
+    deployment: {
+        overview: '[data-testid="deployment-details"] [data-testid="deployment-overview"]',
+        containerConfiguration:
+            '[data-testid="deployment-details"] [data-testid="container-configuration"]',
+        securityContext: '[data-testid="deployment-details"] [data-testid="security-context"]',
+        portConfiguration: '[data-testid="deployment-details"] [data-testid="port-configuration"]',
+        snapshotWarning:
+            '[data-testid="deployment-details"] [data-testid="deployment-snapshot-warning"]',
+    },
+    table: {
+        rows: 'tbody tr',
+        column: {
+            lifecycle: 'th:contains("Lifecycle")',
+            entity: 'th:contains("Entity")',
+            type: 'th:contains("Type")',
+            policy: 'th:contains("Policy")',
+        },
+    },
+    modal: {
+        excludeConfirmation: '[data-testid="exclude-confirmation-modal"]',
+        tagConfirmation: {
+            input: '[data-testid="tag-confirmation-modal"] input',
+            options: '[data-testid="tag-confirmation-modal"] li button',
+            cancelBtn: 'footer button:contains("Cancel")',
+            confirmBtn: 'footer button:contains("Confirm")',
+        },
+        resolveConfirmation: '[data-testid="resolve-confirmation-modal"]',
+    },
     viewDeploymentsButton: 'button:contains("View Deployments")',
-    modal: '.ReactModalPortal > .ReactModal__Overlay',
     clusterFieldInModal: '.ReactModalPortal > .ReactModal__Overlay span:contains("Cluster")',
-    collapsible: {
-        header: '.Collapsible__trigger',
-        body: '.Collapsible__contentInner',
-    },
     securityBestPractices: '[data-testid="deployment-security-practices"]',
     runtimeProcessCards: '[data-testid="runtime-processes"]',
-    lifeCycleColumn: '.rt-thead.-header:contains("Lifecycle")',
-    excludeDeploymentButton: '[data-testid="exclude-deployment-button"]',
-    resolveButton: '[data-testid="resolve-button"]',
     excludedDeploymentRow: '.rt-tr:contains("metadata-proxy-v0.1")',
-    bulkAddTagsButton: '[data-testid="bulk-add-tags-button"]',
-    addTagsDialog: scopeSelectors('.ReactModal__Content', {
-        ...selectSelectors.multiSelect,
-        confirmButton: 'button:contains("Confirm")',
-        cancelButton: 'button:contains("Cancel")',
-    }),
     commentsDialog: commentsDialogSelectors,
 };

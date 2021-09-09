@@ -21,7 +21,7 @@ function ContainerConfiguration({ container }): ReactElement {
     const { resources, volumes, secrets, config, image } = container;
     const { command, args } = config || {};
     return (
-        <DescriptionList data-testid="deployment-container-configuration" isHorizontal>
+        <DescriptionList data-testid="container-configuration" isHorizontal>
             <ContainerImage image={image} />
             <Divider component="div" />
             {(command || args) && (
@@ -30,6 +30,7 @@ function ContainerConfiguration({ container }): ReactElement {
                         <DescriptionListItem
                             term="Commands"
                             desc={<Commands command={command} />}
+                            data-testid="commands"
                         />
                     )}
                     {args?.length > 0 && <DescriptionListItem term="Arguments" desc={args} />}

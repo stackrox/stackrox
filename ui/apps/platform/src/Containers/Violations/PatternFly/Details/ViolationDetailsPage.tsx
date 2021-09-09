@@ -12,7 +12,7 @@ import {
     Bullseye,
 } from '@patternfly/react-core';
 
-import { violationsPFBasePath } from 'routePaths';
+import { violationsBasePath } from 'routePaths';
 import { fetchAlert } from 'services/AlertsService';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
@@ -66,9 +66,9 @@ function ViolationDetailsPage(): ReactElement {
     const resourceType = resource?.resourceType || commonEntityInfo?.resourceType || 'deployment';
 
     return (
-        <PageSection variant="light" isFilled id="violation-details">
+        <PageSection variant="light" isFilled data-testid="violation-details-page">
             <Breadcrumb className="pf-u-mb-md">
-                <BreadcrumbItemLink to={violationsPFBasePath}>Violations</BreadcrumbItemLink>
+                <BreadcrumbItemLink to={violationsBasePath}>Violations</BreadcrumbItemLink>
                 <BreadcrumbItem isActive>{title}</BreadcrumbItem>
             </Breadcrumb>
             <Title headingLevel="h1">{title}</Title>

@@ -173,7 +173,7 @@ function ViolationsTablePanel({
                 <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                     <Badge isRead>{violationsCount}</Badge>
                 </FlexItem>
-                <FlexItem>
+                <FlexItem data-testid="violations-bulk-actions-dropdown">
                     <Select
                         onToggle={onToggleSelect}
                         isOpen={isSelectOpen}
@@ -185,6 +185,7 @@ function ViolationsTablePanel({
                             key="0"
                             value={`Add Tags for Violations (${numSelected})`}
                             onClick={showTagConfirmationDialog}
+                            data-testid="bulk-add-tags-btn"
                         />
                         <SelectOption
                             key="1"
@@ -311,6 +312,7 @@ function ViolationsTablePanel({
                 selectedAlertIds={selectedIds}
                 closeModal={closeModal}
                 cancelModal={cancelModal}
+                data-testid="exclude-confirmation-modal"
             />
             <ResolveConfirmation
                 isOpen={modalType === 'resolve'}
@@ -318,12 +320,14 @@ function ViolationsTablePanel({
                 resolvableAlerts={resolvableAlerts}
                 closeModal={closeModal}
                 cancelModal={cancelModal}
+                data-testid="resolve-confirmation-modal"
             />
             <TagConfirmation
                 isOpen={modalType === 'tag'}
                 selectedAlertIds={selectedIds}
                 closeModal={closeModal}
                 cancelModal={cancelModal}
+                data-testid="tag-confirmation-modal"
             />
         </>
     );

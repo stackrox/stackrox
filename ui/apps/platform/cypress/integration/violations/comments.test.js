@@ -1,12 +1,10 @@
 import randomstring from 'randomstring';
 
 import { selectors, url } from '../../constants/ViolationsPage';
-
 import * as api from '../../constants/apiEndpoints';
-
 import withAuth from '../../helpers/basicAuth';
 
-const commentsSelectors = selectors.sidePanel.comments;
+const commentsSelectors = selectors.details.comments;
 
 function setRoutes() {
     cy.server();
@@ -19,7 +17,7 @@ function openFirstItemOnViolationsPage() {
     cy.visit(url);
     cy.wait('@alerts');
 
-    cy.get(selectors.firstPanelTableRow).click();
+    cy.get(selectors.firstTableRowLink).click();
     cy.wait('@alertById');
     cy.wait('@getComments');
 }

@@ -61,6 +61,7 @@ function ExcludeConfirmation({
                 </Button>,
             ]}
             onClose={cancelModal}
+            data-testid="exclude-confirmation-modal"
         >
             {`Are you sure you want to exclude ${numSelectedRows} ${pluralize(
                 'violation',

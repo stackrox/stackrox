@@ -48,6 +48,7 @@ function TagConfirmation({
         }).then(
             () => {
                 toast('Tags were successfully added');
+                setTags([]);
                 closeModal();
             },
             (err) => Raven.captureException(err)
@@ -82,6 +83,7 @@ function TagConfirmation({
             ]}
             onClose={cancelModal}
             title={modalTitle}
+            data-testid="tag-confirmation-modal"
         >
             {isLoading && <Spinner />}
             {hasErrors && (

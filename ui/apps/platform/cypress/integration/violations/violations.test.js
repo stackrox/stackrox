@@ -4,7 +4,6 @@ import {
 } from '../../constants/ViolationsPage';
 import { selectors as PoliciesPageSelectors } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
-import { selectors as searchSelectors } from '../../constants/SearchPage';
 import withAuth from '../../helpers/basicAuth';
 
 describe('Violations page', () => {
@@ -28,10 +27,6 @@ describe('Violations page', () => {
         cy.intercept('GET', `/v1/alerts/${alertId}`, {
             fixture: 'alerts/alertById.json',
         }).as('alertById');
-    };
-
-    const mockResolveAlert = () => {
-        cy.route('PATCH', api.alerts.resolveAlert, {}).as('resolve');
     };
 
     const mockGetAlertWithEmptyContainerConfig = () => {
@@ -68,94 +63,43 @@ describe('Violations page', () => {
     });
 
     it('should have violations in table', () => {
-        cy.get(ViolationsPageSelectors.rows).should('have.length', 2);
+        cy.get(ViolationsPageSelectors.table.rows).should('have.length', 2);
     });
 
     it('should have Lifecycle column in table', () => {
-        cy.get(ViolationsPageSelectors.lifeCycleColumn).should('be.visible');
+        cy.get(ViolationsPageSelectors.table.column.lifecycle).should('be.visible');
         cy.get(ViolationsPageSelectors.firstTableRow).should('contain', 'Runtime');
     });
 
-    it('should show the side panel on row click', () => {
+    it('should show the detail page on row click', () => {
         mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.get(ViolationsPageSelectors.firstTableRowLink).click();
         cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.panels).eq(1).should('be.visible');
+        cy.get(ViolationsPageSelectors.details.page).should('be.visible');
+        cy.get(ViolationsPageSelectors.details.title).should('have.text', 'Misuse of iptables');
+        cy.get(ViolationsPageSelectors.details.subtitle).should(
+            'have.text',
+            'in "ip-masq-agent" deployment'
+        );
     });
 
-    it('should show side panel with panel header', () => {
+    it('should have Entity column in table', () => {
+        cy.get(ViolationsPageSelectors.table.column.entity).should('be.visible');
+    });
+
+    it('should have Type column in table', () => {
+        cy.get(ViolationsPageSelectors.table.column.type).should('be.visible');
+    });
+
+    it('should have 4 tabs in the sidepanel', () => {
         mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstTableRow).click();
+        cy.get(ViolationsPageSelectors.firstTableRowLink).click();
         cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .find(ViolationsPageSelectors.sidePanel.header)
-            .should('have.text', 'ip-masq-agent (70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9)');
-    });
-
-    it('should have entity column in table', () => {
-        cy.get(ViolationsPageSelectors.entityTableHeader).should('be.visible');
-    });
-
-    it('should have type column in table', () => {
-        cy.get(ViolationsPageSelectors.typeTableHeader).should('be.visible');
-    });
-
-    it('should close the side panel on search filter', () => {
-        mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstTableRow).click();
-        cy.wait('@alertById');
-
-        // The side panel opens to display the first alert.
-        // Use tabs as the criterion, because both the main and side panels have
-        // [data-testid="panel"] nor [data-testid="panel-header"]
-        cy.get(ViolationsPageSelectors.sidePanel.tabs);
-
-        cy.fixture('alerts/alerts.json').then(({ alerts }) => {
-            // Omit the first alert because it does not match the search filter below.
-            cy.route('GET', api.alerts.alerts, { alerts: alerts.slice(1) }).as('alertsSearch');
-            cy.route('GET', api.alerts.alertscount, { count: alerts.length - 1 }).as(
-                'alertsCountSearch'
-            );
-        });
-        cy.get(searchSelectors.pageSearch.input).type('Cluster:{enter}', { force: true });
-        cy.get(searchSelectors.pageSearch.input).type('zzz_remote{enter}', { force: true });
-        cy.get(searchSelectors.pageSearch.input).type('{esc}'); // close the drop-down menu
-        cy.wait(['@alertsSearch', '@alertsCountSearch']);
-
-        // The side panel closes because the first alert does not match the search filter.
-        cy.get(ViolationsPageSelectors.sidePanel.tabs).should('not.exist');
-    });
-
-    // TODO(ROX-3106)
-    xit('should have 4 tabs in the sidepanel', () => {
-        mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
-        cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .find(ViolationsPageSelectors.sidePanel.tabs)
-            .should('have.length', 4);
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .find(ViolationsPageSelectors.sidePanel.tabs)
-            .eq(0)
-            .should('have.text', 'Violation');
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .find(ViolationsPageSelectors.sidePanel.tabs)
-            .eq(1)
-            .should('have.text', 'Enforcement');
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .find(ViolationsPageSelectors.sidePanel.tabs)
-            .eq(2)
-            .should('have.text', 'Deployment');
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .find(ViolationsPageSelectors.sidePanel.tabs)
-            .eq(3)
-            .should('have.text', 'Policy');
+        cy.get(ViolationsPageSelectors.details.tabs).should('have.length', 4);
+        cy.get(ViolationsPageSelectors.details.violationTab).should('exist');
+        cy.get(ViolationsPageSelectors.details.enforcementTab).should('exist');
+        cy.get(ViolationsPageSelectors.details.deploymentTab).should('exist');
+        cy.get(ViolationsPageSelectors.details.policyTab).should('exist');
     });
 
     // @TODO: Figure out how to mock GraphQL, because this test depends on that working
@@ -173,17 +117,30 @@ describe('Violations page', () => {
 
     it('should contain correct action buttons for the lifecycle stage', () => {
         // Lifecycle: Runtime
+        cy.get(
+            `${ViolationsPageSelectors.firstTableRow} ${ViolationsPageSelectors.actions.btn}`
+        ).click();
         cy.get(ViolationsPageSelectors.firstTableRow)
-            .get(ViolationsPageSelectors.excludeDeploymentButton)
+            .get(ViolationsPageSelectors.actions.excludeDeploymentBtn)
             .should('exist')
-            .get(ViolationsPageSelectors.resolveButton)
+            .get(ViolationsPageSelectors.actions.resolveBtn)
+            .should('exist')
+            .get(ViolationsPageSelectors.actions.resolveAndAddToBaselineBtn)
             .should('exist');
 
+        // to click out and reset the actions dropdown
+        cy.get('body').type('{esc}');
+
         // Lifecycle: Deploy
+        cy.get(
+            `${ViolationsPageSelectors.lastTableRow} ${ViolationsPageSelectors.actions.btn}`
+        ).click();
         cy.get(ViolationsPageSelectors.lastTableRow)
-            .get(ViolationsPageSelectors.resolveButton)
-            .should('be.hidden')
-            .get(ViolationsPageSelectors.excludeDeploymentButton)
+            .get(ViolationsPageSelectors.actions.resolveBtn)
+            .should('not.exist')
+            .get(ViolationsPageSelectors.actions.resolveAndAddToBaselineBtn)
+            .should('not.exist')
+            .get(ViolationsPageSelectors.actions.excludeDeploymentBtn)
             .should('exist');
     });
 
@@ -204,76 +161,47 @@ describe('Violations page', () => {
 
     it('should have enforcement information in the Enforcement tab', () => {
         mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.get(ViolationsPageSelectors.firstTableRowLink).click();
         cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.panels, { timeout: 7000 })
-            .eq(1)
-            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1), { timeout: 7000 })
-            .click();
-        cy.get(ViolationsPageSelectors.sidePanel.enforcementDetailMessage).should((message) => {
+        cy.get(ViolationsPageSelectors.details.enforcementTab).click();
+        cy.get(ViolationsPageSelectors.enforcement.detailMessage).should((message) => {
             expect(message).to.contain('Kill Pod');
         });
-        cy.get(ViolationsPageSelectors.sidePanel.enforcementExplanationMessage).should(
-            (message) => {
-                expect(message).to.contain(
-                    'Runtime data was evaluated against this StackRox policy'
-                );
-            }
-        );
+        cy.get(ViolationsPageSelectors.enforcement.explanationMessage).should((message) => {
+            expect(message).to.contain('Runtime data was evaluated against this StackRox policy');
+        });
     });
 
     it('should have deployment information in the Deployment Details tab', () => {
         mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.get(ViolationsPageSelectors.firstTableRowLink).click();
         cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(2))
-            .click();
-        cy.get(ViolationsPageSelectors.collapsible.header).should('have.length', 3);
-        cy.get(ViolationsPageSelectors.collapsible.header).eq(0).should('have.text', 'Overview');
-        cy.get(ViolationsPageSelectors.collapsible.header)
-            .eq(1)
-            .should('have.text', 'Container configuration');
-        cy.get(ViolationsPageSelectors.collapsible.header)
-            .eq(2)
-            .should('have.text', 'Security Context');
+        cy.get(ViolationsPageSelectors.details.deploymentTab).click();
+        cy.get(ViolationsPageSelectors.deployment.overview).should('have.exist');
+        cy.get(ViolationsPageSelectors.deployment.containerConfiguration).should('exist');
+        cy.get(ViolationsPageSelectors.deployment.securityContext).should('exist');
+        cy.get(ViolationsPageSelectors.deployment.portConfiguration).should('exist');
+
+        cy.get(ViolationsPageSelectors.deployment.snapshotWarning).should('exist');
     });
 
     it('should show deployment information in the Deployment Details tab with no container configuration values', () => {
         mockGetAlertWithEmptyContainerConfig();
-        cy.get(ViolationsPageSelectors.lastTableRow).click();
+        cy.get(ViolationsPageSelectors.lastTableRowLink).click();
         cy.wait('@alertWithEmptyContainerConfig');
-        cy.get(ViolationsPageSelectors.sidePanel.deploymentTab).click();
-        cy.get(ViolationsPageSelectors.sidePanel.deploymentContainerConfiguration.commands).should(
-            'not.exist'
-        );
+        cy.get(ViolationsPageSelectors.details.deploymentTab).click();
+        cy.get(
+            `${ViolationsPageSelectors.deployment.containerConfiguration} [data-testid="commands"]`
+        ).should('not.exist');
     });
 
     it('should have policy information in the Policy Details tab', () => {
         mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.get(ViolationsPageSelectors.firstTableRowLink).click();
         cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.sidePanel.policyTab).click();
+        cy.get(ViolationsPageSelectors.details.policyTab).click();
         cy.get(PoliciesPageSelectors.policyDetailsPanel.detailsSection).should('exist');
         cy.get(PoliciesPageSelectors.policyDetailsPanel.idValueDiv).should('exist');
-    });
-
-    it('should close side panel after resolving violation', () => {
-        mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
-        cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.sidePanel.tabs).should('be.visible');
-
-        mockResolveAlert();
-        mockGetAlert();
-        cy.get(ViolationsPageSelectors.firstPanelTableRow)
-            .get(ViolationsPageSelectors.resolveButton)
-            .eq(1)
-            .click({ force: true });
-        cy.wait('@resolve');
-
-        cy.get(ViolationsPageSelectors.sidePanel.tabs).should('not.exist');
     });
 
     it('should request the alerts in descending time order by default', () => {
@@ -285,14 +213,14 @@ describe('Violations page', () => {
 
     it('should sort violations when clicking on a table header', () => {
         // first click will sort in direct order
-        cy.get(ViolationsPageSelectors.policyTableHeader).click();
+        cy.get(ViolationsPageSelectors.table.column.policy).click();
         cy.wait('@alerts')
             .its('url')
             .should(
                 'include',
                 'pagination.sortOption.field=Policy&pagination.sortOption.reversed=false'
             );
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).should('contain', 'ip-masq-agent');
+        cy.get(ViolationsPageSelectors.firstTableRow).should('contain', 'ip-masq-agent');
 
         // second click will sort in reverse order
         cy.fixture('alerts/alerts.json').then((alertsData) => {
@@ -303,13 +231,13 @@ describe('Violations page', () => {
             };
             cy.route('GET', api.alerts.alerts, reverseSortedAlerts).as('alerts');
         });
-        cy.get(ViolationsPageSelectors.policyTableHeader).click();
+        cy.get(ViolationsPageSelectors.table.column.policy).click();
         cy.wait('@alerts')
             .its('url')
             .should(
                 'include',
                 'pagination.sortOption.field=Policy&pagination.sortOption.reversed=true'
             );
-        cy.get(ViolationsPageSelectors.firstPanelTableRow).should('contain', 'metadata-proxy-v0.1');
+        cy.get(ViolationsPageSelectors.firstTableRow).should('contain', 'metadata-proxy-v0.1');
     });
 });

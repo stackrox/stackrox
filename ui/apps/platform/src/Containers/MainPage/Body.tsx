@@ -6,7 +6,6 @@ import {
     dashboardPath,
     networkPath,
     violationsPath,
-    violationsPFBasePath,
     compliancePath,
     clustersPathWithParam,
     integrationsPath,
@@ -36,8 +35,7 @@ const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/Clust
 const AsyncIntegrationsPage = asyncComponent(
     () => import('Containers/Integrations/IntegrationsPage')
 );
-const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
-const AsyncViolationsPFPage = asyncComponent(
+const AsyncViolationsPage = asyncComponent(
     () => import('Containers/Violations/PatternFly/ViolationsPage')
 );
 
@@ -72,11 +70,6 @@ function Body(): ReactElement {
                 <Switch>
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
                     <ProtectedRoute path={networkPath} component={AsyncNetworkPage} />
-                    <ProtectedRoute
-                        path={violationsPFBasePath}
-                        component={AsyncViolationsPFPage}
-                        devOnly
-                    />
                     <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />
                     <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
                     <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />

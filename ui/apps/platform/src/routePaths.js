@@ -15,8 +15,6 @@ export const networkBasePath = `${mainPath}/network`;
 export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
-export const violationsPFBasePath = `${mainPath}/violations-pf`;
-export const violationsPFPath = `${violationsPFBasePath}/:alertId?`;
 export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const integrationsPath = `${mainPath}/integrations`;
@@ -90,7 +88,6 @@ export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph',
     [violationsBasePath]: 'Violations',
-    [violationsPFBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     [vulnManagementPath]: 'Vulnerability Management',
     [configManagementPath]: 'Configuration Management',

@@ -9,9 +9,9 @@ function SecurityContext({ deployment }): ReactElement {
         (container) => !!container.securityContext
     );
     return (
-        <Card isFlat title="Security Context">
+        <Card isFlat data-testid="security-context">
             <CardBody>
-                {securityContextContainers.length > 0
+                {securityContextContainers?.length > 0
                     ? securityContextContainers.map((container) => {
                           const {
                               privileged,
