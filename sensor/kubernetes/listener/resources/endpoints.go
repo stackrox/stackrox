@@ -112,6 +112,7 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 				ContainerID:   id,
 				Namespace:     w.GetNamespace(),
 				StartTime:     inst.GetStarted(),
+				ImageID:       inst.GetImageDigest(),
 			})
 		}
 	})

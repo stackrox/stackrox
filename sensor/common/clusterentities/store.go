@@ -19,6 +19,7 @@ type ContainerMetadata struct {
 	ContainerID   string
 	Namespace     string
 	StartTime     *types.Timestamp
+	ImageID       string
 }
 
 // PublicIPsListener is an interface for listeners on changes to the set of public IP addresses.

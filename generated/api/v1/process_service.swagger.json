@@ -187,9 +187,12 @@
         "containerStartTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "imageId": {
+          "type": "string"
         }
       },
-      "title": "Next available tag: 12"
+      "title": "Next available tag: 13"
     },
     "storageProcessSignal": {
       "type": "object",

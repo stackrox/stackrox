@@ -1014,6 +1014,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"containerStartTime: Time",
 		"deploymentId: String!",
 		"id: ID!",
+		"imageId: String!",
 		"namespace: String!",
 		"podId: String!",
 		"podUid: String!",
@@ -8967,6 +8968,11 @@ func (resolver *processIndicatorResolver) DeploymentId(ctx context.Context) stri
 func (resolver *processIndicatorResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *processIndicatorResolver) ImageId(ctx context.Context) string {
+	value := resolver.data.GetImageId()
+	return value
 }
 
 func (resolver *processIndicatorResolver) Namespace(ctx context.Context) string {
