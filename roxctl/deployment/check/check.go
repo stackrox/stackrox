@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
@@ -36,9 +37,6 @@ func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "check",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			if file == "" {
-				return errors.New("--file must be set")
-			}
 			return checkDeploymentWithRetry(file, json, flags.Timeout(c), retryDelay, retryCount, policyCategories, printAllViolations)
 		}),
 	}
@@ -49,6 +47,7 @@ func Command() *cobra.Command {
 	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "Number of retries before exiting as error")
 	c.Flags().StringSliceVarP(&policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	c.Flags().BoolVar(&printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
+	utils.Should(c.MarkFlagRequired("file"))
 	return c
 }
 

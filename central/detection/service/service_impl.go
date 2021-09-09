@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	deployConfScheme "github.com/openshift/client-go/apps/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
@@ -32,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
@@ -203,6 +205,14 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.Enr
 }
 
 func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
+	err := deployConfScheme.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, err
+	}
+	err = k8sutil.AddLegacyOpenshiftAppsToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, err
+	}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	reader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBufferString(yamlString)))
 	var objects []k8sRuntime.Object

@@ -289,6 +289,30 @@ or, more securely, configure credentials in docker credentials store for your OS
 suggested [here](https://docs.docker.com/engine/reference/commandline/login/#credentials-store).
 </details>
 
+<details><summary>Openshift</summary>
+
+Before deploying on Openshift, ensure that you have the [oc - OpenShift Command Line](https://github.com/openshift/oc)
+installed.
+
+On MacOS, you can install it via the following command:
+```bash
+brew install openshift-cli
+```
+
+Afterwards, deploy `rox`:
+```bash
+# Automatically creates a OS route for exposing all relevant services
+export LOAD_BALANCER=route
+
+./deploy/openshift/deploy.sh
+```
+
+To avoid typing in docker registry username and password each time you deploy,
+set credentials in `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` environment variables,
+or, more securely, configure credentials in docker credentials store for your OS as
+suggested [here](https://docs.docker.com/engine/reference/commandline/login/#credentials-store).
+</details>
+
 ## Generating portable installers
 
 <details><summary>Kubernetes</summary>

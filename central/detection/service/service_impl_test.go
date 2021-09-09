@@ -3,6 +3,8 @@ package service
 import (
 	"testing"
 
+	openshiftAppsV1 "github.com/openshift/api/apps/v1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -196,6 +198,44 @@ metadata:
   selfLink: ""
 `
 
+const openshiftDeploymentConfigYaml = `
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: frontend
+  namespace: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 5
+  selector:
+    app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: hello-openshift:latest
+        name: helloworld
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        restartPolicy: Always
+  triggers:
+  - type: ConfigChange 
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - helloworld
+      from:
+        kind: ImageStreamTag
+        name: hello-openshift:latest
+    type: ImageChange  
+  strategy:
+    type: Rolling
+`
+
 const multiYaml = `
 apiVersion: v1
 kind: Service
@@ -264,12 +304,216 @@ spec:
       - name: wordpress-persistent-storage
         persistentVolumeClaim:
           claimName: wp-pv-claim
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: frontend
+  namespace: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 5
+  selector:
+    app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: hello-openshift:latest
+        name: helloworld
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        restartPolicy: Always
+  triggers:
+  - type: ConfigChangeg
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - helloworld
+      from:
+        kind: ImageStreamTag
+        name: hello-openshift:latest
+    type: ImageChange
+  strategy:
+    type: Rolling
+---
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: frontend
+  namespace: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 5
+  selector:
+    app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: hello-openshift:latest
+        name: helloworld
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        restartPolicy: Always
+  triggers:
+  - type: ConfigChange 
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - helloworld
+      from:
+        kind: ImageStreamTag
+        name: hello-openshift:latest
+    type: ImageChange  
+  strategy:
+    type: Rolling
 `
 
-func TestParseList(t *testing.T) {
+const unregisteredType = `
+apiVersion: apps/v1
+kind: DeploymentConfig
+metadata:
+  name: frontend
+  namespace: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 5
+  selector:
+    app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: hello-openshift:latest
+        name: helloworld
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        restartPolicy: Always
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - helloworld
+      from:
+        kind: ImageStreamTag
+        name: hello-ogpenshift:latest
+    type: ImageChange
+  strategy:
+    type: Rolling
+`
+
+const openshiftDeployConfMultiYaml = `
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: frontend
+  namespace: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 5
+  selector:
+    app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: hello-openshift:latest
+        name: helloworld
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        restartPolicy: Always
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - helloworld
+      from:
+        kind: ImageStreamTag
+        name: hello-ogpenshift:latest
+    type: ImageChange
+  strategy:
+    type: Rolling
+---
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: frontend
+  namespace: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 5
+  selector:
+    app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: hello-openshift:latest
+        name: helloworld
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        restartPolicy: Always
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - helloworld
+      from:
+        kind: ImageStreamTag
+        name: hello-ogpenshift:latest
+    type: ImageChange
+  strategy:
+    type: Rolling
+`
+
+func TestParseList_Success(t *testing.T) {
 	_, err := getObjectsFromYAML(listYAML)
+	require.NoError(t, err)
+
+	_, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
 	require.NoError(t, err)
 
 	_, err = getObjectsFromYAML(multiYaml)
 	require.NoError(t, err)
+
+	_, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
+	require.NoError(t, err)
+}
+
+func TestParseList_Error(t *testing.T) {
+	_, err := getObjectsFromYAML(unregisteredType)
+	require.Error(t, err)
+}
+
+func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {
+	objs, err := getObjectsFromYAML(openshiftDeployConfMultiYaml)
+	require.NoError(t, err)
+
+	for _, obj := range objs {
+		assert.IsType(t, (*openshiftAppsV1.DeploymentConfig)(nil), obj)
+	}
 }
