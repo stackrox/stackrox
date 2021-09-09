@@ -41,10 +41,10 @@ const storedCredentialKeyPaths = ['pagerduty.apiKey'];
 
 function getSchema(isStoredCredentialRequired: boolean) {
     return yup.object().shape({
-        name: yup.string().trim().required('Name is required'),
+        name: yup.string().trim().required('Integration name is required'),
         pagerduty: yup.object().shape({
             apiKey: isStoredCredentialRequired
-                ? yup.string().required('PagerDuty Integration Key is required')
+                ? yup.string().required('PagerDuty integration key is required')
                 : yup.string(),
         }),
     });
@@ -110,7 +110,7 @@ function PagerDutyIntegrationForm({
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
-                        label="Name"
+                        label="Integration name"
                         fieldId="name"
                         touched={touched}
                         errors={errors}

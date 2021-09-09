@@ -37,12 +37,21 @@ export type SyslogIntegration = {
 };
 
 export const validationSchema = yup.object().shape({
-    name: yup.string().required('Required'),
+    name: yup.string().required('Integration name is required'),
     syslog: yup.object().shape({
-        localFacility: yup.string().required('Required'),
+        localFacility: yup.string().required('Logging facility is required'),
         tcpConfig: yup.object().shape({
-            hostname: yup.string().required('Required'),
-            port: yup.number().required('Required'),
+            hostname: yup.string().required('Receiver host is required'),
+            port: yup
+                .number()
+                .required('Receiver port is required')
+                .test(
+                    'receiver-port-test',
+                    'Receiver port must be between 1 and 65535',
+                    (value = 0) => {
+                        return value >= 1 && value <= 65535;
+                    }
+                ),
             useTls: yup.bool(),
             skipTlsVerify: yup.bool(),
         }),
@@ -57,9 +66,9 @@ export const defaultValues: SyslogIntegration = {
         localFacility: '',
         tcpConfig: {
             hostname: '',
-            port: 0,
-            useTls: true,
-            skipTlsVerify: true,
+            port: 514,
+            useTls: false,
+            skipTlsVerify: false,
         },
     },
     name: '',
@@ -77,8 +86,12 @@ function SyslogIntegrationForm({
         : defaultValues;
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -99,27 +112,36 @@ function SyslogIntegrationForm({
             <PageSection variant="light" isFilled hasOverflowScroll>
                 {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    <FormLabelGroup isRequired label="Name" fieldId="name" errors={errors}>
+                    <FormLabelGroup
+                        isRequired
+                        label="Integration name"
+                        fieldId="name"
+                        touched={touched}
+                        errors={errors}
+                    >
                         <TextInput
+                            isRequired
                             type="text"
                             id="name"
-                            name="name"
                             value={values.name}
-                            placeholder="(ex. Syslog Integration)"
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
-                        label="Logging Facility"
+                        label="Logging facility"
                         fieldId="syslog.localFacility"
+                        touched={touched}
                         errors={errors}
                     >
                         <FormSelect
+                            isRequired
                             id="syslog.localFacility"
                             value={values.syslog.localFacility}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
                             <FormSelectOption key={0} label="Choose one..." value="" isDisabled />
@@ -135,33 +157,37 @@ function SyslogIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
-                        label="Receiver Host"
+                        label="Receiver host"
                         fieldId="syslog.tcpConfig.hostname"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
+                            isRequired
                             type="text"
                             id="syslog.tcpConfig.hostname"
-                            name="syslog.tcpConfig.hostname"
                             value={values.syslog.tcpConfig.hostname}
-                            placeholder="(ex. host.example.com)"
+                            placeholder="example, host.example.com)"
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
-                        label="Receiver Port"
+                        label="Receiver port"
                         fieldId="syslog.tcpConfig.port"
+                        touched={touched}
                         errors={errors}
+                        helperText="A port number between 1 and 65535"
                     >
                         <TextInput
+                            isRequired
                             type="number"
                             id="syslog.tcpConfig.port"
-                            name="syslog.tcpConfig.port"
                             value={values.syslog.tcpConfig.port}
-                            placeholder="(ex. 80)"
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
@@ -180,7 +206,7 @@ function SyslogIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Disable TLS Certificate Validation (Insecure)"
+                        label="Disable TLS certificate validation (insecure)"
                         fieldId="syslog.tcpConfig.skipTlsVerify"
                         errors={errors}
                     >
@@ -201,6 +227,7 @@ function SyslogIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -208,6 +235,7 @@ function SyslogIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

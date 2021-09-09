@@ -1,5 +1,6 @@
+/* eslint-disable no-void */
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, FormSelect, Switch } from '@patternfly/react-core';
+import { Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
@@ -46,21 +47,48 @@ export type GcsIntegrationFormValues = {
 
 export const validationSchema = yup.object().shape({
     externalBackup: yup.object().shape({
-        name: yup.string().required('Required'),
-        backupsToKeep: yup.number().required('Required'),
+        name: yup.string().trim().required('Integration name is required'),
+        backupsToKeep: yup
+            .number()
+            .required('Number of backups to keep is required')
+            .min(1, 'Number of backups to keep must be 1 or greater'),
         schedule: yup.object().shape({
-            intervalType: yup.string().required('Required'),
+            intervalType: yup.string().trim().required('Interval is required'),
             weekly: yup.object().shape({
                 day: yup.number(),
             }),
-            hour: yup.number().required('Required'),
-            minute: yup.number().required('Required'),
+            hour: yup.number(),
+            minute: yup.number(),
         }),
         gcs: yup.object().shape({
-            bucket: yup.string().required('Required'),
-            objectPrefix: yup.string(),
+            bucket: yup.string().trim().required('Bucket is required'),
+            objectPrefix: yup.string().trim(),
             useWorkloadId: yup.bool(),
-            serviceAccount: yup.string(),
+            serviceAccount: yup
+                .string()
+                .trim()
+                .test(
+                    'serviceAccount-test',
+                    'Valid JSON is required for service account',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+                        const useWorkloadId = context?.parent?.useWorkloadId;
+
+                        if (!requirePasswordField || useWorkloadId) {
+                            return true;
+                        }
+                        try {
+                            JSON.parse(value as string);
+                        } catch (e) {
+                            return false;
+                        }
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
         }),
         type: yup.string().matches(/gcs/),
         enabled: yup.bool(),
@@ -72,7 +100,7 @@ export const validationSchema = yup.object().shape({
 export const defaultValues: GcsIntegrationFormValues = {
     externalBackup: {
         name: '',
-        backupsToKeep: 0,
+        backupsToKeep: 1,
         schedule: {
             intervalType: 'DAILY',
             hour: 0,
@@ -107,8 +135,12 @@ function GcsIntegrationForm({
     }
     const {
         values,
+        touched,
         errors,
+        dirty,
+        isValid,
         setFieldValue,
+        handleBlur,
         isSubmitting,
         isTesting,
         onSave,
@@ -125,6 +157,13 @@ function GcsIntegrationForm({
         return setFieldValue(event.target.id, value, false);
     }
 
+    function updateServiceAccountOnChange(value, event) {
+        void setFieldValue(event.target.id, value);
+        if (value === true) {
+            void setFieldValue('externalBackup.gcs.serviceAccount', '');
+        }
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -132,45 +171,51 @@ function GcsIntegrationForm({
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
-                        label="Name"
+                        label="Integration name"
                         fieldId="externalBackup.name"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
+                            isRequired
                             type="text"
                             id="externalBackup.name"
-                            name="externalBackup.name"
                             value={values.externalBackup.name}
-                            placeholder="(ex. Google Cloud Storage)"
                             onChange={onChange}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Backups to Retain"
-                        fieldId="externalBackup.backupsToKeep"
-                        errors={errors}
-                    >
-                        <TextInput
-                            type="number"
-                            id="externalBackup.backupsToKeep"
-                            name="externalBackup.backupsToKeep"
-                            value={values.externalBackup.backupsToKeep}
-                            placeholder="(ex. 5)"
-                            onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
-                        label="Schedule Interval"
+                        label="Backups to retain"
+                        fieldId="externalBackup.backupsToKeep"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="externalBackup.backupsToKeep"
+                            name="externalBackup.backupsToKeep"
+                            value={values.externalBackup.backupsToKeep}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        isRequired
+                        label="Schedule interval"
                         fieldId="externalBackup.schedule.intervalType"
+                        touched={touched}
                         errors={errors}
                     >
                         <FormSelect
                             id="externalBackup.schedule.intervalType"
                             value={values.externalBackup.schedule.intervalType}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
                             <ScheduleIntervalOptions />
@@ -179,14 +224,16 @@ function GcsIntegrationForm({
                     {values.externalBackup.schedule.intervalType === 'WEEKLY' && (
                         <FormLabelGroup
                             isRequired
-                            label="Schedule Day of Week"
+                            label="Schedule day of week"
                             fieldId="externalBackup.schedule.weekly.day"
+                            touched={touched}
                             errors={errors}
                         >
                             <FormSelect
                                 id="externalBackup.schedule.weekly.day"
                                 value={values.externalBackup.schedule?.weekly?.day}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             >
                                 <ScheduleWeeklyOptions />
@@ -195,14 +242,16 @@ function GcsIntegrationForm({
                     )}
                     <FormLabelGroup
                         isRequired
-                        label="Schedule Time of Day"
+                        label="Schedule time of day"
                         fieldId="externalBackup.schedule.hour"
+                        touched={touched}
                         errors={errors}
                     >
                         <FormSelect
                             id="externalBackup.schedule.hour"
                             value={values.externalBackup.schedule.hour}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
                             <ScheduleDailyOptions />
@@ -212,21 +261,24 @@ function GcsIntegrationForm({
                         isRequired
                         label="Bucket"
                         fieldId="externalBackup.gcs.bucket"
+                        touched={touched}
                         errors={errors}
+                        helperText="example, stackrox.backups"
                     >
                         <TextInput
                             type="text"
                             id="externalBackup.gcs.bucket"
                             name="externalBackup.gcs.bucket"
                             value={values.externalBackup.gcs.bucket}
-                            placeholder="(ex. stackrox.backups)"
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Object Prefix"
+                        label="Object prefix"
                         fieldId="externalBackup.gcs.objectPrefix"
+                        touched={touched}
                         errors={errors}
                     >
                         <TextInput
@@ -235,57 +287,74 @@ function GcsIntegrationForm({
                             name="externalBackup.gcs.objectPrefix"
                             value={values.externalBackup.gcs.objectPrefix}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Use Workload Identity"
+                        label=""
                         fieldId="externalBackup.gcs.useWorkloadId"
+                        touched={touched}
                         errors={errors}
                     >
-                        <Switch
+                        <Checkbox
+                            label="Use workload identity"
                             id="externalBackup.gcs.useWorkloadId"
-                            name="externalBackup.gcs.useWorkloadId"
-                            aria-label="use container iam role"
                             isChecked={values.externalBackup.gcs.useWorkloadId}
-                            onChange={onChange}
+                            onChange={updateServiceAccountOnChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                     {!isCreating && !values.externalBackup.gcs.useWorkloadId && (
                         <FormLabelGroup
-                            label="Update Password"
+                            label=""
                             fieldId="updatePassword"
-                            helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            helperText="Leave this off to use the currently stored credentials."
+                            touched={touched}
                             errors={errors}
                         >
-                            <Switch
+                            <Checkbox
+                                label="Update service account"
                                 id="updatePassword"
-                                name="updatePassword"
-                                aria-label="update password"
                                 isChecked={values.updatePassword}
                                 onChange={onChange}
+                                onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
-                    {values.updatePassword && !values.externalBackup.gcs.useWorkloadId && (
-                        <FormLabelGroup
-                            label="Service Account (JSON)"
-                            fieldId="externalBackup.gcs.serviceAccount"
-                            isRequired
-                            errors={errors}
-                        >
-                            <TextInput
-                                type="password"
-                                id="externalBackup.gcs.serviceAccount"
-                                name="externalBackup.gcs.serviceAccount"
-                                value={values.externalBackup.gcs.serviceAccount}
-                                onChange={onChange}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
+                    <FormLabelGroup
+                        isRequired={
+                            values.updatePassword && !values.externalBackup.gcs.useWorkloadId
+                        }
+                        label="Service account (JSON)"
+                        fieldId="externalBackup.gcs.serviceAccount"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            isRequired={
+                                values.updatePassword && !values.externalBackup.gcs.useWorkloadId
+                            }
+                            type="password"
+                            id="externalBackup.gcs.serviceAccount"
+                            name="externalBackup.gcs.serviceAccount"
+                            value={values.externalBackup.gcs.serviceAccount}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={
+                                !isEditable ||
+                                !values.updatePassword ||
+                                values.externalBackup.gcs.useWorkloadId
+                            }
+                            placeholder={
+                                values.updatePassword || values.externalBackup.gcs.useWorkloadId
+                                    ? ''
+                                    : 'Currently-stored service account JSON will be used.'
+                            }
+                        />
+                    </FormLabelGroup>
                 </Form>
             </PageSection>
             {isEditable && (
@@ -294,6 +363,7 @@ function GcsIntegrationForm({
                         onSave={onSave}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isDisabled={!dirty || !isValid}
                     >
                         Save
                     </FormSaveButton>
@@ -301,6 +371,7 @@ function GcsIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
+                        isValid={isValid}
                     >
                         Test
                     </FormTestButton>

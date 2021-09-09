@@ -27,7 +27,7 @@ export type SumoLogicIntegration = {
 };
 
 const validationSchema = yup.object().shape({
-    name: yup.string().trim().required('Name is required'),
+    name: yup.string().trim().required('Integration name is required'),
     sumologic: yup.object().shape({
         httpSourceAddress: yup
             .string()
@@ -84,7 +84,7 @@ function SumoLogicIntegrationForm({
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
-                        label="Name"
+                        label="Integration name"
                         fieldId="name"
                         touched={touched}
                         errors={errors}

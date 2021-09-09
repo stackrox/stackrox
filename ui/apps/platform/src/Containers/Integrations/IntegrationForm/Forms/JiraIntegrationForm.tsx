@@ -311,14 +311,6 @@ function JiraIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        {/* <Switch
-                            id="toggle-priority-mappings"
-                            label="Hide priority mappings"
-                            labelOff="Show priority mappings"
-                            isChecked={mappingsShown}
-                            onChange={toggleMappingsShown}
-                            isReversed
-                        /> */}
                         <FormFieldGroupExpandable
                             isExpanded={false}
                             toggleAriaLabel="Toggle showing Jira priority mappings"
@@ -331,12 +323,6 @@ function JiraIntegrationForm({
                                 />
                             }
                         >
-                            {/* {mappingsShown && (
-                            <FormSection
-                                title="Priority Mappings"
-                                titleElement="h3"
-                                className="pf-u-mt-0"
-                            > */}
                             <FieldArray
                                 name="notifier.jira.priorityMappings"
                                 render={() => (

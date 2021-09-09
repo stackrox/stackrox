@@ -3,7 +3,11 @@ import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { editIntegration } from './integrationUtils';
-import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
+import {
+    generateUniqueName,
+    getHelperElementByLabel,
+    getInputByLabel,
+} from '../../helpers/formHelpers';
 import sampleCert from '../../helpers/sampleCert';
 
 describe('Notifiers Test', () => {
@@ -20,7 +24,61 @@ describe('Notifiers Test', () => {
         cy.wait('@getNotifiers');
     });
 
-    describe.skip('Notifier forms', () => {
+    describe('Notifier forms', () => {
+        it('should create a new AWS Security Hub integration', () => {
+            const integrationName = generateUniqueName('Nova AWS Security Hub');
+
+            cy.get(selectors.awsSecurityHubTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/awsSecurityHub/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').click().blur();
+            getInputByLabel('AWS account number').click().blur();
+            getInputByLabel('AWS region').focus().blur(); // focus, then blur, select in order to trigger validation
+            getInputByLabel('Access key ID').click().blur();
+            getInputByLabel('Secret access key').click().blur();
+
+            getHelperElementByLabel('Integration name').contains('An integration name is required');
+            getHelperElementByLabel('AWS account number').contains(
+                'An AWS account number is required'
+            );
+            getHelperElementByLabel('AWS region').contains('An AWS region is required');
+            getHelperElementByLabel('Access key ID').contains('An access key ID is required');
+            getHelperElementByLabel('Secret access key').contains(
+                'A secret access key is required'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            getInputByLabel('Integration name').clear().type(integrationName);
+            getInputByLabel('AWS region').select('US East (N. Virginia) us-east-1');
+            getInputByLabel('Access key ID').click().type('AKIA5VNQSYCDODH7VKMK');
+            getInputByLabel('Secret access key')
+                .click()
+                .type('3JBA+EtbcGwONcx+1CKvbCn4FxFLRGiDANfzD+Vr');
+            getInputByLabel('AWS account number').clear().type('93935755277').blur();
+
+            getHelperElementByLabel('AWS account number').contains(
+                'AWS account numbers must be 12 characters long'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 3, check valid form and save
+            getInputByLabel('AWS account number').clear().type('939357552771').blur();
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+
         it('should create a new email integration', () => {
             cy.get(selectors.emailTile).click();
 
@@ -267,10 +325,10 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.disabled');
 
             // Step 1, check empty fields
-            getInputByLabel('Name').type(' ').blur();
+            getInputByLabel('Integration name').type(' ').blur();
             getInputByLabel('PagerDuty integration key').type(' ').clear().blur();
 
-            getHelperElementByLabel('Name').contains('Name is required');
+            getHelperElementByLabel('Integration name').contains('Integration name is required');
             getHelperElementByLabel('PagerDuty integration key').contains(
                 'PagerDuty integration key is required'
             );
@@ -284,9 +342,9 @@ describe('Notifiers Test', () => {
             */
 
             // Step 3, check valid form and save
-            const isoString = new Date().toISOString();
-            getInputByLabel('Name').clear().type(`Test new PagerDuty ${isoString}`);
-            getInputByLabel('PagerDuty Integration Key').type('key');
+            const integrationName = generateUniqueName('Nova PagerDuty');
+            getInputByLabel('Integration name').clear().type(integrationName);
+            getInputByLabel('PagerDuty integration key').type('key');
 
             cy.get(selectors.buttons.test).should('be.enabled');
             cy.get(selectors.buttons.save).should('be.enabled').click();
@@ -304,10 +362,10 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.disabled');
 
             // Step 1, check empty fields
-            getInputByLabel('Name').type(' ');
+            getInputByLabel('Integration name').type(' ');
             getInputByLabel('HTTP Collector Source Address').type(' ').blur();
 
-            getHelperElementByLabel('Name').contains('Name is required');
+            getHelperElementByLabel('Integration name').contains('Integration name is required');
             getHelperElementByLabel('HTTP Collector Source Address').contains(
                 'HTTP Collector Source Address is required'
             );
@@ -321,8 +379,8 @@ describe('Notifiers Test', () => {
             */
 
             // Step 3, check valid from and save
-            const isoString = new Date().toISOString();
-            getInputByLabel('Name').clear().type(`Test new Sumo Logic ${isoString}`);
+            const integrationName = generateUniqueName('Nova Sumo Logic');
+            getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('HTTP Collector Source Address')
                 .clear()
                 .type('https://endpoint.sumologic.com/receiver/v1/http/');
@@ -440,6 +498,50 @@ describe('Notifiers Test', () => {
                 .clear()
                 .type('https://hooks.slack.com/services/nova')
                 .blur();
+
+            cy.get(selectors.buttons.test).should('be.enabled');
+            cy.get(selectors.buttons.save).should('be.enabled').click();
+        });
+
+        it('should create a new Syslog integration', () => {
+            cy.get(selectors.syslogTile).click();
+
+            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
+            cy.get(selectors.buttons.new).click();
+            cy.visit('/main/integrations/notifiers/syslog/create');
+
+            // Step 0, should start out with disabled Save and Test buttons
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 1, check empty fields
+            getInputByLabel('Integration name').click().blur();
+            getInputByLabel('Logging facility').focus().blur(); // focus, then blur, select in order to trigger validation
+            getInputByLabel('Receiver host').click().blur();
+            getInputByLabel('Receiver port').click().clear().blur();
+
+            getHelperElementByLabel('Integration name').contains('Integration name is required');
+            getHelperElementByLabel('Logging facility').contains('Logging facility is required');
+            getHelperElementByLabel('Receiver host').contains('Receiver host is required');
+            getHelperElementByLabel('Receiver port').contains('Receiver port is required');
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 2, check fields for invalid formats
+            const integrationName = generateUniqueName('Nova Syslog');
+            getInputByLabel('Integration name').clear().type(integrationName);
+            getInputByLabel('Logging facility').select('local0').blur();
+            getInputByLabel('Receiver host').clear().type('host.example.com').blur();
+            getInputByLabel('Receiver port').clear().type('65536').blur();
+
+            getHelperElementByLabel('Receiver port').contains(
+                'Receiver port must be between 1 and 65535'
+            );
+            cy.get(selectors.buttons.test).should('be.disabled');
+            cy.get(selectors.buttons.save).should('be.disabled');
+
+            // Step 3, check valid form and save
+            getInputByLabel('Receiver port').clear().type('1').blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
             cy.get(selectors.buttons.save).should('be.enabled').click();
@@ -586,7 +688,8 @@ describe('Notifiers Test', () => {
 
             cy.get(selectors.buttons.newIntegration).click();
 
-            cy.get(selectors.awsSecurityHubForm.nameInput).type('Test AWS Sec Hub integration');
+            const integrationName = generateUniqueName('Test AWS Sec Hub integration');
+            cy.get(selectors.awsSecurityHubForm.nameInput).type(integrationName);
             cy.get(selectors.awsSecurityHubForm.awsAccountNumber).type('939357552774');
             cy.get(selectors.awsSecurityHubForm.awsRegion).click();
             cy.get(

@@ -39,7 +39,10 @@ export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
         name: yup.string().required('An integration name is required'),
         awsSecurityHub: yup.object().shape({
-            accountId: yup.string().required('An AWS account number is required'),
+            accountId: yup
+                .string()
+                .required('An AWS account number is required')
+                .length(12, 'AWS account numbers must be 12 characters long'),
             region: yup.string().required('An AWS region is required'),
             credentials: yup.object().shape({
                 accessKeyId: yup
@@ -51,7 +54,7 @@ export const validationSchema = yup.object().shape({
                             const requirePasswordField =
                                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                 // @ts-ignore
-                                context?.from[2]?.value?.updatePassword || false;
+                                context?.from[3]?.value?.updatePassword || false;
 
                             if (!requirePasswordField) {
                                 return true;
@@ -70,7 +73,7 @@ export const validationSchema = yup.object().shape({
                             const requirePasswordField =
                                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                 // @ts-ignore
-                                context?.from[2]?.value?.updatePassword || false;
+                                context?.from[3]?.value?.updatePassword || false;
 
                             if (!requirePasswordField) {
                                 return true;
@@ -145,7 +148,6 @@ function AwsSecurityHubIntegrationForm({
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
     }
-
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -153,7 +155,7 @@ function AwsSecurityHubIntegrationForm({
                 <Form isWidthLimited>
                     <FormLabelGroup
                         isRequired
-                        label="Name"
+                        label="Integration name"
                         fieldId="notifier.name"
                         touched={touched}
                         errors={errors}
@@ -235,7 +237,7 @@ function AwsSecurityHubIntegrationForm({
                             placeholder={
                                 values.updatePassword
                                     ? ''
-                                    : 'Currently-stored password will be used.'
+                                    : 'Currently-stored access key ID will be used.'
                             }
                         />
                     </FormLabelGroup>
@@ -257,7 +259,7 @@ function AwsSecurityHubIntegrationForm({
                             placeholder={
                                 values.updatePassword
                                     ? ''
-                                    : 'Currently-stored password will be used.'
+                                    : 'Currently-stored secret access key will be used.'
                             }
                         />
                     </FormLabelGroup>
