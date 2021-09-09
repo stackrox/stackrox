@@ -91,6 +91,7 @@ class TableContents extends Component {
                 />
                 <RowActionButton
                     text="Delete policy"
+                    disabled={policy.isDefault}
                     onClick={this.onDeletePolicy(policy)}
                     border="border-l-2 border-base-400"
                     icon={<Icon.Trash2 className="h-4 w-4" />}

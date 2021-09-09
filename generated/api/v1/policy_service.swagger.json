@@ -934,6 +934,9 @@
         },
         "eventSource": {
           "$ref": "#/definitions/storageEventSource"
+        },
+        "isDefault": {
+          "type": "boolean"
         }
       }
     },

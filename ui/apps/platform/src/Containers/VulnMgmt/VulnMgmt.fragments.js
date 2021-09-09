@@ -313,6 +313,7 @@ export const POLICY_LIST_FRAGMENT_CORE = gql`
         severity
         lifecycleStages
         enforcementActions
+        isDefault
     }
 `;
 
@@ -350,6 +351,7 @@ export const POLICY_ENTITY_ALL_FIELDS_FRAGMENT = gql`
         lastUpdated
         enforcementActions
         lifecycleStages
+        isDefault
         policySections {
             sectionName
             policyGroups {

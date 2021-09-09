@@ -42,6 +42,7 @@ function DetailsButtons({
          */
         newPolicy.mitreVectorsLocked = false;
         newPolicy.criteriaLocked = false;
+        newPolicy.isDefault = false;
         newPolicy.id = '';
         newPolicy.name += ' (COPY)';
         setWizardPolicy(newPolicy);

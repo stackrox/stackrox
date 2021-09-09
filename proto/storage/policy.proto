@@ -94,15 +94,16 @@ message PolicyList {
 }
 
 message ListPolicy {
-    string   id                                 = 1;
-    string   name                               = 2;
-    string   description                        = 3;
-    Severity severity                           = 4;
-    bool     disabled                           = 5;
-    repeated LifecycleStage lifecycle_stages    = 6;
-    repeated string notifiers                   = 7;
-    google.protobuf.Timestamp last_updated      = 8;
-    EventSource event_source                    = 9;
+    string                    id               = 1;
+    string                    name             = 2;
+    string                    description      = 3;
+    Severity                  severity         = 4;
+    bool                      disabled         = 5;
+    repeated LifecycleStage   lifecycle_stages = 6;
+    repeated string           notifiers        = 7;
+    google.protobuf.Timestamp last_updated     = 8;
+    EventSource               event_source     = 9;
+    bool                      is_default       = 10;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.

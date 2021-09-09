@@ -272,7 +272,7 @@ const VulnMgmtPolicies = ({
             });
     }
 
-    const renderRowActionButtons = ({ id }) => (
+    const renderRowActionButtons = ({ id, isDefault }) => (
         <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
             <RowActionButton
                 text="Delete this Policy"
@@ -280,6 +280,7 @@ const VulnMgmtPolicies = ({
                 icon={
                     <Trash2 className="hover:bg-alert-200 text-alert-600 hover:text-alert-700 my-1 h-4 w-4" />
                 }
+                disabled={isDefault}
             />
         </div>
     );

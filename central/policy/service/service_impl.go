@@ -165,6 +165,7 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 			Notifiers:       p.GetNotifiers(),
 			LastUpdated:     p.GetLastUpdated(),
 			EventSource:     p.GetEventSource(),
+			IsDefault:       p.GetIsDefault(),
 		})
 	}
 	return listPolicies

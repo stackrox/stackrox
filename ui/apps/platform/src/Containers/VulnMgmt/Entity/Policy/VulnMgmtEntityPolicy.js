@@ -42,6 +42,7 @@ const VulmMgmtEntityPolicy = ({
                 lastUpdated
                 enforcementActions
                 lifecycleStages
+                isDefault
                 policySections {
                     sectionName
                     policyGroups {
