@@ -10,10 +10,10 @@ import (
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
+	"github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
@@ -21,8 +21,6 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -38,45 +36,6 @@ type datastoreImpl struct {
 
 	clusterDatastore  clusterDS.DataStore
 	notifierDatastore notifierDS.DataStore
-
-	defaultPolicies map[string]struct{}
-}
-
-func (ds *datastoreImpl) addDefaults() {
-	policyIDSet, policyNameSet := set.NewStringSet(), set.NewStringSet()
-	storedPolicies, err := ds.storage.GetAllPolicies()
-	if err != nil {
-		panic(err)
-	}
-
-	for _, p := range storedPolicies {
-		policyIDSet.Add(p.GetId())
-		policyNameSet.Add(p.GetName())
-	}
-
-	// Preload the default policies.
-	defaultPolicies, err := policies.DefaultPolicies()
-	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policies out.
-	utils.CrashOnError(err)
-
-	var count int
-	for _, p := range defaultPolicies {
-		ds.defaultPolicies[p.GetId()] = struct{}{}
-
-		// If the ID or Name already exists then ignore
-		if policyIDSet.Contains(p.GetId()) || policyNameSet.Contains(p.GetName()) {
-			continue
-		}
-		count++
-
-		// fill multi-word sort helper field
-		fillSortHelperFields(p)
-
-		if _, err := ds.storage.AddPolicy(p); err != nil {
-			panic(err)
-		}
-	}
-	log.Infof("Loaded %d new default Policies", count)
 }
 
 func (ds *datastoreImpl) buildIndex() error {
@@ -190,11 +149,13 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		return "", sac.ErrResourceAccessDenied
 	}
 
-	fillSortHelperFields(policy)
+	utils.FillSortHelperFields(policy)
+	// Any policy added after statup must be marked custom policy.
+	markPoliciesAsCustom(policy)
 
 	// No need to lock here because nobody can update the policy
 	// until this function returns and they receive the id.
-	id, err := ds.storage.AddPolicy(policy)
+	id, err := ds.storage.AddPolicy(policy, true)
 	if err != nil {
 		return id, err
 	}
@@ -209,7 +170,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 		return sac.ErrResourceAccessDenied
 	}
 
-	fillSortHelperFields(policy)
+	utils.FillSortHelperFields(policy)
 
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
@@ -230,10 +191,10 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
 
-	if _, found := ds.defaultPolicies[id]; found {
-		return errorsPkg.Errorf("policy %s is a default policy. Default system policies cannot be removed", id)
-	}
+	return ds.removePolicyNoLock(id)
+}
 
+func (ds *datastoreImpl) removePolicyNoLock(id string) error {
 	if err := ds.storage.RemovePolicy(id); err != nil {
 		return err
 	}
@@ -273,7 +234,9 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 		return nil, false, errorsPkg.Wrap(err, "removing cluster scopes and notifiers")
 	}
 
-	fillSortHelperFields(importPolicies...)
+	utils.FillSortHelperFields(importPolicies...)
+	// All imported policies must be marked custom policy even if they were exported default policies.
+	markPoliciesAsCustom(importPolicies...)
 
 	// Store the policies and report any errors
 	ds.policyMutex.Lock()
@@ -283,14 +246,15 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	if err != nil {
 		return nil, false, errorsPkg.Wrap(err, "getting all policies")
 	}
-	policiesByName := make(map[string]*storage.Policy, len(allPolicies))
+	policyNameIDMap := make(map[string]string, len(allPolicies))
 	for _, policy := range allPolicies {
-		policiesByName[policy.GetName()] = policy
+		policyNameIDMap[policy.GetName()] = policy.GetId()
 	}
+
 	allSucceeded := true
 	responses := make([]*v1.ImportPolicyResponse, len(importPolicies))
 	for i, policy := range importPolicies {
-		response := ds.importPolicy(policy, overwrite, policiesByName)
+		response := ds.importPolicy(policy, overwrite, policyNameIDMap)
 		if !response.Succeeded {
 			allSucceeded = false
 		}
@@ -307,15 +271,15 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	return responses, allSucceeded, nil
 }
 
-func (ds *datastoreImpl) importPolicy(policy *storage.Policy, overwrite bool, policiesByName map[string]*storage.Policy) *v1.ImportPolicyResponse {
+func (ds *datastoreImpl) importPolicy(policy *storage.Policy, overwrite bool, policyNameIDMap map[string]string) *v1.ImportPolicyResponse {
 	result := &v1.ImportPolicyResponse{
 		Policy: policy,
 	}
 	var err error
 	if overwrite {
-		err = ds.importOverwrite(policy, policiesByName)
+		err = ds.importOverwrite(policy, policyNameIDMap)
 	} else {
-		_, err = ds.storage.AddPolicy(policy)
+		_, err = ds.storage.AddPolicy(policy, true)
 	}
 	if err != nil {
 		result.Errors = getImportErrorsFromError(err)
@@ -330,23 +294,28 @@ func (ds *datastoreImpl) importPolicy(policy *storage.Policy, overwrite bool, po
 	return result
 }
 
-func (ds *datastoreImpl) importOverwrite(policy *storage.Policy, policiesByName map[string]*storage.Policy) error {
-	if policy.GetId() == "" {
-		// TODO: Reconsider this, IDs to this point have always been generated by the Store.
-		policy.Id = uuid.NewV4().String()
-	}
-	if otherPolicy, ok := policiesByName[policy.GetName()]; ok && otherPolicy.GetId() != policy.GetId() {
-		err := ds.storage.RemovePolicy(otherPolicy.GetId())
+func (ds *datastoreImpl) importOverwrite(policy *storage.Policy, policyNameIDMap map[string]string) error {
+	if policy.GetId() != "" {
+		_, exists, err := ds.storage.GetPolicy(policy.GetId())
 		if err != nil {
-			return err
+			return errorsPkg.Wrapf(err, "getting policy %s", policy.GetId())
 		}
-		err = ds.indexer.DeletePolicy(otherPolicy.GetId())
-		if err != nil {
-			return err
+		if exists {
+			if err := ds.removePolicyNoLock(policy.GetId()); err != nil {
+				return errorsPkg.Wrapf(err, "removing policy %s", policy.GetId())
+			}
 		}
 	}
-	// This should never create a name violation because we just removed any name conflicts
-	return ds.storage.UpsertPolicy(policy)
+
+	if otherPolicyID, ok := policyNameIDMap[policy.GetName()]; ok && otherPolicyID != policy.GetId() {
+		if err := ds.removePolicyNoLock(otherPolicyID); err != nil {
+			return errorsPkg.Wrapf(err, "removing policy %s", otherPolicyID)
+		}
+	}
+
+	// This should never create a name violation because we just removed any ID/name conflicts
+	_, err := ds.storage.AddPolicy(policy, true)
+	return err
 }
 
 func getImportErrorsFromError(err error) []*v1.ImportPolicyError {

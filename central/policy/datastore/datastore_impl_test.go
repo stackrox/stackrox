@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -81,7 +80,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), nil)
+	s.store.EXPECT().AddPolicy(policy, true).Return(policy.GetId(), nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
@@ -110,7 +109,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 	}
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), storeError)
+	s.store.EXPECT().AddPolicy(policy, true).Return(policy.GetId(), storeError)
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
@@ -138,7 +137,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 	}
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), storeError)
+	s.store.EXPECT().AddPolicy(policy, true).Return(policy.GetId(), storeError)
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
@@ -170,7 +169,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateNameAndDuplicateID()
 	}
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), storeError)
+	s.store.EXPECT().AddPolicy(policy, true).Return(policy.GetId(), storeError)
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
@@ -221,11 +220,11 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
 
-	s.store.EXPECT().AddPolicy(policySucceed).Return(policySucceed.GetId(), nil)
+	s.store.EXPECT().AddPolicy(policySucceed, true).Return(policySucceed.GetId(), nil)
 	s.indexer.EXPECT().AddPolicy(policySucceed).Return(nil)
 
-	s.store.EXPECT().AddPolicy(policyFail1).Return(policyFail1.GetId(), errorFail1)
-	s.store.EXPECT().AddPolicy(policyFail2).Return(policyFail2.GetId(), errorFail2)
+	s.store.EXPECT().AddPolicy(policyFail1, true).Return(policyFail1.GetId(), errorFail1)
+	s.store.EXPECT().AddPolicy(policyFail2, true).Return(policyFail2.GetId(), errorFail2)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policySucceed.Clone(), policyFail1.Clone(), policyFail2.Clone()}, false)
 	s.NoError(err)
@@ -252,7 +251,7 @@ func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), storeError)
+	s.store.EXPECT().AddPolicy(policy, true).Return(policy.GetId(), storeError)
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
@@ -289,12 +288,16 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 
 	s.store.EXPECT().GetAllPolicies().Return([]*storage.Policy{existingPolicy1, existingPolicy2}, nil)
 
-	s.store.EXPECT().UpsertPolicy(policy1).Return(nil)
+	s.store.EXPECT().GetPolicy(existingPolicy1.GetId()).Return(nil, true, nil)
+	s.store.EXPECT().RemovePolicy(existingPolicy1.GetId()).Return(nil)
+	s.indexer.EXPECT().DeletePolicy(existingPolicy1.GetId()).Return(nil)
+	s.store.EXPECT().AddPolicy(policy1, true).Return("", nil)
 	s.indexer.EXPECT().AddPolicy(policy1).Return(nil)
+
+	s.store.EXPECT().GetPolicy(policy2.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().RemovePolicy(existingPolicy2.GetId()).Return(nil)
 	s.indexer.EXPECT().DeletePolicy(existingPolicy2.GetId()).Return(nil)
-
-	s.store.EXPECT().UpsertPolicy(policy2).Return(nil)
+	s.store.EXPECT().AddPolicy(policy2, true).Return("", nil)
 	s.indexer.EXPECT().AddPolicy(policy2).Return(nil)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy1.Clone(), policy2.Clone()}, true)
@@ -339,7 +342,7 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.notifierDatastore.EXPECT().GetNotifier(s.ctx, notifierName).Return(nil, false, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), nil)
+	s.store.EXPECT().AddPolicy(policy, true).Return(policy.GetId(), nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
@@ -388,7 +391,7 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(mockClusters, nil)
 	s.notifierDatastore.EXPECT().GetNotifier(s.ctx, notifierName).Return(nil, true, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), nil)
+	s.store.EXPECT().AddPolicy(policy, true).Return(policy.GetId(), nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
@@ -400,26 +403,4 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	s.True(resp.GetSucceeded())
 	s.Equal(resp.GetPolicy(), policy)
 	s.Empty(resp.GetErrors())
-}
-
-func TestRmDefaultPolicy(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-
-	store := storeMocks.NewMockStore(mockCtrl)
-	indexer := indexMocks.NewMockIndexer(mockCtrl)
-
-	// addDefaults()
-	store.EXPECT().GetAllPolicies()
-	store.EXPECT().AddPolicy(gomock.Any()).AnyTimes()
-
-	// buildIndex()
-	store.EXPECT().GetAllPolicies()
-	indexer.EXPECT().AddPolicies(gomock.Any())
-
-	ds := New(store, indexer, nil, nil, nil)
-
-	// OpenShift: Advanced Cluster Security Central Admin Secret Accessed
-	err := ds.RemovePolicy(sac.WithAllAccess(context.Background()), "da4e0776-159b-42a3-90a9-18cdd9b485ba")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Default system policies cannot be removed")
 }

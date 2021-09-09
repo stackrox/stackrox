@@ -241,6 +241,9 @@ class UpgradesTest extends BaseSpecification {
             // All default policies are expected to have the following flags set to true.
             // Therefore, move to target by adding the known diff.
             builder.setCriteriaLocked(true)
+            // The upgrade tests upgrades policies from prior to 65.0, which we do not migrate
+            // because of above - criteria is not locked.
+            builder.setIsDefault(true)
             if (knownPolicyDifferences.containsKey(policy.id)) {
                 def diffs = knownPolicyDifferences[policy.id]
 

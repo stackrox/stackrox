@@ -910,6 +910,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"exclusions: [Exclusion]!",
 		"fields: PolicyFields",
 		"id: ID!",
+		"isDefault: Boolean!",
 		"lastUpdated: Time",
 		"lifecycleStages: [LifecycleStage!]!",
 		"mitreAttackVectors: [Policy_MitreAttackVectors]!",
@@ -8265,6 +8266,11 @@ func (resolver *policyResolver) Fields(ctx context.Context) (*policyFieldsResolv
 func (resolver *policyResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *policyResolver) IsDefault(ctx context.Context) bool {
+	value := resolver.data.GetIsDefault()
+	return value
 }
 
 func (resolver *policyResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {

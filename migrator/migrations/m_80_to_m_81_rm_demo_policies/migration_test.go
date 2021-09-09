@@ -4,25 +4,15 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/common/test"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 )
 
-func getTestDB(t *testing.T) *bolt.DB {
-	db := testutils.DBForT(t)
-	err := db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(policyBucket)
-		return err
-	})
-	require.NoError(t, err)
-	return db
-}
-
 func TestMigrationWithoutEditedPolicy(t *testing.T) {
-	db := getTestDB(t)
+	db := test.GetDBWithBucket(t, policyBucket)
 
 	for _, c := range []struct {
 		policyID   string
@@ -79,7 +69,7 @@ func TestMigrationWithoutEditedPolicy(t *testing.T) {
 }
 
 func TestMigrationWithEditedPolicy(t *testing.T) {
-	db := getTestDB(t)
+	db := test.GetDBWithBucket(t, policyBucket)
 	nginxPolicyID := "5a90a571-58e7-4ed5-a2fa-2dbe83e649ba"
 
 	err := db.Update(func(tx *bolt.Tx) error {

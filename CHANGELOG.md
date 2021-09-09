@@ -6,7 +6,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 - Default system policies `DockerHub NGINX 1.10`, `Shellshock: Multiple CVEs`, and `Heartbleed: CVE-2014-0160` have been deprecated.
-- Default system policy deletion is prohibited.
+- Default system policy deletion is prohibited in fresh installations of 65 or greater. If the initial installation 
+  was done in a version lower than 65, then default policies can be deleted even after an upgrade to 65 or greater.
 - `Analyst` permission set and corresponding role will no longer have `DebugLogs` permission. The only default role with this permission will be `Admin` role.
 - The "Mount Docker Socket" policy has been renamed to "Mount Container Runtime Socket" and will now also detect if a deployment 
   mounts the CRI-O socket for both Kubernetes and OpenShift.

@@ -1278,6 +1278,10 @@
         "mitreVectorsLocked": {
           "type": "boolean",
           "description": "Read-only field. If true, the policy's MITRE ATT\u0026CK fields are rendered read-only."
+        },
+        "isDefault": {
+          "type": "boolean",
+          "description": "Read-only field. Indicates the policy is a default policy if true and a custom policy if false."
         }
       }
     },

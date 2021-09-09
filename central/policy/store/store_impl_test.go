@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )
@@ -20,9 +22,9 @@ func TestPolicyStore(t *testing.T) {
 type PolicyStoreTestSuite struct {
 	suite.Suite
 
-	db *bolt.DB
-
-	store Store
+	db              *bolt.DB
+	removedPolicyDB *bolt.DB
+	store           Store
 }
 
 // Do setup before each test so we have a clean DB
@@ -31,18 +33,23 @@ func (suite *PolicyStoreTestSuite) SetupTest() {
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}
-
+	removedPolicyDB, err := bolthelper.NewTemp(suite.T().Name() + "-removed-policies.db")
+	if err != nil {
+		suite.FailNow("Failed to make BoltDB", err.Error())
+	}
 	suite.db = db
-	suite.store = New(db)
+	suite.removedPolicyDB = removedPolicyDB
+	suite.store = newWithoutDefaults(db)
 }
 
 // Do teardown after each test because we're doing setup before each test
 func (suite *PolicyStoreTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
+	testutils.TearDownDB(suite.removedPolicyDB)
 }
 
 func (suite *PolicyStoreTestSuite) verifyAddPolicySucceeds(policy *storage.Policy) {
-	dbID, err := suite.store.AddPolicy(policy)
+	dbID, err := suite.store.AddPolicy(policy, true)
 	suite.NoError(err)
 	suite.Equal(policy.GetId(), dbID)
 }
@@ -61,7 +68,7 @@ func (suite *PolicyStoreTestSuite) verifyPolicyDoesNotExist(id string) {
 }
 
 func (suite *PolicyStoreTestSuite) verifyPolicyStoreErrorList(policy *storage.Policy, errorTypes []error) {
-	_, err := suite.store.AddPolicy(policy)
+	_, err := suite.store.AddPolicy(policy, true)
 	suite.Error(err)
 	policyStoreErrorList := new(PolicyStoreErrorList)
 	suite.Require().IsType(policyStoreErrorList, err)
@@ -84,7 +91,7 @@ func (suite *PolicyStoreTestSuite) TestPolicies() {
 	}
 	policies := []*storage.Policy{policy1, policy2}
 	for _, p := range policies {
-		id, err := suite.store.AddPolicy(p)
+		id, err := suite.store.AddPolicy(p, true)
 		suite.NoError(err)
 		suite.NotEmpty(id)
 	}
@@ -220,7 +227,7 @@ func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
 
 	policies := []*storage.Policy{policy1, policy2}
 	for _, p := range policies {
-		id, err := suite.store.AddPolicy(p)
+		id, err := suite.store.AddPolicy(p, true)
 		suite.NoError(err)
 		suite.NotEmpty(id)
 	}
@@ -293,4 +300,36 @@ func (suite *PolicyStoreTestSuite) TestUpdatePolicyAlreadyExists() {
 	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{Id: "boo-1",
 		Name: "Foo",
 	}))
+}
+
+func TestDefaultPolicyRemoval(t *testing.T) {
+	db, err := bolthelper.NewTemp(t.Name() + ".db")
+	if err != nil {
+		assert.FailNow(t, "Failed to make BoltDB", err.Error())
+	}
+	defer testutils.TearDownDB(db)
+
+	store := New(db)
+
+	policy := &storage.Policy{
+		Id:   "da4e0776-159b-42a3-90a9-18cdd9b485ba",
+		Name: "OpenShift: Advanced Cluster Security Central Admin Secret Accessed",
+	}
+
+	// Test remove.
+	err = store.RemovePolicy(policy.GetId())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Default system policies cannot be removed")
+
+	policy = &storage.Policy{
+		Id:   "da4e0776-159b-42a3-90a9-18cdd9b48111",
+		Name: "OpenShift: Advanced Cluster Security Central Admin Secret Accessed (CUSTOM)",
+	}
+
+	_, err = store.AddPolicy(policy, true)
+	require.NoError(t, err)
+
+	// Test remove.
+	err = store.RemovePolicy(policy.GetId())
+	assert.NoError(t, err)
 }

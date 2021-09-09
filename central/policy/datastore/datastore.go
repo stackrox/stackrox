@@ -44,11 +44,8 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, c
 		searcher:          searcher,
 		clusterDatastore:  clusterDatastore,
 		notifierDatastore: notifierDatastore,
-
-		defaultPolicies: make(map[string]struct{}),
 	}
 
-	ds.addDefaults()
 	if err := ds.buildIndex(); err != nil {
 		panic("unable to load search index for policies")
 	}
@@ -63,7 +60,5 @@ func newWithoutDefaults(storage store.Store, indexer index.Indexer, searcher sea
 		searcher:          searcher,
 		clusterDatastore:  clusterDatastore,
 		notifierDatastore: notifierDatastore,
-
-		defaultPolicies: make(map[string]struct{}),
 	}
 }

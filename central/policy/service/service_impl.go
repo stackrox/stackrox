@@ -316,18 +316,11 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "A policy id must be specified to delete a Policy")
 	}
 
-	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
-	if err != nil {
-		return nil, err
-	} else if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Policy with id '%s' not found", request.GetId())
-	}
-
 	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 
-	if err := s.removeActivePolicy(policy); err != nil {
+	if err := s.removeActivePolicy(request.GetId()); err != nil {
 		return nil, err
 	}
 
@@ -597,10 +590,10 @@ func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
 	return errorList.ToError()
 }
 
-func (s *serviceImpl) removeActivePolicy(policy *storage.Policy) error {
+func (s *serviceImpl) removeActivePolicy(id string) error {
 	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
-	s.buildTimePolicies.RemovePolicy(policy.GetId())
-	errorList.AddError(s.lifecycleManager.RemovePolicy(policy.GetId()))
+	s.buildTimePolicies.RemovePolicy(id)
+	errorList.AddError(s.lifecycleManager.RemovePolicy(id))
 	return errorList.ToError()
 }
 

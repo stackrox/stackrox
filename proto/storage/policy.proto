@@ -58,6 +58,8 @@ message Policy {
     bool                        criteria_locked         = 24;
     // Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
     bool                        mitre_vectors_locked    = 25;
+    // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
+    bool                        is_default              = 26;
 }
 
 enum EventSource {

@@ -1,0 +1,18 @@
+{
+  "id": "0ac267ae-9128-42c7-b15e-0e926844aa2f",
+  "name": "Kubernetes Dashboard Deployed",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Remote",
+          "values": [
+            {
+              "value": "r/.*kubernetesui/dashboard.*"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

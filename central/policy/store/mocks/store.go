@@ -87,18 +87,18 @@ func (mr *MockStoreMockRecorder) GetPolicies(ids ...interface{}) *gomock.Call {
 }
 
 // AddPolicy mocks base method
-func (m *MockStore) AddPolicy(arg0 *storage.Policy) (string, error) {
+func (m *MockStore) AddPolicy(policy *storage.Policy, removePolicyTombstone bool) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddPolicy", arg0)
+	ret := m.ctrl.Call(m, "AddPolicy", policy, removePolicyTombstone)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddPolicy indicates an expected call of AddPolicy
-func (mr *MockStoreMockRecorder) AddPolicy(arg0 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) AddPolicy(policy, removePolicyTombstone interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicy", reflect.TypeOf((*MockStore)(nil).AddPolicy), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicy", reflect.TypeOf((*MockStore)(nil).AddPolicy), policy, removePolicyTombstone)
 }
 
 // UpdatePolicy mocks base method
@@ -113,20 +113,6 @@ func (m *MockStore) UpdatePolicy(arg0 *storage.Policy) error {
 func (mr *MockStoreMockRecorder) UpdatePolicy(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePolicy", reflect.TypeOf((*MockStore)(nil).UpdatePolicy), arg0)
-}
-
-// UpsertPolicy mocks base method
-func (m *MockStore) UpsertPolicy(policy *storage.Policy) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertPolicy", policy)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertPolicy indicates an expected call of UpsertPolicy
-func (mr *MockStoreMockRecorder) UpsertPolicy(policy interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPolicy", reflect.TypeOf((*MockStore)(nil).UpsertPolicy), policy)
 }
 
 // RemovePolicy mocks base method

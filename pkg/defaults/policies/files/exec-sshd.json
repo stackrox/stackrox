@@ -49,5 +49,6 @@
     }
   ],
   "criteriaLocked": true,
-  "mitreVectorsLocked": true
+  "mitreVectorsLocked": true,
+  "isDefault": true
 }

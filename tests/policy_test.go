@@ -35,6 +35,7 @@ func TestImportExportPolicies(t *testing.T) {
 	verifyMixedExportFails(t)
 	verifyImportSucceeds(t)
 	verifyDuplicateImportSucceeds(t)
+	verifyDefaultPolicyDuplicateImportFails(t)
 	verifyImportInvalidFails(t)
 	verifyImportDuplicateNameFails(t)
 	verifyImportDuplicateIDFails(t)
@@ -196,6 +197,9 @@ func createUniquePolicy(t *testing.T, service v1.PolicyServiceClient) *storage.P
 	newUniquePolicy := exportPolicy(t, service, knownPolicyID)
 	newUniquePolicy.Name = uuid.NewV4().String()
 	newUniquePolicy.Id = uuid.NewV4().String()
+	newUniquePolicy.IsDefault = false
+	newUniquePolicy.CriteriaLocked = false
+	newUniquePolicy.MitreVectorsLocked = false
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{newUniquePolicy},
@@ -279,10 +283,29 @@ func verifyImportSucceeds(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{policy}, false)
 }
 
 func verifyDuplicateImportSucceeds(t *testing.T) {
+	conn := testutils.GRPCConnectionToCentral(t)
+	service := v1.NewPolicyServiceClient(conn)
+
+	// Create an existing policy so we don't change default policies
+	policy := createUniquePolicy(t, service)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
+		Policies: []*storage.Policy{policy},
+	})
+	cancel()
+	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
+	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{policy}, false)
+}
+
+func verifyDefaultPolicyDuplicateImportFails(t *testing.T) {
 	conn := testutils.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
@@ -293,7 +316,9 @@ func verifyDuplicateImportSucceeds(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
-	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{policy}, false)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
+	validateImportPoliciesErrors(t, importResp, policy, []string{duplicateID, duplicateName})
 }
 
 func verifyImportInvalidFails(t *testing.T) {
@@ -307,6 +332,8 @@ func verifyImportInvalidFails(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(badPolicy)
 	validateImportPoliciesErrors(t, importResp, badPolicy, []string{"invalid_policy"})
 }
 
@@ -323,6 +350,8 @@ func verifyImportDuplicateNameFails(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
 	validateImportPoliciesErrors(t, importResp, policy, []string{duplicateName})
 }
 
@@ -339,6 +368,8 @@ func verifyImportDuplicateIDFails(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
 	validateImportPoliciesErrors(t, importResp, policy, []string{duplicateID})
 }
 
@@ -355,6 +386,8 @@ func verifyImportDuplicateNameAndIDFails(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
 	validateImportPoliciesErrors(t, importResp, policy, []string{duplicateID, duplicateName})
 }
 
@@ -371,6 +404,8 @@ func verifyImportNoIDSucceeds(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{policy}, true)
 }
 
@@ -393,6 +428,8 @@ func verifyImportMultipleSucceeds(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy1, policy2)
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{policy1, policy2}, false)
 }
 
@@ -416,6 +453,8 @@ func verifyImportMixedSuccess(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy1, policy2)
 	validateImport(t, importResp, []*storage.Policy{policy1, policy2}, []int{1}, [][]string{{duplicateName}}, true)
 }
 
@@ -440,6 +479,8 @@ func verifyNotifiersRemoved(t *testing.T) {
 
 	// Notifier should have been scraped out
 	policy.Notifiers = nil
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
 	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
 }
 
@@ -472,6 +513,8 @@ func verifyExclusionsRemoved(t *testing.T) {
 
 	// Exclude scopes should have been scraped out
 	policy.Exclusions = nil
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
 	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
 }
 
@@ -500,6 +543,8 @@ func verifyScopesRemoved(t *testing.T) {
 
 	// Scope should have been scraped out
 	policy.Scope = nil
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(policy)
 	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
 }
 
@@ -521,6 +566,8 @@ func verifyOverwriteNameSucceeds(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(newPolicy)
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{newPolicy}, false)
 
 	mockErrors := []*v1.ExportPolicyError{
@@ -550,6 +597,8 @@ func verifyOverwriteIDSucceeds(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(newPolicy)
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{newPolicy}, false)
 
 	dbPolicy := exportPolicy(t, service, existingPolicy.GetId())
@@ -575,6 +624,8 @@ func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
 	})
 	cancel()
 	require.NoError(t, err)
+	// All imported policies are treated as custom policies.
+	markPolicyAsCustom(newPolicy)
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{newPolicy}, false)
 
 	mockErrors := []*v1.ExportPolicyError{
@@ -639,4 +690,12 @@ func verifyConvertInvalidSearchToPolicyFails(t *testing.T) {
 	cancel()
 	require.Error(t, err)
 	require.Nil(t, newPolicy)
+}
+
+func markPolicyAsCustom(policies ...*storage.Policy) {
+	for _, p := range policies {
+		p.CriteriaLocked = false
+		p.MitreVectorsLocked = false
+		p.IsDefault = false
+	}
 }

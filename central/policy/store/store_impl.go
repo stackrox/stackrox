@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -28,7 +29,23 @@ type storeImpl struct {
 	mutex sync.Mutex
 }
 
-func (b *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *storage.Policy, exists bool, err error) {
+func (s *storeImpl) wasDefaultPolicyRemoved(id string) (bool, error) {
+	var wasRemoved bool
+	if err := s.View(func(tx *bolt.Tx) error {
+		val := tx.Bucket(removedDefaultPolicyBucket).Get([]byte(id))
+		if val == nil {
+			wasRemoved = false
+			return nil
+		}
+		return json.Unmarshal(val, &wasRemoved)
+	}); err != nil {
+		// Do not block adding policy if an error was encountered figuring it out.
+		return false, err
+	}
+	return wasRemoved, nil
+}
+
+func (s *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *storage.Policy, exists bool, err error) {
 	policy = new(storage.Policy)
 	val := bucket.Get([]byte(id))
 	if val == nil {
@@ -40,10 +57,10 @@ func (b *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *storage.P
 }
 
 // GetPolicy returns policy with given id.
-func (b *storeImpl) GetPolicy(id string) (policy *storage.Policy, exists bool, err error) {
+func (s *storeImpl) GetPolicy(id string) (policy *storage.Policy, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Policy")
 	policy = new(storage.Policy)
-	err = b.View(func(tx *bolt.Tx) error {
+	err = s.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(policyBucket)
 		val := b.Get([]byte(id))
 		if val == nil {
@@ -57,10 +74,10 @@ func (b *storeImpl) GetPolicy(id string) (policy *storage.Policy, exists bool, e
 }
 
 // GetAllPolicies retrieves policies matching the request from bolt
-func (b *storeImpl) GetAllPolicies() ([]*storage.Policy, error) {
+func (s *storeImpl) GetAllPolicies() ([]*storage.Policy, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policies []*storage.Policy
-	err := b.View(func(tx *bolt.Tx) error {
+	err := s.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(policyBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var policy storage.Policy
@@ -74,12 +91,12 @@ func (b *storeImpl) GetAllPolicies() ([]*storage.Policy, error) {
 	return policies, err
 }
 
-func (b *storeImpl) GetPolicies(ids ...string) ([]*storage.Policy, []int, []error, error) {
+func (s *storeImpl) GetPolicies(ids ...string) ([]*storage.Policy, []int, []error, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policies []*storage.Policy
 	var missingIndices []int
 	var errorList []error
-	err := b.View(func(tx *bolt.Tx) error {
+	err := s.View(func(tx *bolt.Tx) error {
 		for i, id := range ids {
 			policy := new(storage.Policy)
 			b := tx.Bucket(policyBucket)
@@ -103,7 +120,7 @@ func (b *storeImpl) GetPolicies(ids ...string) ([]*storage.Policy, []int, []erro
 }
 
 // AddPolicy adds a policy to bolt
-func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
+func (s *storeImpl) AddPolicy(policy *storage.Policy, removePolicyTombstone bool) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Policy")
 
 	if policy.Id == "" {
@@ -112,16 +129,32 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 
 	// Lock here so we can check whether the policy exists outside of the Bolt write lock.  This can race with
 	// update/delete but I don't think this results in any problems.
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if removePolicyTombstone {
+		if err := s.Update(func(tx *bolt.Tx) error {
+			return tx.Bucket(removedDefaultPolicyBucket).Delete([]byte(policy.GetId()))
+		}); err != nil {
+			return "", err
+		}
+	} else {
+		wasRemoved, err := s.wasDefaultPolicyRemoved(policy.GetId())
+		if err != nil {
+			return "", err
+		}
+		if wasRemoved {
+			return "", errors.Errorf("default policy %s was previously removed", policy.GetId())
+		}
+	}
 
 	equalPolicyExists := false
-	err := b.View(func(tx *bolt.Tx) error {
+	err := s.View(func(tx *bolt.Tx) error {
 		var errs []error
 		bucket := tx.Bucket(policyBucket)
 
 		// Check whether a policy with this ID already exists
-		existingPolicy, exists, err := b.getPolicy(policy.GetId(), bucket)
+		existingPolicy, exists, err := s.getPolicy(policy.GetId(), bucket)
 		if err != nil {
 			return err
 		}
@@ -165,7 +198,7 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 		return policy.GetId(), nil
 	}
 
-	err = b.Update(func(tx *bolt.Tx) error {
+	if err = s.Update(func(tx *bolt.Tx) error {
 		// We've already checked for duplicate IDs and names, we can just write here.
 		if err := secondarykey.InsertUniqueKey(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
 			return err
@@ -177,39 +210,33 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 			return err
 		}
 		return bucket.Put([]byte(policy.GetId()), bytes)
-	})
-	return policy.Id, err
+	}); err != nil {
+		return "", err
+	}
+
+	return policy.GetId(), nil
 }
 
 // UpdatePolicy updates a policy to bolt
-func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
-	return b.upsertPolicy(policy, true)
-}
-
-// UpsertPolicy updates a policy to bolt
-func (b *storeImpl) UpsertPolicy(policy *storage.Policy) error {
-	return b.upsertPolicy(policy, false)
-}
-
-func (b *storeImpl) upsertPolicy(policy *storage.Policy, errIfNotFound bool) error {
+func (s *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Policy")
 
 	// Have to lock here because this is an upsert, not an update.  AddPolicy should not re-create a policy which is
 	// created here.
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	// Check if policy's lock flags are not updated. If the lock flags are set to read-only,
-	// check the corresponding fields are not updated.
-	if err := b.verifyLockFieldsState(policy); err != nil {
+	// Verify that policy's settings flags are not updated. If the lock flags are set to read-only,
+	// verify that the corresponding fields are not updated.
+	if err := s.verifySettingFieldsAreUnchanged(policy); err != nil {
 		return err
 	}
 
-	return b.Update(func(tx *bolt.Tx) error {
+	err := s.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)
 		// If the update is changing the name, check if the name has already been taken
 		val, ok := secondarykey.GetCurrentUniqueKey(tx, policyBucket, policy.GetId())
-		if errIfNotFound && !ok {
+		if !ok {
 			return errorhelpers.ErrNotFound
 		}
 		if val != policy.GetName() {
@@ -224,28 +251,77 @@ func (b *storeImpl) upsertPolicy(policy *storage.Policy, errIfNotFound bool) err
 		}
 		return bucket.Put([]byte(policy.GetId()), bytes)
 	})
+	if err != nil {
+		return err
+	}
+
+	// If the policy is marked as default, then we prohibit deletion and do not use 'removedDefaultPolicyBucket'.
+	if policy.GetIsDefault() {
+		return nil
+	}
+
+	// All policies upserted after initial addition are treated as custom policies. A default policy may have been
+	// exported, then deleted and re-imported. Ensure that it is removed from the bucket.
+	return s.Update(func(tx *bolt.Tx) error {
+		return tx.Bucket(removedDefaultPolicyBucket).Delete([]byte(policy.GetId()))
+	})
 }
 
 // RemovePolicy removes a policy.
-func (b *storeImpl) RemovePolicy(id string) error {
+func (s *storeImpl) RemovePolicy(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Policy")
-	return b.Update(func(tx *bolt.Tx) error {
+	var policy storage.Policy
+	err := s.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)
 		key := []byte(id)
-		if exists := bucket.Get(key) != nil; !exists {
+		val := bucket.Get(key)
+		if val == nil {
 			return dberrors.ErrNotFound{Type: "Policy", ID: string(key)}
 		}
+
+		if err := proto.Unmarshal(val, &policy); err != nil {
+			return err
+		}
+
+		if policy.GetIsDefault() {
+			return errors.Errorf("policy %s is a default policy. Default system policies cannot be removed", id)
+		}
+
 		if err := secondarykey.RemoveUniqueKey(tx, policyBucket, id); err != nil {
 			return err
 		}
 		return bucket.Delete(key)
 	})
+	if err != nil {
+		return err
+	}
+
+	// If the policy is marked as default, then we prohibit deletion and do not use 'removedDefaultPolicyBucket'.
+	if policy.GetIsDefault() {
+		return nil
+	}
+
+	return s.updatePolicyTombstone(id, true, false)
+}
+
+func (s *storeImpl) updatePolicyTombstone(id string, tombstoned bool, addIfNotFound bool) error {
+	return s.Update(func(tx *bolt.Tx) error {
+		if tx.Bucket(removedDefaultPolicyBucket).Get([]byte(id)) == nil && !addIfNotFound {
+			return nil
+		}
+
+		bytes, err := json.Marshal(tombstoned)
+		if err != nil {
+			return err
+		}
+		return tx.Bucket(removedDefaultPolicyBucket).Put([]byte(id), bytes)
+	})
 }
 
 // RenamePolicyCategory renames all occurrence of a policy category to the new requested category.
-func (b *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
+func (s *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Rename, "PolicyCategory")
-	return b.Update(func(tx *bolt.Tx) error {
+	return s.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(policyBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var policy storage.Policy
@@ -276,9 +352,9 @@ func (b *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest
 }
 
 // DeletePolicyCategory removes a category from all policies.
-func (b *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
+func (s *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "PolicyCategory")
-	return b.Update(func(tx *bolt.Tx) error {
+	return s.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(policyBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var policy storage.Policy
@@ -306,17 +382,22 @@ func (b *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest
 	})
 }
 
-func (b *storeImpl) verifyLockFieldsState(newPolicy *storage.Policy) error {
-	return b.View(func(tx *bolt.Tx) error {
+func (s *storeImpl) verifySettingFieldsAreUnchanged(newPolicy *storage.Policy) error {
+	return s.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)
 
-		oldPolicy, exists, err := b.getPolicy(newPolicy.GetId(), bucket)
+		oldPolicy, exists, err := s.getPolicy(newPolicy.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 
 		if !exists {
 			return nil
+		}
+
+		if oldPolicy.GetIsDefault() != newPolicy.GetIsDefault() {
+			log.Warnf("'isDefault' is read-only fields. Setting it to previous value for policy %q.", newPolicy.GetName())
+			newPolicy.IsDefault = oldPolicy.GetIsDefault()
 		}
 
 		if oldPolicy.GetCriteriaLocked() != newPolicy.GetCriteriaLocked() {
