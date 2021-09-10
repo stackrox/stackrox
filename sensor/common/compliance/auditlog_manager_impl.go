@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"time"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -11,17 +13,26 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+const (
+	defaultInterval = 1 * time.Minute
+)
+
 // auditLogCollectionManagerImpl manages the lifecycle of audit log collection within the cluster
 type auditLogCollectionManagerImpl struct {
-	enabled         concurrency.Flag
-	fileStates      map[string]*storage.AuditLogFileState
 	clusterIDGetter func() string
 
-	auditEventMsgs chan *sensor.MsgFromCompliance
+	enabled                         concurrency.Flag
+	receivedInitialStateFromCentral concurrency.Flag
+	fileStates                      map[string]*storage.AuditLogFileState
+	eligibleComplianceNodes         map[string]sensor.ComplianceService_CommunicateServer
 
-	stopSig concurrency.Signal
+	auditEventMsgs   chan *sensor.MsgFromCompliance
+	fileStateUpdates chan *central.MsgFromSensor
 
-	eligibleComplianceNodes map[string]sensor.ComplianceService_CommunicateServer
+	stopSig        concurrency.Signal
+	forceUpdateSig concurrency.Signal
+
+	updateInterval time.Duration
 
 	fileStateLock  sync.RWMutex
 	connectionLock sync.RWMutex
@@ -29,6 +40,7 @@ type auditLogCollectionManagerImpl struct {
 
 func (a *auditLogCollectionManagerImpl) Start() error {
 	go a.runStateSaver()
+	go a.runUpdater()
 	return nil
 }
 
@@ -49,7 +61,14 @@ func (a *auditLogCollectionManagerImpl) ProcessMessage(msg *central.MsgToSensor)
 }
 
 func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	return nil // this sensor component doesn't send anything
+	return a.fileStateUpdates
+}
+
+// ForceUpdate immediately updates Central with the latest file state
+func (a *auditLogCollectionManagerImpl) ForceUpdate() {
+	// If the signal is already triggered then an update will happen soon (or is in process)
+	// It will be reset once the update finishes
+	a.forceUpdateSig.Signal()
 }
 
 func (a *auditLogCollectionManagerImpl) runStateSaver() {
@@ -84,6 +103,60 @@ func (a *auditLogCollectionManagerImpl) updateFileState(node string, latestTime 
 	a.fileStates[node] = &storage.AuditLogFileState{
 		CollectLogsSince: latestTime,
 		LastAuditId:      latestID,
+	}
+}
+
+func (a *auditLogCollectionManagerImpl) runUpdater() {
+	ticker := time.NewTicker(a.updateInterval)
+	defer ticker.Stop()
+
+	for !a.stopSig.IsDone() {
+		select {
+		case <-a.forceUpdateSig.Done():
+			a.sendUpdate()
+			a.forceUpdateSig.Reset()
+		case <-ticker.C:
+			a.sendUpdate()
+		}
+	}
+}
+
+func (a *auditLogCollectionManagerImpl) sendUpdate() {
+	fileStates := a.getLatestFileStates()
+
+	if a.shouldSendUpdateToCentral(fileStates) {
+		select {
+		case a.fileStateUpdates <- a.getCentralUpdateMsg(fileStates):
+		case <-a.stopSig.Done():
+		}
+	}
+}
+
+func (a *auditLogCollectionManagerImpl) shouldSendUpdateToCentral(fileStates map[string]*storage.AuditLogFileState) bool {
+	// No point in updating if the central communication hasn't started or there are no states
+	return a.receivedInitialStateFromCentral.Get() && len(fileStates) > 0
+}
+
+// getLatestFileStates returns a copy of the latest state of audit log collection at each compliance node
+func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storage.AuditLogFileState {
+	a.fileStateLock.RLock()
+	defer a.fileStateLock.RUnlock()
+
+	// Clone the map before returning because it may get changed before the caller has a chance to use it.
+	nodeStates := make(map[string]*storage.AuditLogFileState, len(a.fileStates))
+	for k, v := range a.fileStates {
+		nodeStates[k] = v // no need to clone this because when the map is updated a new storage.AuditLogFileState is always created (see updateFileState)
+	}
+	return nodeStates
+}
+
+func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
+			AuditLogStatusInfo: &central.AuditLogStatusInfo{
+				NodeAuditLogFileStates: fileStates,
+			},
+		},
 	}
 }
 
@@ -122,14 +195,13 @@ func (a *auditLogCollectionManagerImpl) forEachNode(fn func(node string, server 
 	}
 }
 
-// EnableCollection enables audit log collection on all the nodes who are eligible
+// EnableCollection enables audit log collection on all nodes that are eligible
 func (a *auditLogCollectionManagerImpl) EnableCollection() {
 	if wasEnabled := a.enabled.TestAndSet(true); !wasEnabled {
 		a.startAuditLogCollectionOnAllNodes()
 	}
 }
 
-// the file state lock must be acquired (in read mode) before calling this
 func (a *auditLogCollectionManagerImpl) startAuditLogCollectionOnAllNodes() {
 	// locked because we will need to read states when enabling collection
 	a.fileStateLock.RLock()
@@ -162,7 +234,7 @@ func (a *auditLogCollectionManagerImpl) startCollectionOnNodeNoFileStateLock(nod
 	}
 }
 
-// DisableCollection disables audit log collection on all the nodes who are eligible
+// DisableCollection disables audit log collection on all nodes that are eligible
 func (a *auditLogCollectionManagerImpl) DisableCollection() {
 	if wasEnabled := a.enabled.TestAndSet(false); wasEnabled {
 		a.stopAuditLogCollectionOnAllNodes()
@@ -190,9 +262,10 @@ func (a *auditLogCollectionManagerImpl) stopAuditLogCollectionOnAllNodes() {
 	})
 }
 
-// UpdateAuditLogFileState updates the location at which each node collects audit logs
+// SetAuditLogFileStateFromCentral sets the location at which each node should collect audit logs as sent by Central
 // If the feature is already enabled and there are eligible nodes, then this will restart collection on those nodes from this state
-func (a *auditLogCollectionManagerImpl) UpdateAuditLogFileState(fileStates map[string]*storage.AuditLogFileState) {
+func (a *auditLogCollectionManagerImpl) SetAuditLogFileStateFromCentral(fileStates map[string]*storage.AuditLogFileState) {
+	a.receivedInitialStateFromCentral.Set(true)
 	a.fileStateLock.Lock()
 	a.fileStates = fileStates
 
@@ -206,19 +279,6 @@ func (a *auditLogCollectionManagerImpl) UpdateAuditLogFileState(fileStates map[s
 	if a.enabled.Get() {
 		a.startAuditLogCollectionOnAllNodes()
 	}
-}
-
-// GetLatestFileStates returns the latest state of audit log collection at each compliance node
-func (a *auditLogCollectionManagerImpl) GetLatestFileStates() map[string]*storage.AuditLogFileState {
-	a.fileStateLock.RLock()
-	defer a.fileStateLock.RUnlock()
-
-	// Clone the map before returning because it may get changed before the caller has a chance to use it.
-	nodeStates := make(map[string]*storage.AuditLogFileState, len(a.fileStates))
-	for k, v := range a.fileStates {
-		nodeStates[k] = v // no need to clone this because when the map is updated a new storage.AuditLogFileState is always created (see updateFileState)
-	}
-	return nodeStates
 }
 
 // AuditMessagesChan returns a send-only channel that can be used to notify the manager of the latest received audit log message from a compliance node. It used to maintain the latest file states

@@ -72,7 +72,7 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		err := c.parseMessage(func() {
 			log.Infof("Received audit log sync state from Central: %s", protoutils.NewWrapper(msg.GetAuditLogSync()))
 			// This will restart collection only if it's already started. If it's the first time, it just saves the state and does nothing (until it is started eventually)
-			c.auditLogCollectionManager.UpdateAuditLogFileState(msg.GetAuditLogSync().GetNodeAuditLogFileStates())
+			c.auditLogCollectionManager.SetAuditLogFileStateFromCentral(msg.GetAuditLogSync().GetNodeAuditLogFileStates())
 		})
 		if err != nil {
 			return err

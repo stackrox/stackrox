@@ -100,18 +100,16 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) EnableCollection() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableCollection", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).EnableCollection))
 }
 
-// GetLatestFileStates mocks base method
-func (m *MockAuditLogCollectionManager) GetLatestFileStates() map[string]*storage.AuditLogFileState {
+// ForceUpdate mocks base method
+func (m *MockAuditLogCollectionManager) ForceUpdate() {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestFileStates")
-	ret0, _ := ret[0].(map[string]*storage.AuditLogFileState)
-	return ret0
+	m.ctrl.Call(m, "ForceUpdate")
 }
 
-// GetLatestFileStates indicates an expected call of GetLatestFileStates
-func (mr *MockAuditLogCollectionManagerMockRecorder) GetLatestFileStates() *gomock.Call {
+// ForceUpdate indicates an expected call of ForceUpdate
+func (mr *MockAuditLogCollectionManagerMockRecorder) ForceUpdate() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestFileStates", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).GetLatestFileStates))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForceUpdate", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).ForceUpdate))
 }
 
 // ProcessMessage mocks base method
@@ -154,6 +152,18 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) ResponsesC() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResponsesC", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).ResponsesC))
 }
 
+// SetAuditLogFileStateFromCentral mocks base method
+func (m *MockAuditLogCollectionManager) SetAuditLogFileStateFromCentral(arg0 map[string]*storage.AuditLogFileState) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetAuditLogFileStateFromCentral", arg0)
+}
+
+// SetAuditLogFileStateFromCentral indicates an expected call of SetAuditLogFileStateFromCentral
+func (mr *MockAuditLogCollectionManagerMockRecorder) SetAuditLogFileStateFromCentral(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAuditLogFileStateFromCentral", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).SetAuditLogFileStateFromCentral), arg0)
+}
+
 // Start mocks base method
 func (m *MockAuditLogCollectionManager) Start() error {
 	m.ctrl.T.Helper()
@@ -178,16 +188,4 @@ func (m *MockAuditLogCollectionManager) Stop(arg0 error) {
 func (mr *MockAuditLogCollectionManagerMockRecorder) Stop(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Stop), arg0)
-}
-
-// UpdateAuditLogFileState mocks base method
-func (m *MockAuditLogCollectionManager) UpdateAuditLogFileState(arg0 map[string]*storage.AuditLogFileState) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateAuditLogFileState", arg0)
-}
-
-// UpdateAuditLogFileState indicates an expected call of UpdateAuditLogFileState
-func (mr *MockAuditLogCollectionManagerMockRecorder) UpdateAuditLogFileState(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAuditLogFileState", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).UpdateAuditLogFileState), arg0)
 }
