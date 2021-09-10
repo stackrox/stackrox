@@ -2,7 +2,6 @@ package envisolator
 
 import (
 	"os"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -15,9 +14,16 @@ type envWithOldValue struct {
 	oldValue string // oldValue (consulted only if it was set)
 }
 
+// TestingI is an interface wrapper around *testing.T and *testing.B.
+type TestingI interface {
+	Errorf(format string, args ...interface{})
+	Logf(format string, args ...interface{})
+	FailNow()
+}
+
 // NewEnvIsolator returns an EnvIsolator object.
 // Always defer .RestoreAll() on the returned object.
-func NewEnvIsolator(t *testing.T) *EnvIsolator {
+func NewEnvIsolator(t TestingI) *EnvIsolator {
 	return &EnvIsolator{
 		t:              t,
 		valuesToRewind: make([]envWithOldValue, 0),
@@ -26,7 +32,7 @@ func NewEnvIsolator(t *testing.T) *EnvIsolator {
 
 // EnvIsolator is a test helper class that aids in isolating a test from the environment.
 type EnvIsolator struct {
-	t              *testing.T
+	t              TestingI
 	valuesToRewind []envWithOldValue
 }
 
