@@ -77,8 +77,8 @@ export const images = {
 };
 
 export const auth = {
-    loginAuthProviders: 'v1/login/authproviders',
-    authProviders: 'v1/authProviders*',
+    loginAuthProviders: '/v1/login/authproviders',
+    authProviders: '/v1/authProviders*',
     authStatus: '/v1/auth/status',
     logout: '/sso/session/logout',
     tokenRefresh: '/sso/session/tokenrefresh',

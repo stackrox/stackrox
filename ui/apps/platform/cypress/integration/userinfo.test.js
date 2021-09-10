@@ -7,31 +7,42 @@ import * as api from '../constants/apiEndpoints';
 describe('User Info', () => {
     withAuth();
 
-    function mockWithAdminUser() {
-        cy.server();
-        cy.route('GET', api.auth.authStatus, 'fixture:auth/adminUserStatus').as('authStatus');
+    function interceptWithoutMockUser() {
+        cy.intercept('GET', api.auth.authStatus).as('authStatus');
     }
 
-    function mockWithMultiRolesUser() {
-        cy.server();
-        cy.route('GET', api.auth.authStatus, 'fixture:auth/multiRolesUserStatus').as('authStatus');
+    function interceptWithMockAdminUser() {
+        cy.intercept('GET', api.auth.authStatus, {
+            fixture: 'auth/adminUserStatus',
+        }).as('authStatus');
     }
 
-    function mockWithBasicAuthUser() {
-        cy.server();
-        cy.route('GET', api.auth.authStatus, 'fixture:auth/basicAuthAdminStatus').as('authStatus');
+    function interceptWithMockMultiRolesUser() {
+        cy.intercept('GET', api.auth.authStatus, {
+            fixture: 'auth/multiRolesUserStatus',
+        }).as('authStatus');
+    }
+
+    function interceptWithMockBasicUser() {
+        cy.intercept('GET', api.auth.authStatus, {
+            fixture: 'auth/basicAuthAdminStatus',
+        }).as('authStatus');
     }
 
     describe('User Info in Top Navigation', () => {
         it('should show initials in the user avatar', () => {
-            mockWithAdminUser();
+            interceptWithMockAdminUser();
             cy.visit(dashboardURL);
+            cy.wait('@authStatus');
+
             cy.get(topNavSelectors.menuButton).should('contain.text', 'AI');
         });
 
         it('should show name, email and a single role', () => {
-            mockWithAdminUser();
+            interceptWithMockAdminUser();
             cy.visit(dashboardURL);
+            cy.wait('@authStatus');
+
             cy.get(topNavSelectors.menuButton).click();
 
             cy.get(topNavSelectors.menuList.userName).should(
@@ -43,8 +54,10 @@ describe('User Info', () => {
         });
 
         it('should show username when name is missed, and all roles', () => {
-            mockWithMultiRolesUser();
+            interceptWithMockMultiRolesUser();
             cy.visit(dashboardURL);
+            cy.wait('@authStatus');
+
             cy.get(topNavSelectors.menuButton).click();
 
             // name is intentionally missed for this mock data, therefore UI should show username
@@ -60,25 +73,32 @@ describe('User Info', () => {
         });
 
         it('should navigate to the user page', () => {
+            interceptWithoutMockUser();
             cy.visit(dashboardURL);
+            cy.wait('@authStatus');
+
             cy.get(topNavSelectors.menuButton).click();
             cy.get(topNavSelectors.menuList.userName).click();
-            cy.url().should('include', userPageUrl);
+            cy.wait('@authStatus');
+
+            cy.location('pathname').should('eq', userPageUrl);
         });
     });
 
     describe('User Page', () => {
         it('should show user name and email', () => {
-            mockWithAdminUser();
+            interceptWithMockAdminUser();
             cy.visit(userPageUrl);
+            cy.wait('@authStatus');
 
             cy.get(userPageSelectors.userName).should('contain.text', 'Artificial Intelligence');
             cy.get(userPageSelectors.userEmail).should('contain.text', 'ai@stackrox.com');
         });
 
         it('should show all the user roles', () => {
-            mockWithMultiRolesUser();
+            interceptWithMockMultiRolesUser();
             cy.visit(userPageUrl);
+            cy.wait('@authStatus');
 
             cy.get(`${userPageSelectors.userRoleNames}:contains("Admin")`);
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`);
@@ -86,8 +106,9 @@ describe('User Info', () => {
         });
 
         it('should show correct permissions for the role', () => {
-            mockWithMultiRolesUser();
+            interceptWithMockMultiRolesUser();
             cy.visit(userPageUrl);
+            cy.wait('@authStatus');
 
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).click();
 
@@ -97,7 +118,9 @@ describe('User Info', () => {
         });
 
         it('should properly highlight current nav item', () => {
+            interceptWithoutMockUser();
             cy.visit(userPageUrl);
+            cy.wait('@authStatus');
 
             const { userPermissionsForRoles, userRoleNames } = userPageSelectors;
             const userRoleAdmin = `${userRoleNames}:contains("Admin")`;
@@ -119,8 +142,9 @@ describe('User Info', () => {
         });
 
         it('should display aggregated permissions for basic auth user', () => {
-            mockWithBasicAuthUser();
+            interceptWithMockBasicUser();
             cy.visit(userPageUrl);
+            cy.wait('@authStatus');
 
             cy.get(userPageSelectors.userName).should('contain.text', 'admin');
             cy.get(userPageSelectors.authProviderName).should('contain.text', 'Basic');
@@ -134,8 +158,9 @@ describe('User Info', () => {
         });
 
         it('should show correct aggregated permissions for multi roles user', () => {
-            mockWithMultiRolesUser();
+            interceptWithMockMultiRolesUser();
             cy.visit(userPageUrl);
+            cy.wait('@authStatus');
 
             cy.get(userPageSelectors.userName).should('contain.text', 'ai');
             cy.get(userPageSelectors.authProviderName).should('contain.text', 'My OIDC Provider');

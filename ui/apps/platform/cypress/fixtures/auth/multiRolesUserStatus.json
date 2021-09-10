@@ -11,7 +11,6 @@
     "username": "ai",
     "permissions": {
       "name": "Admin",
-      "globalAccess": "READ_WRITE_ACCESS",
       "resourceToAccess": {
         "User": "READ_WRITE_ACCESS"
       }
@@ -19,27 +18,23 @@
     "roles": [
       {
         "name": "Admin",
-        "globalAccess": "READ_WRITE_ACCESS",
         "resourceToAccess": {
           "User": "READ_WRITE_ACCESS"
         }
       },
       {
         "name": "Analyst",
-        "globalAccess": "READ_ACCESS",
         "resourceToAccess": {
           "User": "READ_ACCESS"
         }
       },
       {
         "name": "Continuous Integration",
-        "globalAccess": "NO_ACCESS",
         "resourceToAccess": {}
       }
     ],
     "role": {
       "name": "Admin",
-      "globalAccess": "READ_WRITE_ACCESS",
       "resourceToAccess": {}
     }
   },
