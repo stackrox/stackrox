@@ -1,4 +1,4 @@
-package sac
+package effectiveaccessscope
 
 import (
 	"fmt"
@@ -183,8 +183,10 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 	type testCase struct {
 		desc      string
 		scopeDesc string
+		scopeStr  string
+		scopeJSON string
 		scope     *storage.SimpleAccessScope
-		expected  *EffectiveAccessScopeTree
+		expected  *ScopeTree
 		hasError  bool
 		detail    v1.ComputeEffectiveAccessScopeRequest_Detail
 	}
@@ -192,12 +194,12 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 	notFoundCluster := &ClustersScopeSubTree{
 		State:      Excluded,
 		Namespaces: namespacesTree(excluded(errored)),
-		Extras: &EffectiveAccessScopeTreeExtras{
+		Extras: &ScopeTreeExtras{
 			Name: "Not Found",
 		},
 	}
-	arrakisExtras := &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis", Labels: map[string]string{"focus": "melange"}}
-	earthExtras := &EffectiveAccessScopeTreeExtras{ID: "planet.earth", Name: "Earth"}
+	arrakisExtras := &ScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis", Labels: map[string]string{"focus": "melange"}}
+	earthExtras := &ScopeTreeExtras{ID: "planet.earth", Name: "Earth"}
 	clusterIDs := map[string]string{}
 	for _, c := range clusters {
 		clusterIDs[c.GetId()] = c.GetName()
@@ -206,8 +208,10 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "no access scope includes nothing",
 			scopeDesc: `nil => { }`,
+			scopeStr:  "",
+			scopeJSON: `{}`,
 			scope:     nil,
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -241,11 +245,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "empty access scope includes nothing",
 			scopeDesc: `∅ => { }`,
+			scopeStr:  "",
+			scopeJSON: `{}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -279,6 +285,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "selector with empty requirements includes nothing",
 			scopeDesc: `cluster.labels: ∅ => { }`,
+			scopeStr:  "",
+			scopeJSON: `{}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -289,7 +297,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					},
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -323,6 +331,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "cluster included by name includes all its namespaces",
 			scopeDesc: `cluster: "Arrakis" => { "Arrakis::*" }`,
+			scopeStr:  "Arrakis::*",
+			scopeJSON: `{"Arrakis":["*"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -330,7 +340,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					IncludedClusters: []string{"Arrakis"},
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -364,6 +374,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "cluster included have empty namespaces in minimal form",
 			scopeDesc: `cluster: "Arrakis" => { "Arrakis::*" }`,
+			scopeStr:  "Arrakis::*",
+			scopeJSON: `{"Arrakis":["*"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -371,13 +383,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					IncludedClusters: []string{"Arrakis"},
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
 					"Arrakis": {
 						State:  Included,
-						Extras: &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis"},
+						Extras: &ScopeTreeExtras{ID: "planet.arrakis"},
 					},
 				},
 			},
@@ -387,6 +399,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "cluster(s) included by label include all underlying namespaces",
 			scopeDesc: `cluster.labels: focus in (melange) => { "Arrakis::*" }`,
+			scopeStr:  "Arrakis::*",
+			scopeJSON: `{"Arrakis":["*"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -394,7 +408,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					ClusterLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -428,6 +442,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "namespace included by name does not include anything else",
 			scopeDesc: `namespace: "Arrakis::Atreides" => { "Arrakis::Atreides" }`,
+			scopeStr:  "Arrakis::Atreides",
+			scopeJSON: `{"Arrakis":["Atreides"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -440,7 +456,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					},
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -474,6 +490,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "namespace(s) included by label do not include anything else",
 			scopeDesc: `namespace.labels: focus in (melange) => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
+			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -481,7 +499,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -515,6 +533,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "inclusion by label works across clusters",
 			scopeDesc: `namespace.labels: focus in (transportation) => { "Earth::Skunk Works", "Arrakis::Spacing Guild" }`,
+			scopeStr:  "Arrakis::Spacing Guild, Earth::Skunk Works",
+			scopeJSON: `{"Arrakis":["Spacing Guild"],"Earth":["Skunk Works"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -522,7 +542,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"transportation"}),
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -556,6 +576,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "inclusion by label groups labels by AND and set values by OR",
 			scopeDesc: `namespace.labels: focus in (transportation, applied_research), region in (NA, dune_universe) => { "Earth::Skunk Works", "Earth::JPL", "Arrakis::Spacing Guild" }`,
+			scopeStr:  "Arrakis::Spacing Guild, Earth::{JPL, Skunk Works}",
+			scopeJSON: `{"Earth":["JPL","Skunk Works"],"Arrakis":["Spacing Guild"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -570,7 +592,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					},
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -604,6 +626,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "inclusion by label supports EXISTS, NOT_EXISTS, and NOTIN operators",
 			scopeDesc: `namespace.labels: focus notin (physics, melange), clearance, !founded => { "Earth::Skunk Works" }`,
+			scopeStr:  "Earth::Skunk Works",
+			scopeJSON: `{"Earth":["Skunk Works"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -619,7 +643,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					},
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -653,6 +677,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "multiple label selectors are joined by OR",
 			scopeDesc: `namespace.labels: focus in (transportation), region in (NA) OR region in (EU) OR founded in (1949) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN" }`,
+			scopeStr:  "Earth::{CERN, Fraunhofer, Skunk Works}",
+			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -669,7 +695,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					},
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -703,6 +729,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "rules are joined by OR",
 			scopeDesc: `namespace: "Earth::Skunk Works" OR cluster.labels: focus in (melange) OR namespace.labels: region in (EU) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN", "Arrakis::*" }`,
+			scopeStr:  "Arrakis::*, Earth::{CERN, Fraunhofer, Skunk Works}",
+			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"],"Arrakis":["*"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -717,7 +745,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("region", opIN, []string{"EU"}),
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -751,6 +779,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "all excluded namespaces are removed from cluster in minimal form",
 			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
+			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -758,7 +788,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -767,14 +797,14 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						Namespaces: map[string]*NamespacesScopeSubTree{
 							"Atreides": {
 								State:  Included,
-								Extras: &EffectiveAccessScopeTreeExtras{ID: "house.atreides"},
+								Extras: &ScopeTreeExtras{ID: "house.atreides"},
 							},
 							"Harkonnen": {
 								State:  Included,
-								Extras: &EffectiveAccessScopeTreeExtras{ID: "house.harkonnen"},
+								Extras: &ScopeTreeExtras{ID: "house.harkonnen"},
 							},
 						},
-						Extras: &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis"},
+						Extras: &ScopeTreeExtras{ID: "planet.arrakis"},
 					},
 				},
 			},
@@ -784,6 +814,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		{
 			desc:      "no labels in standard form",
 			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
+			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -791,7 +823,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
 				},
 			},
-			expected: &EffectiveAccessScopeTree{
+			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*ClustersScopeSubTree{
@@ -814,12 +846,12 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 							excludedStandard(bene),
 							excludedStandard(fremen),
 						),
-						Extras: &EffectiveAccessScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis"},
+						Extras: &ScopeTreeExtras{ID: "planet.arrakis", Name: "Arrakis"},
 					},
 					"Not Found": {
 						State:      Excluded,
 						Namespaces: namespacesTree(excludedStandard(errored)),
-						Extras: &EffectiveAccessScopeTreeExtras{
+						Extras: &ScopeTreeExtras{
 							Name: "Not Found",
 						},
 					},
@@ -870,6 +902,12 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			assert.Exactly(t, clusters, clonedClusters, "clusters have been modified")
 			assert.Exactly(t, namespaces, clonedNamespaces, "namespaces have been modified")
 			if tc.expected != nil {
+				assert.Exactly(t, tc.scopeStr, result.String())
+
+				json, err := result.ToJSON()
+				assert.NoError(t, err)
+				assert.JSONEq(t, tc.scopeJSON, json)
+
 				assert.Nil(t, result.GetClusterByID("unknown cluster id"))
 				for _, c := range clonedClusters {
 					assert.Equal(t, result.GetClusterByID(c.GetId()), tc.expected.Clusters[c.GetName()])
@@ -880,13 +918,21 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 }
 
 func TestUnrestrictedEffectiveAccessScope(t *testing.T) {
-	expected := &EffectiveAccessScopeTree{
+	expected := &ScopeTree{
 		State:           Included,
 		Clusters:        make(map[string]*ClustersScopeSubTree),
 		clusterIDToName: make(map[string]string),
 	}
+	expectedStr := "*::*"
+	expectedJSON := `{"*":["*"]}`
+
 	result := UnrestrictedEffectiveAccessScope()
 	assert.Exactly(t, expected, result)
+	assert.Exactly(t, expectedStr, result.String())
+
+	json, err := result.ToJSON()
+	assert.NoError(t, err)
+	assert.JSONEq(t, expectedJSON, json)
 }
 
 // TestNewUnvalidatedRequirement covers both use cases we currently have:
@@ -930,7 +976,7 @@ func TestNewUnvalidatedRequirement(t *testing.T) {
 func namespacesTree(namespaces ...*NamespacesScopeSubTree) map[string]*NamespacesScopeSubTree {
 	m := map[string]*NamespacesScopeSubTree{}
 	for _, n := range namespaces {
-		e, ok := n.Extras.(*EffectiveAccessScopeTreeExtras)
+		e, ok := n.Extras.(*ScopeTreeExtras)
 		if !ok {
 			panic(fmt.Sprintf("could not convert %v to %T", n, e))
 		}
@@ -956,7 +1002,7 @@ func excludedStandard(n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
 }
 
 func namespace(scope ScopeState, n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
-	return &NamespacesScopeSubTree{State: scope, Extras: &EffectiveAccessScopeTreeExtras{
+	return &NamespacesScopeSubTree{State: scope, Extras: &ScopeTreeExtras{
 		ID:     n.Id,
 		Name:   n.Name,
 		Labels: n.Labels,
@@ -964,7 +1010,7 @@ func namespace(scope ScopeState, n *storage.NamespaceMetadata) *NamespacesScopeS
 }
 
 func namespaceStandard(scope ScopeState, n *storage.NamespaceMetadata) *NamespacesScopeSubTree {
-	return &NamespacesScopeSubTree{State: scope, Extras: &EffectiveAccessScopeTreeExtras{
+	return &NamespacesScopeSubTree{State: scope, Extras: &ScopeTreeExtras{
 		ID:   n.Id,
 		Name: n.Name,
 	}}

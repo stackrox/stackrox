@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/uuid"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -169,7 +169,7 @@ func ValidateSimpleAccessScopeRules(scopeRules *storage.SimpleAccessScope_Rules)
 func validateSelectorRequirement(labelSelector *storage.SetBasedLabelSelector) error {
 	var multiErr error
 	for _, requirement := range labelSelector.GetRequirements() {
-		op := sac.ConvertLabelSelectorOperatorToSelectionOperator(requirement.GetOp())
+		op := effectiveaccessscope.ConvertLabelSelectorOperatorToSelectionOperator(requirement.GetOp())
 		_, err := labels.NewRequirement(requirement.GetKey(), op, requirement.Values)
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)

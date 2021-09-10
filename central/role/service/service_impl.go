@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -390,87 +390,15 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 // effectiveAccessScopeForSimpleAccessScope computes the effective access scope
 // for the given rules and converts it to the desired response.
 func effectiveAccessScopeForSimpleAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*storage.EffectiveAccessScope, error) {
-	tree, err := sac.ComputeEffectiveAccessScope(scopeRules, clusters, namespaces, detail)
+	tree, err := effectiveaccessscope.ComputeEffectiveAccessScope(scopeRules, clusters, namespaces, detail)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := convertEffectiveAccessScopeTreeToEffectiveAccessScope(tree)
+	response, err := effectiveaccessscope.ToEffectiveAccessScope(tree)
 	if err != nil {
 		return nil, err
 	}
-	sortScopesInEffectiveAccessScope(response)
 
 	return response, nil
-}
-
-// convertEffectiveAccessScopeTreeToEffectiveAccessScope converts effective
-// access scope tree with enriched nodes to storage.EffectiveAccessScope.
-func convertEffectiveAccessScopeTreeToEffectiveAccessScope(tree *sac.EffectiveAccessScopeTree) (*storage.EffectiveAccessScope, error) {
-	response := &storage.EffectiveAccessScope{}
-	if len(tree.Clusters) != 0 {
-		response.Clusters = make([]*storage.EffectiveAccessScope_Cluster, 0, len(tree.Clusters))
-	}
-
-	for clusterName, clusterSubTree := range tree.Clusters {
-		extras, ok := clusterSubTree.Extras.(*sac.EffectiveAccessScopeTreeExtras)
-		if !ok {
-			return nil, errors.Errorf("rich data not available for cluster %q", clusterName)
-		}
-		cluster := &storage.EffectiveAccessScope_Cluster{
-			Id:     extras.ID,
-			Name:   extras.Name,
-			State:  convertScopeStateToEffectiveAccessScopeState(clusterSubTree.State),
-			Labels: extras.Labels,
-		}
-		if len(clusterSubTree.Namespaces) != 0 {
-			cluster.Namespaces = make([]*storage.EffectiveAccessScope_Namespace, 0, len(clusterSubTree.Namespaces))
-		}
-
-		for namespaceName, namespaceSubTree := range clusterSubTree.Namespaces {
-			extras, ok := namespaceSubTree.Extras.(*sac.EffectiveAccessScopeTreeExtras)
-			if !ok {
-				return nil, errors.Errorf("rich data not available for namespace '%s::%s'", clusterName, namespaceName)
-			}
-			namespace := &storage.EffectiveAccessScope_Namespace{
-				Id:     extras.ID,
-				Name:   extras.Name,
-				State:  convertScopeStateToEffectiveAccessScopeState(namespaceSubTree.State),
-				Labels: extras.Labels,
-			}
-
-			cluster.Namespaces = append(cluster.Namespaces, namespace)
-		}
-
-		response.Clusters = append(response.Clusters, cluster)
-	}
-
-	return response, nil
-}
-
-func sortScopesInEffectiveAccessScope(msg *storage.EffectiveAccessScope) {
-	clusters := msg.GetClusters()
-	sort.Slice(clusters, func(i, j int) bool {
-		return clusters[i].GetId() < clusters[j].GetId()
-	})
-
-	for _, cluster := range clusters {
-		namespaces := cluster.GetNamespaces()
-		sort.Slice(namespaces, func(i, j int) bool {
-			return namespaces[i].GetId() < namespaces[j].GetId()
-		})
-	}
-}
-
-func convertScopeStateToEffectiveAccessScopeState(scopeState sac.ScopeState) storage.EffectiveAccessScope_State {
-	switch scopeState {
-	case sac.Excluded:
-		return storage.EffectiveAccessScope_EXCLUDED
-	case sac.Partial:
-		return storage.EffectiveAccessScope_PARTIAL
-	case sac.Included:
-		return storage.EffectiveAccessScope_INCLUDED
-	default:
-		return storage.EffectiveAccessScope_UNKNOWN
-	}
 }

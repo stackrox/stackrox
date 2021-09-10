@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -44,7 +45,7 @@ func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storag
 		cache: &authorizerDataCache{
 			clusters:                  clusters,
 			namespaces:                namespaces,
-			effectiveAccessScopesByID: make(map[string]*sac.EffectiveAccessScopeTree),
+			effectiveAccessScopesByID: make(map[string]*effectiveaccessscope.ScopeTree),
 		},
 	}
 	return scc
@@ -144,7 +145,7 @@ func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 		if utils.Should(err) != nil {
 			return sac.Unknown
 		}
-		if scope.State == sac.Included {
+		if scope.State == effectiveaccessscope.Included {
 			return sac.Allow
 		}
 	}
@@ -201,10 +202,10 @@ type authorizerDataCache struct {
 	lock                      sync.RWMutex
 	clusters                  []*storage.Cluster
 	namespaces                []*storage.NamespaceMetadata
-	effectiveAccessScopesByID map[string]*sac.EffectiveAccessScopeTree
+	effectiveAccessScopesByID map[string]*effectiveaccessscope.ScopeTree
 }
 
-func (c *authorizerDataCache) getEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*sac.EffectiveAccessScopeTree, error) {
+func (c *authorizerDataCache) getEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
 	eas := c.getEffectiveAccessScopeFromCache(accessScope.GetId())
 	if eas != nil {
 		return eas, nil
@@ -223,29 +224,29 @@ func (c *authorizerDataCache) getEffectiveAccessScope(accessScope *storage.Simpl
 	return eas, nil
 }
 
-func (c *authorizerDataCache) getEffectiveAccessScopeFromCache(id string) *sac.EffectiveAccessScopeTree {
+func (c *authorizerDataCache) getEffectiveAccessScopeFromCache(id string) *effectiveaccessscope.ScopeTree {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	return c.effectiveAccessScopesByID[id]
 }
 
-func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*sac.EffectiveAccessScopeTree, error) {
+func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
 	if accessScope == nil {
-		return sac.UnrestrictedEffectiveAccessScope(), nil
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
-	eas, err := sac.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+	eas, err := effectiveaccessscope.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not compute effective access scope for access scope with id %q", accessScope.GetId())
 	}
 	return eas, nil
 }
 
-func effectiveAccessScopeAllows(effectiveAccessScope *sac.EffectiveAccessScopeTree,
+func effectiveAccessScopeAllows(effectiveAccessScope *effectiveaccessscope.ScopeTree,
 	resourceMetadata permissions.ResourceMetadata,
 	clusterID, namespaceName string) bool {
 
-	if effectiveAccessScope.State != sac.Partial {
-		return effectiveAccessScope.State == sac.Included
+	if effectiveAccessScope.State != effectiveaccessscope.Partial {
+		return effectiveAccessScope.State == effectiveaccessscope.Included
 	}
 
 	clusterNode := effectiveAccessScope.GetClusterByID(clusterID)
@@ -253,7 +254,7 @@ func effectiveAccessScopeAllows(effectiveAccessScope *sac.EffectiveAccessScopeTr
 		return false
 	}
 
-	if clusterNode.State == sac.Included || resourceMetadata.GetScope() == permissions.ClusterScope {
+	if clusterNode.State == effectiveaccessscope.Included || resourceMetadata.GetScope() == permissions.ClusterScope {
 		return true
 	}
 	if namespaceName == "" {
@@ -262,5 +263,5 @@ func effectiveAccessScopeAllows(effectiveAccessScope *sac.EffectiveAccessScopeTr
 
 	namespaceNode, ok := clusterNode.Namespaces[namespaceName]
 
-	return ok && namespaceNode.State == sac.Included
+	return ok && namespaceNode.State == effectiveaccessscope.Included
 }

@@ -1,6 +1,8 @@
-package sac
+package effectiveaccessscope
 
 import (
+	"sort"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,10 +31,10 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// EffectiveAccessScopeTree is a tree of scopes with their states.
-type EffectiveAccessScopeTree struct {
+// ScopeTree is a tree of scopes with their states.
+type ScopeTree struct {
 	State           ScopeState
-	Clusters        map[string]*ClustersScopeSubTree
+	Clusters        map[string]*ClustersScopeSubTree // keyed by cluster name
 	clusterIDToName map[string]string
 }
 
@@ -41,7 +43,7 @@ type EffectiveAccessScopeTree struct {
 // cluster id, labels, etc.
 type ClustersScopeSubTree struct {
 	State      ScopeState
-	Namespaces map[string]*NamespacesScopeSubTree
+	Namespaces map[string]*NamespacesScopeSubTree // keyed by namespace name
 	Extras     interface{}
 }
 
@@ -53,16 +55,16 @@ type NamespacesScopeSubTree struct {
 	Extras interface{}
 }
 
-// UnrestrictedEffectiveAccessScope returns EffectiveAccessScopeTree
-// allowing everything implicitly via marking the root Included.
-func UnrestrictedEffectiveAccessScope() *EffectiveAccessScopeTree {
+// UnrestrictedEffectiveAccessScope returns ScopeTree allowing everything
+// implicitly via marking the root Included.
+func UnrestrictedEffectiveAccessScope() *ScopeTree {
 	return newEffectiveAccessScopeTree(Included)
 }
 
 // ComputeEffectiveAccessScope applies a simple access scope to provided
-// clusters and namespaces and yields EffectiveAccessScopeTree. Empty access
-// scope rules mean nothing is included.
-func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*EffectiveAccessScopeTree, error) {
+// clusters and namespaces and yields ScopeTree. Empty access scope rules
+// mean nothing is included.
+func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*ScopeTree, error) {
 	root := newEffectiveAccessScopeTree(Excluded)
 
 	// Compile scope into cluster and namespace selectors.
@@ -89,7 +91,7 @@ func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, cl
 		parentCluster := root.Clusters[clusterName]
 		if parentCluster == nil {
 			log.Warnf("namespace %q belongs to unknown cluster %q", namespaceFQSN, clusterName)
-			parentCluster = newClusterScopeSubTreeWithExtras(Excluded, EffectiveAccessScopeTreeExtras{Name: clusterName})
+			parentCluster = newClusterScopeSubTreeWithExtras(Excluded, ScopeTreeExtras{Name: clusterName})
 			root.Clusters[clusterName] = parentCluster
 		}
 
@@ -101,16 +103,68 @@ func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, cl
 	return root, nil
 }
 
+// Compactify yields a compact representation of the scope tree.
+func (root *ScopeTree) Compactify() ScopeTreeCompacted {
+	compacted := make(ScopeTreeCompacted)
+
+	switch root.State {
+	case Excluded:
+		return compacted
+	case Included:
+		compacted["*"] = []string{"*"}
+		return compacted
+	}
+
+	// `root.State` is Partial.
+	for clusterName, clusterSubTree := range root.Clusters {
+		switch clusterSubTree.State {
+		case Excluded:
+			continue
+		case Included:
+			compacted[clusterName] = []string{"*"}
+			continue
+		}
+
+		// `clusterSubTree.State` is Partial.
+		namespaces := make([]string, 0)
+		for namespaceName, namespaceSubTree := range clusterSubTree.Namespaces {
+			switch namespaceSubTree.State {
+			case Excluded:
+				// Skip to the next one.
+			case Included:
+				namespaces = append(namespaces, namespaceName)
+			}
+		}
+		// Ensure order consistency across invocations.
+		sort.Slice(namespaces, func(i, j int) bool {
+			return namespaces[i] < namespaces[j]
+		})
+		compacted[clusterName] = namespaces
+	}
+
+	return compacted
+}
+
+// String yields a compacted one-line string representation.
+func (root *ScopeTree) String() string {
+	return root.Compactify().String()
+}
+
+// ToJSON yields a compacted JSON representation.
+func (root *ScopeTree) ToJSON() (string, error) {
+	return root.Compactify().ToJSON()
+}
+
 // GetClusterByID returns ClusterScopeSubTree for given cluster ID.
 // Returns nil when clusterID is not known.
-func (root *EffectiveAccessScopeTree) GetClusterByID(clusterID string) *ClustersScopeSubTree {
+func (root *ScopeTree) GetClusterByID(clusterID string) *ClustersScopeSubTree {
 	return root.Clusters[root.clusterIDToName[clusterID]]
 }
 
 // populateStateForCluster adds given cluster as Included or Excluded to root.
 // Only the last observed cluster is considered if multiple ones with the same
 // name exist.
-func (root *EffectiveAccessScopeTree) populateStateForCluster(cluster *storage.Cluster, clusterSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, clusterSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := cluster.GetName()
 
 	extras := extrasForCluster(cluster, detail)
@@ -139,7 +193,7 @@ func (root *EffectiveAccessScopeTree) populateStateForCluster(cluster *storage.C
 // For MINIMAL level of detail, delete from the tree:
 //   * subtrees *with roots* in the Excluded state,
 //   * subtrees *of nodes* in the Included state.
-func (root *EffectiveAccessScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	deleteUnnecessaryNodes := detail == v1.ComputeEffectiveAccessScopeRequest_MINIMAL
 	for clusterName, cluster := range root.Clusters {
 		for namespaceName, namespace := range cluster.Namespaces {
@@ -200,15 +254,15 @@ func (cluster *ClustersScopeSubTree) populateStateForNamespace(namespace *storag
 	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(matched, extrasForNamespace(namespace, detail))
 }
 
-func newEffectiveAccessScopeTree(state ScopeState) *EffectiveAccessScopeTree {
-	return &EffectiveAccessScopeTree{
+func newEffectiveAccessScopeTree(state ScopeState) *ScopeTree {
+	return &ScopeTree{
 		State:           state,
 		Clusters:        make(map[string]*ClustersScopeSubTree),
 		clusterIDToName: make(map[string]string),
 	}
 }
 
-func newClusterScopeSubTreeWithExtras(state ScopeState, extras EffectiveAccessScopeTreeExtras) *ClustersScopeSubTree {
+func newClusterScopeSubTreeWithExtras(state ScopeState, extras ScopeTreeExtras) *ClustersScopeSubTree {
 	return &ClustersScopeSubTree{
 		State:      state,
 		Namespaces: make(map[string]*NamespacesScopeSubTree),
@@ -216,7 +270,7 @@ func newClusterScopeSubTreeWithExtras(state ScopeState, extras EffectiveAccessSc
 	}
 }
 
-func newNamespacesScopeSubTree(state ScopeState, extras EffectiveAccessScopeTreeExtras) *NamespacesScopeSubTree {
+func newNamespacesScopeSubTree(state ScopeState, extras ScopeTreeExtras) *NamespacesScopeSubTree {
 	return &NamespacesScopeSubTree{
 		State:  state,
 		Extras: &extras,

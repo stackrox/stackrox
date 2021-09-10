@@ -1,7 +1,8 @@
-package sac
+package effectiveaccessscope
 
 import (
 	"reflect"
+	"sort"
 	"unsafe"
 
 	"github.com/pkg/errors"
@@ -9,6 +10,55 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 )
+
+// ToEffectiveAccessScope converts effective access scope tree with enriched
+// nodes to storage.EffectiveAccessScope.
+func ToEffectiveAccessScope(tree *ScopeTree) (*storage.EffectiveAccessScope, error) {
+	response := &storage.EffectiveAccessScope{}
+	if len(tree.Clusters) != 0 {
+		response.Clusters = make([]*storage.EffectiveAccessScope_Cluster, 0, len(tree.Clusters))
+	}
+
+	for clusterName, clusterSubTree := range tree.Clusters {
+		// TODO(ROX-7952): We don't need type conversion any more here.
+		extras, ok := clusterSubTree.Extras.(*ScopeTreeExtras)
+		if !ok {
+			return nil, errors.Errorf("rich data not available for cluster %q", clusterName)
+		}
+		cluster := &storage.EffectiveAccessScope_Cluster{
+			Id:     extras.ID,
+			Name:   extras.Name,
+			State:  convertScopeStateToEffectiveAccessScopeState(clusterSubTree.State),
+			Labels: extras.Labels,
+		}
+		if len(clusterSubTree.Namespaces) != 0 {
+			cluster.Namespaces = make([]*storage.EffectiveAccessScope_Namespace, 0, len(clusterSubTree.Namespaces))
+		}
+
+		for namespaceName, namespaceSubTree := range clusterSubTree.Namespaces {
+			// TODO(ROX-7952): We don't need type conversion any more here.
+			extras, ok := namespaceSubTree.Extras.(*ScopeTreeExtras)
+			if !ok {
+				return nil, errors.Errorf("rich data not available for namespace '%s::%s'", clusterName, namespaceName)
+			}
+			namespace := &storage.EffectiveAccessScope_Namespace{
+				Id:     extras.ID,
+				Name:   extras.Name,
+				State:  convertScopeStateToEffectiveAccessScopeState(namespaceSubTree.State),
+				Labels: extras.Labels,
+			}
+
+			cluster.Namespaces = append(cluster.Namespaces, namespace)
+		}
+
+		response.Clusters = append(response.Clusters, cluster)
+	}
+
+	// Ensure order consistency across invocations.
+	sortScopesInEffectiveAccessScope(response)
+
+	return response, nil
+}
 
 // ConvertLabelSelectorOperatorToSelectionOperator translates storage selection operator into k8s type.
 func ConvertLabelSelectorOperatorToSelectionOperator(op storage.SetBasedLabelSelector_Operator) selection.Operator {
@@ -23,6 +73,33 @@ func ConvertLabelSelectorOperatorToSelectionOperator(op storage.SetBasedLabelSel
 		return selection.DoesNotExist
 	default:
 		return selection.Operator(op.String())
+	}
+}
+
+func convertScopeStateToEffectiveAccessScopeState(scopeState ScopeState) storage.EffectiveAccessScope_State {
+	switch scopeState {
+	case Excluded:
+		return storage.EffectiveAccessScope_EXCLUDED
+	case Partial:
+		return storage.EffectiveAccessScope_PARTIAL
+	case Included:
+		return storage.EffectiveAccessScope_INCLUDED
+	default:
+		return storage.EffectiveAccessScope_UNKNOWN
+	}
+}
+
+func sortScopesInEffectiveAccessScope(msg *storage.EffectiveAccessScope) {
+	clusters := msg.GetClusters()
+	sort.Slice(clusters, func(i, j int) bool {
+		return clusters[i].GetId() < clusters[j].GetId()
+	})
+
+	for _, cluster := range clusters {
+		namespaces := cluster.GetNamespaces()
+		sort.Slice(namespaces, func(i, j int) bool {
+			return namespaces[i].GetId() < namespaces[j].GetId()
+		})
 	}
 }
 
