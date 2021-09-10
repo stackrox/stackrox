@@ -139,6 +139,15 @@
 #  nodeSelector
 #    environment: production
 #
+#  If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#  tolerations:
+#    - effect: NoSchedule
+#      key: infra
+#      value: reserved
+#    - effect: NoExecute
+#      key: infra
+#      value: reserved
+#
 #  # Address of the Sensor endpoint including port number. No trailing slash.
 #  # Rarely needs to be changed.
 #  endpoint: sensor.stackrox.svc:443
@@ -162,6 +171,18 @@
 #  # Defaults to `false` on OpenShift, to `true` otherwise.
 #  listenOnEvents: true
 #
+#  # Use a nodeSelector for admission control pods
+#  nodeSelector
+#    environment: production
+#
+#  If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#  tolerations:
+#    - effect: NoSchedule
+#      key: infra
+#      value: reserved
+#    - effect: NoExecute
+#      key: infra
+#      value: reserved
 #
 #  # Dynamic part of the configuration which is retrieved from Central and can be modified through
 #  # the frontend.

@@ -245,6 +245,24 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: scanner.db.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: central.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: scanner.analyzer.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: scanner.db.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: Disable admin password generation. Do not use this for first-time
           installations, as you will have no way to perform initial setup and configuration
           of alternative authentication methods.
@@ -454,6 +472,18 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: sensor.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: admissionControl.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: sensor.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name

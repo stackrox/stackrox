@@ -29,7 +29,7 @@ spec:
       {{- if not ._rox.collector.disableTaintTolerations }}
       tolerations:
       - operator: "Exists"
-      {{- end}}
+      {{- end }}
       {{- if ._rox.collector._nodeSelector }}
       nodeSelector:
         {{- ._rox.collector._nodeSelector | nindent 8 }}

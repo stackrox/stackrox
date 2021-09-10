@@ -71,6 +71,14 @@ func TestTranslateComplete(t *testing.T) {
 					Spec: platform.SecuredClusterSpec{
 						ClusterName:     "test-cluster",
 						CentralEndpoint: "central.test:443",
+						Sensor: &platform.SensorComponentSpec{
+							DeploymentSpec: platform.DeploymentSpec{
+								Tolerations: []*v1.Toleration{
+									{Key: "node.stackrox.io", Value: "false", Operator: v1.TolerationOpEqual},
+									{Key: "node-role.kubernetes.io/infra", Value: "", Operator: v1.TolerationOpExists},
+								},
+							},
+						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
 							ListenOnCreates:      pointer.BoolPtr(true),
 							ListenOnUpdates:      pointer.BoolPtr(true),
@@ -92,6 +100,10 @@ func TestTranslateComplete(t *testing.T) {
 								NodeSelector: map[string]string{
 									"admission-ctrl-node-selector1": "admission-ctrl-node-selector-val1",
 									"admission-ctrl-node-selector2": "admission-ctrl-node-selector-val2",
+								},
+								Tolerations: []*v1.Toleration{
+									{Key: "node.stackrox.io", Value: "false", Operator: v1.TolerationOpEqual},
+									{Key: "node-role.kubernetes.io/infra", Value: "", Operator: v1.TolerationOpExists},
 								},
 							},
 						},
@@ -174,6 +186,18 @@ func TestTranslateComplete(t *testing.T) {
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
 				},
+				"sensor": map[string]interface{}{
+					"tolerations": []map[string]interface{}{
+						{
+							"key":      "node.stackrox.io",
+							"operator": "Equal",
+							"value":    "false",
+						}, {
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+						},
+					},
+				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
 						"enforceOnCreates": true,
@@ -196,6 +220,16 @@ func TestTranslateComplete(t *testing.T) {
 						}, "requests": map[string]interface{}{
 							"cpu":    "1501m",
 							"memory": "1001Mi",
+						},
+					},
+					"tolerations": []map[string]interface{}{
+						{
+							"key":      "node.stackrox.io",
+							"operator": "Equal",
+							"value":    "false",
+						}, {
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
 						},
 					},
 				},

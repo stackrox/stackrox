@@ -32,6 +32,10 @@ spec:
       nodeSelector:
         {{- ._rox.central._nodeSelector | nindent 8 }}
       {{- end }}
+      {{- if ._rox.central.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.central.tolerations | nindent 8 }}
+      {{- end }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

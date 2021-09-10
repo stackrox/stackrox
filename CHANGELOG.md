@@ -13,6 +13,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   mounts the CRI-O socket for both Kubernetes and OpenShift.
 - The policy "Docker CIS 4.4: Ensure images are scanned and rebuilt to include security patches" is now disabled by default
 - Alpine-based images are now deprecated and all images will be based on UBI. main-rhel will continue to be pushed for consistency.
+- Added `central.tolerations`, `scanner.tolerations` and `scanner.dbTolerations` to the `stackrox-central-services` Helm chart
+- Added `sensor.tolerations` and `admission-control.tolerations` to the `stackrox-secured-cluster-services` Helm chart
+- Operator now supports `tolerations`  for `Central` and `SecuredCluster`
 - Operator now supports disabling the admin password generation by setting Central's option `adminPasswordGenerationDisabled` to `true`.
 
 ## [65.0]

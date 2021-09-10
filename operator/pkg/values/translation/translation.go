@@ -11,6 +11,8 @@ import (
 const (
 	// ResourcesKey is a key for most resources chart values.
 	ResourcesKey = "resources"
+	// TolerationsKey is the default tolerations key used in the charts.
+	TolerationsKey = "tolerations"
 )
 
 // GetResources converts platform.Resources to chart values builder.
@@ -102,4 +104,23 @@ func GetTLSConfigValues(tls *platform.TLSConfig) *ValuesBuilder {
 	res := NewValuesBuilder()
 	res.AddChild("additionalCAs", &cas)
 	return &res
+}
+
+// GetTolerations converts a slice of tolerations to a *ValuesBuilder object and sets the field name
+// based on the key parameter.
+func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder {
+	v := NewValuesBuilder()
+
+	var convertedList []interface{}
+	for _, toleration := range tolerations {
+		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(toleration)
+		if err != nil {
+			v.SetError(errors.Wrapf(err, "failed converting %q to unstructured", key))
+			break
+		}
+		convertedList = append(convertedList, m)
+	}
+	v.SetSlice(key, convertedList)
+
+	return &v
 }

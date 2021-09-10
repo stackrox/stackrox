@@ -34,6 +34,10 @@ spec:
       nodeSelector:
         {{- ._rox.scanner._nodeSelector | nindent 8 }}
       {{- end }}
+      {{- if ._rox.scanner.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.scanner.tolerations | nindent 8 }}
+      {{- end }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -184,6 +188,10 @@ spec:
       {{- if ._rox.scanner._dbNodeSelector }}
       nodeSelector:
         {{- ._rox.scanner._dbNodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.scanner.dbTolerations }}
+      tolerations:
+        {{- toYaml ._rox.scanner.dbTolerations | nindent 8 }}
       {{- end }}
       affinity:
         nodeAffinity:

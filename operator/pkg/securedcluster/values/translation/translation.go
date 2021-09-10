@@ -159,6 +159,7 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec) *trans
 
 	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
 	sv.SetStringMap("nodeSelector", sensor.NodeSelector)
+	sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
 
 	return &sv
 }
@@ -200,6 +201,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	}
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
+	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))
 
 	return &acv
 }

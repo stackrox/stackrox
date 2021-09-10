@@ -15,7 +15,7 @@ else
   make -C "$DIR/../" cli-linux
 fi
 
-"$DIR/roxctl.sh" helm output central-services --remove
-"$DIR/roxctl.sh" helm output secured-cluster-services --remove
+"$DIR/roxctl.sh" helm output central-services --remove --debug
+"$DIR/roxctl.sh" helm output secured-cluster-services --remove --debug
 
 helm $@

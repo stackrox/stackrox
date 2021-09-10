@@ -60,6 +60,7 @@ sensor:
     key: null # string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
+  tolerations: null # [dict]
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
@@ -77,6 +78,7 @@ admissionControl:
     key: null # string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
+  tolerations: null # [dict]
 collector:
   collectionMethod: null # string
   disableTaintTolerations: null # bool

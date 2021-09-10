@@ -133,6 +133,15 @@
 #     # This can contain arbitrary `label-key: label-value` pairs.
 #     role: stackrox-central
 #
+#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#   tolerations:
+#     - effect: NoSchedule
+#       key: infra
+#       value: reserved
+#     - effect: NoExecute
+#       key: infra
+#       value: reserved
+#
 #   # Configures the Central image to be used. Most users will only need to configure a
 #   # custom registry (if any) at the global scope, and do not require any settings here.
 #   image:
@@ -261,6 +270,14 @@
 #     # This can contain arbitrary `label-key: label-value` pairs.
 #     role: stackrox-scanner
 #
+#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#   tolerations:
+#     - effect: NoSchedule
+#       key: infra
+#       value: reserved
+#     - effect: NoExecute
+#       key: infra
+#       value: reserved
 #
 #   # If you want to enforce StackRox Scanner DB to only run on certain nodes, you can specify
 #   # a node selector here to make sure Scanner DB can only be scheduled on Nodes with the
@@ -268,6 +285,15 @@
 #   dbNodeSelector:
 #     # This can contain arbitrary `label-key: label-value` pairs.
 #     role: stackrox-scanner-db
+#
+#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#   dbTolerations:
+#     - effect: NoSchedule
+#       key: infra
+#       value: reserved
+#     - effect: NoExecute
+#       key: infra
+#       value: reserved
 #
 #   # Configuration for autoscaling the Scanner deployment.
 #   autoscaling:

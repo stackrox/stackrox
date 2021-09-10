@@ -85,6 +85,10 @@ func TestTranslate(t *testing.T) {
 									"central-node-selector-label1": "central-node-selector-value1",
 									"central-node-selector-label2": "central-node-selector-value2",
 								},
+								Tolerations: []*corev1.Toleration{
+									{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+									{Key: "node-role.kubernetes.io/infra", Value: "", Operator: corev1.TolerationOpExists},
+								},
 								Resources: &corev1.ResourceRequirements{
 									Limits: corev1.ResourceList{
 										corev1.ResourceCPU:    resource.MustParse("10"),
@@ -136,6 +140,10 @@ func TestTranslate(t *testing.T) {
 										"scanner-node-selector-label1": "scanner-node-selector-value1",
 										"scanner-node-selector-label2": "scanner-node-selector-value2",
 									},
+									Tolerations: []*corev1.Toleration{
+										{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+										{Key: "node-role.kubernetes.io/infra", Value: "", Operator: corev1.TolerationOpExists},
+									},
 									Resources: &corev1.ResourceRequirements{
 										Limits: corev1.ResourceList{
 											corev1.ResourceCPU:    resource.MustParse("50"),
@@ -152,6 +160,10 @@ func TestTranslate(t *testing.T) {
 								NodeSelector: map[string]string{
 									"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 									"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
+								},
+								Tolerations: []*corev1.Toleration{
+									{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
+									{Key: "node-role.kubernetes.io/infra", Value: "", Operator: corev1.TolerationOpExists},
 								},
 								Resources: &corev1.ResourceRequirements{
 									Limits: corev1.ResourceList{
@@ -235,6 +247,16 @@ func TestTranslate(t *testing.T) {
 						"central-node-selector-label1": "central-node-selector-value1",
 						"central-node-selector-label2": "central-node-selector-value2",
 					},
+					"tolerations": []map[string]interface{}{
+						{
+							"key":      "node.stackrox.io",
+							"operator": "Equal",
+							"value":    "false",
+						}, {
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+						},
+					},
 					"persistence": map[string]interface{}{
 						"hostPath": "/central/host/path",
 					},
@@ -288,9 +310,29 @@ func TestTranslate(t *testing.T) {
 						"scanner-node-selector-label1": "scanner-node-selector-value1",
 						"scanner-node-selector-label2": "scanner-node-selector-value2",
 					},
+					"tolerations": []map[string]interface{}{
+						{
+							"key":      "node.stackrox.io",
+							"operator": "Equal",
+							"value":    "false",
+						}, {
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+						},
+					},
 					"dbNodeSelector": map[string]string{
 						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
+					},
+					"dbTolerations": []map[string]interface{}{
+						{
+							"key":      "node.stackrox.io",
+							"operator": "Equal",
+							"value":    "false",
+						}, {
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+						},
 					},
 					"resources": map[string]interface{}{
 						"limits": map[string]interface{}{
@@ -347,6 +389,7 @@ func TestTranslate(t *testing.T) {
 			},
 		},
 	}
+
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			wantAsValues, err := translation.ToHelmValues(tt.want)

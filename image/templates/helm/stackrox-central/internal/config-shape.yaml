@@ -23,6 +23,7 @@ central:
   config: null # string | dict
   endpointsConfig: null # string | dict
   nodeSelector: null # string | dict
+  tolerations: null # [dict]
   exposeMonitoring: null # bool
   jwtSigner:
     key: null # string
@@ -73,6 +74,8 @@ scanner:
   logLevel: null # string
   nodeSelector: null # string | dict
   dbNodeSelector: null # string | dict
+  tolerations: null # [dict]
+  dbTolerations: null # [dict]
   autoscaling:
     disable: null # bool
     minReplicas: null # int

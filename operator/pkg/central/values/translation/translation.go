@@ -109,6 +109,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec) *translation.Va
 	}
 
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
+	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
 
 	// TODO(ROX-7147): design CentralEndpointSpec, see central_types.go
 
@@ -189,11 +190,13 @@ func getScannerComponentValues(s *platform.ScannerComponentSpec) *translation.Va
 	if s.GetAnalyzer() != nil {
 		sv.SetStringMap("nodeSelector", s.GetAnalyzer().NodeSelector)
 		sv.AddChild(translation.ResourcesKey, translation.GetResources(s.GetAnalyzer().Resources))
+		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, s.GetAnalyzer().DeploymentSpec.Tolerations))
 	}
 
 	if s.DB != nil {
 		sv.SetStringMap("dbNodeSelector", s.DB.NodeSelector)
 		sv.AddChild("dbResources", translation.GetResources(s.DB.Resources))
+		sv.AddAllFrom(translation.GetTolerations("dbTolerations", s.DB.Tolerations))
 	}
 
 	return &sv

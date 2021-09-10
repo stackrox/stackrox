@@ -28,6 +28,10 @@ spec:
         {{- include "srox.podAnnotations" (list . "deployment" "admission-control") | nindent 8 }}
     spec:
       # Attempt to schedule these on master nodes
+      {{- if ._rox.admissionControl.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.admissionControl.tolerations | nindent 8 }}
+      {{- end }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

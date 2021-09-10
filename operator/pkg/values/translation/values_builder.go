@@ -189,3 +189,11 @@ func (v *ValuesBuilder) SetMapSlice(key string, values []map[string]interface{})
 	}
 	v.getData()[key] = values
 }
+
+// SetSlice adds values slice, if not empty, under the given key. Records error on attempt to overwrite key.
+func (v *ValuesBuilder) SetSlice(key string, values []interface{}) {
+	if len(values) == 0 || v.validateKey(key) != nil {
+		return
+	}
+	v.getData()[key] = values
+}

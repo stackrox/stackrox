@@ -115,6 +115,12 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: central.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: central.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: Disable admin password generation. Do not use this for first-time
           installations, as you will have no way to perform initial setup and configuration
           of alternative authentication methods.
@@ -250,6 +256,12 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: scanner.analyzer.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: scanner.analyzer.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: When enabled, the number of analyzer replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
@@ -277,6 +289,12 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: scanner.db.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: scanner.db.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
@@ -392,6 +410,12 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: admissionControl.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: admissionControl.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: Whether collection of Kubernetes audit logs should be enabled
           or disabled. Currently, this is only supported on OpenShift 4, and trying
           to enable it on non-OpenShift 4 clusters will result in an error. Use the
@@ -469,6 +493,12 @@ spec:
           can configure a node selector here.
         displayName: Node Selector
         path: sensor.nodeSelector
+      - description: If you want this component to only run on specific nodes, you
+          can configure tolerations of tainted nodes.
+        displayName: Tolerations
+        path: sensor.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
