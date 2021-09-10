@@ -190,9 +190,11 @@ export const integrations = {
 export const integration = {
     apiToken: {
         generate: 'v1/apitokens/generate',
+        revoke: '/v1/apitokens/revoke/*',
     },
     clusterInitBundle: {
         generate: 'v1/cluster-init/init-bundles',
+        revoke: '/v1/cluster-init/init-bundles/revoke',
     },
 };
 

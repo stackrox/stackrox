@@ -2,9 +2,8 @@
 import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { editIntegration } from './integrationUtils';
 import {
-    generateUniqueName,
+    generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
@@ -26,7 +25,7 @@ describe('Notifiers Test', () => {
 
     describe('Notifier forms', () => {
         it('should create a new AWS Security Hub integration', () => {
-            const integrationName = generateUniqueName('Nova AWS Security Hub');
+            const integrationName = generateNameWithDate('Nova AWS Security Hub');
 
             cy.get(selectors.awsSecurityHubTile).click();
 
@@ -79,12 +78,10 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.enabled').click();
         });
 
-        it('should create a new email integration', () => {
+        it('should create a new Email integration', () => {
             cy.get(selectors.emailTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/email/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -149,12 +146,10 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.enabled').click();
         });
 
-        it('should create a new generic webhook integration', () => {
+        it('should create a new Generic Webhook integration', () => {
             cy.get(selectors.genericWebhookTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/generic/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -205,9 +200,7 @@ describe('Notifiers Test', () => {
         it('should create a new Google Cloud SCC integration', () => {
             cy.get(selectors.googleCloudSCCTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/cscc/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -268,9 +261,7 @@ describe('Notifiers Test', () => {
 
             cy.get(selectors.jiraTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/jira/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -316,9 +307,7 @@ describe('Notifiers Test', () => {
         it('should create a new PagerDuty integration', () => {
             cy.get(selectors.pagerDutyTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/pagerduty/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -342,7 +331,7 @@ describe('Notifiers Test', () => {
             */
 
             // Step 3, check valid form and save
-            const integrationName = generateUniqueName('Nova PagerDuty');
+            const integrationName = generateNameWithDate('Nova PagerDuty');
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('PagerDuty integration key').type('key');
 
@@ -353,9 +342,7 @@ describe('Notifiers Test', () => {
         it('should create a new Sumo Logic integration', () => {
             cy.get(selectors.sumologicTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/sumologic/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -379,7 +366,7 @@ describe('Notifiers Test', () => {
             */
 
             // Step 3, check valid from and save
-            const integrationName = generateUniqueName('Nova Sumo Logic');
+            const integrationName = generateNameWithDate('Nova Sumo Logic');
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('HTTP Collector Source Address')
                 .clear()
@@ -392,9 +379,7 @@ describe('Notifiers Test', () => {
         it('should create a new Splunk integration', () => {
             cy.get(selectors.splunkTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/splunk/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -459,9 +444,7 @@ describe('Notifiers Test', () => {
         it('should create a new Slack integration', () => {
             cy.get(selectors.slackTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/slack/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -528,7 +511,7 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.disabled');
 
             // Step 2, check fields for invalid formats
-            const integrationName = generateUniqueName('Nova Syslog');
+            const integrationName = generateNameWithDate('Nova Syslog');
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Logging facility').select('local0').blur();
             getInputByLabel('Receiver host').clear().type('host.example.com').blur();
@@ -550,9 +533,7 @@ describe('Notifiers Test', () => {
         it('should create a new Teams integration', () => {
             cy.get(selectors.teamsTile).click();
 
-            // @TODO: only use the the click, and delete the direct URL visit after forms official launch
             cy.get(selectors.buttons.new).click();
-            cy.visit('/main/integrations/notifiers/teams/create');
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -591,169 +572,6 @@ describe('Notifiers Test', () => {
 
             cy.get(selectors.buttons.test).should('be.enabled');
             cy.get(selectors.buttons.save).should('be.enabled').click();
-        });
-    });
-
-    // @DEPRECATED: change this test after migrating forms to PatternFly
-    it('should show a hint about stored credentials for Google Cloud SCC', () => {
-        cy.get(selectors.googleCloudSCCTile).click();
-        editIntegration('Google Cloud SCC Test');
-        cy.get('div:contains("Service Account Key"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Jira', () => {
-        cy.get(selectors.jiraTile).click();
-        editIntegration('Jira Test');
-        cy.get('div:contains("Password or API Token"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    // @DEPRECATED: change this test after migrating forms to PatternFly
-    it('should show a hint about stored credentials for Email', () => {
-        cy.get(selectors.emailTile).click();
-        editIntegration('Email Test');
-        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    // @DEPRECATED: change this test after migrating forms to PatternFly
-    it('should show a hint about stored credentials for Splunk', () => {
-        cy.get(selectors.splunkTile).click();
-        editIntegration('Splunk Test');
-        cy.get('div:contains("HTTP Event Collector Token"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for PagerDuty', () => {
-        cy.get(selectors.pagerDutyTile).click();
-        editIntegration('PagerDuty Test');
-        cy.get('div:contains("PagerDuty Integration Key"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Generic Webhook', () => {
-        cy.get(selectors.genericWebhookTile).click();
-        editIntegration('Generic Webhook Test');
-        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    describe('AWS Security Hub notifier', () => {
-        it('should show the AWS Security Hub notifier', () => {
-            cy.get(selectors.awsSecurityHubTile).click();
-            cy.get('.pf-c-breadcrumb').contains('AWS Security Hub');
-        });
-
-        it('should disable the save button if all the required fields are not filled out', () => {
-            cy.get(selectors.awsSecurityHubTile).click();
-
-            cy.get(selectors.buttons.newIntegration).click();
-            cy.get(selectors.buttons.create).should('be.disabled'); // starts out disabled
-
-            cy.get(selectors.awsSecurityHubForm.nameInput).type('Test AWS Sec Hub integration');
-            cy.get(selectors.awsSecurityHubForm.awsAccountNumber).type('939357552774');
-            cy.get(selectors.awsSecurityHubForm.awsRegion).click();
-            cy.get(
-                `${selectors.awsSecurityHubForm.awsRegionListItems}:contains('us-east-2')`
-            ).click();
-            cy.get(selectors.awsSecurityHubForm.awsAccessKeyId).type('EXAMPLE7AKIAIOSFODNN');
-            // not filling out the last field, Secret Acccess Key
-
-            cy.get(selectors.buttons.create).should('be.disabled'); // still disabled
-        });
-
-        it('should allow you to configure a new AWS Security Hub integration', () => {
-            cy.get(selectors.awsSecurityHubTile).click();
-
-            cy.get(selectors.buttons.newIntegration).click();
-
-            const integrationName = generateUniqueName('Test AWS Sec Hub integration');
-            cy.get(selectors.awsSecurityHubForm.nameInput).type(integrationName);
-            cy.get(selectors.awsSecurityHubForm.awsAccountNumber).type('939357552774');
-            cy.get(selectors.awsSecurityHubForm.awsRegion).click();
-            cy.get(
-                `${selectors.awsSecurityHubForm.awsRegionListItems}:contains('us-east-2')`
-            ).click();
-            cy.get(selectors.awsSecurityHubForm.awsAccessKeyId).type('EXAMPLE7AKIAIOSFODNN');
-            cy.get(selectors.awsSecurityHubForm.awsSecretAccessKey).type(
-                'EXAMPLEKEYwJalrXUtnFEMI/K7MDENG/bPxRfiCY'
-            );
-
-            cy.get(selectors.buttons.create).click();
-
-            cy.get(`${selectors.toast.body}:contains("Successfully integrated AWS Security Hub")`);
-        });
-    });
-
-    describe('Syslog notifier', () => {
-        it('should show the Syslog notifier', () => {
-            cy.get(selectors.syslogTile).click();
-            cy.get('.pf-c-breadcrumb').contains('Syslog');
-        });
-
-        it('should disable the save button if all the required fields are not filled out', () => {
-            cy.get(selectors.syslogTile).click();
-
-            cy.get(selectors.buttons.new).click();
-            cy.get(selectors.buttons.create).should('be.disabled'); // starts out disabled
-
-            cy.get(selectors.syslogForm.nameInput).type('Test Syslog integration');
-            cy.get(selectors.syslogForm.localFacility).click();
-            cy.get(`${selectors.syslogForm.localFacilityListItems}:contains('local7')`).click();
-            cy.get(selectors.syslogForm.receiverHost).type('splunk.default');
-            // not filling out the last required field, Receiver Port
-
-            cy.get(selectors.buttons.create).should('be.disabled'); // still disabled
-        });
-
-        it('should allow you to configure a new Syslog integration when none exists', () => {
-            cy.intercept('POST', api.integrations.notifiers, {
-                fixture: 'integrations/syslogResponse.json',
-            }).as('saveSyslogNotifier');
-            cy.get(selectors.syslogTile).click();
-
-            cy.get(selectors.buttons.new).click();
-
-            cy.get(selectors.syslogForm.nameInput).type('Test Syslog integration');
-            cy.get(selectors.syslogForm.localFacility).click();
-            cy.get(`${selectors.syslogForm.localFacilityListItems}:contains('local7')`).click();
-            cy.get(selectors.syslogForm.receiverHost).type('splunk.default');
-            cy.get(selectors.syslogForm.receiverPort).type('514');
-
-            // test toggles, but then turn off again, to avoid actual TLS validation
-            cy.get(selectors.syslogForm.useTls).click({ force: true });
-            cy.get(selectors.syslogForm.disableTlsValidation).click({ force: true });
-            cy.get(selectors.syslogForm.useTls).click({ force: true });
-            cy.get(selectors.syslogForm.disableTlsValidation).click({ force: true });
-
-            cy.get(selectors.buttons.create).click();
-
-            cy.wait('@saveSyslogNotifier');
-
-            cy.get(`${selectors.toast.body}:contains("Successfully integrated syslog")`, {
-                timeout: 8000,
-            });
         });
     });
 });

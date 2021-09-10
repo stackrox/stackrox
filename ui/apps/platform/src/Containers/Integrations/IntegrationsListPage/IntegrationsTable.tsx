@@ -1,10 +1,11 @@
 import React from 'react';
 import { Flex, FlexItem, Button, Divider, PageSection, Title, Badge } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
 import useTableSelection from 'hooks/useTableSelection';
+import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
@@ -16,51 +17,33 @@ type TableCellProps = {
         Header: string;
         accessor: (data) => string | string;
     };
-    onClick?: (integration) => void;
 };
 
-function TableCell({ row, column, onClick }: TableCellProps): React.ReactElement {
-    let value;
+function TableCellValue({ row, column }: TableCellProps): React.ReactElement {
+    let value: string;
     if (typeof column.accessor === 'function') {
         value = column.accessor(row).toString();
     } else {
-        value = resolvePath(row, column.accessor).toString() as string;
+        value = resolvePath(row, column.accessor).toString();
     }
-    function onClickHandler() {
-        if (onClick) {
-            onClick(row);
-        }
-    }
-    if (onClick && column.Header === 'Name') {
-        value = (
-            <Button variant="link" isInline onClick={onClickHandler}>
-                {value}
-            </Button>
-        );
-    }
-    return <Td key={column.Header}>{value || '-'}</Td>;
+    return <div>{value || '-'}</div>;
 }
 
 type IntegrationsTableProps = {
     title: string;
     integrations: Integration[];
     hasMultipleDelete: boolean;
-    onCreateIntegration: (integration) => void;
-    onEditIntegration: (integration) => void;
     onDeleteIntegrations: (integration) => void;
-    onViewIntegration?: (integration) => void;
 };
 
 function IntegrationsTable({
     title,
     integrations,
     hasMultipleDelete,
-    onCreateIntegration,
-    onEditIntegration,
     onDeleteIntegrations,
-    onViewIntegration,
 }: IntegrationsTableProps): React.ReactElement {
     const { source, type } = useParams();
+    const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const columns = [...tableColumnDescriptor[source][type]];
     const {
         selected,
@@ -118,9 +101,9 @@ function IntegrationsTable({
                             </FlexItem>
                         )}
                         <FlexItem spacer={{ default: 'spacerMd' }}>
-                            <Button data-testid="add-integration" onClick={onCreateIntegration}>
-                                New integration
-                            </Button>
+                            <Link to={getPathToCreate(source, type)}>
+                                <Button data-testid="add-integration">New integration</Button>
+                            </Link>
                         </FlexItem>
                     </Flex>
                 </FlexItem>
@@ -150,10 +133,15 @@ function IntegrationsTable({
                     </Thead>
                     <Tbody>
                         {integrations.map((integration, rowIndex) => {
+                            const { id } = integration;
                             const actionItems = [
                                 {
-                                    title: 'Edit Integration',
-                                    onClick: () => onEditIntegration(integration),
+                                    title: (
+                                        <Link to={getPathToEdit(source, type, id)}>
+                                            Edit integration
+                                        </Link>
+                                    ),
+                                    isHidden: isAPIToken || isClusterInitBundle,
                                 },
                                 {
                                     title: (
@@ -164,10 +152,7 @@ function IntegrationsTable({
                                     onClick: () => onDeleteIntegrations([integration.id]),
                                 },
                             ].filter((actionItem) => {
-                                if (actionItem.title === 'Edit Integration') {
-                                    return !isAPIToken && !isClusterInitBundle;
-                                }
-                                return true;
+                                return !actionItem?.isHidden;
                             });
                             return (
                                 <Tr key={integration.id}>
@@ -182,12 +167,24 @@ function IntegrationsTable({
                                         />
                                     )}
                                     {columns.map((column) => {
+                                        if (column.Header === 'Name') {
+                                            return (
+                                                <Td>
+                                                    <Link
+                                                        to={getPathToViewDetails(source, type, id)}
+                                                    >
+                                                        <TableCellValue
+                                                            row={integration}
+                                                            column={column}
+                                                        />
+                                                    </Link>
+                                                </Td>
+                                            );
+                                        }
                                         return (
-                                            <TableCell
-                                                row={integration}
-                                                column={column}
-                                                onClick={onViewIntegration}
-                                            />
+                                            <Td>
+                                                <TableCellValue row={integration} column={column} />
+                                            </Td>
                                         );
                                     })}
                                     <Td

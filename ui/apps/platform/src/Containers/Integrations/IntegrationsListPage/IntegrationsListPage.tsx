@@ -9,7 +9,6 @@ import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundle
 import { integrationsPath } from 'routePaths';
 import { ClusterInitBundle } from 'services/ClustersService';
 import {
-    Integration,
     getIsAPIToken,
     getIsClusterInitBundle,
     getIntegrationLabel,
@@ -20,7 +19,6 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 
 import IntegrationsTable from './IntegrationsTable';
 import useIntegrations from '../hooks/useIntegrations';
-import GenericIntegrationModal from '../GenericIntegrationModal';
 import ConfirmationModal from './ConfirmationModal';
 import {
     DeleteAPITokensConfirmationText,
@@ -34,27 +32,12 @@ function IntegrationsListPage({
     revokeAPITokens,
 }): ReactElement {
     const { source, type } = useParams();
-    const [selectedIntegration, setSelectedIntegration] = useState<
-        Integration | Record<string, unknown> | null
-    >(null);
     const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
-
-    function closeModal() {
-        setSelectedIntegration(null);
-    }
-
-    function onEditIntegration(integration) {
-        setSelectedIntegration(integration);
-    }
-
-    function onViewIntegration(integration) {
-        setSelectedIntegration(integration);
-    }
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
@@ -83,10 +66,6 @@ function IntegrationsListPage({
         fetchClusterInitBundles();
     }
 
-    function onCreateIntegration() {
-        setSelectedIntegration({});
-    }
-
     return (
         <>
             <PageTitle title={typeLabel} />
@@ -104,23 +83,8 @@ function IntegrationsListPage({
                 title={typeLabel}
                 integrations={integrations}
                 hasMultipleDelete={!isClusterInitBundle}
-                onCreateIntegration={onCreateIntegration}
-                onEditIntegration={onEditIntegration}
                 onDeleteIntegrations={onDeleteIntegrations}
-                onViewIntegration={
-                    isClusterInitBundle || isAPIToken ? onViewIntegration : undefined
-                }
             />
-            {selectedIntegration && (
-                <GenericIntegrationModal
-                    integrations={integrations}
-                    source={source}
-                    type={type}
-                    label={typeLabel}
-                    onRequestClose={closeModal}
-                    selectedIntegration={selectedIntegration}
-                />
-            )}
             {isAPIToken && (
                 <ConfirmationModal
                     isOpen={deletingIntegrationIds.length !== 0}

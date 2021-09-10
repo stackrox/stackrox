@@ -1,3 +1,5 @@
+import randomstring from 'randomstring';
+
 export function getInputByLabel(label) {
     return cy
         .contains('label', label)
@@ -30,6 +32,12 @@ export function getHelperElementByLabel(label) {
         });
 }
 
-export function generateUniqueName(name) {
-    return `${name} - ${new Date().toISOString()}`;
+export function generateNameWithDate(name) {
+    const randomValue = new Date().toISOString();
+    return `${name}-${randomValue}`;
+}
+
+export function generateNameWithRandomString(name) {
+    const randomValue = randomstring.generate(10);
+    return `${name}-${randomValue}`;
 }

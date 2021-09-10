@@ -1,11 +1,10 @@
 import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { editIntegration } from './integrationUtils';
 import {
     getHelperElementByLabel,
     getInputByLabel,
-    generateUniqueName,
+    generateNameWithDate,
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';
@@ -28,9 +27,7 @@ describe('Image Integrations Test', () => {
     it('should create a new StackRox Scanner integration', () => {
         cy.get(selectors.clairifyTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/clairify/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -46,7 +43,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('Clairify Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('Clairify Test'));
         getSelectButtonByLabel('Type').click();
         getSelectOption('Image Scanner').click();
         getInputByLabel('Endpoint').clear().type('https://scanner.stackrox:8080');
@@ -63,9 +60,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Generic Docker Registry integration', () => {
         cy.get(selectors.dockerRegistryTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/docker/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -81,7 +76,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('Docker Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('Docker Test'));
         getInputByLabel('Endpoint').clear().type('registry-1.docker.io');
 
         cy.get(selectors.buttons.test).should('be.enabled');
@@ -96,9 +91,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Anchore integration', () => {
         cy.get(selectors.anchoreScannerTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/anchore/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -116,7 +109,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('Docker Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('Docker Test'));
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
@@ -133,9 +126,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Amazon ECR integration', () => {
         cy.get(selectors.amazonECRTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/ecr/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -155,7 +146,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('ECR Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('ECR Test'));
         getInputByLabel('Registry id').clear().type('12345');
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Region').clear().type('us-west-1');
@@ -172,9 +163,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Google Container Registry integration', () => {
         cy.get(selectors.googleContainerRegistryTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/google/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -196,7 +185,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('ECR Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('ECR Test'));
         getSelectButtonByLabel('Type').click();
         getSelectOption('Registry').click();
         getInputByLabel('Registry endpoint').clear().type('test.endpoint');
@@ -217,9 +206,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Microsoft Azure integration', () => {
         cy.get(selectors.microsoftACRTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/azure/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -237,7 +224,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('Azure Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('Azure Test'));
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').type('password');
@@ -254,9 +241,7 @@ describe('Image Integrations Test', () => {
     it('should create a new JFrog Artifactory integration', () => {
         cy.get(selectors.jFrogArtifactoryTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/artifactory/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -276,7 +261,7 @@ describe('Image Integrations Test', () => {
         // Step 2, check valid from and save
         getInputByLabel('Integration name')
             .clear()
-            .type(generateUniqueName('JFrog Artifactory Test'));
+            .type(generateNameWithDate('JFrog Artifactory Test'));
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').type('password');
@@ -293,9 +278,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Docker Trusted Registry integration', () => {
         cy.get(selectors.dockerTrustedRegistryTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/dtr/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -313,7 +296,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('DTR Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('DTR Test'));
         getSelectButtonByLabel('Type').click();
         getSelectOption('Registry').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
@@ -332,9 +315,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Quay integration', () => {
         cy.get(selectors.quayTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/quay/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -352,7 +333,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('Quay Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('Quay Test'));
         getSelectButtonByLabel('Type').click();
         getSelectOption('Registry').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
@@ -370,9 +351,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Clair integration', () => {
         cy.get(selectors.clairTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/clair/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -388,7 +367,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('Clair Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('Clair Test'));
         getSelectButtonByLabel('Type').click();
         getSelectOption('Image Scanner').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
@@ -405,9 +384,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Nexus integration', () => {
         cy.get(selectors.sonatypeNexusTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/nexus/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -425,7 +402,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('Nexus Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('Nexus Test'));
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
@@ -442,9 +419,7 @@ describe('Image Integrations Test', () => {
     it('should create a new Tenable integration', () => {
         cy.get(selectors.tenableTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/tenable/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -462,7 +437,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('Tenable Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('Tenable Test'));
         getSelectButtonByLabel('Type').click();
         getSelectOption('Registry').click();
         getInputByLabel('Access key').clear().type('12345');
@@ -480,9 +455,7 @@ describe('Image Integrations Test', () => {
     it('should create a new IBM integration', () => {
         cy.get(selectors.ibmCloudTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/ibm/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -500,7 +473,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('IBM Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('IBM Test'));
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('API key').clear().type('12345');
 
@@ -516,9 +489,7 @@ describe('Image Integrations Test', () => {
     it('should create a new RHEL integration', () => {
         cy.get(selectors.redHatTile).click();
 
-        // @TODO: only use the click, and delete the direct URL visit after forms official launch
         cy.get(selectors.buttons.new).click();
-        cy.visit('/main/integrations/imageIntegrations/rhel/create');
 
         // Step 0, should start out with disabled Save and Test buttons
         cy.get(selectors.buttons.test).should('be.disabled');
@@ -536,7 +507,7 @@ describe('Image Integrations Test', () => {
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(generateUniqueName('RHEL Test'));
+        getInputByLabel('Integration name').clear().type(generateNameWithDate('RHEL Test'));
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
         getInputByLabel('Password').clear().type('password');
@@ -548,118 +519,5 @@ describe('Image Integrations Test', () => {
         cy.location().should((loc) => {
             expect(loc.pathname).to.eq('/main/integrations/imageIntegrations/rhel');
         });
-    });
-
-    it('should show a hint about stored credentials for Docker Trusted Registry', () => {
-        cy.get(selectors.dockerTrustedRegistryTile).click();
-        editIntegration('DTR Test');
-        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Quay', () => {
-        cy.get(selectors.quayTile).click();
-        editIntegration('Quay Test');
-        cy.get('div:contains("OAuth Token"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Amazon ECR', () => {
-        cy.get(selectors.amazonECRTile).click();
-        editIntegration('Amazon ECR Test');
-        cy.get('div:contains("Access Key ID"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-        cy.get('div:contains("Secret Access Key"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Tenable', () => {
-        cy.get(selectors.tenableTile).click();
-        editIntegration('Tenable Test');
-        cy.get('div:contains("Access Key"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-        cy.get('div:contains("Secret Key"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Google Container Registry', () => {
-        cy.get(selectors.googleContainerRegistryTile).click();
-        editIntegration('Google Container Registry Test');
-        cy.get('div:contains("Service Account Key"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Anchore Scanner', () => {
-        cy.get(selectors.anchoreScannerTile).click();
-        editIntegration('Anchore Scanner Test');
-        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for IBM Cloud', () => {
-        cy.get(selectors.ibmCloudTile).click();
-        editIntegration('IBM Cloud Test');
-        cy.get('div:contains("API Key"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Microsoft ACR', () => {
-        cy.get(selectors.microsoftACRTile).click();
-        editIntegration('Microsoft ACR Test');
-        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for JFrog Artifactory', () => {
-        cy.get(selectors.jFrogArtifactoryTile).click();
-        editIntegration('JFrog Artifactory Test');
-        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Sonatype Nexus', () => {
-        cy.get(selectors.sonatypeNexusTile).click();
-        editIntegration('Sonatype Nexus Test');
-        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Red Hat', () => {
-        cy.get(selectors.redHatTile).click();
-        editIntegration('Red Hat Test');
-        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
     });
 });

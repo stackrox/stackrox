@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as authActions } from 'reducers/auth';
 import { actions as apitokensActions } from 'reducers/apitokens';
-import { actions as clusterActions } from 'reducers/clusters';
+import { actions as clusterInitBundleActions } from 'reducers/clusterInitBundles';
 import { IntegrationSource } from '../utils/integrationUtils';
 
 const fetchIntegrationsActionMap = {
@@ -12,8 +12,6 @@ const fetchIntegrationsActionMap = {
     backups: integrationsActions.fetchBackups.request(),
     imageIntegrations: integrationsActions.fetchImageIntegrations.request(),
     notifiers: integrationsActions.fetchNotifiers.request(),
-    clusters: clusterActions.fetchClusters.request(),
-    apitoken: apitokensActions.fetchAPITokens.request(),
 };
 
 export type UseFetchIntegrationsResponse = () => void;
@@ -22,7 +20,12 @@ const useFetchIntegrations = (source: IntegrationSource): UseFetchIntegrationsRe
     const dispatch = useDispatch();
 
     function fetchIntegrations() {
-        dispatch(fetchIntegrationsActionMap[source]);
+        if (source === 'authProviders') {
+            dispatch(clusterInitBundleActions.fetchClusterInitBundles.request());
+            dispatch(apitokensActions.fetchAPITokens.request());
+        } else {
+            dispatch(fetchIntegrationsActionMap[source]);
+        }
     }
 
     return fetchIntegrations;

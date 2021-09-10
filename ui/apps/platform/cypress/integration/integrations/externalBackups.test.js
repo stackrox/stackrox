@@ -1,7 +1,6 @@
 import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { editIntegration } from './integrationUtils';
 import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
 
 describe('External Backups Test', () => {
@@ -17,6 +16,7 @@ describe('External Backups Test', () => {
         cy.get(selectors.navLink).click({ force: true });
         cy.wait('@getExternalBackups');
     });
+
     describe('External Backup forms', () => {
         it('should create a new S3 integration', () => {
             cy.get(selectors.amazonS3Tile).click();
@@ -144,33 +144,5 @@ describe('External Backups Test', () => {
                 expect(loc.pathname).to.eq('/main/integrations/backups/gcs');
             });
         });
-    });
-
-    it('should show a hint about stored credentials for Amazon S3', () => {
-        cy.get(selectors.amazonS3Tile).click();
-        editIntegration('Amazon S3 Test');
-        cy.get('div:contains("Access Key ID"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-        cy.get('div:contains("Secret Access Key"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
-    });
-
-    it('should show a hint about stored credentials for Google Cloud Storage', () => {
-        cy.get(selectors.googleCloudStorageTile).click();
-        editIntegration('Google Cloud Storage Test');
-        cy.get('div:contains("Service Account JSON"):last [data-testid="help-icon"]').trigger(
-            'mouseenter'
-        );
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
     });
 });
