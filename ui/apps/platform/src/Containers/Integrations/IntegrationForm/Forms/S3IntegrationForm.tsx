@@ -3,6 +3,8 @@ import React, { ReactElement } from 'react';
 import { Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
+
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -18,17 +20,6 @@ import ScheduleWeeklyOptions from '../FormSchedule/ScheduleWeeklyOptions';
 import ScheduleDailyOptions from '../FormSchedule/ScheduleDailyOptions';
 
 export type S3Integration = {
-    id?: string;
-    name: string;
-    backupsToKeep: number;
-    schedule: {
-        intervalType: 'UNSET' | 'DAILY' | 'WEEKLY';
-        weekly?: {
-            day: number;
-        };
-        hour: number;
-        minute: number;
-    };
     s3: {
         bucket: string;
         objectPrefix: string;
@@ -39,9 +30,7 @@ export type S3Integration = {
         secretAccessKey: string;
     };
     type: 's3';
-    enabled: boolean;
-    categories: string[];
-};
+} & BackupIntegrationBase;
 
 export type S3IntegrationFormValues = {
     externalBackup: S3Integration;
@@ -98,14 +87,13 @@ export const validationSchema = yup.object().shape({
                 ),
         }),
         type: yup.string().matches(/s3/),
-        enabled: yup.bool(),
-        categories: yup.array().of(yup.string()),
     }),
     updatePassword: yup.bool(),
 });
 
 export const defaultValues: S3IntegrationFormValues = {
     externalBackup: {
+        id: '',
         name: '',
         backupsToKeep: 1,
         schedule: {
@@ -123,8 +111,6 @@ export const defaultValues: S3IntegrationFormValues = {
             secretAccessKey: '',
         },
         type: 's3',
-        enabled: true,
-        categories: [],
     },
     updatePassword: true,
 };

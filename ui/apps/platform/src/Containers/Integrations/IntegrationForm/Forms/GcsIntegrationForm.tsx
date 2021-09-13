@@ -3,6 +3,8 @@ import React, { ReactElement } from 'react';
 import { Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
+
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -18,17 +20,6 @@ import ScheduleWeeklyOptions from '../FormSchedule/ScheduleWeeklyOptions';
 import ScheduleDailyOptions from '../FormSchedule/ScheduleDailyOptions';
 
 export type GcsIntegration = {
-    id?: string;
-    name: string;
-    backupsToKeep: number;
-    schedule: {
-        intervalType: 'UNSET' | 'DAILY' | 'WEEKLY';
-        weekly?: {
-            day: number;
-        };
-        hour: number;
-        minute: number;
-    };
     gcs: {
         bucket: string;
         objectPrefix: string;
@@ -36,9 +27,7 @@ export type GcsIntegration = {
         serviceAccount: string;
     };
     type: 'gcs';
-    enabled: boolean;
-    categories: string[];
-};
+} & BackupIntegrationBase;
 
 export type GcsIntegrationFormValues = {
     externalBackup: GcsIntegration;
@@ -91,14 +80,13 @@ export const validationSchema = yup.object().shape({
                 ),
         }),
         type: yup.string().matches(/gcs/),
-        enabled: yup.bool(),
-        categories: yup.array().of(yup.string()),
     }),
     updatePassword: yup.bool(),
 });
 
 export const defaultValues: GcsIntegrationFormValues = {
     externalBackup: {
+        id: '',
         name: '',
         backupsToKeep: 1,
         schedule: {
@@ -113,8 +101,6 @@ export const defaultValues: GcsIntegrationFormValues = {
             serviceAccount: '',
         },
         type: 'gcs',
-        enabled: true,
-        categories: [],
     },
     updatePassword: true,
 };
