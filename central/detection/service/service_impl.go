@@ -37,9 +37,13 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
+	k8sSchema "k8s.io/apimachinery/pkg/runtime/schema"
+	k8sSerializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -56,7 +60,18 @@ var (
 	})
 
 	log = logging.LoggerForModule()
+
+	workloadScheme = k8sRuntime.NewScheme()
+
+	workloadDeserializer = k8sSerializer.NewCodecFactory(workloadScheme).UniversalDeserializer()
 )
+
+func init() {
+	metav1.AddToGroupVersion(workloadScheme, k8sSchema.GroupVersion{Version: "v1"})
+	pkgUtils.Must(errors.Wrap(scheme.AddToScheme(workloadScheme), "failed to load scheme"))
+	pkgUtils.Must(errors.Wrap(deployConfScheme.AddToScheme(workloadScheme), "failed to load scheme"))
+	pkgUtils.Must(errors.Wrap(k8sutil.AddLegacyOpenshiftAppsToScheme(workloadScheme), "failed to load scheme"))
+}
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
@@ -205,15 +220,6 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.Enr
 }
 
 func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
-	err := deployConfScheme.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
-	}
-	err = k8sutil.AddLegacyOpenshiftAppsToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, err
-	}
-	decode := scheme.Codecs.UniversalDeserializer().Decode
 	reader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBufferString(yamlString)))
 	var objects []k8sRuntime.Object
 	for {
@@ -224,7 +230,7 @@ func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
 		if err != nil {
 			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Failed to read YAML with err: %v", err)
 		}
-		obj, _, err := decode(yamlBytes, nil, nil)
+		obj, _, err := workloadDeserializer.Decode(yamlBytes, nil, nil)
 		if err != nil {
 			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not parse YAML: %v", err)
 		}
@@ -242,10 +248,9 @@ func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
 }
 
 func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
 	objects := make([]k8sRuntime.Object, 0, len(list.Items))
 	for i, item := range list.Items {
-		obj, _, err := decode(item.Raw, nil, nil)
+		obj, _, err := workloadDeserializer.Decode(item.Raw, nil, nil)
 		if err != nil {
 			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not decode item %d in the list: %v", i, err)
 		}
