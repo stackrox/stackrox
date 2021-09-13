@@ -43,6 +43,7 @@ function ResolveConfirmation({
             ]}
             onClose={cancelModal}
             data-testid="resolve-confirmation-modal"
+            aria-label="Confirm resolving violations"
         >
             {`Are you sure you want to resolve ${numSelectedRows} ${pluralize(
                 'violation',

@@ -221,6 +221,7 @@ function ViolationsTablePanel({
                                     onSelect: onSelectAll,
                                     isSelected: allRowsSelected,
                                 }}
+                                key="select"
                             />
                             {columns.map(({ Header, sortField }, idx) => {
                                 const sortParams = sortField
@@ -236,7 +237,7 @@ function ViolationsTablePanel({
                                       }
                                     : {};
                                 return (
-                                    <Th modifier="wrap" {...sortParams}>
+                                    <Th modifier="wrap" {...sortParams} key={Header}>
                                         {Header}
                                     </Th>
                                 );
@@ -285,7 +286,7 @@ function ViolationsTablePanel({
                             return (
                                 <Tr key={id}>
                                     <Td
-                                        key={id}
+                                        key="select"
                                         select={{
                                             rowIndex,
                                             onSelect,
@@ -293,12 +294,19 @@ function ViolationsTablePanel({
                                         }}
                                     />
                                     {columns.map((column) => {
-                                        return <TableCell row={violation} column={column} />;
+                                        return (
+                                            <TableCell
+                                                key={column.Header}
+                                                row={violation}
+                                                column={column}
+                                            />
+                                        );
                                     })}
                                     <Td
                                         actions={{
                                             items: actionItems,
                                         }}
+                                        key="actions"
                                     />
                                 </Tr>
                             );

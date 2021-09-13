@@ -62,6 +62,7 @@ function ExcludeConfirmation({
             ]}
             onClose={cancelModal}
             data-testid="exclude-confirmation-modal"
+            aria-label="Confirm excluding violations"
         >
             {`Are you sure you want to exclude ${numSelectedRows} ${pluralize(
                 'violation',
