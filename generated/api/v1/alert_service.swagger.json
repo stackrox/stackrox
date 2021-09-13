@@ -722,6 +722,14 @@
       },
       "description": "Fields common to all entities that an alert might belong to."
     },
+    "ListAlertPolicyDevFields": {
+      "type": "object",
+      "properties": {
+        "SORTName": {
+          "type": "string"
+        }
+      }
+    },
     "ListAlertResourceEntity": {
       "type": "object",
       "properties": {
@@ -1248,6 +1256,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "developerInternalFields": {
+          "$ref": "#/definitions/ListAlertPolicyDevFields",
+          "description": "For internal use only."
         }
       }
     },

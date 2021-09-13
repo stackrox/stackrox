@@ -135,13 +135,7 @@ func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) 
 	ds.keyedMutex.Lock(alert.GetId())
 	defer ds.keyedMutex.Unlock(alert.GetId())
 
-	if err := ds.storage.Upsert(alert); err != nil {
-		return err
-	}
-	if err := ds.indexer.AddListAlert(convert.AlertToListAlert(alert)); err != nil {
-		return err
-	}
-	return ds.storage.AckKeysIndexed(alert.GetId())
+	return ds.updateAlertNoLock(alert)
 }
 
 // UpdateAlert updates an alert in storage and in the indexer
@@ -404,7 +398,7 @@ func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {
 	if err := ds.storage.Upsert(alert); err != nil {
 		return err
 	}
-	if err := ds.indexer.AddListAlert(convert.AlertToListAlert(alert)); err != nil {
+	if err := ds.indexer.AddListAlert(fillSortHelperFields(convert.AlertToListAlert(alert))); err != nil {
 		return err
 	}
 	return ds.storage.AckKeysIndexed(alert.GetId())

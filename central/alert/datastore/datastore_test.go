@@ -126,7 +126,7 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 func (s *alertDataStoreTestSuite) TestAddAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Upsert(fakeAlert).Return(nil)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Return(errFake)
+	s.indexer.EXPECT().AddListAlert(fillSortHelperFields(convert.AlertToListAlert(alerttest.NewFakeAlert()))).Return(errFake)
 
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
@@ -378,7 +378,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed() {
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithNoTags, true, nil)
 	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
 	s.storage.EXPECT().Upsert(fakeAlertWithTwoTags).Return(nil)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithTwoTags)).Return(nil)
+	s.indexer.EXPECT().AddListAlert(fillSortHelperFields(convert.AlertToListAlert(fakeAlertWithTwoTags))).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithTwoTags.GetId()).Return(nil)
 	expectedResponse := alerttest.NewFakeTwoTags()
 
@@ -392,7 +392,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed2() {
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
 	fakeAlertWithThreeTags := alerttest.NewFakeAlertWithThreeTags()
 	s.storage.EXPECT().Upsert(fakeAlertWithThreeTags).Return(nil)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithThreeTags)).Return(nil)
+	s.indexer.EXPECT().AddListAlert(fillSortHelperFields(convert.AlertToListAlert(fakeAlertWithThreeTags))).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithThreeTags.GetId()).Return(nil)
 	expectedResponse := alerttest.NewFakeThreeTags()
 
@@ -414,7 +414,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed() {
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
 	fakeAlertWithNoTags := alerttest.NewFakeAlert()
 	s.storage.EXPECT().Upsert(fakeAlertWithNoTags).Return(nil)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithNoTags)).Return(nil)
+	s.indexer.EXPECT().AddListAlert(fillSortHelperFields(convert.AlertToListAlert(fakeAlertWithNoTags))).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithNoTags.GetId()).Return(nil)
 
 	err := s.dataStore.RemoveAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
@@ -426,7 +426,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed2() {
 	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithThreeTags, true, nil)
 	fakeAlertWithOneTag := alerttest.NewFakeAlertWithOneTag()
 	s.storage.EXPECT().Upsert(fakeAlertWithOneTag).Return(nil)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithOneTag)).Return(nil)
+	s.indexer.EXPECT().AddListAlert(fillSortHelperFields(convert.AlertToListAlert(fakeAlertWithOneTag))).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithOneTag.GetId()).Return(nil)
 
 	err := s.dataStore.RemoveAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 var (
@@ -113,8 +114,8 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	filteredSearcher := alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-
-	paginatedSearcher := paginated.Paginated(filteredSearcher)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher)
+	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	withDefaultViolationState := withDefaultActiveViolations(defaultSortedSearcher)
 	return withDefaultViolationState

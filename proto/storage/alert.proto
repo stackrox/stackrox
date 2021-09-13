@@ -183,6 +183,13 @@ message ListAlertPolicy {
     Severity severity                           = 3 [(gogoproto.moretags) = "search:\"Severity,store\""];
     string description                          = 4;
     repeated string categories                  = 5 [(gogoproto.moretags) = "search:\"Category,store\""];
+
+    message DevFields {
+        string                      SORT_name   = 6 [(gogoproto.moretags) = "search:\"SORT_Policy,hidden,analyzer=keyword\""];
+    }
+
+    // For internal use only.
+    DevFields developer_internal_fields = 6;
 }
 
 message ListAlertDeployment {
