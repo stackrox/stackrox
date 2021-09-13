@@ -17,7 +17,7 @@
         "@patternfly/react-styles": "^4.11.13",
         "@patternfly/react-table": "^4.29.58",
         "@stackrox/ui-components": "*",
-        "axios": "^0.21.1",
+        "axios": "^0.21.4",
         "computed-style-to-inline-style": "^3.0.0",
         "connected-react-router": "^6.8.0",
         "cytoscape": "^3.17.0",
