@@ -2,6 +2,8 @@ import React, { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput, TextArea } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -14,16 +16,12 @@ import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type GoogleCloudSccIntegration = {
-    id?: string;
-    name: string;
     cscc: {
         serviceAccount: string;
         sourceId: string;
     };
-    uiEndpoint: string;
     type: 'cscc';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 export type GoogleCloudSccIntegrationFormValues = {
     notifier: GoogleCloudSccIntegration;
@@ -66,14 +64,16 @@ export const validationSchema = yup.object().shape({
 
 export const defaultValues: GoogleCloudSccIntegrationFormValues = {
     notifier: {
+        id: '',
         name: '',
         cscc: {
             serviceAccount: '',
             sourceId: '',
         },
+        labelDefault: '',
+        labelKey: '',
         uiEndpoint: window.location.origin,
         type: 'cscc',
-        enabled: true,
     },
     updatePassword: true,
 };

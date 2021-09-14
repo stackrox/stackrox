@@ -2,6 +2,8 @@ import React, { ReactElement } from 'react';
 import { Form, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -14,14 +16,8 @@ import FormLabelGroup from '../FormLabelGroup';
 import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
 export type SlackIntegration = {
-    id?: string;
-    name: string;
-    labelDefault: string;
-    labelKey: string;
-    uiEndpoint: string;
     type: 'slack';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 const validWebhookRegex = /^((https?):\/\/)?([a-zA-Z0-9\-.]\.)?[a-zA-Z0-9\-.]{1,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(\/services)(\/[a-zA-Z0-9-]+)$/;
 
@@ -39,12 +35,12 @@ export const validationSchema = yup.object().shape({
 });
 
 export const defaultValues: SlackIntegration = {
+    id: '',
     name: '',
     labelDefault: '',
     labelKey: '',
     uiEndpoint: window.location.origin,
     type: 'slack',
-    enabled: true,
 };
 
 function SlackIntegrationForm({

@@ -9,6 +9,8 @@ import {
 } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -20,8 +22,6 @@ import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type SyslogIntegration = {
-    id?: string;
-    name: string;
     syslog: {
         localFacility: string;
         tcpConfig: {
@@ -31,10 +31,8 @@ export type SyslogIntegration = {
             skipTlsVerify: boolean;
         };
     };
-    uiEndpoint: string;
     type: 'syslog';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 export const validationSchema = yup.object().shape({
     name: yup.string().required('Integration name is required'),
@@ -58,10 +56,11 @@ export const validationSchema = yup.object().shape({
     }),
     uiEndpoint: yup.string(),
     type: yup.string().matches(/syslog/),
-    enabled: yup.bool(),
 });
 
 export const defaultValues: SyslogIntegration = {
+    id: '',
+    name: '',
     syslog: {
         localFacility: '',
         tcpConfig: {
@@ -71,10 +70,10 @@ export const defaultValues: SyslogIntegration = {
             skipTlsVerify: false,
         },
     },
-    name: '',
+    labelDefault: '',
+    labelKey: '',
     uiEndpoint: window.location.origin,
     type: 'syslog',
-    enabled: true,
 };
 
 function SyslogIntegrationForm({

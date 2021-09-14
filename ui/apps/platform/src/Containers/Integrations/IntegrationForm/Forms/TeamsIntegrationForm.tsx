@@ -2,6 +2,8 @@ import React, { ReactElement } from 'react';
 import { TextInput, PageSection, Form } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -14,14 +16,8 @@ import FormLabelGroup from '../FormLabelGroup';
 import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
 export type TeamsIntegration = {
-    id?: string;
-    name: string;
-    labelDefault: string;
-    labelKey: string;
-    uiEndpoint: string;
     type: 'teams';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 const validTeamsWebhookRegex = /^((https?):\/\/)?(outlook.office365.com\/webhook\/)([a-zA-Z0-9-]+)$/;
 
@@ -42,12 +38,12 @@ export const validationSchema = yup.object().shape({
 });
 
 export const defaultValues: TeamsIntegration = {
+    id: '',
     name: '',
     labelDefault: '',
     labelKey: '',
     uiEndpoint: window.location.origin,
     type: 'teams',
-    enabled: true,
 };
 
 function TeamsIntegrationForm({

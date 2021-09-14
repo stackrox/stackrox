@@ -2,6 +2,8 @@ import React, { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -14,8 +16,6 @@ import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type SplunkIntegration = {
-    id?: string;
-    name: string;
     splunk: {
         httpEndpoint: string;
         httpToken: string;
@@ -27,10 +27,8 @@ export type SplunkIntegration = {
             audit: string;
         };
     };
-    uiEndpoint: string;
     type: 'splunk';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 export type SplunkIntegrationFormValues = {
     notifier: SplunkIntegration;
@@ -80,6 +78,7 @@ export const validationSchema = yup.object().shape({
 
 export const defaultValues: SplunkIntegrationFormValues = {
     notifier: {
+        id: '',
         name: '',
         splunk: {
             httpEndpoint: '',
@@ -92,9 +91,10 @@ export const defaultValues: SplunkIntegrationFormValues = {
                 audit: 'stackrox-audit-message',
             },
         },
+        labelDefault: '',
+        labelKey: '',
         uiEndpoint: window.location.origin,
         type: 'splunk',
-        enabled: true,
     },
     updatePassword: true,
 };

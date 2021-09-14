@@ -30,8 +30,8 @@ export const defaultValues: PagerDutyIntegration = {
     name: '',
     type: 'pagerduty',
     uiEndpoint: window.location.origin,
-    labelKey: '',
     labelDefault: '',
+    labelKey: '',
     pagerduty: {
         apiKey: '',
     },

@@ -3,6 +3,8 @@ import React, { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, SelectOption, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import SelectSingle from 'Components/SelectSingle';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
@@ -17,8 +19,6 @@ import FormLabelGroup from '../FormLabelGroup';
 import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
 export type EmailIntegration = {
-    id?: string;
-    name: string;
     email: {
         server: string;
         username: string;
@@ -28,12 +28,8 @@ export type EmailIntegration = {
         disableTLS: boolean;
         startTLSAuthMethod: 'DISABLED' | 'PLAIN' | 'LOGIN';
     };
-    labelDefault: string;
-    labelKey: string;
-    uiEndpoint: string;
     type: 'email';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 export type EmailIntegrationFormValues = {
     notifier: EmailIntegration;
@@ -109,6 +105,7 @@ export const validationSchema = yup.object().shape({
 
 export const defaultValues: EmailIntegrationFormValues = {
     notifier: {
+        id: '',
         name: '',
         email: {
             server: '',
@@ -123,7 +120,6 @@ export const defaultValues: EmailIntegrationFormValues = {
         labelKey: '',
         uiEndpoint: window.location.origin,
         type: 'email',
-        enabled: true,
     },
     updatePassword: true,
 };

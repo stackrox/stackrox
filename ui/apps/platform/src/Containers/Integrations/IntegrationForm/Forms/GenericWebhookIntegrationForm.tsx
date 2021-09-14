@@ -15,6 +15,8 @@ import { PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -27,8 +29,6 @@ import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type GenericWebhookIntegration = {
-    id: string;
-    name: string;
     generic: {
         endpoint: string;
         skipTlsVerify: boolean;
@@ -45,10 +45,8 @@ export type GenericWebhookIntegration = {
             value: string;
         }[];
     };
-    uiEndpoint: string;
     type: 'generic';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 export type GenericWebhookIntegrationFormValues = {
     notifier: GenericWebhookIntegration;
@@ -121,9 +119,10 @@ export const defaultValues: GenericWebhookIntegrationFormValues = {
             headers: [],
             extraFields: [],
         },
+        labelDefault: '',
+        labelKey: '',
         uiEndpoint: window.location.origin,
         type: 'generic',
-        enabled: true,
     },
     updatePassword: true,
 };

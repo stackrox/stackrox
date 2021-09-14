@@ -3,6 +3,8 @@ import { Form, PageSection, Switch, TextInput } from '@patternfly/react-core';
 import merge from 'lodash/merge';
 import * as yup from 'yup';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -14,17 +16,12 @@ import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type SumoLogicIntegration = {
-    id: string;
-    name: string;
-    type: 'sumologic';
-    uiEndpoint: string;
-    labelKey: string;
-    labelDefault: string;
     sumologic: {
         httpSourceAddress: string;
         skipTLSVerify: boolean;
     };
-};
+    type: 'sumologic';
+} & NotifierIntegrationBase;
 
 const validationSchema = yup.object().shape({
     name: yup.string().trim().required('Integration name is required'),
@@ -40,14 +37,14 @@ const validationSchema = yup.object().shape({
 const defaultValues: SumoLogicIntegration = {
     id: '',
     name: '',
-    type: 'sumologic',
-    uiEndpoint: window.location.origin,
-    labelKey: '',
-    labelDefault: '',
     sumologic: {
         httpSourceAddress: '',
         skipTLSVerify: false,
     },
+    labelDefault: '',
+    labelKey: '',
+    uiEndpoint: window.location.origin,
+    type: 'sumologic',
 };
 
 function SumoLogicIntegrationForm({

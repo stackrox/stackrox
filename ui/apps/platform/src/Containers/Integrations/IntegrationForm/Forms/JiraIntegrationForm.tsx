@@ -15,6 +15,8 @@ import merge from 'lodash/merge';
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -28,8 +30,6 @@ import FormLabelGroup from '../FormLabelGroup';
 import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
 export type JiraIntegration = {
-    id: string;
-    name: string;
     jira: {
         username: string;
         password: string;
@@ -41,12 +41,8 @@ export type JiraIntegration = {
         }[];
         defaultFieldsJson: string;
     };
-    labelDefault: string;
-    labelKey: string;
-    uiEndpoint: string;
     type: 'jira';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 export type JiraIntegrationFormValues = {
     notifier: JiraIntegration;
@@ -121,7 +117,6 @@ export const defaultValues: JiraIntegrationFormValues = {
         labelKey: '',
         uiEndpoint: window.location.origin,
         type: 'jira',
-        enabled: true,
     },
     updatePassword: true,
 };

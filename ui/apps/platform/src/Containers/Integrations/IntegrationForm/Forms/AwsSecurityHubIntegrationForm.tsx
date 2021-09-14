@@ -2,6 +2,8 @@ import React, { ReactElement } from 'react';
 import { TextInput, PageSection, Form, FormSelect, Checkbox } from '@patternfly/react-core';
 import * as yup from 'yup';
 
+import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -15,8 +17,6 @@ import FormLabelGroup from '../FormLabelGroup';
 import AwsRegionOptions from '../AwsRegionOptions';
 
 export type AwsSecurityHubIntegration = {
-    id?: string;
-    name: string;
     awsSecurityHub: {
         accountId: string;
         region: string;
@@ -25,10 +25,8 @@ export type AwsSecurityHubIntegration = {
             secretAccessKey: string;
         };
     };
-    uiEndpoint: string;
     type: 'awsSecurityHub';
-    enabled: boolean;
-};
+} & NotifierIntegrationBase;
 
 export type AwsSecurityHubIntegrationFormValues = {
     notifier: AwsSecurityHubIntegration;
@@ -87,13 +85,13 @@ export const validationSchema = yup.object().shape({
         }),
         uiEndpoint: yup.string(),
         type: yup.string().matches(/awsSecurityHub/),
-        enabled: yup.bool(),
     }),
     updatePassword: yup.bool(),
 });
 
 export const defaultValues: AwsSecurityHubIntegrationFormValues = {
     notifier: {
+        id: '',
         name: '',
         awsSecurityHub: {
             accountId: '',
@@ -103,9 +101,10 @@ export const defaultValues: AwsSecurityHubIntegrationFormValues = {
                 secretAccessKey: '',
             },
         },
+        labelDefault: '',
+        labelKey: '',
         uiEndpoint: window.location.origin,
         type: 'awsSecurityHub',
-        enabled: true,
     },
     updatePassword: true,
 };
