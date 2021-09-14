@@ -15,6 +15,7 @@ import (
 
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
+	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
@@ -56,6 +57,7 @@ type jira struct {
 	notifier *storage.Notifier
 
 	namespaces namespaceDataStore.DataStore
+	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore
 
 	severityToPriority map[storage.Severity]string
 	needsPriority      bool
@@ -131,7 +133,7 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 		},
 	}
 	alertLink := notifiers.AlertLink(j.notifier.UiEndpoint, alert)
-	return notifiers.FormatAlert(alert, alertLink, funcMap)
+	return notifiers.FormatAlert(alert, alertLink, funcMap, j.mitreStore)
 }
 
 func (j *jira) Close(ctx context.Context) error {
@@ -219,7 +221,7 @@ func validate(jira *storage.Jira) error {
 	return errorList.ToError()
 }
 
-func newJira(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore) (*jira, error) {
+func newJira(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDataStore.MitreAttackReadOnlyDataStore) (*jira, error) {
 	conf := notifier.GetJira()
 	if conf == nil {
 		return nil, errors.New("Jira configuration required")
@@ -283,6 +285,7 @@ func newJira(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore
 		conf:               notifier.GetJira(),
 		notifier:           notifier,
 		namespaces:         namespaces,
+		mitreStore:         mitreStore,
 		severityToPriority: derivedPriorities,
 
 		needsPriority: needsPriority,
@@ -395,7 +398,7 @@ func mapPriorities(integration *storage.Jira, prios []jiraLib.Priority) map[stor
 
 func init() {
 	notifiers.Add("jira", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := newJira(notifier, namespaceDataStore.Singleton())
+		j, err := newJira(notifier, namespaceDataStore.Singleton(), mitreDataStore.Singleton())
 		return j, err
 	})
 }

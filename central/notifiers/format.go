@@ -7,6 +7,8 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/mitre/datastore"
+	"github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/readable"
@@ -16,6 +18,8 @@ import (
 
 type policyFormatStruct struct {
 	*storage.Alert
+
+	FullMitreAttackVectors []*storage.MitreAttackVector
 
 	AlertLink string
 	Severity  string
@@ -53,6 +57,17 @@ const bplPolicyFormat = `
 	{{.Policy.Rationale | list}}
 	{{"Remediation:" | subheader}}
 	{{.Policy.Remediation | list}}
+
+	{{if .FullMitreAttackVectors}}{{subheader "MITRE ATT&CK:"}}
+		{{range .FullMitreAttackVectors}}
+			{{stringify "Tactic:" .Tactic.Name "(" .Tactic.Id ")"  | list}}
+			{{if .Techniques}}{{nestedList "Techniques:"}}
+				{{range .Techniques}}
+					{{stringify "\t"}}{{stringify .Name "(" .Id ")" | nestedList}}
+				{{end}}
+			{{end}}
+		{{end}}
+	{{end}}
 
 	{{ subheader "Policy Criteria:"}}
 	{{range .Policy.PolicySections}}
@@ -95,7 +110,7 @@ var requiredFunctions = set.NewFrozenStringSet(
 )
 
 // FormatAlert takes in an alert, a link and funcMap that must define specific formatting functions
-func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMap) (string, error) {
+func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMap, mitreStore datastore.MitreAttackReadOnlyDataStore) (string, error) {
 	if funcMap == nil {
 		return "", errors.New("Function map passed to FormatAlert cannot be nil")
 	}
@@ -109,11 +124,18 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 	if _, ok := funcMap["valuePrinter"]; !ok {
 		funcMap["valuePrinter"] = valuePrinter
 	}
+
+	fullMitreVectors, err := utils.GetFullMitreAttackVectors(mitreStore, alert.GetPolicy())
+	if err != nil {
+		log.Errorf("Could not get MITRE details for alert %s: %v", alert.GetId(), err)
+	}
+
 	data := policyFormatStruct{
-		Alert:     alert,
-		AlertLink: alertLink,
-		Severity:  SeverityString(alert.Policy.Severity),
-		Time:      readable.ProtoTime(alert.Time),
+		Alert:                  alert,
+		FullMitreAttackVectors: fullMitreVectors,
+		AlertLink:              alertLink,
+		Severity:               SeverityString(alert.Policy.Severity),
+		Time:                   readable.ProtoTime(alert.Time),
 	}
 	switch alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:

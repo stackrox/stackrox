@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -34,6 +35,8 @@ func getJira(t *testing.T) (*jira, *gomock.Controller) {
 	mockCtrl := gomock.NewController(t)
 	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
 	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
+	mitreStore := mitreMocks.NewMockMitreAttackReadOnlyDataStore(mockCtrl)
+	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
 
 	user, password := skip(t)
 	notifier := &storage.Notifier{
@@ -49,7 +52,7 @@ func getJira(t *testing.T) (*jira, *gomock.Controller) {
 		LabelDefault: "AJIT",
 	}
 
-	j, err := newJira(notifier, nsStore)
+	j, err := newJira(notifier, nsStore, mitreStore)
 	require.NoError(t, err)
 	return j, mockCtrl
 }

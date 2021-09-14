@@ -58,6 +58,13 @@ func GetAlert() *storage.Alert {
 	}
 }
 
+// GetAlertWithMitre returns a mock Alert with MITRE ATT&CK
+func GetAlertWithMitre() *storage.Alert {
+	alert := GetAlert()
+	alert.Policy = GetPolicyWithMitre()
+	return alert
+}
+
 // GetResourceAlert returns a Mock Alert with a resource entity
 func GetResourceAlert() *storage.Alert {
 	return &storage.Alert{

@@ -205,6 +205,21 @@ func GetPolicy() *storage.Policy {
 	return booleanPolicy.Clone()
 }
 
+// GetPolicyWithMitre return mock Policy with MITRE ATT&CK
+func GetPolicyWithMitre() *storage.Policy {
+	policy := booleanPolicy.Clone()
+	policy.MitreAttackVectors = []*storage.Policy_MitreAttackVectors{
+		{
+			Tactic:     "TA0001",
+			Techniques: []string{"T1078", "T1078.001"},
+		},
+		{
+			Tactic: "TA0003",
+		},
+	}
+	return policy
+}
+
 // GetAuditLogEventSourcePolicy returns a Mock Policy with source set to Audit Log Event
 func GetAuditLogEventSourcePolicy() *storage.Policy {
 	p := booleanPolicy.Clone()

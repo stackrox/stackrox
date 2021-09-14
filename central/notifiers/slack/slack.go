@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
@@ -37,6 +38,7 @@ type slack struct {
 	client *http.Client
 
 	namespaces namespaceDataStore.DataStore
+	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore
 }
 
 // notification json struct for richly-formatted notifications
@@ -111,7 +113,7 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 		},
 	}
 	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint, alert)
-	return notifiers.FormatAlert(alert, alertLink, funcMap)
+	return notifiers.FormatAlert(alert, alertLink, funcMap, s.mitreStore)
 }
 
 func (*slack) Close(ctx context.Context) error {
@@ -212,13 +214,14 @@ func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newSlack(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore) (*slack, error) {
+func newSlack(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDataStore.MitreAttackReadOnlyDataStore) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 		client: &http.Client{
 			Transport: proxy.RoundTripper(),
 		},
 		namespaces: namespaces,
+		mitreStore: mitreStore,
 	}, nil
 }
 
@@ -269,7 +272,7 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 
 func init() {
 	notifiers.Add("slack", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newSlack(notifier, namespaceDataStore.Singleton())
+		s, err := newSlack(notifier, namespaceDataStore.Singleton(), mitreDataStore.Singleton())
 		return s, err
 	})
 }

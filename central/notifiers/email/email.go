@@ -14,6 +14,7 @@ import (
 	"text/template"
 	"time"
 
+	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,6 +39,7 @@ type email struct {
 	smtpServer smtpServer
 
 	namespaces namespaceDataStore.DataStore
+	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore
 
 	notifier *storage.Notifier
 }
@@ -133,7 +135,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore) (*email, error) {
+func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDataStore.MitreAttackReadOnlyDataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, errors.New("Email configuration required")
@@ -163,6 +165,7 @@ func newEmail(notifier *storage.Notifier, namespaces namespaceDataStore.DataStor
 		},
 		notifier:   notifier,
 		namespaces: namespaces,
+		mitreStore: mitreStore,
 	}, nil
 }
 
@@ -211,7 +214,7 @@ func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 		},
 	}
 	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint, alert)
-	return notifiers.FormatAlert(alert, alertLink, funcMap)
+	return notifiers.FormatAlert(alert, alertLink, funcMap, e.mitreStore)
 }
 
 func (*email) Close(context.Context) error {
@@ -403,7 +406,7 @@ func (e *email) ProtoNotifier() *storage.Notifier {
 
 func init() {
 	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := newEmail(notifier, namespaceDataStore.Singleton())
+		e, err := newEmail(notifier, namespaceDataStore.Singleton(), mitreDataStore.Singleton())
 		return e, err
 	})
 }
