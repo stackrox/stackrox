@@ -17,3 +17,10 @@ export function getTableRowActionButtonByName(name) {
             return cy.wrap($el).parent().siblings('td').find('button[aria-label="Actions"]');
         });
 }
+
+export function editIntegration(name) {
+    cy.get(`tr:contains('${name}') td.pf-c-table__action button`).click();
+    cy.get(
+        `tr:contains('${name}') td.pf-c-table__action button:contains("Edit Integration")`
+    ).click();
+}

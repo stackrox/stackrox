@@ -100,10 +100,12 @@ describe('Image Integrations Test', () => {
         // Step 1, check empty fields
         getInputByLabel('Integration name').type(' ');
         getInputByLabel('Endpoint').type(' ');
+        getInputByLabel('Username').type(' ');
         getInputByLabel('Password').type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Endpoint').contains('An endpoint is required');
+        getHelperElementByLabel('Username').contains('A username is required');
         getHelperElementByLabel('Password').contains('A password is required');
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
@@ -287,10 +289,12 @@ describe('Image Integrations Test', () => {
         // Step 1, check empty fields
         getInputByLabel('Integration name').type(' ');
         getInputByLabel('Endpoint').type(' ');
+        getInputByLabel('Username').type(' ');
         getInputByLabel('Password').type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Endpoint').contains('An endpoint is required');
+        getHelperElementByLabel('Username').contains('A username is required');
         getHelperElementByLabel('Password').contains('A password is required');
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
@@ -368,8 +372,6 @@ describe('Image Integrations Test', () => {
 
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(generateNameWithDate('Clair Test'));
-        getSelectButtonByLabel('Type').click();
-        getSelectOption('Image Scanner').click();
         getInputByLabel('Endpoint').clear().type('test.endpoint');
 
         cy.get(selectors.buttons.test).should('be.enabled');
