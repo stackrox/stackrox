@@ -38,8 +38,14 @@ func GetFullMitreAttackVectors(mitreStore mitreDS.MitreAttackReadOnlyDataStore, 
 				vector.Techniques = append(vector.Techniques, technique)
 			}
 		}
+		sort.SliceStable(vector.GetTechniques(), func(i, j int) bool {
+			return vector.GetTechniques()[i].GetId() < vector.GetTechniques()[j].GetId()
+		})
 		resp = append(resp, vector)
 	}
+	sort.SliceStable(resp, func(i, j int) bool {
+		return resp[i].GetTactic().GetId() < resp[j].GetTactic().GetId()
+	})
 	return resp, nil
 }
 
