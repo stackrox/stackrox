@@ -41,6 +41,8 @@ type ScopeTree struct {
 // ClustersScopeSubTree is a subtree of cluster scopes with their states. Extras
 // field can be used by clients to augment the tree with additional info like
 // cluster id, labels, etc.
+//
+// TODO(ROX-7952): Extras don't need to be interface{} any more.
 type ClustersScopeSubTree struct {
 	State      ScopeState
 	Namespaces map[string]*NamespacesScopeSubTree // keyed by namespace name
@@ -50,6 +52,8 @@ type ClustersScopeSubTree struct {
 // NamespacesScopeSubTree is a subtree of namespace scopes with their states.
 // Extras field can be used by clients to augment the tree with additional info
 // like namespace id, labels, etc.
+//
+// TODO(ROX-7952): Extras don't need to be interface{} any more.
 type NamespacesScopeSubTree struct {
 	State  ScopeState
 	Extras interface{}

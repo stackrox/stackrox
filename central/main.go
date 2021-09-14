@@ -156,6 +156,7 @@ import (
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
@@ -438,10 +439,17 @@ func startGRPCServer() {
 		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
 
+	// This adds an on-demand global tracing for the built-in authorization.
+	config.UnaryInterceptors = append(config.UnaryInterceptors,
+		// TODO(ROX-7953): Pass a Sink instance here.
+		observe.AuthzTraceInterceptor(),
+	)
+
 	// The below enrichers handle SAC being off or on.
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
-		centralSAC.GetEnricher().PreAuthContextEnricher,
+		// TODO(ROX-7953): Pass a proper Sink type & instance instead of bool here.
+		centralSAC.GetEnricher().GetPreAuthContextEnricher(true),
 	)
 	// After auth checks are run, we want to use the client (if available) to add scope checking.
 	config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,

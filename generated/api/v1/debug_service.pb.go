@@ -8,6 +8,7 @@ import (
 	fmt "fmt"
 	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
+	storage "github.com/stackrox/rox/generated/storage"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -26,6 +27,34 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
+
+type AuthorizationTraceResponse_Response_Status int32
+
+const (
+	AuthorizationTraceResponse_Response_UNKNOWN_STATUS AuthorizationTraceResponse_Response_Status = 0
+	AuthorizationTraceResponse_Response_SUCCESS        AuthorizationTraceResponse_Response_Status = 1
+	AuthorizationTraceResponse_Response_FAILURE        AuthorizationTraceResponse_Response_Status = 2
+)
+
+var AuthorizationTraceResponse_Response_Status_name = map[int32]string{
+	0: "UNKNOWN_STATUS",
+	1: "SUCCESS",
+	2: "FAILURE",
+}
+
+var AuthorizationTraceResponse_Response_Status_value = map[string]int32{
+	"UNKNOWN_STATUS": 0,
+	"SUCCESS":        1,
+	"FAILURE":        2,
+}
+
+func (x AuthorizationTraceResponse_Response_Status) String() string {
+	return proto.EnumName(AuthorizationTraceResponse_Response_Status_name, int32(x))
+}
+
+func (AuthorizationTraceResponse_Response_Status) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_a3778505c13ee937, []int{4, 1, 0}
+}
 
 type GetLogLevelRequest struct {
 	Modules              []string `protobuf:"bytes,1,rep,name=modules,proto3" json:"modules,omitempty"`
@@ -305,40 +334,753 @@ func (m *LogLevelResponse) Clone() *LogLevelResponse {
 	return cloned
 }
 
+type AuthorizationTraceResponse struct {
+	ArrivedAt            *types.Timestamp                     `protobuf:"bytes,1,opt,name=arrived_at,json=arrivedAt,proto3" json:"arrived_at,omitempty"`
+	ProcessedAt          *types.Timestamp                     `protobuf:"bytes,2,opt,name=processed_at,json=processedAt,proto3" json:"processed_at,omitempty"`
+	Request              *AuthorizationTraceResponse_Request  `protobuf:"bytes,3,opt,name=request,proto3" json:"request,omitempty"`
+	Response             *AuthorizationTraceResponse_Response `protobuf:"bytes,4,opt,name=response,proto3" json:"response,omitempty"`
+	User                 *AuthorizationTraceResponse_User     `protobuf:"bytes,5,opt,name=user,proto3" json:"user,omitempty"`
+	Trace                *AuthorizationTraceResponse_Trace    `protobuf:"bytes,6,opt,name=trace,proto3" json:"trace,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
+	XXX_unrecognized     []byte                               `json:"-"`
+	XXX_sizecache        int32                                `json:"-"`
+}
+
+func (m *AuthorizationTraceResponse) Reset()         { *m = AuthorizationTraceResponse{} }
+func (m *AuthorizationTraceResponse) String() string { return proto.CompactTextString(m) }
+func (*AuthorizationTraceResponse) ProtoMessage()    {}
+func (*AuthorizationTraceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a3778505c13ee937, []int{4}
+}
+func (m *AuthorizationTraceResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthorizationTraceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthorizationTraceResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthorizationTraceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthorizationTraceResponse.Merge(m, src)
+}
+func (m *AuthorizationTraceResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthorizationTraceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthorizationTraceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthorizationTraceResponse proto.InternalMessageInfo
+
+func (m *AuthorizationTraceResponse) GetArrivedAt() *types.Timestamp {
+	if m != nil {
+		return m.ArrivedAt
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse) GetProcessedAt() *types.Timestamp {
+	if m != nil {
+		return m.ProcessedAt
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse) GetRequest() *AuthorizationTraceResponse_Request {
+	if m != nil {
+		return m.Request
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse) GetResponse() *AuthorizationTraceResponse_Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse) GetUser() *AuthorizationTraceResponse_User {
+	if m != nil {
+		return m.User
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse) GetTrace() *AuthorizationTraceResponse_Trace {
+	if m != nil {
+		return m.Trace
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthorizationTraceResponse) Clone() *AuthorizationTraceResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthorizationTraceResponse)
+	*cloned = *m
+
+	cloned.ArrivedAt = m.ArrivedAt.Clone()
+	cloned.ProcessedAt = m.ProcessedAt.Clone()
+	cloned.Request = m.Request.Clone()
+	cloned.Response = m.Response.Clone()
+	cloned.User = m.User.Clone()
+	cloned.Trace = m.Trace.Clone()
+	return cloned
+}
+
+type AuthorizationTraceResponse_Request struct {
+	Endpoint             string   `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	Method               string   `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AuthorizationTraceResponse_Request) Reset()         { *m = AuthorizationTraceResponse_Request{} }
+func (m *AuthorizationTraceResponse_Request) String() string { return proto.CompactTextString(m) }
+func (*AuthorizationTraceResponse_Request) ProtoMessage()    {}
+func (*AuthorizationTraceResponse_Request) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a3778505c13ee937, []int{4, 0}
+}
+func (m *AuthorizationTraceResponse_Request) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthorizationTraceResponse_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthorizationTraceResponse_Request.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthorizationTraceResponse_Request) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthorizationTraceResponse_Request.Merge(m, src)
+}
+func (m *AuthorizationTraceResponse_Request) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthorizationTraceResponse_Request) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthorizationTraceResponse_Request.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthorizationTraceResponse_Request proto.InternalMessageInfo
+
+func (m *AuthorizationTraceResponse_Request) GetEndpoint() string {
+	if m != nil {
+		return m.Endpoint
+	}
+	return ""
+}
+
+func (m *AuthorizationTraceResponse_Request) GetMethod() string {
+	if m != nil {
+		return m.Method
+	}
+	return ""
+}
+
+func (m *AuthorizationTraceResponse_Request) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthorizationTraceResponse_Request) Clone() *AuthorizationTraceResponse_Request {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthorizationTraceResponse_Request)
+	*cloned = *m
+
+	return cloned
+}
+
+type AuthorizationTraceResponse_Response struct {
+	Status               AuthorizationTraceResponse_Response_Status `protobuf:"varint,1,opt,name=status,proto3,enum=v1.AuthorizationTraceResponse_Response_Status" json:"status,omitempty"`
+	Error                string                                     `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
+	XXX_unrecognized     []byte                                     `json:"-"`
+	XXX_sizecache        int32                                      `json:"-"`
+}
+
+func (m *AuthorizationTraceResponse_Response) Reset()         { *m = AuthorizationTraceResponse_Response{} }
+func (m *AuthorizationTraceResponse_Response) String() string { return proto.CompactTextString(m) }
+func (*AuthorizationTraceResponse_Response) ProtoMessage()    {}
+func (*AuthorizationTraceResponse_Response) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a3778505c13ee937, []int{4, 1}
+}
+func (m *AuthorizationTraceResponse_Response) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthorizationTraceResponse_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthorizationTraceResponse_Response.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthorizationTraceResponse_Response) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthorizationTraceResponse_Response.Merge(m, src)
+}
+func (m *AuthorizationTraceResponse_Response) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthorizationTraceResponse_Response) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthorizationTraceResponse_Response.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthorizationTraceResponse_Response proto.InternalMessageInfo
+
+func (m *AuthorizationTraceResponse_Response) GetStatus() AuthorizationTraceResponse_Response_Status {
+	if m != nil {
+		return m.Status
+	}
+	return AuthorizationTraceResponse_Response_UNKNOWN_STATUS
+}
+
+func (m *AuthorizationTraceResponse_Response) GetError() string {
+	if m != nil {
+		return m.Error
+	}
+	return ""
+}
+
+func (m *AuthorizationTraceResponse_Response) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthorizationTraceResponse_Response) Clone() *AuthorizationTraceResponse_Response {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthorizationTraceResponse_Response)
+	*cloned = *m
+
+	return cloned
+}
+
+type AuthorizationTraceResponse_User struct {
+	Username              string                                  `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	FriendlyName          string                                  `protobuf:"bytes,2,opt,name=friendly_name,json=friendlyName,proto3" json:"friendly_name,omitempty"`
+	AggregatedPermissions map[string]storage.Access               `protobuf:"bytes,3,rep,name=aggregated_permissions,json=aggregatedPermissions,proto3" json:"aggregated_permissions,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
+	Roles                 []*AuthorizationTraceResponse_User_Role `protobuf:"bytes,4,rep,name=roles,proto3" json:"roles,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{}                                `json:"-"`
+	XXX_unrecognized      []byte                                  `json:"-"`
+	XXX_sizecache         int32                                   `json:"-"`
+}
+
+func (m *AuthorizationTraceResponse_User) Reset()         { *m = AuthorizationTraceResponse_User{} }
+func (m *AuthorizationTraceResponse_User) String() string { return proto.CompactTextString(m) }
+func (*AuthorizationTraceResponse_User) ProtoMessage()    {}
+func (*AuthorizationTraceResponse_User) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a3778505c13ee937, []int{4, 2}
+}
+func (m *AuthorizationTraceResponse_User) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthorizationTraceResponse_User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthorizationTraceResponse_User.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthorizationTraceResponse_User) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthorizationTraceResponse_User.Merge(m, src)
+}
+func (m *AuthorizationTraceResponse_User) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthorizationTraceResponse_User) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthorizationTraceResponse_User.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthorizationTraceResponse_User proto.InternalMessageInfo
+
+func (m *AuthorizationTraceResponse_User) GetUsername() string {
+	if m != nil {
+		return m.Username
+	}
+	return ""
+}
+
+func (m *AuthorizationTraceResponse_User) GetFriendlyName() string {
+	if m != nil {
+		return m.FriendlyName
+	}
+	return ""
+}
+
+func (m *AuthorizationTraceResponse_User) GetAggregatedPermissions() map[string]storage.Access {
+	if m != nil {
+		return m.AggregatedPermissions
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse_User) GetRoles() []*AuthorizationTraceResponse_User_Role {
+	if m != nil {
+		return m.Roles
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse_User) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthorizationTraceResponse_User) Clone() *AuthorizationTraceResponse_User {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthorizationTraceResponse_User)
+	*cloned = *m
+
+	if m.AggregatedPermissions != nil {
+		cloned.AggregatedPermissions = make(map[string]storage.Access, len(m.AggregatedPermissions))
+		for k, v := range m.AggregatedPermissions {
+			cloned.AggregatedPermissions[k] = v
+		}
+	}
+	if m.Roles != nil {
+		cloned.Roles = make([]*AuthorizationTraceResponse_User_Role, len(m.Roles))
+		for idx, v := range m.Roles {
+			cloned.Roles[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type AuthorizationTraceResponse_User_Role struct {
+	Name                 string                           `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Permissions          map[string]storage.Access        `protobuf:"bytes,2,rep,name=permissions,proto3" json:"permissions,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
+	AccessScopeName      string                           `protobuf:"bytes,3,opt,name=access_scope_name,json=accessScopeName,proto3" json:"access_scope_name,omitempty"`
+	AccessScope          *storage.SimpleAccessScope_Rules `protobuf:"bytes,4,opt,name=access_scope,json=accessScope,proto3" json:"access_scope,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
+	XXX_unrecognized     []byte                           `json:"-"`
+	XXX_sizecache        int32                            `json:"-"`
+}
+
+func (m *AuthorizationTraceResponse_User_Role) Reset()         { *m = AuthorizationTraceResponse_User_Role{} }
+func (m *AuthorizationTraceResponse_User_Role) String() string { return proto.CompactTextString(m) }
+func (*AuthorizationTraceResponse_User_Role) ProtoMessage()    {}
+func (*AuthorizationTraceResponse_User_Role) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a3778505c13ee937, []int{4, 2, 0}
+}
+func (m *AuthorizationTraceResponse_User_Role) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthorizationTraceResponse_User_Role) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthorizationTraceResponse_User_Role.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthorizationTraceResponse_User_Role) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthorizationTraceResponse_User_Role.Merge(m, src)
+}
+func (m *AuthorizationTraceResponse_User_Role) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthorizationTraceResponse_User_Role) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthorizationTraceResponse_User_Role.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthorizationTraceResponse_User_Role proto.InternalMessageInfo
+
+func (m *AuthorizationTraceResponse_User_Role) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *AuthorizationTraceResponse_User_Role) GetPermissions() map[string]storage.Access {
+	if m != nil {
+		return m.Permissions
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse_User_Role) GetAccessScopeName() string {
+	if m != nil {
+		return m.AccessScopeName
+	}
+	return ""
+}
+
+func (m *AuthorizationTraceResponse_User_Role) GetAccessScope() *storage.SimpleAccessScope_Rules {
+	if m != nil {
+		return m.AccessScope
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse_User_Role) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthorizationTraceResponse_User_Role) Clone() *AuthorizationTraceResponse_User_Role {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthorizationTraceResponse_User_Role)
+	*cloned = *m
+
+	if m.Permissions != nil {
+		cloned.Permissions = make(map[string]storage.Access, len(m.Permissions))
+		for k, v := range m.Permissions {
+			cloned.Permissions[k] = v
+		}
+	}
+	cloned.AccessScope = m.AccessScope.Clone()
+	return cloned
+}
+
+type AuthorizationTraceResponse_Trace struct {
+	ScopeCheckerType string `protobuf:"bytes,1,opt,name=scope_checker_type,json=scopeCheckerType,proto3" json:"scope_checker_type,omitempty"`
+	// Types that are valid to be assigned to Authorizer:
+	//	*AuthorizationTraceResponse_Trace_BuiltIn
+	Authorizer           isAuthorizationTraceResponse_Trace_Authorizer `protobuf_oneof:"authorizer"`
+	XXX_NoUnkeyedLiteral struct{}                                      `json:"-"`
+	XXX_unrecognized     []byte                                        `json:"-"`
+	XXX_sizecache        int32                                         `json:"-"`
+}
+
+func (m *AuthorizationTraceResponse_Trace) Reset()         { *m = AuthorizationTraceResponse_Trace{} }
+func (m *AuthorizationTraceResponse_Trace) String() string { return proto.CompactTextString(m) }
+func (*AuthorizationTraceResponse_Trace) ProtoMessage()    {}
+func (*AuthorizationTraceResponse_Trace) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a3778505c13ee937, []int{4, 3}
+}
+func (m *AuthorizationTraceResponse_Trace) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthorizationTraceResponse_Trace) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthorizationTraceResponse_Trace.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthorizationTraceResponse_Trace) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthorizationTraceResponse_Trace.Merge(m, src)
+}
+func (m *AuthorizationTraceResponse_Trace) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthorizationTraceResponse_Trace) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthorizationTraceResponse_Trace.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthorizationTraceResponse_Trace proto.InternalMessageInfo
+
+type isAuthorizationTraceResponse_Trace_Authorizer interface {
+	isAuthorizationTraceResponse_Trace_Authorizer()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isAuthorizationTraceResponse_Trace_Authorizer
+}
+
+type AuthorizationTraceResponse_Trace_BuiltIn struct {
+	BuiltIn *AuthorizationTraceResponse_Trace_BuiltInAuthorizer `protobuf:"bytes,2,opt,name=built_in,json=builtIn,proto3,oneof" json:"built_in,omitempty"`
+}
+
+func (*AuthorizationTraceResponse_Trace_BuiltIn) isAuthorizationTraceResponse_Trace_Authorizer() {}
+func (m *AuthorizationTraceResponse_Trace_BuiltIn) Clone() isAuthorizationTraceResponse_Trace_Authorizer {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthorizationTraceResponse_Trace_BuiltIn)
+	*cloned = *m
+
+	cloned.BuiltIn = m.BuiltIn.Clone()
+	return cloned
+}
+
+func (m *AuthorizationTraceResponse_Trace) GetAuthorizer() isAuthorizationTraceResponse_Trace_Authorizer {
+	if m != nil {
+		return m.Authorizer
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse_Trace) GetScopeCheckerType() string {
+	if m != nil {
+		return m.ScopeCheckerType
+	}
+	return ""
+}
+
+func (m *AuthorizationTraceResponse_Trace) GetBuiltIn() *AuthorizationTraceResponse_Trace_BuiltInAuthorizer {
+	if x, ok := m.GetAuthorizer().(*AuthorizationTraceResponse_Trace_BuiltIn); ok {
+		return x.BuiltIn
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*AuthorizationTraceResponse_Trace) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*AuthorizationTraceResponse_Trace_BuiltIn)(nil),
+	}
+}
+
+func (m *AuthorizationTraceResponse_Trace) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthorizationTraceResponse_Trace) Clone() *AuthorizationTraceResponse_Trace {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthorizationTraceResponse_Trace)
+	*cloned = *m
+
+	if m.Authorizer != nil {
+		cloned.Authorizer = m.Authorizer.Clone()
+	}
+	return cloned
+}
+
+type AuthorizationTraceResponse_Trace_BuiltInAuthorizer struct {
+	ClustersTotalNum      int32             `protobuf:"varint,1,opt,name=clusters_total_num,json=clustersTotalNum,proto3" json:"clusters_total_num,omitempty"`
+	NamespacesTotalNum    int32             `protobuf:"varint,2,opt,name=namespaces_total_num,json=namespacesTotalNum,proto3" json:"namespaces_total_num,omitempty"`
+	DeniedAuthzDecisions  map[string]int32  `protobuf:"bytes,3,rep,name=denied_authz_decisions,json=deniedAuthzDecisions,proto3" json:"denied_authz_decisions,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+	AllowedAuthzDecisions map[string]int32  `protobuf:"bytes,4,rep,name=allowed_authz_decisions,json=allowedAuthzDecisions,proto3" json:"allowed_authz_decisions,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+	EffectiveAccessScopes map[string]string `protobuf:"bytes,5,rep,name=effective_access_scopes,json=effectiveAccessScopes,proto3" json:"effective_access_scopes,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral  struct{}          `json:"-"`
+	XXX_unrecognized      []byte            `json:"-"`
+	XXX_sizecache         int32             `json:"-"`
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Reset() {
+	*m = AuthorizationTraceResponse_Trace_BuiltInAuthorizer{}
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) String() string {
+	return proto.CompactTextString(m)
+}
+func (*AuthorizationTraceResponse_Trace_BuiltInAuthorizer) ProtoMessage() {}
+func (*AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a3778505c13ee937, []int{4, 3, 0}
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthorizationTraceResponse_Trace_BuiltInAuthorizer.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthorizationTraceResponse_Trace_BuiltInAuthorizer.Merge(m, src)
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthorizationTraceResponse_Trace_BuiltInAuthorizer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthorizationTraceResponse_Trace_BuiltInAuthorizer proto.InternalMessageInfo
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) GetClustersTotalNum() int32 {
+	if m != nil {
+		return m.ClustersTotalNum
+	}
+	return 0
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) GetNamespacesTotalNum() int32 {
+	if m != nil {
+		return m.NamespacesTotalNum
+	}
+	return 0
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) GetDeniedAuthzDecisions() map[string]int32 {
+	if m != nil {
+		return m.DeniedAuthzDecisions
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) GetAllowedAuthzDecisions() map[string]int32 {
+	if m != nil {
+		return m.AllowedAuthzDecisions
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) GetEffectiveAccessScopes() map[string]string {
+	if m != nil {
+		return m.EffectiveAccessScopes
+	}
+	return nil
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Clone() *AuthorizationTraceResponse_Trace_BuiltInAuthorizer {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthorizationTraceResponse_Trace_BuiltInAuthorizer)
+	*cloned = *m
+
+	if m.DeniedAuthzDecisions != nil {
+		cloned.DeniedAuthzDecisions = make(map[string]int32, len(m.DeniedAuthzDecisions))
+		for k, v := range m.DeniedAuthzDecisions {
+			cloned.DeniedAuthzDecisions[k] = v
+		}
+	}
+	if m.AllowedAuthzDecisions != nil {
+		cloned.AllowedAuthzDecisions = make(map[string]int32, len(m.AllowedAuthzDecisions))
+		for k, v := range m.AllowedAuthzDecisions {
+			cloned.AllowedAuthzDecisions[k] = v
+		}
+	}
+	if m.EffectiveAccessScopes != nil {
+		cloned.EffectiveAccessScopes = make(map[string]string, len(m.EffectiveAccessScopes))
+		for k, v := range m.EffectiveAccessScopes {
+			cloned.EffectiveAccessScopes[k] = v
+		}
+	}
+	return cloned
+}
+
 func init() {
+	proto.RegisterEnum("v1.AuthorizationTraceResponse_Response_Status", AuthorizationTraceResponse_Response_Status_name, AuthorizationTraceResponse_Response_Status_value)
 	proto.RegisterType((*GetLogLevelRequest)(nil), "v1.GetLogLevelRequest")
 	proto.RegisterType((*LogLevelRequest)(nil), "v1.LogLevelRequest")
 	proto.RegisterType((*ModuleLevel)(nil), "v1.ModuleLevel")
 	proto.RegisterType((*LogLevelResponse)(nil), "v1.LogLevelResponse")
+	proto.RegisterType((*AuthorizationTraceResponse)(nil), "v1.AuthorizationTraceResponse")
+	proto.RegisterType((*AuthorizationTraceResponse_Request)(nil), "v1.AuthorizationTraceResponse.Request")
+	proto.RegisterType((*AuthorizationTraceResponse_Response)(nil), "v1.AuthorizationTraceResponse.Response")
+	proto.RegisterType((*AuthorizationTraceResponse_User)(nil), "v1.AuthorizationTraceResponse.User")
+	proto.RegisterMapType((map[string]storage.Access)(nil), "v1.AuthorizationTraceResponse.User.AggregatedPermissionsEntry")
+	proto.RegisterType((*AuthorizationTraceResponse_User_Role)(nil), "v1.AuthorizationTraceResponse.User.Role")
+	proto.RegisterMapType((map[string]storage.Access)(nil), "v1.AuthorizationTraceResponse.User.Role.PermissionsEntry")
+	proto.RegisterType((*AuthorizationTraceResponse_Trace)(nil), "v1.AuthorizationTraceResponse.Trace")
+	proto.RegisterType((*AuthorizationTraceResponse_Trace_BuiltInAuthorizer)(nil), "v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer")
+	proto.RegisterMapType((map[string]int32)(nil), "v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.AllowedAuthzDecisionsEntry")
+	proto.RegisterMapType((map[string]int32)(nil), "v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.DeniedAuthzDecisionsEntry")
+	proto.RegisterMapType((map[string]string)(nil), "v1.AuthorizationTraceResponse.Trace.BuiltInAuthorizer.EffectiveAccessScopesEntry")
 }
 
 func init() { proto.RegisterFile("api/v1/debug_service.proto", fileDescriptor_a3778505c13ee937) }
 
 var fileDescriptor_a3778505c13ee937 = []byte{
-	// 361 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x91, 0xbf, 0x4e, 0xc3, 0x30,
-	0x10, 0xc6, 0xeb, 0x20, 0x8a, 0xea, 0x14, 0x15, 0x99, 0xaa, 0x44, 0x01, 0xa2, 0x2a, 0x53, 0xc5,
-	0xe0, 0x28, 0x85, 0x09, 0x26, 0x10, 0x88, 0xa5, 0x2c, 0xe9, 0xc0, 0x9f, 0x81, 0x2a, 0x6d, 0x4d,
-	0x14, 0x91, 0xc6, 0xa1, 0x76, 0x2c, 0x58, 0x79, 0x05, 0x16, 0x9e, 0x87, 0x89, 0x11, 0x89, 0x17,
-	0x40, 0x85, 0x07, 0x41, 0x8e, 0x5b, 0x92, 0x16, 0xd8, 0xfc, 0xf9, 0xee, 0x7e, 0x77, 0xfa, 0x3e,
-	0x68, 0xfa, 0x49, 0xe8, 0x08, 0xd7, 0x19, 0x92, 0x7e, 0x1a, 0xf4, 0x18, 0x19, 0x8b, 0x70, 0x40,
-	0x70, 0x32, 0xa6, 0x9c, 0x22, 0x4d, 0xb8, 0xe6, 0x56, 0x40, 0x69, 0x10, 0x11, 0x47, 0xb6, 0xf9,
-	0x71, 0x4c, 0xb9, 0xcf, 0x43, 0x1a, 0x33, 0xd5, 0x61, 0x6e, 0x4e, 0xab, 0x99, 0xea, 0xa7, 0x37,
-	0x0e, 0x19, 0x25, 0xfc, 0x41, 0x15, 0x6d, 0x0c, 0xd1, 0x29, 0xe1, 0x1d, 0x1a, 0x74, 0x88, 0x20,
-	0x91, 0x47, 0xee, 0x52, 0xc2, 0x38, 0x32, 0xe0, 0xca, 0x88, 0x0e, 0xd3, 0x88, 0x30, 0x03, 0x34,
-	0x97, 0x5a, 0x15, 0x6f, 0x26, 0xed, 0x43, 0x58, 0x5b, 0x6c, 0xae, 0xc3, 0xe5, 0x48, 0x6a, 0x03,
-	0x34, 0x41, 0xab, 0xe2, 0x29, 0x51, 0x44, 0x68, 0xf3, 0x88, 0x03, 0xa8, 0x9f, 0x65, 0xcf, 0x8c,
-	0x82, 0x1a, 0xb0, 0xac, 0x2a, 0xd3, 0xf9, 0xa9, 0xca, 0xb1, 0x5a, 0x01, 0x6b, 0x5f, 0xc3, 0xb5,
-	0x7c, 0x3f, 0x4b, 0x68, 0xcc, 0xc8, 0x3f, 0x07, 0xec, 0xc1, 0x55, 0x45, 0xea, 0x65, 0x5a, 0x9d,
-	0xa1, 0xb7, 0x6b, 0x58, 0xb8, 0xb8, 0xb0, 0xdf, 0xab, 0x8e, 0x72, 0xc1, 0xda, 0x2f, 0x00, 0x56,
-	0x8f, 0xa5, 0xcd, 0x5d, 0xe5, 0x32, 0x3a, 0x87, 0x7a, 0xc1, 0x20, 0xd4, 0x90, 0xe3, 0xbf, 0x1d,
-	0x33, 0xeb, 0xf2, 0x7f, 0xf1, 0x32, 0xdb, 0x7c, 0x7c, 0xff, 0x7a, 0xd2, 0xea, 0x08, 0xfd, 0xa4,
-	0xe7, 0x44, 0x32, 0x0b, 0x49, 0xba, 0x84, 0x7a, 0xb7, 0x00, 0x5e, 0x9f, 0x07, 0x28, 0x6a, 0x03,
-	0xab, 0xec, 0xf0, 0x2c, 0x3b, 0x7c, 0x22, 0xb3, 0xb3, 0xb7, 0x33, 0xee, 0x46, 0xfb, 0x0f, 0xee,
-	0x3e, 0xd8, 0x39, 0xc2, 0xaf, 0x13, 0x0b, 0xbc, 0x4d, 0x2c, 0xf0, 0x31, 0xb1, 0xc0, 0xf3, 0xa7,
-	0x55, 0x82, 0x46, 0x48, 0x31, 0xe3, 0xfe, 0xe0, 0x76, 0x4c, 0xef, 0x15, 0x0c, 0xfb, 0x49, 0x88,
-	0x85, 0x7b, 0xa5, 0x09, 0xf7, 0xa2, 0xd4, 0x2f, 0x67, 0x7f, 0xbb, 0xdf, 0x01, 0x00, 0x00, 0xff,
-	0xff, 0x29, 0x81, 0xef, 0x9d, 0x6a, 0x02, 0x00, 0x00,
+	// 1108 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x56, 0xdd, 0x6e, 0x1b, 0x45,
+	0x14, 0xce, 0x3a, 0x76, 0x9c, 0x1c, 0xbb, 0x8d, 0x3b, 0xb8, 0xa9, 0x59, 0x20, 0x44, 0x2e, 0x3f,
+	0x51, 0x85, 0xd6, 0xc4, 0xa0, 0x42, 0x83, 0x5a, 0xe1, 0xfc, 0xf4, 0x47, 0x84, 0xb4, 0xec, 0x3a,
+	0x2a, 0x05, 0x89, 0xd5, 0x64, 0x3d, 0x71, 0x56, 0x59, 0xef, 0x2c, 0x33, 0xb3, 0x06, 0xe7, 0x92,
+	0x0b, 0x24, 0x24, 0xee, 0x10, 0x12, 0x12, 0x37, 0xbc, 0x06, 0xb7, 0x5c, 0x71, 0x89, 0xc4, 0x0b,
+	0xa0, 0xc0, 0x0b, 0xf0, 0x06, 0x68, 0x66, 0x76, 0xd7, 0xdb, 0xc4, 0x56, 0x42, 0x7b, 0x37, 0x67,
+	0xbe, 0xf3, 0x7d, 0xe7, 0xcc, 0x99, 0x33, 0xa3, 0x03, 0x26, 0x8e, 0xfc, 0xd6, 0x70, 0xad, 0xd5,
+	0x23, 0xfb, 0x71, 0xdf, 0xe5, 0x84, 0x0d, 0x7d, 0x8f, 0x58, 0x11, 0xa3, 0x82, 0xa2, 0xc2, 0x70,
+	0xcd, 0x7c, 0xb9, 0x4f, 0x69, 0x3f, 0x20, 0x2d, 0xe9, 0x86, 0xc3, 0x90, 0x0a, 0x2c, 0x7c, 0x1a,
+	0x72, 0xed, 0x61, 0xbe, 0x94, 0xa0, 0xca, 0xda, 0x8f, 0x0f, 0x5a, 0x64, 0x10, 0x89, 0x51, 0x02,
+	0xbe, 0x7a, 0x1a, 0x14, 0xfe, 0x80, 0x70, 0x81, 0x07, 0x51, 0xe2, 0x80, 0xb8, 0xa0, 0x0c, 0xf7,
+	0x49, 0x8b, 0xd1, 0x20, 0x89, 0xd9, 0xb4, 0x00, 0xdd, 0x23, 0x62, 0x87, 0xf6, 0x77, 0xc8, 0x90,
+	0x04, 0x36, 0xf9, 0x32, 0x26, 0x5c, 0xa0, 0x06, 0x94, 0x07, 0xb4, 0x17, 0x07, 0x84, 0x37, 0x8c,
+	0x95, 0xd9, 0xd5, 0x05, 0x3b, 0x35, 0x9b, 0x1d, 0x58, 0x3c, 0xed, 0x5c, 0x87, 0x52, 0x20, 0xed,
+	0x86, 0xb1, 0x62, 0xac, 0x2e, 0xd8, 0xda, 0xc8, 0x4b, 0x14, 0x9e, 0x96, 0xf8, 0x00, 0x2a, 0x1f,
+	0xab, 0xa5, 0x52, 0x41, 0x4b, 0x30, 0xa7, 0x91, 0x84, 0x9f, 0x58, 0x63, 0xd9, 0x42, 0x4e, 0xb6,
+	0xf9, 0x05, 0xd4, 0xc6, 0xf1, 0x79, 0x44, 0x43, 0x4e, 0xa6, 0x24, 0xf0, 0x2e, 0x5c, 0xd2, 0x4a,
+	0xae, 0xb2, 0x75, 0x1a, 0x95, 0xf6, 0xa2, 0x35, 0x5c, 0xb3, 0x72, 0xf1, 0xed, 0xea, 0x60, 0x6c,
+	0xf0, 0xe6, 0xcf, 0x57, 0xc0, 0xec, 0xc4, 0xe2, 0x90, 0x32, 0xff, 0x58, 0x95, 0xbe, 0xcb, 0xb0,
+	0x47, 0xb2, 0x50, 0xb7, 0x00, 0x30, 0x63, 0xfe, 0x90, 0xf4, 0x5c, 0x2c, 0x54, 0xbc, 0x4a, 0xdb,
+	0xb4, 0x74, 0xe1, 0xad, 0xb4, 0xf0, 0x56, 0x37, 0x2d, 0xbc, 0xbd, 0x90, 0x78, 0x77, 0x04, 0xba,
+	0x0d, 0xd5, 0x88, 0x51, 0x8f, 0x70, 0xae, 0xc9, 0x85, 0x73, 0xc9, 0x95, 0xcc, 0xbf, 0x23, 0xd0,
+	0x87, 0x50, 0x66, 0xba, 0xe0, 0x8d, 0x59, 0xc5, 0x7c, 0x43, 0x1e, 0x64, 0x7a, 0xaa, 0x56, 0x72,
+	0x3d, 0x76, 0x4a, 0x43, 0x9b, 0x30, 0xcf, 0x12, 0xb0, 0x51, 0x54, 0x12, 0x6f, 0x9e, 0x2b, 0xa1,
+	0x17, 0x76, 0x46, 0x44, 0xef, 0x41, 0x31, 0xe6, 0x84, 0x35, 0x4a, 0x4a, 0xe0, 0xfa, 0x39, 0x02,
+	0x7b, 0x9c, 0x30, 0x5b, 0x11, 0xd0, 0x3a, 0x94, 0x84, 0xc4, 0x1a, 0x73, 0x8a, 0xf9, 0xda, 0x39,
+	0x4c, 0x6d, 0x69, 0x8a, 0x79, 0x1b, 0xca, 0x69, 0xb3, 0x99, 0x30, 0x4f, 0xc2, 0x5e, 0x44, 0xfd,
+	0x50, 0x24, 0xd7, 0x9d, 0xd9, 0xaa, 0x93, 0x88, 0x38, 0xa4, 0xbd, 0xa4, 0x65, 0x12, 0xcb, 0xfc,
+	0xc5, 0x80, 0xf9, 0xec, 0x06, 0xef, 0xc2, 0x1c, 0x17, 0x58, 0xc4, 0x5c, 0xd1, 0x2f, 0xb7, 0xad,
+	0x0b, 0xd6, 0xc0, 0x72, 0x14, 0xcb, 0x4e, 0xd8, 0xb2, 0xe9, 0x08, 0x63, 0x94, 0xa5, 0xed, 0xa9,
+	0x8c, 0xe6, 0x4d, 0x98, 0xd3, 0x7e, 0x08, 0xc1, 0xe5, 0xbd, 0xdd, 0x8f, 0x76, 0x1f, 0x3e, 0xde,
+	0x75, 0x9d, 0x6e, 0xa7, 0xbb, 0xe7, 0xd4, 0x66, 0x50, 0x05, 0xca, 0xce, 0xde, 0xe6, 0xe6, 0xb6,
+	0xe3, 0xd4, 0x0c, 0x69, 0xdc, 0xed, 0x3c, 0xd8, 0xd9, 0xb3, 0xb7, 0x6b, 0x05, 0xf3, 0xc7, 0x12,
+	0x14, 0x65, 0xb1, 0xe4, 0xf9, 0x64, 0xb9, 0x42, 0x3c, 0x48, 0xdf, 0x43, 0x66, 0xa3, 0xeb, 0x70,
+	0xe9, 0x80, 0xf9, 0x24, 0xec, 0x05, 0x23, 0x57, 0x39, 0xe8, 0xd0, 0xd5, 0x74, 0x73, 0x57, 0x3a,
+	0xc5, 0xb0, 0x84, 0xfb, 0x7d, 0x46, 0xfa, 0x58, 0x90, 0x9e, 0x1b, 0x11, 0x36, 0xf0, 0x39, 0x97,
+	0x5f, 0x48, 0x63, 0x56, 0xf5, 0xff, 0x9d, 0x0b, 0x5c, 0x99, 0xd5, 0xc9, 0x14, 0x1e, 0x8d, 0x05,
+	0xb6, 0x43, 0xc1, 0x46, 0xf6, 0x55, 0x3c, 0x09, 0x43, 0x77, 0xa0, 0x24, 0x7f, 0x15, 0xde, 0x28,
+	0xaa, 0x28, 0xab, 0x17, 0x89, 0x62, 0xd3, 0x80, 0xd8, 0x9a, 0x66, 0xfe, 0x5a, 0x80, 0xa2, 0xb4,
+	0x11, 0x82, 0x62, 0xee, 0xf0, 0x6a, 0x8d, 0x3e, 0x87, 0x4a, 0xfe, 0x20, 0xfa, 0x21, 0xdf, 0xba,
+	0x68, 0x08, 0xeb, 0xcc, 0x19, 0xf2, 0x6a, 0xe8, 0x06, 0x5c, 0xc1, 0x9e, 0x7c, 0x66, 0x2e, 0xf7,
+	0x68, 0x44, 0x74, 0x65, 0x67, 0x55, 0xf4, 0x45, 0x0d, 0x38, 0x72, 0x5f, 0x15, 0x77, 0x13, 0xaa,
+	0x79, 0xdf, 0xe4, 0x19, 0xad, 0x58, 0xc9, 0xc7, 0x6a, 0x39, 0xfe, 0x20, 0x0a, 0x48, 0x67, 0xcc,
+	0xb2, 0x6c, 0xf9, 0xe5, 0xd9, 0x95, 0x9c, 0x90, 0xf9, 0x10, 0x6a, 0xa7, 0x33, 0x42, 0x35, 0x98,
+	0x3d, 0x22, 0xa3, 0xe4, 0xd0, 0x72, 0x89, 0x5e, 0x87, 0xd2, 0x10, 0x07, 0xb1, 0xbe, 0xe4, 0xcb,
+	0xed, 0xc5, 0x2c, 0x86, 0x56, 0xb7, 0x35, 0xba, 0x5e, 0x78, 0xdf, 0x30, 0x9f, 0x80, 0x39, 0xfd,
+	0xc2, 0x9e, 0x4f, 0xfa, 0xfb, 0x32, 0x94, 0x54, 0x59, 0xd1, 0x5b, 0x80, 0x74, 0x7d, 0xbc, 0x43,
+	0xe2, 0x1d, 0x11, 0xe6, 0x8a, 0x51, 0x94, 0xde, 0x52, 0x4d, 0x21, 0x9b, 0x1a, 0xe8, 0x8e, 0x22,
+	0x82, 0x1c, 0x98, 0xdf, 0x8f, 0xfd, 0x40, 0xb8, 0x7e, 0x98, 0x7c, 0x74, 0x37, 0x2f, 0xf2, 0xe0,
+	0xad, 0x0d, 0x49, 0x7a, 0x10, 0xa6, 0x7e, 0x84, 0xdd, 0x9f, 0xb1, 0xcb, 0xfb, 0x7a, 0xd3, 0xfc,
+	0xb7, 0x04, 0x57, 0xce, 0x38, 0xc8, 0xc4, 0xbc, 0x20, 0xe6, 0x82, 0x30, 0xee, 0x0a, 0x2a, 0x70,
+	0xe0, 0x86, 0xf1, 0x40, 0x25, 0x56, 0xb2, 0x6b, 0x29, 0xd2, 0x95, 0xc0, 0x6e, 0x3c, 0x40, 0x6f,
+	0x43, 0x5d, 0x5e, 0x30, 0x8f, 0xb0, 0x47, 0xf2, 0xfe, 0x05, 0xe5, 0x8f, 0xc6, 0x58, 0xc6, 0xf8,
+	0xd6, 0x80, 0xa5, 0x1e, 0x09, 0x7d, 0xf9, 0x6b, 0xc7, 0xe2, 0xf0, 0xd8, 0xed, 0x11, 0xcf, 0xcf,
+	0xbf, 0xa8, 0x47, 0xcf, 0x76, 0x32, 0x6b, 0x4b, 0x89, 0xca, 0x8d, 0xe3, 0xad, 0x54, 0x52, 0xf7,
+	0x67, 0xbd, 0x37, 0x01, 0x42, 0xdf, 0x19, 0x70, 0x0d, 0x07, 0x01, 0xfd, 0x6a, 0x42, 0x26, 0xfa,
+	0xd5, 0x7d, 0xf2, 0x8c, 0x99, 0x74, 0xb4, 0xea, 0xa4, 0x54, 0xae, 0xe2, 0x49, 0x98, 0xca, 0x85,
+	0x1c, 0x1c, 0x10, 0x4f, 0xf8, 0x43, 0xe2, 0xe6, 0xdf, 0x04, 0x6f, 0x94, 0x9e, 0x2b, 0x97, 0xed,
+	0x54, 0x35, 0xf7, 0x8a, 0xd2, 0x5c, 0xc8, 0x24, 0xcc, 0xbc, 0x07, 0x2f, 0x4e, 0x2d, 0xe5, 0x84,
+	0xee, 0xaf, 0xe7, 0xbb, 0xbf, 0x94, 0x6f, 0xf6, 0xfb, 0x60, 0x4e, 0xaf, 0xc4, 0xff, 0x55, 0x9a,
+	0x7e, 0x8e, 0xf3, 0x94, 0x16, 0x72, 0x4a, 0x1b, 0x55, 0x00, 0x9c, 0x15, 0xa7, 0xfd, 0x9b, 0x01,
+	0xd5, 0x2d, 0x39, 0x39, 0x3a, 0x7a, 0x70, 0x44, 0x8f, 0xa1, 0x92, 0x1b, 0xdf, 0xd0, 0x92, 0x2c,
+	0xfa, 0xd9, 0x79, 0xce, 0xac, 0xcb, 0xfd, 0xd3, 0x73, 0x53, 0xd3, 0xfc, 0xe6, 0xcf, 0x7f, 0x7e,
+	0x28, 0xd4, 0x11, 0xca, 0x06, 0xd2, 0x56, 0x20, 0x67, 0x11, 0xa9, 0xf4, 0x04, 0x2a, 0x4e, 0x4e,
+	0xf8, 0x85, 0xa7, 0x05, 0xb4, 0xea, 0xd2, 0x99, 0xd9, 0x65, 0x5b, 0x8e, 0xa3, 0xcd, 0x57, 0x94,
+	0xee, 0xb5, 0xf6, 0x04, 0xdd, 0x75, 0xe3, 0xc6, 0x86, 0xf5, 0xfb, 0xc9, 0xb2, 0xf1, 0xc7, 0xc9,
+	0xb2, 0xf1, 0xd7, 0xc9, 0xb2, 0xf1, 0xd3, 0xdf, 0xcb, 0x33, 0xd0, 0xf0, 0xa9, 0xc5, 0x05, 0xf6,
+	0x8e, 0x18, 0xfd, 0x5a, 0x8b, 0x59, 0x38, 0xf2, 0xad, 0xe1, 0xda, 0x67, 0x85, 0xe1, 0xda, 0xa7,
+	0x33, 0xfb, 0x73, 0x6a, 0xef, 0x9d, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff, 0xc4, 0x08, 0xa2, 0x5d,
+	0x3d, 0x0b, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -629,6 +1371,481 @@ func (m *LogLevelResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *AuthorizationTraceResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthorizationTraceResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthorizationTraceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Trace != nil {
+		{
+			size, err := m.Trace.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDebugService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.User != nil {
+		{
+			size, err := m.User.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDebugService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.Response != nil {
+		{
+			size, err := m.Response.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDebugService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.Request != nil {
+		{
+			size, err := m.Request.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDebugService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.ProcessedAt != nil {
+		{
+			size, err := m.ProcessedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDebugService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ArrivedAt != nil {
+		{
+			size, err := m.ArrivedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDebugService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthorizationTraceResponse_Request) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthorizationTraceResponse_Request) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthorizationTraceResponse_Request) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Method) > 0 {
+		i -= len(m.Method)
+		copy(dAtA[i:], m.Method)
+		i = encodeVarintDebugService(dAtA, i, uint64(len(m.Method)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Endpoint) > 0 {
+		i -= len(m.Endpoint)
+		copy(dAtA[i:], m.Endpoint)
+		i = encodeVarintDebugService(dAtA, i, uint64(len(m.Endpoint)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthorizationTraceResponse_Response) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthorizationTraceResponse_Response) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthorizationTraceResponse_Response) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Error) > 0 {
+		i -= len(m.Error)
+		copy(dAtA[i:], m.Error)
+		i = encodeVarintDebugService(dAtA, i, uint64(len(m.Error)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Status != 0 {
+		i = encodeVarintDebugService(dAtA, i, uint64(m.Status))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthorizationTraceResponse_User) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthorizationTraceResponse_User) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthorizationTraceResponse_User) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Roles) > 0 {
+		for iNdEx := len(m.Roles) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Roles[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintDebugService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.AggregatedPermissions) > 0 {
+		for k := range m.AggregatedPermissions {
+			v := m.AggregatedPermissions[k]
+			baseI := i
+			i = encodeVarintDebugService(dAtA, i, uint64(v))
+			i--
+			dAtA[i] = 0x10
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintDebugService(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintDebugService(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.FriendlyName) > 0 {
+		i -= len(m.FriendlyName)
+		copy(dAtA[i:], m.FriendlyName)
+		i = encodeVarintDebugService(dAtA, i, uint64(len(m.FriendlyName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Username) > 0 {
+		i -= len(m.Username)
+		copy(dAtA[i:], m.Username)
+		i = encodeVarintDebugService(dAtA, i, uint64(len(m.Username)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthorizationTraceResponse_User_Role) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthorizationTraceResponse_User_Role) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthorizationTraceResponse_User_Role) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.AccessScope != nil {
+		{
+			size, err := m.AccessScope.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDebugService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.AccessScopeName) > 0 {
+		i -= len(m.AccessScopeName)
+		copy(dAtA[i:], m.AccessScopeName)
+		i = encodeVarintDebugService(dAtA, i, uint64(len(m.AccessScopeName)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Permissions) > 0 {
+		for k := range m.Permissions {
+			v := m.Permissions[k]
+			baseI := i
+			i = encodeVarintDebugService(dAtA, i, uint64(v))
+			i--
+			dAtA[i] = 0x10
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintDebugService(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintDebugService(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintDebugService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthorizationTraceResponse_Trace) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthorizationTraceResponse_Trace) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthorizationTraceResponse_Trace) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Authorizer != nil {
+		{
+			size := m.Authorizer.Size()
+			i -= size
+			if _, err := m.Authorizer.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.ScopeCheckerType) > 0 {
+		i -= len(m.ScopeCheckerType)
+		copy(dAtA[i:], m.ScopeCheckerType)
+		i = encodeVarintDebugService(dAtA, i, uint64(len(m.ScopeCheckerType)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltIn) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltIn) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.BuiltIn != nil {
+		{
+			size, err := m.BuiltIn.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintDebugService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.EffectiveAccessScopes) > 0 {
+		for k := range m.EffectiveAccessScopes {
+			v := m.EffectiveAccessScopes[k]
+			baseI := i
+			i -= len(v)
+			copy(dAtA[i:], v)
+			i = encodeVarintDebugService(dAtA, i, uint64(len(v)))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintDebugService(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintDebugService(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
+	if len(m.AllowedAuthzDecisions) > 0 {
+		for k := range m.AllowedAuthzDecisions {
+			v := m.AllowedAuthzDecisions[k]
+			baseI := i
+			i = encodeVarintDebugService(dAtA, i, uint64(v))
+			i--
+			dAtA[i] = 0x10
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintDebugService(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintDebugService(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.DeniedAuthzDecisions) > 0 {
+		for k := range m.DeniedAuthzDecisions {
+			v := m.DeniedAuthzDecisions[k]
+			baseI := i
+			i = encodeVarintDebugService(dAtA, i, uint64(v))
+			i--
+			dAtA[i] = 0x10
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintDebugService(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintDebugService(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if m.NamespacesTotalNum != 0 {
+		i = encodeVarintDebugService(dAtA, i, uint64(m.NamespacesTotalNum))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.ClustersTotalNum != 0 {
+		i = encodeVarintDebugService(dAtA, i, uint64(m.ClustersTotalNum))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintDebugService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovDebugService(v)
 	base := offset
@@ -714,6 +1931,220 @@ func (m *LogLevelResponse) Size() (n int) {
 		for _, e := range m.ModuleLevels {
 			l = e.Size()
 			n += 1 + l + sovDebugService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AuthorizationTraceResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ArrivedAt != nil {
+		l = m.ArrivedAt.Size()
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.ProcessedAt != nil {
+		l = m.ProcessedAt.Size()
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.Request != nil {
+		l = m.Request.Size()
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.Response != nil {
+		l = m.Response.Size()
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.User != nil {
+		l = m.User.Size()
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.Trace != nil {
+		l = m.Trace.Size()
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AuthorizationTraceResponse_Request) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Endpoint)
+	if l > 0 {
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	l = len(m.Method)
+	if l > 0 {
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AuthorizationTraceResponse_Response) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Status != 0 {
+		n += 1 + sovDebugService(uint64(m.Status))
+	}
+	l = len(m.Error)
+	if l > 0 {
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AuthorizationTraceResponse_User) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Username)
+	if l > 0 {
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	l = len(m.FriendlyName)
+	if l > 0 {
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if len(m.AggregatedPermissions) > 0 {
+		for k, v := range m.AggregatedPermissions {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovDebugService(uint64(len(k))) + 1 + sovDebugService(uint64(v))
+			n += mapEntrySize + 1 + sovDebugService(uint64(mapEntrySize))
+		}
+	}
+	if len(m.Roles) > 0 {
+		for _, e := range m.Roles {
+			l = e.Size()
+			n += 1 + l + sovDebugService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AuthorizationTraceResponse_User_Role) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if len(m.Permissions) > 0 {
+		for k, v := range m.Permissions {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovDebugService(uint64(len(k))) + 1 + sovDebugService(uint64(v))
+			n += mapEntrySize + 1 + sovDebugService(uint64(mapEntrySize))
+		}
+	}
+	l = len(m.AccessScopeName)
+	if l > 0 {
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.AccessScope != nil {
+		l = m.AccessScope.Size()
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AuthorizationTraceResponse_Trace) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ScopeCheckerType)
+	if l > 0 {
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	if m.Authorizer != nil {
+		n += m.Authorizer.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AuthorizationTraceResponse_Trace_BuiltIn) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BuiltIn != nil {
+		l = m.BuiltIn.Size()
+		n += 1 + l + sovDebugService(uint64(l))
+	}
+	return n
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ClustersTotalNum != 0 {
+		n += 1 + sovDebugService(uint64(m.ClustersTotalNum))
+	}
+	if m.NamespacesTotalNum != 0 {
+		n += 1 + sovDebugService(uint64(m.NamespacesTotalNum))
+	}
+	if len(m.DeniedAuthzDecisions) > 0 {
+		for k, v := range m.DeniedAuthzDecisions {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovDebugService(uint64(len(k))) + 1 + sovDebugService(uint64(v))
+			n += mapEntrySize + 1 + sovDebugService(uint64(mapEntrySize))
+		}
+	}
+	if len(m.AllowedAuthzDecisions) > 0 {
+		for k, v := range m.AllowedAuthzDecisions {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovDebugService(uint64(len(k))) + 1 + sovDebugService(uint64(v))
+			n += mapEntrySize + 1 + sovDebugService(uint64(mapEntrySize))
+		}
+	}
+	if len(m.EffectiveAccessScopes) > 0 {
+		for k, v := range m.EffectiveAccessScopes {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovDebugService(uint64(len(k))) + 1 + len(v) + sovDebugService(uint64(len(v)))
+			n += mapEntrySize + 1 + sovDebugService(uint64(mapEntrySize))
 		}
 	}
 	if m.XXX_unrecognized != nil {
@@ -1135,6 +2566,1576 @@ func (m *LogLevelResponse) Unmarshal(dAtA []byte) error {
 			if err := m.ModuleLevels[len(m.ModuleLevels)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDebugService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDebugService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AuthorizationTraceResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AuthorizationTraceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ArrivedAt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ArrivedAt == nil {
+				m.ArrivedAt = &types.Timestamp{}
+			}
+			if err := m.ArrivedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProcessedAt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ProcessedAt == nil {
+				m.ProcessedAt = &types.Timestamp{}
+			}
+			if err := m.ProcessedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Request", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Request == nil {
+				m.Request = &AuthorizationTraceResponse_Request{}
+			}
+			if err := m.Request.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Response", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Response == nil {
+				m.Response = &AuthorizationTraceResponse_Response{}
+			}
+			if err := m.Response.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field User", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.User == nil {
+				m.User = &AuthorizationTraceResponse_User{}
+			}
+			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trace", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Trace == nil {
+				m.Trace = &AuthorizationTraceResponse_Trace{}
+			}
+			if err := m.Trace.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDebugService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthorizationTraceResponse_Request) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDebugService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Request: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Request: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Endpoint", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Endpoint = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Method", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Method = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDebugService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthorizationTraceResponse_Response) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDebugService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Response: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Response: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+			}
+			m.Status = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Status |= AuthorizationTraceResponse_Response_Status(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Error = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDebugService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthorizationTraceResponse_User) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDebugService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: User: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: User: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Username", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Username = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FriendlyName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FriendlyName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AggregatedPermissions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AggregatedPermissions == nil {
+				m.AggregatedPermissions = make(map[string]storage.Access)
+			}
+			var mapkey string
+			var mapvalue storage.Access
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowDebugService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapvalue |= storage.Access(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipDebugService(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.AggregatedPermissions[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Roles", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Roles = append(m.Roles, &AuthorizationTraceResponse_User_Role{})
+			if err := m.Roles[len(m.Roles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDebugService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthorizationTraceResponse_User_Role) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDebugService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Role: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Role: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Permissions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Permissions == nil {
+				m.Permissions = make(map[string]storage.Access)
+			}
+			var mapkey string
+			var mapvalue storage.Access
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowDebugService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapvalue |= storage.Access(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipDebugService(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Permissions[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScopeName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessScopeName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScope", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AccessScope == nil {
+				m.AccessScope = &storage.SimpleAccessScope_Rules{}
+			}
+			if err := m.AccessScope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDebugService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthorizationTraceResponse_Trace) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDebugService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Trace: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Trace: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScopeCheckerType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScopeCheckerType = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BuiltIn", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &AuthorizationTraceResponse_Trace_BuiltInAuthorizer{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Authorizer = &AuthorizationTraceResponse_Trace_BuiltIn{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipDebugService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowDebugService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BuiltInAuthorizer: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BuiltInAuthorizer: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClustersTotalNum", wireType)
+			}
+			m.ClustersTotalNum = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClustersTotalNum |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NamespacesTotalNum", wireType)
+			}
+			m.NamespacesTotalNum = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NamespacesTotalNum |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeniedAuthzDecisions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DeniedAuthzDecisions == nil {
+				m.DeniedAuthzDecisions = make(map[string]int32)
+			}
+			var mapkey string
+			var mapvalue int32
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowDebugService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapvalue |= int32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipDebugService(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.DeniedAuthzDecisions[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllowedAuthzDecisions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AllowedAuthzDecisions == nil {
+				m.AllowedAuthzDecisions = make(map[string]int32)
+			}
+			var mapkey string
+			var mapvalue int32
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowDebugService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapvalue |= int32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipDebugService(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.AllowedAuthzDecisions[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EffectiveAccessScopes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDebugService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthDebugService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.EffectiveAccessScopes == nil {
+				m.EffectiveAccessScopes = make(map[string]string)
+			}
+			var mapkey string
+			var mapvalue string
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowDebugService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var stringLenmapvalue uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowDebugService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapvalue |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapvalue := int(stringLenmapvalue)
+					if intStringLenmapvalue < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+					if postStringIndexmapvalue < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if postStringIndexmapvalue > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+					iNdEx = postStringIndexmapvalue
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipDebugService(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthDebugService
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.EffectiveAccessScopes[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

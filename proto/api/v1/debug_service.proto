@@ -5,6 +5,8 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "storage/role.proto";
 
 package v1;
 
@@ -25,6 +27,60 @@ message ModuleLevel {
 message LogLevelResponse {
     string               level         = 1;
     repeated ModuleLevel module_levels = 2;
+}
+
+message AuthorizationTraceResponse {
+    message Request {
+        string endpoint = 1;
+        string method   = 2;
+    }
+
+    message Response {
+        enum Status {
+            UNKNOWN_STATUS = 0;
+            SUCCESS        = 1;
+            FAILURE        = 2;
+        }
+
+        Status status = 1;
+        string error  = 2;
+    }
+
+    message User {
+        message Role {
+            string                          name              = 1;
+            map<string, storage.Access>     permissions       = 2;
+            string                          access_scope_name = 3;
+            storage.SimpleAccessScope.Rules access_scope      = 4;
+        }
+
+        string                      username               = 1;
+        string                      friendly_name          = 2;
+        map<string, storage.Access> aggregated_permissions = 3;
+        repeated Role               roles                  = 4;
+    }
+
+    message Trace {
+        message BuiltInAuthorizer {
+            int32               clusters_total_num      = 1;
+            int32               namespaces_total_num    = 2;
+            map<string, int32>  denied_authz_decisions  = 3;
+            map<string, int32>  allowed_authz_decisions = 4;
+            map<string, string> effective_access_scopes = 5;
+        }
+
+        string scope_checker_type      = 1;
+        oneof authorizer {
+            BuiltInAuthorizer built_in = 2;
+        }
+    }
+
+    google.protobuf.Timestamp arrived_at   = 1;
+    google.protobuf.Timestamp processed_at = 2;
+    Request                   request      = 3;
+    Response                  response     = 4;
+    User                      user         = 5;
+    Trace                     trace        = 6;
 }
 
 // APIs for debugging.

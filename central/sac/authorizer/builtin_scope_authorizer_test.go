@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
 )
@@ -47,7 +48,7 @@ var (
 	}}
 )
 
-func TestBuiltInScopeAuthorizer(t *testing.T) {
+func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 	t.Parallel()
 	clusterEdit := map[string]storage.Access{string(resources.Cluster.Resource): storage.Access_READ_WRITE_ACCESS}
 
@@ -73,7 +74,7 @@ func TestBuiltInScopeAuthorizer(t *testing.T) {
 			name:      "deny cluster view with permissions but no access scope if id does not exist",
 			roles:     []permissions.ResolvedRole{role(clusterEdit, withAccessTo1Cluster())},
 			scopeKeys: readCluster("unknown ID"),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
 		},
 		{
 			name:      "deny cluster modification with permission to view",
@@ -85,7 +86,7 @@ func TestBuiltInScopeAuthorizer(t *testing.T) {
 			name:      "deny read from cluster with no scope access",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
 			scopeKeys: readCluster(secondCluster.ID),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
 		},
 		{
 			name: "allow read from namespace with multiple roles",
@@ -99,26 +100,27 @@ func TestBuiltInScopeAuthorizer(t *testing.T) {
 			name:      "allow read from anything when scope is nil",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, nil)},
 			scopeKeys: readCluster("unknown ID"),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow, sac.Allow},
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Allow, sac.Allow},
 		},
 		{
 			name:      "deny read from anything when scope is empty",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "empty"})},
 			scopeKeys: readCluster(firstCluster.ID),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
 		},
 		{
 			name:      "deny read from anything when scope deny all",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeExcludeAll)},
 			scopeKeys: readCluster(firstCluster.ID),
-			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny, sac.Deny},
+			results:   []sac.TryAllowedResult{sac.Deny, sac.Deny, sac.Deny},
 		},
 	}
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles)
+			trace := observe.NewAuthzTrace()
+			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, trace)
 			for i, scopeKey := range tc.scopeKeys {
 				scc = scc.SubScopeChecker(scopeKey)
 				expected := tc.results[i]
@@ -128,6 +130,9 @@ func TestBuiltInScopeAuthorizer(t *testing.T) {
 				wantErr := expected == sac.Unknown
 				assert.Truef(t, (err != nil) == wantErr, "got %+v", err)
 			}
+			// The amount of "allowed" traces should equal the amount of
+			// expected Allow responses.
+			assert.Equal(t, countAllowedResults(tc.results), observe.CountAllowedTraces(trace), "number of allowed traces differs from the number of expected allow responses")
 		})
 	}
 }
@@ -136,7 +141,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 	t.Parallel()
 	roles := []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Namespace())}
 
-	subScopeChecker := newGlobalScopeCheckerCore(clusters, namespaces, roles)
+	subScopeChecker := newGlobalScopeCheckerCore(clusters, namespaces, roles, nil)
 
 	tests := []struct {
 		name      string
@@ -239,7 +244,7 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 
 func TestGlobalScopeCheckerCore(t *testing.T) {
 	t.Parallel()
-	scc := newGlobalScopeCheckerCore(nil, nil, nil)
+	scc := newGlobalScopeCheckerCore(nil, nil, nil, nil)
 	assert.Equal(t, nil, scc.PerformChecks(context.Background()))
 	assert.Equal(t, sac.Deny, scc.TryAllowed())
 }
@@ -269,7 +274,7 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles)
+			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil)
 			for i, scopeKey := range tc.scopeKeys {
 				scc = scc.SubScopeChecker(scopeKey)
 				expected := tc.results[i]
@@ -337,4 +342,14 @@ func mapResourcesToAccess(res []permissions.ResourceWithAccess) map[string]stora
 		idToAccess[rwa.Resource.String()] = rwa.Access
 	}
 	return idToAccess
+}
+
+func countAllowedResults(xs []sac.TryAllowedResult) int {
+	result := 0
+	for _, x := range xs {
+		if x == sac.Allow {
+			result++
+		}
+	}
+	return result
 }

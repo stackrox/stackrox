@@ -10,12 +10,14 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sac/authorizer"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	sacClient "github.com/stackrox/rox/pkg/sac/client"
+	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -49,8 +51,8 @@ func newEnricher() *Enricher {
 	}
 }
 
-// PreAuthContextEnricher adds a scope checker to the context for later use in
-// scope checking. There are four possibilities currently:
+// getRootScopeCheckerCore adds a scope checker to the context for later use in
+// scope checking. There are five possibilities currently:
 //   1. Scoped access control is disabled => nothing to add.
 //   2. User identity maps to a special case: (a) deny all or (b) allow all =>
 //      add the corresponding trivial scope checker.
@@ -58,50 +60,78 @@ func newEnricher() *Enricher {
 //      constructed from resolved roles associated with the identity.
 //   4. Auth plugin is detected => use the scope checker created around the
 //      auth plugin client in use at the time of request.
-func (se *Enricher) PreAuthContextEnricher(ctx context.Context) (context.Context, error) {
+//   5. Unrecoverable error => nil context.
+func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Context, observe.ScopeCheckerCoreType, error) {
 	client := se.clientManager.GetClient()
 	if client == nil && !features.ScopedAccessControl.Enabled() {
 		// 1. Scoped access control is disabled.
-		return ctx, nil
+		return ctx, observe.ScopeCheckerNone, nil
 	}
 	ctx = sac.SetContextSACEnabled(ctx)
 
 	// Check the id of the context and decide scope checker to use.
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
-		// 2a. User identity not found => deny all
-		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), nil
+		// 2a. User identity not found => deny all.
+		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil
 	}
 	if id.Service() != nil || userpass.IsLocalAdmin(id) {
-		// 2b. Admin => allow all
-		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
+		// 2b. Admin => allow all.
+		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), observe.ScopeCheckerAllowAdminAndService, nil
 	}
 	if client == nil && features.ScopedAccessControl.Enabled() {
 		// 3. Built-in scoped authorizer must be used.
 		ctx = sac.SetContextBuiltinScopedAuthzEnabled(ctx)
 		scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, id.Roles())
 		if err != nil {
-			return nil, errors.Wrap(err, "creating scoped authorizer for identity")
+			return nil, observe.ScopeCheckerNone, errors.Wrap(err, "creating scoped authorizer for identity")
 		}
-		return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), nil
+		return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), observe.ScopeCheckerBuiltIn, nil
 	}
 
 	// Get the principal and the cache key for it.
 	principal, idCacheKey, err := idToPrincipalAndCacheKey(id)
 	if err != nil {
-		return nil, err
+		return nil, observe.ScopeCheckerNone, err
 	}
 
-	// 4. If we have a scope checker cached for the user, use that, otherwise generate a new one and add it to the cache.
+	// 4. If we have a scope checker cached for the user, use that,
+	// otherwise generate a new one and add it to the cache.
 	cacheForClient := se.cacheForClient(client)
 	rsc, _ := cacheForClient.Get(idCacheKey).(sac.ScopeCheckerCore)
 	if rsc == nil {
 		rsc = sac.NewRootScopeCheckerCore(NewRequestTracker(client, datastore.Singleton(), principal))
-		// Not locking here can cause multiple root contexts to be created for one user.  This will have correct results
-		// and be eventually consistent but it will be slightly inefficient.
+		// Not locking here can cause multiple root contexts to be created for
+		// one user. This will have correct results and be eventually consistent
+		// but it will be slightly inefficient.
 		cacheForClient.Add(idCacheKey, rsc)
 	}
-	return sac.WithGlobalAccessScopeChecker(ctx, rsc), nil
+	return sac.WithGlobalAccessScopeChecker(ctx, rsc), observe.ScopeCheckerPlugin, nil
+}
+
+// GetPreAuthContextEnricher returns a contextutil.ContextUpdater which adds a
+// scope checker to the context for later use in scope checking. It also enables
+// authorization tracing on demand by injecting an instance of a specific struct
+// into the context.
+func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink bool) contextutil.ContextUpdater {
+	return func(ctx context.Context) (context.Context, error) {
+		// Collect authz trace iff it is turned on globally. An alternative
+		// could be per-request collection triggered by a specific request
+		// header and the `DebugLogs` permission of the associated principal.
+		// TODO(ROX-7953): Replace the if-clause when sink logic is available.
+		var trace *observe.AuthzTrace
+		if authzTraceSink {
+			trace = observe.NewAuthzTrace()
+			ctx = observe.ContextWithAuthzTrace(ctx, trace)
+		}
+
+		ctxWithSCC, sccType, err := se.getRootScopeCheckerCore(ctx)
+		if err != nil {
+			return nil, err
+		}
+		trace.RecordScopeCheckerCoreType(sccType)
+		return ctxWithSCC, nil
+	}
 }
 
 // PostAuthContextEnricher enriches the given context with a root scope checker which can be used to check a

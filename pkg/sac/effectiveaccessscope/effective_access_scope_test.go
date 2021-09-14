@@ -902,7 +902,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			assert.Exactly(t, clusters, clonedClusters, "clusters have been modified")
 			assert.Exactly(t, namespaces, clonedNamespaces, "namespaces have been modified")
 			if tc.expected != nil {
-				assert.Exactly(t, tc.scopeStr, result.String())
+				assert.Equal(t, tc.scopeStr, result.String())
 
 				json, err := result.ToJSON()
 				assert.NoError(t, err)
@@ -928,7 +928,7 @@ func TestUnrestrictedEffectiveAccessScope(t *testing.T) {
 
 	result := UnrestrictedEffectiveAccessScope()
 	assert.Exactly(t, expected, result)
-	assert.Exactly(t, expectedStr, result.String())
+	assert.Equal(t, expectedStr, result.String())
 
 	json, err := result.ToJSON()
 	assert.NoError(t, err)

@@ -113,6 +113,7 @@ type Config struct {
 	PreAuthContextEnrichers  []contextutil.ContextUpdater
 	PostAuthContextEnrichers []contextutil.ContextUpdater
 
+	// These interceptors are executed post authn and authz.
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
 
