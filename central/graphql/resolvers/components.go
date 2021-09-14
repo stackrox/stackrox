@@ -88,7 +88,7 @@ type ComponentResolver interface {
 }
 
 // Component returns an image scan component based on an input id (name:version)
-func (resolver *Resolver) Component(ctx context.Context, args idQuery) (ComponentResolver, error) {
+func (resolver *Resolver) Component(ctx context.Context, args IDQuery) (ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
 	return resolver.componentV2(ctx, args)
 }

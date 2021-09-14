@@ -20,7 +20,6 @@ import (
 	componentSAC "github.com/stackrox/rox/central/imagecomponent/sac"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
 	imageComponentEdgeSAC "github.com/stackrox/rox/central/imagecomponentedge/sac"
-	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	nodeSAC "github.com/stackrox/rox/central/node/sac"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	nodeComponentEdgeSAC "github.com/stackrox/rox/central/nodecomponentedge/sac"
@@ -33,8 +32,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/compound"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/filtered"
-	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
-	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 )
@@ -43,33 +40,6 @@ var (
 	defaultSortOption = &v1.QuerySortOption{
 		Field: search.CVE.String(),
 	}
-
-	deploymentOnlyOptionsMap = search.Difference(
-		deploymentMappings.OptionsMap,
-		search.CombineOptionsMaps(
-			imageMappings.OptionsMap,
-			clusterMappings.OptionsMap,
-		),
-	)
-	imageOnlyOptionsMap = search.Difference(
-		imageMappings.OptionsMap,
-		search.CombineOptionsMaps(
-			imageComponentEdgeMappings.OptionsMap,
-			componentMappings.OptionsMap,
-			componentCVEEdgeMappings.OptionsMap,
-			cveMappings.OptionsMap,
-		),
-	)
-	nodeOnlyOptionsMap = search.Difference(
-		nodeMappings.OptionsMap,
-		search.CombineOptionsMaps(
-			nodeComponentEdgeMappings.OptionsMap,
-			componentMappings.OptionsMap,
-			componentCVEEdgeMappings.OptionsMap,
-			cveMappings.OptionsMap,
-			clusterMappings.OptionsMap,
-		),
-	)
 )
 
 type searcherImpl struct {
@@ -242,12 +212,12 @@ func getCompoundCVESearcher(
 		{
 			Searcher:       scoped.WithScoping(imageSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGES)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGES][v1.SearchCategory_VULNERABILITIES],
-			Options:        imageOnlyOptionsMap,
+			Options:        dackbox.ImageOnlyOptionsMap,
 		},
 		{
 			Searcher:       scoped.WithScoping(deploymentSearcher, dackbox.ToCategory(v1.SearchCategory_DEPLOYMENTS)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_DEPLOYMENTS][v1.SearchCategory_VULNERABILITIES],
-			Options:        deploymentOnlyOptionsMap,
+			Options:        dackbox.DeploymentOnlyOptionsMap,
 		},
 		{
 			Searcher:       scoped.WithScoping(nodeComponentEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_NODE_COMPONENT_EDGE)),
@@ -257,7 +227,7 @@ func getCompoundCVESearcher(
 		{
 			Searcher:       scoped.WithScoping(nodeSearcher, dackbox.ToCategory(v1.SearchCategory_NODES)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_NODES][v1.SearchCategory_VULNERABILITIES],
-			Options:        nodeOnlyOptionsMap,
+			Options:        dackbox.NodeOnlyOptionsMap,
 		},
 		{
 			Searcher:       scoped.WithScoping(clusterSearcher, dackbox.ToCategory(v1.SearchCategory_CLUSTERS)),

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -171,7 +172,7 @@ func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error
 	return resolver.root.wrapCVSSV3(value, true, nil)
 }
 
-func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	if err := readCVEs(ctx); err != nil {
 		return nil, err
 	}
@@ -316,7 +317,7 @@ func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Quer
 	return mapCVEsToVulnerabilityCounter(fixableVulns, unFixableCVEs), nil
 }
 
-func (resolver *Resolver) k8sVulnerabilityV2(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) k8sVulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	return resolver.vulnerabilityV2(ctx, args)
 }
 
@@ -326,7 +327,7 @@ func (resolver *Resolver) k8sVulnerabilitiesV2(ctx context.Context, q PaginatedQ
 	return resolver.vulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 }
 
-func (resolver *Resolver) istioVulnerabilityV2(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) istioVulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	return resolver.vulnerabilityV2(ctx, args)
 }
 
@@ -336,7 +337,7 @@ func (resolver *Resolver) istioVulnerabilitiesV2(ctx context.Context, q Paginate
 	return resolver.vulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 }
 
-func (resolver *Resolver) openShiftVulnerabilityV2(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) openShiftVulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	return resolver.vulnerabilityV2(ctx, args)
 }
 
@@ -370,7 +371,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 		return false, err
 	}
 
-	conjuncts := []*v1.Query{q, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
+	conjuncts := []*v1.Query{q}
 
 	ctx := resolver.ctx
 	if scope, ok := scoped.GetScope(ctx); !ok {
@@ -381,12 +382,27 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 		conjuncts = append(conjuncts, resolver.getCVEQuery())
 	}
 
-	results, err := resolver.root.CVEDataStore.Search(ctx, search.ConjunctionQuery(conjuncts...))
-	if err != nil {
-		return false, err
+	if cve.ContainsComponentBasedCVE(resolver.data.GetTypes()) {
+		query := search.ConjunctionQuery(append(conjuncts, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())...)
+		count, err := resolver.root.ComponentCVEEdgeDataStore.Count(ctx, query)
+		if err != nil {
+			return false, err
+		}
+		if count != 0 {
+			return true, nil
+		}
 	}
-
-	return len(results) != 0, nil
+	if cve.ContainsClusterCVE(resolver.data.GetTypes()) {
+		query := search.ConjunctionQuery(append(conjuncts, search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery())...)
+		count, err := resolver.root.clusterCVEEdgeDataStore.Count(ctx, query)
+		if err != nil {
+			return false, err
+		}
+		if count != 0 {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (resolver *cVEResolver) scopeContext(ctx context.Context) context.Context {
@@ -692,7 +708,7 @@ func (resolver *cVEResolver) UnusedVarSink(ctx context.Context, args RawQuery) *
 }
 
 func (resolver *cVEResolver) getCVEFixedByVersion(ctx context.Context) (string, error) {
-	if containsAtLeastOneOfCVEType(resolver.data.GetTypes(), storage.CVE_IMAGE_CVE, storage.CVE_NODE_CVE) {
+	if cve.ContainsComponentBasedCVE(resolver.data.GetTypes()) {
 		return resolver.getComponentFixedByVersion(ctx)
 	}
 	return resolver.getClusterFixedByVersion(ctx)
@@ -733,7 +749,7 @@ func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string
 }
 
 func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error) {
-	if !containsCVEType(resolver.data.GetTypes(), storage.CVE_IMAGE_CVE) {
+	if !cve.ContainsCVEType(resolver.data.GetTypes(), storage.CVE_IMAGE_CVE) {
 		return nil, nil
 	}
 
@@ -799,23 +815,4 @@ func (resolver *cVEResolver) ActiveState(ctx context.Context, _ PaginatedQuery) 
 		state = Active
 	}
 	return &activeStateResolver{root: resolver.root, state: state, activeComponentIDs: ids}, nil
-}
-
-func containsCVEType(cveTypes []storage.CVE_CVEType, cveType storage.CVE_CVEType) bool {
-	return containsAtLeastOneOfCVEType(cveTypes, cveType)
-}
-
-func containsAtLeastOneOfCVEType(cveTypes []storage.CVE_CVEType, types ...storage.CVE_CVEType) bool {
-	typeSet := make(map[storage.CVE_CVEType]struct{}, len(cveTypes))
-	for _, cveType := range cveTypes {
-		typeSet[cveType] = struct{}{}
-	}
-
-	for _, cveType := range types {
-		if _, ok := typeSet[cveType]; ok {
-			return true
-		}
-	}
-
-	return false
 }

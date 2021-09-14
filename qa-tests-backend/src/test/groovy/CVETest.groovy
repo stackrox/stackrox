@@ -149,6 +149,14 @@ class CVETest extends BaseSpecification {
     }
     """
 
+    private static final SCOPED_FIXABLE_QUERY = """
+    query getCve(\$id: ID!, \$scopeQuery: String) {
+      result: vulnerability(id: \$id) {
+        isFixable(query: \$scopeQuery)
+      }
+    }
+    """
+
     static final private String CVE_DEPLOYMENT_NAME = "cve-deployment"
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
@@ -162,11 +170,25 @@ class CVETest extends BaseSpecification {
     static final private UBUNTU_IMAGE =
             "docker.io/library/ubuntu:latest@sha256:ffc76f71dd8be8c9e222d420dc96901a07b61616689a44c7b3ef6a10b7213de4"
 
+    static final private FIXABLE_VULN_IMAGE_DIGEST =
+            "sha256:b74ad76891c58909fa57534513cefe11fb5917f1f1095ceef80a6343666c096f"
+
+    static final private FIXABLE_VULN_IMAGE =
+            "docker.io/sandyg1/om-cred-auto@${FIXABLE_VULN_IMAGE_DIGEST}"
+
+    static final private UNFIXABLE_VULN_IMAGE_DIGEST =
+            "sha256:df7d71b9a1ce0fa0b774f52ac7a0d966b483f0650185cc3594ff7d367d5c6a55"
+
+    static final private UNFIXABLE_VULN_IMAGE =
+            "docker.io/library/debian@${UNFIXABLE_VULN_IMAGE_DIGEST}"
+
     def setupSpec() {
         ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
         ImageService.scanImage(NGINX_1_10_2_IMAGE)
         ImageService.scanImage(RED_HAT_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
+        ImageService.scanImage(FIXABLE_VULN_IMAGE)
+        ImageService.scanImage(UNFIXABLE_VULN_IMAGE)
         orchestrator.createDeployment(CVE_DEPLOYMENT)
     }
 
@@ -417,4 +439,29 @@ class CVETest extends BaseSpecification {
         ret.getCode() == 200
         ret.value.result.vulnerabilities.toList().findAll { x -> x.isFixable }.size() > 1
     }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify IsFixable is correct when scoped (#digest, #fixable)"() {
+        when:
+        "Query fixable CVEs by a specific CVE in the image"
+        def gqlService = new GraphQLService()
+        def ret = gqlService.Call(SCOPED_FIXABLE_QUERY, [
+                id: "CVE-2019-9893",
+                scopeQuery: "Image Sha:${digest}+CVE:CVE-2019-9893",
+        ])
+
+        then:
+        "Ensure the fixable status matches expectations"
+        ret.getCode() == 200
+        assert ret.value.result.isFixable == fixable
+
+        where:
+        "data inputs"
+
+        digest | fixable
+        FIXABLE_VULN_IMAGE_DIGEST | true
+        UNFIXABLE_VULN_IMAGE_DIGEST | false
+    }
+
 }

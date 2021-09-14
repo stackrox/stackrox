@@ -104,7 +104,7 @@ type VulnerabilityResolver interface {
 }
 
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).
-func (resolver *Resolver) Vulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) Vulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerability")
 	return resolver.vulnerabilityV2(ctx, args)
 }
@@ -132,7 +132,7 @@ func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*Vuln
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // K8sVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
-func (resolver *Resolver) K8sVulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) K8sVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerability")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, args Paginated
 }
 
 // IstioVulnerability resolves a single istio vulnerability based on an id (the CVE value).
-func (resolver *Resolver) IstioVulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) IstioVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioVulnerability")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
@@ -172,7 +172,7 @@ func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args Paginat
 }
 
 // OpenShiftVulnerability resolves a single OpenShift vulnerability based on an id (the CVE value).
-func (resolver *Resolver) OpenShiftVulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) OpenShiftVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftVulnerability")
 	if err := readClusters(ctx); err != nil {
 		return nil, err

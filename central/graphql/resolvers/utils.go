@@ -28,7 +28,8 @@ var (
 	}
 )
 
-type idQuery struct {
+// IDQuery is a wrapper around a graphql.ID
+type IDQuery struct {
 	ID *graphql.ID
 }
 
