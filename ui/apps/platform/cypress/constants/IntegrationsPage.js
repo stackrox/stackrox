@@ -47,6 +47,8 @@ export const selectors = {
     },
     buttons: {
         new: 'button:contains("New")',
+        newApiToken: 'button:contains("Generate token")',
+        newClusterInitBundle: 'button:contains("Generate bundle")',
         next: 'button:contains("Next")',
         downloadYAML: 'button:contains("Download YAML")',
         delete: 'button:contains("Delete")',

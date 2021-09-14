@@ -32,7 +32,7 @@ describe('Cluster Init Bundle tests', () => {
     it('should create a new Cluster Init Bundle integration', () => {
         cy.get(selectors.clusterInitBundleTile).click();
 
-        cy.get(selectors.buttons.new).click();
+        cy.get(selectors.buttons.newClusterInitBundle).click();
 
         // Step 0, should start out with disabled Generate button
         cy.get(selectors.buttons.generate).should('be.disabled');

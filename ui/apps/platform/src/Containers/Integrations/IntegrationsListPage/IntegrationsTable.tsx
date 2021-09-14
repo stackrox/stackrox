@@ -29,6 +29,16 @@ function TableCellValue({ row, column }: TableCellProps): React.ReactElement {
     return <div>{value || '-'}</div>;
 }
 
+function getNewButtonText(type) {
+    if (type === 'apitoken') {
+        return 'Generate token';
+    }
+    if (type === 'clusterInitBundle') {
+        return 'Generate bundle';
+    }
+    return 'New integration';
+}
+
 type IntegrationsTableProps = {
     title: string;
     integrations: Integration[];
@@ -61,6 +71,8 @@ function IntegrationsTable({
         const ids = getSelectedIds();
         onDeleteIntegrations(ids);
     }
+
+    const newButtonText = getNewButtonText(type);
 
     return (
         <>
@@ -102,7 +114,7 @@ function IntegrationsTable({
                         )}
                         <FlexItem spacer={{ default: 'spacerMd' }}>
                             <Link to={getPathToCreate(source, type)}>
-                                <Button data-testid="add-integration">New integration</Button>
+                                <Button data-testid="add-integration">{newButtonText}</Button>
                             </Link>
                         </FlexItem>
                     </Flex>

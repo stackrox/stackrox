@@ -29,7 +29,7 @@ describe('API Token tests', () => {
     it('should create a new API Token integration', () => {
         cy.get(selectors.apiTokenTile).click();
 
-        cy.get(selectors.buttons.new).click();
+        cy.get(selectors.buttons.newApiToken).click();
 
         // Step 0, should start out with disabled Generate button
         cy.get(selectors.buttons.generate).should('be.disabled');
