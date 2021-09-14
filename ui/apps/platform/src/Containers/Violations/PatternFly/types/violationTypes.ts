@@ -125,6 +125,15 @@ export type Deployment = {
     type: string;
 };
 
+export type Policy = {
+    categories: string[];
+    description: string;
+    id: string;
+    name: string;
+    severity: PolicySeverity;
+    policyVersion: string;
+};
+
 export type Alert = {
     id: string;
     deployment?: {
@@ -153,13 +162,7 @@ export type Alert = {
     };
     firstOccurred: string;
     lifecycleStage: LifecycleStage;
-    policy: {
-        categories: string[];
-        description: string;
-        id: string;
-        name: string;
-        severity: PolicySeverity;
-    };
+    policy: Policy;
     state: 'ACTIVE' | 'INACTIVE';
     tags: string[];
     time: string;

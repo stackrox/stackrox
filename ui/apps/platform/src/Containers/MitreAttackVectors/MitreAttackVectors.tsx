@@ -1,3 +1,5 @@
+// @TODO: Once we migrate Vuln Management and the Policies Page to PatternFly, we can delete this
+// component and replace it with the PatternFly implementation
 import React, { ReactElement } from 'react';
 import { useQuery, gql } from '@apollo/client';
 
