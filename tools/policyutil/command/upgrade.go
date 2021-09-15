@@ -341,12 +341,12 @@ func upgradePolicyJSON(json string) (string, error) {
 	ensureReadOnlySettings(&policy)
 	ensureMitreVectorSorted(&policy)
 
-	result, err = jsonutil.ProtoToJSON(&policy)
+	result, err = jsonutil.ProtoToJSON(&policy, jsonutil.OptUnEscape)
 	if err != nil {
 		return result, errors.Wrap(err, "upgraded policy can't be serialized to JSON")
 	}
 
-	return jsonutil.UnEscape(result), nil
+	return result, nil
 }
 
 func ensureReadOnlySettings(policy *storage.Policy) {

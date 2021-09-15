@@ -86,12 +86,12 @@ func fetchC(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	str, err := jsonutil.ProtoToJSON(bundle)
+	str, err := jsonutil.ProtoToJSON(bundle, jsonutil.OptUnEscape)
 	if err != nil {
 		return errors.Wrap(err, "marshalling parsed MITRE ATT&CK bundle")
 	}
 
-	if err := os.WriteFile(out, []byte(jsonutil.UnEscape(str)), 0644); err != nil {
+	if err := os.WriteFile(out, []byte(str), 0644); err != nil {
 		return errors.Wrapf(err, "writing MITRE ATT&CK bundle to file %q", out)
 	}
 	return nil

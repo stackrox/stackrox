@@ -12,26 +12,45 @@ var (
 	re = regexp.MustCompile(`.?\\u00(26|3c|3e)`)
 )
 
+// ConversionOption identifies an option for Proto -> JSON conversion.
+type ConversionOption int
+
+// ConversionOption constant values.
+const (
+	OptCompact ConversionOption = iota
+	OptUnEscape
+)
+
 // JSONToProto converts a string containing JSON into a proto message.
 func JSONToProto(json string, m proto.Message) error {
 	return jsonpb.UnmarshalString(json, m)
 }
 
 // ProtoToJSON converts a proto message into a string containing JSON.
-func ProtoToJSON(m proto.Message) (string, error) {
+// If compact is true, the result is compact (one-line) JSON.
+func ProtoToJSON(m proto.Message, options ...ConversionOption) (string, error) {
 	if m == nil {
 		return "", nil
+	}
+
+	indent := "  "
+	if contains(options, OptCompact) {
+		indent = ""
 	}
 
 	marshaller := &jsonpb.Marshaler{
 		EnumsAsInts:  false,
 		EmitDefaults: false,
-		Indent:       "  ",
+		Indent:       indent,
 	}
 
 	s, err := marshaller.MarshalToString(m)
 	if err != nil {
 		return "", err
+	}
+
+	if contains(options, OptUnEscape) {
+		s = unEscape(s)
 	}
 
 	return s, nil
@@ -45,7 +64,7 @@ func ProtoToJSON(m proto.Message) (string, error) {
 // An alternative suggested by the jsonpb maintainers is to post process the
 // result JSON:
 //     https://github.com/golang/protobuf/issues/407
-func UnEscape(json string) string {
+func unEscape(json string) string {
 	return re.ReplaceAllStringFunc(json, func(match string) string {
 		// If the match starts with "\\u...", the backwards slash is escaped,
 		// hence the "\u..." sequence was fed into the JSON converter and not
@@ -70,4 +89,13 @@ func UnEscape(json string) string {
 
 		return match
 	})
+}
+
+func contains(options []ConversionOption, opt ConversionOption) bool {
+	for _, o := range options {
+		if o == opt {
+			return true
+		}
+	}
+	return false
 }
