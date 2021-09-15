@@ -116,10 +116,9 @@ func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() {
 }
 
 func (rs *storeImpl) upsertRoleGenericNoLock(ref namespacedRoleRef, role *namespacedRole) {
-	if oldRole, oldRoleExists := rs.roles[ref]; oldRoleExists {
-		if role == oldRole {
-			return
-		}
+	oldRole, oldRoleExists := rs.roles[ref]
+	if oldRoleExists && role.Equal(oldRole) {
+		return
 	}
 	rs.roles[ref] = role
 	rs.markDirtyNoLock() // All related bindings now refer to the new role.
@@ -131,10 +130,9 @@ func (rs *storeImpl) removeRoleGenericNoLock(ref namespacedRoleRef) {
 }
 
 func (rs *storeImpl) upsertRoleBindingGenericNoLock(bindingID namespacedBindingID, binding *namespacedBinding) {
-	if oldBinding, oldBindingExists := rs.bindings[bindingID]; oldBindingExists {
-		if binding == oldBinding {
-			return
-		}
+	oldBinding, oldBindingExists := rs.bindings[bindingID]
+	if oldBindingExists && binding.Equal(oldBinding) {
+		return
 	}
 
 	rs.bindings[bindingID] = binding

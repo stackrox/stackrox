@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -17,6 +18,28 @@ type namespacedBinding struct {
 
 func (b *namespacedBindingID) IsClusterBinding() bool {
 	return len(b.namespace) == 0
+}
+
+func (b *namespacedBinding) Equal(other *namespacedBinding) bool {
+	if b == nil || other == nil {
+		return b == other
+	}
+	if b.roleRef != other.roleRef {
+		return false
+	}
+	if len(b.subjects) != len(other.subjects) {
+		return false
+	}
+	subjects := make(set.StringSet, len(b.subjects))
+	for _, s := range b.subjects {
+		subjects.Add(string(s))
+	}
+	for _, s := range other.subjects {
+		if !subjects.Contains(string(s)) {
+			return false
+		}
+	}
+	return true
 }
 
 func roleBindingToNamespacedBindingID(roleBinding *v1.RoleBinding) namespacedBindingID {
