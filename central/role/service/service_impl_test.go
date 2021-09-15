@@ -435,22 +435,22 @@ func TestEffectiveAccessScopeForSimpleAccessScope(t *testing.T) {
 		t.Run(tc.desc+"detail: HIGH", func(t *testing.T) {
 			resHigh, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
 			assert.NoError(t, err)
-			assert.Exactly(t, tc.expectedHigh, resHigh)
+			assert.Equal(t, tc.expectedHigh, resHigh)
 		})
 		t.Run(tc.desc+"detail: STANDARD", func(t *testing.T) {
 			resStandard, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_STANDARD)
 			assert.NoError(t, err)
-			assert.Exactly(t, tc.expectedStandard, resStandard)
+			assert.Equal(t, tc.expectedStandard, resStandard)
 		})
 		t.Run(tc.desc+"detail: MINIMAL", func(t *testing.T) {
 			resMinimal, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 			assert.NoError(t, err)
-			assert.Exactly(t, tc.expectedMinimal, resMinimal)
+			assert.Equal(t, tc.expectedMinimal, resMinimal)
 		})
 		t.Run(tc.desc+"unknown detail maps to STANDARD", func(t *testing.T) {
 			resUnknown, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, 42)
 			assert.NoError(t, err)
-			assert.Exactly(t, tc.expectedStandard, resUnknown)
+			assert.Equal(t, tc.expectedStandard, resUnknown)
 		})
 	}
 }
