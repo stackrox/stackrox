@@ -69,6 +69,7 @@ import (
 	licenseService "github.com/stackrox/rox/central/license/service"
 	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
+	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -118,6 +119,7 @@ import (
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
+	"github.com/stackrox/rox/central/telemetry/gatherers"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/ui"
@@ -276,7 +278,7 @@ func startServices() {
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
-func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
+func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.AuthzTraceSink) []pkgGRPC.APIService {
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
@@ -291,7 +293,8 @@ func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
-		debugService.Singleton(),
+		debugService.New(clusterDataStore.Singleton(), connection.ManagerSingleton(), gatherers.Singleton(),
+			logimbueStore.Singleton(), authzTraceSink),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
 		featureFlagService.Singleton(),
@@ -440,16 +443,15 @@ func startGRPCServer() {
 	}
 
 	// This adds an on-demand global tracing for the built-in authorization.
+	authzTraceSink := observe.NewAuthzTraceSink()
 	config.UnaryInterceptors = append(config.UnaryInterceptors,
-		// TODO(ROX-7953): Pass a Sink instance here.
-		observe.AuthzTraceInterceptor(),
+		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
 
 	// The below enrichers handle SAC being off or on.
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
-		// TODO(ROX-7953): Pass a proper Sink type & instance instead of bool here.
-		centralSAC.GetEnricher().GetPreAuthContextEnricher(true),
+		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 	// After auth checks are run, we want to use the client (if available) to add scope checking.
 	config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,
@@ -457,7 +459,7 @@ func startGRPCServer() {
 	)
 
 	server := pkgGRPC.NewAPI(config)
-	server.Register(servicesToRegister(registry)...)
+	server.Register(servicesToRegister(registry, authzTraceSink)...)
 
 	startServices()
 	startedSig := server.Start()

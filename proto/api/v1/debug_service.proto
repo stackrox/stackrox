@@ -4,6 +4,7 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/role.proto";
@@ -100,5 +101,10 @@ service DebugService {
              body: "*"
          };
     }
-
+    // Stream authorization traces for all incoming requests.
+    rpc StreamAuthzTraces(v1.Empty) returns (stream AuthorizationTraceResponse) {
+        option (google.api.http) = {
+            get: "/v1/debug/authz/trace"
+        };
+    }
 }

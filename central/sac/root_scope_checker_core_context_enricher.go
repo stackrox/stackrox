@@ -113,14 +113,13 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 // scope checker to the context for later use in scope checking. It also enables
 // authorization tracing on demand by injecting an instance of a specific struct
 // into the context.
-func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink bool) contextutil.ContextUpdater {
+func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink observe.AuthzTraceSink) contextutil.ContextUpdater {
 	return func(ctx context.Context) (context.Context, error) {
 		// Collect authz trace iff it is turned on globally. An alternative
 		// could be per-request collection triggered by a specific request
 		// header and the `DebugLogs` permission of the associated principal.
-		// TODO(ROX-7953): Replace the if-clause when sink logic is available.
 		var trace *observe.AuthzTrace
-		if authzTraceSink {
+		if authzTraceSink.IsActive() {
 			trace = observe.NewAuthzTrace()
 			ctx = observe.ContextWithAuthzTrace(ctx, trace)
 		}

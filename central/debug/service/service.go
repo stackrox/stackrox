@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/prometheusutil"
+	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
@@ -63,6 +64,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DebugLogs)): {
 			"/v1.DebugService/GetLogLevel",
+			"/v1.DebugService/StreamAuthzTraces",
 		},
 		user.With(permissions.Modify(resources.DebugLogs)): {
 			"/v1.DebugService/SetLogLevel",
@@ -86,12 +88,13 @@ type Service interface {
 
 // New returns a Service that implements v1.DebugServiceServer
 func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer,
-	store store.Store) Service {
+	store store.Store, authzTraceSink observe.AuthzTraceSink) Service {
 	return &serviceImpl{
 		clusters:          clusters,
 		sensorConnMgr:     sensorConnMgr,
 		telemetryGatherer: telemetryGatherer,
 		store:             store,
+		authzTraceSink:    authzTraceSink,
 	}
 }
 
@@ -100,6 +103,7 @@ type serviceImpl struct {
 	clusters          datastore.DataStore
 	telemetryGatherer *gatherers.RoxGatherer
 	store             store.Store
+	authzTraceSink    observe.AuthzTraceSink
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -184,6 +188,29 @@ func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) 
 	}
 
 	return &types.Empty{}, nil
+}
+
+func (s *serviceImpl) StreamAuthzTraces(_ *v1.Empty, stream v1.DebugService_StreamAuthzTracesServer) error {
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+	traceC := s.authzTraceSink.Subscribe(ctx)
+	for {
+		select {
+		case trace, ok := <-traceC:
+			if !ok {
+				return nil
+			}
+			err := stream.Send(trace)
+			if err != nil {
+				if err != io.EOF {
+					log.Warnf("Error during authz trace streaming: %s", err.Error())
+				}
+				return err
+			}
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 func zipPrometheusMetrics(zipWriter *zip.Writer, name string) error {

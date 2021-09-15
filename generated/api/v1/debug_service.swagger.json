@@ -11,6 +11,38 @@
     "application/json"
   ],
   "paths": {
+    "/v1/debug/authz/trace": {
+      "get": {
+        "summary": "Stream authorization traces for all incoming requests.",
+        "operationId": "DebugService_StreamAuthzTraces",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1AuthorizationTraceResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/runtimeStreamError"
+                }
+              },
+              "title": "Stream result of v1AuthorizationTraceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "DebugService"
+        ]
+      }
+    },
     "/v1/debug/loglevel": {
       "get": {
         "summary": "Get the current logging level for StackRox services.",
@@ -79,6 +111,121 @@
     }
   },
   "definitions": {
+    "AuthorizationTraceResponseResponseStatus": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_STATUS",
+        "SUCCESS",
+        "FAILURE"
+      ],
+      "default": "UNKNOWN_STATUS"
+    },
+    "AuthorizationTraceResponseTrace": {
+      "type": "object",
+      "properties": {
+        "scopeCheckerType": {
+          "type": "string"
+        },
+        "builtIn": {
+          "$ref": "#/definitions/TraceBuiltInAuthorizer"
+        }
+      }
+    },
+    "AuthorizationTraceResponseUserRole": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/storageAccess"
+          }
+        },
+        "accessScopeName": {
+          "type": "string"
+        },
+        "accessScope": {
+          "$ref": "#/definitions/SimpleAccessScopeRules"
+        }
+      }
+    },
+    "SimpleAccessScopeRules": {
+      "type": "object",
+      "properties": {
+        "includedClusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "includedNamespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SimpleAccessScopeRulesNamespace"
+          }
+        },
+        "clusterLabelSelectors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSetBasedLabelSelector"
+          }
+        },
+        "namespaceLabelSelectors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSetBasedLabelSelector"
+          }
+        }
+      },
+      "description": "Each element of any repeated field is an individual rule. Rules are\njoined by logical OR: if there exists a rule allowing resource `x`,\n`x` is in the access scope."
+    },
+    "SimpleAccessScopeRulesNamespace": {
+      "type": "object",
+      "properties": {
+        "clusterName": {
+          "type": "string",
+          "description": "Both fields must be set."
+        },
+        "namespaceName": {
+          "type": "string"
+        }
+      }
+    },
+    "TraceBuiltInAuthorizer": {
+      "type": "object",
+      "properties": {
+        "clustersTotalNum": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "namespacesTotalNum": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "deniedAuthzDecisions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "allowedAuthzDecisions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "effectiveAccessScopes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -111,6 +258,151 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpcCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "httpCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "httpStatus": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "storageAccess": {
+      "type": "string",
+      "enum": [
+        "NO_ACCESS",
+        "READ_ACCESS",
+        "READ_WRITE_ACCESS"
+      ],
+      "default": "NO_ACCESS"
+    },
+    "storageSetBasedLabelSelector": {
+      "type": "object",
+      "properties": {
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSetBasedLabelSelectorRequirement"
+          }
+        }
+      },
+      "description": "SetBasedLabelSelector only allows set-based label requirements.\n\nNext available tag: 3"
+    },
+    "storageSetBasedLabelSelectorOperator": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "IN",
+        "NOT_IN",
+        "EXISTS",
+        "NOT_EXISTS"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageSetBasedLabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/storageSetBasedLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
+    },
+    "v1AuthorizationTraceResponse": {
+      "type": "object",
+      "properties": {
+        "arrivedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "processedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "request": {
+          "$ref": "#/definitions/v1AuthorizationTraceResponseRequest"
+        },
+        "response": {
+          "$ref": "#/definitions/v1AuthorizationTraceResponseResponse"
+        },
+        "user": {
+          "$ref": "#/definitions/v1AuthorizationTraceResponseUser"
+        },
+        "trace": {
+          "$ref": "#/definitions/AuthorizationTraceResponseTrace"
+        }
+      }
+    },
+    "v1AuthorizationTraceResponseRequest": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        }
+      }
+    },
+    "v1AuthorizationTraceResponseResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/AuthorizationTraceResponseResponseStatus"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "v1AuthorizationTraceResponseUser": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "friendlyName": {
+          "type": "string"
+        },
+        "aggregatedPermissions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/storageAccess"
+          }
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthorizationTraceResponseUserRole"
           }
         }
       }

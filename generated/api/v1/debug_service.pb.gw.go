@@ -103,6 +103,23 @@ func local_request_DebugService_SetLogLevel_0(ctx context.Context, marshaler run
 
 }
 
+func request_DebugService_StreamAuthzTraces_0(ctx context.Context, marshaler runtime.Marshaler, client DebugServiceClient, req *http.Request, pathParams map[string]string) (DebugService_StreamAuthzTracesClient, runtime.ServerMetadata, error) {
+	var protoReq Empty
+	var metadata runtime.ServerMetadata
+
+	stream, err := client.StreamAuthzTraces(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
 // RegisterDebugServiceHandlerServer registers the http handlers for service DebugService to "mux".
 // UnaryRPC     :call DebugServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -153,6 +170,13 @@ func RegisterDebugServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 
 		forward_DebugService_SetLogLevel_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
+	})
+
+	mux.Handle("GET", pattern_DebugService_StreamAuthzTraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
 	})
 
 	return nil
@@ -236,6 +260,26 @@ func RegisterDebugServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 
 	})
 
+	mux.Handle("GET", pattern_DebugService_StreamAuthzTraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_DebugService_StreamAuthzTraces_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_DebugService_StreamAuthzTraces_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -243,10 +287,14 @@ var (
 	pattern_DebugService_GetLogLevel_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "debug", "loglevel"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_DebugService_SetLogLevel_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "debug", "loglevel"}, "", runtime.AssumeColonVerbOpt(false)))
+
+	pattern_DebugService_StreamAuthzTraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "debug", "authz", "trace"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
 	forward_DebugService_GetLogLevel_0 = runtime.ForwardResponseMessage
 
 	forward_DebugService_SetLogLevel_0 = runtime.ForwardResponseMessage
+
+	forward_DebugService_StreamAuthzTraces_0 = runtime.ForwardResponseStream
 )
