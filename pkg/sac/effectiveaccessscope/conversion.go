@@ -19,33 +19,23 @@ func ToEffectiveAccessScope(tree *ScopeTree) (*storage.EffectiveAccessScope, err
 		response.Clusters = make([]*storage.EffectiveAccessScope_Cluster, 0, len(tree.Clusters))
 	}
 
-	for clusterName, clusterSubTree := range tree.Clusters {
-		// TODO(ROX-7952): We don't need type conversion any more here.
-		extras, ok := clusterSubTree.Extras.(*ScopeTreeExtras)
-		if !ok {
-			return nil, errors.Errorf("rich data not available for cluster %q", clusterName)
-		}
+	for _, clusterSubTree := range tree.Clusters {
 		cluster := &storage.EffectiveAccessScope_Cluster{
-			Id:     extras.ID,
-			Name:   extras.Name,
+			Id:     clusterSubTree.Attributes.ID,
+			Name:   clusterSubTree.Attributes.Name,
 			State:  convertScopeStateToEffectiveAccessScopeState(clusterSubTree.State),
-			Labels: extras.Labels,
+			Labels: clusterSubTree.Attributes.Labels,
 		}
 		if len(clusterSubTree.Namespaces) != 0 {
 			cluster.Namespaces = make([]*storage.EffectiveAccessScope_Namespace, 0, len(clusterSubTree.Namespaces))
 		}
 
-		for namespaceName, namespaceSubTree := range clusterSubTree.Namespaces {
-			// TODO(ROX-7952): We don't need type conversion any more here.
-			extras, ok := namespaceSubTree.Extras.(*ScopeTreeExtras)
-			if !ok {
-				return nil, errors.Errorf("rich data not available for namespace '%s::%s'", clusterName, namespaceName)
-			}
+		for _, namespaceSubTree := range clusterSubTree.Namespaces {
 			namespace := &storage.EffectiveAccessScope_Namespace{
-				Id:     extras.ID,
-				Name:   extras.Name,
+				Id:     namespaceSubTree.Attributes.ID,
+				Name:   namespaceSubTree.Attributes.Name,
 				State:  convertScopeStateToEffectiveAccessScopeState(namespaceSubTree.State),
-				Labels: extras.Labels,
+				Labels: namespaceSubTree.Attributes.Labels,
 			}
 
 			cluster.Namespaces = append(cluster.Namespaces, namespace)
@@ -76,7 +66,7 @@ func ConvertLabelSelectorOperatorToSelectionOperator(op storage.SetBasedLabelSel
 	}
 }
 
-func convertScopeStateToEffectiveAccessScopeState(scopeState ScopeState) storage.EffectiveAccessScope_State {
+func convertScopeStateToEffectiveAccessScopeState(scopeState scopeState) storage.EffectiveAccessScope_State {
 	switch scopeState {
 	case Excluded:
 		return storage.EffectiveAccessScope_EXCLUDED

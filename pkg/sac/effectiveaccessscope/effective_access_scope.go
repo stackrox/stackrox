@@ -9,12 +9,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// ScopeState represents possible states of a scope.
-type ScopeState int
+// scopeState represents possible states of a scope.
+type scopeState int
 
 const (
 	// Excluded indicates that neither the scope nor its subtree are included.
-	Excluded ScopeState = iota
+	Excluded scopeState = iota
 	// Partial indicates that the scope is not included in its entirety but some
 	// of its children are included.
 	Partial
@@ -33,30 +33,26 @@ var (
 
 // ScopeTree is a tree of scopes with their states.
 type ScopeTree struct {
-	State           ScopeState
-	Clusters        map[string]*ClustersScopeSubTree // keyed by cluster name
+	State           scopeState
+	Clusters        map[string]*clustersScopeSubTree // keyed by cluster name
 	clusterIDToName map[string]string
 }
 
-// ClustersScopeSubTree is a subtree of cluster scopes with their states. Extras
-// field can be used by clients to augment the tree with additional info like
-// cluster id, labels, etc.
-//
-// TODO(ROX-7952): Extras don't need to be interface{} any more.
-type ClustersScopeSubTree struct {
-	State      ScopeState
-	Namespaces map[string]*NamespacesScopeSubTree // keyed by namespace name
-	Extras     interface{}
+// clustersScopeSubTree is a subtree of cluster scopes with their states.
+// Attributes field optionally stores additional node info, e.g., cluster id,
+// cluster name, labels.
+type clustersScopeSubTree struct {
+	State      scopeState
+	Namespaces map[string]*namespacesScopeSubTree // keyed by namespace name
+	Attributes treeNodeAttributes
 }
 
-// NamespacesScopeSubTree is a subtree of namespace scopes with their states.
-// Extras field can be used by clients to augment the tree with additional info
-// like namespace id, labels, etc.
-//
-// TODO(ROX-7952): Extras don't need to be interface{} any more.
-type NamespacesScopeSubTree struct {
-	State  ScopeState
-	Extras interface{}
+// namespacesScopeSubTree is a subtree of namespace scopes with their states.
+// Attributes field optionally stores additional node info, e.g., namespace id,
+// namespace name, labels.
+type namespacesScopeSubTree struct {
+	State      scopeState
+	Attributes treeNodeAttributes
 }
 
 // UnrestrictedEffectiveAccessScope returns ScopeTree allowing everything
@@ -95,7 +91,7 @@ func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, cl
 		parentCluster := root.Clusters[clusterName]
 		if parentCluster == nil {
 			log.Warnf("namespace %q belongs to unknown cluster %q", namespaceFQSN, clusterName)
-			parentCluster = newClusterScopeSubTreeWithExtras(Excluded, ScopeTreeExtras{Name: clusterName})
+			parentCluster = newClusterScopeSubTree(Excluded, treeNodeAttributes{Name: clusterName})
 			root.Clusters[clusterName] = parentCluster
 		}
 
@@ -161,7 +157,7 @@ func (root *ScopeTree) ToJSON() (string, error) {
 
 // GetClusterByID returns ClusterScopeSubTree for given cluster ID.
 // Returns nil when clusterID is not known.
-func (root *ScopeTree) GetClusterByID(clusterID string) *ClustersScopeSubTree {
+func (root *ScopeTree) GetClusterByID(clusterID string) *clustersScopeSubTree {
 	return root.Clusters[root.clusterIDToName[clusterID]]
 }
 
@@ -170,8 +166,6 @@ func (root *ScopeTree) GetClusterByID(clusterID string) *ClustersScopeSubTree {
 // name exist.
 func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, clusterSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := cluster.GetName()
-
-	extras := extrasForCluster(cluster, detail)
 
 	// There is no need to check if root is Included as we start with Excluded root.
 	// If it will be Included then we can include the cluster and short-circuit:
@@ -182,7 +176,7 @@ func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, cluster
 
 	// Match and update the tree.
 	matched := matchLabels(clusterSelectors, clusterLabels)
-	root.Clusters[clusterName] = newClusterScopeSubTreeWithExtras(matched, extras)
+	root.Clusters[clusterName] = newClusterScopeSubTree(matched, nodeAttributesForCluster(cluster, detail))
 	root.clusterIDToName[cluster.GetId()] = clusterName
 }
 
@@ -238,7 +232,7 @@ func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAcc
 // populateStateForNamespace adds given namespace as Included or Excluded to
 // parent cluster. Only the last observed namespace is considered if multiple
 // ones with the same <cluster name, namespace name> exist.
-func (cluster *ClustersScopeSubTree) populateStateForNamespace(namespace *storage.NamespaceMetadata, namespaceSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace *storage.NamespaceMetadata, namespaceSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := namespace.GetClusterName()
 	namespaceName := namespace.GetName()
 	namespaceFQSN := getNamespaceFQSN(clusterName, namespaceName)
@@ -246,7 +240,7 @@ func (cluster *ClustersScopeSubTree) populateStateForNamespace(namespace *storag
 	// If parent is Included, include the namespace and short-circuit:
 	// no need to match if parent is included.
 	if cluster.State == Included {
-		cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(Included, extrasForNamespace(namespace, detail))
+		cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(Included, nodeAttributesForNamespace(namespace, detail))
 		return
 	}
 
@@ -255,29 +249,29 @@ func (cluster *ClustersScopeSubTree) populateStateForNamespace(namespace *storag
 
 	// Match and update the tree.
 	matched := matchLabels(namespaceSelectors, namespaceLabels)
-	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(matched, extrasForNamespace(namespace, detail))
+	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(matched, nodeAttributesForNamespace(namespace, detail))
 }
 
-func newEffectiveAccessScopeTree(state ScopeState) *ScopeTree {
+func newEffectiveAccessScopeTree(state scopeState) *ScopeTree {
 	return &ScopeTree{
 		State:           state,
-		Clusters:        make(map[string]*ClustersScopeSubTree),
+		Clusters:        make(map[string]*clustersScopeSubTree),
 		clusterIDToName: make(map[string]string),
 	}
 }
 
-func newClusterScopeSubTreeWithExtras(state ScopeState, extras ScopeTreeExtras) *ClustersScopeSubTree {
-	return &ClustersScopeSubTree{
+func newClusterScopeSubTree(state scopeState, attributes treeNodeAttributes) *clustersScopeSubTree {
+	return &clustersScopeSubTree{
 		State:      state,
-		Namespaces: make(map[string]*NamespacesScopeSubTree),
-		Extras:     &extras,
+		Namespaces: make(map[string]*namespacesScopeSubTree),
+		Attributes: attributes,
 	}
 }
 
-func newNamespacesScopeSubTree(state ScopeState, extras ScopeTreeExtras) *NamespacesScopeSubTree {
-	return &NamespacesScopeSubTree{
-		State:  state,
-		Extras: &extras,
+func newNamespacesScopeSubTree(state scopeState, attributes treeNodeAttributes) *namespacesScopeSubTree {
+	return &namespacesScopeSubTree{
+		State:      state,
+		Attributes: attributes,
 	}
 }
 
@@ -296,7 +290,7 @@ func augmentLabels(labels map[string]string, key string, value string) map[strin
 }
 
 // matchLabels checks if any of the given selectors matches the given label map.
-func matchLabels(selectors []labels.Selector, lbls map[string]string) ScopeState {
+func matchLabels(selectors []labels.Selector, lbls map[string]string) scopeState {
 	for _, s := range selectors {
 		if s.Matches(labels.Set(lbls)) {
 			return Included
