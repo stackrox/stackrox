@@ -2398,6 +2398,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
       - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - checkout
@@ -3250,6 +3251,7 @@ jobs:
       - SENSOR_HELM_DEPLOY: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
       - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - checkout
@@ -3632,6 +3634,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
       - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - run-qa-tests:
@@ -3662,6 +3665,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
       - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - run-qa-tests:
@@ -4167,6 +4171,7 @@ jobs:
       - SENSOR_HELM_DEPLOY: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
       - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - check-label-exists-or-skip:
@@ -4193,6 +4198,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
       - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - check-label-exists-or-skip:
@@ -4220,6 +4226,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
       - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - checkout
@@ -4313,6 +4320,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_INACTIVE_IMAGE_SCANNING_UI: true
       - ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: true
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - checkout
@@ -4420,6 +4428,7 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - run-qa-tests:
@@ -4461,6 +4470,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_NETWORK_DETECTION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
 
     steps:
       - run-qa-tests:
