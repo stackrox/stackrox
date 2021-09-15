@@ -1,4 +1,3 @@
-import { violationTagsSelectors } from '../selectors/tags';
 import { violationCommentsSelectors, commentsDialogSelectors } from '../selectors/comments';
 import navigationSelectors from '../selectors/navigation';
 
@@ -29,7 +28,12 @@ export const selectors = {
         enforcementTab: 'li.pf-c-tabs__item:contains("Enforcement")',
         deploymentTab: 'li.pf-c-tabs__item:contains("Deployment")',
         policyTab: 'li.pf-c-tabs__item:contains("Policy")',
-        tags: violationTagsSelectors,
+        tags: {
+            input: '[data-testid="violation-tags"] input',
+            values: '[data-testid="violation-tags"] .pf-c-chip-group div.pf-c-chip',
+            removeValueButton: (tag) =>
+                `[data-testid="violation-tags"] div.pf-c-chip:contains(${tag}) button`,
+        },
         comments: violationCommentsSelectors,
     },
     enforcement: {

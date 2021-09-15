@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
-import ViolationTags from 'Containers/AnalystNotes/ViolationTags';
+import ViolationTags from './AnalystNotes/ViolationTags';
 import DeploytimeMessages from './DeploytimeMessages';
 import RuntimeMessages from './RuntimeMessages';
 import { ProcessViolation, LifecycleStage, Violation } from '../types/violationTypes';
