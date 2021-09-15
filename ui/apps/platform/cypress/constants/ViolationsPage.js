@@ -6,6 +6,7 @@ export const url = '/main/violations';
 
 export const selectors = {
     navLink: `${navigationSelectors.navLinks}:contains("Violations")`,
+    tableRow: 'tbody tr',
     firstTableRow: 'tbody tr:nth(0)',
     tableRowContains: (text) => `tbody tr:contains("${text}")`,
     firstTableRowLink: 'tbody tr:nth(0) a',

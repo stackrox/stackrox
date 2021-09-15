@@ -40,6 +40,7 @@ export const alerts = {
     alertscount: '/v1/alertscount?(\\?*)',
     pageSearchAutocomplete: (searchObj) => search.autocompleteBySearch(searchObj, 'ALERTS'),
     graphqlOps: {
+        addTags: 'addAlertTags',
         getTags: 'getAlertTags',
         tagsAutocomplete: 'autocomplete',
         bulkAddAlertTags: 'bulkAddAlertTags',

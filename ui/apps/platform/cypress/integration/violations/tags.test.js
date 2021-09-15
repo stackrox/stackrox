@@ -6,12 +6,16 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 
 function setAlertRoutes() {
-    cy.server();
-    cy.route('GET', api.alerts.alerts).as('alerts');
-    cy.route('GET', api.alerts.alertById).as('alertById');
-    cy.route('POST', api.graphql(api.alerts.graphqlOps.getTags)).as('getTags');
-    cy.route('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as('tagsAutocomplete');
-    cy.route('POST', api.graphql(api.alerts.graphqlOps.bulkAddAlertTags)).as('bulkAddAlertTags');
+    cy.intercept('GET', api.alerts.alerts).as('alerts');
+    cy.intercept('GET', api.alerts.alertById).as('alertById');
+    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.addTags)).as('addTags');
+    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.getTags)).as('getTags');
+    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as(
+        'tagsAutocomplete'
+    );
+    cy.intercept('POST', api.graphql(api.alerts.graphqlOps.bulkAddAlertTags)).as(
+        'bulkAddAlertTags'
+    );
 }
 
 function openFirstItemOnViolationsPage() {
@@ -24,13 +28,13 @@ function openFirstItemOnViolationsPage() {
 }
 
 function enterPageSearch(searchObj, inputSelector = search.input) {
-    cy.route(api.search.autocomplete).as('searchAutocomplete');
+    cy.intercept('GET', api.search.autocomplete).as('searchAutocomplete');
     function selectSearchOption(optionText) {
         // typing is slow, assuming we'll get autocomplete results, select them
         // also, likely it'll mimic better typical user's behavior
         cy.get(inputSelector).type(`${optionText.charAt(0)}`);
         cy.wait('@searchAutocomplete');
-        cy.get(search.options).contains(optionText).first().click({ force: true });
+        cy.get(search.options).contains(optionText).first().click();
     }
 
     Object.entries(searchObj).forEach(([searchCategory, searchValue]) => {
@@ -79,45 +83,60 @@ describe('Violation Page: Tags', () => {
     it('should add bulk tags without duplication', () => {
         setAlertRoutes();
 
-        cy.visit(url);
-        cy.wait('@alerts');
-
-        // check first item
-        cy.get(`${selectors.firstTableRow} input[type="checkbox"]`).should('not.be.checked');
-        cy.get(`${selectors.firstTableRow} input[type="checkbox"]`).check();
-
-        // add tags
-        cy.get(selectors.actions.dropdown).click();
-        cy.get(selectors.actions.addTagsBtn).click();
         const tag = randomstring.generate(7);
-        cy.get(selectors.modal.tagConfirmation.input).type(`${tag}{enter}`);
-        cy.get(selectors.modal.tagConfirmation.confirmBtn).click();
-        cy.wait('@bulkAddAlertTags');
-        cy.wait(1000);
 
-        cy.get(`${selectors.firstTableRow} input[type="checkbox"]`).should('not.be.checked');
-        cy.get(`${selectors.firstTableRow} input[type="checkbox"]`).check();
-        // also check some other violation
-        cy.get(
-            `${selectors.table.rows}:not(${selectors.firstTableRow}):first input[type="checkbox"]`
-        ).should('not.be.checked');
-        cy.get(
-            `${selectors.table.rows}:not(${selectors.firstTableRow}):first input[type="checkbox"]`
-        ).check();
+        cy.visit(url);
+        cy.wait('@alerts').then((interceptionOuter) => {
+            // Remember first and second violations in original order.
+            const [alert0, alert1] = interceptionOuter.response.body.alerts;
 
-        cy.get(selectors.actions.dropdown).click();
-        cy.get(selectors.actions.addTagsBtn).click();
-        // ROX-4626: until we hit {enter} the tag isn't created yet, button should be disabled
-        cy.get(selectors.modal.tagConfirmation.confirmBtn).should('be.disabled');
+            // Add tag to first violation on its page.
+            cy.visit(`${url}/${alert0.id}`);
+            cy.wait('@alertById');
+            cy.get(selectors.details.tags.input).type(`${tag}{enter}`);
+            cy.get('@addTags');
 
-        cy.get(selectors.modal.tagConfirmation.input).type(`${tag}{enter}`);
-        cy.get(selectors.modal.tagConfirmation.confirmBtn).click();
-        cy.wait('@bulkAddAlertTags');
+            cy.visit(url);
+            cy.wait('@alerts').then((interceptionInner) => {
+                // Find index of violations in current order, in case it has changed.
+                const { alerts } = interceptionInner.response.body;
+                const index0 = alerts.findIndex((alert) => alert.id === alert0.id);
+                const index1 = alerts.findIndex((alert) => alert.id === alert1.id);
 
-        enterPageSearch({ Tag: tag });
-        cy.wait('@alerts');
+                // Select the violation which already has a tag.
+                cy.get(`${selectors.tableRow}:nth(${index0}) input[type="checkbox"]`)
+                    .should('not.be.checked')
+                    .check();
+                // Select a violation which does not already have a tag.
+                cy.get(`${selectors.tableRow}:nth(${index1}) input[type="checkbox"]`)
+                    .should('not.be.checked')
+                    .check();
 
-        cy.get(selectors.table.rows).should('have.length', 2);
+                // Bulk add the same tag to 2 violations, including the violation which already has it.
+                cy.get(selectors.actions.dropdown).click();
+                cy.get(selectors.actions.addTagsBtn).click();
+                // ROX-4626: until we hit {enter} the tag isn't created yet, button should be disabled
+                cy.get(selectors.modal.tagConfirmation.confirmBtn).should('be.disabled');
+                cy.get(selectors.modal.tagConfirmation.input).type(`${tag}{enter}`);
+                cy.get(selectors.modal.tagConfirmation.confirmBtn).click();
+                cy.wait('@bulkAddAlertTags');
+
+                // Verify 2 violations with search filter by tag.
+                enterPageSearch({ Tag: tag });
+                cy.wait('@alerts');
+                cy.get(selectors.table.rows).should('have.length', 2);
+
+                // Verify only one occurrence of the tag on the first violation page.
+                cy.visit(`${url}/${alert0.id}`);
+                cy.wait('@alertById');
+                cy.get(selectors.details.tags.values).contains(tag).should('have.length', 1);
+
+                // Verify only one occurrence of the tag on the second violation pages.
+                cy.visit(`${url}/${alert1.id}`);
+                cy.wait('@alertById');
+                cy.get(selectors.details.tags.values).contains(tag).should('have.length', 1);
+            });
+        });
     });
 
     it('should suggest autocompletion for existing tags', () => {
