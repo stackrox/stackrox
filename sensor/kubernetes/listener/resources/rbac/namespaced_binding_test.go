@@ -39,6 +39,13 @@ func Test_namespacedBinding_Equal(t *testing.T) {
 			roleRef:  namespacedRoleRef{namespace: "test"},
 			subjects: []namespacedSubject{"b", "a"},
 		}, equal: true},
+		{this: &namespacedBinding{
+			roleRef:  namespacedRoleRef{namespace: "test"},
+			subjects: []namespacedSubject{"a", "b", "d"},
+		}, that: &namespacedBinding{
+			roleRef:  namespacedRoleRef{namespace: "test"},
+			subjects: []namespacedSubject{"b", "a", "c"},
+		}, equal: false},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("(%+v == %+v) == %t", tt.this, tt.that, tt.equal), func(t *testing.T) {

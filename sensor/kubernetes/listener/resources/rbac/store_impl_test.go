@@ -31,6 +31,15 @@ func TestStore(t *testing.T) {
 				Name:      "r1",
 				Namespace: "n1",
 			},
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"get"},
+			}, {
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"list"},
+			}},
 		},
 	}
 	clusterRoles := []*v1.ClusterRole{
@@ -129,7 +138,15 @@ func TestStore(t *testing.T) {
 						Name:      "r1",
 						Namespace: "n1",
 						CreatedAt: protoconv.ConvertTimeToTimestamp(roles[0].GetCreationTimestamp().Time),
-						Rules:     []*storage.PolicyRule{},
+						Rules: []*storage.PolicyRule{{
+							ApiGroups: []string{""},
+							Resources: []string{""},
+							Verbs:     []string{"get"},
+						}, {
+							ApiGroups: []string{""},
+							Resources: []string{""},
+							Verbs:     []string{"list"},
+						}},
 					},
 				},
 			}},
@@ -378,15 +395,27 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 	// Roles:
 	//  1. role-admin (all verbs on all resources)
 	//  2. role-default (get)
+	//  3. role-elevated (get, list) in 2 rules
+	//  4. role-elevated-2 (get, list) in a single rule
 	// Bindings:
-	//  1. admin-subject -> role-admin
-	//  2. default-subject -> role-default
+	//  1. admin-subject      -> role-admin
+	//  2. default-subject    -> role-default
+	//  3. elevated-subject   -> role-elevated
+	//  4. elevated-subject-2 -> role-elevated-2
 	// Cluster Roles:
 	//  1. cluster-admin (all verbs on all resources)
 	//  2. cluster-elevated (get on all resources)
+	//  3. cluster-elevated-2 (deletecollection)
+	//  4. cluster-elevated-3 (deletecollection on pod duplicated)
+	//  5. cluster-none (all verbs on all resources but no API groups)
+	//  6. cluster-elevated-admin (all verbs on all resources with additional rule)
 	// Cluster Bindings:
-	//  1. cluster-admin-subject -> cluster-admin
-	//  2. cluster-elevated-subject -> cluster-elevated
+	//  3. cluster-admin-subject    -> cluster-admin
+	//  4. cluster-elevated-subject -> cluster-elevated
+	//  5. cluster-elevated-admin   -> cluster-admin-2]
+	//  6. cluster-elevated-2       -> cluster-elevated-subject-3
+	//  7. cluster-elevated-3       -> cluster-elevated-subject-4
+	//  8. cluster-none             -> cluster-none-subject
 	roles := []*v1.Role{
 		{
 			ObjectMeta: meta("role-admin"),
@@ -408,6 +437,26 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 				APIGroups: []string{""},
 				Resources: []string{""},
 				Verbs:     []string{"get"},
+			}},
+		},
+		{
+			ObjectMeta: meta("role-elevated"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"get"},
+			}, {
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"list"},
+			}},
+		},
+		{
+			ObjectMeta: meta("role-elevated-2"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{""},
+				Verbs:     []string{"get", "list"},
 			}},
 		},
 	}
@@ -445,6 +494,24 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 				Namespace: "n1",
 			}},
 		},
+		{
+			ObjectMeta: meta("b3"),
+			RoleRef:    role("role-elevated"),
+			Subjects: []v1.Subject{{
+				Name:      "elevated-subject",
+				Kind:      v1.ServiceAccountKind,
+				Namespace: "n1",
+			}},
+		},
+		{
+			ObjectMeta: meta("b4"),
+			RoleRef:    role("role-elevated-2"),
+			Subjects: []v1.Subject{{
+				Name:      "elevated-subject-2",
+				Kind:      v1.ServiceAccountKind,
+				Namespace: "n1",
+			}},
+		},
 	}
 	clusterRoles := []*v1.ClusterRole{
 		{
@@ -455,8 +522,47 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		},
 		{
 			ObjectMeta: meta("cluster-admin"),
-
 			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-elevated-2"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"deletecollection"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-elevated-3"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"pod"},
+				Verbs:     []string{"deletecollection"},
+			}, {
+				APIGroups: []string{""},
+				Resources: []string{"pod"},
+				Verbs:     []string{"deletecollection"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-none"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			}},
+		},
+		{
+			ObjectMeta: meta("cluster-elevated-admin"),
+			Rules: []v1.PolicyRule{{
+				APIGroups: []string{""},
+				Resources: []string{"*"},
+				Verbs:     []string{"get"},
+			}, {
 				APIGroups: []string{""},
 				Resources: []string{"*"},
 				Verbs:     []string{"*"},
@@ -518,6 +624,41 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 			},
 		},
 		{
+			ObjectMeta: meta("b5"),
+			RoleRef:    clusterRole("cluster-elevated-admin"),
+			Subjects: []v1.Subject{
+				{
+					Name:      "cluster-admin-2",
+					Kind:      v1.ServiceAccountKind,
+					Namespace: "n1",
+				},
+			},
+		},
+		{
+			ObjectMeta: meta("b6"),
+			RoleRef:    clusterRole("cluster-elevated-2"),
+			Subjects: []v1.Subject{{
+				Name: "cluster-elevated-subject-3",
+				Kind: v1.ServiceAccountKind,
+			}},
+		},
+		{
+			ObjectMeta: meta("b7"),
+			RoleRef:    clusterRole("cluster-elevated-3"),
+			Subjects: []v1.Subject{{
+				Name: "cluster-elevated-subject-4",
+				Kind: v1.ServiceAccountKind,
+			}},
+		},
+		{
+			ObjectMeta: meta("b8"),
+			RoleRef:    clusterRole("cluster-none"),
+			Subjects: []v1.Subject{{
+				Name: "cluster-none-subject",
+				Kind: v1.ServiceAccountKind,
+			}},
+		},
+		{
 			ObjectMeta: meta("b4"),
 			RoleRef:    clusterRole("cluster-elevated"),
 			Subjects: []v1.Subject{
@@ -546,12 +687,20 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 	}{
 		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject-2", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject-3"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject-4"}},
+		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: storage.Deployment{ServiceAccount: "cluster-admin-2", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment{ServiceAccount: "cluster-namespace-subject", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-elevated-subject"}},
 		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-admin-subject", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: storage.Deployment{ServiceAccount: "cluster-admin-subject"}},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-none-subject"}},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "cluster-none-subject", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment{ServiceAccount: "admin-subject", Namespace: "n1"}},
 		{expected: storage.PermissionLevel_DEFAULT, deployment: storage.Deployment{ServiceAccount: "default-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment{ServiceAccount: "elevated-subject", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment{ServiceAccount: "elevated-subject-2", Namespace: "n1"}},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "elevated-subject-2", Namespace: "n2"}},
 		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "default-subject"}},
 		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment{ServiceAccount: "admin-subject"}},
 	}
