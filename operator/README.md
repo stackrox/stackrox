@@ -26,7 +26,7 @@ make stackrox-image-pull-secret
 kubectl -n stackrox delete persistentvolumeclaims stackrox-db
 
 # TODO: switch back to user-facing samples in `config/samples/platform_v1alpha1_*.yaml`.
-kubectl apply -n stackrox -f tests/securedcluster/basic-sc/05-central-cr.yaml
+kubectl apply -n stackrox -f tests/common/central-cr.yaml
 ```
 
 4. Once Central services come online, create Secured Cluster using test sample.
@@ -38,7 +38,7 @@ kubectl -n stackrox exec deploy/central -- \
   | kubectl -n stackrox apply -f -
 
 # Create Secured Cluster CR
-kubectl apply -n stackrox -f tests/securedcluster/basic-sc/10-secured-cluster-cr.yaml
+kubectl apply -n stackrox -f tests/common/secured-cluster-cr.yaml
 ```
 
 4. Check status of the custom resource.

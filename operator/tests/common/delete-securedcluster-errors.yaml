@@ -1,0 +1,9 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor

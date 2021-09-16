@@ -4518,6 +4518,10 @@ jobs:
         at: /go/src/github.com/stackrox/rox
 
     - run:
+        name: Install Python's Virtualenv
+        command: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-venv
+
+    - run:
         name: Restore KUBECONFIG
         command: |
           ls -lh $PWD/operator-oc4/data
@@ -4532,8 +4536,15 @@ jobs:
     - *setupGoogleAppCreds
 
     - run:
-        name: Start operator manager on cluster
-        command: make -C operator deploy-via-olm
+        name: Start previous version of operator manager on cluster
+        command: make -C operator deploy-previous-via-olm
+
+    - run:
+        name: Run Operator upgrade tests
+        command: make -C operator test-upgrade
+
+    - store-test-results-and-artifacts:
+        path: operator/build/kuttl-test-artifacts
 
     - run:
         name: Run Operator e2e tests

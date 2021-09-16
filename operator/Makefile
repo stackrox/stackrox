@@ -45,6 +45,9 @@ INDEX_IMG ?= $(INDEX_IMG_BASE):v$(VERSION)
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
+# TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
+TEST_NAMESPACE ?= stackrox-operator
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -199,6 +202,12 @@ test-e2e-deployed: kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	SKIP_MANAGER_START=1 $(KUTTL) test
 
+test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
+	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
+	SKIP_MANAGER_START=1 \
+	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
+	KUTTL=$(KUTTL) $(KUTTL) test --config kuttl-test.yaml tests/upgrade
+
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on DockerHub. Used by Helm chart.
 # Create stackrox namespace if not exists.
 	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "stackrox" } }' | kubectl apply -f -
@@ -238,23 +247,40 @@ docker-build: test ## Build docker image with the operator.
 
 ##@ Deployment
 
+.PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
+.PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
+.PHONY: deploy
 deploy: manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
+.PHONY: undeploy
 undeploy: kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+.PHONY: deploy-via-olm
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	./hack/olm-operator-install.sh stackrox-operator $(VERSION)
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION)
+
+.PHONY: deploy-previous-via-olm
+deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
+# This requires operator, bundle and index images to already be pushed, but we do not depend on the
+# target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
+	@replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	set -x ;\
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) $${replaced_version_no_v}
+
+.PHONY: upgrade-via-olm
+upgrade-via-olm: kuttl
+	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION)
 
 ##@ Bundle and Index build
 

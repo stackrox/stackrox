@@ -1,0 +1,121 @@
+# A library of bash functions useful for installing operator using OLM.
+
+declare -r IMAGE_TAG_BASE="${IMAGE_TAG_BASE:-docker.io/stackrox/stackrox-operator}"
+declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
+declare -r pull_secret="operator-pull-secret"
+# `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
+ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
+readonly ROOT_DIR
+
+function log() {
+    echo "$(date -u "+%Y-%m-%dT%H:%M:%SZ")" "$@" >&2
+}
+
+function create_namespace() {
+  local -r operator_ns="$1"
+  log "Creating namespace..."
+  echo '{"kind": "Namespace", "apiVersion": "v1", "metadata": { "name": "'"${operator_ns}"'" } }' \
+    | kubectl apply -f -
+}
+
+function create_pull_secret() {
+  local -r operator_ns="$1"
+  # Note: can get rid of this secret once its in the cluster global pull secrets,
+  # see https://stack-rox.atlassian.net/browse/RS-261
+  log "Creating image pull secret..."
+  local -r registry_hostname="${IMAGE_TAG_BASE%%/*}"
+  "${ROOT_DIR}/deploy/common/pull-secret.sh" "${pull_secret}" "${registry_hostname}" \
+    | kubectl -n "${operator_ns}" apply -f -
+}
+
+function apply_operator_manifests() {
+  log "Applying operator manifests..."
+  local -r image_registry="${IMAGE_TAG_BASE%/*}"
+  local -r operator_ns="$1"
+  local -r index_version="$2"
+  local -r operator_version="$3"
+  env -i PATH="${PATH}" \
+    INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
+    `# TODO(ROX-7740): Remove the following two once we have a single dev+CI repo.` \
+    IMAGE_TAG_BASE="${IMAGE_TAG_BASE}" IMAGE_REGISTRY="${image_registry}" \
+    envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
+    | kubectl -n "${operator_ns}" apply -f -
+}
+
+function retry() {
+  local -ir max_attempts=$1; shift
+  local -ir sleep=$1; shift
+  for attempt in $(seq "${max_attempts}")
+  do
+    if (( attempt > 1 )); then
+      log "retrying in ${sleep}s..."
+      sleep "${sleep}"
+    fi
+    if "$@"
+    then
+      return 0
+    fi
+  done
+  log "failed $max_attempts attempts"
+  return 1
+}
+
+function approve_install_plan() {
+  local -r operator_ns="$1"
+  local -r version_tag="$2"
+
+  log "Waiting for an install plan to be created"
+  retry 10 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s
+
+  log "Verifying that the subscription is progressing to the expected CSV of ${version_tag}..."
+  local current_csv
+  # `local` ignores `errexit` so we assign value separately: http://mywiki.wooledge.org/BashFAQ/105
+  current_csv=$(kubectl get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
+  readonly current_csv
+  local -r expected_csv="rhacs-operator.v${version_tag}"
+  if [[ $current_csv != $expected_csv ]]; then
+    log "Subscription is progressing to unexpected CSV '${current_csv}', expected '${expected_csv}'"
+    return 1
+  fi
+
+  local install_plan_name
+  # `local` ignores `errexit` so we assign value separately: http://mywiki.wooledge.org/BashFAQ/105
+  install_plan_name=$(kubectl get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.installPlanRef.name}")
+  readonly install_plan_name
+
+  log "Approving install plan ${install_plan_name}"
+  retry 3 5 kubectl -n "${operator_ns}" patch installplan "${install_plan_name}" --type merge -p '{"spec":{"approved":true}}'
+}
+
+function nurse_deployment_until_available() {
+  local -r operator_ns="$1"
+  local -r version_tag="$2"
+
+  log "Patching image pull secret into ${version_tag} CSV..."
+  retry 20 5 kubectl -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
+    "rhacs-operator.v${version_tag}" --type json \
+    -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "'"${pull_secret}"'"}] } ]'
+
+  # Just waiting turns out to be the quickest and most reliable way of propagating the change.
+  # Deleting the deployment sometimes tends to never get reconciled, with evidence of the
+  # reconciliation failing with "not found" errors. OTOH simply leaving an unhealthy deployment around
+  # means it will get updated eventually (and usually in under a minute).
+
+  # We check the CSV status first, because it is hard to wait for the deployment in a non-racy way:
+  # the deployment .status is set separately from the .spec, so the .status reflects the status of
+  # the _old_ .spec until the deployment controller runs the first reconciliation.
+  # We use kuttl because CSV has a Condition type incompatible with `kubectl wait`.
+  log "Waiting for the ${version_tag} CSV to finish installing."
+  "${KUTTL}" assert --timeout 300 --namespace "${operator_ns}" /dev/stdin <<-END
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: rhacs-operator.v${version_tag}
+status:
+  phase: Succeeded
+END
+
+  # Double-check that the deployment itself is healthy.
+  log "Making sure the ${version_tag} operator deployment is available..."
+  retry 3 5 kubectl -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.v${version_tag}" --for condition=available --timeout 5s
+}

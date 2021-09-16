@@ -6,7 +6,7 @@ spec:
   sourceType: grpc
   secrets:
   - operator-pull-secret
-  image: ${IMAGE_TAG_BASE}-index:v${VERSION_TAG}
+  image: ${IMAGE_TAG_BASE}-index:v${INDEX_VERSION}
   displayName: StackRox Operator Test index
 ---
 apiVersion: operators.coreos.com/v1alpha2
@@ -23,7 +23,8 @@ spec:
   name: rhacs-operator
   source: stackrox-operator-test-index
   sourceNamespace: ${NAMESPACE}
-  installPlanApproval: Automatic
+  installPlanApproval: Manual
+  startingCSV: rhacs-operator.v${OPERATOR_VERSION}
   config:
     env:
     # TODO(ROX-7740): Remove these once we have a single dev+CI repo.
