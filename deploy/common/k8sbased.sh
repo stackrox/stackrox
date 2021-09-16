@@ -391,6 +391,11 @@ function launch_sensor {
         extra_helm_config+=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
     fi
 
+    if [[ -n "$ROXCTL_TIMEOUT" ]]; then
+      echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
+      extra_config+=("--timeout=$ROXCTL_TIMEOUT")
+    fi
+
     # Delete path
     rm -rf "$k8s_dir/sensor-deploy"
 

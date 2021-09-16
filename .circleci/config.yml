@@ -468,6 +468,18 @@ getPrometheusMetricParser: &getPrometheusMetricParser
       go get github.com/stackrox/prometheus-metric-parser
       prometheus-metric-parser help
 
+fetchBundleForRemoteClusterInTheDB: &fetchBundleForRemoteClusterInTheDB
+  run:
+    name: Fetch bundle for the "remote" cluster in the DB
+    command: |
+      extra_args=()
+      if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+        # builds with -race are very slow at building the bundle (PR #8149)
+        extra_args+=(-t 60s)
+      fi
+      roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" "${extra_args[@]}" sensor get-bundle remote
+      [[ -d sensor-remote ]]
+
 version: 2.1
 
 parameters:
@@ -1871,6 +1883,11 @@ commands:
               export ADMISSION_CONTROLLER=true
             else
               echo "Deploying sensor using kubectl ... "
+              if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+                # builds with -race are slow at generating the sensor bundle
+                # https://stack-rox.atlassian.net/browse/ROX-6987
+                export ROXCTL_TIMEOUT=60s
+              fi
             fi
 
             deploy/<< parameters.orchestrator-flavor >>/sensor.sh
@@ -3718,12 +3735,11 @@ jobs:
 
       - *waitForAPI
 
-      - run:
-          name: Fetch bundle for the "remote" cluster in the DB
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor get-bundle remote
-            [[ -d sensor-remote ]]
+      - *fetchBundleForRemoteClusterInTheDB
 
+      - run:
+          name: Edit the main image and collector image in the YAMLs to be the latest ones
+          command: |
             cci-export ROXCTL_IMAGE_REPO quay.io/cgorman1/roxctl
             cci-export QUAY_REPO cgorman1
 
@@ -3790,7 +3806,11 @@ jobs:
       - run:
           name: Create a "sensor-remote-new" cluster
           command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor generate k8s \
+            extra_args=()
+            if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+              extra_args+=(-t 60s)
+            fi
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" "${extra_args[@]}" sensor generate k8s \
               --main-image-repository "${MAIN_IMAGE_REPO:-quay.io/$QUAY_REPO/main}" \
               --collector-image-repository "${COLLECTOR_IMAGE_REPO:-quay.io/$QUAY_REPO/collector}" \
               --name remote-new \
@@ -4016,16 +4036,7 @@ jobs:
           upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
           desc: "Validate RocksDB after backup + restore"
 
-      - run:
-          name: Fetch bundle for the "remote" cluster in the DB
-          command: |
-            extra_args=()
-            if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
-              # builds with -race are very slow at building the bundle (PR #8149)
-              extra_args+=(-t 40s)
-            fi
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" "${extra_args[@]}" sensor get-bundle remote
-            [[ -d sensor-remote ]]
+      - *fetchBundleForRemoteClusterInTheDB
 
       - run:
           name: Install the sensor and patch to correct images
