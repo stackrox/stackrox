@@ -11,7 +11,6 @@ import {
     sidePanelEntityCountMatchesTableRows,
     entityListCountMatchesTableLinkCount,
 } from '../../helpers/configWorkflowUtils';
-import { url } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
 describe('Config Management Entities (Namespaces)', () => {
@@ -99,12 +98,10 @@ describe('Config Management Entities (Namespaces)', () => {
     });
 
     it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
-        cy.visit(url.list.namespaces);
-        entityListCountMatchesTableLinkCount('Service Accounts');
+        entityListCountMatchesTableLinkCount('namespaces', 'Service Accounts');
     });
 
     it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
-        cy.visit(url.list.namespaces);
-        entityListCountMatchesTableLinkCount('Roles');
+        entityListCountMatchesTableLinkCount('namespaces', 'Roles');
     });
 });

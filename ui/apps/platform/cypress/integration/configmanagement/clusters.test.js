@@ -181,17 +181,14 @@ describe('Config Management Entities (Clusters)', () => {
     });
 
     it('should open the side panel to show the same number of Users & Groups when the Users & Groups link is clicked', () => {
-        cy.visit(url.list.clusters);
-        entityListCountMatchesTableLinkCount('Users & Groups');
+        entityListCountMatchesTableLinkCount('clusters', 'Users & Groups');
     });
 
     it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
-        cy.visit(url.list.clusters);
-        entityListCountMatchesTableLinkCount('Service Accounts');
+        entityListCountMatchesTableLinkCount('clusters', 'Service Accounts');
     });
 
     it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
-        cy.visit(url.list.clusters);
-        entityListCountMatchesTableLinkCount('Roles');
+        entityListCountMatchesTableLinkCount('clusters', 'Roles');
     });
 });
