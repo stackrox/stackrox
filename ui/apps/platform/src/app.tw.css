@@ -288,7 +288,6 @@ h6 {
 .search-modal {
     position: absolute;
     left: 0;
-    z-index: 10;
     top: 76px;
     height: calc(100% - 76px);
 }
