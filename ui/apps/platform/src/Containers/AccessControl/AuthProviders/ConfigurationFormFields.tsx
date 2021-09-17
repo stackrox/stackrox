@@ -399,6 +399,11 @@ function ConfigurationFormFields({
                                             <kbd className="pf-u-font-size-xs">
                                                 https://idp.example.com/
                                             </kbd>
+                                            {', '}
+                                            or{' '}
+                                            <kbd className="pf-u-font-size-xs">
+                                                urn:something:else
+                                            </kbd>
                                         </span>
                                     }
                                     helperTextInvalid={configErrors?.idp_issuer || ''}
