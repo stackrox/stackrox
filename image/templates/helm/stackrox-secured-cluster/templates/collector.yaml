@@ -48,7 +48,7 @@ spec:
         - name: GRPC_SERVER
           value: {{ ._rox.sensor.endpoint }}
         - name: SNI_HOSTNAME
-          value: "sensor.stackrox"
+          value: "sensor.stackrox.svc"
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
           {{- ._rox.collector._resources | nindent 10 }}
