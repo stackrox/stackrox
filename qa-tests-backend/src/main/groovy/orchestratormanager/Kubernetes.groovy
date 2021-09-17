@@ -493,6 +493,12 @@ class Kubernetes implements OrchestratorMain {
         return this.deployments.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
+    List<String> getDeployments(String ns) {
+        return evaluateWithRetry(2, 3) {
+            this.deployments.inNamespace(ns).list().getItems().collect { it.metadata.name }
+        }
+    }
+
     def createPortForward(int port, Deployment deployment, String podName = "") {
         if (deployment.pods.size() == 0) {
             throw new KubernetesClientException(
@@ -1217,6 +1223,14 @@ class Kubernetes implements OrchestratorMain {
     def removeNamespaceAnnotation(String ns, String key) {
         client.namespaces().withName(ns).edit {
             n -> new NamespaceBuilder(n).editMetadata().removeFromAnnotations(key).endMetadata().build()
+        }
+    }
+
+    List<String> getNamespaces() {
+        return evaluateWithRetry(2, 3) {
+            return client.namespaces().list().items.collect {
+                it.metadata.name
+            }
         }
     }
 

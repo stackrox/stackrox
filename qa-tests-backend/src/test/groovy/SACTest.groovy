@@ -24,7 +24,9 @@ import spock.lang.Unroll
 @Category(BAT)
 class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
+    static final private String NAMESPACE_QA1 = "qa-test1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
+    static final private String NAMESPACE_QA2 = "qa-test2"
     static final private String TEST_IMAGE = "nginx:1.7.9"
     static final private String NONE = "None"
     static final private String SECRETNAME = "sac-secret"
@@ -36,7 +38,7 @@ class SACTest extends BaseSpecification {
             .addPort(22, "TCP")
             .addAnnotation("test", "annotation")
             .setEnv(["CLUSTER_NAME": "main"])
-            .setNamespace("qa-test1")
+            .setNamespace(NAMESPACE_QA1)
             .addLabel("app", "test")
     static final protected Deployment DEPLOYMENT_QA2 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA2)
@@ -44,7 +46,7 @@ class SACTest extends BaseSpecification {
             .addPort(22, "TCP")
             .addAnnotation("test", "annotation")
             .setEnv(["CLUSTER_NAME": "main"])
-            .setNamespace("qa-test2")
+            .setNamespace(NAMESPACE_QA2)
             .addLabel("app", "test")
 
     static final private List<Deployment> DEPLOYMENTS = [DEPLOYMENT_QA1, DEPLOYMENT_QA2,]
@@ -74,6 +76,11 @@ class SACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
+        }
+        [NAMESPACE_QA1, NAMESPACE_QA2].forEach {
+            ns ->
+                orchestrator.deleteNamespace(ns)
+                orchestrator.waitForNamespaceDeletion(ns)
         }
     }
 
@@ -136,7 +143,7 @@ class SACTest extends BaseSpecification {
         where:
         "Data inputs are: "
         sacResource | _
-        "qa-test2"  | _
+        NAMESPACE_QA2 | _
     }
 
     def "Verify GetSummaryCounts using a token without access receives no results"() {
@@ -501,9 +508,9 @@ class SACTest extends BaseSpecification {
                                                                SSOC.SearchCategory.IMAGES,
                                                                SSOC.SearchCategory.DEPLOYMENTS]
         "kubeSystemDeploymentsImagesToken" | "kube-system"  | [SSOC.SearchCategory.IMAGES]
-        "searchNamespacesToken"            | "qa-test1"     | [SSOC.SearchCategory.NAMESPACES]
-        "searchDeploymentsToken"           | "qa-test1"     | [SSOC.SearchCategory.DEPLOYMENTS]
-        "searchDeploymentsImagesToken"     | "qa-test1"     | [SSOC.SearchCategory.IMAGES]
+        "searchNamespacesToken"            | NAMESPACE_QA1  | [SSOC.SearchCategory.NAMESPACES]
+        "searchDeploymentsToken"           | NAMESPACE_QA1  | [SSOC.SearchCategory.DEPLOYMENTS]
+        "searchDeploymentsImagesToken"     | NAMESPACE_QA1  | [SSOC.SearchCategory.IMAGES]
     }
 
     def "Verify that SAC has the same effect as query restriction for network flows"() {

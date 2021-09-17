@@ -229,6 +229,8 @@ class NetworkFlowTest extends BaseSpecification {
                 orchestrator.waitForServiceDeletion(new Service(deployment.name, deployment.namespace))
             }
         }
+        orchestrator.deleteNamespace(OTHER_NAMESPACE)
+        orchestrator.waitForNamespaceDeletion(OTHER_NAMESPACE)
     }
 
     def cleanupSpec() {

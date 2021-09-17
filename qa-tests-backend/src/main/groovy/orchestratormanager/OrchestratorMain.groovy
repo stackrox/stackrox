@@ -56,6 +56,7 @@ interface OrchestratorMain {
     def updateDeploymentEnv(String ns, String name, String key, String value)
     EnvVar getDeploymentEnv(String ns, String name, String key)
     def scaleDeployment(String ns, String name, Integer replicas)
+    List<String> getDeployments(String ns)
 
     //DaemonSets
     def createDaemonSet(DaemonSet daemonSet)
@@ -110,6 +111,7 @@ interface OrchestratorMain {
     def removeNamespaceAnnotation(String ns, String key)
     def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated)
     List<Namespace> getNamespaceDetails()
+    List<String> getNamespaces()
 
     //NetworkPolicies
     String applyNetworkPolicy(NetworkPolicy policy)

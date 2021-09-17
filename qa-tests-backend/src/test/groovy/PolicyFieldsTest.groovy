@@ -157,6 +157,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private CONFIG_MAP_NAME = "test-config-map"
     static final private SECRET_NAME = "test-secret"
 
+    static final private NAMESPACE_C = "qa-policyfieldstest-c"
     static final private Deployment DEP_C =
             createAndRegisterDeployment()
                     .setName("deployment-c")
@@ -166,7 +167,7 @@ class PolicyFieldsTest extends BaseSpecification {
                     .addLabel("im-a-key", "with_a_different_value")
                     .addLabel("another-key", "and_a_value")
                     .setReadOnlyRootFilesystem(true)
-                    .setNamespace("qa-policyfieldstest-c")
+                    .setNamespace(NAMESPACE_C)
                     .setContainerName("match-container-name")
 
     static final private BASED_ON_ALPINE = DEP_C
@@ -188,11 +189,12 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITH_NAMESPACE_POLICYFIELDTEST_C = DEP_C
     static final private WITH_CONTAINER_NAME_SET = DEP_C
 
+    static final private NAMESPACE_D = "qa-policyfieldstest-d"
     static final private Deployment DEP_D =
             createAndRegisterDeployment()
                     .setName("deployment-d")
                     .setImage("quay.io/cgorman1/qa:apache-dns")
-                    .setNamespace("qa-policyfieldstest-d")
+                    .setNamespace(NAMESPACE_D)
 
     static final private WITHOUT_ANNOTATIONS = DEP_D
     static final private WITH_COMPONENT_CPIO = DEP_D
@@ -812,6 +814,12 @@ class PolicyFieldsTest extends BaseSpecification {
 
         for (policyID in createdPolicyIds) {
             PolicyService.deletePolicy(policyID)
+        }
+
+        [NAMESPACE_C, NAMESPACE_D].forEach {
+            ns ->
+                orchestrator.deleteNamespace(ns)
+                orchestrator.waitForNamespaceDeletion(ns)
         }
     }
 

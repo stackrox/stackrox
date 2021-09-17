@@ -10,6 +10,10 @@ import objects.Secret
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import orchestratormanager.OrchestratorTypes
+import org.javers.core.Javers
+import org.javers.core.JaversBuilder
+import org.javers.core.diff.Diff
+import org.javers.core.diff.ListCompareAlgorithm
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -55,6 +59,8 @@ class BaseSpecification extends Specification {
     protected static String allAccessToken = null
 
     public static strictIntegrationTesting = false
+
+    Map<String, List<String>> resourceRecord = [:]
 
     private static globalSetup() {
         if (globalSetupDone) {
@@ -223,6 +229,16 @@ class BaseSpecification extends Specification {
             println "WARNING: Could not create the core image integration."
             println "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
+
+        recordResourcesAtSpecStart()
+    }
+
+    def recordResourcesAtSpecStart() {
+        resourceRecord = [
+                "namespaces": orchestrator.getNamespaces(),
+                "deployments": orchestrator.getDeployments("default") +
+                        orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE),
+        ]
     }
 
     def resetAuth() {
@@ -266,6 +282,33 @@ class BaseSpecification extends Specification {
             throw e
         }
         disableAuthzPlugin()
+
+        compareResourcesAtSpecEnd()
+    }
+
+    def compareResourcesAtSpecEnd() {
+        Javers javers = JaversBuilder.javers()
+                .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
+                .build()
+
+        List<String> namespaces = orchestrator.getNamespaces()
+        Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
+        if (diff.hasChanges()) {
+            println "There is a difference in namespaces between the start and end of this test spec:"
+            println diff.prettyPrint()
+            throw new TestSpecRuntimeException("Namespaces have changed. Ensure that any namespace created " +
+                    "in a test spec is deleted in that test spec.")
+        }
+
+        List<String> deployments = orchestrator.getDeployments("default") +
+                orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
+        diff = javers.compare(resourceRecord["deployments"], deployments)
+        if (diff.hasChanges()) {
+            println "There is a difference in deployments between the start and end of this test spec"
+            println diff.prettyPrint()
+            throw new TestSpecRuntimeException("Deployments have changed. Ensure that any deployments created " +
+                    "in a test spec are destroyed in that test spec.")
+        }
     }
 
     def cleanup() {
@@ -357,5 +400,11 @@ class BaseSpecification extends Specification {
         def date = new Date()
         def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
         println "${sdf.format(date)} ${msg}"
+    }
+}
+
+class TestSpecRuntimeException extends RuntimeException {
+    TestSpecRuntimeException(String message) {
+        super(message)
     }
 }
