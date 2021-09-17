@@ -16,6 +16,10 @@ type namespacedRole struct {
 	rules     []*storage.PolicyRule
 }
 
+func (r *namespacedRoleRef) IsClusterRole() bool {
+	return len(r.namespace) == 0
+}
+
 func (r *namespacedRole) Equal(other *namespacedRole) bool {
 	if r == nil || other == nil {
 		return r == other
@@ -63,6 +67,13 @@ func clusterRoleAsNamespacedRole(role *v1.ClusterRole) *namespacedRole {
 }
 
 func roleBindingToNamespacedRoleRef(roleBinding *v1.RoleBinding) namespacedRoleRef {
+	if roleBinding.RoleRef.Kind == "ClusterRole" {
+		return namespacedRoleRef{
+			namespace: "",
+			name:      roleBinding.RoleRef.Name,
+		}
+	}
+
 	return namespacedRoleRef{
 		namespace: roleBinding.GetNamespace(),
 		name:      roleBinding.RoleRef.Name,
