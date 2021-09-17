@@ -141,10 +141,7 @@ function AuthProviderForm({
                     }),
                     idp_issuer: yup.string().when('configurationType', {
                         is: (value) => value === 'static',
-                        then: yup
-                            .string()
-                            .required('An IdP issuer is required.')
-                            .url('Must be a valid URL, for example, https://idp.example.com/'),
+                        then: yup.string().required('An IdP issuer is required.'),
                     }),
                     idp_sso_url: yup.string().when('configurationType', {
                         is: (value) => value === 'static',

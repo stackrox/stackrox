@@ -6,7 +6,6 @@ import {
 import { permissions as permissionsApi } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 // TODO Fix 'v1/authProviders*' without initial slash and with asterisk in apiEndpoints?
 const authProvidersApi = {
@@ -22,12 +21,6 @@ const h2 = 'Auth providers';
 
 describe('Access Control Auth providers', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_SCOPED_ACCESS_CONTROL_V2')) {
-            this.skip();
-        }
-    });
 
     function visitAuthProviders() {
         cy.intercept('GET', authProvidersApi.list).as('GetAuthProviders');
