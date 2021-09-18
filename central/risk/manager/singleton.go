@@ -1,6 +1,7 @@
 package manager
 
 import (
+	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
@@ -34,7 +35,9 @@ func initialize() {
 
 		ranking.ClusterRanker(),
 		ranking.NamespaceRanker(),
-		ranking.ComponentRanker())
+		ranking.ComponentRanker(),
+
+		acUpdater.Singleton())
 }
 
 // Singleton provides the singleton Manager to use.

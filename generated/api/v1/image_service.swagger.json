@@ -703,7 +703,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/EmbeddedImageScanComponentExecutable"
-          }
+          },
+          "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
         }
       },
       "title": "Next Tag: 13"

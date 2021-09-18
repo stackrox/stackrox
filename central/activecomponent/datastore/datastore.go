@@ -20,7 +20,7 @@ type DataStore interface {
 
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error)
-	GetBatch(ctx context.Context, id []string) ([]*storage.ActiveComponent, error)
+	GetBatch(ctx context.Context, ids []string) ([]*storage.ActiveComponent, error)
 
 	UpsertBatch(ctx context.Context, activeComponents []*converter.CompleteActiveComponent) error
 	DeleteBatch(ctx context.Context, ids ...string) error

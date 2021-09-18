@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
@@ -32,6 +33,7 @@ func initialize() {
 		reprocessor.Singleton(),
 		cache.DeletedDeploymentCacheSingleton(),
 		filter.Singleton(),
+		aggregator.Singleton(),
 	)
 
 	policies, err := policyDataStore.Singleton().GetAllPolicies(lifecycleMgrCtx)

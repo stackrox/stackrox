@@ -90,7 +90,8 @@ message EmbeddedImageScanComponent {
     message Executable {
         string path = 1;
     }
-    repeated Executable            executables = 12;
+    // Values are cleared after moving to cache, remove them from the grpc return as well
+    repeated Executable            executables = 12 [(gogoproto.jsontag) = "-"];
 }
 
 enum SourceType {

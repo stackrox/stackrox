@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
@@ -188,13 +189,15 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 		defer txn.Discard()
 
 		g := txn.Graph()
+		acKeys := g.GetRefsFromPrefix(deploymentKey, acDackBox.Bucket)
 		// Clear cluster pointing to the namespace before setting the new one.
 		// This is to handle situations where a new cluster bundle is generated for an existing cluster, as the cluster
 		// ID will change, the the IDs for child objects will remain the same.
 		g.DeleteRefsTo(namespaceKey)
 		g.AddRefs(clusterKey, namespaceKey)
 		g.AddRefs(namespaceKey, deploymentKey)
-		g.SetRefs(deploymentKey, imageKeys)
+		// Merge image keys and active component keys
+		g.SetRefs(deploymentKey, append(acKeys, imageKeys...))
 
 		err = deploymentDackBox.Upserter.UpsertIn(nil, deployment, txn)
 		if err != nil {
@@ -221,6 +224,14 @@ func (b *StoreImpl) RemoveDeployment(id string) error {
 		}
 		defer txn.Discard()
 
+		g := txn.Graph()
+
+		acKeys := g.GetRefsFromPrefix(deploymentDackBox.BucketHandler.GetKey(id), acDackBox.Bucket)
+		for _, key := range acKeys {
+			if err := acDackBox.Deleter.DeleteIn(key, txn); err != nil {
+				return err
+			}
+		}
 		err = deploymentDackBox.Deleter.DeleteIn(deploymentDackBox.BucketHandler.GetKey(id), txn)
 		if err != nil {
 			return err
@@ -231,7 +242,6 @@ func (b *StoreImpl) RemoveDeployment(id string) error {
 		}
 
 		// If the namespace has no more deployments, remove refs in both directions.
-		g := txn.Graph()
 		if namespaceKey != nil && deploymentDackBox.BucketHandler.CountFilteredRefsFrom(g, namespaceKey) == 0 {
 			g.DeleteRefsFrom(namespaceKey)
 			// This deletes all references from cluster to this namespace.

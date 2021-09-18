@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/mitchellh/hashstructure"
+	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -35,7 +37,8 @@ func GetPipeline() pipeline.Fragment {
 		lifecycle.SingletonManager(),
 		graph.Singleton(),
 		reprocessor.Singleton(),
-		networkBaselineManager.Singleton())
+		networkBaselineManager.Singleton(),
+		aggregator.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
@@ -46,6 +49,7 @@ func NewPipeline(
 	graphEvaluator graph.Evaluator,
 	reprocessor reprocessor.Loop,
 	networkBaselines networkBaselineManager.Manager,
+	processAggregator aggregator.ProcessAggregator,
 ) pipeline.Fragment {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
@@ -58,6 +62,8 @@ func NewPipeline(
 		networkBaselines: networkBaselines,
 
 		reprocessor: reprocessor,
+
+		processAggregator: processAggregator,
 	}
 }
 
@@ -73,6 +79,8 @@ type pipelineImpl struct {
 	reprocessor      reprocessor.Loop
 
 	graphEvaluator graph.Evaluator
+
+	processAggregator aggregator.ProcessAggregator
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
@@ -185,6 +193,10 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 			return nil
 		}
 		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
+	}
+
+	if features.ActiveVulnManagement.Enabled() {
+		go s.processAggregator.RefreshDeployment(deployment)
 	}
 
 	// Add/Update the deployment from persistence depending on the deployment action.

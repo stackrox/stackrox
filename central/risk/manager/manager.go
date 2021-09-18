@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
@@ -59,6 +60,8 @@ type managerImpl struct {
 	clusterRanker   *ranking.Ranker
 	nsRanker        *ranking.Ranker
 	componentRanker *ranking.Ranker
+
+	acUpdater acUpdater.Updater
 }
 
 // New returns a new manager
@@ -74,7 +77,9 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 	imageComponentScorer componentScorer.Scorer,
 	clusterRanker *ranking.Ranker,
 	nsRanker *ranking.Ranker,
-	componentRanker *ranking.Ranker) Manager {
+	componentRanker *ranking.Ranker,
+	acUpdater acUpdater.Updater,
+) Manager {
 	m := &managerImpl{
 		nodeStorage:           nodeStorage,
 		deploymentStorage:     deploymentStorage,
@@ -91,6 +96,7 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 		clusterRanker:   clusterRanker,
 		nsRanker:        nsRanker,
 		componentRanker: componentRanker,
+		acUpdater:       acUpdater,
 	}
 	return m
 }
@@ -219,6 +225,10 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 
 	if err := e.imageStorage.UpsertImage(riskReprocessorCtx, image); err != nil {
 		return errors.Wrapf(err, "upserting image %s", image.GetName().GetFullName())
+	}
+
+	if err := e.acUpdater.PopulateExecutableCache(riskReprocessorCtx, image); err != nil {
+		return errors.Wrapf(err, "populating executable cache for image %s", image.GetId())
 	}
 	return nil
 }

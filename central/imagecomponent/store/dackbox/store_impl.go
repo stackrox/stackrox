@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	"github.com/stackrox/rox/central/metrics"
@@ -209,7 +210,14 @@ func (b *storeImpl) deleteNoBatch(ids ...string) error {
 	}
 	defer dackTxn.Discard()
 
+	g := dackTxn.Graph()
 	for _, id := range ids {
+		acKeys := g.GetRefsToPrefix(componentDackBox.BucketHandler.GetKey(id), acDackBox.Bucket)
+		for _, key := range acKeys {
+			if err := acDackBox.Deleter.DeleteIn(key, dackTxn); err != nil {
+				return err
+			}
+		}
 		err := componentDackBox.Deleter.DeleteIn(componentDackBox.BucketHandler.GetKey(id), dackTxn)
 		if err != nil {
 			return err

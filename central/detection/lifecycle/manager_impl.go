@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/process/filter"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
@@ -65,6 +67,8 @@ type managerImpl struct {
 
 	policyAlertsLock          sync.RWMutex
 	removedOrDisabledPolicies set.StringSet
+
+	processAggregator aggregator.ProcessAggregator
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
@@ -156,6 +160,10 @@ func (m *managerImpl) flushIndicatorQueue() {
 	// Index the process indicators in batch
 	if err := m.processesDataStore.AddProcessIndicators(lifecycleMgrCtx, indicatorSlice...); err != nil {
 		log.Errorf("Error adding process indicators: %v", err)
+	}
+
+	if features.ActiveVulnManagement.Enabled() {
+		m.processAggregator.Add(indicatorSlice)
 	}
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")

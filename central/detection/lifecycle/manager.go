@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"time"
 
+	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -41,7 +42,8 @@ type Manager interface {
 // newManager returns a new manager with the injected dependencies.
 func newManager(deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
 	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, baselines baselineDataStore.DataStore,
-	alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache, filter filter.Filter) *managerImpl {
+	alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache, filter filter.Filter,
+	processAggregator aggregator.ProcessAggregator) *managerImpl {
 	m := &managerImpl{
 		deploytimeDetector:      deploytimeDetector,
 		runtimeDetector:         runtimeDetector,
@@ -59,6 +61,7 @@ func newManager(deploytimeDetector deploytime.Detector, runtimeDetector runtime.
 		indicatorFlushTicker: time.NewTicker(indicatorFlushTickerDuration),
 
 		removedOrDisabledPolicies: set.NewStringSet(),
+		processAggregator:         processAggregator,
 	}
 
 	go m.flushQueuePeriodically()

@@ -8,6 +8,7 @@ type Cache interface {
 	Get(key interface{}) (interface{}, bool)
 	Remove(key interface{}) (interface{}, bool)
 	Size() int
+	Keys() []interface{}
 }
 
 // New creates a new simple map backed cache
@@ -50,6 +51,17 @@ func (c *cacheImpl) Remove(k interface{}) (interface{}, bool) {
 	}
 	delete(c.cache, k)
 	return v, true
+}
+
+func (c *cacheImpl) Keys() []interface{} {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	var keys = make([]interface{}, 0, len(c.cache))
+	for k := range c.cache {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 func (c *cacheImpl) Size() int {

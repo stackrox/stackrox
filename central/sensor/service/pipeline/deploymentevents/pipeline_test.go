@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	aggregatorMocks "github.com/stackrox/rox/central/activecomponent/updater/aggregator/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
@@ -26,13 +27,14 @@ type PipelineTestSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 
-	clusters         *clusterMocks.MockDataStore
-	deployments      *deploymentMocks.MockDataStore
-	networkBaselines *networkBaselineMocks.MockManager
-	manager          *lifecycleMocks.MockManager
-	graphEvaluator   *graphMocks.MockEvaluator
-	reprocessor      *reprocessorMocks.MockLoop
-	pipeline         *pipelineImpl
+	clusters          *clusterMocks.MockDataStore
+	deployments       *deploymentMocks.MockDataStore
+	networkBaselines  *networkBaselineMocks.MockManager
+	manager           *lifecycleMocks.MockManager
+	graphEvaluator    *graphMocks.MockEvaluator
+	reprocessor       *reprocessorMocks.MockLoop
+	pipeline          *pipelineImpl
+	processAggregator *aggregatorMocks.MockProcessAggregator
 
 	mockCtrl *gomock.Controller
 }
@@ -46,6 +48,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.manager = lifecycleMocks.NewMockManager(suite.mockCtrl)
 	suite.graphEvaluator = graphMocks.NewMockEvaluator(suite.mockCtrl)
 	suite.reprocessor = reprocessorMocks.NewMockLoop(suite.mockCtrl)
+	suite.processAggregator = aggregatorMocks.NewMockProcessAggregator(suite.mockCtrl)
 	suite.pipeline =
 		NewPipeline(
 			suite.clusters,
@@ -53,7 +56,8 @@ func (suite *PipelineTestSuite) SetupTest() {
 			suite.manager,
 			suite.graphEvaluator,
 			suite.reprocessor,
-			suite.networkBaselines).(*pipelineImpl)
+			suite.networkBaselines,
+			suite.processAggregator).(*pipelineImpl)
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 }
 
@@ -91,6 +95,7 @@ func (suite *PipelineTestSuite) TestCreateNetworkBaseline() {
 	suite.networkBaselines.EXPECT().ProcessDeploymentCreate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any()).Return()
 	suite.graphEvaluator.EXPECT().IncrementEpoch(gomock.Any()).Return()
+	suite.processAggregator.EXPECT().RefreshDeployment(gomock.Any()).AnyTimes()
 
 	err := suite.pipeline.Run(
 		context.Background(),
