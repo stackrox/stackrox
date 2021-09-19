@@ -136,6 +136,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         cleanup:
         "remove splunk"
         tearDownSplunk(orchestrator, splunkDeployment)
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
     private static void validateCimMappings(Map<String, String> result) {

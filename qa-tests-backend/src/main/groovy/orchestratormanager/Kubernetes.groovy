@@ -2237,9 +2237,12 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    def deleteNamespace(String ns) {
+    def deleteNamespace(String ns, Boolean waitForDeletion = true) {
         withRetry(2, 3) {
             client.namespaces().withName(ns).delete()
+        }
+        if (waitForDeletion) {
+            waitForNamespaceDeletion(ns)
         }
     }
 
