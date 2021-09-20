@@ -159,17 +159,19 @@ class ComplianceTest extends BaseSpecification {
                         ["StackRox is installed in cluster \"remote\", and provides continuous risk assessment."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
-        List<Node> nodes = NodeService.getNodes()
-        if (nodes.size() > 0 && nodes.get(0).containerRuntimeVersion.contains("docker")) {
-            staticControls.add(new Control(
-                    "CIS_Docker_v1_2_0:2_6",
-                    ["Docker daemon is not exposed over TCP"],
-                    ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE))
-        } else {
-            staticControls.add(new Control(
-                    "CIS_Docker_v1_2_0:2_6",
-                    ["Node does not use Docker container runtime"],
-                    ComplianceState.COMPLIANCE_STATE_SKIP).setType(Control.ControlType.NODE))
+        if (!ClusterService.isAKS()) { // ROX-6993
+            List<Node> nodes = NodeService.getNodes()
+            if (nodes.size() > 0 && nodes.get(0).containerRuntimeVersion.contains("docker")) {
+                staticControls.add(new Control(
+                        "CIS_Docker_v1_2_0:2_6",
+                        ["Docker daemon is not exposed over TCP"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE))
+            } else {
+                staticControls.add(new Control(
+                        "CIS_Docker_v1_2_0:2_6",
+                        ["Node does not use Docker container runtime"],
+                        ComplianceState.COMPLIANCE_STATE_SKIP).setType(Control.ControlType.NODE))
+            }
         }
 
         expect:

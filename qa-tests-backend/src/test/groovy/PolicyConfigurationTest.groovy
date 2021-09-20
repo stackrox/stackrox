@@ -223,7 +223,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     @Unroll
     @Category([BAT, SMOKE])
     def "Verify policy configuration #policyName can be triggered"() {
-        Assume.assumeFalse(skip)
+        Assume.assumeTrue(canRun == null || canRun())
 
         when:
         "Create a Policy"
@@ -240,7 +240,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         where:
         "Data inputs are :"
-        policyName                            | policy | depname | skip
+        policyName                            | policy | depname | canRun
 
         "Image Tag"                           |
                 Policy.newBuilder()
@@ -257,7 +257,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                                 .setTag("1.7.9")
                                                 .build())
                                 .build())
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Image Remote"                        |
                 Policy.newBuilder()
@@ -274,7 +274,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                                 .setRemote("library/nginx")
                                                 .build())
                                 .build())
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Days since image was created"        |
                 Policy.newBuilder()
@@ -288,7 +288,8 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setImageAgeDays(1)
                                 .build())
-                        .build()                       | DEPLOYMENTNGINX | !containerRuntimeVersion.contains("docker")
+                        .build()                 | DEPLOYMENTNGINX | { containerRuntimeVersion.contains("docker") &&
+                                                                       !ClusterService.isAKS() } // ROX-6994
 
         "Dockerfile Line"                     |
                 Policy.newBuilder()
@@ -304,8 +305,9 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         .setValue("apt-get.*")
                                         .setInstruction("RUN")
                                         .build()))
-                        .build()                       | DEPLOYMENTNGINX | !containerRuntimeVersion.contains("docker")
-//
+                        .build()                 | DEPLOYMENTNGINX | { containerRuntimeVersion.contains("docker") &&
+                                                                       !ClusterService.isAKS() } // ROX-6994
+
 //        TODO(ROX-3102)
 //        "Image is NOT Scanned"     |
 //                Policy.newBuilder()
@@ -331,7 +333,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setSeverityValue(2)
                         .setFields(PolicyFields.newBuilder()
                                 .setCve("CVE-2017-5638"))
-                        .build()                       | STRUTS | false
+                        .build()                       | STRUTS | null
 
         "Port"                                |
                 Policy.newBuilder()
@@ -345,7 +347,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setPortPolicy(PortPolicy.newBuilder()
                                         .setPort(22).build()))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
         "Port Exposure through Load Balancer" |
                 Policy.newBuilder()
                         .setName("TestPortExposurePolicy")
@@ -358,7 +360,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setPortExposurePolicy(PolicyOuterClass.PortExposurePolicy.newBuilder()
                                         .addAllExposureLevels(EXPOSURE_VALUES)))
-                        .build()                       | DEPLOYMENTNGINX_LB | false
+                        .build()                       | DEPLOYMENTNGINX_LB | null
         "Port Exposure by  Node Port"         |
                 Policy.newBuilder()
                         .setName("TestPortExposurePolicy")
@@ -371,7 +373,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setPortExposurePolicy(PolicyOuterClass.PortExposurePolicy.newBuilder()
                                         .addAllExposureLevels(EXPOSURE_VALUES)))
-                        .build()                       | DEPLOYMENTNGINX_NP | false
+                        .build()                       | DEPLOYMENTNGINX_NP | null
 
         "Required Label"                      |
                 Policy.newBuilder()
@@ -386,7 +388,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                 .setRequiredLabel(KeyValuePolicy.newBuilder()
                                         .setKey("app1")
                                         .setValue("test1").build()))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Required Annotations"                |
                 Policy.newBuilder()
@@ -401,7 +403,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                 .setRequiredAnnotation(KeyValuePolicy.newBuilder()
                                         .setKey("test")
                                         .setValue("annotation").build()))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Environment Variable is available"   |
                 Policy.newBuilder()
@@ -419,7 +421,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         .setEnvVarSource(DeploymentOuterClass.
                                                 ContainerConfig.EnvironmentConfig.EnvVarSource.RAW)
                                         .build()))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Container Port"                      |
                 Policy.newBuilder()
@@ -433,7 +435,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setPortPolicy(PortPolicy.newBuilder()
                                         .setPort(22)).build())
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Privileged"                          |
                 Policy.newBuilder()
@@ -446,7 +448,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setSeverityValue(2)
                         .setFields(PolicyFields.newBuilder()
                                 .setPrivileged(true))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Protocol"                            |
                 Policy.newBuilder()
@@ -460,7 +462,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setPortPolicy(PortPolicy.newBuilder()
                                         .setProtocol("TCP").build()))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Protocol (case-insensitive)"                            |
                 Policy.newBuilder()
@@ -474,7 +476,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setPortPolicy(PortPolicy.newBuilder()
                                         .setProtocol("tcp").build()))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Limits"                              |
                 Policy.newBuilder()
@@ -493,7 +495,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         .setMemoryResourceLimit(NumericalPolicy.newBuilder()
                                                 .setOp(Comparator.EQUALS)
                                                 .setValue(0).build())))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Requests"                            |
                 Policy.newBuilder()
@@ -512,7 +514,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         .setCpuResourceRequest(NumericalPolicy.newBuilder()
                                                 .setOp(Comparator.EQUALS)
                                                 .setValue(0).build())))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "VolumeName"                          |
                 Policy.newBuilder()
@@ -526,7 +528,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setVolumePolicy(VolumePolicy.newBuilder()
                                         .setName("test-writable-volume").build()))
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         /*"VolumeType" | @Bug : ROX-884
                   Policy.newBuilder()
@@ -554,7 +556,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setHostMountPolicy(PolicyOuterClass.HostMountPolicy.newBuilder()
                                         .setReadOnly(false)).build())
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "Writable Volume"                     |
                 Policy.newBuilder()
@@ -569,7 +571,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                 .setVolumePolicy(
                                         PolicyOuterClass.VolumePolicy.newBuilder().setReadOnly(false).build())
                                 .build())
-                        .build()                       | DEPLOYMENTNGINX | false
+                        .build()                       | DEPLOYMENTNGINX | null
 
         "RBAC API access"                     |
                 Policy.newBuilder()
@@ -583,7 +585,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setPermissionPolicy(PolicyOuterClass.PermissionPolicy.newBuilder()
                                         .setPermissionLevel(Rbac.PermissionLevel.ELEVATED_CLUSTER_WIDE)))
-                        .build()                       | DEPLOYMENT_RBAC | false
+                        .build()                       | DEPLOYMENT_RBAC | null
     }
 
     @Unroll

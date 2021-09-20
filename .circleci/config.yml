@@ -3121,11 +3121,9 @@ jobs:
       - run:
           name: Create AKS cluster
           environment:
-            - AKS_AUTOMATION_VERSION: 0.1.7
-            - AZURE_RESOURCE_GROUP: stackrox-ci
-            - CREATION_SOURCE: ci
-            # Pin to 1.18 to ensure that docker runtime is used (ROX-6993 ROX-6994)
-            - K8S_VERSION: 1.18.17
+            AKS_AUTOMATION_VERSION: "0.1.7"
+            AZURE_RESOURCE_GROUP: "stackrox-ci"
+            CREATION_SOURCE: "ci"
           command: |
             mkdir $PWD/aks
             docker run --name aks-automation -t \
