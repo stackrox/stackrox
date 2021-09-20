@@ -2,6 +2,8 @@ import static Services.getPolicies
 import static Services.waitForViolation
 
 import io.grpc.StatusRuntimeException
+
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import services.AlertService
@@ -226,12 +228,9 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Category(BAT)
     @Retry(count = 0)
+    @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
         when:
-        "Running against a 'nightly' CI build"
-        Assume.assumeTrue(Env.CI_TAG != null && Env.CI_TAG.contains("nightly"))
-
-        then:
         "Verify policies are not violated within the stackrox namespace"
         def violations = AlertService.getViolations(
                 ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,Violation State:*").build()
@@ -330,6 +329,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             )
         }
 
+        then:
         assert !hadGetErrors
     }
 

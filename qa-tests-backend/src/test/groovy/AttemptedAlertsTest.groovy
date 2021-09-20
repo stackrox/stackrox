@@ -1,21 +1,24 @@
-import groups.BAT
-import groups.RUNTIME
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
-import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+
+import groups.BAT
+import groups.RUNTIME
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
+import util.Env
+
+import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
-import util.Env
 
 @Stepwise
 class AttemptedAlertsTest extends BaseSpecification {
@@ -97,9 +100,9 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Retry(count = 0)
     @Unroll
     @Category([BAT, RUNTIME])
+    // "ROX-6916: Only run in reliable environments until fixed"
+    @IgnoreIf({ Env.CI_JOBNAME.contains("openshift-rhel") })
     def "Verify attempted alerts on deployment create: #desc"() {
-        Assume.assumeTrue("ROX-6916: Only run in reliable environments until fixed",
-                !Env.CI_JOBNAME.contains("openshift-rhel"))
         when:
         "Set 'Latest Tag' policy enforcement to #policyEnforcements"
         Services.updatePolicyEnforcement(LATEST_TAG_POLICY_NAME, policyEnforcements, true)
@@ -172,9 +175,9 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Retry(count = 0)
     @Unroll
     @Category([BAT, RUNTIME])
+    // "ROX-6916: Only run in reliable environments until fixed"
+    @IgnoreIf({ Env.CI_JOBNAME.contains("openshift-rhel") })
     def "Verify attempted alerts on deployment updates: #desc"() {
-        Assume.assumeTrue("ROX-6916: Only run in reliable environments until fixed",
-                !Env.CI_JOBNAME.contains("openshift-rhel"))
         given:
         "Create deployment not violating 'Latest Tag' policy"
         assert orchestrator.createDeploymentNoWait(DEPLOYMENTS.get(DEP_NAMES[4]))
@@ -249,12 +252,11 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Retry(count = 0)
     @Unroll
     @Category([BAT, RUNTIME])
+    // K8s event detection is currently not supported on OpenShift.
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify attempted alerts on kubernetes events: #desc"() {
         given:
         "Admission Controller exec/pf is enabled"
-        // K8s event detection is currently not supported on OpenShift.
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
-
         assert ClusterService.getCluster().getAdmissionControllerEvents()
 
         and:

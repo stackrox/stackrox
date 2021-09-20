@@ -1,21 +1,35 @@
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
 import com.google.protobuf.util.Timestamps
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
-import common.Constants
-import groups.BAT
-import groups.SensorBounceNext
+import v1.ComplianceServiceOuterClass.ComplianceControl
+import v1.ComplianceServiceOuterClass.ComplianceStandard
+import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.Compliance
+import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Result
+import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Scope
 import io.stackrox.proto.storage.Compliance.ComplianceResultValue
 import io.stackrox.proto.storage.Compliance.ComplianceRunResults
 import io.stackrox.proto.storage.Compliance.ComplianceState
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.NodeOuterClass.Node
 import io.stackrox.proto.storage.PolicyOuterClass
+
+import common.Constants
+import groups.BAT
+import groups.SensorBounceNext
 import objects.Control
 import objects.CsvRow
 import objects.Deployment
@@ -24,33 +38,23 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
 import objects.SlackNotifier
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import services.BaseService
 import services.ClusterService
 import services.ComplianceManagementService
 import services.ComplianceService
-import services.PolicyService
 import services.ImageIntegrationService
+import services.ImageService
 import services.NetworkPolicyService
 import services.NodeService
-import services.ImageService
+import services.PolicyService
 import services.ProcessService
+import util.Timer
+
+import org.junit.Assume
+import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
-import util.Timer
-import v1.ComplianceServiceOuterClass.ComplianceControl
-import v1.ComplianceServiceOuterClass.ComplianceStandard
-import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Result
-import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Scope
-import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
-
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 class ComplianceTest extends BaseSpecification {
     @Shared
@@ -598,12 +602,11 @@ class ComplianceTest extends BaseSpecification {
     */
 
     @Category(BAT)
+    // Schedules are not yet supported, so skipping this test for now.
+    // Once we fully support Compliance Run scheduling, we can reneable.
+    // Running this test now will expose ROX-1255
+    @IgnoreIf({ !Constants.SCHEDULES_SUPPORTED })
     def "Verify compliance scheduling"() {
-        // Schedules are not yet supported, so skipping this test for now.
-        // Once we fully support Compliance Run scheduling, we can reneable.
-        // Running this test now will expose ROX-1255
-        Assume.assumeTrue(Constants.SCHEDULES_SUPPORTED)
-
         given:
         "List of Standards"
         List<ComplianceStandardMetadata> standards = ComplianceService.getComplianceStandards()

@@ -1,10 +1,12 @@
 import com.google.protobuf.util.Timestamps
+
 import groups.BAT
 import objects.Deployment
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import services.GraphQLService
 import services.ImageService
+
+import org.junit.experimental.categories.Category
+import spock.lang.Ignore
 import spock.lang.Unroll
 
 class CVETest extends BaseSpecification {
@@ -198,10 +200,8 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @Ignore("The CVE(s) that these tests depend upon stopped serving the purpose. ROX-6518 ROX-6348")
     def "Verify the results of the CVE GraphQL Query with single specific CVE match - #cve"() {
-        setup:
-        Assume.assumeTrue(false)
-
         when:
         "Fetch the CVEs using GraphQL"
         def gqlService = new GraphQLService()
@@ -246,10 +246,8 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @Ignore("The CVE(s) that these tests depend upon stopped serving the purpose. ROX-6518 ROX-6348")
     def "Verify the results of the CVE GraphQL Query lots of parameters - #query #checkImageCount"() {
-        setup:
-        Assume.assumeTrue(false)
-
         when:
         "Fetch the CVEs using GraphQL"
         def gqlService = new GraphQLService()
@@ -286,10 +284,8 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @Ignore("The CVE(s) that these tests depend upon stopped serving the purpose. ROX-6518 ROX-6348")
     def "Verify IsFixable when scoped by images"() {
-        setup:
-        Assume.assumeTrue(false)
-
         when:
         "Scan two images that have CVE-2019-14866, but have differing CVE status (ubuntu is fixable, centos is not)"
         def gqlService = new GraphQLService()
@@ -319,10 +315,8 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @Ignore("The CVE(s) that these tests depend upon stopped serving the purpose. ROX-6518 ROX-6348")
     def "Verify CreatedAt(DiscoveredAtSystem) and DiscoveredAtImage when scoped by images"() {
-        setup:
-        Assume.assumeTrue(false)
-
         when:
         "Scan two images having same CVE but different scan time and CVE is queried nested through image resolver"
         def gqlService = new GraphQLService()
@@ -360,10 +354,8 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @Ignore("The CVE(s) that these tests depend upon stopped serving the purpose. ROX-6518 ROX-6348")
     def "Verify CreatedAt(DiscoveredAtSystem) and DiscoveredAtImage when not scoped by images"() {
-        setup:
-        Assume.assumeTrue(false)
-
         when:
         "Scan centos image and CVE is queried directly using vulnerability resolver"
         def gqlService = new GraphQLService()
@@ -391,10 +383,8 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @Ignore("The CVE(s) that these tests depend upon stopped serving the purpose. ROX-6518 ROX-6348")
     def "Verify CreatedAt(DiscoveredAtSystem) and DiscoveredAtImage when scoped by resources other than images"() {
-        setup:
-        Assume.assumeTrue(false)
-
         when:
         "Scan centos image and CVE is queried nested through image component resolver"
         def gqlService = new GraphQLService()

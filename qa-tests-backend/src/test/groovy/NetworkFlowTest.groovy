@@ -1,38 +1,42 @@
 import static com.jayway.restassured.RestAssured.given
 
-import common.Constants
-import orchestratormanager.OrchestratorTypes
-import util.Env
-import util.Helpers
-import util.Timer
+import com.jayway.restassured.response.Response
 import io.grpc.StatusRuntimeException
+import orchestratormanager.OrchestratorTypes
 import org.yaml.snakeyaml.Yaml
-import services.NetworkPolicyService
+
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
+import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
+import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
+import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
+import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
+
+import common.Constants
 import groups.BAT
-import groups.RUNTIME
 import groups.NetworkFlowVisualization
-import objects.Deployment
+import groups.RUNTIME
 import objects.DaemonSet
+import objects.Deployment
 import objects.Edge
 import objects.K8sServiceAccount
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
+import services.ClusterService
+import services.NetworkGraphService
+import services.NetworkPolicyService
+import util.Env
+import util.Helpers
+import util.NetworkGraphUtil
+import util.Timer
+
 import org.junit.Assume
 import org.junit.experimental.categories.Category
-import services.NetworkGraphService
-import services.ClusterService
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
-import util.NetworkGraphUtil
-import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
-import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
-import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
-import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
-import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
-import com.jayway.restassured.response.Response
 
 @Stepwise
 class NetworkFlowTest extends BaseSpecification {
@@ -491,10 +495,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Category([NetworkFlowVisualization])
+    @Ignore("ROX-7046 - this test does not pass")
     def "Verify intra-cluster connection via external IP"() {
-        // https://stack-rox.atlassian.net/browse/ROX-7046 - this test does not pass
-        Assume.assumeTrue(false)
-
         given:
         "Deployment A, exposed via LB"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
@@ -804,10 +806,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Category([BAT, NetworkFlowVisualization])
+    @Ignore("Skip this test until we can determine a more reliable way to test")
     def "Apply a generated network policy and verify connection states"() {
-        // Skip this test until we can determine a more reliable way to test
-        Assume.assumeTrue(false)
-
         given:
         "Initial graph state and existing network policies"
         NetworkGraph baseGraph = NetworkGraphService.getNetworkGraph()

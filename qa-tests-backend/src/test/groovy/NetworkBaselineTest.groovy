@@ -1,12 +1,14 @@
-import groups.NetworkBaseline
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
+
+import groups.NetworkBaseline
 import objects.Deployment
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import services.NetworkBaselineService
-import spock.lang.Retry
 import util.NetworkGraphUtil
+
+import org.junit.experimental.categories.Category
+import spock.lang.Ignore
+import spock.lang.Retry
 
 @Retry(count = 0)
 class NetworkBaselineTest extends BaseSpecification {
@@ -103,12 +105,8 @@ class NetworkBaselineTest extends BaseSpecification {
     }
 
     @Category(NetworkBaseline)
+    @Ignore("Skip test for now, we're working on fixing it.")
     def "Verify network baseline functionality"() {
-        given:
-        "Feature flag is enabled"
-        // Skip test for now, we're working on fixing it.
-        Assume.assumeTrue(false)
-
         when:
         "Create initial set of deployments, wait for baseline to populate"
         def beforeDeploymentCreate = System.currentTimeSeconds()

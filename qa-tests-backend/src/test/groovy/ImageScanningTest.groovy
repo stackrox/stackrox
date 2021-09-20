@@ -17,6 +17,7 @@ import objects.QuayImageIntegration
 import objects.Secret
 import objects.StackroxScannerIntegration
 import org.junit.Assume
+import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ImageIntegrationService
@@ -206,7 +207,7 @@ class ImageScanningTest extends BaseSpecification {
             if (strictIntegrationTesting) {
                 throw (e)
             }
-            Assume.assumeNoException("Failed to pull the image using ${integration}. Skipping test!", e)
+            throw new AssumptionViolatedException("Failed to pull the image using ${integration}. Skipping test!", e)
         }
         ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest?.id)
         assert imageDetail.metadata?.v1?.layersCount >= 1
@@ -246,7 +247,7 @@ class ImageScanningTest extends BaseSpecification {
             if (strictIntegrationTesting) {
                 throw (e)
             }
-            Assume.assumeNoException("Failed to scan the image using ${integration}. Skipping test!", e)
+            throw new AssumptionViolatedException("Failed to scan the image using ${integration}. Skipping test!", e)
         }
 
         and:

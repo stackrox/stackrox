@@ -1,24 +1,27 @@
 package objects
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
-import common.Constants
-import groovy.json.JsonSlurper
-import io.stackrox.proto.storage.NotifierOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass.Policy
-import org.junit.Assume
-import services.NotifierService
-import util.Env
-import util.MailService
-import util.SplunkUtil
-import util.Timer
-
 import javax.mail.Message
 import javax.mail.internet.InternetAddress
 import javax.mail.search.AndTerm
 import javax.mail.search.FromTerm
 import javax.mail.search.SearchTerm
 import javax.mail.search.SubjectTerm
+
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import groovy.json.JsonSlurper
+
+import io.stackrox.proto.storage.NotifierOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+
+import common.Constants
+import services.NotifierService
+import util.Env
+import util.MailService
+import util.SplunkUtil
+import util.Timer
+
+import org.junit.AssumptionViolatedException
 
 class Notifier {
     NotifierOuterClass.Notifier notifier
@@ -83,7 +86,7 @@ class EmailNotifier extends Notifier {
         try {
             mail.login()
         } catch (Exception e) {
-            Assume.assumeNoException("Failed to login to GMAIL service... skipping test!: ", e)
+            throw new AssumptionViolatedException("Failed to login to GMAIL service... skipping test!: ", e)
         }
 
         println "looking for a message with subject containing: ${deployment.name}"
@@ -124,7 +127,7 @@ class EmailNotifier extends Notifier {
         try {
             mail.login()
         } catch (Exception e) {
-            Assume.assumeNoException("Failed to login to GMAIL service... skipping test!: ", e)
+            throw new AssumptionViolatedException("Failed to login to GMAIL service... skipping test!: ", e)
         }
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
