@@ -33,6 +33,12 @@ func MustGetProperty(key string) string {
 	return Singleton().MustGetString(key)
 }
 
+// GetProperty gets the string property value for the specified key. If it cannot find the key,
+// an empty string will be returned.
+func GetProperty(key string) string {
+	return Singleton().GetString(key, "")
+}
+
 // GetShortCommandKey gets the property key for the short help for a command
 func GetShortCommandKey(path string) string {
 	return fmt.Sprintf("%s.short", strings.Join(strings.Split(path, " ")[1:], "."))

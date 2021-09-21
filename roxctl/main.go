@@ -45,8 +45,21 @@ func addHelp(commands []*cobra.Command) {
 		return
 	}
 	for _, c := range commands {
-		c.Short = properties.MustGetProperty(properties.GetShortCommandKey(c.CommandPath()))
-		c.Long = properties.MustGetProperty(properties.GetLongCommandKey(c.CommandPath()))
+		setDescription(c)
 		addHelp(c.Commands())
+	}
+}
+
+// setDescription sets the description for the cobra command in the form of Short and Long.
+// If Short / Long is already set on the command, they will take precedence over the properties in the properties file.
+// If no Short / Long is set, the properties file will be used to determine both values.
+// The function will panic if Short could not be set and is empty.
+func setDescription(c *cobra.Command) {
+	if c.Short == "" {
+		c.Short = properties.MustGetProperty(properties.GetShortCommandKey(c.CommandPath()))
+	}
+	if c.Long == "" {
+		// We do not need to panic here, Long can be empty for commands and is not required like Short.
+		c.Long = properties.GetProperty(properties.GetLongCommandKey(c.CommandPath()))
 	}
 }

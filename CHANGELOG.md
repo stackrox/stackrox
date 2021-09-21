@@ -17,6 +17,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Added `sensor.tolerations` and `admission-control.tolerations` to the `stackrox-secured-cluster-services` Helm chart
 - Operator now supports `tolerations`  for `Central` and `SecuredCluster`
 - Operator now supports disabling the admin password generation by setting Central's option `adminPasswordGenerationDisabled` to `true`.
+- Roxctl now supports shell completion for bash, zsh, fish and powershell
 
 ## [65.0]
 - Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 

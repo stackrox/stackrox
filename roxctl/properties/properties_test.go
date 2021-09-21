@@ -45,9 +45,12 @@ func checkHelp(t *testing.T, commands []*cobra.Command, props *properties.Proper
 		_, shortKeyOk := props.Get(GetShortCommandKey(c.CommandPath()))
 		_, longKeyOk := props.Get(GetLongCommandKey(c.CommandPath()))
 
-		assert.True(t, shortKeyOk, "unable to get short command help key for %s", c.Name())
-		assert.True(t, longKeyOk, "unable to get long command help key for %s", c.Name())
-
+		if c.Short == "" {
+			assert.True(t, shortKeyOk, "unable to get short command help key for %s", c.Name())
+		}
+		if c.Long == "" {
+			assert.True(t, longKeyOk, "unable to get long command help key for %s", c.Name())
+		}
 		checkHelp(t, c.Commands(), props)
 	}
 }

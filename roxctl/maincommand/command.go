@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"github.com/stackrox/rox/roxctl/completion"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
@@ -53,6 +54,7 @@ func Command() *cobra.Command {
 		sensor.Command(),
 		helm.Command(),
 		versionCommand(),
+		completion.Command(),
 	)
 
 	return c
