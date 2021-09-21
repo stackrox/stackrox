@@ -1,3 +1,4 @@
+//go:build externalbackups
 // +build externalbackups
 
 package tests

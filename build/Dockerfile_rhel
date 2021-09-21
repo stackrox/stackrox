@@ -13,7 +13,7 @@ RUN  curl -L https://github.com/facebook/zstd/archive/v${ZSTD_VERSION}.tar.gz | 
     cd /tmp/zstd && make && make install
 
 # This compiles RocksDB without BMI and AVX2 instructions
-ENV PORTABLE=1 TRY_SSE_ETC=0 TRY_SSE42="-msse4.2" TRY_PCLMUL="-mpclmul"
+ENV PORTABLE=1 TRY_SSE_ETC=0 TRY_SSE42="-msse4.2" TRY_PCLMUL="-mpclmul" CXXFLAGS="-fPIC"
 
 RUN cd /tmp && \
     git clone -b "${ROCKSDB_VERSION}" --depth 1 https://github.com/facebook/rocksdb.git && \
@@ -27,7 +27,7 @@ RUN upx-3.96-amd64_linux/upx -9 /tmp/rocksdb/ldb
 
 FROM centos:8
 
-ARG GOLANG_VERSION=1.16.7
+ARG GOLANG_VERSION=1.17
 
 RUN yum update -y && yum install -y epel-release dnf-plugins-core && yum config-manager --set-enabled powertools
 RUN yum -y groupinstall "Development Tools"

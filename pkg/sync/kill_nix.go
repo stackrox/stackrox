@@ -1,3 +1,4 @@
+//go:build !release && (linux || darwin)
 // +build !release
 // +build linux darwin
 

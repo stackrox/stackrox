@@ -1,3 +1,4 @@
+//go:build !release || test
 // +build !release test
 
 package testutils

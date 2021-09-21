@@ -1,3 +1,4 @@
+//go:build tools
 // +build tools
 
 package tools
@@ -8,6 +9,7 @@ package tools
 
 import (
 	// Tool dependencies, not used anywhere in the code.
+	_ "github.com/ckaznocha/protoc-gen-lint"
 	_ "github.com/golang/mock/mockgen"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/jstemmer/go-junit-report"
@@ -17,5 +19,4 @@ import (
 	_ "github.com/nilslice/protolock"
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "honnef.co/go/tools/cmd/staticcheck"
-	_ "github.com/ckaznocha/protoc-gen-lint"
 )
