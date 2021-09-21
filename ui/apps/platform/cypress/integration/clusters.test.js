@@ -281,25 +281,22 @@ describe('Cluster Creation Flow', () => {
 describe('Cluster with Helm management', () => {
     withAuth();
 
-    beforeEach(() => {
+    it('should indicate which clusters are managed by Helm', () => {
         cy.intercept('GET', clustersApi.list, {
             fixture: 'clusters/health.json',
-        }).as('GetClusters');
+        }).as('getClusters');
+        cy.intercept('GET', clustersApi.kernelSupportAvailable, {
+            body: {
+                kernelSupportAvailable: true,
+            },
+        }).as('getIsKernelSupportAvailable');
 
         cy.visit(clustersUrl);
-        cy.wait(['@GetClusters']);
-    });
+        cy.wait('@getClusters');
 
-    it('should indicate which clusters are managed by Helm', () => {
-        cy.get(`${selectors.clusters.tableDataCell} [data-testid="cluster-name"]`).each(
-            ($nameCell, index) => {
-                if (index === 0) {
-                    cy.wrap($nameCell.children()).get('img[alt="Managed by Helm"]');
-                } else {
-                    cy.wrap($nameCell.children()).should('have.length', 0);
-                }
-            }
-        );
+        const helmIndicator = '[data-testid="cluster-name"] img[alt="Managed by Helm"]';
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(0) ${helmIndicator}`).should('exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(1) ${helmIndicator}`).should('not.exist');
     });
 });
 
