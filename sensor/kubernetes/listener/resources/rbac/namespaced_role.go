@@ -16,10 +16,6 @@ type namespacedRole struct {
 	rules     []*storage.PolicyRule
 }
 
-func (r *namespacedRoleRef) IsClusterRole() bool {
-	return len(r.namespace) == 0
-}
-
 func (r *namespacedRole) Equal(other *namespacedRole) bool {
 	if r == nil || other == nil {
 		return r == other
