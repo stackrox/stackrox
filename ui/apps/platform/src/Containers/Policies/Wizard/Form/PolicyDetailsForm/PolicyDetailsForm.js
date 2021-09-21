@@ -6,8 +6,6 @@ import { reduxForm, formValueSelector, change, FieldArray } from 'redux-form';
 
 import { selectors } from 'reducers';
 import { lifecycleStageLabels, severityLabels } from 'messages/common';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import FormField from 'Components/FormField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
@@ -34,9 +32,6 @@ function PolicyDetailsForm({
     policyCategories,
     mitreVectorsLocked,
 }) {
-    const isMitreEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_SYSTEM_POLICY_MITRE_FRAMEWORK
-    );
     useEffect(() => {
         // clear Event Source if Runtime lifecycle stage is not included
         if (!includesRuntimeLifecycleStage) {
@@ -168,18 +163,16 @@ function PolicyDetailsForm({
                     </FormField>
                 </FormSectionBody>
             </FormSection>
-            {isMitreEnabled && (
-                <FormSection dataTestId="mitreAttackVectorFormFields" headerText="MITRE ATT&CK">
-                    <FieldArray
-                        name="mitreAttackVectors"
-                        component={MitreAttackVectorBuilder}
-                        rerenderOnEveryChange
-                        props={{
-                            isReadOnly: mitreVectorsLocked,
-                        }}
-                    />
-                </FormSection>
-            )}
+            <FormSection dataTestId="mitreAttackVectorFormFields" headerText="MITRE ATT&CK">
+                <FieldArray
+                    name="mitreAttackVectors"
+                    component={MitreAttackVectorBuilder}
+                    rerenderOnEveryChange
+                    props={{
+                        isReadOnly: mitreVectorsLocked,
+                    }}
+                />
+            </FormSection>
         </form>
     );
 }

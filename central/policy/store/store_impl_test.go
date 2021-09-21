@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -198,10 +197,6 @@ func (suite *PolicyStoreTestSuite) TestAddSamePolicySucceeds() {
 }
 
 func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		suite.T().Skip("RHACS System Policy MITRE ATT&CK framework feature is disabled. skipping...")
-	}
-
 	policy1 := &storage.Policy{
 		Id:                 "policy1",
 		Name:               "policy1",

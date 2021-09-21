@@ -7,17 +7,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/common/test"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 )
 
 func TestMigration(t *testing.T) {
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		t.Skip("RHACS System Policy MITRE ATT&CK framework feature is disabled. skipping...")
-	}
-
 	db := test.GetDBWithBucket(t, policyBucket)
 
 	// Add default policies to DB with no mitre att&ck.

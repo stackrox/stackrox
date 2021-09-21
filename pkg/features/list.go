@@ -33,9 +33,6 @@ var (
 	// ActiveVulnManagement enables detection of active vulnerabilities
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", false)
 
-	// SystemPolicyMitreFramework enables MITRE ATT&CK framework for RHACS System Policies.
-	SystemPolicyMitreFramework = registerFeature("Enable MITRE ATT&CK framework for RHACS System Policies", "ROX_SYSTEM_POLICY_MITRE_FRAMEWORK", true)
-
 	// AlternateProbeDownload enables alternate probe download solution for collector
 	AlternateProbeDownload = registerFeature("Enable alternate probe download solution for collector", "ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", false)
 )

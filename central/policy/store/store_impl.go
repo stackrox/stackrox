@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -412,18 +411,16 @@ func (s *storeImpl) verifySettingFieldsAreUnchanged(newPolicy *storage.Policy) e
 			}
 		}
 
-		if features.SystemPolicyMitreFramework.Enabled() {
-			if oldPolicy.GetMitreVectorsLocked() != newPolicy.GetMitreVectorsLocked() {
-				log.Warnf("'mitreVectorsLocked' is read-only field. Setting it to previous value for policy %q.", newPolicy.GetName())
+		if oldPolicy.GetMitreVectorsLocked() != newPolicy.GetMitreVectorsLocked() {
+			log.Warnf("'mitreVectorsLocked' is read-only field. Setting it to previous value for policy %q.", newPolicy.GetName())
 
-				newPolicy.MitreVectorsLocked = oldPolicy.GetMitreVectorsLocked()
-				newPolicy.CriteriaLocked = oldPolicy.GetCriteriaLocked()
-			}
+			newPolicy.MitreVectorsLocked = oldPolicy.GetMitreVectorsLocked()
+			newPolicy.CriteriaLocked = oldPolicy.GetCriteriaLocked()
+		}
 
-			if oldPolicy.GetMitreVectorsLocked() {
-				if !reflect.DeepEqual(oldPolicy.GetMitreAttackVectors(), newPolicy.GetMitreAttackVectors()) {
-					errs.AddString("policy's MITRE ATT&CK vectors cannot be updated since they are marked read-only (mitreVectorsLocked=true)")
-				}
+		if oldPolicy.GetMitreVectorsLocked() {
+			if !reflect.DeepEqual(oldPolicy.GetMitreAttackVectors(), newPolicy.GetMitreAttackVectors()) {
+				errs.AddString("policy's MITRE ATT&CK vectors cannot be updated since they are marked read-only (mitreVectorsLocked=true)")
 			}
 		}
 		return errs.ToError()

@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -835,10 +834,6 @@ func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
 
 // This test is the expected behavior after the sample mitre data injection is removed.
 func (s *PolicyServiceTestSuite) TestMitreVectors() {
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		s.T().Skip("RHACS System Policy MITRE ATT&CK framework feature is disabled. skipping...")
-	}
-
 	s.policies.EXPECT().GetPolicy(gomock.Any(), "policy1").Return(&storage.Policy{
 		Id: "policy1",
 		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{

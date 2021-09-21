@@ -30,7 +30,6 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -251,10 +250,6 @@ func (s *serviceImpl) addPolicyToStoreAndSetID(ctx context.Context, p *storage.P
 
 // GetPolicyMitreVectors returns a policy's MITRE ATT&CK vectors.
 func (s *serviceImpl) GetPolicyMitreVectors(ctx context.Context, request *v1.GetPolicyMitreVectorsRequest) (*v1.GetPolicyMitreVectorsResponse, error) {
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		return nil, status.Error(codes.FailedPrecondition, "RHACS System Policy MITRE ATT&CK Framework is not enabled. Request cannot be fulfilled.")
-	}
-
 	policy, err := s.getPolicy(ctx, request.GetId())
 	if err != nil {
 		return nil, err

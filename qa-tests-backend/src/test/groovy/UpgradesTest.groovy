@@ -7,7 +7,6 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import org.junit.experimental.categories.Category
 import services.ClusterService
-import services.FeatureFlagService
 import services.GraphQLService
 import services.PolicyService
 import services.SummaryService
@@ -290,9 +289,6 @@ class UpgradesTest extends BaseSpecification {
                 builder.clearExclusions().addAllExclusions(
                         policy.exclusionsList.sort(false) { it.name }
                 )
-            }
-            if (!FeatureFlagService.isFeatureFlagEnabled('ROX_SYSTEM_POLICY_MITRE_FRAMEWORK')) {
-                builder.clearMitreAttackVectors()
             }
             [id, builder.build()]
         } as Map<String, PolicyOuterClass.Policy>

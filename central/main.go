@@ -138,7 +138,6 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -279,6 +278,7 @@ func startServices() {
 }
 
 func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.AuthzTraceSink) []pkgGRPC.APIService {
+	// PLEASE KEEP THE FOLLOWING LIST SORTED.
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
@@ -288,21 +288,31 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		backupService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
+		clusterInitService.Singleton(),
 		clusterService.Singleton(),
 		complianceManagerService.Singleton(),
 		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
-		debugService.New(clusterDataStore.Singleton(), connection.ManagerSingleton(), gatherers.Singleton(),
-			logimbueStore.Singleton(), authzTraceSink),
+		cveService.Singleton(),
+		debugService.New(
+			clusterDataStore.Singleton(),
+			connection.ManagerSingleton(),
+			gatherers.Singleton(),
+			logimbueStore.Singleton(),
+			authzTraceSink,
+		),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
 		featureFlagService.Singleton(),
 		groupService.Singleton(),
+		helmcharts.NewService(),
 		imageService.Singleton(),
 		iiService.Singleton(),
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
+		integrationHealthService.Singleton(),
 		metadataService.New(),
+		mitreService.Singleton(),
 		namespaceService.Singleton(),
 		networkBaselineService.Singleton(),
 		networkFlowService.Singleton(),
@@ -328,14 +338,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
-		cveService.Singleton(),
-		integrationHealthService.Singleton(),
-		clusterInitService.Singleton(),
-		helmcharts.NewService(),
-	}
-
-	if features.SystemPolicyMitreFramework.Enabled() {
-		servicesToRegister = append(servicesToRegister, mitreService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()

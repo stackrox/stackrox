@@ -6,13 +6,10 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/mitre/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -46,20 +43,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) ListMitreAttackVectors(ctx context.Context, _ *v1.Empty) (*v1.ListMitreAttackVectorsResponse, error) {
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		return nil, status.Error(codes.FailedPrecondition, "RHACS System Policy MITRE ATT&CK Framework is not enabled")
-	}
-
 	return &v1.ListMitreAttackVectorsResponse{
 		MitreAttackVectors: s.store.GetAll(),
 	}, nil
 }
 
 func (s *serviceImpl) GetMitreAttackVector(ctx context.Context, req *v1.ResourceByID) (*v1.GetMitreVectorResponse, error) {
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		return nil, status.Error(codes.FailedPrecondition, "RHACS System Policy MITRE ATT&CK Framework is not enabled")
-	}
-
 	vector, err := s.store.Get(req.GetId())
 	if err != nil {
 		return nil, err

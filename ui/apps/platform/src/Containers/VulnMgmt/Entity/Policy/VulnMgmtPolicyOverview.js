@@ -27,8 +27,6 @@ import {
     FormSection,
     FormSectionBody,
 } from 'Containers/Policies/Wizard/Form/PolicyDetailsForm/FormSection';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -57,9 +55,6 @@ const emptyPolicy = {
 const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
-    const isMitreEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_SYSTEM_POLICY_MITRE_FRAMEWORK
-    );
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyPolicy, ...data };
@@ -329,7 +324,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                 </div>
                             </div>
                         </CollapsibleSection>
-                        {isMitreEnabled && !!id && (
+                        {!!id && (
                             <CollapsibleSection
                                 title="MITRE ATT&CK"
                                 dataTestId="mitre-attack-section"

@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
@@ -80,10 +79,6 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	if err != nil || !exists {
 		return nil, false, err
 	}
-
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		resetMitreFields(policy)
-	}
 	return policy, true, nil
 }
 
@@ -96,10 +91,6 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		resetMitreFields(policies...)
-	}
 	return policies, missingIndices, policyErrors, nil
 }
 
@@ -111,10 +102,6 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 	policies, err := ds.storage.GetAllPolicies()
 	if err != nil {
 		return nil, err
-	}
-
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		resetMitreFields(policies...)
 	}
 	return policies, err
 }
@@ -132,9 +119,6 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*sto
 
 	for _, p := range policies {
 		if p.GetName() == name {
-			if !features.SystemPolicyMitreFramework.Enabled() {
-				resetMitreFields(p)
-			}
 			return p, true, nil
 		}
 	}
@@ -437,10 +421,4 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 		}
 	}
 	return changedIndices, nil
-}
-
-func resetMitreFields(policies ...*storage.Policy) {
-	for _, policy := range policies {
-		policy.MitreAttackVectors = nil
-	}
 }

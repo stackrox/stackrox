@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -38,9 +37,6 @@ func init() {
 }
 
 func updatePoliciesWithMitre(db *bolt.DB) error {
-	if !features.SystemPolicyMitreFramework.Enabled() {
-		return nil
-	}
 	policies, err := defaultPolicies()
 	if err != nil {
 		return errors.Wrap(err, "could not read default system policies")
