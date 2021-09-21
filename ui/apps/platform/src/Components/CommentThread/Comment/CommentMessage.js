@@ -14,7 +14,6 @@ const CommentMessage = ({ message }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     key={word}
-                    className="text-primary-700"
                     data-testid="comment-link"
                 >
                     {word}

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, useMutation } from '@apollo/client';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import captureGraphQLErrors from 'utils/captureGraphQLErrors';
@@ -42,19 +42,21 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
         { loading: isWaitingToRemoveComment, error: errorOnRemoveComment },
     ] = useMutation(REMOVE_COMMENT, refetchAndWait);
 
-    const { hasErrors } = captureGraphQLErrors([
+    const { hasErrors, errorMessages } = captureGraphQLErrors([
         error,
         errorOnAddComment,
         errorOnUpdateComment,
         errorOnRemoveComment,
     ]);
 
-    if (hasErrors) {
+    if (hasErrors && errorMessages) {
         return (
-            <Message type="error">
-                There was an issue retrieving and/or modifying comments. Please try to view this
-                page again in a little while.
-            </Message>
+            <Alert
+                variant="warning"
+                title="There was an issue retrieving and/or modifying comments. Please try again later."
+            >
+                {errorMessages}
+            </Alert>
         );
     }
 

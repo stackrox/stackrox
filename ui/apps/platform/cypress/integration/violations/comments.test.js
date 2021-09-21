@@ -24,7 +24,7 @@ function openFirstItemOnViolationsPage() {
 
 function deleteLastComment() {
     cy.get(commentsSelectors.lastComment.deleteButton).click();
-    cy.get(selectors.commentsDialog.yesButton).click();
+    cy.get(selectors.commentsDialog.deleteButton).click();
     cy.wait('@getComments');
 }
 
@@ -66,7 +66,7 @@ describe('Violation Page: Comments', () => {
 
         cy.get(commentsSelectors.newButton).click();
         cy.get(commentsSelectors.newComment.textArea).type('   ');
-        cy.get(commentsSelectors.newComment.saveButton).click();
+        cy.get(commentsSelectors.newComment.saveButton).should('be.disabled');
 
         cy.get(commentsSelectors.newComment.error).should('have.text', 'This field is required');
     });

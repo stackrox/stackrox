@@ -2,12 +2,20 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import sortBy from 'lodash/sortBy';
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    CardActions,
+    Button,
+    Bullseye,
+    Spinner,
+    Flex,
+    FlexItem,
+    EmptyState,
+} from '@patternfly/react-core';
+import { PlusCircleIcon } from '@patternfly/react-icons';
 
-import CollapsibleCard from 'Components/CollapsibleCard';
-import Button from 'Components/Button';
-import { PlusCircle } from 'react-feather';
-import NoResultsMessage from 'Components/NoResultsMessage';
-import Loader from 'Components/Loader';
 import Comment from './Comment';
 
 const CommentThread = ({
@@ -17,10 +25,8 @@ const CommentThread = ({
     onUpdate,
     onRemove,
     defaultLimit,
-    defaultOpen,
     isLoading,
     isDisabled,
-    isCollapsible,
 }) => {
     const [newComment, createComment] = useState(null);
     const [limit, setLimit] = useState(defaultLimit);
@@ -54,33 +60,26 @@ const CommentThread = ({
     }
 
     let content = (
-        <div className="p-3">
-            <Loader />
-        </div>
+        <Bullseye>
+            <Spinner />
+        </Bullseye>
     );
     if (!isLoading) {
         content =
             comments.length > 0 || !!newComment ? (
-                <div className="p-3">
-                    {sortedComments.slice(0, limit).map((comment, i) => (
-                        <div
-                            key={comment.id}
-                            className={i === 0 ? 'mt-0' : 'mt-3'}
-                            data-testid="comment"
-                        >
+                <Flex direction={{ default: 'column' }}>
+                    {sortedComments.slice(0, limit).map((comment) => (
+                        <FlexItem key={comment.id} data-testid="comment">
                             <Comment
                                 comment={comment}
                                 onSave={onSave}
                                 onRemove={onRemove}
                                 isDisabled={isDisabled}
                             />
-                        </div>
+                        </FlexItem>
                     ))}
                     {!!newComment && (
-                        <div
-                            className={sortedComments.length === 0 ? 'mt-0' : 'mt-3'}
-                            data-testid="new-comment"
-                        >
+                        <FlexItem data-testid="new-comment">
                             <Comment
                                 comment={newComment}
                                 onSave={onSave}
@@ -89,45 +88,39 @@ const CommentThread = ({
                                 defaultEdit
                                 isDisabled={isDisabled}
                             />
-                        </div>
+                        </FlexItem>
                     )}
                     {hasMoreComments && (
-                        <div className="flex flex-1 justify-center mt-3">
-                            <Button
-                                className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 rounded-full rounded-sm text-sm text-success-900 uppercase"
-                                text="Load More Comments"
-                                onClick={showMoreComments}
-                                disabled={isDisabled}
-                            />
-                        </div>
+                        <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                            <Button onClick={showMoreComments} isDisabled={isDisabled}>
+                                Load More Comments
+                            </Button>
+                        </FlexItem>
                     )}
-                </div>
+                </Flex>
             ) : (
-                <div className="flex items-center justify-center p-5">
-                    <NoResultsMessage message="No Comments" />
-                </div>
+                <EmptyState>No Comments</EmptyState>
             );
     }
 
     return (
-        <CollapsibleCard
-            cardClassName="border border-base-400 h-full"
-            title={`${length} ${label} ${pluralize('Comment', length)}`}
-            headerComponents={
-                <Button
-                    className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 mx-2 rounded-sm text-sm text-success-900 uppercase"
-                    text="New"
-                    icon={<PlusCircle className="text-primary-800 h-4 w-4 mr-1" />}
-                    disabled={!!newComment || isDisabled}
-                    onClick={addNewComment}
-                    dataTestId="new-comment-button"
-                />
-            }
-            open={defaultOpen}
-            isCollapsible={isCollapsible}
-        >
-            {content}
-        </CollapsibleCard>
+        <Card isFlat>
+            <CardHeader>
+                {`${length} ${label} ${pluralize('Comment', length)}`}
+                <CardActions>
+                    <Button
+                        variant="secondary"
+                        icon={<PlusCircleIcon />}
+                        disabled={!!newComment || isDisabled}
+                        onClick={addNewComment}
+                        data-testid="new-comment-button"
+                    >
+                        New
+                    </Button>
+                </CardActions>
+            </CardHeader>
+            <CardBody>{content}</CardBody>
+        </Card>
     );
 };
 
@@ -152,19 +145,15 @@ CommentThread.propTypes = {
     onUpdate: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     defaultLimit: PropTypes.number,
-    defaultOpen: PropTypes.bool,
     isLoading: PropTypes.bool,
     isDisabled: PropTypes.bool,
-    isCollapsible: PropTypes.bool,
 };
 
 CommentThread.defaultProps = {
     comments: [],
     defaultLimit: 5,
-    defaultOpen: false,
     isLoading: false,
     isDisabled: false,
-    isCollapsible: true,
 };
 
 export default CommentThread;

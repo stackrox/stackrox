@@ -1,50 +1,51 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Formik } from 'formik';
+import { useFormik } from 'formik';
 import { object, string } from 'yup';
+import { TextArea, ActionGroup, Button, Form, FormGroup } from '@patternfly/react-core';
 
 const CommentForm = ({ initialFormValues, onSubmit }) => {
+    const { errors, values, handleChange, handleBlur } = useFormik({
+        initialValues: initialFormValues,
+        validationSchema: object().shape({
+            message: string().trim().required('This field is required'),
+        }),
+    });
+    function onChange(_value, event) {
+        handleChange(event);
+    }
+    function handleSubmit() {
+        onSubmit(values);
+    }
+    const validatedState = errors.message ? 'error' : 'default';
     return (
-        <Formik
-            initialValues={initialFormValues}
-            validationSchema={object().shape({
-                message: string().trim().required('This field is required'),
-            })}
-            onSubmit={onSubmit}
-        >
-            {({ values, errors, handleChange, handleBlur, handleSubmit }) => (
-                <form onSubmit={handleSubmit}>
-                    <textarea
-                        data-testid="comment-textarea"
-                        className="form-textarea bg-base-100 text-base border border-base-400 leading-normal p-1 w-full"
-                        name="message"
-                        rows="5"
-                        cols="33"
-                        placeholder="Write a comment here..."
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        value={values.message}
-                        // eslint-disable-next-line jsx-a11y/no-autofocus
-                        autoFocus
-                        aria-label="Comment Input"
-                    />
-                    {errors && errors.message && (
-                        <span className="text-alert-700" data-testid="comment-form-error">
-                            {errors.message}
-                        </span>
-                    )}
-                    <div className="flex justify-end">
-                        <button
-                            className="bg-success-300 border border-success-800 p-1 rounded-sm text-sm text-success-900 uppercase hover:bg-success-400 cursor-pointer"
-                            type="submit"
-                            data-testid="save-comment-button"
-                        >
-                            Save
-                        </button>
-                    </div>
-                </form>
-            )}
-        </Formik>
+        <Form>
+            <FormGroup validated={validatedState} helperTextInvalid={errors.message}>
+                <TextArea
+                    data-testid="comment-textarea"
+                    name="message"
+                    rows="5"
+                    placeholder="Write a comment here..."
+                    onChange={onChange}
+                    onBlur={handleBlur}
+                    value={values.message}
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
+                    autoFocus
+                    aria-label="Comment Input"
+                    validated={validatedState}
+                />
+            </FormGroup>
+            <ActionGroup>
+                <Button
+                    variant="primary"
+                    data-testid="save-comment-button"
+                    isDisabled={values.message === '' || validatedState === 'error'}
+                    onClick={handleSubmit}
+                >
+                    Save
+                </Button>
+            </ActionGroup>
+        </Form>
     );
 };
 

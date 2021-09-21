@@ -3,15 +3,15 @@ import scopeSelectors from '../helpers/scopeSelectors';
 const editSelectors = {
     textArea: 'textarea[data-testid="comment-textarea"]',
     saveButton: 'button[data-testid="save-comment-button"]',
-    error: '[data-testid="comment-form-error"]',
+    error: '.pf-c-form__helper-text',
     cancelButton: '[data-testid="cancel-comment-editing-button"]',
 };
 
 const commentSelectors = {
     editButton: 'button[data-testid="edit-comment-button"]',
     deleteButton: 'button[data-testid="delete-comment-button"]',
-    userName: '[data-testid="comment-header"]',
-    dateAndEditedStatus: '[data-testid="comment-subheader"]',
+    userName: '[data-testid="comment-header-title"] ',
+    dateAndEditedStatus: '[data-testid="comment-header-subtitle"]',
     message: '[data-testid="comment-message"]',
     links: 'a[data-testid="comment-link"]',
     ...editSelectors, // when editing existing comment it's applicable
@@ -36,6 +36,6 @@ export const processCommentsSelectors = scopeSelectors(
     selectors
 );
 
-export const commentsDialogSelectors = scopeSelectors('.ReactModal__Content', {
-    yesButton: 'button:contains("Yes")',
+export const commentsDialogSelectors = scopeSelectors('.pf-c-modal-box', {
+    deleteButton: 'button:contains("Delete")',
 });

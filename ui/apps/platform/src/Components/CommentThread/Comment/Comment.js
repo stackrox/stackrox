@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { format } from 'date-fns';
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    CardActions,
+    CardTitle,
+    Flex,
+    FlexItem,
+    Modal,
+    ModalVariant,
+    Button,
+    ButtonVariant,
+} from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
-import CustomDialogue from 'Components/CustomDialogue';
 import CommentForm from './CommentForm';
 import CommentActionButtons from './CommentActionButtons';
 import CommentMessage from './CommentMessage';
@@ -48,47 +60,65 @@ const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit, isDisabled }
     }
 
     return (
-        <div
-            className={`${
-                isEditing
-                    ? 'bg-success-200 border-success-500'
-                    : 'bg-primary-100 border-primary-300'
-            } border rounded-lg p-2`}
-        >
-            <div className="flex flex-1">
-                <div className="text-primary-800 flex flex-1" data-testid="comment-header">
-                    {textHeader}
-                </div>
-                <CommentActionButtons
-                    isEditing={isEditing}
-                    isEditable={isEditable}
-                    isDeletable={isDeletable}
-                    onEdit={onEdit}
-                    onRemove={onRemoveHandler}
-                    onClose={onCloseHandler}
-                    isDisabled={isDisabled}
-                />
-            </div>
-            <div className="text-base-500 text-xs mt-1" data-testid="comment-subheader">
-                {createdTime && format(createdTime, dateTimeFormat)}{' '}
-                {isCommentUpdated && '(edited)'}
-            </div>
-            <div className="mt-2 text-primary-800 leading-normal" data-testid="comment-message">
-                {isEditing ? (
-                    <CommentForm initialFormValues={initialFormValues} onSubmit={onSubmit} />
-                ) : (
-                    <CommentMessage message={message} />
-                )}
-            </div>
-            {isDialogueOpen && (
-                <CustomDialogue
-                    title="Delete Comment?"
-                    onConfirm={confirmDeletion}
-                    confirmText="Yes"
-                    onCancel={cancelDeletion}
-                />
-            )}
-        </div>
+        <>
+            <Card
+                className={`${
+                    isEditing ? 'pf-u-background-color-success' : 'pf-u-background-color-info'
+                }`}
+                isFlat
+            >
+                <CardHeader>
+                    <CardTitle data-testid="comment-header">
+                        <Flex direction={{ default: 'column' }}>
+                            <FlexItem data-testid="comment-header-title" className="pf-u-mb-xs">
+                                {textHeader}
+                            </FlexItem>
+                            <FlexItem
+                                className="pf-u-font-size-sm"
+                                data-testid="comment-header-subtitle"
+                            >
+                                {createdTime && format(createdTime, dateTimeFormat)}
+                                {isCommentUpdated && '(edited)'}
+                            </FlexItem>
+                        </Flex>
+                    </CardTitle>
+                    <CardActions>
+                        <CommentActionButtons
+                            isEditing={isEditing}
+                            isEditable={isEditable}
+                            isDeletable={isDeletable}
+                            onEdit={onEdit}
+                            onRemove={onRemoveHandler}
+                            onClose={onCloseHandler}
+                            isDisabled={isDisabled}
+                        />
+                    </CardActions>
+                </CardHeader>
+                <CardBody data-testid="comment-message">
+                    {isEditing ? (
+                        <CommentForm initialFormValues={initialFormValues} onSubmit={onSubmit} />
+                    ) : (
+                        <CommentMessage message={message} />
+                    )}
+                </CardBody>
+            </Card>
+            <Modal
+                variant={ModalVariant.small}
+                isOpen={isDialogueOpen}
+                actions={[
+                    <Button key="confirm" variant={ButtonVariant.danger} onClick={confirmDeletion}>
+                        Delete
+                    </Button>,
+                    <Button key="cancel" variant="link" onClick={cancelDeletion}>
+                        Cancel
+                    </Button>,
+                ]}
+                onClose={cancelDeletion}
+                aria-label="Delete comment confirmation"
+            >
+                Delete Comment?
+            </Modal>
+        </>
     );
 };
 

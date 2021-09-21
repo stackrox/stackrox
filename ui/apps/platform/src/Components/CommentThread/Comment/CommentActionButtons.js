@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Edit, Trash2, XCircle } from 'react-feather';
-
-import Button from 'Components/Button';
+import { Button, Flex } from '@patternfly/react-core';
+import { PencilAltIcon, TrashIcon, TimesCircleIcon } from '@patternfly/react-icons';
 
 const CommentActionButtons = ({
     isEditing,
@@ -17,37 +16,37 @@ const CommentActionButtons = ({
         return (
             <Button
                 onClick={onClose}
-                icon={
-                    <XCircle className="h-4 w-4 ml-2 text-success-800 cursor-pointer hover:text-success-500" />
-                }
-                disabled={isDisabled}
-                dataTestId="cancel-comment-editing-button"
-            />
+                variant="plain"
+                isDisabled={isDisabled}
+                data-testid="cancel-comment-editing-button"
+            >
+                <TimesCircleIcon />
+            </Button>
         );
     }
     return (
-        <div className="flex">
+        <Flex spaceItems={{ default: 'spaceItemsNone' }}>
             {isEditable && (
                 <Button
                     onClick={onEdit}
-                    icon={
-                        <Edit className="h-4 w-4 mx-2 text-primary-800 cursor-pointer hover:text-primary-500" />
-                    }
-                    disabled={isDisabled}
-                    dataTestId="edit-comment-button"
-                />
+                    variant="plain"
+                    isDisabled={isDisabled}
+                    data-testid="edit-comment-button"
+                >
+                    <PencilAltIcon />
+                </Button>
             )}
             {isDeletable && (
                 <Button
                     onClick={onRemove}
-                    icon={
-                        <Trash2 className="h-4 w-4 text-primary-800 cursor-pointer hover:text-primary-500" />
-                    }
-                    disabled={isDisabled}
-                    dataTestId="delete-comment-button"
-                />
+                    variant="plain"
+                    isDisabled={isDisabled}
+                    data-testid="delete-comment-button"
+                >
+                    <TrashIcon />
+                </Button>
             )}
-        </div>
+        </Flex>
     );
 };
 
