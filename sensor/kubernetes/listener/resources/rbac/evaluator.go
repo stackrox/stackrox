@@ -1,10 +1,11 @@
 package rbac
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type namespacedSubject string
@@ -32,13 +33,35 @@ func (e *evaluator) GetPermissionLevelForSubject(subject *storage.Subject) stora
 	return level
 }
 
-func newBucketEvaluator(roles map[namespacedRoleRef]*namespacedRole, bindings map[namespacedBindingID]*namespacedBinding) *evaluator {
-	return evaluateRules(groupRulesBySubject(roles, bindings))
+func rolePermissionLevelToClusterPermissionLevel(permissionLevel rolePermissionLevel) storage.PermissionLevel {
+	switch permissionLevel {
+	case permissionWriteAllResources:
+		return storage.PermissionLevel_CLUSTER_ADMIN
+	case permissionWriteSomeResource, permissionListSomeResource, permissionGetOrWatchSomeResource:
+		return storage.PermissionLevel_ELEVATED_CLUSTER_WIDE
+	case permissionNone:
+		return storage.PermissionLevel_NONE
+	}
+	_ = utils.Should(fmt.Errorf("unhandled permission level %d", permissionLevel))
+	return storage.PermissionLevel_UNSET
 }
 
-func groupRulesBySubject(roles map[namespacedRoleRef]*namespacedRole, bindings map[namespacedBindingID]*namespacedBinding) (namespaceSubjectToRules, clusterSubjectToRules map[namespacedSubject]k8srbac.PolicyRuleSet) {
-	namespaceSubjectToRules = make(map[namespacedSubject]k8srbac.PolicyRuleSet, len(bindings))
-	clusterSubjectToRules = make(map[namespacedSubject]k8srbac.PolicyRuleSet, len(bindings))
+func rolePermissionLevelToNamespacePermissionLevel(permissionLevel rolePermissionLevel) storage.PermissionLevel {
+	switch permissionLevel {
+	case permissionWriteAllResources, permissionWriteSomeResource, permissionListSomeResource:
+		return storage.PermissionLevel_ELEVATED_IN_NAMESPACE
+	case permissionGetOrWatchSomeResource:
+		return storage.PermissionLevel_DEFAULT
+	case permissionNone:
+		return storage.PermissionLevel_NONE
+	}
+	_ = utils.Should(fmt.Errorf("unhandled permission level %d", permissionLevel))
+	return storage.PermissionLevel_UNSET
+}
+
+func newBucketEvaluator(roles map[namespacedRoleRef]namespacedRole, bindings map[namespacedBindingID]*namespacedBinding) *evaluator {
+	permissionsForSubject := make(map[namespacedSubject]storage.PermissionLevel, len(bindings))
+
 	for bID, b := range bindings {
 		role, ok := roles[b.roleRef]
 		if !ok {
@@ -46,45 +69,23 @@ func groupRulesBySubject(roles map[namespacedRoleRef]*namespacedRole, bindings m
 		}
 
 		for _, subject := range b.subjects {
-			subjectToRules := namespaceSubjectToRules
-			if bID.IsClusterBinding() {
-				subjectToRules = clusterSubjectToRules
-			}
-			ruleSet, ok := subjectToRules[subject]
+			currentLevel, ok := permissionsForSubject[subject]
 			if !ok {
-				ruleSet = k8srbac.NewPolicyRuleSet(k8srbac.CoreFields()...)
-				subjectToRules[subject] = ruleSet
+				permissionsForSubject[subject] = storage.PermissionLevel_NONE
+				currentLevel = storage.PermissionLevel_NONE
 			}
-			ruleSet.Add(role.rules...)
+
+			var roleLevel storage.PermissionLevel
+			if bID.IsClusterBinding() {
+				roleLevel = rolePermissionLevelToClusterPermissionLevel(role.permissionLevel)
+			} else {
+				roleLevel = rolePermissionLevelToNamespacePermissionLevel(role.permissionLevel)
+			}
+
+			if roleLevel > currentLevel {
+				permissionsForSubject[subject] = roleLevel
+			}
 		}
 	}
-	return namespaceSubjectToRules, clusterSubjectToRules
-}
-
-func evaluateRules(subjectToRules, clusterSubjectToRules map[namespacedSubject]k8srbac.PolicyRuleSet) *evaluator {
-	permissionsForSubject := make(map[namespacedSubject]storage.PermissionLevel, len(subjectToRules)+len(clusterSubjectToRules))
-
-	for subject, rules := range clusterSubjectToRules {
-		permissionLevel := storage.PermissionLevel_NONE
-		if rules.Grants(k8srbac.EffectiveAdmin) {
-			permissionLevel = storage.PermissionLevel_CLUSTER_ADMIN
-			delete(subjectToRules, subject)
-		} else if k8srbac.CanWriteAResource(rules) || k8srbac.CanReadAResource(rules) {
-			permissionLevel = storage.PermissionLevel_ELEVATED_CLUSTER_WIDE
-			delete(subjectToRules, subject)
-		}
-		permissionsForSubject[subject] = permissionLevel
-	}
-
-	for subject, rules := range subjectToRules {
-		permissionLevel := storage.PermissionLevel_NONE
-		if k8srbac.CanWriteAResource(rules) || rules.Grants(k8srbac.ListAnything) {
-			permissionLevel = storage.PermissionLevel_ELEVATED_IN_NAMESPACE
-		} else if k8srbac.CanReadAResource(rules) {
-			permissionLevel = storage.PermissionLevel_DEFAULT
-		}
-		permissionsForSubject[subject] = permissionLevel
-	}
-
 	return &evaluator{permissionsForSubject: permissionsForSubject}
 }

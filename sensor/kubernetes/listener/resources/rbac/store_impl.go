@@ -14,7 +14,7 @@ var (
 type storeImpl struct {
 	lock sync.RWMutex
 
-	roles    map[namespacedRoleRef]*namespacedRole
+	roles    map[namespacedRoleRef]namespacedRole
 	bindings map[namespacedBindingID]*namespacedBinding
 
 	bucketEvaluator *evaluator
@@ -115,9 +115,9 @@ func (rs *storeImpl) rebuildEvaluatorBucketsNoLock() {
 	rs.dirty = false
 }
 
-func (rs *storeImpl) upsertRoleGenericNoLock(ref namespacedRoleRef, role *namespacedRole) {
+func (rs *storeImpl) upsertRoleGenericNoLock(ref namespacedRoleRef, role namespacedRole) {
 	oldRole, oldRoleExists := rs.roles[ref]
-	if oldRoleExists && role.Equal(oldRole) {
+	if oldRoleExists && role == oldRole {
 		return
 	}
 	rs.roles[ref] = role

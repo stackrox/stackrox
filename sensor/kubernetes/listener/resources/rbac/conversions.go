@@ -105,21 +105,6 @@ func getPolicyRules(k8sRules []v1.PolicyRule) []*storage.PolicyRule {
 	return rules
 }
 
-func clonePolicyRules(k8sRules []v1.PolicyRule) []*storage.PolicyRule {
-	rules := make([]*storage.PolicyRule, 0, len(k8sRules))
-	for _, rule := range k8sRules {
-		rule := rule.DeepCopy()
-		rules = append(rules, &storage.PolicyRule{
-			Verbs:           rule.Verbs,
-			Resources:       rule.Resources,
-			ApiGroups:       rule.APIGroups,
-			ResourceNames:   rule.ResourceNames,
-			NonResourceUrls: rule.NonResourceURLs,
-		})
-	}
-	return rules
-}
-
 func getSubjectKind(kind string) storage.SubjectKind {
 	switch kind {
 	case v1.ServiceAccountKind:

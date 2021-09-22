@@ -777,6 +777,35 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 			},
 			expected: false,
 		},
+		{
+			name: "rules verbs and resources are not merged",
+			initial: []*storage.PolicyRule{
+				{
+					Verbs: []string{
+						"*",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"",
+					},
+				},
+				{
+					Verbs: []string{
+						"get",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"*",
+					},
+				},
+			},
+			grants:   EffectiveAdmin,
+			expected: false,
+		},
 	}
 
 	for _, c := range cases {
