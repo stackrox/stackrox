@@ -57,10 +57,11 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
             vulnPagination: queryService.getPagination(cveSort, fixableCvesPage, LIST_PAGE_SIZE),
         },
     };
-    const { loading: cvesLoading, data: fixableCvesData, error: cvesError } = useQuery(
-        fixableCvesQuery,
-        queryOptions
-    );
+    const {
+        loading: cvesLoading,
+        data: fixableCvesData,
+        error: cvesError,
+    } = useQuery(fixableCvesQuery, queryOptions);
 
     const fixableCves = fixableCvesData?.result?.vulnerabilities || [];
     const fixableCount = fixableCvesData?.result?.vulnCounter?.all?.fixable || 0;

@@ -126,11 +126,8 @@ const buildTableColumns = (match, location, entityContext) => {
                   // eslint-disable-next-line
                   Cell: ({ original, pdf }) => {
                       const { nodeComplianceControlCount } = original;
-                      const {
-                          passingCount,
-                          failingCount,
-                          unknownCount,
-                      } = nodeComplianceControlCount;
+                      const { passingCount, failingCount, unknownCount } =
+                          nodeComplianceControlCount;
                       const controlCount = passingCount + failingCount + unknownCount;
                       if (!controlCount) {
                           return <LabelChip text="No Controls" type="alert" />;

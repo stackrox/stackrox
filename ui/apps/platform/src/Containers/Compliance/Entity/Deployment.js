@@ -54,15 +54,8 @@ const DeploymentPage = ({
                     return <Loader />;
                 }
                 const deployment = processData(data);
-                const {
-                    name,
-                    id,
-                    labels,
-                    clusterName,
-                    namespace,
-                    clusterId,
-                    namespaceId,
-                } = deployment;
+                const { name, id, labels, clusterName, namespace, clusterId, namespaceId } =
+                    deployment;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 

@@ -47,13 +47,8 @@ describe('System Health Clusters local deployment', () => {
 describe('System Health Clusters health fixture', () => {
     withAuth();
 
-    const {
-        categoryCount,
-        categoryLabel,
-        healthySubtext,
-        healthyText,
-        problemCount,
-    } = selectors.clusters;
+    const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
+        selectors.clusters;
 
     // For comparison to `sensorCertExpiry` in clusters fixture.
     const currentDatetime = new Date('2020-08-31T13:01:00Z');
@@ -196,13 +191,8 @@ describe('System Health Clusters health fixture', () => {
 describe('System Health Clusters subset 3', () => {
     withAuth();
 
-    const {
-        categoryCount,
-        categoryLabel,
-        healthySubtext,
-        healthyText,
-        problemCount,
-    } = selectors.clusters;
+    const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
+        selectors.clusters;
 
     // For comparison to `sensorCertExpiry` in clusters fixture.
     const currentDatetime = new Date('2020-08-31T13:01:00Z');
@@ -342,13 +332,8 @@ describe('System Health Clusters subset 3', () => {
 describe('System Health Clusters subset 1 Uninitialized', () => {
     withAuth();
 
-    const {
-        categoryCount,
-        categoryLabel,
-        healthySubtext,
-        healthyText,
-        problemCount,
-    } = selectors.clusters;
+    const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
+        selectors.clusters;
 
     let clusters;
 
@@ -396,12 +381,8 @@ describe('System Health Clusters subset 1 Uninitialized', () => {
     });
 
     it('should have 0 clusters in other widgets', () => {
-        const {
-            collectorStatus,
-            credentialExpiration,
-            sensorStatus,
-            sensorUpgrade,
-        } = selectors.clusters.widgets;
+        const { collectorStatus, credentialExpiration, sensorStatus, sensorUpgrade } =
+            selectors.clusters.widgets;
         [collectorStatus, sensorStatus, sensorUpgrade, credentialExpiration].forEach(
             (widgetSelector) => {
                 cy.get(`${widgetSelector} ${healthyText}`).should('contain', '0 clusters');
@@ -417,13 +398,8 @@ describe('System Health Clusters subset 1 Uninitialized', () => {
 describe('System Health Clusters subset 1 Healthy', () => {
     withAuth();
 
-    const {
-        categoryCount,
-        categoryLabel,
-        healthySubtext,
-        healthyText,
-        problemCount,
-    } = selectors.clusters;
+    const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
+        selectors.clusters;
 
     // For comparison to `sensorCertExpiry` in clusters fixture.
     const currentDatetime = new Date('2020-08-31T13:01:00Z');

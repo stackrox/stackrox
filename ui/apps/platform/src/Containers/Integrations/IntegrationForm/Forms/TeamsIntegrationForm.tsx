@@ -19,7 +19,8 @@ export type TeamsIntegration = {
     type: 'teams';
 } & NotifierIntegrationBase;
 
-const validTeamsWebhookRegex = /^((https?):\/\/)?(outlook.office365.com\/webhook\/)([a-zA-Z0-9-]+)$/;
+const validTeamsWebhookRegex =
+    /^((https?):\/\/)?(outlook.office365.com\/webhook\/)([a-zA-Z0-9-]+)$/;
 
 export const validationSchema = yup.object().shape({
     name: yup.string().trim().required('Integration name is required'),

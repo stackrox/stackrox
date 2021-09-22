@@ -165,11 +165,8 @@ describe('Access Control Auth providers', () => {
         cy.visit(`${authProvidersUrl}/${id}`);
         cy.wait(['@GetAuthProviders', '@GetGroups']);
 
-        const {
-            inputIssuer,
-            inputClientSecret,
-            checkboxDoNotUseClientSecret,
-        } = selectors.form.authProvider.oidc;
+        const { inputIssuer, inputClientSecret, checkboxDoNotUseClientSecret } =
+            selectors.form.authProvider.oidc;
 
         cy.get(inputClientSecret)
             .should('be.disabled')

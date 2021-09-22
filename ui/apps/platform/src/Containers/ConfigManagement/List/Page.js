@@ -39,14 +39,8 @@ const ListPage = ({ match, location, history }) => {
     );
 
     const params = URLService.getParams(match, location);
-    const {
-        pageEntityListType,
-        entityId1,
-        entityType2,
-        entityListType2,
-        entityId2,
-        query,
-    } = params;
+    const { pageEntityListType, entityId1, entityType2, entityListType2, entityId2, query } =
+        params;
     const searchParam = useContext(searchContext);
 
     function onRowClick(entityId) {

@@ -17,11 +17,12 @@ const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
 const valueOptionClass = `bg-base-200 text-base-600 ${borderClass}`;
 
-export const placeholderCreator = (placeholderText) => () => (
-    <span className="text-base-500 flex h-full items-center pointer-events-none">
-        <span className="font-600 absolute text-lg">{placeholderText}</span>
-    </span>
-);
+export const placeholderCreator = (placeholderText) => () =>
+    (
+        <span className="text-base-500 flex h-full items-center pointer-events-none">
+            <span className="font-600 absolute text-lg">{placeholderText}</span>
+        </span>
+    );
 
 const isCategoryChip = (value) => value.endsWith(':');
 

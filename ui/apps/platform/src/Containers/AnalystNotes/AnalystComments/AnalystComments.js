@@ -15,7 +15,11 @@ import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 const AnalystComments = ({ type, variables, isCollapsible }) => {
     const { GET_COMMENTS, ADD_COMMENT, UPDATE_COMMENT, REMOVE_COMMENT } = getQueriesByType(type);
 
-    const { loading: isLoading, error, data } = useQuery(GET_COMMENTS, {
+    const {
+        loading: isLoading,
+        error,
+        data,
+    } = useQuery(GET_COMMENTS, {
         variables,
     });
 
@@ -33,14 +37,10 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
         ADD_COMMENT,
         refetchAndWait
     );
-    const [
-        updateComment,
-        { loading: isWaitingToUpdateComment, error: errorOnUpdateComment },
-    ] = useMutation(UPDATE_COMMENT, refetchAndWait);
-    const [
-        removeComment,
-        { loading: isWaitingToRemoveComment, error: errorOnRemoveComment },
-    ] = useMutation(REMOVE_COMMENT, refetchAndWait);
+    const [updateComment, { loading: isWaitingToUpdateComment, error: errorOnUpdateComment }] =
+        useMutation(UPDATE_COMMENT, refetchAndWait);
+    const [removeComment, { loading: isWaitingToRemoveComment, error: errorOnRemoveComment }] =
+        useMutation(REMOVE_COMMENT, refetchAndWait);
 
     const { hasErrors, errorMessages } = captureGraphQLErrors([
         error,

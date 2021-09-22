@@ -35,7 +35,11 @@ function ViolationTagsCard({
     const variables = { resourceId };
     const { GET_TAGS, ADD_TAGS, REMOVE_TAGS } = getQueriesByType(ANALYST_NOTES_TYPES.VIOLATION);
 
-    const { loading: isLoading, error, data } = useQuery(GET_TAGS, {
+    const {
+        loading: isLoading,
+        error,
+        data,
+    } = useQuery(GET_TAGS, {
         variables,
     });
 

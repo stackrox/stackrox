@@ -26,9 +26,8 @@ function useFetchBaselineGeneratedNetworkPolicy({
     deploymentId,
     includePorts,
 }: UseFetchBaselineGeneratedNetworkPolicy): FetchBaselineGeneratedNetworkPolicyResult {
-    const [result, setResult] = useState<FetchBaselineGeneratedNetworkPolicyResult>(
-        defaultResultState
-    );
+    const [result, setResult] =
+        useState<FetchBaselineGeneratedNetworkPolicyResult>(defaultResultState);
 
     useEffect(() => {
         setResult((prevResult) => ({ ...prevResult, isGeneratingNetworkPolicy: true }));

@@ -29,12 +29,8 @@ const EventTimelineOverview = ({ deploymentId }) => {
     }
 
     // data fetching with "deploymentId" will happen here...
-    const {
-        numPolicyViolations,
-        numProcessActivities,
-        numRestarts,
-        numTerminations,
-    } = data.deployment;
+    const { numPolicyViolations, numProcessActivities, numRestarts, numTerminations } =
+        data.deployment;
     const numRestartsAndTerminations = numRestarts + numTerminations;
 
     function showEventTimelineGraph() {

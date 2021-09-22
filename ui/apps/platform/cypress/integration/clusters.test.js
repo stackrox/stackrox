@@ -530,12 +530,8 @@ describe('Cluster Health', () => {
     });
 
     expectedClusters.forEach(({ expectedInListAndSide, expectedInSide }, i) => {
-        const {
-            clusterName,
-            clusterStatus,
-            sensorUpgrade,
-            credentialExpiration,
-        } = expectedInListAndSide;
+        const { clusterName, clusterStatus, sensorUpgrade, credentialExpiration } =
+            expectedInListAndSide;
         const {
             admissionControlHealthInfo,
             collectorHealthInfo,
@@ -566,11 +562,8 @@ describe('Cluster Health', () => {
             // Collector Status
             cy.get(selectors.clusterHealth.collectorStatus).should('have.text', collectorStatus);
             if (collectorHealthInfo !== null) {
-                const {
-                    totalReadyPods,
-                    totalDesiredPods,
-                    totalRegisteredNodes,
-                } = collectorHealthInfo;
+                const { totalReadyPods, totalDesiredPods, totalRegisteredNodes } =
+                    collectorHealthInfo;
                 cy.get(selectors.clusterHealth.collectorHealthInfo.totalReadyPods).should(
                     'have.text',
                     totalReadyPods

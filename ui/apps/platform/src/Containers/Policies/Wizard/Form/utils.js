@@ -95,7 +95,8 @@ function isCompoundField(fieldName = '') {
     return compoundValueFields.includes(fieldName);
 }
 
-const numericCompRe = /^([><=]+)?\D*(?=.)(([+-]?([0-9]*)(\.([0-9]+))?)|(UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL))$/;
+const numericCompRe =
+    /^([><=]+)?\D*(?=.)(([+-]?([0-9]*)(\.([0-9]+))?)|(UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL))$/;
 
 export function parseNumericComparisons(str) {
     const matches = str.match(numericCompRe);
@@ -153,9 +154,8 @@ function preFormatNestedPolicyFields(policy) {
         policyGroups.forEach((policyGroup, groupIdx) => {
             const { values, fieldName } = policyGroup;
             values.forEach((value, valueIdx) => {
-                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
-                    valueIdx
-                ] = parseValueStr(value.value, fieldName);
+                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] =
+                    parseValueStr(value.value, fieldName);
             });
         });
     });

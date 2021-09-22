@@ -17,7 +17,11 @@ const FormCollapsibleButton = ({
     execFilePath,
     args,
 }) => {
-    const { loading: isLoading, error, data = {} } = useQuery(GET_PROCESS_COMMENTS_TAGS_COUNT, {
+    const {
+        loading: isLoading,
+        error,
+        data = {},
+    } = useQuery(GET_PROCESS_COMMENTS_TAGS_COUNT, {
         variables: { key: { deploymentID, containerName, execFilePath, args } },
     });
 

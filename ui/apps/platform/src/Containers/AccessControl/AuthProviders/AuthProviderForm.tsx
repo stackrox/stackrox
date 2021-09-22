@@ -180,16 +180,8 @@ function AuthProviderForm({
         validationSchema: authProviderValidationSchema,
         enableReinitialize: true,
     });
-    const {
-        dirty,
-        handleChange,
-        isValid,
-        setFieldValue,
-        handleBlur,
-        values,
-        errors,
-        touched,
-    } = formik;
+    const { dirty, handleChange, isValid, setFieldValue, handleBlur, values, errors, touched } =
+        formik;
 
     function onChange(_value, event) {
         handleChange(event);

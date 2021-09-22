@@ -57,7 +57,11 @@ export type PFMitreAttackVectorsProps = {
 };
 
 function PFMitreAttackVectors({ policyId }: PFMitreAttackVectorsProps): ReactElement {
-    const { loading: isLoading, data, error } = useQuery(GET_MITRE_ATTACK_VECTORS, {
+    const {
+        loading: isLoading,
+        data,
+        error,
+    } = useQuery(GET_MITRE_ATTACK_VECTORS, {
         variables: {
             id: policyId,
         },

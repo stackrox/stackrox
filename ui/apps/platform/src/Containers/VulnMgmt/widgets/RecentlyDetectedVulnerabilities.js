@@ -55,7 +55,11 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
     }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
 
-    const { loading, data = {}, error } = useQuery(RECENTLY_DETECTED_VULNERABILITIES, {
+    const {
+        loading,
+        data = {},
+        error,
+    } = useQuery(RECENTLY_DETECTED_VULNERABILITIES, {
         variables: {
             query,
             scopeQuery: queryService.objectToWhereClause(entityContextObject),

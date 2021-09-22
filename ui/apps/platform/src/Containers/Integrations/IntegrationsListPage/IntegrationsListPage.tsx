@@ -100,9 +100,9 @@ function IntegrationsListPage({
                 <DeleteClusterInitBundleConfirmationModal
                     bundle={
                         deletingIntegrationIds.length === 1
-                            ? ((integrations.find(
+                            ? (integrations.find(
                                   (integration) => integration.id === deletingIntegrationIds[0]
-                              ) as unknown) as ClusterInitBundle)
+                              ) as unknown as ClusterInitBundle)
                             : undefined
                     }
                     handleCancel={onCancelDeleteIntegrationIds}

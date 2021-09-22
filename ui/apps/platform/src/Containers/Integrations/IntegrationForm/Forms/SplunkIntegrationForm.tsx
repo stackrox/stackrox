@@ -35,7 +35,8 @@ export type SplunkIntegrationFormValues = {
     updatePassword: boolean;
 };
 
-const validHttpEndpointRegex = /^((https?):\/\/)?([a-zA-Z0-9\-.]\.)?[a-zA-Z0-9\-.]{1,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(:[0-9]+)?(\/[a-zA-Z0-9-]*\/?)*$/;
+const validHttpEndpointRegex =
+    /^((https?):\/\/)?([a-zA-Z0-9\-.]\.)?[a-zA-Z0-9\-.]{1,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(:[0-9]+)?(\/[a-zA-Z0-9-]*\/?)*$/;
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({

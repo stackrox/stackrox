@@ -64,18 +64,11 @@ const Page = ({
 }: PageProps): ReactElement => {
     const initialValues = getInitialValues(systemConfig, telemetryConfig);
     const [isEditing, setIsEditing] = useState(false);
-    const {
-        submitForm,
-        setFieldValue,
-        values,
-        dirty,
-        isValid,
-        isSubmitting,
-        setSubmitting,
-    } = useFormik({
-        initialValues,
-        onSubmit,
-    });
+    const { submitForm, setFieldValue, values, dirty, isValid, isSubmitting, setSubmitting } =
+        useFormik({
+            initialValues,
+            onSubmit,
+        });
 
     function editSystemConfig() {
         setIsEditing(true);

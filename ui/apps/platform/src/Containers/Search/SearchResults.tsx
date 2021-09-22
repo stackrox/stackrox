@@ -152,9 +152,8 @@ function SearchResults({
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(INITIAL_SORT_INDEX);
     // sort direction of the currently active column
-    const [activeSortDirection, setActiveSortDirection] = useState<SortDirection>(
-        INITIAL_SORT_DIRECTION
-    );
+    const [activeSortDirection, setActiveSortDirection] =
+        useState<SortDirection>(INITIAL_SORT_DIRECTION);
     const [sortedRows, setSortedRows] = useState<GlobalSearchResult[]>([]);
 
     useEffect(() => {
@@ -202,23 +201,19 @@ function SearchResults({
         setGlobalSearchCategory(selectedTab.category);
     }
 
-    const onLinkHandler = (
-        searchCategory: string,
-        category: string,
-        toURL: string,
-        name: string
-    ) => () => {
-        let searchOptions = globalSearchOptions.slice();
-        if (name) {
-            searchOptions = addSearchModifier(
-                searchOptions,
-                `${mapping[searchCategory].name as string}:`
-            );
-            searchOptions = addSearchKeyword(searchOptions, name);
-        }
-        passthroughGlobalSearchOptions(searchOptions, category);
-        onClose(toURL);
-    };
+    const onLinkHandler =
+        (searchCategory: string, category: string, toURL: string, name: string) => () => {
+            let searchOptions = globalSearchOptions.slice();
+            if (name) {
+                searchOptions = addSearchModifier(
+                    searchOptions,
+                    `${mapping[searchCategory].name as string}:`
+                );
+                searchOptions = addSearchKeyword(searchOptions, name);
+            }
+            passthroughGlobalSearchOptions(searchOptions, category);
+            onClose(toURL);
+        };
 
     const contents = sortedRows.length ? (
         <TableComposable aria-label="Matches" variant="compact" isStickyHeader>

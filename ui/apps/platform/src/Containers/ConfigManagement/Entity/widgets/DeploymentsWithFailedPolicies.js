@@ -79,8 +79,9 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                 return null;
             }
             const groups = getDeploymentsGroupedByPolicies(data);
-            const numDeployments = uniq(data.violations.map((violation) => violation.deployment))
-                .length;
+            const numDeployments = uniq(
+                data.violations.map((violation) => violation.deployment)
+            ).length;
             if (numDeployments === 0) {
                 return <NoResultsMessage message={message} className="p-3 shadow" icon="info" />;
             }

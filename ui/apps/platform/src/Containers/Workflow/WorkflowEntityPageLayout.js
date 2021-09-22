@@ -45,9 +45,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
     const pagePaging = workflowState.paging[pagingParams.page];
 
     // Sidepanel props
-    const { sidePanelEntityId, sidePanelEntityType, sidePanelListType } = getSidePanelEntity(
-        workflowState
-    );
+    const { sidePanelEntityId, sidePanelEntityType, sidePanelListType } =
+        getSidePanelEntity(workflowState);
     const sidePanelSearch = workflowState.search[searchParams.sidePanel];
     const sidePanelSort = workflowState.sort[sortParams.sidePanel];
     const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];

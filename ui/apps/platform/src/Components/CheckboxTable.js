@@ -34,9 +34,11 @@ class CheckboxTable extends Component {
         this.reactTable = table;
     };
 
-    toggleRowHandler = ({ id }) => () => {
-        this.props.toggleRow(id);
-    };
+    toggleRowHandler =
+        ({ id }) =>
+        () => {
+            this.props.toggleRow(id);
+        };
 
     stopPropagationOnClick = (e) => e.stopPropagation();
 

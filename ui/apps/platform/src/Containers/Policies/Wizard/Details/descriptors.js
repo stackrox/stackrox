@@ -98,10 +98,9 @@ const fieldsMap = {
                 .filter((obj) => obj.deployment && (obj.deployment.name || obj.deployment.scope))
                 .map((obj) => obj.deployment);
             if (deploymentExcludedScopes.length > 0) {
-                exclusionObj[
-                    'Excluded Deployments'
-                ] = deploymentExcludedScopes.map((deploymentExcludedScope) =>
-                    formatDeploymentExcludedScope(deploymentExcludedScope, props)
+                exclusionObj['Excluded Deployments'] = deploymentExcludedScopes.map(
+                    (deploymentExcludedScope) =>
+                        formatDeploymentExcludedScope(deploymentExcludedScope, props)
                 );
             }
             const images = values

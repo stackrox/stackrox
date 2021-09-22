@@ -31,7 +31,11 @@ export const GET_MITRE_ATTACK_VECTORS = gql`
 `;
 
 function MitreAttackVectors({ policyId }: MitreAttackVectorsProps): ReactElement {
-    const { loading: isLoading, data, error } = useQuery(GET_MITRE_ATTACK_VECTORS, {
+    const {
+        loading: isLoading,
+        data,
+        error,
+    } = useQuery(GET_MITRE_ATTACK_VECTORS, {
         variables: {
             id: policyId,
         },

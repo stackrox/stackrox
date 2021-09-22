@@ -25,13 +25,8 @@ function CollectorStatusTotals({
     fgColor,
 }: CollectorStatusTotalsProps): ReactElement {
     const notAvailable = 'n/a';
-    const {
-        totalReadyPods,
-        totalDesiredPods,
-        totalRegisteredNodes,
-        version,
-        statusErrors,
-    } = collectorHealthInfo;
+    const { totalReadyPods, totalDesiredPods, totalRegisteredNodes, version, statusErrors } =
+        collectorHealthInfo;
     return (
         <table data-testid="collectorHealthInfo">
             <tbody>

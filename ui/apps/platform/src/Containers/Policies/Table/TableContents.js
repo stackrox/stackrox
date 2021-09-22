@@ -51,14 +51,16 @@ class TableContents extends Component {
         this.props.setSelectedPolicy(policy.id);
     };
 
-    toggleEnabledDisabledPolicy = ({ id, disabled }) => (e) => {
-        e.stopPropagation();
-        this.props.updatePolicyDisabledState({
-            policyId: id,
-            disabled: !disabled,
-        });
-        this.props.setWizardPolicyDisabled(!disabled);
-    };
+    toggleEnabledDisabledPolicy =
+        ({ id, disabled }) =>
+        (e) => {
+            e.stopPropagation();
+            this.props.updatePolicyDisabledState({
+                policyId: id,
+                disabled: !disabled,
+            });
+            this.props.setWizardPolicyDisabled(!disabled);
+        };
 
     toggleRow = (id) => {
         const selection = toggleRow(id, this.props.selectedPolicyIds);
@@ -72,10 +74,12 @@ class TableContents extends Component {
         this.props.selectPolicyIds(selection);
     };
 
-    onDeletePolicy = ({ id }) => (e) => {
-        e.stopPropagation();
-        this.props.deletePolicies([id]);
-    };
+    onDeletePolicy =
+        ({ id }) =>
+        (e) => {
+            e.stopPropagation();
+            this.props.deletePolicies([id]);
+        };
 
     renderRowActionButtons = (policy) => {
         const enableTooltip = `${policy.disabled ? 'Enable' : 'Disable'} policy`;

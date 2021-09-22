@@ -72,13 +72,8 @@ function AuthProviders(): ReactElement {
     const dispatch = useDispatch();
 
     const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-    const {
-        authProviders,
-        groups,
-        isFetchingAuthProviders,
-        isFetchingRoles,
-        userRolePermissions,
-    } = useSelector(authProviderState);
+    const { authProviders, groups, isFetchingAuthProviders, isFetchingRoles, userRolePermissions } =
+        useSelector(authProviderState);
     const hasWriteAccess = getHasReadWritePermission('AuthProvider', userRolePermissions);
 
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);

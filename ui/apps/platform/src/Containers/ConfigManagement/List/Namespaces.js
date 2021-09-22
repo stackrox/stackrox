@@ -208,10 +208,8 @@ const Namespaces = ({
 
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
-    const {
-        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus,
-        ...restQuery
-    } = queryService.getQueryBasedOnSearchContext(query, searchParam);
+    const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } =
+        queryService.getQueryBasedOnSearchContext(query, searchParam);
     const queryText = queryService.objectToWhereClause({ ...restQuery });
     const variables = queryText ? { query: queryText } : null;
 

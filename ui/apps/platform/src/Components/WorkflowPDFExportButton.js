@@ -124,14 +124,8 @@ class WorkflowPDFExportButton extends Component {
     };
 
     saveFn = () => {
-        const {
-            id,
-            options,
-            fileName,
-            setPDFRequestState,
-            setPDFSuccessState,
-            onClick,
-        } = this.props;
+        const { id, options, fileName, setPDFRequestState, setPDFSuccessState, onClick } =
+            this.props;
         setPDFRequestState();
         if (onClick) {
             onClick();
@@ -282,9 +276,8 @@ class WorkflowPDFExportButton extends Component {
                     }
                 }
                 Array.from(imgElements).forEach((el, index) => {
-                    printElements[index].className = printClonedElements[index].getAttribute(
-                        'data-class-name'
-                    );
+                    printElements[index].className =
+                        printClonedElements[index].getAttribute('data-class-name');
                     el.parentNode.removeChild(printClonedElements[index]);
                     el.parentNode.removeChild(el);
                 });

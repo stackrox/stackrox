@@ -258,7 +258,11 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
         setSelectedEntity(value);
     }
 
-    const { loading, data = {}, error } = useQuery(getQueryBySelectedEntity(selectedEntity), {
+    const {
+        loading,
+        data = {},
+        error,
+    } = useQuery(getQueryBySelectedEntity(selectedEntity), {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             pagination: queryService.getPagination(

@@ -76,7 +76,11 @@ const processData = (data, workflowState, limit) => {
 };
 
 const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
-    const { loading, data = {}, error } = useQuery(FREQUENTLY_VIOLATED_POLICIES, {
+    const {
+        loading,
+        data = {},
+        error,
+    } = useQuery(FREQUENTLY_VIOLATED_POLICIES, {
         variables: {
             query: `${queryService.entityContextToQueryString(entityContext)}+
             ${queryService.objectToWhereClause({ Category: 'Vulnerability Management' })}`,

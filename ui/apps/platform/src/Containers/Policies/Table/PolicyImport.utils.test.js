@@ -155,8 +155,7 @@ describe('PolicyImport.utils', () => {
 
             expect(errStr).toEqual([
                 {
-                    msg:
-                        'An existing policy has the same name, “A policy name”, as the one you are trying to import.',
+                    msg: 'An existing policy has the same name, “A policy name”, as the one you are trying to import.',
                     type: 'duplicate_name',
                 },
             ]);
@@ -176,8 +175,7 @@ describe('PolicyImport.utils', () => {
 
             expect(errStr).toEqual([
                 {
-                    msg:
-                        'An existing policy with the name “Another policy name” has the same ID—1234-5678-9012-3456—as the policy “A policy name” you are trying to import.',
+                    msg: 'An existing policy with the name “Another policy name” has the same ID—1234-5678-9012-3456—as the policy “A policy name” you are trying to import.',
                     type: 'duplicate_id',
                 },
             ]);
@@ -203,13 +201,11 @@ describe('PolicyImport.utils', () => {
 
             expect(errStr).toEqual([
                 {
-                    msg:
-                        'An existing policy has the same name, “A policy name”, as the one you are trying to import.',
+                    msg: 'An existing policy has the same name, “A policy name”, as the one you are trying to import.',
                     type: 'duplicate_name',
                 },
                 {
-                    msg:
-                        'An existing policy with the name “Another policy name” has the same ID—1234-5678-9012-3456—as the policy “A policy name” you are trying to import.',
+                    msg: 'An existing policy with the name “Another policy name” has the same ID—1234-5678-9012-3456—as the policy “A policy name” you are trying to import.',
                     type: 'duplicate_id',
                 },
             ]);
@@ -231,8 +227,7 @@ describe('PolicyImport.utils', () => {
 
             expect(errStr).toEqual([
                 {
-                    msg:
-                        'Invalid policy: policy invalid error: error validating lifecycle stage error: deploy time policy cannot contain runtime fields',
+                    msg: 'Invalid policy: policy invalid error: error validating lifecycle stage error: deploy time policy cannot contain runtime fields',
                     type: 'invalid_policy',
                 },
             ]);

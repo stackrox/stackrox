@@ -247,13 +247,8 @@ function ViolationsTablePanel({
                     </Thead>
                     <Tbody>
                         {violations.map((violation, rowIndex) => {
-                            const {
-                                state,
-                                lifecycleStage,
-                                enforcementAction,
-                                policy,
-                                id,
-                            } = violation;
+                            const { state, lifecycleStage, enforcementAction, policy, id } =
+                                violation;
                             const isAttemptedViolation = state === VIOLATION_STATES.ATTEMPTED;
                             const isResolved = state === VIOLATION_STATES.RESOLVED;
                             const isRuntimeAlert = lifecycleStage === LIFECYCLE_STAGES.RUNTIME;

@@ -21,11 +21,8 @@ function NetworkPageContent() {
         'showNamespaceFlows',
         'show'
     );
-    const {
-        isNetworkSimulationOn,
-        isNetworkSimulationError,
-        stopNetworkSimulation,
-    } = useNetworkPolicySimulation();
+    const { isNetworkSimulationOn, isNetworkSimulationError, stopNetworkSimulation } =
+        useNetworkPolicySimulation();
     const { isBaselineSimulationOn, stopBaselineSimulation } = useNetworkBaselineSimulation();
     const { simulatedBaselines } = useFetchBaselineComparisons();
 

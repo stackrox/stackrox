@@ -48,13 +48,8 @@ class CollapsibleCard extends Component {
     renderWhenClosed = () => this.renderTriggerElement('closed');
 
     render() {
-        const {
-            open,
-            renderWhenOpened,
-            renderWhenClosed,
-            cardClassName,
-            isCollapsible,
-        } = this.props;
+        const { open, renderWhenOpened, renderWhenClosed, cardClassName, isCollapsible } =
+            this.props;
         return (
             <div className={`bg-base-100 text-base-600 rounded ${cardClassName}`}>
                 <Collapsible

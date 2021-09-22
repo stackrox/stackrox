@@ -13,11 +13,8 @@ function SecurityContext({ deployment }): ReactElement {
             <CardBody>
                 {securityContextContainers?.length > 0
                     ? securityContextContainers.map((container) => {
-                          const {
-                              privileged,
-                              addCapabilities,
-                              dropCapabilities,
-                          } = container.securityContext;
+                          const { privileged, addCapabilities, dropCapabilities } =
+                              container.securityContext;
                           return (
                               <DescriptionList isHorizontal>
                                   {privileged && (

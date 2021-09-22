@@ -50,8 +50,7 @@ export const WarnType: Story = () => (
 export const ErrorType: Story = () => {
     const imageScanMessages = {
         header: 'The scanner doesn’t provide OS information.',
-        body:
-            'Failed to get the base OS information. Either the integrated scanner can’t find the OS or the base OS is unidentifiable.',
+        body: 'Failed to get the base OS information. Either the integrated scanner can’t find the OS or the base OS is unidentifiable.',
     };
     return (
         <Message type="error">

@@ -7,7 +7,11 @@ import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 
 const SearchAutoComplete = ({ categories, query, children }) => {
-    const { loading: isLoading, error, data } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, {
+    const {
+        loading: isLoading,
+        error,
+        data,
+    } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, {
         variables: {
             categories,
             query,

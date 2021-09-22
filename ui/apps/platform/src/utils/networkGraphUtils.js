@@ -339,15 +339,17 @@ export const getNamespaceEdges = ({
                     : 0;
                 if (isActive) {
                     namespaceLink.numActiveBidirectionalLinks += 1;
-                    namespaceLink.numActiveUnidirectionalLinks = namespaceLink.numActiveUnidirectionalLinks
-                        ? namespaceLink.numActiveUnidirectionalLinks - 1
-                        : 0;
+                    namespaceLink.numActiveUnidirectionalLinks =
+                        namespaceLink.numActiveUnidirectionalLinks
+                            ? namespaceLink.numActiveUnidirectionalLinks - 1
+                            : 0;
                 }
                 if (isAllowed) {
                     namespaceLink.numAllowedBidirectionalLinks += 1;
-                    namespaceLink.numAllowedUnidirectionalLinks = namespaceLink.numAllowedUnidirectionalLinks
-                        ? namespaceLink.numAllowedUnidirectionalLinks - 1
-                        : 0;
+                    namespaceLink.numAllowedUnidirectionalLinks =
+                        namespaceLink.numAllowedUnidirectionalLinks
+                            ? namespaceLink.numAllowedUnidirectionalLinks - 1
+                            : 0;
                 }
             } else {
                 namespaceLink.numUnidirectionalLinks += 1;

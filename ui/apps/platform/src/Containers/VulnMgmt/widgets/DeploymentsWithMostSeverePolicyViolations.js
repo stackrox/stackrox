@@ -93,7 +93,11 @@ const processData = (data, workflowState) => {
 const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => {
     const entityContextObject = queryService.entityContextToQueryObject(entityContext);
     const queryObject = { ...entityContextObject, ...{ Category: 'Vulnerability Management' } };
-    const { loading, data = {}, error } = useQuery(DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS, {
+    const {
+        loading,
+        data = {},
+        error,
+    } = useQuery(DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS, {
         variables: {
             query: queryService.objectToWhereClause(queryObject),
             pagination: queryService.getPagination({}, 0, limit),

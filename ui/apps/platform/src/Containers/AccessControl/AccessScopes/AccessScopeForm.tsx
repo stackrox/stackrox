@@ -95,13 +95,11 @@ function AccessScopeForm({
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
 
     // Disable Save button while editing label selectors.
-    const [
-        labelSelectorsEditingState,
-        setLabelSelectorsEditingState,
-    ] = useState<LabelSelectorsEditingState>({
-        clusterLabelSelectors: -1,
-        namespaceLabelSelectors: -1,
-    });
+    const [labelSelectorsEditingState, setLabelSelectorsEditingState] =
+        useState<LabelSelectorsEditingState>({
+            clusterLabelSelectors: -1,
+            namespaceLabelSelectors: -1,
+        });
 
     const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: accessScope,

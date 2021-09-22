@@ -30,9 +30,8 @@ const selectBaselineSimulation = createStructuredSelector<BaselineSimulationStat
 
 const useNetworkBaselineSimulation = (): BaselineSimulationResult => {
     const dispatch = useDispatch();
-    const { isBaselineSimulationOn, baselineSimulationOptions, isUndoOn } = useSelector(
-        selectBaselineSimulation
-    );
+    const { isBaselineSimulationOn, baselineSimulationOptions, isUndoOn } =
+        useSelector(selectBaselineSimulation);
     const startBaselineSimulation = (options: BaselineSimulationOptions) => {
         dispatch(actions.startBaselineSimulation(options));
     };

@@ -84,8 +84,7 @@ function getLargerDataSet(withHint) {
             hint: withHint
                 ? {
                       title: `CVE-2019-${i}`,
-                      body:
-                          'Echo ethernet floating-point analog in computer plasma indeterminate integral interface inversion element.',
+                      body: 'Echo ethernet floating-point analog in computer plasma indeterminate integral interface inversion element.',
                   }
                 : null,
         });

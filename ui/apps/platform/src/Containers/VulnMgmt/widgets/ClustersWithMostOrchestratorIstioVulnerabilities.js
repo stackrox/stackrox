@@ -186,14 +186,15 @@ const processData = (data, workflowState, limit) => {
 };
 
 const ClustersWithMostOrchestratorVulnerabilities = ({ entityContext, limit }) => {
-    const { loading, data = {}, error } = useQuery(
-        CLUSTER_WITH_MOST_ORCHESTRATOR_ISTIO_VULNERABILTIES,
-        {
-            variables: {
-                query: queryService.entityContextToQueryString(entityContext),
-            },
-        }
-    );
+    const {
+        loading,
+        data = {},
+        error,
+    } = useQuery(CLUSTER_WITH_MOST_ORCHESTRATOR_ISTIO_VULNERABILTIES, {
+        variables: {
+            query: queryService.entityContextToQueryString(entityContext),
+        },
+    });
 
     let content = <Loader />;
 

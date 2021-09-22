@@ -51,7 +51,8 @@ const startTLSAuthMethods = [
     },
 ];
 
-const validHostnameRegex = /^(([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])(:[0-9]+)?$/;
+const validHostnameRegex =
+    /^(([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])(:[0-9]+)?$/;
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({

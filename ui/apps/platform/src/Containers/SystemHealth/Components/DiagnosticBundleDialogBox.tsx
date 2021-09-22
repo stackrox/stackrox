@@ -21,7 +21,8 @@ const startingTimeFormat = 'yyyy-mm-ddThh:mmZ'; // seconds are optional but UTC 
  * does not require seconds or thousandths
  * does require UTC as time zone
  */
-export const startingTimeRegExp = /^20\d\d-(?:0\d|1[012])-(?:0[123456789]|1\d|2\d|3[01])T(?:0\d|1\d|2[0123]):[012345]\d(?::\d\d(?:\.\d\d\d)?)?Z$/;
+export const startingTimeRegExp =
+    /^20\d\d-(?:0\d|1[012])-(?:0[123456789]|1\d|2\d|3[01])T(?:0\d|1\d|2[0123]):[012345]\d(?::\d\d(?:\.\d\d\d)?)?Z$/;
 
 type QueryStringProps = {
     selectedClusterNames: string[];

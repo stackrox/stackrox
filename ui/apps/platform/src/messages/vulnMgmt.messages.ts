@@ -12,18 +12,15 @@ export const imageScanMessages = {
     },
     missingScanData: {
         header: 'Failed to get the base OS information.',
-        body:
-            'Failed to get the base OS information. Either the integrated scanner can’t find the OS or the base OS is unidentifiable.',
+        body: 'Failed to get the base OS information. Either the integrated scanner can’t find the OS or the base OS is unidentifiable.',
     },
     osUnavailable: {
         header: 'The scanner doesn’t provide OS information.',
-        body:
-            'Failed to get the base OS information. Either the integrated scanner can’t find the OS or the base OS is unidentifiable.',
+        body: 'Failed to get the base OS information. Either the integrated scanner can’t find the OS or the base OS is unidentifiable.',
     },
     languageCvesUnavailable: {
         header: 'Unable to retrieve the Language CVE data, only OS CVE data is available.',
-        body:
-            'Only showing information about the OS CVEs. Turn on the Language CVE feature in a scanner to view additional details.',
+        body: 'Only showing information about the OS CVEs. Turn on the Language CVE feature in a scanner to view additional details.',
     },
     osCvesUnavailable: {
         header: 'Unable to retrieve the OS CVE data, only Language CVE data is available.',
@@ -36,7 +33,6 @@ export const imageScanMessages = {
     },
     certifiedRHELUnavailable: {
         header: 'Image out of scope for Red Hat Vulnerability Scanner Certification.',
-        body:
-            'The scan results are not certified, as the base RHEL image is out of scope for certification. Please consider updating the base image.',
+        body: 'The scan results are not certified, as the base RHEL image is out of scope for certification. Please consider updating the base image.',
     },
 };

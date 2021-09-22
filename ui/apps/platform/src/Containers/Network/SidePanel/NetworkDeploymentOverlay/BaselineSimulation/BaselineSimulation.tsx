@@ -39,13 +39,11 @@ function BaselineSimulation({ deploymentId }: BaselineSimulationProps): ReactEle
         isUndoOn,
     } = useNetworkBaselineSimulation();
     const { simulatedBaselines, isLoading } = useFetchBaselineComparison();
-    const {
-        data: networkPolicy,
-        isGeneratingNetworkPolicy,
-    } = useFetchBaselineGeneratedNetworkPolicy({
-        deploymentId,
-        includePorts: !excludePortsAndProtocols,
-    });
+    const { data: networkPolicy, isGeneratingNetworkPolicy } =
+        useFetchBaselineGeneratedNetworkPolicy({
+            deploymentId,
+            includePorts: !excludePortsAndProtocols,
+        });
     const [page, setPage] = useState(0);
     const [searchOptions, setSearchOptions] = useState([]);
     const filteredBaselines = useSearchFilteredData(

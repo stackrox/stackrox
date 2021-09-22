@@ -122,23 +122,26 @@ const IntegrationTilesPage = ({
             integrationsList[source]
                 // filter out non-visible integrations
                 .filter((integration) => {
-                    const isIntegrationFeatureFlagEnabled = getIsIntegrationFeatureFlagEnabled(
-                        integration
-                    );
+                    const isIntegrationFeatureFlagEnabled =
+                        getIsIntegrationFeatureFlagEnabled(integration);
                     if (!isIntegrationFeatureFlagEnabled) {
                         return false;
                     }
                     if (source !== 'authPlugins') {
                         return true;
                     }
-                    const numIntegrations = findIntegrations(integration.source, integration.type)
-                        .length;
+                    const numIntegrations = findIntegrations(
+                        integration.source,
+                        integration.type
+                    ).length;
                     return numIntegrations !== 0;
                 })
                 // get a list of rendered integration tiles
                 .map((integration) => {
-                    const numIntegrations = findIntegrations(integration.source, integration.type)
-                        .length;
+                    const numIntegrations = findIntegrations(
+                        integration.source,
+                        integration.type
+                    ).length;
                     const linkTo = `${integrationsPath}/${integration.source}/${integration.type}`;
 
                     return (

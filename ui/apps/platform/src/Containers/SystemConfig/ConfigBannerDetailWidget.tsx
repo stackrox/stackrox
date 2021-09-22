@@ -29,8 +29,13 @@ const ConfigBannerDetailWidget = ({
     type,
     publicConfig,
 }: ConfigBannerDetailWidgetProps): ReactElement => {
-    const { backgroundColor = null, color = null, enabled = false, size = 'None', text = 'None' } =
-        publicConfig?.[type] || {};
+    const {
+        backgroundColor = null,
+        color = null,
+        enabled = false,
+        size = 'None',
+        text = 'None',
+    } = publicConfig?.[type] || {};
 
     const title = `${capitalize(type)} Configuration`;
 

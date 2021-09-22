@@ -90,38 +90,41 @@ function enhanceNodesWithSimulatedStatus(
         acc[curr.entity.id] = curr;
         return acc;
     }, {} as Record<string, NetworkNodeBase>);
-    const modifiedNodeMap = simulatedBaselines.reduce((acc, curr): Record<
-        string,
-        NetworkNodeBase
-    > => {
-        const { id } = curr.peer.entity;
-        // if node doesn't exist
-        if (!acc[id]) {
-            const entity = getEntity(curr.peer.entity);
-            const result = {
-                entity,
-                externallyConnected:
-                    getIsExternal(selectedNode.type) || getIsExternal(curr.peer.entity.type),
-                internetAccess: false,
-                nonIsolatedEgress: false,
-                nonIsolatedIngress: false,
-                policyIds: [],
-                queryMatch: false,
-                outEdges: {},
+    const modifiedNodeMap = simulatedBaselines.reduce(
+        (acc, curr): Record<string, NetworkNodeBase> => {
+            const { id } = curr.peer.entity;
+            // if node doesn't exist
+            if (!acc[id]) {
+                const entity = getEntity(curr.peer.entity);
+                const result = {
+                    entity,
+                    externallyConnected:
+                        getIsExternal(selectedNode.type) || getIsExternal(curr.peer.entity.type),
+                    internetAccess: false,
+                    nonIsolatedEgress: false,
+                    nonIsolatedIngress: false,
+                    policyIds: [],
+                    queryMatch: false,
+                    outEdges: {},
+                };
+                acc[id] = result;
+            }
+            const node = curr.peer.ingress ? acc[selectedNode.id] : acc[id];
+            const outEdgeId = curr.peer.ingress ? id : selectedNode.id;
+            const newProperty = {
+                port: curr.peer.port,
+                protocol: curr.peer.protocol,
+                simulatedStatus: curr.simulatedStatus,
             };
-            acc[id] = result;
-        }
-        const node = curr.peer.ingress ? acc[selectedNode.id] : acc[id];
-        const outEdgeId = curr.peer.ingress ? id : selectedNode.id;
-        const newProperty = {
-            port: curr.peer.port,
-            protocol: curr.peer.protocol,
-            simulatedStatus: curr.simulatedStatus,
-        };
-        const mergedProperties = mergeProperties(node.outEdges[outEdgeId]?.properties, newProperty);
-        node.outEdges[outEdgeId] = { properties: mergedProperties };
-        return acc;
-    }, nodeMap as Record<string, NetworkNodeBase | NetworkNodeBaseWithSimulatedStatus>);
+            const mergedProperties = mergeProperties(
+                node.outEdges[outEdgeId]?.properties,
+                newProperty
+            );
+            node.outEdges[outEdgeId] = { properties: mergedProperties };
+            return acc;
+        },
+        nodeMap as Record<string, NetworkNodeBase | NetworkNodeBaseWithSimulatedStatus>
+    );
 
     return Object.values(modifiedNodeMap);
 }

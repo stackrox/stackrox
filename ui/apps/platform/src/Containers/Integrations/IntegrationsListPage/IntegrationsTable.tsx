@@ -55,14 +55,8 @@ function IntegrationsTable({
     const { source, type } = useParams();
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const columns = [...tableColumnDescriptor[source][type]];
-    const {
-        selected,
-        allRowsSelected,
-        hasSelections,
-        onSelect,
-        onSelectAll,
-        getSelectedIds,
-    } = useTableSelection<Integration>(integrations);
+    const { selected, allRowsSelected, hasSelections, onSelect, onSelectAll, getSelectedIds } =
+        useTableSelection<Integration>(integrations);
 
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);

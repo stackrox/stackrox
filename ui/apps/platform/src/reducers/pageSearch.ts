@@ -54,17 +54,15 @@ type SearchActions<T extends string> = {
     [prop in `set${Capitalize<T>}SearchOptions`]: (
         options: SearchEntry[]
     ) => SetSearchOptionsAction<T>;
-} &
-    {
-        [prop in `set${Capitalize<T>}SearchModifiers`]: (
-            modifiers: SearchEntry[]
-        ) => SetSearchModifiersAction<T>;
-    } &
-    {
-        [prop in `set${Capitalize<T>}SearchSuggestions`]: (
-            suggestions: SearchEntry[]
-        ) => SetSearchSuggestionsAction<T>;
-    };
+} & {
+    [prop in `set${Capitalize<T>}SearchModifiers`]: (
+        modifiers: SearchEntry[]
+    ) => SetSearchModifiersAction<T>;
+} & {
+    [prop in `set${Capitalize<T>}SearchSuggestions`]: (
+        suggestions: SearchEntry[]
+    ) => SetSearchSuggestionsAction<T>;
+};
 
 export function getActions<EntityPrefix extends string>(
     prefix: EntityPrefix

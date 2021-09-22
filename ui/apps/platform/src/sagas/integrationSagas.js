@@ -82,12 +82,9 @@ function* getImageIntegrations() {
 }
 
 function* watchLocation() {
-    const effects = [
-        getImageIntegrations,
-        getNotifiers,
-        getBackups,
-        getAuthPlugins,
-    ].map((fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc));
+    const effects = [getImageIntegrations, getNotifiers, getBackups, getAuthPlugins].map(
+        (fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
+    );
     yield all([
         ...effects,
         takeEveryNewlyMatchedLocation(policiesPath, getNotifiers),

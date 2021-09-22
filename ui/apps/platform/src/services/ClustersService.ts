@@ -219,9 +219,7 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         });
 }
 
-export function generateClusterInitBundle(data: {
-    name: string;
-}): Promise<{
+export function generateClusterInitBundle(data: { name: string }): Promise<{
     response: { meta?: ClusterInitBundle; helmValuesBundle?: string; kubectlBundle?: string };
 }> {
     return axios

@@ -210,8 +210,9 @@ describe('Risk Page Pod Event Timeline', () => {
          */
         function getFormattedEventTimeById(id) {
             return cy.fixture('risks/eventTimeline/deploymentEventTimeline.json').then((json) => {
-                const eventTime = json.data.pods[0].events.find((event) => event.id === id)
-                    .timestamp;
+                const eventTime = json.data.pods[0].events.find(
+                    (event) => event.id === id
+                ).timestamp;
                 return `Event time: ${format(eventTime, 'MM/DD/YYYY | h:mm:ssA')}`;
             });
         }

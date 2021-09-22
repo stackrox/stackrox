@@ -30,10 +30,8 @@ const SystemHealthDashboardPage = () => {
     const [vulnerabilityDefinitionsInfo, setVulnerabilityDefinitionsInfo] = useState(null);
 
     const [clustersRequestHasError, setClustersRequestHasError] = useState(false);
-    const [
-        vulnerabilityDefinitionsRequestHasError,
-        setVulnerabilityDefinitionsRequestHasError,
-    ] = useState(false);
+    const [vulnerabilityDefinitionsRequestHasError, setVulnerabilityDefinitionsRequestHasError] =
+        useState(false);
 
     useEffect(() => {
         setCurrentDatetime(new Date());
