@@ -1,8 +1,11 @@
-import groups.BAT
 import com.google.common.base.CaseFormat
-import common.Constants
+
+import io.stackrox.proto.api.v1.RbacServiceOuterClass
 import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
 import io.stackrox.proto.storage.Rbac
+
+import common.Constants
+import groups.BAT
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
@@ -11,9 +14,9 @@ import objects.K8sServiceAccount
 import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
-import spock.lang.Stepwise
-import util.Timer
+
 import org.junit.experimental.categories.Category
+import spock.lang.Stepwise
 
 @Stepwise
 class K8sRbacTest extends BaseSpecification {
@@ -50,24 +53,19 @@ class K8sRbacTest extends BaseSpecification {
     @Category(BAT)
     def "Verify scraped service accounts"() {
         given:
-        "list of service accounts from the orchestrator"
-        def orchestratorSAs = orchestrator.getServiceAccounts()
+        List<K8sServiceAccount> orchestratorSAs = null
+        List<ServiceAccountServiceOuterClass.ServiceAccountAndRoles> stackroxSAs = null
 
         expect:
         "SR should have the same service accounts"
-        Timer t = new Timer(15, 2)
-        def stackroxSAs = ServiceAccountService.getServiceAccounts()
-
         // Make sure the qa namespace SA exists before running the test. That SA should be the most recent added.
         // This will ensure scrapping is complete if this test spec is run first
-        while (t.IsValid() &&
-                !stackroxSAs.find { it.serviceAccount.getNamespace() == Constants.ORCHESTRATOR_NAMESPACE }) {
+        withRetry(15, 2) {
             stackroxSAs = ServiceAccountService.getServiceAccounts()
+            // list of service accounts from the orchestrator
             orchestratorSAs = orchestrator.getServiceAccounts()
+            assert stackroxSAs.find { it.serviceAccount.getNamespace() == Constants.ORCHESTRATOR_NAMESPACE }
         }
-
-        println t.IsValid() ? "Found default SA for namespace" : "Never found default SA for namespace"
-        assert t.IsValid()
 
         stackroxSAs.size() == orchestratorSAs.size()
         for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
@@ -82,7 +80,7 @@ class K8sRbacTest extends BaseSpecification {
                 println "SR serviceaccount: " + sa
                 K8sServiceAccount nameOnlyMatch = orchestratorSAs.find {
                     it.name == sa.name &&
-                    it.namespace == sa.namespace
+                            it.namespace == sa.namespace
                 }
                 if (nameOnlyMatch) {
                     println "K8S serviceaccount: " + nameOnlyMatch.dump()
@@ -108,7 +106,6 @@ class K8sRbacTest extends BaseSpecification {
     @Category(BAT)
     def "Create deployment with service account and verify relationships"() {
         given:
-
         Deployment deployment = new Deployment()
                 .setName(DEPLOYMENT_NAME)
                 .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
@@ -126,27 +123,18 @@ class K8sRbacTest extends BaseSpecification {
 
         expect:
         "SR should have the service account and its relationship to the deployment"
-        Timer t = new Timer(45, 2)
-        def passed = false
-        while (t.IsValid() && !passed) {
+        withRetry(45, 2) {
             def stackroxSAs = ServiceAccountService.getServiceAccounts()
             for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
                 def sa = s.serviceAccount
-                if ( sa.name == NEW_SA.name && sa.namespace == NEW_SA.namespace ) {
-                    passed = s.deploymentRelationshipsCount == 1 && \
-                        s.deploymentRelationshipsList[0].name == DEPLOYMENT_NAME && \
-                        s.clusterRolesCount == 0 && s.scopedRolesCount == 1 && \
-                        s.scopedRolesList[0].getRoles(0).name == ROLE_NAME
-                    if (passed) {
-                        break
-                    }
+                if (sa.name == NEW_SA.name && sa.namespace == NEW_SA.namespace) {
+                    assert s.deploymentRelationshipsCount == 1
+                    assert s.deploymentRelationshipsList[0].name == DEPLOYMENT_NAME
+                    assert s.clusterRolesCount == 0 && s.scopedRolesCount == 1
+                    assert s.scopedRolesList[0].getRoles(0).name == ROLE_NAME
                 }
             }
         }
-        if (!passed) {
-            println "Failed to find the correct service account values"
-        }
-        assert passed
 
         cleanup:
         orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
@@ -172,7 +160,7 @@ class K8sRbacTest extends BaseSpecification {
             def stackroxRoles = RbacService.getRoles()
             def orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
 
-            stackroxRoles.size() == orchestratorRoles.size()
+            assert stackroxRoles.size() == orchestratorRoles.size()
             for (Rbac.K8sRole stackroxRole : stackroxRoles) {
                 println "Looking for SR Role: ${stackroxRole.name} (${stackroxRole.namespace})"
                 K8sRole role = orchestratorRoles.find {
@@ -185,13 +173,13 @@ class K8sRbacTest extends BaseSpecification {
                 role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
                 assert role.annotations == stackroxRole.annotationsMap
                 for (int i = 0; i < role.rules.size(); i++) {
-                    def oRule = role.rules.get(i) as K8sPolicyRule
-                    def sRule = stackroxRole.rulesList.get(i) as Rbac.PolicyRule
-                    assert oRule.verbs == sRule.verbsList &&
-                            oRule.apiGroups == sRule.apiGroupsList &&
-                            oRule.resources == sRule.resourcesList &&
-                            oRule.nonResourceUrls == sRule.nonResourceUrlsList &&
-                            oRule.resourceNames == sRule.resourceNamesList
+                    K8sPolicyRule oRule = role.rules[i]
+                    Rbac.PolicyRule sRule = stackroxRole.rulesList[i]
+                    assert oRule.verbs == sRule.verbsList
+                    assert oRule.apiGroups == sRule.apiGroupsList
+                    assert oRule.resources == sRule.resourcesList
+                    assert oRule.nonResourceUrls == sRule.nonResourceUrlsList
+                    assert oRule.resourceNames == sRule.resourceNamesList
                 }
                 assert RbacService.getRole(stackroxRole.id) == stackroxRole
             }
@@ -246,85 +234,59 @@ class K8sRbacTest extends BaseSpecification {
     def "Verify scraped bindings"() {
         expect:
         "SR should have the same bindings"
-        Timer t = new Timer(45, 2)
-        def passed = false
-        while (t.IsValid() && !passed) {
+        withRetry(45, 2) {
             def stackroxBindings = RbacService.getRoleBindings()
             def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
+            assert stackroxBindings.size() == orchestratorBindings.size()
 
-            if (stackroxBindings.size() != orchestratorBindings.size()) {
-                continue
-            }
-            println "All bindings scraped in ${t.SecondsSince()}s"
-            passed = true
             for (Rbac.K8sRoleBinding b : stackroxBindings) {
-                K8sRoleBinding binding =  orchestratorBindings.find {
-                    it.name == b.name &&
-                            it.namespace == b.namespace
+                K8sRoleBinding binding = orchestratorBindings.find {
+                    it.name == b.name && it.namespace == b.namespace
                 }
-                if (binding == null || b.labelsMap != binding.labels) {
-                    passed = false
-                    break
-                }
+                assert binding != null
+
                 binding.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-                if (b.annotationsMap != binding.annotations ||
-                        b.roleId != binding.roleRef.uid || b.subjectsCount != binding.subjects.size()) {
-                    passed = false
-                    break
-                }
-                def allMatching = true
+                assert b.labelsMap == binding.labels
+                assert b.annotationsMap == binding.annotations
+                assert b.roleId == binding.roleRef.uid
+                assert b.subjectsCount == binding.subjects.size()
+
                 for (int i = 0; i < binding.subjects.size(); i++) {
-                    def oSubject = binding.subjects.get(i) as K8sSubject
-                    def sSubject = b.subjectsList.get(i) as Rbac.Subject
-                    if (!(sSubject.name == oSubject.name &&
-                            oSubject.namespace == null ?
-                            sSubject.namespace == "" :
-                            sSubject.namespace == oSubject.namespace &&
-                                    CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, sSubject.kind.toString()) ==
-                                    oSubject.kind)) {
-                        allMatching = false
-                    }
-                }
-                if (!allMatching) {
-                    passed = false
-                    break
+                    K8sSubject oSubject = binding.subjects[i]
+                    Rbac.Subject sSubject = b.subjectsList[i]
+                    assert sSubject.name == oSubject.name
+                    assert sSubject.namespace == ( oSubject.namespace ?:"" )
+                    assert CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, sSubject.kind.toString()) ==
+                            oSubject.kind
                 }
 
-                if (RbacService.getRoleBinding(b.id) != b) {
-                    passed = false
-                    break
-                }
+                assert RbacService.getRoleBinding(b.id) == b
             }
         }
-        if (!passed) {
-            println "Failed to verify scraped bindings"
-        }
-        assert passed
     }
 
     @Category(BAT)
     def "Verify returned subject list is complete"() {
         given:
-        "list of bindings from the orchestrator, we will pull unique subjects from this list"
-        def orchestratorSubjects = fetchOrchestratorSubjects()
+        List<K8sSubject> orchestratorSubjects = null
+        List<RbacServiceOuterClass.SubjectAndRoles> stackroxSubjectsAndRoles = null
 
         expect:
         "SR should have the same subjects"
-        def stackroxSubjectsAndRoles = RbacService.getSubjects()
-        Timer t = new Timer(15, 2)
-        while (t.IsValid() && stackroxSubjectsAndRoles.size() != orchestratorSubjects.size()) {
+        withRetry(15, 2) {
             stackroxSubjectsAndRoles = RbacService.getSubjects()
+            // list of bindings from the orchestrator, we will pull unique subjects from this list
             orchestratorSubjects = fetchOrchestratorSubjects()
+            assert stackroxSubjectsAndRoles.size() == orchestratorSubjects.size()
         }
         def stackroxSubjects = stackroxSubjectsAndRoles*.subject
 
         assert stackroxSubjects.size() == orchestratorSubjects.size()
-        println "All subjects scraped in ${t.SecondsSince()}s"
         for (Rbac.Subject sub : stackroxSubjects) {
             K8sSubject subject = orchestratorSubjects.find {
                 it.name == sub.name &&
                         it.namespace == sub.namespace &&
-                                it.kind.toLowerCase() == sub.kind.toString().toLowerCase()
+                        it.kind.toLowerCase() == sub.kind.toString().toLowerCase()
             }
             assert subject
         }
