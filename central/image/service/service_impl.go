@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -29,8 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -271,9 +268,6 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 }
 
 func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequest) (*v1.WatchImageResponse, error) {
-	if !features.InactiveImageScanningUI.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	if request.GetName() == "" {
 		return &v1.WatchImageResponse{
 			ErrorMessage: "no image name specified",
@@ -332,9 +326,6 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 }
 
 func (s *serviceImpl) UnwatchImage(ctx context.Context, request *v1.UnwatchImageRequest) (*v1.Empty, error) {
-	if !features.InactiveImageScanningUI.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
 	if err := s.watchedImages.UnwatchImage(ctx, request.GetName()); err != nil {
 		return nil, err
 	}
@@ -342,10 +333,6 @@ func (s *serviceImpl) UnwatchImage(ctx context.Context, request *v1.UnwatchImage
 }
 
 func (s *serviceImpl) GetWatchedImages(ctx context.Context, empty *v1.Empty) (*v1.GetWatchedImagesResponse, error) {
-	if !features.InactiveImageScanningUI.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "feature not enabled")
-	}
-
 	watchedImgs, err := s.watchedImages.GetAllWatchedImages(ctx)
 	if err != nil {
 		return nil, err

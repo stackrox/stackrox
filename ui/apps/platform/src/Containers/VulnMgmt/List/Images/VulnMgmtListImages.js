@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
 import { List } from 'react-feather';
@@ -17,13 +17,12 @@ import {
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
+import workflowStateContext from 'Containers/workflowStateContext';
 import { imageWatchStatuses } from 'Containers/VulnMgmt/VulnMgmt.constants';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
-import { knownBackendFlags } from 'utils/featureFlags';
 import queryService from 'utils/queryService';
 import WatchedImagesDialog from './WatchedImagesDialog';
 
@@ -229,6 +228,9 @@ const VulnMgmtImages = ({
     setRefreshTrigger,
 }) => {
     const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
+    const workflowState = useContext(workflowStateContext);
+
+    const inactiveImageScanningEnabled = workflowState.isBaseList(entityTypes.IMAGE);
 
     const query = gql`
         query getImages($query: String, $pagination: Pagination) {
@@ -250,10 +252,6 @@ const VulnMgmtImages = ({
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },
     };
-
-    const inactiveImageScanningEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_INACTIVE_IMAGE_SCANNING_UI
-    );
 
     function toggleWatchedImagesDialog(e) {
         e.stopPropagation();

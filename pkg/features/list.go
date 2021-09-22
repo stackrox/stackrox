@@ -21,9 +21,6 @@ var (
 	// ScopedAccessControl enables scoped access control in core product
 	ScopedAccessControl = registerFeature("Enable scoped access control in core product", "ROX_SCOPED_ACCESS_CONTROL_V2", true)
 
-	// InactiveImageScanningUI enables UI to facilitate scanning of inactive images.
-	InactiveImageScanningUI = registerFeature("Enable UI to facilitate scanning of inactive images", "ROX_INACTIVE_IMAGE_SCANNING_UI", true)
-
 	// UpgradeRollback enables rollback to last central version after upgrade.
 	UpgradeRollback = registerFeature("Enable rollback to last central version after upgrade", "ROX_ENABLE_ROLLBACK", true)
 

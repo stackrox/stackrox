@@ -384,9 +384,6 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 }
 
 func (l *loopImpl) reprocessWatchedImages() {
-	if !features.InactiveImageScanningUI.Enabled() {
-		return
-	}
 	l.runReprocessingForObjects("watched image", func() ([]string, error) {
 		watchedImages, err := l.watchedImages.GetAllWatchedImages(allAccessCtx)
 		if err != nil {

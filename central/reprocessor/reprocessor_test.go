@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageEnricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
 	nodeEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
@@ -92,9 +91,7 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 
 	timesSpec(suite.mockImage.EXPECT().Search(allAccessCtx, gomock.Any()).Return(nil, nil), times)
 	timesSpec(suite.mockNode.EXPECT().Search(allAccessCtx, gomock.Any()).Return(nil, nil), times)
-	if features.InactiveImageScanningUI.Enabled() {
-		timesSpec(suite.mockWatchedImages.EXPECT().GetAllWatchedImages(allAccessCtx).Return(nil, nil), times)
-	}
+	timesSpec(suite.mockWatchedImages.EXPECT().GetAllWatchedImages(allAccessCtx).Return(nil, nil), times)
 	timesSpec(suite.mockManager.EXPECT().BroadcastMessage(&central.MsgToSensor{
 		Msg: &central.MsgToSensor_ReassessPolicies{
 			ReassessPolicies: &central.ReassessPolicies{},
