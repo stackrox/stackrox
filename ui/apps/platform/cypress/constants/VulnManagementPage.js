@@ -36,6 +36,7 @@ export const listSelectors = {
     cvesCvssScoreCol: '.rt-table > .rt-tbody > div > .rt-tr.-odd > div:nth-child(4) > div > span',
     tableRows: '.rt-tr',
     tableCells: '.rt-td',
+    tableBodyRowGroups: '.rt-tbody .rt-tr-group',
     tableBodyRows: '.rt-tbody .rt-tr',
     tableRowCheckbox: '[data-testid="checkbox-table-row-selector"]',
     tableColumn: '.rt-th.leading-normal > div',

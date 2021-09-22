@@ -196,7 +196,44 @@ export const configMgmt = {
     // Use graphqlPluralEntity or graphqlSingularEntity.
 };
 
+const vulnMgmtEntityOp = {
+    CLUSTER: 'getCluster',
+    COMPONENT: 'getComponent',
+    CVE: 'getCve',
+    DEPLOYMENT: 'getDeployment',
+    IMAGE: 'getImage',
+    NAMESPACE: 'getNamespace',
+    NODE: 'getNode',
+    POLICY: 'getPolicy',
+};
+
+const vulnMgmtEntitiesOp = {
+    CLUSTER: 'getClusters',
+    COMPONENT: 'getComponents',
+    CVE: 'getCves',
+    DEPLOYMENT: 'getDeployments',
+    IMAGE: 'getImages',
+    NAMESPACE: 'getNamespaces',
+    NODE: 'getNodes',
+    POLICY: 'getPolicies',
+};
+
+const vulnMgmtEntitiesPrefix = {
+    CLUSTER: 'getCluster_',
+    COMPONENT: 'getComponentSubEntity',
+    CVE: 'getCve',
+    DEPLOYMENT: 'getDeployment',
+    IMAGE: 'getImage',
+    NAMESPACE: 'getNamespace',
+    NODE: 'getNode',
+    POLICY: 'getPolicy',
+};
+
 export const vulnMgmt = {
+    graphqlEntity: (key) => graphql(vulnMgmtEntityOp[key]),
+    graphqlEntities: (key) => graphql(vulnMgmtEntitiesOp[key]),
+    // prettier-ignore
+    graphqlEntities2: (key1, key2) => graphql(`${vulnMgmtEntitiesPrefix[key1]}${key2}`),
     graphqlOps: {
         getCves: 'getCves',
         getPolicies: 'getPolicies',
