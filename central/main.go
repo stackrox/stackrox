@@ -224,6 +224,12 @@ func main() {
 	proxy.WatchProxyConfig(context.Background(), proxyConfigPath, proxyConfigFile, true)
 
 	if devbuild.IsEnabled() {
+		if env.HotReload.BooleanSetting() {
+			log.Warn("***********************************************************************************")
+			log.Warn("This binary is being hot reloaded. It may be a different version from the image tag")
+			log.Warn("***********************************************************************************")
+		}
+
 		debughandler.MustStartServerAsync("")
 
 		devmode.StartBinaryWatchdog("central")

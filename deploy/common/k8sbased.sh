@@ -48,6 +48,12 @@ function hotload_binary {
   local local_name="$2"
   local deployment="$3"
 
+  echo
+  echo "**********"
+  echo "$binary_name binary is being hot reloaded"
+  echo "**********"
+  echo
+
   binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux/${local_name}")
   kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
 }
@@ -307,7 +313,7 @@ function launch_central {
       fi
     fi
 
-    if [[ "${is_local_dev}" == "true" && "${HOTRELOAD}" == "true" ]]; then
+    if [[ "${is_local_dev}" == "true" && "${ROX_HOTRELOAD}" == "true" ]]; then
       hotload_binary central central central
     fi
 
@@ -473,7 +479,7 @@ function launch_sensor {
     fi
 
     if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
-       if [[ "${HOTRELOAD}" == "true" ]]; then
+       if [[ "${ROX_HOTRELOAD}" == "true" ]]; then
          hotload_binary bin/kubernetes-sensor kubernetes sensor
        fi
        if [[ -z "${IS_RACE_BUILD}" ]]; then
