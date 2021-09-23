@@ -401,7 +401,14 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
+ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
+	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --name builder $(BUILD_IMAGE) make main-build-nodeps
+	docker cp $(GOPATH) builder:/
+	docker start -i builder
+	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
+else
 	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+endif
 
 .PHONY: main-build-nodeps
 main-build-nodeps:

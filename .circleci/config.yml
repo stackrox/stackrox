@@ -473,12 +473,17 @@ fetchBundleForRemoteClusterInTheDB: &fetchBundleForRemoteClusterInTheDB
     name: Fetch bundle for the "remote" cluster in the DB
     command: |
       extra_args=()
-      if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+      if .circleci/pr_has_label.sh ci-race-tests; then
         # builds with -race are very slow at building the bundle (PR #8149)
         extra_args+=(-t 60s)
       fi
       roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" "${extra_args[@]}" sensor get-bundle remote
       [[ -d sensor-remote ]]
+
+checkToRunSeparateRaceConditionTestPipe: &checkToRunSeparateRaceConditionTestPipe
+  check-to-run:
+    run-on-master: true
+    run-on-tags: true
 
 version: 2.1
 
@@ -1833,9 +1838,13 @@ commands:
       - run:
           name: Deploy central to remote cluster
           command: |
-            # If we're running a race check, then set CGO_CHECK=true so the central script will deploy it with strict checks
+            # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
+            # deployed with strict checks
             if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
                 cci-export CGO_CHECKS "true"
+            fi
+
+            if .circleci/pr_has_label.sh ci-race-tests; then
                 cci-export IS_RACE_BUILD "true"
             fi
 
@@ -1883,7 +1892,7 @@ commands:
               export ADMISSION_CONTROLLER=true
             else
               echo "Deploying sensor using kubectl ... "
-              if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+              if [[ -n "${IS_RACE_BUILD}" ]]; then
                 # builds with -race are slow at generating the sensor bundle
                 # https://stack-rox.atlassian.net/browse/ROX-6987
                 export ROXCTL_TIMEOUT=60s
@@ -2652,8 +2661,7 @@ jobs:
       - run:
           name: Build the main Go binaries
           command: |
-            if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
-              # build race images and then overwrite
+            if .circleci/pr_has_label.sh ci-race-tests; then
               RACE=true make main-build
             else
               make main-build
@@ -2777,6 +2785,61 @@ jobs:
 
       - cleanup-clusters-on-fail
 
+  build-race-condition-debug-image:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+      - *checkToRunSeparateRaceConditionTestPipe
+
+      - run:
+          name: Override the main image tag with a '-rcd' suffix
+          command: |
+            TAG="$(make --quiet tag)"
+            echo "${TAG}-rcd" > CI_TAG
+            make --quiet tag
+
+      - setup_remote_docker
+
+      - install-ossls
+
+      - *restoreGoModCache
+      - setup-go-build-env
+
+      - restore-npm-deps-cache
+      - fetch-ui-deps
+
+      - run:
+          name: Generate OSS notice
+          command: |
+            make ossls-notice
+
+      - setup-dep-env:
+          docker-login: true
+
+      - run:
+          name: Build main image with race condition checks
+          command: |
+            make RACE=true CIRCLE_TAG="$(make --quiet tag)" main-image
+
+      - run:
+          name: Push new image
+          command: |
+            TAG="$(make --quiet tag)"
+
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:${TAG}" | cat
+
+            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            QUAY_REPO="cgorman1"
+            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
+
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - CI_TAG
+            - bin/linux/roxctl
+
   build-operator:
     executor: custom
     resource_class: large
@@ -2834,7 +2897,6 @@ jobs:
           name: Build and push images for quay.io
           command: |
             IMAGE_REPO=quay.io/cgorman1 make -C operator/ everything
-
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
@@ -3241,6 +3303,19 @@ jobs:
     - destroy-openshift-4-cluster:
         when: on_fail
         cluster-name: operator-oc4
+
+  provision-race-condition-tests:
+    executor: custom
+    environment:
+      GCP_IMAGE_TYPE: "COS"
+      POD_SECURITY_POLICIES: "true"
+    steps:
+      - checkout
+      - check-backend-changes
+      - *checkToRunSeparateRaceConditionTestPipe
+
+      - provision-gke-cluster:
+          cluster-id: race-condition-tests
 
   ###
   # Test jobs against built artifacts
@@ -3795,7 +3870,7 @@ jobs:
           name: Create a "sensor-remote-new" cluster
           command: |
             extra_args=()
-            if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+            if .circleci/pr_has_label.sh ci-race-tests; then
               extra_args+=(-t 60s)
             fi
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" "${extra_args[@]}" sensor generate k8s \
@@ -4601,6 +4676,35 @@ jobs:
             echo "Versions: from YAML ${version_from_yaml}; from roxctl ${version_from_roxctl}"
             test "${version_from_yaml}" = "${version_from_roxctl}"
 
+  race-condition-tests:
+    executor: custom
+    environment:
+      LOCAL_PORT: 443
+      COLLECTION_METHOD: ebpf
+      GCP_IMAGE_TYPE: "COS"
+      MONITORING_SUPPORT: "true"
+      SCANNER_SUPPORT: "true"
+      ROX_BASELINE_GENERATION_DURATION: 1m
+      LOAD_BALANCER: lb
+      ADMISSION_CONTROLLER: "true"
+      ADMISSION_CONTROLLER_UPDATES: "true"
+      ROX_NETWORK_DETECTION_BASELINE_SIMULATION: "true"
+      ROX_NETWORK_DETECTION_BLOCKED_FLOWS: "true"
+      ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      ROX_SCOPED_ACCESS_CONTROL_V2: "true"
+      ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
+      ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: "true"
+      ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: "true"
+      IS_RACE_BUILD: "true"
+
+    steps:
+      - run-qa-tests:
+          cluster-id: race-condition-tests
+          sensor-deploy-flavor: helm
+          determine-whether-to-run:
+            - *checkToRunSeparateRaceConditionTestPipe
+          use-websocket: true
+
   ###
   # Post-build jobs to handle built artifacts (like tag, scan and publish images)
   ###
@@ -4912,6 +5016,8 @@ workflows:
             - pre-build-go-binaries
       - build-operator:
           <<: *runOnAllTagsWithPushCtx
+      - build-race-condition-debug-image:
+          <<: *runOnAllTagsWithPushCtx
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithPushCtx
       - provision-gke-api-nongroovy-tests:
@@ -5018,6 +5124,14 @@ workflows:
             - build
             - build-operator
             - provision-openshift-4-operator-e2e-tests
+      - provision-race-condition-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - race-condition-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-race-condition-debug-image
+            - build-scale-monitoring-and-mock-server
+            - provision-race-condition-tests
       - roxctl-windows-test:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:

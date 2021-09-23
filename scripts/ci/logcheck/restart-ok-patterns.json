@@ -16,5 +16,11 @@
         "job": "openshift",
         "logfile": "collector-previous",
         "logline": "Failed to connect to sensor.stackrox.* port 443: No route to host"
+    },
+    {
+        "comment": "sensor is up before central in scale-tests",
+        "job": "scale-tests",
+        "logfile": "sensor-previous",
+        "logline": "checking central status failed after 15 retries"
     }
 ]
