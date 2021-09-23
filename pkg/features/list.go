@@ -28,7 +28,7 @@ var (
 	ComplianceOperatorCheckResults = registerFeature("Enable fetching of compliance operator results", "ROX_COMPLIANCE_OPERATOR_INTEGRATION", true)
 
 	// ActiveVulnManagement enables detection of active vulnerabilities
-	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", false)
+	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", true)
 
 	// AlternateProbeDownload enables alternate probe download solution for collector
 	AlternateProbeDownload = registerFeature("Enable alternate probe download solution for collector", "ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", false)
