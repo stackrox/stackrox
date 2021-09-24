@@ -2,7 +2,6 @@ import { rolesUrl, selectors } from '../../constants/AccessControlPage';
 import { permissions as permissionsApi } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 // Migration from cy.server and cy.route to cy.intercept fails for /v1/roles/* imported from apiEndpoints.
 const rolesApi = {
@@ -16,12 +15,6 @@ const defaultNames = ['Admin', 'Analyst', 'Continuous Integration', 'None', 'Sen
 
 describe('Access Control Roles', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_SCOPED_ACCESS_CONTROL_V2')) {
-            this.skip();
-        }
-    });
 
     function visitRoles() {
         cy.intercept('GET', rolesApi.list).as('GetRoles');
@@ -164,7 +157,7 @@ describe('Access Control Roles', () => {
         cy.wait('@PostRoles');
 
         cy.get(selectors.h2).should('have.text', h2);
-        cy.get(`${selectors.list.tdNameLink}:contains("${name}") a`).click();
+        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
 
         cy.get(selectors.h2).should('have.text', name);
         cy.get(selectors.form.inputName).should('be.disabled').should('have.value', name);

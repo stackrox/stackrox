@@ -23,7 +23,7 @@ export const selectors = scopeSelectors('#access-control', {
         addButton: 'button:contains("Add")',
         th: 'th',
         tdName: 'td[data-label="Name"]',
-        tdNameLink: 'td[data-label="Name"] button',
+        tdNameLink: 'td[data-label="Name"] a',
         tdDescription: 'td[data-label="Description"]',
 
         authProviders: {
@@ -38,18 +38,18 @@ export const selectors = scopeSelectors('#access-control', {
         },
 
         roles: {
-            tdPermissionSetLink: 'td[data-label="Permission set"] button a',
-            tdAccessScopeLink: 'td[data-label="Access scope"] button a',
+            tdPermissionSetLink: 'td[data-label="Permission set"] a',
+            tdAccessScopeLink: 'td[data-label="Access scope"] a',
             tdAccessScope: 'td[data-label="Access scope"]', // No access scope
         },
 
         permissionSets: {
-            tdRolesLink: 'td[data-label="Roles"] button a',
+            tdRolesLink: 'td[data-label="Roles"] a',
             tdRoles: 'td[data-label="Roles"]', // No roles
         },
 
         accessScopes: {
-            tdRolesLink: 'td[data-label="Roles"] ',
+            tdRolesLink: 'td[data-label="Roles"] a',
             tdRoles: 'td[data-label="Roles"]', // No roles
         },
     },

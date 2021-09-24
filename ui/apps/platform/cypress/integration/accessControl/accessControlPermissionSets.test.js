@@ -5,7 +5,6 @@ import {
 } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 const h1 = 'Access Control';
 const h2 = 'Permission sets';
@@ -14,12 +13,6 @@ const defaultNames = ['Admin', 'Analyst', 'Continuous Integration', 'None', 'Sen
 
 describe('Access Control Permission sets', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_SCOPED_ACCESS_CONTROL_V2')) {
-            this.skip();
-        }
-    });
 
     function visitPermissionSets() {
         cy.intercept('GET', permissionSetsApi.list).as('GetPermissionSets');

@@ -198,14 +198,25 @@ function IntegrationsTable({
                                         if (column.Header === 'Name') {
                                             return (
                                                 <Td key="name">
-                                                    <Link
-                                                        to={getPathToViewDetails(source, type, id)}
+                                                    <Button
+                                                        variant={ButtonVariant.link}
+                                                        isInline
+                                                        component={(props) => (
+                                                            <Link
+                                                                {...props}
+                                                                to={getPathToViewDetails(
+                                                                    source,
+                                                                    type,
+                                                                    id
+                                                                )}
+                                                            />
+                                                        )}
                                                     >
                                                         <TableCellValue
                                                             row={integration}
                                                             column={column}
                                                         />
-                                                    </Link>
+                                                    </Button>
                                                 </Td>
                                             );
                                         }

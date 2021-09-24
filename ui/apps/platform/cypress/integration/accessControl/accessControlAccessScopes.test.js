@@ -5,7 +5,6 @@ import {
 } from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 const h1 = 'Access Control';
 const h2 = 'Access scopes';
@@ -14,12 +13,6 @@ const defaultNames = ['Deny All'];
 
 describe('Access Control Access scopes', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_SCOPED_ACCESS_CONTROL_V2')) {
-            this.skip();
-        }
-    });
 
     function visitAccessScopes() {
         cy.intercept('GET', accessScopesApi.list).as('GetAccessScopes');

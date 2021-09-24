@@ -20,8 +20,12 @@ export function AccessControlEntityLink({
     entityName,
 }: AccessControlEntityLinkProps): ReactElement {
     return (
-        <Button variant="link" isInline>
-            <Link to={getEntityPath(entityType, entityId)}>{entityName}</Link>
+        <Button
+            variant="link"
+            isInline
+            component={(props) => <Link {...props} to={getEntityPath(entityType, entityId)} />}
+        >
+            {entityName}
         </Button>
     );
 }
@@ -47,8 +51,8 @@ export function RolesLink({ roles, entityType, entityId }: RolesLinkProps): Reac
     const url = getEntityPath('ROLE', '', { s: { [entityType]: entityId } });
     const text = `${count} ${pluralize('role', count)}`;
     return (
-        <Button variant="link" isInline>
-            <Link to={url}>{text}</Link>
+        <Button variant="link" isInline component={(props) => <Link {...props} to={url} />}>
+            {text}
         </Button>
     );
 }
