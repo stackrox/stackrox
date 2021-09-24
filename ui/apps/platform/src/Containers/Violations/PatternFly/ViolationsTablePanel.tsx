@@ -133,11 +133,10 @@ function ViolationsTablePanel({
         setIsSelectOpen(false);
     }
 
-    function resolveAlertAction(addToBaseline, violation) {
-        return () => {
-            resolveAlert(violation.id, addToBaseline).then(onClearAll, onClearAll);
-        };
+    function resolveAlertAction(addToBaseline, id) {
+        return resolveAlert(id, addToBaseline).then(onClearAll, onClearAll);
     }
+
     function onSort(e, index, direction) {
         setActiveSortIndex(index);
         setActiveSortDirection(direction);
@@ -221,7 +220,6 @@ function ViolationsTablePanel({
                                     onSelect: onSelectAll,
                                     isSelected: allRowsSelected,
                                 }}
-                                key="select"
                             />
                             {columns.map(({ Header, sortField }, idx) => {
                                 const sortParams = sortField
@@ -237,7 +235,7 @@ function ViolationsTablePanel({
                                       }
                                     : {};
                                 return (
-                                    <Th modifier="wrap" {...sortParams} key={Header}>
+                                    <Th key={Header} modifier="wrap" {...sortParams}>
                                         {Header}
                                     </Th>
                                 );
@@ -261,13 +259,13 @@ function ViolationsTablePanel({
                                 if (isRuntimeAlert) {
                                     actionItems.push({
                                         title: 'Resolve and add to process baseline',
-                                        onClick: () => resolveAlertAction(true, violation),
+                                        onClick: () => resolveAlertAction(true, violation.id),
                                     });
                                 }
                                 if (isRuntimeAlert || isAttemptedViolation) {
                                     actionItems.push({
                                         title: 'Mark as resolved',
-                                        onClick: () => resolveAlertAction(false, violation),
+                                        onClick: () => resolveAlertAction(false, violation.id),
                                     });
                                 }
                             }
@@ -279,9 +277,10 @@ function ViolationsTablePanel({
                                 });
                             }
                             return (
-                                <Tr key={id}>
+                                // eslint-disable-next-line react/no-array-index-key
+                                <Tr key={rowIndex}>
                                     <Td
-                                        key="select"
+                                        key={id}
                                         select={{
                                             rowIndex,
                                             onSelect,
@@ -301,7 +300,6 @@ function ViolationsTablePanel({
                                         actions={{
                                             items: actionItems,
                                         }}
-                                        key="actions"
                                     />
                                 </Tr>
                             );
@@ -315,7 +313,6 @@ function ViolationsTablePanel({
                 selectedAlertIds={selectedIds}
                 closeModal={closeModal}
                 cancelModal={cancelModal}
-                data-testid="exclude-confirmation-modal"
             />
             <ResolveConfirmation
                 isOpen={modalType === 'resolve'}
@@ -323,14 +320,12 @@ function ViolationsTablePanel({
                 resolvableAlerts={resolvableAlerts}
                 closeModal={closeModal}
                 cancelModal={cancelModal}
-                data-testid="resolve-confirmation-modal"
             />
             <TagConfirmation
                 isOpen={modalType === 'tag'}
                 selectedAlertIds={selectedIds}
                 closeModal={closeModal}
                 cancelModal={cancelModal}
-                data-testid="tag-confirmation-modal"
             />
         </>
     );
