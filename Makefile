@@ -338,12 +338,16 @@ endif
 build-prep: deps
 	mkdir -p bin/{darwin,linux,windows}
 
-cli: build-prep
+.PHONY: cli-build
+cli-build: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
 ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
 endif
+
+.PHONY: cli
+cli: cli-build
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
@@ -544,9 +548,8 @@ ifdef CI
 	docker tag stackrox/roxctl:$(TAG) quay.io/$(QUAY_REPO)/roxctl:$(TAG)
 endif
 
-.PHONY: copy-binaries-to-image-dir
-copy-binaries-to-image-dir:
-	cp -r ui/build image/ui/
+.PHONY: copy-go-binaries-to-image-dir
+copy-go-binaries-to-image-dir:
 	cp bin/linux/central image/bin/central
 ifdef CI
 	cp bin/linux/roxctl image/bin/roxctl-linux
@@ -564,6 +567,10 @@ endif
 	cp bin/linux/admission-control image/bin/admission-control
 	cp bin/linux/collection        image/bin/compliance
 
+
+.PHONY: copy-binaries-to-image-dir
+copy-binaries-to-image-dir: copy-go-binaries-to-image-dir
+	cp -r ui/build image/ui/
 ifdef CI
 	@[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
 else
