@@ -53,16 +53,16 @@ func assumeFeatureFlagHasValue(t *testing.T, featureFlag features.FeatureFlag, a
 	t.Fatalf("Central has no knowledge about feature flag %s", featureFlag.EnvVar())
 }
 
-func retrieveDeployment(service v1.DeploymentServiceClient, listDeployment *storage.ListDeployment) (*storage.Deployment, error) {
+func retrieveDeployment(service v1.DeploymentServiceClient, deploymentID string) (*storage.Deployment, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return service.GetDeployment(ctx, &v1.ResourceByID{Id: listDeployment.GetId()})
+	return service.GetDeployment(ctx, &v1.ResourceByID{Id: deploymentID})
 }
 
 func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.ListDeployment) ([]*storage.Deployment, error) {
 	deployments := make([]*storage.Deployment, 0, len(deps))
 	for _, d := range deps {
-		deployment, err := retrieveDeployment(service, d)
+		deployment, err := retrieveDeployment(service, d.GetId())
 		if err != nil {
 			return nil, err
 		}
@@ -166,11 +166,39 @@ func setupNginxLatestTagDeployment(t *testing.T) {
 }
 
 func setupDeployment(t *testing.T, image, deploymentName string) {
-	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image))
+	setupDeploymentWithReplicas(t, image, deploymentName, 1)
+}
+
+func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
+	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image), fmt.Sprintf("--replicas=%d", replicas))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
 	waitForDeployment(t, deploymentName)
+}
+
+func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
+	cmd := exec.Command(`kubectl`, `set`, `image`, fmt.Sprintf("deployment/%s", deploymentName), fmt.Sprintf("%s=%s", containerName, image))
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+	conn := testutils.GRPCConnectionToCentral(t)
+	service := v1.NewDeploymentServiceClient(conn)
+
+	waitForCondition(t, func() bool {
+		deployment, err := retrieveDeployment(service, deploymentID)
+		if err != nil {
+			log.Error(err)
+			return false
+		}
+		containers := deployment.GetContainers()
+		for _, container := range containers {
+			if container.GetImage().GetName().GetFullName() != image {
+				return false
+			}
+		}
+		log.Infof("Image set to %s for deployment %s(%s) container %s", image, deploymentName, deploymentID, containerName)
+		return true
+	}, "image updated", time.Minute, 5*time.Second)
 }
 
 func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
@@ -204,4 +232,23 @@ func createK8sClient(t *testing.T) kubernetes.Interface {
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
+}
+
+func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
+	ticker := time.NewTicker(frequency)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if condition() {
+				return
+			}
+		case <-timer.C:
+			t.Fatalf("Timed out waiting for condition %s to stop", desc)
+		}
+	}
 }

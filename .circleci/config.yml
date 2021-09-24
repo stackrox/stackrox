@@ -3344,6 +3344,8 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_ACTIVE_VULN_MANAGEMENT: true
+      - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
 
     steps:
       - checkout

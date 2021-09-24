@@ -31,10 +31,6 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-const (
-	activeComponentRefreshInterval = 15 * time.Minute
-)
-
 var (
 	log = logging.LoggerForModule()
 
@@ -72,7 +68,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater) Loop {
 	return newLoopWithDuration(
 		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk, watchedImages,
-		env.ReprocessInterval.DurationSetting(), 15*time.Second, activeComponentRefreshInterval, acUpdater)
+		env.ReprocessInterval.DurationSetting(), 15*time.Second, env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
