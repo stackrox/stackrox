@@ -1,10 +1,20 @@
 import React from 'react';
-import { Flex, FlexItem, Button, Divider, PageSection, Title, Badge } from '@patternfly/react-core';
+import {
+    Badge,
+    Button,
+    ButtonVariant,
+    Divider,
+    Flex,
+    FlexItem,
+    PageSection,
+    Title,
+} from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
 import useTableSelection from 'hooks/useTableSelection';
+import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
@@ -52,6 +62,7 @@ function IntegrationsTable({
     hasMultipleDelete,
     onDeleteIntegrations,
 }: IntegrationsTableProps): React.ReactElement {
+    const permissions = useIntegrationPermissions();
     const { source, type } = useParams();
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const columns = [...tableColumnDescriptor[source][type]];
@@ -94,7 +105,7 @@ function IntegrationsTable({
                 </FlexItem>
                 <FlexItem align={{ default: 'alignRight' }}>
                     <Flex>
-                        {hasSelections && hasMultipleDelete && (
+                        {hasSelections && hasMultipleDelete && permissions[source].write && (
                             <FlexItem spacer={{ default: 'spacerMd' }}>
                                 <Button variant="danger" onClick={onDeleteIntegrationHandler}>
                                     Delete integrations
@@ -106,11 +117,22 @@ function IntegrationsTable({
                                 <DownloadCAConfigBundle />
                             </FlexItem>
                         )}
-                        <FlexItem spacer={{ default: 'spacerMd' }}>
-                            <Link to={getPathToCreate(source, type)}>
-                                <Button data-testid="add-integration">{newButtonText}</Button>
-                            </Link>
-                        </FlexItem>
+                        {permissions[source].write && (
+                            <FlexItem spacer={{ default: 'spacerMd' }}>
+                                <Button
+                                    variant={ButtonVariant.primary}
+                                    component={(props) => (
+                                        <Link
+                                            {...props}
+                                            to={getPathToCreate(source, type)}
+                                            data-testid="add-integration"
+                                        />
+                                    )}
+                                >
+                                    {newButtonText}
+                                </Button>
+                            </FlexItem>
+                        )}
                     </Flex>
                 </FlexItem>
             </Flex>
@@ -175,7 +197,7 @@ function IntegrationsTable({
                                     {columns.map((column) => {
                                         if (column.Header === 'Name') {
                                             return (
-                                                <Td>
+                                                <Td key="name">
                                                     <Link
                                                         to={getPathToViewDetails(source, type, id)}
                                                     >
@@ -188,7 +210,7 @@ function IntegrationsTable({
                                             );
                                         }
                                         return (
-                                            <Td>
+                                            <Td key={column.Header}>
                                                 <TableCellValue row={integration} column={column} />
                                             </Td>
                                         );
@@ -196,6 +218,7 @@ function IntegrationsTable({
                                     <Td
                                         actions={{
                                             items: actionItems,
+                                            disable: !permissions[source].write,
                                         }}
                                         className="pf-u-text-align-right"
                                     />

@@ -65,7 +65,7 @@ describe('API Token tests', () => {
 
         getTableRowActionButtonByName(apiTokenName).click();
         cy.get('button:contains("Delete Integration")').click();
-        cy.get('button:contains("Confirm")').click();
+        cy.get(selectors.buttons.delete).click();
         cy.wait('@revokeAPIToken');
 
         getTableRowActionButtonByName(apiTokenName).should('not.exist');

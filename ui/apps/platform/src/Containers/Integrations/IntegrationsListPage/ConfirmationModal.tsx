@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode } from 'react';
-import { Modal, ModalVariant, Button } from '@patternfly/react-core';
+import { Modal, ModalVariant, Button, ButtonVariant } from '@patternfly/react-core';
 
 export type DeleteIntegrationsConfirmationProps = {
     isOpen: boolean;
@@ -16,12 +16,13 @@ function DeleteIntegrationsConfirmation({
 }: DeleteIntegrationsConfirmationProps): ReactElement {
     return (
         <Modal
+            aria-label="Confirm delete"
             variant={ModalVariant.small}
             isOpen={isOpen}
             onClose={onCancel}
             actions={[
-                <Button key="confirm" variant="primary" onClick={onConfirm}>
-                    Confirm
+                <Button key="confirm" variant={ButtonVariant.danger} onClick={onConfirm}>
+                    Delete
                 </Button>,
                 <Button key="cancel" variant="link" onClick={onCancel}>
                     Cancel

@@ -46,9 +46,9 @@ export const selectors = {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
     },
     buttons: {
-        new: 'button:contains("New")',
-        newApiToken: 'button:contains("Generate token")',
-        newClusterInitBundle: 'button:contains("Generate bundle")',
+        new: 'a:contains("New")',
+        newApiToken: 'a:contains("Generate token")',
+        newClusterInitBundle: 'a:contains("Generate bundle")',
         next: 'button:contains("Next")',
         downloadYAML: 'button:contains("Download YAML")',
         delete: 'button:contains("Delete")',
