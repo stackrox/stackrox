@@ -186,6 +186,8 @@ manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration
 generate: parent-proto-generate controller-gen client-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations, as well as the client code.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(CLIENT_GEN) --input-base="github.com/stackrox/rox/operator/apis" --input="platform/v1alpha1" --clientset-name="stackrox" --output-package="github.com/stackrox/rox/operator/pkg/clientset" --fake-clientset --go-header-file="hack/boilerplate.go.txt"
+	# The generated source files might not comply with the current go formatting, so format them explicitly.
+	go fmt ./apis/... ./pkg/clientset/...
 
 fmt: ## Run go fmt against code.
 	go fmt ./...
