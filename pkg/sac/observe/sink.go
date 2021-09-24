@@ -63,20 +63,25 @@ func (s *authzTraceSinkImpl) Subscribe(ctx context.Context) <-chan *v1.Authoriza
 	return publishC
 }
 
+// fetchPublishChannels purges done channels from the stored publish channels
+// and returns a copy which can be manipulated without synchronization. The
+// caller must handle done channels in the returned slice.
 func (s *authzTraceSinkImpl) fetchPublishChannels() []channelWithContext {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	channels := make([]channelWithContext, 0)
+	purged := make([]channelWithContext, 0, len(s.publishChannels))
 	for _, c := range s.publishChannels {
-		// PublishAuthzTrace() can be called concurrently.
-		// We don't close expired channel here to avoid write to a closed channel and consecutively, panic().
+		// Don't close done channels to avoid writing to a closed channel
+		// and thus panic().
 		if c.ctx.Err() == nil {
-			channels = append(channels, c)
+			purged = append(purged, c)
 		}
 	}
-	s.publishChannels = channels
-	return append([]channelWithContext(nil), channels...)
+
+	old := s.publishChannels
+	s.publishChannels = purged
+	return old
 }
 
 // NewAuthzTraceSink returns new AuthzTraceSink.
