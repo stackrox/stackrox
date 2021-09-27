@@ -111,7 +111,7 @@ function ArtifactRegistryIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<ArtifactRegistryIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<ArtifactRegistryIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

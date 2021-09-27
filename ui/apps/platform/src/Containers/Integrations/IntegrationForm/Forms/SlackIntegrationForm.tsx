@@ -65,7 +65,7 @@ function SlackIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<SlackIntegration, typeof validationSchema>({
+    } = useIntegrationForm<SlackIntegration>({
         initialValues: formInitialValues,
         validationSchema,
     });

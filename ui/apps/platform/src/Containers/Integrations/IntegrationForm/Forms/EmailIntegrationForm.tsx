@@ -153,7 +153,7 @@ function EmailIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<EmailIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<EmailIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

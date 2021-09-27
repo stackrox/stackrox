@@ -96,7 +96,7 @@ function DockerIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<DockerIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<DockerIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

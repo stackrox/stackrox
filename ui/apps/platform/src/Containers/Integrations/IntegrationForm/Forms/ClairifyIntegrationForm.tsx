@@ -77,7 +77,7 @@ function ClairifyIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<ClairifyIntegration, typeof validationSchema>({
+    } = useIntegrationForm<ClairifyIntegration>({
         initialValues: formInitialValues,
         validationSchema,
     });

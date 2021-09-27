@@ -138,7 +138,7 @@ function AwsSecurityHubIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<AwsSecurityHubIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<AwsSecurityHubIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

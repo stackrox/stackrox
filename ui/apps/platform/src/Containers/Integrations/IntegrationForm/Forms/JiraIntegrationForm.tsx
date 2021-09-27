@@ -133,7 +133,7 @@ function JiraIntegrationForm({
         // are currently stored credentials
         formInitialValues.notifier.jira.password = '';
     }
-    const formik = useIntegrationForm<JiraIntegrationFormValues, typeof validationSchema>({
+    const formik = useIntegrationForm<JiraIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

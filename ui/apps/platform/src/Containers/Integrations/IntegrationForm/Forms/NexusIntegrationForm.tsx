@@ -114,7 +114,7 @@ function NexusIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<NexusIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<NexusIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

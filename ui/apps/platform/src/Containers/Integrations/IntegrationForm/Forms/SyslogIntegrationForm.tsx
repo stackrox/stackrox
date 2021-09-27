@@ -97,7 +97,7 @@ function SyslogIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<SyslogIntegration, typeof validationSchema>({
+    } = useIntegrationForm<SyslogIntegration>({
         initialValues: formInitialValues,
         validationSchema,
     });

@@ -65,7 +65,7 @@ function SumoLogicIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<SumoLogicIntegration, typeof validationSchema>({
+    } = useIntegrationForm<SumoLogicIntegration>({
         initialValues: merge({}, defaultValues, initialValues), // in case properties are missing from initialValues
         validationSchema,
     });

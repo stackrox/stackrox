@@ -118,7 +118,7 @@ function AnchoreIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<AnchoreIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<AnchoreIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

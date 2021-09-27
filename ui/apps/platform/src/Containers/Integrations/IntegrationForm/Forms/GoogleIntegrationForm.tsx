@@ -119,7 +119,7 @@ function DockerIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<GoogleIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<GoogleIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

@@ -107,7 +107,7 @@ function IbmIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<IbmIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<IbmIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

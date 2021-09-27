@@ -53,7 +53,7 @@ function ClusterInitBundleIntegrationForm({
         onSave,
         onCancel,
         message,
-    } = useIntegrationForm<ClusterInitBundleIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<ClusterInitBundleIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

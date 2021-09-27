@@ -145,7 +145,7 @@ function EcrIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<EcrIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<EcrIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

@@ -76,7 +76,7 @@ function PagerDutyIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<PagerDutyIntegration, () => unknown>({
+    } = useIntegrationForm<PagerDutyIntegration>({
         initialValues: initialValues
             ? clearStoredCredentials(
                   merge({}, defaultValues, initialValues),

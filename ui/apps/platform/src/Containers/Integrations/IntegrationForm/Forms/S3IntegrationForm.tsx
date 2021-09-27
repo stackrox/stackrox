@@ -144,7 +144,7 @@ function S3IntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<S3IntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<S3IntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

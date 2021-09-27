@@ -106,7 +106,7 @@ function GoogleCloudSccIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<GoogleCloudSccIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<GoogleCloudSccIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

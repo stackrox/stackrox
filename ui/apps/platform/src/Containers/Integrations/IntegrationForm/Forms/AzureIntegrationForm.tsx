@@ -114,7 +114,7 @@ function ClairifyIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<AzureIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<AzureIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

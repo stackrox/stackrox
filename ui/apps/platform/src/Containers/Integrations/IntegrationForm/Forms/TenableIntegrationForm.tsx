@@ -128,7 +128,7 @@ function TenableIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<TenableIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<TenableIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

@@ -114,7 +114,7 @@ function RhelIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<RhelIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<RhelIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

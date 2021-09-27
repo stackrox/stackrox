@@ -128,7 +128,7 @@ function SplunkIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<SplunkIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<SplunkIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

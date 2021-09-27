@@ -73,7 +73,7 @@ function ClairIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<ClairIntegration, typeof validationSchema>({
+    } = useIntegrationForm<ClairIntegration>({
         initialValues: formInitialValues,
         validationSchema,
     });

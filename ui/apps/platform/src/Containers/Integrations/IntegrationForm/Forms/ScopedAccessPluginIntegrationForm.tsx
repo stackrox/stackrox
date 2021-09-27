@@ -137,10 +137,7 @@ function ScopedAccessPluginIntegrationForm({
         // are currently stored credentials
         formInitialValues.config.endpointConfig.password = '';
     }
-    const formik = useIntegrationForm<
-        ScopedAccessPluginIntegrationFormValues,
-        typeof validationSchema
-    >({
+    const formik = useIntegrationForm<ScopedAccessPluginIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

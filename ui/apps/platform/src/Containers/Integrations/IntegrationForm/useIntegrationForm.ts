@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useFormik, FormikProps } from 'formik';
+import { BaseSchema } from 'yup';
 
 import { IntegrationOptions } from 'services/IntegrationsService';
 
@@ -11,9 +12,9 @@ export type FormResponseMessage = {
     responseData?: unknown;
 } | null;
 
-export type UseIntegrationForm<T, V> = {
+export type UseIntegrationForm<T> = {
     initialValues: T;
-    validationSchema: V;
+    validationSchema: BaseSchema | (() => BaseSchema);
 };
 
 export type UseIntegrationFormResult<T> = FormikProps<T> & {
@@ -24,10 +25,10 @@ export type UseIntegrationFormResult<T> = FormikProps<T> & {
     message: FormResponseMessage;
 };
 
-function useIntegrationForm<T, V>({
+function useIntegrationForm<T>({
     initialValues,
     validationSchema,
-}: UseIntegrationForm<T, V>): UseIntegrationFormResult<T> {
+}: UseIntegrationForm<T>): UseIntegrationFormResult<T> {
     const { onSave, onTest, onCancel } = useIntegrationActions();
     // we will submit the form when clicking "Test" or "Create" so this value will distinguish
     // between the two

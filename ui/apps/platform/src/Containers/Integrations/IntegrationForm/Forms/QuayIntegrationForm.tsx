@@ -112,7 +112,7 @@ function QuayIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<QuayIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<QuayIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

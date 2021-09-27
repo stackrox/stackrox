@@ -114,7 +114,7 @@ function ArtifactoryIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<ArtifactoryIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<ArtifactoryIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

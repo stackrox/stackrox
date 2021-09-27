@@ -142,12 +142,10 @@ function GenericWebhookIntegrationForm({
         // are currently stored credentials
         formInitialValues.notifier.generic.password = '';
     }
-    const formik = useIntegrationForm<GenericWebhookIntegrationFormValues, typeof validationSchema>(
-        {
-            initialValues: formInitialValues,
-            validationSchema,
-        }
-    );
+    const formik = useIntegrationForm<GenericWebhookIntegrationFormValues>({
+        initialValues: formInitialValues,
+        validationSchema,
+    });
     const {
         values,
         touched,

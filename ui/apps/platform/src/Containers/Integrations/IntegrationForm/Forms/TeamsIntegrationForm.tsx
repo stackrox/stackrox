@@ -68,7 +68,7 @@ function TeamsIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<TeamsIntegration, typeof validationSchema>({
+    } = useIntegrationForm<TeamsIntegration>({
         initialValues: formInitialValues,
         validationSchema,
     });

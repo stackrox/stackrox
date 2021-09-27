@@ -115,7 +115,7 @@ function DtrIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<DtrIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<DtrIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

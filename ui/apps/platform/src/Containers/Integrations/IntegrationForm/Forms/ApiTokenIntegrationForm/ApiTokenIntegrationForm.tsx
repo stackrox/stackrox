@@ -75,7 +75,7 @@ function ApiTokenIntegrationForm({
         onSave,
         onCancel,
         message,
-    } = useIntegrationForm<ApiTokenIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<ApiTokenIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });

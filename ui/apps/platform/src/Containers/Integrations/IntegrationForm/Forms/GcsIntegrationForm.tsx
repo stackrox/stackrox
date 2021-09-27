@@ -133,7 +133,7 @@ function GcsIntegrationForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<GcsIntegrationFormValues, typeof validationSchema>({
+    } = useIntegrationForm<GcsIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });
