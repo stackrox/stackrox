@@ -47,6 +47,7 @@ function NetworkFlows({
     return (
         <NetworkBaselines
             header={header}
+            headerComponents={null}
             isLoading={isLoading}
             networkBaselines={networkBaselines}
             deploymentId={deploymentId}

@@ -26,7 +26,7 @@ function getPanelId(filterState) {
 
 function NetworkBaselines({
     header,
-    headerComponents = null,
+    headerComponents,
     isLoading,
     networkBaselines,
     deploymentId,

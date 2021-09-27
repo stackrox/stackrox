@@ -40,6 +40,7 @@ function BlockedFlows({
     return (
         <NetworkBaselines
             header={header}
+            headerComponents={null}
             isLoading={isLoading}
             // TODO: might have to reconsider the name for this component since blocked flows != network baselines
             networkBaselines={blockedFlows}
