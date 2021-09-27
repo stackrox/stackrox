@@ -93,13 +93,13 @@ function* createPolicy(policy) {
         yield put(push(`/main/policies/${data.id}`));
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
-        } else {
-            // TODO-ivan: use global user notification system to display the problem to the user as well
-            Raven.captureException(error);
-        }
+        const errorMessage =
+            error?.response?.data?.error || 'Could not create policy. Please try again.';
+        yield put(notificationActions.addNotification(errorMessage));
+        yield put(notificationActions.removeOldestNotification());
+
+        Raven.captureException(error);
+
         yield put(wizardActions.setWizardPolicy(policy));
         yield put(wizardActions.setWizardStage(wizardStages.enforcement));
     }
@@ -112,13 +112,12 @@ function* savePolicy(policy) {
         yield put(wizardActions.setWizardStage(wizardStages.details));
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
-        } else {
-            // TODO-ivan: use global user notification system to display the problem to the user as well
-            Raven.captureException(error);
-        }
+        const errorMessage =
+            error?.response?.data?.error || 'Could not save policy. Please try again.';
+        yield put(notificationActions.addNotification(errorMessage));
+        yield put(notificationActions.removeOldestNotification());
+
+        Raven.captureException(error);
         yield put(wizardActions.setWizardPolicy(policy));
         yield put(wizardActions.setWizardStage(wizardStages.enforcement));
     }
@@ -134,7 +133,11 @@ function* deletePolicies({ policyIds }) {
         yield put(notificationActions.removeOldestNotification());
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        // TODO-ivan: use global user notification system to display the problem to the user as well
+        const errorMessage =
+            error?.response?.data?.error || 'Could not delete policy. Please try again.';
+        yield put(notificationActions.addNotification(errorMessage));
+        yield put(notificationActions.removeOldestNotification());
+
         Raven.captureException(error);
     }
 }
@@ -145,6 +148,10 @@ function* importPolicySuccess({ policyId }) {
         yield put(push(`/main/policies/${policyId}`));
         yield fork(filterPoliciesPageBySearch);
     } else {
+        const errorMessage = 'Could not import policy. Please try again.';
+        yield put(notificationActions.addNotification(errorMessage));
+        yield put(notificationActions.removeOldestNotification());
+
         Raven.captureException({ message: 'importPolicySuccess saga called with no policy ID' });
     }
 }
@@ -158,7 +165,11 @@ function* updatePolicy(action) {
             yield put(notificationActions.addNotification(error.response.data.error));
             yield put(notificationActions.removeOldestNotification());
         } else {
-            // TODO-ivan: use global user notification system to display the problem to the user as well
+            const errorMessage =
+                error?.response?.data?.error || 'Could not update policy. Please try again.';
+            yield put(notificationActions.addNotification(errorMessage));
+            yield put(notificationActions.removeOldestNotification());
+
             Raven.captureException(error);
         }
     }
@@ -174,7 +185,11 @@ function* reassessPolicies() {
             yield put(notificationActions.addNotification(error.response.data.error));
             yield put(notificationActions.removeOldestNotification());
         } else {
-            // TODO-ivan: use global user notification system to display the problem to the user as well
+            const errorMessage =
+                error?.response?.data?.error || 'Could not reassess policies. Please try again.';
+            yield put(notificationActions.addNotification(errorMessage));
+            yield put(notificationActions.removeOldestNotification());
+
             Raven.captureException(error);
         }
     }
@@ -190,7 +205,11 @@ function* enableNotificationsForPolicies({ policyIds, notifierIds }) {
         yield put(notificationActions.removeOldestNotification());
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        // TODO-ivan: use global user notification system to display the problem to the user as well
+        const errorMessage =
+            error?.response?.data?.error || 'Could not enable notifications. Please try again.';
+        yield put(notificationActions.addNotification(errorMessage));
+        yield put(notificationActions.removeOldestNotification());
+
         Raven.captureException(error);
     }
 }
@@ -205,7 +224,11 @@ function* disableNotificationsForPolicies({ policyIds, notifierIds }) {
         yield put(notificationActions.removeOldestNotification());
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        // TODO-ivan: use global user notification system to display the problem to the user as well
+        const errorMessage =
+            error?.response?.data?.error || 'Could not disable notifications. Please try again.';
+        yield put(notificationActions.addNotification(errorMessage));
+        yield put(notificationActions.removeOldestNotification());
+
         Raven.captureException(error);
     }
 }
@@ -216,13 +239,12 @@ function* startDryRun(policy) {
         yield put(wizardActions.setWizardDryRunJobId(data.jobId));
         yield put(wizardActions.setWizardStage(wizardStages.preview));
     } catch (error) {
-        if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
-        } else {
-            // TODO-ivan: use global user notification system to display the problem to the user as well
-            Raven.captureException(error);
-        }
+        const errorMessage =
+            error?.response?.data?.error || 'Could start dry run. Please try again.';
+        yield put(notificationActions.addNotification(errorMessage));
+        yield put(notificationActions.removeOldestNotification());
+
+        Raven.captureException(error);
     }
 }
 
@@ -330,7 +352,12 @@ function* updatePolicyDisabled({ policyId, disabled }) {
         yield call(service.updatePolicyDisabledState, policyId, disabled);
         yield fork(filterPoliciesPageBySearch);
     } catch (error) {
-        // TODO-ivan: use global user notification system to display the problem to the user as well
+        const errorMessage =
+            error?.response?.data?.error ||
+            'Could not update policy enabled/disabled state. Please try again.';
+        yield put(notificationActions.addNotification(errorMessage));
+        yield put(notificationActions.removeOldestNotification());
+
         Raven.captureException(error);
     }
 }
