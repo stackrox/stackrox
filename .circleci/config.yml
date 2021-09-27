@@ -2127,15 +2127,6 @@ jobs:
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
   ###
 
-  check-rebase:
-    docker:
-    - image: cimg/base:2021.04
-    resource_class: small
-    steps:
-      - run:
-          name: Check Rebase Status
-          command: exit 0
-
   slack-notify:
     executor: custom
     resource_class: small
@@ -4980,10 +4971,6 @@ workflows:
             branches:
               ignore: /.*/
           context: custom-executor-pull
-      - check-rebase:
-          filters:
-            branches:
-              ignore: '/^master$/'
       - style-checks:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - check-generated-files-up-to-date:
