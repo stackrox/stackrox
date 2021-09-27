@@ -8,6 +8,7 @@ import {
     violationsPath,
     compliancePath,
     clustersPathWithParam,
+    clustersListPath,
     integrationsPath,
     policiesPath,
     riskPath,
@@ -32,6 +33,7 @@ const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'))
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
+const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
 const AsyncIntegrationsPage = asyncComponent(
     () => import('Containers/Integrations/IntegrationsPage')
 );
@@ -90,6 +92,9 @@ function Body(): ReactElement {
                         component={AsyncConfigManagementPage}
                     />
                     <ProtectedRoute path={clustersPathWithParam} component={AsyncClustersPage} />
+                    {process.env.NODE_ENV === 'development' && (
+                        <ProtectedRoute path={clustersListPath} component={AsyncPFClustersPage} />
+                    )}
                     <ProtectedRoute path={systemHealthPath} component={AsyncSystemHealthPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
