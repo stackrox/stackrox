@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -98,14 +99,30 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 // ConvertAlert returns proto search result from an alert object and the internal search result
 func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResult {
-	deployment := alert.GetDeployment()
+	entityInfo := alert.GetCommonEntityInfo()
+	var entityName string
+	switch entity := alert.GetEntity().(type) {
+	case *storage.ListAlert_Resource:
+		entityName = entity.Resource.GetName()
+	case *storage.ListAlert_Deployment:
+		entityName = entity.Deployment.GetName()
+	}
+	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
+	var location string
+	if entityInfo.GetNamespace() != "" {
+		location = fmt.Sprintf("/%s/%s/%s/%s",
+			entityInfo.GetClusterName(), entityInfo.GetNamespace(), resourceTypeTitleCase, entityName)
+	} else {
+		location = fmt.Sprintf("/%s/%s/%s",
+			entityInfo.GetClusterName(), resourceTypeTitleCase, entityName)
+	}
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_ALERTS,
 		Id:             alert.GetId(),
 		Name:           alert.GetPolicy().GetName(),
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
-		Location:       fmt.Sprintf("/%s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName()),
+		Location:       location,
 	}
 }
 

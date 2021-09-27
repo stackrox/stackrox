@@ -1404,15 +1404,20 @@ func (m *MatchNoneQuery) Clone() *MatchNoneQuery {
 }
 
 type SearchResult struct {
-	Id                   string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Category             SearchCategory                   `protobuf:"varint,3,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
-	FieldToMatches       map[string]*SearchResult_Matches `protobuf:"bytes,4,rep,name=field_to_matches,json=fieldToMatches,proto3" json:"field_to_matches,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Score                float64                          `protobuf:"fixed64,5,opt,name=score,proto3" json:"score,omitempty"`
-	Location             string                           `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
-	XXX_unrecognized     []byte                           `json:"-"`
-	XXX_sizecache        int32                            `json:"-"`
+	Id             string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name           string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Category       SearchCategory                   `protobuf:"varint,3,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
+	FieldToMatches map[string]*SearchResult_Matches `protobuf:"bytes,4,rep,name=field_to_matches,json=fieldToMatches,proto3" json:"field_to_matches,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Score          float64                          `protobuf:"fixed64,5,opt,name=score,proto3" json:"score,omitempty"`
+	// Location is intended to be a unique, yet human readable,
+	// identifier for the result. For example, for a deployment,
+	// the location will be "$cluster_name/$namespace/$deployment_name.
+	// It is displayed in the UI in the global search results, underneath
+	// the name for each result.
+	Location             string   `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *SearchResult) Reset()         { *m = SearchResult{} }

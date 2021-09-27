@@ -385,7 +385,8 @@
           "format": "double"
         },
         "location": {
-          "type": "string"
+          "type": "string",
+          "description": "Location is intended to be a unique, yet human readable,\nidentifier for the result. For example, for a deployment,\nthe location will be \"$cluster_name/$namespace/$deployment_name.\nIt is displayed in the UI in the global search results, underneath\nthe name for each result."
         }
       }
     }

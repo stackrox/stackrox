@@ -68,7 +68,7 @@ var (
 			output = append(output, a.GetPolicy().GetCategories()...)
 			return
 		},
-		v1.GetAlertsCountsRequest_CLUSTER: func(a *storage.ListAlert) []string { return []string{a.GetDeployment().GetClusterName()} },
+		v1.GetAlertsCountsRequest_CLUSTER: func(a *storage.ListAlert) []string { return []string{a.GetCommonEntityInfo().GetClusterName()} },
 	}
 )
 

@@ -614,9 +614,9 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					ClusterName: "prod",
+			Entity: &storage.ListAlert_Resource{
+				Resource: &storage.ListAlert_ResourceEntity{
+					Name: "blah",
 				},
 			},
 			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{

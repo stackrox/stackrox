@@ -158,6 +158,11 @@ message SearchResult {
     }
     map<string, Matches> field_to_matches = 4;
     double score                          = 5;
+    // Location is intended to be a unique, yet human readable,
+    // identifier for the result. For example, for a deployment,
+    // the location will be "$cluster_name/$namespace/$deployment_name.
+    // It is displayed in the UI in the global search results, underneath
+    // the name for each result.
     string location                       = 6;
 }
 
