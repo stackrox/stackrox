@@ -94,7 +94,7 @@ function DtrIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<DtrIntegration>): ReactElement {
-    const formInitialValues = defaultValues;
+    const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
         // We want to clear the password because backend returns '******' to represent that there

@@ -125,7 +125,7 @@ function JiraIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<JiraIntegration>): ReactElement {
-    const formInitialValues = defaultValues;
+    const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = merge({}, defaultValues.notifier, initialValues); // in case properties are missing from initialValues
 

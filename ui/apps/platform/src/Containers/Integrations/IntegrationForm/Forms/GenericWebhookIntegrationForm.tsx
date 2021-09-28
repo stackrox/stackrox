@@ -132,7 +132,7 @@ function GenericWebhookIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GenericWebhookIntegration>): ReactElement {
-    const formInitialValues = defaultValues;
+    const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
             ...formInitialValues.notifier,

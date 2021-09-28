@@ -82,7 +82,7 @@ function GoogleCloudSccIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleCloudSccIntegration>): ReactElement {
-    const formInitialValues = defaultValues;
+    const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
             ...formInitialValues.notifier,

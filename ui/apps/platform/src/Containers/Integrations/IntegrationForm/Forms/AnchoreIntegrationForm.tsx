@@ -94,7 +94,7 @@ function AnchoreIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<AnchoreIntegration>): ReactElement {
-    const formInitialValues = defaultValues;
+    const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.config = {
             ...formInitialValues.config,
