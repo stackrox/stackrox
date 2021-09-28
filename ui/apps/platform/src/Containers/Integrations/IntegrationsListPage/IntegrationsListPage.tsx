@@ -1,5 +1,12 @@
 import React, { ReactElement, useState } from 'react';
-import { PageSection, Title, Breadcrumb, BreadcrumbItem, Divider } from '@patternfly/react-core';
+import {
+    PageSection,
+    PageSectionVariants,
+    Title,
+    Breadcrumb,
+    BreadcrumbItem,
+    Divider,
+} from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 import { connect } from 'react-redux';
 
@@ -69,7 +76,7 @@ function IntegrationsListPage({
     return (
         <>
             <PageTitle title={typeLabel} />
-            <PageSection variant="light">
+            <PageSection variant={PageSectionVariants.light}>
                 <div className="pf-u-mb-sm">
                     <Breadcrumb>
                         <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>

@@ -9,7 +9,7 @@ import {
 import { CubesIcon } from '@patternfly/react-icons';
 
 type ACSEmptyStateProps = {
-    children: ReactNode;
+    children?: ReactNode;
     title: string;
     headingLevel?: 'h1' | 'h2' | 'h3';
 };

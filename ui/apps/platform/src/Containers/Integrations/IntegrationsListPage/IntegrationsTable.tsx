@@ -7,12 +7,14 @@ import {
     Flex,
     FlexItem,
     PageSection,
+    PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
+import ACSEmptyState from 'Components/ACSEmptyState';
 import useTableSelection from 'hooks/useTableSelection';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
@@ -137,107 +139,122 @@ function IntegrationsTable({
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
-                <TableComposable variant="compact" isStickyHeader>
-                    <Thead>
-                        <Tr>
-                            {hasMultipleDelete && (
-                                <Th
-                                    select={{
-                                        onSelect: onSelectAll,
-                                        isSelected: allRowsSelected,
-                                    }}
-                                />
-                            )}
-                            {columns.map((column) => {
+            <PageSection
+                isFilled
+                padding={{ default: 'noPadding' }}
+                hasOverflowScroll
+                variant={PageSectionVariants.light}
+            >
+                {integrations.length > 0 ? (
+                    <TableComposable variant="compact" isStickyHeader>
+                        <Thead>
+                            <Tr>
+                                {hasMultipleDelete && (
+                                    <Th
+                                        select={{
+                                            onSelect: onSelectAll,
+                                            isSelected: allRowsSelected,
+                                        }}
+                                    />
+                                )}
+                                {columns.map((column) => {
+                                    return (
+                                        <Th key={column.Header} modifier="wrap">
+                                            {column.Header}
+                                        </Th>
+                                    );
+                                })}
+                                <Th aria-label="Row actions" />
+                            </Tr>
+                        </Thead>
+                        <Tbody>
+                            {integrations.map((integration, rowIndex) => {
+                                const { id } = integration;
+                                const actionItems = [
+                                    {
+                                        title: (
+                                            <Link to={getPathToEdit(source, type, id)}>
+                                                Edit integration
+                                            </Link>
+                                        ),
+                                        isHidden: isAPIToken || isClusterInitBundle,
+                                    },
+                                    {
+                                        title: (
+                                            <div className="pf-u-danger-color-100">
+                                                Delete Integration
+                                            </div>
+                                        ),
+                                        onClick: () => onDeleteIntegrations([integration.id]),
+                                    },
+                                ].filter((actionItem) => {
+                                    return !actionItem?.isHidden;
+                                });
                                 return (
-                                    <Th key={column.Header} modifier="wrap">
-                                        {column.Header}
-                                    </Th>
-                                );
-                            })}
-                            <Th aria-label="Row actions" />
-                        </Tr>
-                    </Thead>
-                    <Tbody>
-                        {integrations.map((integration, rowIndex) => {
-                            const { id } = integration;
-                            const actionItems = [
-                                {
-                                    title: (
-                                        <Link to={getPathToEdit(source, type, id)}>
-                                            Edit integration
-                                        </Link>
-                                    ),
-                                    isHidden: isAPIToken || isClusterInitBundle,
-                                },
-                                {
-                                    title: (
-                                        <div className="pf-u-danger-color-100">
-                                            Delete Integration
-                                        </div>
-                                    ),
-                                    onClick: () => onDeleteIntegrations([integration.id]),
-                                },
-                            ].filter((actionItem) => {
-                                return !actionItem?.isHidden;
-                            });
-                            return (
-                                <Tr key={integration.id}>
-                                    {hasMultipleDelete && (
-                                        <Td
-                                            key={integration.id}
-                                            select={{
-                                                rowIndex,
-                                                onSelect,
-                                                isSelected: selected[rowIndex],
-                                            }}
-                                        />
-                                    )}
-                                    {columns.map((column) => {
-                                        if (column.Header === 'Name') {
-                                            return (
-                                                <Td key="name">
-                                                    <Button
-                                                        variant={ButtonVariant.link}
-                                                        isInline
-                                                        component={(props) => (
-                                                            <Link
-                                                                {...props}
-                                                                to={getPathToViewDetails(
-                                                                    source,
-                                                                    type,
-                                                                    id
-                                                                )}
+                                    <Tr key={integration.id}>
+                                        {hasMultipleDelete && (
+                                            <Td
+                                                key={integration.id}
+                                                select={{
+                                                    rowIndex,
+                                                    onSelect,
+                                                    isSelected: selected[rowIndex],
+                                                }}
+                                            />
+                                        )}
+                                        {columns.map((column) => {
+                                            if (column.Header === 'Name') {
+                                                return (
+                                                    <Td key="name">
+                                                        <Button
+                                                            variant={ButtonVariant.link}
+                                                            isInline
+                                                            component={(props) => (
+                                                                <Link
+                                                                    {...props}
+                                                                    to={getPathToViewDetails(
+                                                                        source,
+                                                                        type,
+                                                                        id
+                                                                    )}
+                                                                />
+                                                            )}
+                                                        >
+                                                            <TableCellValue
+                                                                row={integration}
+                                                                column={column}
                                                             />
-                                                        )}
-                                                    >
-                                                        <TableCellValue
-                                                            row={integration}
-                                                            column={column}
-                                                        />
-                                                    </Button>
+                                                        </Button>
+                                                    </Td>
+                                                );
+                                            }
+                                            return (
+                                                <Td key={column.Header}>
+                                                    <TableCellValue
+                                                        row={integration}
+                                                        column={column}
+                                                    />
                                                 </Td>
                                             );
-                                        }
-                                        return (
-                                            <Td key={column.Header}>
-                                                <TableCellValue row={integration} column={column} />
-                                            </Td>
-                                        );
-                                    })}
-                                    <Td
-                                        actions={{
-                                            items: actionItems,
-                                            disable: !permissions[source].write,
-                                        }}
-                                        className="pf-u-text-align-right"
-                                    />
-                                </Tr>
-                            );
-                        })}
-                    </Tbody>
-                </TableComposable>
+                                        })}
+                                        <Td
+                                            actions={{
+                                                items: actionItems,
+                                                disable: !permissions[source].write,
+                                            }}
+                                            className="pf-u-text-align-right"
+                                        />
+                                    </Tr>
+                                );
+                            })}
+                        </Tbody>
+                    </TableComposable>
+                ) : (
+                    <ACSEmptyState
+                        key="no-results"
+                        title="No integrations of this type are currently configured."
+                    />
+                )}
             </PageSection>
         </>
     );
