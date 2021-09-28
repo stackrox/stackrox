@@ -18,6 +18,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Operator now supports `tolerations`  for `Central` and `SecuredCluster`
 - Operator now supports disabling the admin password generation by setting Central's option `adminPasswordGenerationDisabled` to `true`.
 - Roxctl now supports shell completion for bash, zsh, fish and powershell
+- Added `roxctl central debug authz-trace` command. It streams built-in authorizer traces for all incoming requests. 
 
 ## [65.0]
 - Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 

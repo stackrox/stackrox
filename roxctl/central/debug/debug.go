@@ -28,6 +28,7 @@ func Command() *cobra.Command {
 	c.AddCommand(LogLevelCommand())
 	c.AddCommand(DumpCommand())
 	c.AddCommand(DownloadDiagnosticsCommand())
+	c.AddCommand(AuthzTraceCommand())
 
 	flags.AddTimeout(c)
 	return c

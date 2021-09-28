@@ -3443,6 +3443,11 @@ jobs:
             API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/slim-collector.sh
 
       - run:
+          name: Test authz trace with roxctl
+          command: |
+            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/authz-trace.sh
+
+      - run:
           name: Test istio-support flag in roxctl
           command: |
             API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/istio-support.sh
