@@ -135,7 +135,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
         cleanup:
         "remove splunk"
-        tearDownSplunk(orchestrator, splunkDeployment)
+        if (splunkDeployment) {
+            tearDownSplunk(orchestrator, splunkDeployment)
+        }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 

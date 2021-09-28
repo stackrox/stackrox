@@ -141,35 +141,52 @@ class SplunkUtil {
     static SplunkDeployment createSplunk(OrchestratorMain orchestrator, String namespace, boolean useLegacySplunk) {
         def uid = UUID.randomUUID()
         def deploymentName = "splunk-${uid}"
-        Deployment deployment =
-                new Deployment()
-                        .setNamespace(namespace)
-                        .setName(deploymentName)
-                        .setImage(useLegacySplunk ?
-                                "quay.io/cgorman1/qa:splunk-test-repo-6-6-2" :
-                                "splunk/splunk:8.1.2")
-                        .addPort (8000)
-                        .addPort (8088)
-                        .addPort(8089)
-                        .addPort(514)
-                        .setEnv(useLegacySplunk ? LEGACY_ENV_VARIABLES : ENV_VARIABLES)
-                        .addLabel("app", deploymentName)
-        orchestrator.createDeployment(deployment)
+        Deployment deployment
+        Service collectorSvc
+        Service syslogSvc
+        LocalPortForward splunkPortForward
+        try {
+            deployment =
+                    new Deployment()
+                            .setNamespace(namespace)
+                            .setName(deploymentName)
+                            .setImage(useLegacySplunk ?
+                                    "quay.io/cgorman1/qa:splunk-test-repo-6-6-2" :
+                                    "splunk/splunk:8.1.2")
+                            .addPort(8000)
+                            .addPort(8088)
+                            .addPort(8089)
+                            .addPort(514)
+                            .setEnv(useLegacySplunk ? LEGACY_ENV_VARIABLES : ENV_VARIABLES)
+                            .addLabel("app", deploymentName)
+            orchestrator.createDeployment(deployment)
 
-        Service collectorSvc = new Service("splunk-collector-${uid}", namespace)
-                .addLabel("app", deploymentName)
-                .addPort(8088, "TCP")
-                .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(collectorSvc)
+            collectorSvc = new Service("splunk-collector-${uid}", namespace)
+                    .addLabel("app", deploymentName)
+                    .addPort(8088, "TCP")
+                    .setType(Service.Type.CLUSTERIP)
+            orchestrator.createService(collectorSvc)
 
-        Service syslogSvc = new Service("splunk-syslog-${uid}", namespace)
-                .addLabel("app", deploymentName)
-                .addPort(514, "TCP")
-                .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(syslogSvc)
+            syslogSvc = new Service("splunk-syslog-${uid}", namespace)
+                    .addLabel("app", deploymentName)
+                    .addPort(514, "TCP")
+                    .setType(Service.Type.CLUSTERIP)
+            orchestrator.createService(syslogSvc)
 
-        LocalPortForward splunkPortForward = orchestrator.createPortForward(8089, deployment)
-
+            splunkPortForward = orchestrator.createPortForward(8089, deployment)
+        } catch (Exception e) {
+            println("Something bad happened (${e.message}), will run cleanup before failing")
+            if (syslogSvc) {
+                orchestrator.deleteService(syslogSvc.name, syslogSvc.namespace)
+            }
+            if (collectorSvc) {
+                orchestrator.deleteService(collectorSvc.name, collectorSvc.namespace)
+            }
+            if (deployment) {
+                orchestrator.deleteDeployment(deployment)
+            }
+            throw e
+        }
         return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
     }
 

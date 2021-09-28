@@ -208,7 +208,9 @@ class IntegrationsTest extends BaseSpecification {
         if (policy != null) {
             PolicyService.deletePolicy(policyId)
         }
-        SplunkUtil.tearDownSplunk(orchestrator, parts)
+        if (parts) {
+            SplunkUtil.tearDownSplunk(orchestrator, parts)
+        }
         notifier.deleteNotifier()
 
         where:
