@@ -6,12 +6,12 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
@@ -265,8 +265,8 @@ func (eicr *EmbeddedImageScanComponentResolver) ActiveState(ctx context.Context,
 		return &activeStateResolver{root: eicr.root, state: Undetermined}, nil
 	}
 
-	edgeID := edges.EdgeID{ParentID: deploymentID, ChildID: scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion())}.ToString()
-	found, err := eicr.root.ActiveComponent.Exists(ctx, edgeID)
+	acID := acConverter.ComposeID(deploymentID, scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion()))
+	found, err := eicr.root.ActiveComponent.Exists(ctx, acID)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (eicr *EmbeddedImageScanComponentResolver) ActiveState(ctx context.Context,
 		return &activeStateResolver{root: eicr.root, state: Inactive}, nil
 	}
 
-	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{edgeID}}, nil
+	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{acID}}, nil
 }
 
 // Nodes are the nodes that contain the Component.

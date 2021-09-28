@@ -9,10 +9,21 @@ import (
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 )
 
 var (
+	// ActiveComponentTransformationPaths holds the paths to go from an active component id to the ids of the given category.
+	// NOT A COMPLETE REPLACEMENT OF TRANSFORMATIONS BELOW.
+	ActiveComponentTransformationPaths = map[v1.SearchCategory]dackbox.BucketPath{
+		v1.SearchCategory_NAMESPACES: dackbox.BackwardsBucketPath(
+			acDackBox.BucketHandler,
+			deploymentDackBox.BucketHandler,
+			nsDackBox.BucketHandler,
+		),
+	}
+
 	// ActiveComponentTransformations holds the transformations to go from a deployment:image_component id to the ids of the given category.
 	ActiveComponentTransformations = map[v1.SearchCategory]transformation.OneToMany{
 

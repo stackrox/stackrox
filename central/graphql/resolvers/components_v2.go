@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -333,8 +334,8 @@ func (eicr *imageComponentResolver) ActiveState(ctx context.Context, args Pagina
 	if eicr.data.GetSource() != storage.SourceType_OS {
 		return &activeStateResolver{root: eicr.root, state: Undetermined}, nil
 	}
-	edgeID := edges.EdgeID{ParentID: deploymentID, ChildID: eicr.data.GetId()}.ToString()
-	found, err := eicr.root.ActiveComponent.Exists(ctx, edgeID)
+	acID := acConverter.ComposeID(deploymentID, eicr.data.GetId())
+	found, err := eicr.root.ActiveComponent.Exists(ctx, acID)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +343,7 @@ func (eicr *imageComponentResolver) ActiveState(ctx context.Context, args Pagina
 		return &activeStateResolver{root: eicr.root, state: Inactive}, nil
 	}
 
-	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{edgeID}}, nil
+	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{acID}}, nil
 }
 
 // Nodes are the nodes that contain the Component.

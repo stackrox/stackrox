@@ -241,11 +241,11 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 	s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(_ context.Context, acs []*acConverter.CompleteActiveComponent) {
 		s.Assert().Equal(2, len(acs))
 		for _, ac := range acs {
-			edge, err := edges.FromString(ac.ActiveComponent.GetId())
+			deploymentID, componentID, err := acConverter.DecomposeID(ac.ActiveComponent.GetId())
 			s.Assert().NoError(err)
 			// Deployment C does not have image1.
-			s.Assert().NotEqual(edge.ParentID, mockDeployments[2].GetId())
-			imageComponent, err := edges.FromString(edge.ChildID)
+			s.Assert().NotEqual(deploymentID, mockDeployments[2].GetId())
+			imageComponent, err := edges.FromString(componentID)
 			s.Assert().NoError(err)
 			s.Assert().True(strings.HasPrefix(imageComponent.ParentID, mockImage.GetId()))
 			s.Assert().NotEqual(imageComponent.ParentID, mockImage.GetScan().GetComponents()[2].GetName())
@@ -253,7 +253,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 
 			var expectedComponent *storage.EmbeddedImageScanComponent
 			var expectedContainer string
-			if edge.ParentID == mockDeployments[0].Id {
+			if deploymentID == mockDeployments[0].Id {
 				expectedContainer = mockIndicators[0].ContainerName
 				// Component 1 or 2
 				expectedComponent = mockImage.GetScan().GetComponents()[0]
@@ -261,7 +261,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 					expectedComponent = mockImage.GetScan().GetComponents()[1]
 				}
 			} else {
-				s.Assert().Equal(edge.ParentID, mockDeployments[1].Id)
+				s.Assert().Equal(deploymentID, mockDeployments[1].Id)
 				expectedContainer = mockIndicators[1].ContainerName
 				// Component 1 or 4
 				expectedComponent = mockImage.GetScan().GetComponents()[0]
@@ -271,7 +271,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			}
 			s.Assert().Contains(ac.ActiveComponent.ActiveContexts, expectedContainer)
 			s.Assert().True(strings.HasSuffix(imageComponent.ParentID, expectedComponent.GetName()))
-			s.Assert().Equal(imageComponent, edges.EdgeID{ParentID: expectedComponent.GetName(), ChildID: expectedComponent.Version})
+			s.Assert().Equal(componentID, scancomponent.ComponentID(expectedComponent.GetName(), expectedComponent.GetVersion()))
 		}
 	})
 
@@ -679,9 +679,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					assert.Equal(t, strconv.Quote(deployment.GetId()), query.GetBaseQuery().GetMatchFieldQuery().GetValue())
 					var ret []*storage.ActiveComponent
 					for componentID, containerNames := range testCase.existingAcs {
-						edge := edges.EdgeID{ParentID: deployment.GetId(), ChildID: componentID}
+						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						ac := &storage.ActiveComponent{
-							Id:             edge.ToString(),
+							Id:             acID,
 							ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
 						}
 						for containerName := range containerNames {
@@ -696,12 +696,12 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					var ret []*storage.ActiveComponent
 					requestedIds := set.NewStringSet(ids...)
 					for componentID, containerNames := range testCase.existingAcs {
-						edge := edges.EdgeID{ParentID: deployment.GetId(), ChildID: componentID}
-						if !requestedIds.Contains(edge.ToString()) {
+						acID := acConverter.ComposeID(deployment.GetId(), componentID)
+						if !requestedIds.Contains(acID) {
 							continue
 						}
 						ac := &storage.ActiveComponent{
-							Id:             edge.ToString(),
+							Id:             acID,
 							ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
 						}
 						for containerName := range containerNames {
@@ -718,7 +718,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					func(ctx context.Context, ids ...string) error {
 						expectedToDelete := set.NewStringSet()
 						for _, componentID := range testCase.acsToDelete {
-							expectedToDelete.Add(edges.EdgeID{ParentID: deployment.GetId(), ChildID: componentID}.ToString())
+							expectedToDelete.Add(acConverter.ComposeID(deployment.GetId(), componentID))
 						}
 						assert.Equal(t, expectedToDelete, set.NewStringSet(ids...))
 						return nil
@@ -730,19 +730,19 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					assert.Equal(t, len(testCase.acsToUpdate), len(acs))
 					actualAcs := make(map[string]*acConverter.CompleteActiveComponent, len(acs))
 					for _, ac := range acs {
-						edge, err := edges.FromString(ac.ActiveComponent.GetId())
+						_, _, err := acConverter.DecomposeID(ac.ActiveComponent.GetId())
 						assert.NoError(t, err)
-						actualAcs[edge.ToString()] = ac
+						actualAcs[ac.ActiveComponent.GetId()] = ac
 					}
 
 					for componentID, expectedContexts := range testCase.acsToUpdate {
-						edge := edges.EdgeID{ParentID: deployment.GetId(), ChildID: componentID}
-						assert.Contains(t, actualAcs, edge.ToString())
-						assert.Equal(t, deployment.GetId(), actualAcs[edge.ToString()].DeploymentID)
-						assert.Equal(t, componentID, actualAcs[edge.ToString()].ComponentID)
-						assert.Equal(t, edge.ToString(), actualAcs[edge.ToString()].ActiveComponent.GetId())
-						assert.Equal(t, expectedContexts.Cardinality(), len(actualAcs[edge.ToString()].ActiveComponent.ActiveContexts))
-						for containerName, context := range actualAcs[edge.ToString()].ActiveComponent.ActiveContexts {
+						acID := acConverter.ComposeID(deployment.GetId(), componentID)
+						assert.Contains(t, actualAcs, acID)
+						assert.Equal(t, deployment.GetId(), actualAcs[acID].DeploymentID)
+						assert.Equal(t, componentID, actualAcs[acID].ComponentID)
+						assert.Equal(t, acID, actualAcs[acID].ActiveComponent.GetId())
+						assert.Equal(t, expectedContexts.Cardinality(), len(actualAcs[acID].ActiveComponent.ActiveContexts))
+						for containerName, context := range actualAcs[acID].ActiveComponent.ActiveContexts {
 							assert.Contains(t, expectedContexts, containerName)
 							assert.Equal(t, containerName, context.ContainerName)
 						}

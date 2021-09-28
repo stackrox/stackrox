@@ -36,8 +36,8 @@ var (
 	// DeploymentSACTransform transforms deployment ids into their SAC scopes.
 	DeploymentSACTransform = namespaceScoped(DeploymentTransformationPaths[v1.SearchCategory_NAMESPACES])
 
-	// ActiveComponentSACTransform transforms active component with ids of deployment:image_component into their SAC scopes.
-	ActiveComponentSACTransform = fromEdgeSource(namespaceScoped(DeploymentTransformationPaths[v1.SearchCategory_NAMESPACES]))
+	// ActiveComponentSACTransform transforms active component into their SAC scopes.
+	ActiveComponentSACTransform = namespaceScoped(ActiveComponentTransformationPaths[v1.SearchCategory_NAMESPACES])
 
 	// ImageSACTransform transforms image ids into their SAC scopes.
 	ImageSACTransform = namespaceScoped(ImageTransformationPaths[v1.SearchCategory_NAMESPACES])

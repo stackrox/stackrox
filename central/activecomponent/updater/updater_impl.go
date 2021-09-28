@@ -13,7 +13,6 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -168,11 +167,11 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 			if !ok {
 				continue
 			}
-			edgeID := edges.EdgeID{ParentID: deploymentID, ChildID: componentID}.ToString()
-			if _, ok := idToContainers[edgeID]; !ok {
-				idToContainers[edgeID] = set.NewStringSet()
+			id := converter.ComposeID(deploymentID, componentID)
+			if _, ok := idToContainers[id]; !ok {
+				idToContainers[id] = set.NewStringSet()
 			}
-			containerNameSet := idToContainers[edgeID]
+			containerNameSet := idToContainers[id]
 			containerNameSet.Add(update.ContainerName)
 		}
 	}
@@ -210,14 +209,14 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 		delete(acToContexts, ac.GetId())
 	}
 	for id, contexts := range acToContexts {
-		edge, err := edges.FromString(id)
+		_, componentID, err := converter.DecomposeID(id)
 		if err != nil {
 			utils.Should(err)
 			continue
 		}
 		newAc := &converter.CompleteActiveComponent{
-			DeploymentID: edge.ParentID,
-			ComponentID:  edge.ChildID,
+			DeploymentID: deploymentID,
+			ComponentID:  componentID,
 			ActiveComponent: &storage.ActiveComponent{
 				Id:             id,
 				ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
@@ -265,15 +264,15 @@ func merge(base *storage.ActiveComponent, subtrahend, addend set.StringSet) (*co
 		return nil, false
 	}
 
-	edge, err := edges.FromString(base.GetId())
+	deploymentID, componentID, err := converter.DecomposeID(base.GetId())
 	if err != nil {
 		utils.Should(err)
 		return nil, true
 	}
 
 	return &converter.CompleteActiveComponent{
-		DeploymentID:    edge.ParentID,
-		ComponentID:     edge.ChildID,
+		DeploymentID:    deploymentID,
+		ComponentID:     componentID,
 		ActiveComponent: base,
 	}, false
 }

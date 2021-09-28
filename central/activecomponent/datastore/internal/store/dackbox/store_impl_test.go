@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -103,7 +102,7 @@ func (suite *ActiveComponentStoreTestSuite) TestUpsertDelete() {
 					DeploymentID: deploymentID,
 					ComponentID:  componentID,
 					ActiveComponent: &storage.ActiveComponent{
-						Id:             edges.EdgeID{ParentID: deploymentID, ChildID: componentID}.ToString(),
+						Id:             converter.ComposeID(deploymentID, componentID),
 						ActiveContexts: activeContext,
 					},
 				}
@@ -116,7 +115,7 @@ func (suite *ActiveComponentStoreTestSuite) TestUpsertDelete() {
 			for del := range testCase.deletes {
 				deploymentID := deployments[del/3]
 				componentID := imageComponents[del%3]
-				ids = append(ids, edges.EdgeID{ParentID: deploymentID, ChildID: componentID}.ToString())
+				ids = append(ids, converter.ComposeID(deploymentID, componentID))
 				delete(expectedMapToContainerNames, del)
 			}
 			suite.Assert().NoError(suite.store.DeleteBatch(ids...))
@@ -137,7 +136,7 @@ func (suite *ActiveComponentStoreTestSuite) verify(deployments, imageComponents 
 	for expected, containerNames := range expectedMap {
 		deploymentID := deployments[expected/3]
 		componentID := imageComponents[expected%3]
-		id := edges.EdgeID{ParentID: deploymentID, ChildID: componentID}.ToString()
+		id := converter.ComposeID(deploymentID, componentID)
 		ac, exist, err := suite.store.Get(id)
 		suite.Assert().NoError(err)
 		suite.Assert().True(exist)
