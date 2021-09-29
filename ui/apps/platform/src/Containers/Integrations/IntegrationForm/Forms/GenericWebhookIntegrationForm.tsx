@@ -73,8 +73,8 @@ export const validationSchema = yup.object().shape({
                     'username-test',
                     'A username is required if the integration has a password',
                     (value, context: yup.TestContext) => {
-                        const hasPasswrod = !!context.parent.password;
-                        if (!hasPasswrod) {
+                        const hasPassword = !!context.parent.password;
+                        if (!hasPassword) {
                             return true;
                         }
                         const trimmedValue = value?.trim();

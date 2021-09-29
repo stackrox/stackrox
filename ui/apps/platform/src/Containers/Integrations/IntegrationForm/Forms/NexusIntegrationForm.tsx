@@ -41,19 +41,33 @@ export const validationSchema = yup.object().shape({
             .required('A category is required'),
         docker: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
-            username: yup.string(),
+            username: yup
+                .string()
+                .test(
+                    'username-test',
+                    'A username is required if the integration has a password',
+                    (value, context: yup.TestContext) => {
+                        const hasPassword = !!context.parent.password;
+                        if (!hasPassword) {
+                            return true;
+                        }
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
             password: yup
                 .string()
                 .test(
                     'password-test',
-                    'A password is required',
+                    'A password is required if the integration has a username',
                     (value, context: yup.TestContext) => {
                         const requirePasswordField =
                             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                             // @ts-ignore
                             context?.from[2]?.value?.updatePassword || false;
+                        const hasUsername = !!context.parent.username;
 
-                        if (!requirePasswordField) {
+                        if (!requirePasswordField || !hasUsername) {
                             return true;
                         }
 
@@ -119,6 +133,8 @@ function NexusIntegrationForm({
         validationSchema,
     });
     const { isCreating } = usePageState();
+    const areCredentialsRequired =
+        values.updatePassword || !!values.config.docker.password || !!values.config.docker.username;
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
@@ -165,18 +181,20 @@ function NexusIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Username"
+                        isRequired={areCredentialsRequired}
                         fieldId="config.docker.username"
                         touched={touched}
                         errors={errors}
+                        helperText="A username is required if the integration has a password"
                     >
                         <TextInput
-                            isRequired
+                            isRequired={areCredentialsRequired}
                             type="text"
                             id="config.docker.username"
                             value={values.config.docker.username}
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable}
+                            isDisabled={!isEditable || !values.updatePassword}
                         />
                     </FormLabelGroup>
                     {!isCreating && (
@@ -196,14 +214,15 @@ function NexusIntegrationForm({
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        isRequired={values.updatePassword}
                         label="Password"
+                        isRequired={areCredentialsRequired}
                         fieldId="config.docker.password"
                         touched={touched}
                         errors={errors}
+                        helperText="A password is required if the integration has a username"
                     >
                         <TextInput
-                            isRequired={values.updatePassword}
+                            isRequired={areCredentialsRequired}
                             type="password"
                             id="config.docker.password"
                             value={values.config.docker.password}
