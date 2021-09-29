@@ -479,7 +479,7 @@ describe('Notifiers Test', () => {
             getInputByLabel('Annotation key for Slack webhook').clear().type('slack');
             getInputByLabel('Default Slack webhook')
                 .clear()
-                .type('https://hooks.slack.com/services/nova')
+                .type('https://hooks.slack.com/services/scooby/doo')
                 .blur();
 
             cy.get(selectors.buttons.test).should('be.enabled');
@@ -566,7 +566,7 @@ describe('Notifiers Test', () => {
             // Step 3, check valid form and save
             getInputByLabel('Default Teams webhook')
                 .clear()
-                .type('https://outlook.office365.com/webhook/nova')
+                .type('https://outlook.office365.com/webhook/scooby/doo')
                 .blur();
             getInputByLabel('Annotation key for Teams webhook').clear().type('teams');
 
