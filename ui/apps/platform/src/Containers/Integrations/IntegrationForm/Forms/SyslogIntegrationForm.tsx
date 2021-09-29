@@ -5,7 +5,7 @@ import {
     Form,
     FormSelect,
     FormSelectOption,
-    Switch,
+    Checkbox,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
 
@@ -190,31 +190,23 @@ function SyslogIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Use TLS"
-                        fieldId="syslog.tcpConfig.useTls"
-                        errors={errors}
-                    >
-                        <Switch
+                    <FormLabelGroup fieldId="syslog.tcpConfig.useTls" errors={errors}>
+                        <Checkbox
+                            label="Use TLS"
                             id="syslog.tcpConfig.useTls"
-                            name="syslog.tcpConfig.useTls"
-                            aria-label="use tls"
                             isChecked={values.syslog.tcpConfig.useTls}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Disable TLS certificate validation (insecure)"
-                        fieldId="syslog.tcpConfig.skipTlsVerify"
-                        errors={errors}
-                    >
-                        <Switch
+                    <FormLabelGroup fieldId="syslog.tcpConfig.skipTlsVerify" errors={errors}>
+                        <Checkbox
+                            label="Disable TLS certificate validation (insecure)"
                             id="syslog.tcpConfig.skipTlsVerify"
-                            name="syslog.tcpConfig.skipTlsVerify"
-                            aria-label="disable tls certificate validation"
                             isChecked={values.syslog.tcpConfig.skipTlsVerify}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
