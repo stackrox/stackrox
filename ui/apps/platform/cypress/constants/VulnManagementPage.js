@@ -1,7 +1,6 @@
 import { selectors as tablePaginationSelectors } from './TablePagination';
 import panelSelectors from '../selectors/panel';
 import tableSelectors from '../selectors/table';
-import { violationTagsSelectors } from '../selectors/tags';
 import scopeSelectors from '../helpers/scopeSelectors';
 import navigationSelectors from '../selectors/navigation';
 
@@ -147,7 +146,12 @@ const sidePanelSelectors = {
     policyFindingsSection: scopeSelectors('[data-testid="policy-findings-section"]', {
         table: tableSelectors,
     }),
-    violationTags: violationTagsSelectors,
+    violationTags: {
+        input: '[data-testid="violation-tags"] input',
+        values: '[data-testid="violation-tags"] .pf-c-chip-group div.pf-c-chip',
+        removeValueButton: (tag) =>
+            `[data-testid="violation-tags"] div.pf-c-chip:contains(${tag}) button`,
+    },
     scanDataMessage: '[data-testid="message"].error-message:contains("CVE Data May Be Inaccurate")',
 };
 

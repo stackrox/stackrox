@@ -1,19 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
-import Loader from 'Components/Loader';
+import { Spinner, Bullseye, Flex } from '@patternfly/react-core';
 
 function IconWithCount({ Icon, count, isLoading }) {
-    let content = <Loader message={null} />;
-    if (!isLoading) {
-        content = (
-            <>
-                <span className="mr-1 text-sm">{count}</span>
-                <Icon className="h-3 w-3 text-base-600" />
-            </>
-        );
-    }
-    return <span className="flex items-center border-base-300 border-r mr-2 pr-2">{content}</span>;
+    return (
+        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+            {isLoading ? (
+                <Bullseye>
+                    <Spinner size="lg" />
+                </Bullseye>
+            ) : (
+                <>
+                    <span className="pf-u-mr-sm">{count}</span>
+                    <Icon />
+                </>
+            )}
+        </Flex>
+    );
 }
 
 IconWithCount.propTypes = {

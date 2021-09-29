@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
-import { MessageSquare, Tag } from 'react-feather';
+import { OutlinedCommentsIcon, TagIcon } from '@patternfly/react-icons';
+import { Divider } from '@patternfly/react-core';
 
 import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import CollapsibleCountsButton from 'Components/CollapsibleCountsButton';
@@ -32,11 +33,12 @@ const FormCollapsibleButton = ({
     return (
         <CollapsibleCountsButton isOpen={isOpen} onClick={onClick}>
             <IconWithCount
-                Icon={MessageSquare}
+                Icon={OutlinedCommentsIcon}
                 count={processCommentsCount}
                 isLoading={isLoading}
             />
-            <IconWithCount Icon={Tag} count={processTagsCount} isLoading={isLoading} />
+            <Divider component="div" isVertical />
+            <IconWithCount Icon={TagIcon} count={processTagsCount} isLoading={isLoading} />
         </CollapsibleCountsButton>
     );
 };

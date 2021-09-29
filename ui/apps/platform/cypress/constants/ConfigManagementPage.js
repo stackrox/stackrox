@@ -1,6 +1,5 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 import tableSelectors from '../selectors/table';
-import { violationTagsSelectors } from '../selectors/tags';
 
 const baseURL = '/main/configmanagement';
 
@@ -104,7 +103,12 @@ const sidePanelSelectors = {
     policyFindingsSection: scopeSelectors('[data-testid="policy-findings-section"]', {
         table: tableSelectors,
     }),
-    violationTags: violationTagsSelectors,
+    violationTags: {
+        input: '[data-testid="violation-tags"] input',
+        values: '[data-testid="violation-tags"] .pf-c-chip-group div.pf-c-chip',
+        removeValueButton: (tag) =>
+            `[data-testid="violation-tags"] div.pf-c-chip:contains(${tag}) button`,
+    },
 };
 
 export const selectors = {

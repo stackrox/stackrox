@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 
-import ProcessCard from 'Containers/Violations/SidePanel/ProcessCard';
 import { ProcessViolation, Violation } from '../types/violationTypes';
+import ProcessCard from './ProcessCard';
 import NetworkFlowCard from './NetworkFlowCard';
 import K8sCard from './K8sCard';
 
@@ -39,7 +39,6 @@ function RuntimeMessages({ processViolation, violations }: RuntimeMessagesProps)
     return (
         <>
             {isPlainViolation && plainViolations}
-            {/* TODO: need to PF ProcessCard and subsequent components in hierarchy */}
             {!!processViolation?.processes?.length && (
                 <ProcessCard
                     processes={processViolation.processes}

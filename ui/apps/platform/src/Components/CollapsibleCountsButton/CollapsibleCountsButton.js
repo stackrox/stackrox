@@ -1,23 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ChevronDown, ChevronUp } from 'react-feather';
+import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';
+import { Button, Flex } from '@patternfly/react-core';
 
-import Button from 'Components/Button';
 import IconWithCount from 'Components/IconWithCount';
 
 const CollapsibleCountsButton = ({ isOpen, onClick, children }) => {
     return (
-        <Button
-            className={`hover:bg-base-200 ${isOpen && 'bg-base-200'} p-2 border border-base-300`}
-            icon={
-                <>
-                    {children}
-                    {isOpen && <ChevronDown className="h-4 w-4 text-base-600" />}
-                    {!isOpen && <ChevronUp className="h-4 w-4 text-base-600" />}
-                </>
-            }
-            onClick={onClick}
-        />
+        <Button variant="plain" className="pf-u-background-color-200" onClick={onClick}>
+            <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                {children}
+                {isOpen && <AngleDownIcon />}
+                {!isOpen && <AngleUpIcon />}
+            </Flex>
+        </Button>
     );
 };
 

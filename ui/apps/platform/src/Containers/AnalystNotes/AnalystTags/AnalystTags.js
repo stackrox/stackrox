@@ -2,26 +2,30 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, useMutation } from '@apollo/client';
 import difference from 'lodash/difference';
+import union from 'lodash/union';
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    SelectOption,
+    Alert,
+    Select,
+    SelectVariant,
+    Bullseye,
+    Spinner,
+} from '@patternfly/react-core';
 import pluralize from 'pluralize';
-import { Message } from '@stackrox/ui-components';
 
+import useMultiSelect from 'hooks/useMultiSelect';
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import analystNotesLabels from 'messages/analystnotes';
-import Tags from 'Components/Tags';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { getQueriesByType, getTagsDataByType } from './analystTagsQueries';
 import getRefetchQueriesByCondition from '../analystNotesUtils/getRefetchQueriesByCondition';
 import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
-const AnalystTags = ({
-    type,
-    variables,
-    autoComplete,
-    autoCompleteVariables,
-    isCollapsible,
-    onInputChange,
-}) => {
+const AnalystTags = ({ type, variables, autoComplete, autoCompleteVariables, onInputChange }) => {
     const { GET_TAGS, ADD_TAGS, REMOVE_TAGS } = getQueriesByType(type);
 
     const {
@@ -55,16 +59,11 @@ const AnalystTags = ({
         refetchAndWait
     );
 
-    const { hasErrors } = captureGraphQLErrors([error, errorOnAddTags, errorOnRemoveTags]);
-
-    if (hasErrors) {
-        return (
-            <Message type="error">
-                There was an issue retrieving and/or modifying tags. Please try to view this page
-                again in a little while.
-            </Message>
-        );
-    }
+    const { hasErrors, errorMessages } = captureGraphQLErrors([
+        error,
+        errorOnAddTags,
+        errorOnRemoveTags,
+    ]);
 
     // disable input when waiting for any sort of modification
     const isDisabled = isWaitingToAddTags || isWaitingToRemoveTags || false;
@@ -72,6 +71,7 @@ const AnalystTags = ({
     const tags = getTagsDataByType(type, data);
 
     const title = `${tags.length} ${analystNotesLabels[type]} ${pluralize('Tag', tags.length)}`;
+    const { isOpen: isSelectOpen, onToggle, onSelect, onClear } = useMultiSelect(onChange, tags);
 
     function onChange(updatedTags) {
         const removedTags = difference(tags, updatedTags);
@@ -89,17 +89,43 @@ const AnalystTags = ({
     }
 
     return (
-        <Tags
-            title={title}
-            tags={tags}
-            onChange={onChange}
-            onInputChange={onInputChange}
-            isLoading={isLoading}
-            isDisabled={isDisabled}
-            isCollapsible={isCollapsible}
-            defaultOpen
-            autoComplete={autoComplete}
-        />
+        <Card isFlat>
+            <CardHeader>{title}</CardHeader>
+            <CardBody>
+                {hasErrors && (
+                    <Alert
+                        variant="warning"
+                        isInline
+                        title="There was an issue retrieving and/or modifying tags. Please try again later."
+                    >
+                        {errorMessages}
+                    </Alert>
+                )}
+                {isLoading ? (
+                    <Bullseye>
+                        <Spinner />
+                    </Bullseye>
+                ) : (
+                    <Select
+                        variant={SelectVariant.typeaheadMulti}
+                        onChange={onChange}
+                        selections={tags}
+                        placeholderText="Select or create new tags."
+                        onTypeaheadInputChanged={onInputChange}
+                        isCreatable
+                        isDisabled={isDisabled}
+                        onToggle={onToggle}
+                        onSelect={onSelect}
+                        onClear={onClear}
+                        isOpen={isSelectOpen}
+                    >
+                        {union(autoComplete, tags)?.map((option) => (
+                            <SelectOption key={option} value={option} />
+                        ))}
+                    </Select>
+                )}
+            </CardBody>
+        </Card>
     );
 };
 
@@ -108,13 +134,11 @@ AnalystTags.propTypes = {
     variables: PropTypes.shape({}).isRequired,
     autoComplete: PropTypes.arrayOf(PropTypes.string),
     autoCompleteVariables: PropTypes.shape({}).isRequired,
-    isCollapsible: PropTypes.bool,
     onInputChange: PropTypes.func.isRequired,
 };
 
 AnalystTags.defaultProps = {
     autoComplete: [],
-    isCollapsible: true,
 };
 
 export default React.memo(AnalystTags);

@@ -1,5 +1,4 @@
 import tableSelectors from '../selectors/table';
-import { processTagsSelectors } from '../selectors/tags';
 import { processCommentsSelectors, commentsDialogSelectors } from '../selectors/comments';
 import selectSelectors from '../selectors/select';
 import paginationSelectors from '../selectors/pagination';
@@ -18,7 +17,12 @@ export const errorMessages = {
 const sidePanelSelectors = scopeSelectors('[data-testid="panel"]:eq(1)', {
     firstProcessCard: scopeSelectors('[data-testid="process-discovery-card"]:first', {
         header: '[data-testid="process"]',
-        tags: processTagsSelectors,
+        tags: {
+            input: '[data-testid="process-tags"] input',
+            values: '[data-testid="process-tags"] .pf-c-chip-group div.pf-c-chip',
+            removeValueButton: (tag) =>
+                `[data-testid="process-tags"] div.pf-c-chip:contains(${tag}) button`,
+        },
         comments: processCommentsSelectors,
     }),
 

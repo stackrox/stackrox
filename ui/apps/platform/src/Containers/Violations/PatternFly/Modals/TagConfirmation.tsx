@@ -100,7 +100,7 @@ function TagConfirmation({
                         variant={SelectVariant.typeaheadMulti}
                         selections={tags}
                         onChange={onChange}
-                        placeholderText="No tags created yet. Create new tags."
+                        placeholderText="Select or create new tags."
                         onTypeaheadInputChanged={onInputChange}
                         menuAppendTo="parent"
                         isCreatable

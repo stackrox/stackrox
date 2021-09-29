@@ -1,7 +1,8 @@
 import React, { ReactElement } from 'react';
 
 import ViolationTagsSearchAutoComplete from 'Containers/AnalystNotes/ViolationTags/ViolationTagsSearchAutoComplete';
-import ViolationTagsCard from './ViolationTagsCard';
+import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
+import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 
 type ViolationTagsProps = {
     resourceId: string;
@@ -12,8 +13,9 @@ const ViolationTags = ({ resourceId }: ViolationTagsProps): ReactElement => {
         <div data-testid="violation-tags">
             <ViolationTagsSearchAutoComplete>
                 {({ options, autoCompleteVariables, onInputChange }) => (
-                    <ViolationTagsCard
-                        resourceId={resourceId}
+                    <AnalystTags
+                        type={ANALYST_NOTES_TYPES.VIOLATION}
+                        variables={{ resourceId }}
                         autoComplete={options}
                         autoCompleteVariables={autoCompleteVariables}
                         onInputChange={onInputChange}
