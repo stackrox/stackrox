@@ -50,6 +50,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
                     typeof updatePassword === 'boolean'
                         ? await saveIntegration(source, data, { updatePassword })
                         : await saveIntegrationV2(source, data);
+                history.push(integrationsListPath);
             } else if (type === 'apitoken') {
                 responseData = await generateAPIToken(data);
             } else if (type === 'clusterInitBundle') {

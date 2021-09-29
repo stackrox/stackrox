@@ -20,7 +20,7 @@ export type SlackIntegration = {
 } & NotifierIntegrationBase;
 
 const validWebhookRegex =
-    /^((https?):\/\/)?([a-zA-Z0-9\-.]\.)?[a-zA-Z0-9\-.]{1,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(\/services)(\/[a-zA-Z0-9-]+)$/;
+    /^((https?):\/\/)?([a-zA-Z0-9\-.]\.)?[a-zA-Z0-9\-.]{1,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(\/services)(\/[a-zA-Z0-9-]+)+$/;
 
 export const validationSchema = yup.object().shape({
     name: yup.string().trim().required('Name is required'),
@@ -98,7 +98,7 @@ function SlackIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
-                        label="Default Slack Webhook"
+                        label="Default Slack webhook"
                         fieldId="labelDefault"
                         touched={touched}
                         errors={errors}

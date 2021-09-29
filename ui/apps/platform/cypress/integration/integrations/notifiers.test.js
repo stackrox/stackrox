@@ -452,11 +452,11 @@ describe('Notifiers Test', () => {
 
             // Step 1, check empty fields
             getInputByLabel('Integration name').click().blur();
-            getInputByLabel('Default Slack Webhook').click().blur();
+            getInputByLabel('Default Slack webhook').click().blur();
             getInputByLabel('Annotation key for Slack webhook').click().blur();
 
             getHelperElementByLabel('Integration name').contains('Name is required');
-            getHelperElementByLabel('Default Slack Webhook').contains('Slack webhook is required');
+            getHelperElementByLabel('Default Slack webhook').contains('Slack webhook is required');
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
@@ -464,12 +464,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('Integration name')
                 .clear()
                 .type(`Nova Slack ${new Date().toISOString()}`);
-            getInputByLabel('Default Slack Webhook')
+            getInputByLabel('Default Slack webhook')
                 .clear()
                 .type('https://hooks.slack.com/services/')
                 .blur();
 
-            getHelperElementByLabel('Default Slack Webhook').contains(
+            getHelperElementByLabel('Default Slack webhook').contains(
                 'Must be a valid Slack webhook URL, like https://hooks.slack.com/services/EXAMPLE'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -477,7 +477,7 @@ describe('Notifiers Test', () => {
 
             // Step 3, check valid form and save
             getInputByLabel('Annotation key for Slack webhook').clear().type('slack');
-            getInputByLabel('Default Slack Webhook')
+            getInputByLabel('Default Slack webhook')
                 .clear()
                 .type('https://hooks.slack.com/services/nova')
                 .blur();
