@@ -54,6 +54,7 @@ function useIntegrationForm<T>({
     const { submitForm } = formik;
 
     async function onTestHandler(optionsArg = {}) {
+        setMessage(null);
         setIsTesting(true);
         setOptions(optionsArg);
         const response = await submitForm();
@@ -61,6 +62,7 @@ function useIntegrationForm<T>({
     }
 
     async function onSaveHandler(optionsArg = {}) {
+        setMessage(null);
         setIsTesting(false);
         setOptions(optionsArg);
         const response = await submitForm();

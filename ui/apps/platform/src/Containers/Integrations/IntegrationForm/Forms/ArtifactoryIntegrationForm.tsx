@@ -127,8 +127,8 @@ function ArtifactoryIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
+                {message && <FormMessage message={message} />}
                 <Form isWidthLimited>
-                    {message && <FormMessage message={message} />}
                     <FormLabelGroup
                         label="Integration name"
                         isRequired
@@ -140,7 +140,6 @@ function ArtifactoryIntegrationForm({
                             isRequired
                             type="text"
                             id="config.name"
-                            placeholder="(ex. Artifactory)"
                             value={values.config.name}
                             onChange={onChange}
                             onBlur={handleBlur}
@@ -153,12 +152,12 @@ function ArtifactoryIntegrationForm({
                         fieldId="config.docker.endpoint"
                         touched={touched}
                         errors={errors}
+                        helperText="(example, artifactory.example.com)"
                     >
                         <TextInput
                             isRequired
                             type="text"
                             id="config.docker.endpoint"
-                            placeholder="(ex. artifactory.example.com)"
                             value={values.config.docker.endpoint}
                             onChange={onChange}
                             onBlur={handleBlur}
@@ -167,6 +166,7 @@ function ArtifactoryIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Username"
+                        isRequired
                         fieldId="config.docker.username"
                         touched={touched}
                         errors={errors}
@@ -181,7 +181,7 @@ function ArtifactoryIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
                             helperText="Setting this to false will use the currently stored credentials, if they exist."
