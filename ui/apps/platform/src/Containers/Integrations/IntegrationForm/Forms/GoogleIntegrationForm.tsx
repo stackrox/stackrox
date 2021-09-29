@@ -277,7 +277,7 @@ function DockerIntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
-                        isValid={isValid}
+                        isDisabled={!isValid}
                     >
                         Test
                     </FormTestButton>

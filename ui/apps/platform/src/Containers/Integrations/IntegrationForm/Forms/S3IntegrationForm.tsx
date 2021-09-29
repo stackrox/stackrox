@@ -419,7 +419,7 @@ function S3IntegrationForm({
                         onTest={onTest}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
-                        isValid={isValid}
+                        isDisabled={!isValid}
                     >
                         Test
                     </FormTestButton>

@@ -75,7 +75,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
             } else {
                 await testIntegrationV2(source, data);
             }
-            return { message: 'Test was successful', isError: false };
+            return { message: `The test was successful`, isError: false };
         } catch (error) {
             return { message: error?.response?.data?.error || error, isError: true };
         }
