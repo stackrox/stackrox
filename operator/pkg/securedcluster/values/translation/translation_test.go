@@ -49,7 +49,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	testingUtils.AssertPathValueMatches(t, vals, regexp.MustCompile("[0-9a-f]{32}"), "meta.configFingerprintOverride")
 }
 
-func TestTranslateComplete(t *testing.T) {
+func TestTranslate(t *testing.T) {
 	type args struct {
 		clientSet kubernetes.Interface
 		sc        platform.SecuredCluster
@@ -60,7 +60,31 @@ func TestTranslateComplete(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
-		"SecuredCluster basic spec": {
+		"minimal spec": {
+			args: args{
+				clientSet: newFakeClientSetWithInitBundle(),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+			},
+		},
+		"complete spec": {
 			args: args{
 				clientSet: newFakeClientSetWithInitBundle(),
 				sc: platform.SecuredCluster{
@@ -81,7 +105,7 @@ func TestTranslateComplete(t *testing.T) {
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
 							ListenOnCreates:      pointer.BoolPtr(true),
-							ListenOnUpdates:      pointer.BoolPtr(true),
+							ListenOnUpdates:      pointer.BoolPtr(false),
 							ListenOnEvents:       pointer.BoolPtr(true),
 							ContactImageScanners: platform.ScanIfMissing.Pointer(),
 							TimeoutSeconds:       pointer.Int32Ptr(4),
@@ -201,13 +225,13 @@ func TestTranslateComplete(t *testing.T) {
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
 						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
+						"enforceOnUpdates": false,
 						"scanInline":       true,
 						"disableBypass":    false,
 						"timeout":          4,
 					},
 					"listenOnCreates": true,
-					"listenOnUpdates": true,
+					"listenOnUpdates": false,
 					"listenOnEvents":  true,
 					"nodeSelector": map[string]interface{}{
 						"admission-ctrl-node-selector1": "admission-ctrl-node-selector-val1",

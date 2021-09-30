@@ -14,6 +14,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -71,6 +72,8 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 
 // Translate translates a SecuredCluster CR into helm values.
 func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (chartutil.Values, error) {
+	t.setDefaults(&sc)
+
 	v := translation.NewValuesBuilder()
 
 	v.SetStringValue("clusterName", sc.Spec.ClusterName)
@@ -145,9 +148,10 @@ func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.Sec
 }
 
 func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.SecuredCluster, secretName string) error {
-	if _, err := t.clientSet.CoreV1().Secrets(sc.Namespace).Get(ctx, secretName, metav1.GetOptions{}); err != nil {
+	namespace := sc.Namespace
+	if _, err := t.clientSet.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{}); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return errors.Wrapf(err, "init-bundle secret %q does not exist, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the cluster", secretName)
+			return errors.Wrapf(err, "init-bundle secret %q does not exist in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", secretName, namespace)
 		}
 		return errors.Wrapf(err, "failed receiving secret %q", secretName)
 	}
@@ -288,6 +292,20 @@ func (t Translator) getComplianceContainerValues(compliance *platform.ContainerS
 	cv.AddChild("complianceResources", translation.GetResources(compliance.Resources))
 
 	return &cv
+}
+
+// Sets defaults that might not be applied on the resource due to ROX-8046.
+// Only defaults that result in behaviour different from the Helm chart defaults should be included here.
+func (t Translator) setDefaults(sc *platform.SecuredCluster) {
+	if sc.Spec.AdmissionControl == nil {
+		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
+	}
+	if sc.Spec.AdmissionControl.ListenOnCreates == nil {
+		sc.Spec.AdmissionControl.ListenOnCreates = pointers.Bool(true)
+	}
+	if sc.Spec.AdmissionControl.ListenOnUpdates == nil {
+		sc.Spec.AdmissionControl.ListenOnUpdates = pointers.Bool(true)
+	}
 }
 
 func getMetaValues(sc platform.SecuredCluster) *translation.ValuesBuilder {

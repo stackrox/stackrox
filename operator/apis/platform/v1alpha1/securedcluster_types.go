@@ -89,16 +89,16 @@ type SensorComponentSpec struct {
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.
 type AdmissionControlComponentSpec struct {
 	// Set this to 'true' to enable preventive policy enforcement for object creations.
-	//+kubebuilder:validation:Default=false
-	//+kubebuilder:default=false
+	//+kubebuilder:validation:Default=true
+	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ListenOnCreates *bool `json:"listenOnCreates,omitempty"`
 
 	// Set this to 'true' to enable preventive policy enforcement for object updates.
 	//
 	// Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well.
-	//+kubebuilder:validation:Default=false
-	//+kubebuilder:default=false
+	//+kubebuilder:validation:Default=true
+	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ListenOnUpdates *bool `json:"listenOnUpdates,omitempty"`
 

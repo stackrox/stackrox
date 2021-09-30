@@ -62,7 +62,7 @@ spec:
                     - DoNotScanInline
                     type: string
                   listenOnCreates:
-                    default: false
+                    default: true
                     description: Set this to 'true' to enable preventive policy enforcement
                       for object creations.
                     type: boolean
@@ -72,7 +72,7 @@ spec:
                       for Kubernetes events (port-forward and exec).
                     type: boolean
                   listenOnUpdates:
-                    default: false
+                    default: true
                     description: "Set this to 'true' to enable preventive policy enforcement
                       for object updates. \n Note: this will not have any effect unless
                       'Listen On Creates' is set to 'true' as well."

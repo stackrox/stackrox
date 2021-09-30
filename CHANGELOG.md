@@ -19,6 +19,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Operator now supports disabling the admin password generation by setting Central's option `adminPasswordGenerationDisabled` to `true`.
 - Roxctl now supports shell completion for bash, zsh, fish and powershell
 - Added `roxctl central debug authz-trace` command. It streams built-in authorizer traces for all incoming requests. 
+- Operator defaults changed for `SecuredCluster` fields `spec.admissionControl.listenOnCreates` and `spec.admissionControl.listenOnUpdates`
+  from `false` to `true`. This should not affect these settings in existing `SecuredCluster` resource instances
+  where the previous default had already been applied at instance creation (this typically happens when creating the resource from the OpenShift console).
+  In some circumstances (for example if the instance was created without a `spec.admissionControl` section from the CLI),
+  the default might not have been applied: a symptom of this is that the fields are not shown when printing the object.
+  In these cases this update will change the behaviour of admission controller.
 
 ## [65.0]
 - Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 
