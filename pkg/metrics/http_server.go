@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	defaultAddress = ":9090"
 	metricsURLPath = "/metrics"
 )
 
@@ -32,6 +31,7 @@ func NewDefaultHTTPServer() *HTTPServer {
 	if err := env.ValidateMetricsSetting(); err != nil {
 		utils.Should(errors.Wrap(err, "invalid metrics port setting"))
 		log.Error(errors.Wrap(err, "metrics server is disabled"))
+		return nil
 	}
 	if !env.MetricsEnabled() {
 		log.Warn("Metrics server is disabled")
