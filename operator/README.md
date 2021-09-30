@@ -241,3 +241,8 @@ So far only tested on an OpenShift cluster.
 kubectl delete index-test
 
 ```
+
+## Extending the StackRox Custom Resource Definitions
+
+Instructions and best practices on how to extend the StackRox CRDs is contained in the separate file
+[EXTENDING_CRDS.md](./EXTENDING_CRDS.md).
