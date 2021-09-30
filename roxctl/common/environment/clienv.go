@@ -1,6 +1,8 @@
 package environment
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/roxctl/common"
 	"google.golang.org/grpc"
 )
@@ -9,7 +11,7 @@ import (
 //go:generate mockgen-wrapper
 type Environment interface {
 	// HTTPClient returns a common.RoxctlHTTPClient
-	HTTPClient() common.RoxctlHTTPClient
+	HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error)
 
 	// GRPCConnection returns an authenticated grpc.ClientConn
 	GRPCConnection() (*grpc.ClientConn, error)

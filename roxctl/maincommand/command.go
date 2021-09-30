@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/completion"
 	"github.com/stackrox/rox/roxctl/deployment"
@@ -43,13 +44,15 @@ func Command() *cobra.Command {
 		SilenceUsage: true,
 		Use:          os.Args[0],
 	}
+	cliEnvironment := environment.NewCLIEnvironment(environment.DefaultIO())
+
 	c.AddCommand(
 		central.Command(),
 		cluster.Command(),
 		collector.Command(),
 		deployment.Command(),
 		logconvert.Command(),
-		image.Command(),
+		image.Command(cliEnvironment),
 		scanner.Command(),
 		sensor.Command(),
 		helm.Command(),

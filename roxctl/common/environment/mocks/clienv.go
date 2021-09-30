@@ -10,6 +10,7 @@ import (
 	environment "github.com/stackrox/rox/roxctl/common/environment"
 	grpc "google.golang.org/grpc"
 	reflect "reflect"
+	time "time"
 )
 
 // MockEnvironment is a mock of Environment interface
@@ -36,17 +37,18 @@ func (m *MockEnvironment) EXPECT() *MockEnvironmentMockRecorder {
 }
 
 // HTTPClient mocks base method
-func (m *MockEnvironment) HTTPClient() common.RoxctlHTTPClient {
+func (m *MockEnvironment) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HTTPClient")
+	ret := m.ctrl.Call(m, "HTTPClient", timeout)
 	ret0, _ := ret[0].(common.RoxctlHTTPClient)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // HTTPClient indicates an expected call of HTTPClient
-func (mr *MockEnvironmentMockRecorder) HTTPClient() *gomock.Call {
+func (mr *MockEnvironmentMockRecorder) HTTPClient(timeout interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockEnvironment)(nil).HTTPClient))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockEnvironment)(nil).HTTPClient), timeout)
 }
 
 // GRPCConnection mocks base method

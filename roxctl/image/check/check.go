@@ -3,7 +3,6 @@ package check
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,68 +11,99 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/retry"
+	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
-	"github.com/stackrox/rox/roxctl/common/util"
+	"google.golang.org/grpc"
+)
+
+const (
+	jsonFlagName     = "json"
+	jsonFailFlagName = "json-fail-on-policy-violations"
 )
 
 // Command checks the image against image build lifecycle policies
-func Command() *cobra.Command {
-	const (
-		jsonFlagName     = "json"
-		jsonFailFlagName = "json-fail-on-policy-violations"
-	)
-	var (
-		image                  string
-		json                   bool
-		failViolationsWithJSON bool
-		retryDelay             int
-		retryCount             int
-		sendNotifications      bool
-		policyCategories       []string
-		printAllViolations     bool
-	)
+func Command(cliEnvironment environment.Environment) *cobra.Command {
+	imageCheckCmd := &imageCheckCommand{env: cliEnvironment}
+
 	c := &cobra.Command{
-		Use: "check",
-		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return checkImageWithRetry(image, json, failViolationsWithJSON, sendNotifications, flags.Timeout(c), retryDelay, retryCount, policyCategories, printAllViolations)
-		}),
-		PreRun: func(c *cobra.Command, args []string) {
-			jsonFlag := c.Flag(jsonFlagName)
-			jsonFailFlag := c.Flag(jsonFailFlagName)
-			if !jsonFlag.Changed && jsonFailFlag.Changed {
-				fmt.Fprintf(os.Stderr, "Note: --%s has no effect when --%s is not specified.\n", jsonFailFlag.Name, jsonFlag.Name)
+		Use:  "check",
+		Args: cobra.NoArgs,
+		RunE: func(c *cobra.Command, args []string) error {
+			if err := imageCheckCmd.Construct(nil, c); err != nil {
+				return err
 			}
+			if err := imageCheckCmd.Validate(); err != nil {
+				return err
+			}
+			return imageCheckCmd.CheckImage()
 		},
 	}
 
-	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
+	c.Flags().StringVarP(&imageCheckCmd.image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	pkgUtils.Must(c.MarkFlagRequired("image"))
 
-	c.Flags().BoolVar(&json, jsonFlagName, false, "Output policy results as JSON")
-	c.Flags().BoolVar(&failViolationsWithJSON, jsonFailFlagName, true,
+	c.Flags().BoolVar(&imageCheckCmd.json, jsonFlagName, false, "Output policy results as JSON")
+	c.Flags().BoolVar(&imageCheckCmd.failViolationsWithJSON, jsonFailFlagName, true,
 		"Whether policy violations should cause the command to exit non-zero in JSON output mode too. "+
 			"This flag only has effect when --json is also specified.")
-	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds.")
-	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "number of retries before exiting as error.")
-	c.Flags().BoolVar(&sendNotifications, "send-notifications", false,
+	c.Flags().IntVarP(&imageCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&imageCheckCmd.retryCount, "retries", "r", 0, "number of retries before exiting as error.")
+	c.Flags().BoolVar(&imageCheckCmd.sendNotifications, "send-notifications", false,
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
-	c.Flags().StringSliceVarP(&policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
-	c.Flags().BoolVar(&printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
+	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	return c
 }
 
-func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, retryDelay int, retryCount int, policyCategories []string, printAllViolations bool) error {
+// imageCheckCommand holds all configurations and metadata to execute an image check
+type imageCheckCommand struct {
+	image                  string
+	json                   bool
+	failViolationsWithJSON bool
+	retryDelay             int
+	retryCount             int
+	sendNotifications      bool
+	policyCategories       []string
+	printAllViolations     bool
+	timeout                time.Duration
+	env                    environment.Environment
+	centralDetectionSvc    centralDetectionService
+}
+
+// centralDetectionService abstracts away the gRPC call to the detection service within central.
+// this is especially useful for testing
+type centralDetectionService interface {
+	DetectBuildTime(ctx context.Context, in *v1.BuildDetectionRequest, opts ...grpc.CallOption) (*v1.BuildDetectionResponse, error)
+}
+
+// Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
+func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command) error {
+	i.timeout = flags.Timeout(cmd)
+	return nil
+}
+
+// Validate will validate the injected values and check whether it's possible to execute the operation with the
+// provided values
+func (i *imageCheckCommand) Validate() error {
+	if i.failViolationsWithJSON && !i.json {
+		fmt.Fprintf(i.env.InputOutput().ErrOut, "Note: --%s has no effect when --%s is not specified.\n", jsonFailFlagName, jsonFlagName)
+	}
+	return nil
+}
+
+// CheckImage will execute the image check with retry functionality
+func (i *imageCheckCommand) CheckImage() error {
 	err := retry.WithRetry(func() error {
-		return checkImage(image, json, failViolationsWithJSON, sendNotifications, timeout, policyCategories, printAllViolations)
+		return i.checkImage()
 	},
-		retry.Tries(retryCount+1),
+		retry.Tries(i.retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
-			fmt.Fprintf(os.Stderr, "Checking image failed: %v. Retrying after %v seconds\n", err, retryDelay)
-			time.Sleep(time.Duration(retryDelay) * time.Second)
+			fmt.Fprintf(i.env.InputOutput().ErrOut, "Checking image failed: %v. Retrying after %v seconds\n", err, i.retryDelay)
+			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}))
 	if err != nil {
 		return err
@@ -81,40 +111,62 @@ func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, s
 	return nil
 }
 
-func checkImage(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, policyCategories []string, printAllViolations bool) error {
+func (i *imageCheckCommand) checkImage() error {
 	// Get the violated policies for the input data.
-	req, err := buildRequest(image, sendNotifications, policyCategories)
+	req, err := buildRequest(i.image, i.sendNotifications, i.policyCategories)
 	if err != nil {
 		return err
 	}
-	alerts, err := sendRequestAndGetAlerts(req, timeout)
+	alerts, err := i.getAlerts(req)
 	if err != nil {
 		return err
 	}
 
-	return reportCheckResults(image, json, failViolationsWithJSON, alerts, printAllViolations)
+	return i.reportCheckResults(alerts)
 }
 
-func reportCheckResults(image string, json bool, failViolationsWithJSON bool, alerts []*storage.Alert, printAllViolations bool) error {
+func (i *imageCheckCommand) reportCheckResults(alerts []*storage.Alert) error {
 	// If json mode was given, print results (as json) and either immediately return or check policy,
 	// depending on a flag.
-	if json {
-		err := report.JSON(os.Stdout, alerts)
+	if i.json {
+		err := report.JSON(i.env.InputOutput().Out, alerts)
 		if err != nil {
 			return err
 		}
-		if failViolationsWithJSON {
+		if i.failViolationsWithJSON {
 			return checkPolicyFailures(alerts)
 		}
 		return nil
 	}
 
 	// Print results in human readable mode.
-	if err := report.PrettyWithResourceName(os.Stdout, alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT, "Image", image, printAllViolations); err != nil {
+	if err := report.PrettyWithResourceName(i.env.InputOutput().Out, alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT, "Image", i.image, i.printAllViolations); err != nil {
 		return err
 	}
 
 	return checkPolicyFailures(alerts)
+}
+
+func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage.Alert, error) {
+	conn, err := i.env.GRPCConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	defer pkgUtils.IgnoreError(conn.Close)
+	svc := v1.NewDetectionServiceClient(conn)
+
+	i.centralDetectionSvc = svc
+
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
+	defer cancel()
+
+	response, err := i.centralDetectionSvc.DetectBuildTime(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.GetAlerts(), err
 }
 
 func checkPolicyFailures(alerts []*storage.Alert) error {
@@ -126,28 +178,6 @@ func checkPolicyFailures(alerts []*storage.Alert) error {
 		}
 	}
 	return nil
-}
-
-// Get the alerts for the command line inputs.
-func sendRequestAndGetAlerts(req *v1.BuildDetectionRequest, timeout time.Duration) ([]*storage.Alert, error) {
-	// Create the connection to the central detection service.
-	conn, err := common.GetGRPCConnection()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	service := v1.NewDetectionServiceClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	// Call detection and return the returned alerts.
-	response, err := service.DetectBuildTime(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return response.GetAlerts(), nil
 }
 
 // Use inputs to generate an image name for request.
