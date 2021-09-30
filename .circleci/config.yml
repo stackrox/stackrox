@@ -535,7 +535,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/cgorman1/apollo-ci:0.3.16
+      - image: quay.io/cgorman1/apollo-ci:0.3.17
         auth:
           username: $QUAY_CGORMAN1_RO_USER
           password: $QUAY_CGORMAN1_RO_PASSWORD
@@ -2261,10 +2261,6 @@ jobs:
             ./scripts/check-todos.sh 'do\s?n.*merge'
 
       - run:
-          name: Install Python's Virtualenv
-          command: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-venv
-
-      - run:
           name: Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)
           no_output_timeout: 30m
           command: |
@@ -2857,10 +2853,6 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
-
-      - run:
-          name: Install Python's Virtualenv
-          command: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-venv
 
       - run:
           name: Build Operator Bundle image
@@ -4586,10 +4578,6 @@ jobs:
 
     - attach_workspace:
         at: /go/src/github.com/stackrox/rox
-
-    - run:
-        name: Install Python's Virtualenv
-        command: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-venv
 
     - run:
         name: Restore KUBECONFIG
