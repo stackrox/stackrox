@@ -12,6 +12,8 @@ import {
 import { IntegrationSource, IntegrationType } from 'Containers/Integrations/utils/integrationUtils';
 import { generateAPIToken } from 'services/APITokensService';
 import { generateClusterInitBundle } from 'services/ClustersService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
 
@@ -64,7 +66,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
             fetchIntegrations();
             return { message: 'Integration was saved successfully', isError: false, responseData };
         } catch (error) {
-            return { message: error?.response?.data?.error || error, isError: true };
+            return { message: getAxiosErrorMessage(error), isError: true };
         }
     }
 
@@ -77,7 +79,7 @@ function useIntegrationActions(): UseIntegrationActionsResult {
             }
             return { message: `The test was successful`, isError: false };
         } catch (error) {
-            return { message: error?.response?.data?.error || error, isError: true };
+            return { message: getAxiosErrorMessage(error), isError: true };
         }
     }
 
