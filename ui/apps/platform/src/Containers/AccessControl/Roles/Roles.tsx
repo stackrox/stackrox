@@ -9,6 +9,7 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
+import NotFoundMessage from 'Components/NotFoundMessage';
 import { getIsDefaultRoleName } from 'constants/accessControl';
 import { AccessScope, fetchAccessScopes } from 'services/AccessScopesService';
 import { Group, fetchAuthProviders } from 'services/AuthService';
@@ -211,18 +212,18 @@ function Roles(): ReactElement {
               });
     }
 
-    const role = roles.find(({ name }) => name === entityName) || roleNew;
-    const isActionable = !getIsDefaultRoleName(role.name);
+    const role = roles.find(({ name }) => name === entityName);
     const hasAction = Boolean(action);
-    const isEntity = hasAction || Boolean(entityName);
+    const isList = typeof entityName !== 'string' && !hasAction;
 
     return (
         <>
-            <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
+            <AccessControlPageTitle entityType={entityType} isList={isList} />
             <AccessControlHeading
                 entityType={entityType}
-                entityName={role && (action === 'create' ? 'Add role' : role.name)}
+                entityName={action === 'create' ? 'Add role' : role?.name}
                 isDisabled={hasAction}
+                isList={isList}
             />
             <AccessControlNav entityType={entityType} isDisabled={hasAction} />
             <AccessControlDescription>
@@ -237,19 +238,7 @@ function Roles(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
-            ) : isEntity ? (
-                <RoleForm
-                    isActionable={isActionable}
-                    action={action}
-                    role={role}
-                    roles={roles}
-                    permissionSets={permissionSets}
-                    accessScopes={accessScopes}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
-                />
-            ) : (
+            ) : isList ? (
                 <RolesList
                     roles={roles}
                     s={s}
@@ -258,6 +247,25 @@ function Roles(): ReactElement {
                     accessScopes={accessScopes}
                     handleCreate={handleCreate}
                     handleDelete={handleDelete}
+                />
+            ) : typeof entityName === 'string' && !role ? (
+                <NotFoundMessage
+                    title="Role does not exist"
+                    message={`Role name: ${entityName}`}
+                    actionText="Roles"
+                    url={getEntityPath(entityType)}
+                />
+            ) : (
+                <RoleForm
+                    isActionable={!role || !getIsDefaultRoleName(role.name)}
+                    action={action}
+                    role={role ?? roleNew}
+                    roles={roles}
+                    permissionSets={permissionSets}
+                    accessScopes={accessScopes}
+                    handleCancel={handleCancel}
+                    handleEdit={handleEdit}
+                    handleSubmit={handleSubmit}
                 />
             )}
         </>

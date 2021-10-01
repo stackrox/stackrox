@@ -363,4 +363,24 @@ describe('Access Control Permission sets', () => {
             'Read and Write Access'
         );
     });
+
+    it('displays message instead of form if entity id does not exist', () => {
+        cy.intercept('GET', permissionSetsApi.list).as('GetAuthProviders');
+        cy.visit(`${permissionSetsUrl}/bogus`);
+        cy.wait('@GetAuthProviders');
+
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
+
+        cy.get(selectors.h1).should('have.text', h1);
+        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+
+        cy.get(selectors.h2).should('not.exist');
+
+        cy.get(selectors.notFound.title).should('have.text', 'Permission set does not exist');
+        cy.get(selectors.notFound.a)
+            .should('have.text', h2)
+            .should('have.attr', 'href', permissionSetsUrl);
+    });
 });

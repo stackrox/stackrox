@@ -20,24 +20,24 @@ const NotFoundMessage = ({
     const isButtonVisible = actionText && onClick;
     const isLinkVisible = actionText && url;
     return (
-        <div className="pf-u-w-100 pf-u-h-100">
-            <Bullseye>
-                <EmptyState>
-                    <Title headingLevel="h4" size="lg">
-                        {title}
-                    </Title>
-                    {message && <EmptyStateBody>{message}</EmptyStateBody>}
-                    {isButtonVisible && <Button variant="primary">{actionText}</Button>}
-                    {isLinkVisible && (
-                        <Link to={url}>
-                            <Button className="pf-u-mt-lg" variant="primary">
-                                {actionText}
-                            </Button>
-                        </Link>
-                    )}
-                </EmptyState>
-            </Bullseye>
-        </div>
+        <Bullseye className="pf-u-flex-grow-1">
+            <EmptyState>
+                <Title headingLevel="h4" size="lg">
+                    {title}
+                </Title>
+                {message && <EmptyStateBody>{message}</EmptyStateBody>}
+                {isButtonVisible && <Button variant="primary">{actionText}</Button>}
+                {isLinkVisible && (
+                    <Button
+                        variant="link"
+                        isInline
+                        component={(props) => <Link {...props} to={url} />}
+                    >
+                        {actionText}
+                    </Button>
+                )}
+            </EmptyState>
+        </Bullseye>
     );
 };
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -19,6 +20,7 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
+import NotFoundMessage from 'Components/NotFoundMessage';
 import { availableAuthProviders } from 'constants/accessControl';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
@@ -111,14 +113,12 @@ function AuthProviders(): ReactElement {
         history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
     }
 
-    const selectedAuthProvider =
-        authProviders.find(({ id }) => id === entityId) || getNewAuthProviderObj(type);
-    const isActionable = hasWriteAccess;
+    const selectedAuthProvider = authProviders.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
-    const isExpanded = hasAction || Boolean(entityId);
+    const isList = typeof entityId !== 'string' && !hasAction;
 
     // if user elected to ignore a save error, don't pester them if they return to the form
-    if (!isExpanded) {
+    if (isList) {
         dispatch(authActions.setSaveAuthProviderStatus(null));
     }
 
@@ -130,34 +130,22 @@ function AuthProviders(): ReactElement {
 
     return (
         <>
-            <AccessControlPageTitle entityType={entityType} isEntity={isExpanded} />
+            <AccessControlPageTitle entityType={entityType} isList={isList} />
             <AccessControlHeading
                 entityType={entityType}
-                entityName={
-                    selectedAuthProvider &&
-                    (action === 'create' ? 'Add auth provider' : selectedAuthProvider.name)
-                }
+                entityName={action === 'create' ? 'Add auth provider' : selectedAuthProvider?.name}
                 isDisabled={hasAction}
+                isList={isList}
             />
             <AccessControlNav entityType={entityType} />
             <AccessControlDescription>
                 Configure authentication providers and rules to assign roles to users
             </AccessControlDescription>
-            {(isFetchingAuthProviders || isFetchingRoles) && (
+            {isFetchingAuthProviders || isFetchingRoles ? (
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
-            )}
-            {!isFetchingAuthProviders && !isFetchingRoles && isExpanded && (
-                <AuthProviderForm
-                    isActionable={isActionable}
-                    action={action}
-                    selectedAuthProvider={selectedAuthProvider}
-                    onClickCancel={onClickCancel}
-                    onClickEdit={onClickEdit}
-                />
-            )}
-            {!isFetchingAuthProviders && !isFetchingRoles && !isExpanded && (
+            ) : isList ? (
                 <>
                     <Toolbar inset={{ default: 'insetNone' }}>
                         <ToolbarContent>
@@ -201,6 +189,21 @@ function AuthProviders(): ReactElement {
                         />
                     )}
                 </>
+            ) : typeof entityId === 'string' && !selectedAuthProvider ? (
+                <NotFoundMessage
+                    title="Auth provider does not exist"
+                    message={`Auth provider id: ${entityId}`}
+                    actionText="Auth providers"
+                    url={getEntityPath(entityType)}
+                />
+            ) : (
+                <AuthProviderForm
+                    isActionable={hasWriteAccess}
+                    action={action}
+                    selectedAuthProvider={selectedAuthProvider ?? getNewAuthProviderObj(type)}
+                    onClickCancel={onClickCancel}
+                    onClickEdit={onClickEdit}
+                />
             )}
         </>
     );

@@ -27,7 +27,12 @@ function AccessControl({ userRolePermissions }) {
     const hasReadAccess = getHasReadPermission('AuthProvider', userRolePermissions);
 
     return (
-        <PageSection variant="light" isFilled id="access-control">
+        <PageSection
+            variant="light"
+            isFilled
+            className="pf-u-display-flex pf-u-flex-direction-column"
+            id="access-control"
+        >
             {hasReadAccess ? (
                 <Switch>
                     <Route exact path={accessControlBasePath}>

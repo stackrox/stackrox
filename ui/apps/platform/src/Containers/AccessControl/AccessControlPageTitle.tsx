@@ -11,15 +11,12 @@ const accessControlLabel = useCaseLabels[useCaseTypes.ACCESS_CONTROL];
 
 export type AccessControlPageTitleProps = {
     entityType: AccessControlEntityType;
-    isEntity: boolean;
+    isList: boolean;
 };
 
-function AccessControlPageTitle({
-    entityType,
-    isEntity,
-}: AccessControlPageTitleProps): ReactElement {
+function AccessControlPageTitle({ entityType, isList }: AccessControlPageTitleProps): ReactElement {
     const entityLabel = accessControlLabels[entityType];
-    const title = `${accessControlLabel} - ${isEntity ? entityLabel : pluralize(entityLabel)}`;
+    const title = `${accessControlLabel} - ${isList ? pluralize(entityLabel) : entityLabel}`;
 
     return <PageTitle title={title} />;
 }

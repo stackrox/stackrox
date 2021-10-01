@@ -12,6 +12,7 @@ export type AccessControlHeadingProps = {
     entityType?: AccessControlEntityType;
     entityName?: string;
     isDisabled?: boolean;
+    isList?: boolean;
 };
 
 /*
@@ -24,12 +25,13 @@ function AccessControlHeading({
     entityType,
     entityName,
     isDisabled,
+    isList,
 }: AccessControlHeadingProps): ReactElement {
     let entityTypeBreadcrumb;
     if (entityType) {
         const entityTypeLabel = pluralize(accessControlLabels[entityType]);
         entityTypeBreadcrumb =
-            isDisabled || !entityName ? (
+            isDisabled || isList ? (
                 <BreadcrumbItem isActive>{entityTypeLabel}</BreadcrumbItem>
             ) : (
                 <BreadcrumbItemLink to={getEntityPath(entityType)}>

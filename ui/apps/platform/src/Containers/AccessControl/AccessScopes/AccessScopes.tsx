@@ -9,6 +9,7 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
+import NotFoundMessage from 'Components/NotFoundMessage';
 import {
     AccessScope,
     createAccessScope,
@@ -152,20 +153,18 @@ function AccessScopes(): ReactElement {
               });
     }
 
-    const accessScope = accessScopes.find(({ id }) => id === entityId) || accessScopeNew;
-    const isActionable = !getIsDefaultAccessScopeId(entityId);
+    const accessScope = accessScopes.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
-    const isEntity = hasAction || Boolean(entityId);
+    const isList = typeof entityId !== 'string' && !hasAction;
 
     return (
         <>
-            <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
+            <AccessControlPageTitle entityType={entityType} isList={isList} />
             <AccessControlHeading
                 entityType={entityType}
-                entityName={
-                    accessScope && (action === 'create' ? 'Add access scope' : accessScope.name)
-                }
+                entityName={action === 'create' ? 'Add access scope' : accessScope?.name}
                 isDisabled={hasAction}
+                isList={isList}
             />
             <AccessControlNav entityType={entityType} isDisabled={hasAction} />
             <AccessControlDescription>
@@ -178,22 +177,29 @@ function AccessScopes(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
-            ) : isEntity ? (
-                <AccessScopeForm
-                    isActionable={isActionable}
-                    action={action}
-                    accessScope={accessScope}
-                    accessScopes={accessScopes}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
-                />
-            ) : (
+            ) : isList ? (
                 <AccessScopesList
                     accessScopes={accessScopes}
                     roles={roles}
                     handleCreate={handleCreate}
                     handleDelete={handleDelete}
+                />
+            ) : typeof entityId === 'string' && !accessScope ? (
+                <NotFoundMessage
+                    title="Access scope does not exist"
+                    message={`Access scope id: ${entityId}`}
+                    actionText="Access scopes"
+                    url={getEntityPath(entityType)}
+                />
+            ) : (
+                <AccessScopeForm
+                    isActionable={!accessScope || !getIsDefaultAccessScopeId(entityId)}
+                    action={action}
+                    accessScope={accessScope ?? accessScopeNew}
+                    accessScopes={accessScopes}
+                    handleCancel={handleCancel}
+                    handleEdit={handleEdit}
+                    handleSubmit={handleSubmit}
                 />
             )}
         </>

@@ -18,6 +18,10 @@ export const selectors = scopeSelectors('#access-control', {
     navLink: 'nav a',
     navLinkCurrent: 'nav a.pf-m-current',
     alertTitle: '.pf-c-alert__title',
+    notFound: scopeSelectors('.pf-c-empty-state', {
+        title: 'h4',
+        a: 'a',
+    }),
 
     list: {
         addButton: 'button:contains("Add")',

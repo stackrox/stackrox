@@ -9,6 +9,7 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
+import NotFoundMessage from 'Components/NotFoundMessage';
 import { getIsDefaultRoleName } from 'constants/accessControl';
 import {
     PermissionSet,
@@ -167,22 +168,18 @@ function PermissionSets(): ReactElement {
               });
     }
 
-    const permissionSet =
-        permissionSets.find(({ id }) => id === entityId) || getNewPermissionSet(resources);
-    const isActionable = !getIsDefaultRoleName(permissionSet.name);
+    const permissionSet = permissionSets.find(({ id }) => id === entityId);
     const hasAction = Boolean(action);
-    const isEntity = hasAction || Boolean(entityId);
+    const isList = typeof entityId !== 'string' && !hasAction;
 
     return (
         <>
-            <AccessControlPageTitle entityType={entityType} isEntity={isEntity} />
+            <AccessControlPageTitle entityType={entityType} isList={isList} />
             <AccessControlHeading
                 entityType={entityType}
-                entityName={
-                    permissionSet &&
-                    (action === 'create' ? 'Add permission set' : permissionSet.name)
-                }
+                entityName={action === 'create' ? 'Add permission set' : permissionSet?.name}
                 isDisabled={hasAction}
+                isList={isList}
             />
             <AccessControlNav entityType={entityType} isDisabled={hasAction} />
             <AccessControlDescription>
@@ -196,22 +193,33 @@ function PermissionSets(): ReactElement {
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
-            ) : isEntity ? (
-                <PermissionSetForm
-                    isActionable={isActionable}
-                    action={action}
-                    permissionSet={getCompletePermissionSet(permissionSet, resources)}
-                    permissionSets={permissionSets}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
-                />
-            ) : (
+            ) : isList ? (
                 <PermissionSetsList
                     permissionSets={permissionSets}
                     roles={roles}
                     handleCreate={handleCreate}
                     handleDelete={handleDelete}
+                />
+            ) : typeof entityId === 'string' && !permissionSet ? (
+                <NotFoundMessage
+                    title="Permission set does not exist"
+                    message={`Permission set id: ${entityId}`}
+                    actionText="Permission sets"
+                    url={getEntityPath(entityType)}
+                />
+            ) : (
+                <PermissionSetForm
+                    isActionable={!permissionSet || !getIsDefaultRoleName(permissionSet.name)}
+                    action={action}
+                    permissionSet={
+                        permissionSet
+                            ? getCompletePermissionSet(permissionSet, resources)
+                            : getNewPermissionSet(resources)
+                    }
+                    permissionSets={permissionSets}
+                    handleCancel={handleCancel}
+                    handleEdit={handleEdit}
+                    handleSubmit={handleSubmit}
                 />
             )}
         </>
