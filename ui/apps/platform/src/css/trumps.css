@@ -28,6 +28,7 @@ body {
     border-top: var(--pf-global--BorderColor--100) var(--pf-global--BorderWidth--sm) solid;
 }
 
+/* overrides for forms, until we remove Tailwind */
 .pf-c-check__input {
     height: var(--pf-c-check__input--Height);
     width: var(--pf-c-check__input--Height);
@@ -38,6 +39,13 @@ body {
     border-right-color: var(--pf-global--BorderColor--300);
     border-bottom-color: var(--pf-global--BorderColor--200);
     border-left-color: var(--pf-global--BorderColor--300);
+}
+
+.pf-c-form-control:disabled {
+    color: var(--pf-c-form-control--disabled--Color) !important;
+    background-color: var(--pf-c-form-control--disabled--BackgroundColor) !important;
+    cursor: not-allowed !important;
+    border-color: var(--pf-c-form-control--disabled--BorderColor) !important;
 }
 
 .pf-c-select__toggle::before {
