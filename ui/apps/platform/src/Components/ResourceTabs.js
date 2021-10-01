@@ -75,7 +75,6 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
                             }
 
                             return (
-                                // eslint-disable-next-line
                                 <li key={datum.title} className="inline-block">
                                     <Link
                                         style={style}

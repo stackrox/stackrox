@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { createMemoryHistory } from 'history';
@@ -56,7 +55,6 @@ function getTableColumns() {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'clusterName',
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { clusterName } = original;
                 const url = 'https://stackrow.com';
@@ -72,7 +70,6 @@ function getTableColumns() {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'namespace',
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { namespace } = original;
                 const url = 'https://wikipedia.org';
@@ -87,7 +84,6 @@ function getTableColumns() {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { policyStatus } = original;
                 return policyStatus === 'pass' ? 'Pass' : <LabelChip text="Fail" type="alert" />;
@@ -99,7 +95,6 @@ function getTableColumns() {
             Header: `Images`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { imageCount } = original;
                 if (imageCount === 0) {

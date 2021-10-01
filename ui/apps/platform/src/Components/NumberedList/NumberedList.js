@@ -7,7 +7,6 @@ import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 const leftSideClasses = 'p-2 text-sm text-primary-800 font-600 w-full';
 
 const NumberedList = ({ data, linkLeftOnly }) => {
-    // eslint-disable-next-line no-unused-vars
     const list = data.map(({ text, subText, url, component, tooltip }, i) => {
         const className = `flex items-center ${i !== 0 ? 'border-t border-base-300' : ''} ${
             url ? 'hover:bg-base-200' : ''

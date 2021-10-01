@@ -12,7 +12,6 @@ import {
 import relationshipTypes from 'constants/relationshipTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 
-// eslint-disable-next-line
 const EntityTabs = ({ entityType, activeTab }) => {
     const workflowState = useContext(workflowStateContext);
     function getTab(tabType) {

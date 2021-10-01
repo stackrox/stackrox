@@ -21,7 +21,6 @@ const CveType = ({ types, context }) => {
         <span>
             <div className="flex flex-col">
                 {sortedTypes.map((cveType) => (
-                    // eslint-disable-next-line react/jsx-key
                     <div className="flex justify-center" key={cveType}>
                         {cveType}
                     </div>
