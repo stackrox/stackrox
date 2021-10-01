@@ -118,11 +118,6 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 			Image: &storage.ContainerImage{
 				Id: digest,
 			},
-			Instances: []*storage.ContainerInstance{
-				{
-					ImageDigest: id,
-				},
-			},
 		})
 	}
 	return &storage.Deployment{

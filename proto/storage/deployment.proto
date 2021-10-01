@@ -72,7 +72,7 @@ message Container {
     repeated EmbeddedSecret secrets     = 7;
     Resources resources                 = 8;
 
-    repeated ContainerInstance instances = 9 [(gogoproto.moretags) = "hash:\"ignore\""];
+    reserved 9; // previously instances
     string name                          = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
 }
 

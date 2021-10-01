@@ -445,7 +445,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"config: ContainerConfig",
 		"id: ID!",
 		"image: ContainerImage",
-		"instances: [ContainerInstance]!",
 		"name: String!",
 		"ports: [PortConfig]!",
 		"resources: Resources",
@@ -4716,11 +4715,6 @@ func (resolver *containerResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *containerResolver) Image(ctx context.Context) (*containerImageResolver, error) {
 	value := resolver.data.GetImage()
 	return resolver.root.wrapContainerImage(value, true, nil)
-}
-
-func (resolver *containerResolver) Instances(ctx context.Context) ([]*containerInstanceResolver, error) {
-	value := resolver.data.GetInstances()
-	return resolver.root.wrapContainerInstances(value, nil)
 }
 
 func (resolver *containerResolver) Name(ctx context.Context) string {

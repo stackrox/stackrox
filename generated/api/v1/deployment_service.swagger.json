@@ -518,12 +518,6 @@
         "resources": {
           "$ref": "#/definitions/storageResources"
         },
-        "instances": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageContainerInstance"
-          }
-        },
         "name": {
           "type": "string"
         }
@@ -580,71 +574,6 @@
         }
       }
     },
-    "storageContainerInstance": {
-      "type": "object",
-      "properties": {
-        "instanceId": {
-          "$ref": "#/definitions/storageContainerInstanceID",
-          "description": "The instance ID of this container."
-        },
-        "containingPodId": {
-          "type": "string",
-          "description": "The pod containing this container instance (kubernetes only)."
-        },
-        "containerName": {
-          "type": "string",
-          "description": "Container name."
-        },
-        "containerIps": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "The IP addresses of this container."
-        },
-        "started": {
-          "type": "string",
-          "format": "date-time",
-          "title": "The start time of the container"
-        },
-        "imageDigest": {
-          "type": "string",
-          "title": "Image ID"
-        },
-        "finished": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The finish time of the container, if it finished."
-        },
-        "exitCode": {
-          "type": "integer",
-          "format": "int32",
-          "description": "The exit code of the container. Only valid when finished is populated."
-        },
-        "terminationReason": {
-          "type": "string",
-          "description": "The reason for the container's termination, if it finished."
-        }
-      },
-      "description": "ContainerInstanceID allows to uniquely identify a container within a cluster."
-    },
-    "storageContainerInstanceID": {
-      "type": "object",
-      "properties": {
-        "containerRuntime": {
-          "$ref": "#/definitions/storageContainerRuntime",
-          "description": "The runtime running this container."
-        },
-        "id": {
-          "type": "string",
-          "description": "The ID of the container, specific to the given runtime."
-        },
-        "node": {
-          "type": "string",
-          "description": "The node on which this container runs."
-        }
-      }
-    },
     "storageContainerNameAndBaselineStatus": {
       "type": "object",
       "properties": {
@@ -659,15 +588,6 @@
         }
       },
       "description": "`ContainerNameAndBaselineStatus` represents a cached result\nof process evaluation on a specific container name."
-    },
-    "storageContainerRuntime": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN_CONTAINER_RUNTIME",
-        "DOCKER_CONTAINER_RUNTIME",
-        "CRIO_CONTAINER_RUNTIME"
-      ],
-      "default": "UNKNOWN_CONTAINER_RUNTIME"
     },
     "storageDeployment": {
       "type": "object",
