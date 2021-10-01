@@ -395,27 +395,27 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 	go w.manageProcessesForPod(&podSig, podWorkload, pod)
 
 	client := w.client.Kubernetes().CoreV1().Pods(pod.Namespace)
+	cleanupPodFn := func(pod *corev1.Pod) {
+		if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
+			log.Errorf("error deleting pod: %v", err)
+		}
+		ipPool.remove(pod.Status.PodIP)
+
+		for _, cs := range pod.Status.ContainerStatuses {
+			containerPool.remove(getShortContainerID(cs.ContainerID))
+		}
+		podSig.Signal()
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-deploymentSig.Done():
 			// Deployment has been deleted so delete pod
-			if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
-				log.Errorf("error deleting pod: %v", err)
-			}
+			cleanupPodFn(pod)
 			return
 		case <-podDeadline.C:
-			if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
-				log.Errorf("error deleting pod: %v", err)
-			}
-			ipPool.remove(pod.Status.PodIP)
-
-			for _, cs := range pod.Status.ContainerStatuses {
-				containerPool.remove(getShortContainerID(cs.ContainerID))
-			}
-
-			podSig.Signal()
+			cleanupPodFn(pod)
 
 			// New pod name and UUID
 			pod.Name = randString()
