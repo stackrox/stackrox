@@ -190,61 +190,22 @@ waitForAPI: &waitForAPI
   run:
     name: Wait for the API server to be up
     command: |
-      # This script cannot be refactored out in our scripts/ directory because we checkout older commits
-      # as a part of tests and this function is widely used
-
-      echo "Waiting for central to start"
-      start_time="$(date '+%s')"
-      while true; do
-        central_json="$(kubectl -n stackrox get deploy/central -o json)"
-        if [[ "$(echo "${central_json}" | jq '.status.replicas')" == 1 && "$(echo "${central_json}" | jq '.status.readyReplicas')" == 1 ]]; then
-          break
-        fi
-        echo "$central_json"
-        if (( $(date '+%s') - start_time > 300 )); then
-          kubectl -n stackrox get pod -o wide
-          kubectl -n stackrox get deploy -o wide
-          echo >&2 "Timed out after 5m"
-          exit 1
-        fi
-        echo -n .
-        sleep 1
-      done
-      echo "central is running"
-
-      export API_HOSTNAME=localhost
-      export API_PORT=8000
-      if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-        export API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
-        export API_PORT=443
-      fi
-      export API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
-      export METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
-      echo "METADATA_URL is set to ${METADATA_URL}"
-      set +e
-      NUM_SUCCESSES_IN_A_ROW=0
-      SUCCESSES_NEEDED_IN_A_ROW=3
-      for i in $(seq 1 40); do
-        metadata="$(curl -sk --connect-timeout 5 --max-time 10 "${METADATA_URL}")"
-        if [[ $? -eq 0 && "$(jq '.licenseStatus' -r \<<<"$metadata")" != "RESTARTING" ]]; then
-          NUM_SUCCESSES_IN_A_ROW=$(( NUM_SUCCESSES_IN_A_ROW + 1 ))
-          if [[ "${NUM_SUCCESSES_IN_A_ROW}" == "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-            break
-          fi
-          sleep 2
-          continue
-        fi
-        NUM_SUCCESSES_IN_A_ROW=0
-        sleep 5
-      done
-      if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-        kubectl -n stackrox get pod
-        echo "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
-        exit 1
-      fi
+      source scripts/lib.sh
+      wait_for_api
       cci-export API_HOSTNAME "$API_HOSTNAME"
       cci-export API_PORT "$API_PORT"
-      cci-export API_ENDPOINT "${API_ENDPOINT}"
+      cci-export API_ENDPOINT "$API_ENDPOINT"
+
+alwaysWaitForAPI: &alwaysWaitForAPI
+  run:
+    name: Wait for the API server to be up
+    command: |
+      source scripts/lib.sh
+      wait_for_api
+      cci-export API_HOSTNAME "$API_HOSTNAME"
+      cci-export API_PORT "$API_PORT"
+      cci-export API_ENDPOINT "$API_ENDPOINT"
+    when: always
 
 waitForSensorK8s: &waitForSensorK8s
   run:
@@ -1262,16 +1223,8 @@ commands:
       - run:
           name: Remove all the existing StackRox resources (they can exist when Circle restarts a container)
           command: |
-            kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait || true
-            # openshift specific:
-            kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait || true
-            kubectl delete -R -f scripts/ci/psp --wait || true
-            kubectl delete ns stackrox --wait || true
-            helm uninstall monitoring || true
-            helm uninstall central || true
-            helm uninstall scanner || true
-            helm uninstall sensor || true
-            kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait || true
+            source scripts/lib.sh
+            remove_existing_stackrox_resources
 
   deploy-webhook-server:
     steps:
@@ -3763,11 +3716,8 @@ jobs:
   gke-api-upgrade-tests:
     executor: custom
     environment:
-      - STORAGE: pvc
-      - LOAD_BALANCER: lb
-      - ROX_SCOPED_ACCESS_CONTROL_V2: true
-      - MONITORING_SUPPORT: false
-
+      ROX_SCOPED_ACCESS_CONTROL_V2: "true"
+      LOAD_BALANCER: "lb"
     steps:
       - checkout
       - check-backend-changes
@@ -3786,360 +3736,26 @@ jobs:
       - setup-gcp
       - attach-gke-cluster:
           cluster-id: upgrade-test
-      - remove-existing-stackrox-resources
-
-      - *setupGoogleAppCreds
 
       - run:
-          name: Setup CI License
+          name: Upgrade tests
           command: |
-            ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
-            cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
+            ROX_LICENSE_KEY="${LONGTERM_LICENSE}" \
+            ./tests/upgrade/run.sh
 
-      - deploy-stackrox:
-          post-central-deploy-steps:
-            - *setupClientTLSCerts
-
-      - *waitForAPI
-
-      - *fetchBundleForRemoteClusterInTheDB
+      - store_artifacts:
+          path: /tmp/upgrade-test-logs
+          destination: upgrade-test-logs
 
       - run:
-          name: Edit the main image and collector image in the YAMLs to be the latest ones
+          name: Get central access credentials
           command: |
-            cci-export ROXCTL_IMAGE_REPO quay.io/cgorman1/roxctl
-            cci-export QUAY_REPO cgorman1
-
-            ## Edit the main image and collector image in the YAMLs to be the latest ones.
-            ## Note that we do NOT want to patch the cluster object directly since we want to ensure
-            ## that an unpatched cluster object works.
-            main_image="${MAIN_IMAGE_REPO:-quay.io/$QUAY_REPO/main}:$(make --quiet tag)"
-            sed -i 's@quay.io/$QUAY_REPO/main[^"]*@'"${main_image}"'@g' ./sensor-remote/sensor.yaml
-            collector_image="${COLLECTOR_IMAGE_REPO:-quay.io/$QUAY_REPO/collector}:$(cat COLLECTOR_VERSION)-latest"
-            sed -i 's@quay.io/$QUAY_REPO/collector[^"]*@'"${collector_image}"'@g' ./sensor-remote/sensor.yaml
-
-      - run:
-          name: Install the sensor
-          command: ./sensor-remote/sensor.sh
-
-      - run:
-          name: "Patch down the sensor resources"
-          command: |
-            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
-
-      - *waitForSensorK8s
-
-      - run:
-          name: Delete the sensor
-          command: |
-            ./sensor-remote/delete-sensor.sh
-            rm -rf sensor-remote
-
-      - run:
-          name: Install the metrics server and deactivate it to reproduce ROX-4429
-          command: |
-            kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
-
-            echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
-            success=0
-            for i in $(seq 1 10); do
-              if kubectl api-resources | grep metrics.k8s.io; then
-                success=1
-                break
-              fi
-              sleep 5
-            done
-            [[ "${success}" -eq 1 ]]
-
-            ## Patch the metrics server to be unreachable
-            kubectl -n kube-system patch svc/metrics-server --type json -p '[{"op": "replace", "path": "/spec/selector", "value": {"k8s-app": "non-existent"}}]'
-
-            echo "Waiting for metrics.k8s.io to NOT be in kubectl API resources..."
-            success=0
-            for i in $(seq 1 10); do
-              kubectl api-resources >stdout.out 2>stderr.out || true
-              if grep 'metrics.k8s.io.*the server is currently unable to handle the request' stderr.out; then
-                success=1
-                break
-              fi
-              echo "metrics.k8s.io still in API resources. Will try again..."
-              cat stdout.out
-              cat stderr.out
-              sleep 5
-            done
-            [[ "${success}" -eq 1 ]]
-            rm -f stdout.out stderr.out
-
-      - run:
-          name: Create a "sensor-remote-new" cluster
-          command: |
-            extra_args=()
-            if .circleci/pr_has_label.sh ci-race-tests; then
-              extra_args+=(-t 60s)
-            fi
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" "${extra_args[@]}" sensor generate k8s \
-              --main-image-repository "${MAIN_IMAGE_REPO:-quay.io/$QUAY_REPO/main}" \
-              --collector-image-repository "${COLLECTOR_IMAGE_REPO:-quay.io/$QUAY_REPO/collector}" \
-              --name remote-new \
-              --create-admission-controller
-
-      - deploy-sensor-via-upgrader-for-upgrade-tests:
-          upgrade-process-id: 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
-          desc: for the first time, to test rollback
-
-      - run:
-          name: Roll back sensor upgrade
-          command: |
-            kubectl proxy --port 28001 &
-            proxy_pid=$!
-            sleep 5
-
-            ROX_UPGRADE_PROCESS_ID=3b2cbf78-d35a-4c2c-b67b-e37f805c14da \
-                ROX_CENTRAL_ENDPOINT="${API_ENDPOINT}" \
-                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
-                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
-                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
-                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
-              ./bin/linux/upgrader -workflow roll-back -kube-config kubectl
-
-            kill "$proxy_pid"
-
-      - deploy-sensor-via-upgrader-for-upgrade-tests:
-          upgrade-process-id: 9b8f2cbb-72c6-4e00-b375-5b50ce7f988b
-          desc: from scratch
-
-      - deploy-sensor-via-upgrader-for-upgrade-tests:
-          upgrade-process-id: 9b8f2cbb-72c6-4e00-b375-5b50ce7f988b
-          desc: again, but with the same upgrade process ID
-
-      - deploy-sensor-via-upgrader-for-upgrade-tests:
-          upgrade-process-id: 789c9262-5dd3-4d58-a824-c2a099892bd6
-          desc: yet again, but with a new upgrade process ID
-
-      - run:
-          name: Patch admission webhook
-          command: |
-            kubectl -n stackrox patch validatingwebhookconfiguration stackrox --type 'json'  -p '[{"op":"replace","path":"/webhooks/0/timeoutSeconds","value":29}]'
-            if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json  | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 29 ]]; then
-              echo "Webhook not patched";
-              kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
-              exit 1;
-            fi
-
-      - run:
-          name: Patch resources
-          command: |
-            kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=1.1,memory=1.1Gi'
-
-      - deploy-sensor-via-upgrader-for-upgrade-tests:
-          upgrade-process-id: 060a9fa6-0ed6-49ac-b70c-9ca692614707
-          desc: after manually patching webhook
-
-      - run:
-          name: Verify the webhook was patched back by the upgrader
-          command: |
-            if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json  | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 30 ]]; then
-              echo "Webhook not patched";
-              kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
-              exit 1;
-            fi
-
-      - deploy-sensor-via-upgrader-for-upgrade-tests:
-          upgrade-process-id: 789c9262-5dd3-4d58-a824-c2a099892bd7
-          desc: with yet another new ID
-
-      - run:
-          name: Verify resources were patched back by the upgrader
-          command: |
-            resources="$(kubectl -n stackrox get deploy/sensor -o 'jsonpath=cpu={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.cpu},memory={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.memory}')"
-            if [[ "$resources" != 'cpu=1,memory=1Gi' ]]; then
-              echo "Resources ($resources) not patched back!"
-              kubectl -n stackrox get deploy/sensor -o yaml
-              exit 1
-            fi
-
-      - run:
-          name: Patch resources and add preserve resources annotation. Also, check toleration preservation
-          command: |
-            kubectl -n stackrox annotate deploy/sensor "auto-upgrade.stackrox.io/preserve-resources=true"
-            kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=1.1,memory=1.1Gi'
-            kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"tolerations":[{"effect":"NoSchedule","key":"thekey","operator":"Equal","value":"thevalue"}]}}}}'
-
-      - deploy-sensor-via-upgrader-for-upgrade-tests:
-          upgrade-process-id: 789c9262-5dd3-4d58-a824-c2a099892bd8
-          desc: after patching resources with preserve annotation
-
-      - run:
-          name: Verify resources were not patched back by the upgrader
-          command: |
-            resources="$(kubectl -n stackrox get deploy/sensor -o 'jsonpath=cpu={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.cpu},memory={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.memory}')"
-            if [[ "$resources" != 'cpu=1100m,memory=1181116006400m' ]]; then
-              echo "Resources ($resources) appear patched back!"
-              kubectl -n stackrox get deploy/sensor -o yaml
-              exit 1
-            fi
-            toleration="$(kubectl -n stackrox get deploy/sensor -o json | jq -rc '.spec.template.spec.tolerations[0] | (.effect + "," + .key + "," + .operator + "," + .value)')"
-            echo "Found toleration: $toleration"
-            if [[ "$toleration" != 'NoSchedule,thekey,Equal,thevalue' ]]; then
-              echo "Tolerations were not passed through to new Sensor"
-              kubectl -n stackrox get deploy/sensor -o yaml
-              exit 1
-            fi
-
-      - remove-existing-stackrox-resources
-
-      - run:
-          name: Install yq
-          command: |
-            sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
-            sudo chmod 0755 /usr/bin/yq
-
-      - run:
-          name: Set Central to a 58 image
-          command: |
-            git checkout b7c73d4d9d627b470d047ea4f026818ed92550d3
-            MAIN_IMAGE_TAG=3.0.58.x-41-gb7c73d4d9d ./deploy/k8s/central.sh
-
-            cci-export FORCE_ROLLBACK_VERSION 3.0.58.x-41-gb7c73d4d9d
-
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
+          when: always
 
-      - *waitForAPI
-
-      - run:
-          name: Restore 56.1 backup to 58 image
-          command: |
-            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
-
-      - *waitForAPI
-
-      - run:
-          name: Checkout current commit again
-          command: git reset --hard "${CIRCLE_SHA1}"
-
-      - run:
-          name: Set Central to current commit
-          command: |
-            kubectl -n stackrox set image deploy/central "central=quay.io/$QUAY_REPO/main:$(make --quiet tag)"
-
-      - *waitForAPI
-      - validate-upgrade:
-          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-          desc: "Validate Central upgrade to current"
-
-      - run:
-          name: Force rollback Central to 58
-          command: |
-            # Check upgrade status before proceeding
-            set -x
-            upgradeStatus="$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/v1/centralhealth/upgradestatus")"
-            echo "upgrade status: $upgradeStatus"
-            echo "force rollback version: $FORCE_ROLLBACK_VERSION"
-            [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" == "$(make --quiet tag)" ]]
-            [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" == "$FORCE_ROLLBACK_VERSION" ]]
-            [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" == "true" ]]
-            [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" -gt "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)" ]]
-
-            # checkout git to 58 so that it can be used for tests
-            git checkout b7c73d4d9d627b470d047ea4f026818ed92550d3
-            # We explicitly need to set CIRCLE_TAG to empty, as it will otherwise dictate
-            # the output of `make tag`.
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
-
-            # Force rollback
-            kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - > /tmp/force_rollback_patch
-            central_config=`yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -`
-            config_patch=`yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch`
-            echo "config patch: $config_patch"
-            echo "config patch: $config_patch"
-
-            kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-            kubectl -n stackrox set image deploy/central "central=quay.io/cgorman1/main:$FORCE_ROLLBACK_VERSION"
-
-      - *waitForAPI
-      - validate-upgrade:
-          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-          desc: "Validate Central is functional after force rollback to 58 by running upgrade test as a smoke test"
-          policies-dir: "../image/policies/files"
-
-      - run:
-          name: Checkout current commit again
-          command: git reset --hard "${CIRCLE_SHA1}"
-
-      - run:
-          name: Set Central + Scanner images to most recent commit
-          command: |
-            kubectl -n stackrox set image deploy/central "central=quay.io/$QUAY_REPO/main:$(make --quiet tag)"
-            kubectl -n stackrox set image deploy/scanner "scanner=quay.io/$QUAY_REPO/scanner:$(cat SCANNER_VERSION)"
-            kubectl -n stackrox set image deploy/scanner-db "*=quay.io/$QUAY_REPO/scanner-db:$(cat SCANNER_VERSION)"
-
-      - *waitForAPI
-      - run:
-          name: Wait for Scanner to be ready
-          command: |
-            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
-
-      - validate-upgrade:
-          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-          desc: "Validate upgrade again after rollback"
-      - check-stackrox-logs:
-          collect: true
-
-      - run:
-          name: "Backup RocksDB"
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup --output rocksdb-backup.zip
-
-      - run:
-          name: "Restore RocksDB"
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore rocksdb-backup.zip
-
-      - *waitForAPI
-      - validate-upgrade-and-check-logs-with-bouncing:
-          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
-          desc: "Validate RocksDB after backup + restore"
-
-      - *fetchBundleForRemoteClusterInTheDB
-
-      - run:
-          name: Install the sensor and patch to correct images
-          command: |
-            ./sensor-remote/sensor.sh
-            kubectl -n stackrox set image deploy/sensor *=quay.io/$QUAY_REPO/main:$(make --quiet tag)
-            kubectl -n stackrox set image deploy/admission-control *=quay.io/$QUAY_REPO/main:$(make --quiet tag)
-            kubectl -n stackrox set image ds/collector collector=quay.io/$QUAY_REPO/collector:$(cat COLLECTOR_VERSION)  compliance=quay.io/$QUAY_REPO/main:$(make --quiet tag)
-
-      - *waitForSensorK8s
-
-      - run:
-          name: Wait for Central reconciliation before running smoke tests
-          command: |
-            # Reconciliation is rather slow in this case, since the central has a DB with a bunch of deployments,
-            # none of which exist. So when sensor connects, the reconciliation deletion takes a while to flush.
-            # This causes flakiness with the smoke tests.
-            # To mitigate this, wait for the deployments to get deleted before running the tests.
-            success=0
-            for i in $(seq 1 90); do
-              numDeployments="$(curl -sSk -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/v1/summary/counts" | jq '.numDeployments' -r)"
-              echo "Try number ${i}. Number of deployments in Central: ${numDeployments}"
-              [[ -n "${numDeployments}" ]]
-              if [[ "${numDeployments}" -lt 100 ]]; then
-                success=1
-                break
-              fi
-              sleep 10
-            done
-            [[ "${success}" == 1 ]]
-
-      - run:
-          name: Run smoke tests now that sensor is up
-          command: |
-            export CLUSTER=K8S
-            make -C qa-tests-backend smoke-test
+      - *alwaysWaitForAPI
 
       - collect-k8s-logs
       - get-and-store-debug-dump
@@ -5054,7 +4670,6 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - build
-            - build-scale-monitoring-and-mock-server
             - provision-gke-api-upgrade-tests
       - provision-gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx

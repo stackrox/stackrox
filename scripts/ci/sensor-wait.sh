@@ -12,7 +12,7 @@ set -eu
 # $ ./scripts/ci/sensor-wait.sh
 #
 
-main() {
+sensor_wait() {
     echo "Waiting for sensor to start"
     start_time="$(date '+%s')"
     while true; do
@@ -52,4 +52,6 @@ main() {
     echo "Collectors are running"
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    sensor_wait "$@"
+fi

@@ -103,6 +103,7 @@ class BaseSpecification extends Specification {
                 println "isOpenShift4: ${ClusterService.isOpenShift4()}"
             }
             catch (Exception ex) {
+                println "Cannot connect to central : ${ex.message}"
                 println "Check the test target deployment, auth credentials, kube service proxy, etc."
                 throw(ex)
             }
