@@ -15,7 +15,7 @@ package storage;
 
 // Next available tag: 34
 message Deployment {
-    string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
+    string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\" sql:\"pk\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
     reserved 3;
     uint64 hash                                = 26 [(gogoproto.moretags) = "hash:\"ignore\""];
@@ -73,7 +73,7 @@ message Container {
     Resources resources                 = 8;
 
     reserved 9; // previously instances
-    string name                          = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
+    string name                          = 10 [(gogoproto.moretags) = "policy:\"Container Name\" sql:\"pk\""];
 }
 
 message Resources {
@@ -200,7 +200,7 @@ message PortConfig {
 
 message ContainerConfig {
     message EnvironmentConfig {
-        string key      = 1 [(gogoproto.moretags) = "search:\"Environment Key,store\""];
+        string key      = 1 [(gogoproto.moretags) = "search:\"Environment Key,store\" sql:\"pk\""];
         string value    = 2 [(gogoproto.moretags) = "search:\"Environment Value,store\""];
         EnvVarSource env_var_source = 3 [(gogoproto.moretags) = "search:\"Environment Variable Source,store\""];
 
