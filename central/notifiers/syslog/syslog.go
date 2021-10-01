@@ -129,7 +129,7 @@ func auditLogToCEF(auditLog *v1.Audit_Message) string {
 	extensionList := make([]string, 0, 8) // There will be 8 different key/value pairs in this message.
 
 	// deviceReciptTime is allowed to be ms since epoch, seems easier than converting it to a time string
-	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, auditLog.GetTime()))
+	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, auditLog.GetTime())...)
 	extensionList = append(extensionList, makeExtensionPair(sourceUserPrivileges, joinRoleNames(auditLog.GetUser().GetRoles())))
 	extensionList = append(extensionList, makeExtensionPair(sourceUserName, auditLog.GetUser().GetUsername()))
 	extensionList = append(extensionList, makeExtensionPair(requestURL, auditLog.GetRequest().GetEndpoint()))
@@ -155,10 +155,10 @@ func alertToCEF(alert *storage.Alert) string {
 	extensionList := make([]string, 0, 5)
 
 	extensionList = append(extensionList, makeExtensionPair(devicePayloadID, alert.GetId()))
-	extensionList = append(extensionList, makeTimestampExtensionPair(startTime, alert.GetFirstOccurred()))
-	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, alert.GetTime()))
+	extensionList = append(extensionList, makeTimestampExtensionPair(startTime, alert.GetFirstOccurred())...)
+	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, alert.GetTime())...)
 	if alert.GetState() == storage.ViolationState_RESOLVED {
-		extensionList = append(extensionList, makeTimestampExtensionPair(endTime, alert.GetTime()))
+		extensionList = append(extensionList, makeTimestampExtensionPair(endTime, alert.GetTime())...)
 	}
 	extensionList = append(extensionList, makeJSONExtensionPair(stackroxKubernetesSecurityPlatformAlert, alert))
 
@@ -184,10 +184,13 @@ func makeJSONExtensionPair(key string, valueObject interface{}) string {
 	return makeExtensionPair(key, string(value))
 }
 
-func makeTimestampExtensionPair(key string, timestamp *types.Timestamp) string {
+func makeTimestampExtensionPair(key string, timestamp *types.Timestamp) []string {
 	// string(seconds) + string(milliseconds) should result in the string representation of a millisecond timestamp
-	msts := strconv.Itoa(int(int64(timestamp.Seconds)*1000 + int64(timestamp.Nanos)/1000000))
-	return makeExtensionPair(key, msts)
+	if timestamp == nil {
+		return nil
+	}
+	msts := strconv.Itoa(int((timestamp.Seconds)*1000 + int64(timestamp.Nanos/1000000)))
+	return []string{makeExtensionPair(key, msts)}
 }
 
 func makeExtensionFromPairs(pairs []string) string {

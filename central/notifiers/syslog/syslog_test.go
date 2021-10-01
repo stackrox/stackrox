@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers/syslog/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -88,7 +89,7 @@ func (s *SyslogNotifierTestSuite) TestCEFMakeTimestampExtensionPair() {
 	value := types.TimestampNow()
 
 	msTs := int64(value.GetSeconds())*1000 + int64(value.GetNanos())/1000000
-	expectedValue := fmt.Sprintf("%s=%s", key, strconv.Itoa(int(msTs)))
+	expectedValue := []string{fmt.Sprintf("%s=%s", key, strconv.Itoa(int(msTs)))}
 
 	extensionPair := makeTimestampExtensionPair(key, value)
 	s.Equal(expectedValue, extensionPair)
@@ -124,4 +125,16 @@ func (s *SyslogNotifierTestSuite) TestSendAuditLog() {
 	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
 	err := syslog.SendAuditMessage(context.Background(), testAuditMessage)
 	s.Require().NoError(err)
+}
+
+func (s *SyslogNotifierTestSuite) TestAlerts() {
+	syslog := s.makeSyslog(makeNotifier())
+	testAlert := fixtures.GetAlert()
+	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
+	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
+
+	// Ensure it doesn't panic with nil timestamps
+	testAlert.FirstOccurred = nil
+	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
+	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 }
