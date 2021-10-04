@@ -944,7 +944,8 @@
           "type": "boolean"
         },
         "helmConfig": {
-          "$ref": "#/definitions/storageCompleteClusterConfig"
+          "$ref": "#/definitions/storageCompleteClusterConfig",
+          "description": "The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed."
         },
         "mostRecentSensorId": {
           "$ref": "#/definitions/storageSensorDeploymentIdentification",
@@ -959,6 +960,9 @@
         },
         "initBundleId": {
           "type": "string"
+        },
+        "managedBy": {
+          "$ref": "#/definitions/storageManagerType"
         }
       }
     },
@@ -1778,6 +1782,16 @@
         }
       },
       "title": "Next available tag: 4"
+    },
+    "storageManagerType": {
+      "type": "string",
+      "enum": [
+        "MANAGER_TYPE_UNKNOWN",
+        "MANAGER_TYPE_MANUAL",
+        "MANAGER_TYPE_HELM_CHART",
+        "MANAGER_TYPE_KUBERNETES_OPERATOR"
+      ],
+      "default": "MANAGER_TYPE_UNKNOWN"
     },
     "storageNode": {
       "type": "object",

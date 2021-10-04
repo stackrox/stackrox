@@ -77,7 +77,7 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 	return s.getCluster(ctx, request.GetId())
 }
 
-// PutCluster creates a new cluster.
+// PutCluster updates an existing cluster.
 func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id must be provided")

@@ -8,12 +8,19 @@ tests:
   - name: "with explicit true setting"
     set:
       helmManaged: true
+    expect: |
+      helmClusterConfig | assertThat(.notHelmManaged == false)
+      helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_HELM_CHART")
   - name: "with false setting"
     set:
       helmManaged: false
+    expect: |
+      helmClusterConfig | assertThat(.notHelmManaged == true)
+      helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_MANUAL")
+
 - name: "Explicitly set fingerprint should be as expected"
   expect: |
-    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | assertThat(.clusterConfig.configFingerprint == "test-fpr")
+    helmClusterConfig | assertThat(.clusterConfig.configFingerprint == "test-fpr")
     envVars(.deployments.sensor; "sensor") | assertThat(.["ROX_HELM_CLUSTER_CONFIG_FP"] == "test-fpr")
   set:
     meta.configFingerprintOverride: "test-fpr"

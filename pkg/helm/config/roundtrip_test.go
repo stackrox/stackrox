@@ -190,6 +190,7 @@ func initClusterFromCompleteClusterConfig(cfg *storage.CompleteClusterConfig) *s
 		TolerationsConfig:          cfg.GetStaticConfig().GetTolerationsConfig(),
 		SlimCollector:              cfg.GetStaticConfig().GetSlimCollector(),
 		HelmConfig:                 cfg,
+		ManagedBy:                  storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 	}
 	return &cluster
 }

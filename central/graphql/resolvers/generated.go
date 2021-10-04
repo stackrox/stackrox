@@ -234,6 +234,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"initBundleId: String!",
 		"labels: [Label!]!",
 		"mainImage: String!",
+		"managedBy: ManagerType!",
 		"mostRecentSensorId: SensorDeploymentIdentification",
 		"name: String!",
 		"priority: Int!",
@@ -730,6 +731,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LifecycleStage(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ListAlert_ResourceType(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
 		"licenseStatus: Metadata_LicenseStatus!",
@@ -3097,6 +3099,11 @@ func (resolver *clusterResolver) Labels(ctx context.Context) labels {
 func (resolver *clusterResolver) MainImage(ctx context.Context) string {
 	value := resolver.data.GetMainImage()
 	return value
+}
+
+func (resolver *clusterResolver) ManagedBy(ctx context.Context) string {
+	value := resolver.data.GetManagedBy()
+	return value.String()
 }
 
 func (resolver *clusterResolver) MostRecentSensorId(ctx context.Context) (*sensorDeploymentIdentificationResolver, error) {
@@ -6982,6 +6989,24 @@ func toListAlert_ResourceTypes(values *[]string) []storage.ListAlert_ResourceTyp
 	output := make([]storage.ListAlert_ResourceType, len(*values))
 	for i, v := range *values {
 		output[i] = toListAlert_ResourceType(&v)
+	}
+	return output
+}
+
+func toManagerType(value *string) storage.ManagerType {
+	if value != nil {
+		return storage.ManagerType(storage.ManagerType_value[*value])
+	}
+	return storage.ManagerType(0)
+}
+
+func toManagerTypes(values *[]string) []storage.ManagerType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ManagerType, len(*values))
+	for i, v := range *values {
+		output[i] = toManagerType(&v)
 	}
 	return output
 }
