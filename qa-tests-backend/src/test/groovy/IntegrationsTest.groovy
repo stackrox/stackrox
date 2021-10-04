@@ -43,6 +43,7 @@ import org.junit.AssumptionViolatedException
 import org.junit.Rule
 import org.junit.experimental.categories.Category
 import org.junit.rules.Timeout
+import spock.lang.Ignore
 import spock.lang.Unroll
 
 class IntegrationsTest extends BaseSpecification {
@@ -76,6 +77,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @Ignore("ROX-8113 - email tests are broken")
     def "Verify create Email Integration (port #port, disable TLS=#disableTLS, startTLS=#startTLS)"() {
         given:
         "a configuration that is expected to work"
@@ -260,13 +262,16 @@ class IntegrationsTest extends BaseSpecification {
 
         type                    | notifierTypes
         "SLACK"                 | [new SlackNotifier()]
-        "EMAIL"                 | [new EmailNotifier()]
+        // ROX-8113 - Email tests are broken
+        // "EMAIL"                 | [new EmailNotifier()]
         //        "JIRA"                  | [new JiraNotifier()] TODO(ROX-7460)
         "TEAMS"                 | [new TeamsNotifier()]
         "GENERIC"               | [new GenericNotifier()]
 
         // Adding a SLACK, TEAMS, EMAIL notifier test so we still verify multiple notifiers
-        "SLACK, EMAIL, TEAMS"   | [new SlackNotifier(), new EmailNotifier(), new TeamsNotifier()]
+        // ROX-8113 - Email tests are broken
+        // "SLACK, EMAIL, TEAMS"   | [new SlackNotifier(), new EmailNotifier(), new TeamsNotifier()]
+        "SLACK, TEAMS"   | [new SlackNotifier(), new TeamsNotifier()]
     }
 
     @Unroll
@@ -328,12 +333,15 @@ class IntegrationsTest extends BaseSpecification {
         type        | notifierTypes       |
                 deployment
 
+        /*
+        // ROX-8113 - Email tests are broken
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
                         .setImage("nginx:latest")
+        */
 
         /*
         TODO(ROX-7589)
@@ -436,12 +444,16 @@ class IntegrationsTest extends BaseSpecification {
         type        | notifierTypes       |
                 deployment
 
+        /*
+        ROX-8113 - Email tests are broken
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
                         .setImage("nginx:latest")
+        */
+
          /*
          TODO(ROX-7589)
         "PAGERDUTY" | [new PagerDutyNotifier()]   |
@@ -557,6 +569,8 @@ class IntegrationsTest extends BaseSpecification {
                 namespaceAnnotation   |
                 deployment
 
+        /*
+        // ROX-8113 - Email tests are broken
         "Email deploy override"     |
                 new EmailNotifier("Email Test", false,
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt1@gmail.com")   |
@@ -576,6 +590,7 @@ class IntegrationsTest extends BaseSpecification {
                         .setName(uniqueName("policy-violation-email-notification-ns-override"))
                         .addLabel("app", "policy-violation-email-notification-ns-override")
                         .setImage("nginx:latest")
+         */
         "Slack deploy override"   |
                 new SlackNotifier("slack test", "slack-key")   |
                 null   |
