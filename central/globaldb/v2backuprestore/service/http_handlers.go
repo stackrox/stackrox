@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -70,7 +69,7 @@ func (s *service) handleRestore(req *http.Request) error {
 	defer cancel()
 	body = ioutils.NewContextBoundReader(readCtx, body)
 
-	attemptDone, err := s.mgr.LaunchRestoreProcess(req.Context(), id, &header, ioutil.NopCloser(body))
+	attemptDone, err := s.mgr.LaunchRestoreProcess(req.Context(), id, &header, io.NopCloser(body))
 	if err != nil {
 		return errors.Errorf("Could not create a restore process: %v", err)
 	}
@@ -134,7 +133,7 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 	defer cancel()
 	body = ioutils.NewContextBoundReader(readCtx, body)
 
-	attemptDone, err := activeProcess.Resume(req.Context(), attemptID, ioutil.NopCloser(body), pos, binenc.BigEndian.EncodeUint32(crc32))
+	attemptDone, err := activeProcess.Resume(req.Context(), attemptID, io.NopCloser(body), pos, binenc.BigEndian.EncodeUint32(crc32))
 	if err != nil {
 		return errors.Errorf("could not resume restore process %s: %v", processID, err)
 	}

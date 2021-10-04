@@ -3,7 +3,6 @@ package ioutils
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -76,7 +75,7 @@ func (b *RWBuf) doWrite(buf []byte) (int, error) {
 		}
 
 		var err error
-		b.tmpFile, err = ioutil.TempFile("", "rwbuf")
+		b.tmpFile, err = os.CreateTemp("", "rwbuf")
 		if err != nil {
 			return 0, errors.Wrap(err, "creating temporary file")
 		}

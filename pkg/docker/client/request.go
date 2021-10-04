@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -146,7 +145,7 @@ func (cli *Client) checkResponseErr(serverResp serverResponse) error {
 		return nil
 	}
 
-	body, err := ioutil.ReadAll(serverResp.body)
+	body, err := io.ReadAll(serverResp.body)
 	if err != nil {
 		return err
 	}
@@ -192,7 +191,7 @@ func (cli *Client) addHeaders(req *http.Request, headers headers) *http.Request 
 func ensureReaderClosed(response serverResponse) {
 	if response.body != nil {
 		// Drain up to 512 bytes and close the body to let the Transport reuse the connection
-		_, _ = io.CopyN(ioutil.Discard, response.body, 512)
+		_, _ = io.CopyN(io.Discard, response.body, 512)
 		_ = response.body.Close()
 	}
 }

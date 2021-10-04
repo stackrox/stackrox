@@ -2,7 +2,7 @@ package zip
 
 import (
 	"archive/zip"
-	"io/ioutil"
+	"io"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
@@ -50,7 +50,7 @@ func (r *Reader) ReadFrom(filePath string) ([]byte, error) {
 	}
 	defer utils.IgnoreError(f.Close)
 
-	return ioutil.ReadAll(f)
+	return io.ReadAll(f)
 }
 
 // Close closes the zip reader.

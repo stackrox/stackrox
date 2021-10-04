@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -93,5 +92,5 @@ func writeFile(file *loader.BufferedFile, destDir string) error {
 	if path.Ext(file.Name) == ".sh" {
 		perms |= 0111
 	}
-	return ioutil.WriteFile(outputPath, file.Data, perms)
+	return os.WriteFile(outputPath, file.Data, perms)
 }

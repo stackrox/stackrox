@@ -3,7 +3,6 @@ package tlsconfig
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -40,7 +39,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 		if filepath.Ext(certFile.Name()) != ".crt" {
 			continue
 		}
-		content, err := ioutil.ReadFile(path.Join(additionalCADir, certFile.Name()))
+		content, err := os.ReadFile(path.Join(additionalCADir, certFile.Name()))
 		if err != nil {
 			return nil, errors.Wrap(err, "reading additional CAs cert")
 		}
@@ -58,7 +57,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 // GetDefaultCertChain reads and parses default cert chain and returns it in DER encoded format
 func GetDefaultCertChain() ([][]byte, error) {
 	certFile := filepath.Join(DefaultCertPath, TLSCertFileName)
-	content, err := ioutil.ReadFile(certFile)
+	content, err := os.ReadFile(certFile)
 	if err != nil {
 		// Ignore error if default certs do not exist on filesystem
 		if os.IsNotExist(err) {

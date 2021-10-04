@@ -2,7 +2,6 @@ package derivelocalvalues
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,8 +30,8 @@ func (k localK8sObjectDescription) get(_ context.Context, kind string, name stri
 	return &resource, nil
 }
 
-func k8sResourcesFromFile(file string) (map[string](map[string]unstructured.Unstructured), error) {
-	content, err := ioutil.ReadFile(file)
+func k8sResourcesFromFile(file string) (map[string]map[string]unstructured.Unstructured, error) {
+	content, err := os.ReadFile(file)
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading input file %q", file)
 	}
@@ -45,7 +44,7 @@ func k8sResourcesFromFile(file string) (map[string](map[string]unstructured.Unst
 }
 
 func k8sResourcesFromString(input string) (map[string]map[string]unstructured.Unstructured, error) {
-	cache := make(map[string](map[string]unstructured.Unstructured))
+	cache := make(map[string]map[string]unstructured.Unstructured)
 	resources, err := k8sutil.UnstructuredFromYAMLMulti(input)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing YAML as Unstructured")

@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -230,7 +229,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 		return nil, errors.Wrapf(err, "calling %s", u.String())
 	}
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 
 		if err != nil {
 			return nil, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)

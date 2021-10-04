@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -42,7 +42,7 @@ func processGoFile(fileName string, knownKeys set.StringSet) error {
 		return err
 	}
 	defer utils.IgnoreError(f.Close)
-	contents, err := ioutil.ReadAll(f)
+	contents, err := io.ReadAll(f)
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,7 @@ package quay
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -104,7 +104,7 @@ func (q *quay) sendRequest(method string, values url.Values, pathSegments ...str
 		return nil, -1, err
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, resp.StatusCode, err
 	}

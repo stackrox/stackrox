@@ -2,7 +2,7 @@ package httputil
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -14,7 +14,7 @@ func ResponseToError(resp *http.Response) HTTPError {
 	}
 
 	var errMsg string
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		errMsg = fmt.Sprintf("error reading response body: %v", err)
 	} else {

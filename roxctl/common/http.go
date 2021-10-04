@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -64,7 +63,7 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 	}
 	if resp.StatusCode != 200 {
 		defer utils.IgnoreError(resp.Body.Close)
-		data, err := ioutil.ReadAll(resp.Body)
+		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Expected status code 200, but received %d. Additionally, there was an error reading the response", resp.StatusCode)
 		}

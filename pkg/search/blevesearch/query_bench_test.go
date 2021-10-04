@@ -2,7 +2,6 @@ package blevesearch
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"testing"
@@ -16,7 +15,7 @@ import (
 )
 
 func preload(b *testing.B) bleve.Index {
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := os.MkdirTemp("", "")
 	require.NoError(b, err)
 
 	defer func() {

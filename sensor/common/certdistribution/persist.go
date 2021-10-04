@@ -1,7 +1,6 @@
 package certdistribution
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -22,7 +21,7 @@ func PersistCertificates(certBundle map[string]string) error {
 	var errs error
 	for certFile, certContents := range certBundle {
 		path := filepath.Join(cacheDir, certFile)
-		if err := ioutil.WriteFile(path, []byte(certContents), 0600); err != nil {
+		if err := os.WriteFile(path, []byte(certContents), 0600); err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "failed to persist certificate file %s", certFile))
 		}
 	}

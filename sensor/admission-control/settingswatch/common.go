@@ -1,7 +1,7 @@
 package settingswatch
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
@@ -10,7 +10,7 @@ import (
 )
 
 func getPoliciesFromFile(file string) (*storage.PolicyList, error) {
-	dataGZ, err := ioutil.ReadFile(file)
+	dataGZ, err := os.ReadFile(file)
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading policies from file %s", file)
 	}

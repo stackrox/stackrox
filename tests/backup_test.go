@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -38,7 +37,7 @@ func TestBackup(t *testing.T) {
 }
 
 func doTestBackup(t *testing.T, includeCerts bool) {
-	tmpZipDir, err := ioutil.TempDir("", scratchPath)
+	tmpZipDir, err := os.MkdirTemp("", scratchPath)
 	require.NoError(t, err)
 	zipFilePath := filepath.Join(tmpZipDir, "backup.zip")
 	out, err := os.Create(zipFilePath)
@@ -72,7 +71,7 @@ func checkZipForVersion(t *testing.T, zipFile *zip.ReadCloser) {
 	require.NotNil(t, versionFileEntry)
 	reader, err := versionFileEntry.Open()
 	require.NoError(t, err)
-	bytes, err := ioutil.ReadAll(reader)
+	bytes, err := io.ReadAll(reader)
 	require.NoError(t, err)
 	version := &migrations.MigrationVersion{}
 	err = yaml.Unmarshal(bytes, version)
@@ -105,7 +104,7 @@ func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {
 	require.NoError(t, err)
 
 	// Dump the untar'd rocks file to a scratch directory.
-	tmpBackupDir, err := ioutil.TempDir("", scratchPath)
+	tmpBackupDir, err := os.MkdirTemp("", scratchPath)
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpBackupDir) }()
 
@@ -119,7 +118,7 @@ func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {
 	require.NoError(t, err)
 
 	// Restore the db to another temp directory
-	tmpDBDir, err := ioutil.TempDir("", scratchPath)
+	tmpDBDir, err := os.MkdirTemp("", scratchPath)
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDBDir) }()
 	err = backupEngine.RestoreDBFromLatestBackup(tmpDBDir, tmpDBDir, gorocksdb.NewRestoreOptions())

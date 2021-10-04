@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -62,7 +62,7 @@ func (suite *clientTestSuite) getTestClient(endpoint string) *clientImpl {
 func (suite *clientTestSuite) allowAll(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	request := new(payload.AuthorizationRequest)
-	reqBytes, err := ioutil.ReadAll(r.Body)
+	reqBytes, err := io.ReadAll(r.Body)
 	suite.NoError(err)
 	err = json.Unmarshal(reqBytes, request)
 	suite.NoError(err)

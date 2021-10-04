@@ -3,7 +3,7 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -30,7 +30,7 @@ func truthiness(val interface{}) bool {
 // honoring `json:"..."` tags instead of requiring `yaml:"..."` tags). Any field that is not present in the output data
 // type, as well as any duplicate keys within the same YAML object will result in an error.
 func unmarshalYamlFromFileStrict(filename string, out interface{}) error {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}

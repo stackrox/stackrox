@@ -1,7 +1,6 @@
 package migrations
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestMigrationVersion_Read(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "migver-read")
+	tempDir, err := os.MkdirTemp("", "migver-read")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.Remove(tempDir)
@@ -60,7 +59,7 @@ func TestMigrationVersion_Read(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.description, func(t *testing.T) {
-			dir, err := ioutil.TempDir(tempDir, "")
+			dir, err := os.MkdirTemp(tempDir, "")
 			require.NoError(t, err)
 			if c.prepFunc != nil {
 				c.prepFunc(dir)
@@ -78,7 +77,7 @@ func TestMigrationVersion_Read(t *testing.T) {
 }
 
 func TestMigrationVersion_Write(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "migver-write")
+	tempDir, err := os.MkdirTemp("", "migver-write")
 	require.NoError(t, err)
 	defer func() {
 		_ = os.Remove(tempDir)
@@ -118,7 +117,7 @@ func TestMigrationVersion_Write(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.description, func(t *testing.T) {
-			dir, err := ioutil.TempDir(tempDir, "")
+			dir, err := os.MkdirTemp(tempDir, "")
 			require.NoError(t, err)
 			if c.prepFunc != nil {
 				c.prepFunc(dir)

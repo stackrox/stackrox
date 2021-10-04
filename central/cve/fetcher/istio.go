@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -196,7 +195,7 @@ func (m *istioCVEManager) reconcileOfflineModeCVEs(zipPath string, forceUpdate b
 		return nil
 	}
 
-	data, err := ioutil.ReadFile(bundledCVEFile)
+	data, err := os.ReadFile(bundledCVEFile)
 	if err != nil {
 		return err
 	}

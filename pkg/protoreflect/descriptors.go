@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"strings"
 
@@ -69,7 +69,7 @@ func ParseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "uncompressing file descriptor data")
 	}
-	uncompressedData, err := ioutil.ReadAll(uncompressedReader)
+	uncompressedData, err := io.ReadAll(uncompressedReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "uncompressing file descriptor data")
 	}

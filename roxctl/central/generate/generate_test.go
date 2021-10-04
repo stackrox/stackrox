@@ -3,7 +3,6 @@ package generate
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,7 +30,7 @@ const (
 )
 
 func TestRestoreKeysAndCerts(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "testGenerate")
+	tmpDir, err := os.MkdirTemp("", "testGenerate")
 	require.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 

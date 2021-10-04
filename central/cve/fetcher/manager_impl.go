@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -137,7 +136,7 @@ func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEsInOfflineMode(zipPath 
 }
 
 func extractK8sIstioCVEsInScannerBundleZip(zipPath string) (string, error) {
-	tmpPath, err := ioutil.TempDir("", "")
+	tmpPath, err := os.MkdirTemp("", "")
 	if err != nil {
 		return "", err
 	}

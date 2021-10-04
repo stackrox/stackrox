@@ -1,14 +1,14 @@
 package endpoints
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 )
 
 func loadFromFile(path string) (*Config, error) {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading endpoints config from file %q", path)
 	}

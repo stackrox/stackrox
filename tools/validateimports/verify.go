@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -49,6 +48,9 @@ var (
 		replacement string
 		allowlist   set.StringSet
 	}{
+		"io/ioutil": {
+			replacement: "https://golang.org/doc/go1.16#ioutil",
+		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
 			allowlist: set.NewStringSet(
@@ -109,7 +111,7 @@ func getRoot(packageName string) (root string, valid bool) {
 
 // getImports parses the given Go file, returning its imports
 func getImports(path string) ([]*ast.ImportSpec, error) {
-	fileContents, err := ioutil.ReadFile(path)
+	fileContents, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

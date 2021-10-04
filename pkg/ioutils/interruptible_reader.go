@@ -2,7 +2,6 @@ package ioutils
 
 import (
 	"io"
-	"io/ioutil"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -29,7 +28,7 @@ type interruptibleReader struct {
 func NewInterruptibleReader(r io.Reader) (io.ReadCloser, InterruptFunc) {
 	rc, _ := r.(io.ReadCloser)
 	if rc == nil {
-		rc = ioutil.NopCloser(r)
+		rc = io.NopCloser(r)
 	}
 
 	ir := &interruptibleReader{

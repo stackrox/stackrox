@@ -2,7 +2,6 @@ package helmconfig
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -15,12 +14,12 @@ const (
 
 // StoreCachedClusterID stores the cluster ID in the filesystem cache.
 func StoreCachedClusterID(id string) error {
-	return ioutil.WriteFile(clusterIDCacheFile, []byte(id+"\n"), 0644)
+	return os.WriteFile(clusterIDCacheFile, []byte(id+"\n"), 0644)
 }
 
 // LoadCachedClusterID loads a cached cluster ID from the filesystem cache.
 func LoadCachedClusterID() (string, error) {
-	cachedIDBytes, err := ioutil.ReadFile(clusterIDCacheFile)
+	cachedIDBytes, err := os.ReadFile(clusterIDCacheFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", nil

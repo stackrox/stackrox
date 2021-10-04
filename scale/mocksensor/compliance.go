@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
@@ -24,7 +24,7 @@ func init() {
 }
 
 func loadComplianceReturn(path string) *compliance.ComplianceReturn {
-	complianceBytes, err := ioutil.ReadFile(path)
+	complianceBytes, err := os.ReadFile(path)
 	utils.CrashOnError(err)
 
 	buf := bytes.NewBuffer(complianceBytes)

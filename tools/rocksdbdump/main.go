@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -221,7 +220,7 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 
 func restoreRocksDBBackup(backupFile string) (string, error) {
 	parentDir := os.TempDir()
-	tmpDbPath, err := ioutil.TempDir(parentDir, "*-rocksdb")
+	tmpDbPath, err := os.MkdirTemp(parentDir, "*-rocksdb")
 	if err != nil {
 		return "", err
 	}

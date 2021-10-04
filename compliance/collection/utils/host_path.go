@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -36,6 +35,6 @@ func ReadHostFile(hostPath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	data, err := ioutil.ReadFile(localPath)
+	data, err := os.ReadFile(localPath)
 	return data, errors.Wrapf(err, "trying to read host file %s", hostPath)
 }

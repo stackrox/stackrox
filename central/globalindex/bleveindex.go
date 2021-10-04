@@ -3,7 +3,6 @@ package globalindex
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -63,7 +62,7 @@ func optionsMapToSlice(options search.OptionsMap) []search.FieldLabel {
 
 // TempInitializeIndices initializes the index under the tmp system folder in the specified path.
 func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, err
 	}

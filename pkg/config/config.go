@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/ghodss/yaml"
@@ -84,7 +83,7 @@ func (c *Config) validate() error {
 
 // ReadConfig reads the configuration file
 func ReadConfig() (*Config, error) {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			conf := new(Config)

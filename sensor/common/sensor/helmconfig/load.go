@@ -2,7 +2,7 @@ package helmconfig
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -18,7 +18,7 @@ const (
 
 // Load loads the cluster configuration for Helm-managed cluster from its canonical location.
 func Load() (*central.HelmManagedConfigInit, error) {
-	contents, err := ioutil.ReadFile(configFile)
+	contents, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading cluster config file")
 	}
@@ -41,7 +41,7 @@ func load(data []byte) (*central.HelmManagedConfigInit, error) {
 
 // GetEffectiveClusterName returns the cluster name which is currently used within central.
 func getEffectiveClusterName() (string, error) {
-	name, err := ioutil.ReadFile(clusterNameFile)
+	name, err := os.ReadFile(clusterNameFile)
 	if err != nil {
 		return "", err
 	}

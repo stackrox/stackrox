@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"text/template"
 
@@ -290,7 +289,7 @@ func main() {
 		if err := t.Execute(buf, templateMap); err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile("store.go", buf.Bytes(), 0644); err != nil {
+		if err := os.WriteFile("store.go", buf.Bytes(), 0644); err != nil {
 			return err
 		}
 		return nil

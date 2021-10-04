@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/stackrox/rox/tools/dontprintferr"
 	"github.com/stackrox/rox/tools/invalidoutputroxctl"
-	"github.com/stackrox/rox/tools/ioutilreaddir"
 	"github.com/stackrox/rox/tools/needlessformat"
 	"github.com/stackrox/rox/tools/protoclone"
 	"github.com/stackrox/rox/tools/regexes"
@@ -24,7 +23,6 @@ func main() {
 		uncheckedifassign.Analyzer,
 		protoclone.Analyzer,
 		unusedroxctlargs.Analyzer,
-		ioutilreaddir.Analyzer,
 		invalidoutputroxctl.Analyzer,
 	)
 }

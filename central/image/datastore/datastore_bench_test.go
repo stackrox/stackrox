@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -34,7 +34,7 @@ func BenchmarkImages(b *testing.B) {
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(b, err)
 
-	tempPath, err := ioutil.TempDir("", "")
+	tempPath, err := os.MkdirTemp("", "")
 	require.NoError(b, err)
 	blevePath := filepath.Join(tempPath, "scorch.bleve")
 	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")

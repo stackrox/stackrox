@@ -9,7 +9,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	mathRand "math/rand"
 	"net/http"
 	"net/url"
@@ -208,7 +207,7 @@ func TestClientCARequested(t *testing.T) {
 
 	clientCAFile := os.Getenv("CLIENT_CA_PATH")
 	require.NotEmpty(t, clientCAFile, "no client CA file path set")
-	pemBytes, err := ioutil.ReadFile(clientCAFile)
+	pemBytes, err := os.ReadFile(clientCAFile)
 	require.NoErrorf(t, err, "Could not read client CA file %s", clientCAFile)
 	caCert, err := helpers.ParseCertificatePEM(pemBytes)
 	require.NoError(t, err, "Could not parse client CA PEM data")

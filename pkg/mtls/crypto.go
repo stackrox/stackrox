@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/cloudflare/cfssl/config"
@@ -128,7 +128,7 @@ func CACertPEM() ([]byte, error) {
 
 func readCAKey() ([]byte, error) {
 	readCAKeyOnce.Do(func() {
-		caKeyBytes, err := ioutil.ReadFile(caKeyFilePathSetting.Setting())
+		caKeyBytes, err := os.ReadFile(caKeyFilePathSetting.Setting())
 		if err != nil {
 			caKeyErr = errors.Wrap(err, "reading CA key")
 			return
@@ -140,7 +140,7 @@ func readCAKey() ([]byte, error) {
 
 func readCA() (*x509.Certificate, []byte, []byte, error) {
 	readCACertOnce.Do(func() {
-		caBytes, err := ioutil.ReadFile(caFilePathSetting.Setting())
+		caBytes, err := os.ReadFile(caFilePathSetting.Setting())
 		if err != nil {
 			caCertErr = errors.Wrap(err, "reading CA file")
 			return

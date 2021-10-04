@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -46,7 +46,7 @@ func gatherThrottleMetricsForever(subsystem string) {
 
 	ticker := time.NewTicker(30 * time.Second)
 	for range ticker.C {
-		data, err := ioutil.ReadFile(statFile)
+		data, err := os.ReadFile(statFile)
 		if err != nil {
 			log.Debugf("error reading file %s: %v", statFile, err)
 			continue

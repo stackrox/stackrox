@@ -8,7 +8,6 @@ import (
 	"hash"
 	"hash/crc32"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -365,7 +364,7 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 		return nil, errors.Wrap(err, "could not get data readers for manifest")
 	}
 
-	bodyReader := ioutils.ChainReadersEager(bytes.NewReader(headerBytes), ioutil.NopCloser(r.dataReader))
+	bodyReader := ioutils.ChainReadersEager(bytes.NewReader(headerBytes), io.NopCloser(r.dataReader))
 	req, err := common.NewHTTPRequestWithAuth(http.MethodPost, "/db/v2/restore", bodyReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create restore HTTP request")
@@ -420,7 +419,7 @@ func (r *v2Restorer) prepareResumeRequest(resumeInfo *v1.DBRestoreProcessStatus_
 		r.transferProgressBar.SetRefill(r.headerSize + pos)
 	}
 
-	req, err := common.NewHTTPRequestWithAuth(http.MethodPost, "/db/v2/resumerestore", ioutil.NopCloser(r.dataReader))
+	req, err := common.NewHTTPRequestWithAuth(http.MethodPost, "/db/v2/resumerestore", io.NopCloser(r.dataReader))
 	if err != nil {
 		return nil, err
 	}

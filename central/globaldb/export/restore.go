@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -119,7 +118,7 @@ func tryRestore(backupFile *os.File, outPath string) error {
 
 // Restore restores a backup from a file.
 func Restore(backupFile *os.File) error {
-	tempRestoreDir, err := ioutil.TempDir(migrations.DBMountPath(), ".restore-")
+	tempRestoreDir, err := os.MkdirTemp(migrations.DBMountPath(), ".restore-")
 	if err != nil {
 		return errors.Wrap(err, "could not create a temporary restore directory")
 	}

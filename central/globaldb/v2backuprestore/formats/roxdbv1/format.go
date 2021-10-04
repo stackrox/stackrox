@@ -2,7 +2,6 @@ package roxdbv1
 
 import (
 	"io"
-	"io/ioutil"
 	"path"
 
 	"github.com/pkg/errors"
@@ -25,7 +24,7 @@ func init() {
 }
 
 func discard(_ common.RestoreFileContext, fileReader io.Reader, _ int64) error {
-	if _, err := io.Copy(ioutil.Discard, fileReader); err != nil {
+	if _, err := io.Copy(io.Discard, fileReader); err != nil {
 		return errors.Wrap(err, "could not discard data file")
 	}
 	return nil

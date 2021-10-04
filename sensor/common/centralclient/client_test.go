@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -55,14 +54,14 @@ func (t *ClientTestSuite) SetupSuite() {
 	ca, err := certgen.GenerateCA()
 	t.Require().NoError(err)
 
-	t.clientCertDir, err = ioutil.TempDir("", "client-certs")
+	t.clientCertDir, err = os.MkdirTemp("", "client-certs")
 	t.Require().NoError(err)
 
 	leafCert, err := ca.IssueCertForSubject(mtls.SensorSubject)
 	t.Require().NoError(err)
 
-	t.Require().NoError(ioutil.WriteFile(filepath.Join(t.clientCertDir, "cert.pem"), leafCert.CertPEM, 0644))
-	t.Require().NoError(ioutil.WriteFile(filepath.Join(t.clientCertDir, "key.pem"), leafCert.KeyPEM, 0600))
+	t.Require().NoError(os.WriteFile(filepath.Join(t.clientCertDir, "cert.pem"), leafCert.CertPEM, 0644))
+	t.Require().NoError(os.WriteFile(filepath.Join(t.clientCertDir, "key.pem"), leafCert.KeyPEM, 0600))
 	t.envIsolator.Setenv(mtls.CertFilePathEnvName, filepath.Join(t.clientCertDir, "cert.pem"))
 	t.envIsolator.Setenv(mtls.KeyFileEnvName, filepath.Join(t.clientCertDir, "key.pem"))
 }

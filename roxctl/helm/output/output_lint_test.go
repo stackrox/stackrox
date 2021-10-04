@@ -2,7 +2,6 @@ package output
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -41,7 +40,7 @@ func TestHelmLint(t *testing.T) {
 func testChartLint(t *testing.T, chartName string, rhacs bool) {
 	const noDebug = false
 	const noDebugChartPath = ""
-	outputDir, err := ioutil.TempDir("", "roxctl-helm-output-lint-")
+	outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
 	require.NoError(t, err)
 
 	defer func() {

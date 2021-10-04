@@ -1,7 +1,6 @@
 package generic
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -37,7 +36,7 @@ type UniqueKeyCRUDTestSuite struct {
 }
 
 func (s *UniqueKeyCRUDTestSuite) SetupTest() {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	s.NoError(err)
 
 	s.dir = dir

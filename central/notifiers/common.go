@@ -3,7 +3,7 @@ package notifiers
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -158,7 +158,7 @@ func CreateError(notifier string, resp *http.Response) error {
 
 func wrapError(notifier string, resp *http.Response) error {
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrapf(err, "Error reading %s response body", notifier)
 		}

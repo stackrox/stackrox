@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"reflect"
 
 	"github.com/gogo/protobuf/types"
@@ -103,7 +103,7 @@ var (
 func main() {
 	w := &bytes.Buffer{}
 	codegen.GenerateResolvers(walkParameters, w)
-	err := ioutil.WriteFile("generated.go", w.Bytes(), 0644)
+	err := os.WriteFile("generated.go", w.Bytes(), 0644)
 	if err != nil {
 		panic(err)
 	}

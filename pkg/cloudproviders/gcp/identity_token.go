@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -55,7 +55,7 @@ func getIdentityToken(ctx context.Context, audience string) (string, error) {
 		return "", nil
 	}
 
-	tokenBytes, err := ioutil.ReadAll(resp.Body)
+	tokenBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "reading response body")
 	}

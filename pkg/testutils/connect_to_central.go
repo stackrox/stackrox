@@ -3,7 +3,6 @@ package testutils
 import (
 	"context"
 	"crypto/tls"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -54,7 +53,7 @@ func RoxPassword(t T) string {
 		return pw
 	}
 
-	pwFromFileBytes, err := ioutil.ReadFile(filepath.Join(GetTestWorkspaceDir(t), defaultPasswordPath))
+	pwFromFileBytes, err := os.ReadFile(filepath.Join(GetTestWorkspaceDir(t), defaultPasswordPath))
 	require.NoErrorf(t, err, "no password set via %s, and could not read password file")
 
 	return strings.TrimSpace(string(pwFromFileBytes))

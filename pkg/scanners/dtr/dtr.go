@@ -3,7 +3,7 @@ package dtr
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -112,7 +112,7 @@ func (d *dtr) sendRequest(method, urlPrefix string) ([]byte, error) {
 		return nil, err
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error reading Docker Trusted Registry response body")
 	}

@@ -5,7 +5,6 @@ import (
 	"hash"
 	"hash/crc32"
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestSlidingReader_ReadAll(t *testing.T) {
 	rwr, err := NewSlidingReader(func() io.Reader { return strings.NewReader("foobarbazqux") }, 4, func() hash.Hash { return crc32.NewIEEE() })
 	require.NoError(t, err)
 
-	data, err := ioutil.ReadAll(rwr)
+	data, err := io.ReadAll(rwr)
 	assert.NoError(t, err)
 	assert.Equal(t, "foobarbazqux", string(data))
 
@@ -32,7 +31,7 @@ func TestSlidingReader_RewindInBuffer(t *testing.T) {
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {
 		readerCreations++
-		return ioutil.NopCloser(strings.NewReader("foobarbazqux"))
+		return io.NopCloser(strings.NewReader("foobarbazqux"))
 	}, 4, func() hash.Hash { return crc32.NewIEEE() })
 	require.NoError(t, err)
 
@@ -60,7 +59,7 @@ func TestSlidingReader_RewindOutOfBuffer(t *testing.T) {
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {
 		readerCreations++
-		return ioutil.NopCloser(strings.NewReader("foobarbazqux"))
+		return io.NopCloser(strings.NewReader("foobarbazqux"))
 	}, 4, func() hash.Hash { return crc32.NewIEEE() })
 	require.NoError(t, err)
 
@@ -116,7 +115,7 @@ func TestSlidingReader_FastForwardNear(t *testing.T) {
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {
 		readerCreations++
-		return ioutil.NopCloser(strings.NewReader("foobarbazqux"))
+		return io.NopCloser(strings.NewReader("foobarbazqux"))
 	}, 4, func() hash.Hash { return crc32.NewIEEE() })
 	require.NoError(t, err)
 
@@ -145,7 +144,7 @@ func TestSlidingReader_FastForwardFar(t *testing.T) {
 	readerCreations := 0
 	rwr, err := NewSlidingReader(func() io.Reader {
 		readerCreations++
-		return ioutil.NopCloser(strings.NewReader("foobarbazqux"))
+		return io.NopCloser(strings.NewReader("foobarbazqux"))
 	}, 4, func() hash.Hash { return crc32.NewIEEE() })
 	require.NoError(t, err)
 

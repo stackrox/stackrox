@@ -3,7 +3,6 @@ package command
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -103,7 +102,7 @@ func findProcess(process string) (string, error) {
 			continue
 		}
 
-		cmdlineBytes, err := ioutil.ReadFile(fmt.Sprintf("/host/proc/%d/cmdline", pid))
+		cmdlineBytes, err := os.ReadFile(fmt.Sprintf("/host/proc/%d/cmdline", pid))
 		if err != nil {
 			if os.IsNotExist(err) {
 				continue

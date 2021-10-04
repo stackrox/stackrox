@@ -4,7 +4,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -121,7 +120,7 @@ func openFileFunc(path string) func() io.ReadCloser {
 	return func() io.ReadCloser {
 		f, err := os.Open(path)
 		if err != nil {
-			return ioutil.NopCloser(ioutils.ErrorReader(err))
+			return io.NopCloser(ioutils.ErrorReader(err))
 		}
 		return f
 	}

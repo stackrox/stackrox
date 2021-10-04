@@ -3,7 +3,7 @@ package sensor
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -29,7 +29,7 @@ const (
 // /run/secrets/kubernetes.io/serviceaccount/token, which contains the namespace as well as the UID of the service
 // account objects as a JWT.
 func populateFromServiceAccountTokenFile(out *storage.SensorDeploymentIdentification) error {
-	tokenBytes, err := ioutil.ReadFile(tokenFile)
+	tokenBytes, err := os.ReadFile(tokenFile)
 	if err != nil {
 		return errors.Wrapf(err, "reading token from file %s", tokenFile)
 	}
@@ -55,7 +55,7 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 		return nil
 	}
 
-	appNamespaceBytes, err := ioutil.ReadFile(namespaceFile)
+	appNamespaceBytes, err := os.ReadFile(namespaceFile)
 	if err != nil {
 		return errors.Wrapf(err, "reading application namespace from file %s", namespaceFile)
 	}

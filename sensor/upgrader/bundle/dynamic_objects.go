@@ -1,7 +1,7 @@
 package bundle
 
 import (
-	"io/ioutil"
+	"io"
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
@@ -19,7 +19,7 @@ func readFile(openFn OpenFunc) ([]byte, error) {
 	}
 	defer utils.IgnoreError(reader.Close)
 
-	return ioutil.ReadAll(reader)
+	return io.ReadAll(reader)
 }
 
 func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents Contents) (k8sutil.Object, error) {

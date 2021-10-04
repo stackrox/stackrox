@@ -8,7 +8,7 @@ import (
 )
 
 // DirExistsAndIsEmpty returns whether the given path is an existing directory, and exists.
-// It is more efficient than calling ioutil.ReadDir for large directories.
+// It is more efficient than calling os.ReadDir for large directories.
 // It returns false unless it determines for certain that the directory exists and is empty --
 // in particular, this means that any underlying filesystem-related errors are swallowed.
 // Callers needing more fine-grained information will not be able to use this function.

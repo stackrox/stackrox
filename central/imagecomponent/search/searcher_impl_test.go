@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -74,7 +73,7 @@ func (suite *ImageComponentSearchTestSuite) SetupSuite() {
 		suite.FailNow("failed to create dackbox", err.Error())
 	}
 
-	suite.blevePath, err = ioutil.TempDir("", "")
+	suite.blevePath, err = os.MkdirTemp("", "")
 	if err != nil {
 		suite.FailNow("failed to create dir for bleve", err.Error())
 	}

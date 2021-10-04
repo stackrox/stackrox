@@ -1,7 +1,7 @@
 package httputil
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -33,7 +33,7 @@ func HTTPGet(url string) ([]byte, error) {
 		return nil, errors.Errorf("failed to GET: %q; received status code: %d", url, resp.StatusCode)
 	}
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading HTTP GET response")
 	}

@@ -1,7 +1,7 @@
 package file
 
 import (
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -12,7 +12,7 @@ var (
 )
 
 func parseSystemUserMap(file string, userMap map[uint32]string) {
-	contents, err := ioutil.ReadFile(containerPath(file))
+	contents, err := os.ReadFile(containerPath(file))
 	if err != nil {
 		log.Error(err)
 		return

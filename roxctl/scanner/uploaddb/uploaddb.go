@@ -2,7 +2,7 @@ package uploaddb
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -33,7 +33,7 @@ func Command() *cobra.Command {
 				return err
 			}
 			defer utils.IgnoreError(resp.Body.Close)
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return errors.Wrap(err, "failed to read body")
 			}

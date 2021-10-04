@@ -3,7 +3,6 @@ package ioutils
 import (
 	"context"
 	"io"
-	"io/ioutil"
 )
 
 type contextBoundReader struct {
@@ -25,7 +24,7 @@ type readResp struct {
 func NewContextBoundReader(ctx context.Context, reader io.Reader) io.ReadCloser {
 	rc, _ := reader.(io.ReadCloser)
 	if rc == nil {
-		rc = ioutil.NopCloser(reader)
+		rc = io.NopCloser(reader)
 	}
 	cbr := &contextBoundReader{
 		ReadCloser: rc,

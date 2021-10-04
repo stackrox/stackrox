@@ -3,7 +3,6 @@ package handler
 import (
 	"archive/zip"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -115,7 +114,7 @@ func handleZipContentsFromOfflineDump(zipPath string) error {
 }
 
 func post(w http.ResponseWriter, r *http.Request) {
-	tempDir, err := ioutil.TempDir("", "scanner-definitions-handler")
+	tempDir, err := os.MkdirTemp("", "scanner-definitions-handler")
 	if err != nil {
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to create temp dir: %v", err)
 		return

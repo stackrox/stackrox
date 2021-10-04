@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/cloudflare/cfssl/helpers"
@@ -54,7 +54,7 @@ func createProvider(c *cobra.Command, args []string) error {
 
 	var pems strings.Builder
 	for _, fn := range flagPEMFiles {
-		b, err := ioutil.ReadFile(fn)
+		b, err := os.ReadFile(fn)
 		if err != nil {
 			return errors.Wrap(err, fn)
 		}

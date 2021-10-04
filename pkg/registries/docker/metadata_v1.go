@@ -2,7 +2,7 @@ package docker
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"strings"
 
 	"github.com/docker/distribution/manifest/schema1"
@@ -123,7 +123,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 	if err != nil {
 		return nil, err
 	}
-	val, err := ioutil.ReadAll(v1r)
+	val, err := io.ReadAll(v1r)
 	if err != nil {
 		return nil, err
 	}

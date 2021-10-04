@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -79,7 +78,7 @@ func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 	var roots *x509.CertPool
 	var customVerifier clientconn.TLSCertVerifier
 	if flags.CAFile() != "" {
-		caPEMData, err := ioutil.ReadFile(flags.CAFile())
+		caPEMData, err := os.ReadFile(flags.CAFile())
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to parse CA certificates from file")
 		}

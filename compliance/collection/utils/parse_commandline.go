@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -29,7 +28,7 @@ func findProcessArgs(processes set.StringSet) ([]string, error) {
 		}
 
 		cmdlineFile := filepath.Join(hostProc, f.Name(), "cmdline")
-		cmdlineBytes, err := ioutil.ReadFile(cmdlineFile)
+		cmdlineBytes, err := os.ReadFile(cmdlineFile)
 		if err != nil {
 			if os.IsNotExist(err) {
 				continue

@@ -1,7 +1,6 @@
 package settingswatch
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,7 +52,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, nil
 	}
 
-	configDataGZ, err := ioutil.ReadFile(configPath)
+	configDataGZ, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading cluster config from file %s", configPath)
 	}
@@ -77,7 +76,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "getting run-time policies from file %s", runTimePoliciesPath)
 	}
 
-	timestampBytes, err := ioutil.ReadFile(timestampPath)
+	timestampBytes, err := os.ReadFile(timestampPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading last update timestamp from file %s", timestampPath)
 	}
@@ -93,7 +92,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}
 
 	var cacheVersion string
-	cacheVersionBytes, err := ioutil.ReadFile(cacheVersionPath)
+	cacheVersionBytes, err := os.ReadFile(cacheVersionPath)
 	if err != nil && !os.IsNotExist(err) {
 		log.Errorf("Failed to read cache version from file %s: %v", cacheVersionPath, err)
 	} else {
@@ -101,7 +100,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}
 
 	var centralEndpoint string
-	centralEndpointBytes, err := ioutil.ReadFile(centralEndpointPath)
+	centralEndpointBytes, err := os.ReadFile(centralEndpointPath)
 	if err != nil && !os.IsNotExist(err) {
 		log.Errorf("Failed to read central endpoint from file %s: %v", centralEndpointPath, err)
 	} else {
@@ -109,7 +108,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}
 
 	var clusterID string
-	clusterIDBytes, err := ioutil.ReadFile(clusterIDPath)
+	clusterIDBytes, err := os.ReadFile(clusterIDPath)
 	if err != nil && !os.IsNotExist(err) {
 		log.Errorf("Failed to read cluster ID from file %s: %v", clusterIDPath, err)
 	} else {

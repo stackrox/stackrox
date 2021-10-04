@@ -1,7 +1,6 @@
 package bolthelpers
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -48,7 +47,7 @@ func newBolt(dbPath string) (*bolt.DB, error) {
 
 // NewTemp creates a new DB, but places it in the host temporary directory.
 func NewTemp(dbPath string) (*bolt.DB, error) {
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, err
 	}

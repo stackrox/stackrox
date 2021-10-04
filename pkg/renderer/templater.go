@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
@@ -201,7 +200,7 @@ func (c Config) GetConfigOverride(name string) (string, error) {
 	}
 	defer utils.IgnoreError(f.Close)
 
-	contents, err := ioutil.ReadAll(f)
+	contents, err := io.ReadAll(f)
 	if err != nil {
 		return "", errors.Wrapf(err, "reading contents of file %s", tgtFile)
 	}

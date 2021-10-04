@@ -7,7 +7,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -39,12 +38,12 @@ func readCertAndKey(serviceName string) (*mtls.IssuedCert, error) {
 	certFile := path.Join(testData, fmt.Sprintf("%s-cert.pem", serviceName))
 	keyFile := path.Join(testData, fmt.Sprintf("%s-key.pem", serviceName))
 
-	certPEM, err := ioutil.ReadFile(certFile)
+	certPEM, err := os.ReadFile(certFile)
 	if err != nil {
 		return nil, err
 	}
 
-	keyPEM, err := ioutil.ReadFile(keyFile)
+	keyPEM, err := os.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +67,7 @@ func readCertAndKey(serviceName string) (*mtls.IssuedCert, error) {
 }
 
 func (s *clusterInitBackendTestSuite) initMockData() error {
-	caCertPEM, err := ioutil.ReadFile("testdata/ca-cert.pem")
+	caCertPEM, err := os.ReadFile("testdata/ca-cert.pem")
 	if err != nil {
 		return err
 	}

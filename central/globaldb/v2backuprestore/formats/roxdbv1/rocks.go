@@ -2,7 +2,6 @@ package roxdbv1
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -24,7 +23,7 @@ func restoreRocksDB(ctx common.RestoreFileContext, fileReader io.Reader, size in
 		return errors.Wrap(err, "could not create rocksdb database directory")
 	}
 
-	tmpDir, err := ioutil.TempDir("", scratchPath)
+	tmpDir, err := os.MkdirTemp("", scratchPath)
 	if err != nil {
 		return err
 	}

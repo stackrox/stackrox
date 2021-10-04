@@ -2,14 +2,14 @@ package x509utils
 
 import (
 	"crypto/x509"
-	"io/ioutil"
+	"os"
 
 	"github.com/cloudflare/cfssl/helpers"
 )
 
 // LoadCertificatePEMFile loads a PEM-encoded certificate from a file.
 func LoadCertificatePEMFile(filename string) (*x509.Certificate, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

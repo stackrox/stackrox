@@ -3,7 +3,6 @@ package tar
 import (
 	"archive/tar"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,14 +45,14 @@ func TestFromPathTarUntar(t *testing.T) {
 }
 
 func doTestTarUntar(t *testing.T, tarFunc func(string, *tar.Writer)) {
-	tmpDirIn, err := ioutil.TempDir("", testBasePathIn)
+	tmpDirIn, err := os.MkdirTemp("", testBasePathIn)
 	assert.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDirIn) }()
 
 	err = createTarDir(t, tmpDirIn)
 	assert.NoError(t, err)
 
-	tmpDir, err := ioutil.TempDir("", testTarHolder)
+	tmpDir, err := os.MkdirTemp("", testTarHolder)
 	assert.NoError(t, err)
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
@@ -69,7 +68,7 @@ func doTestTarUntar(t *testing.T, tarFunc func(string, *tar.Writer)) {
 	err = f.Close()
 	assert.NoError(t, err)
 
-	tmpDirOut, err := ioutil.TempDir("", testBasePathOut)
+	tmpDirOut, err := os.MkdirTemp("", testBasePathOut)
 	defer func() { _ = os.RemoveAll(tmpDirOut) }()
 	assert.NoError(t, err)
 
@@ -121,7 +120,7 @@ func checkUntarDir(t *testing.T, path string) error {
 		// Create a file
 		f, err := os.OpenFile(fullPath, os.O_RDONLY, os.ModePerm)
 		assert.NoError(t, err)
-		b, err := ioutil.ReadAll(f)
+		b, err := io.ReadAll(f)
 		assert.NoError(t, err)
 		assert.Equal(t, string(b), testFileContents)
 	}

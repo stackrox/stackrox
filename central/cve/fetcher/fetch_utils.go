@@ -3,7 +3,6 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -65,7 +64,7 @@ func getCurrentLicenseID() string {
 }
 
 func getLocalCVEChecksum(cveChecksumFile string) (string, error) {
-	b, err := ioutil.ReadFile(cveChecksumFile)
+	b, err := os.ReadFile(cveChecksumFile)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed read k8s CVEs checksum file: %q", cveChecksumFile)
 	}
@@ -73,7 +72,7 @@ func getLocalCVEChecksum(cveChecksumFile string) (string, error) {
 }
 
 func getLocalCVEs(cveFile string) ([]*schema.NVDCVEFeedJSON10DefCVEItem, error) {
-	b, err := ioutil.ReadFile(cveFile)
+	b, err := os.ReadFile(cveFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed read CVEs file: %q", cveFile)
 	}
@@ -92,12 +91,12 @@ func getLocalCVEs(cveFile string) ([]*schema.NVDCVEFeedJSON10DefCVEItem, error) 
 }
 
 func overwriteCVEs(cveFile, cveChecksumFile, checksum, CVEs string) error {
-	err := ioutil.WriteFile(cveFile, []byte(CVEs), 0644)
+	err := os.WriteFile(cveFile, []byte(CVEs), 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to overwrite CVEs file: %q", cveFile)
 	}
 
-	err = ioutil.WriteFile(cveChecksumFile, []byte(checksum), 0644)
+	err = os.WriteFile(cveChecksumFile, []byte(checksum), 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to overwrite CVEs cveChecksumFile file: %q", cveChecksumFile)
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -67,7 +66,7 @@ func checkDeploymentWithRetry(file string, json bool, timeout time.Duration, ret
 }
 
 func checkDeployment(file string, json bool, timeout time.Duration, policyCategories []string, printAllViolations bool) error {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}

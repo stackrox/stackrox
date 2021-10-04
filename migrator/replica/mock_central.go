@@ -2,7 +2,6 @@ package replica
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -42,7 +41,7 @@ type mockCentral struct {
 }
 
 func createCentral(t *testing.T) *mockCentral {
-	mountDir, err := ioutil.TempDir("", "mock-central-")
+	mountDir, err := os.MkdirTemp("", "mock-central-")
 	require.NoError(t, err)
 	mock := mockCentral{t: t, mountPath: mountDir}
 	dbPath := filepath.Join(mountDir, ".db-init")
@@ -93,13 +92,13 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 func (m *mockCentral) upgradeDB(path string) {
 	// Verify no downgrade
 	if fileutil.Exist(filepath.Join(path, "db")) {
-		data, err := ioutil.ReadFile(filepath.Join(path, "db"))
+		data, err := os.ReadFile(filepath.Join(path, "db"))
 		require.NoError(m.t, err)
 		currDBSeq, err := strconv.Atoi(string(data))
 		require.NoError(m.t, err)
 		require.LessOrEqual(m.t, currDBSeq, migrations.CurrentDBVersionSeqNum())
 	}
-	require.NoError(m.t, ioutil.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
+	require.NoError(m.t, os.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
 }
 
 func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
@@ -129,7 +128,7 @@ func (m *mockCentral) runCentral() {
 		migrations.SetCurrent(migrations.CurrentPath())
 	}
 	if !fileutil.Exist(filepath.Join(migrations.CurrentPath(), "db")) {
-		require.NoError(m.t, ioutil.WriteFile(filepath.Join(migrations.CurrentPath(), "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
+		require.NoError(m.t, os.WriteFile(filepath.Join(migrations.CurrentPath(), "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
 	}
 
 	m.verifyCurrent()
@@ -159,7 +158,7 @@ func (m *mockCentral) restore(ver *versionPair) {
 	// Central should be in running state.
 	m.verifyCurrent()
 
-	restoreDir, err := ioutil.TempDir(migrations.DBMountPath(), ".restore-")
+	restoreDir, err := os.MkdirTemp(migrations.DBMountPath(), ".restore-")
 	require.NoError(m.t, os.Symlink(filepath.Base(restoreDir), filepath.Join(migrations.DBMountPath(), ".restore")))
 	require.NoError(m.t, err)
 	// backups from version lower than 3.0.57.0 do not have migration version.
@@ -187,7 +186,7 @@ func (m *mockCentral) setMigrationVersion(path string, ver *versionPair) {
 	migVer := migrations.MigrationVersion{MainVersion: ver.version, SeqNum: ver.seqNum}
 	bytes, err := yaml.Marshal(migVer)
 	require.NoError(m.t, err)
-	require.NoError(m.t, ioutil.WriteFile(filepath.Join(path, migrations.MigrationVersionFile), bytes, 0644))
+	require.NoError(m.t, os.WriteFile(filepath.Join(path, migrations.MigrationVersionFile), bytes, 0644))
 }
 
 func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {
@@ -198,7 +197,7 @@ func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {
 }
 
 func (m *mockCentral) verifyDBVersion(dbPath string, seqNum int) {
-	bytes, err := ioutil.ReadFile(filepath.Join(dbPath, "db"))
+	bytes, err := os.ReadFile(filepath.Join(dbPath, "db"))
 	require.NoError(m.t, err)
 	dbSeq, err := strconv.Atoi(string(bytes))
 	require.NoError(m.t, err)

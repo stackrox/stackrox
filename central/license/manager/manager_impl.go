@@ -3,7 +3,7 @@ package manager
 import (
 	"context"
 	"crypto/sha256"
-	"io/ioutil"
+	"os"
 	"sort"
 	"time"
 
@@ -148,7 +148,7 @@ func (m *manager) Stop() concurrency.Waitable {
 }
 
 func (m *manager) populateLicenseFromSecretNoLock() {
-	data, err := ioutil.ReadFile(secretPath)
+	data, err := os.ReadFile(secretPath)
 	if err != nil {
 		return
 	}

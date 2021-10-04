@@ -3,7 +3,6 @@ package file
 import (
 	"bufio"
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -209,7 +208,7 @@ func EvaluatePath(path string, withContents, recurse bool) (*compliance.File, bo
 			return file, true, nil
 		}
 		var err error
-		file.Content, err = ioutil.ReadFile(pathInContainer)
+		file.Content, err = os.ReadFile(pathInContainer)
 		if err != nil {
 			return nil, false, err
 		}

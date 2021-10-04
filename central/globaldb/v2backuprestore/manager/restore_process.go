@@ -4,7 +4,6 @@ import (
 	"context"
 	"hash/crc32"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -383,7 +382,7 @@ func (p *restoreProcess) processSingleFile(ctx *restoreProcessContext, file *res
 
 	// Wrap the checksumReader inside a NopCloser to ensure we are the ones to close it, as that does the final checksum
 	// validation.
-	if err := file.handlerFunc(fileCtx, ioutil.NopCloser(checksumReader), mfFile.GetDecodedSize()); err != nil {
+	if err := file.handlerFunc(fileCtx, io.NopCloser(checksumReader), mfFile.GetDecodedSize()); err != nil {
 		return err
 	}
 

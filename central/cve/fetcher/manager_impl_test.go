@@ -3,7 +3,7 @@ package fetcher
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
@@ -31,7 +31,7 @@ const (
 )
 
 func TestUnmarshalCorrectCVEs(t *testing.T) {
-	dat, err := ioutil.ReadFile(correctCVEFile)
+	dat, err := os.ReadFile(correctCVEFile)
 	require.Nil(t, err)
 	var cveEntries []schema.NVDCVEFeedJSON10DefCVEItem
 	err = json.Unmarshal(dat, &cveEntries)
@@ -40,7 +40,7 @@ func TestUnmarshalCorrectCVEs(t *testing.T) {
 }
 
 func TestReadChecksum(t *testing.T) {
-	data, err := ioutil.ReadFile(cveChecksumFile)
+	data, err := os.ReadFile(cveChecksumFile)
 	require.Nil(t, err)
 	assert.Equal(t, string(data), "e76a63173f5b1e8bdcc9811faf4a4643266cdcb1e179229e30ffcb0e5d8dbe0c")
 }

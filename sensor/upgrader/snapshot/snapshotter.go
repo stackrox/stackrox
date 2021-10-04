@@ -3,7 +3,7 @@ package snapshot
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -81,7 +81,7 @@ func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]k8sutil.Object, erro
 		return nil, errors.Wrap(err, "creating gzip readere for state snapshot data")
 	}
 
-	allObjBytes, err := ioutil.ReadAll(gzReader)
+	allObjBytes, err := io.ReadAll(gzReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading compressed state snapshot data")
 	}

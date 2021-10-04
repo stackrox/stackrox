@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -134,7 +133,7 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 
 func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 	// Read and parse Helm values.
-	valBytes, err := ioutil.ReadFile(helmValuesFile)
+	valBytes, err := os.ReadFile(helmValuesFile)
 	h.Require().NoError(err, "failed to read Helm values from file %q", helmValuesFile)
 	helmCfg, err := chartutil.ReadValues(valBytes)
 	h.Require().NoError(err, "failed to parse Helm configuration in file %q", helmValuesFile)
