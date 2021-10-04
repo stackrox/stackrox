@@ -563,13 +563,11 @@ func (d *detectorImpl) processNetworkFlow(flow *storage.NetworkFlow) {
 	d.processAlertsForFlowOnEntity(flow.GetProps().GetDstEntity(), flowDetails)
 }
 
-// The upstream code can sometimes emit events without a timestamp which is problematic
-// because UI users will see 1st of Jan 1970 as timestamp.
-// TODO(ROX-6858): remove this workaround after the fix is made
 func extractTimestamp(flow *storage.NetworkFlow) *types.Timestamp {
-	timestamp := flow.GetLastSeenTimestamp()
-	if timestamp == nil {
-		return types.TimestampNow()
+	// If the flow has terminated already, then use the last seen timestamp.
+	if timestamp := flow.GetLastSeenTimestamp(); timestamp != nil {
+		return timestamp
 	}
-	return timestamp
+	// If the flow is still active, use the current timestamp.
+	return types.TimestampNow()
 }
