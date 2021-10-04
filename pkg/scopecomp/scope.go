@@ -48,10 +48,10 @@ func (c *CompiledScope) MatchesDeployment(deployment *storage.Deployment) bool {
 	if c == nil {
 		return true
 	}
-	if c.ClusterID != "" && c.ClusterID != deployment.GetClusterId() {
+	if !c.MatchesCluster(deployment.GetClusterId()) {
 		return false
 	}
-	if !c.Namespace.MatchWholeString(deployment.GetNamespace()) {
+	if !c.MatchesNamespace(deployment.GetNamespace()) {
 		return false
 	}
 
@@ -90,8 +90,10 @@ func (c *CompiledScope) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) b
 	if c == nil {
 		return true
 	}
-	// TODO: Match on cluster name once we have it in sensor
-	if !c.Namespace.MatchWholeString(auditEvent.GetObject().GetNamespace()) {
+	if !c.MatchesCluster(auditEvent.GetObject().GetClusterId()) {
+		return false
+	}
+	if !c.MatchesNamespace(auditEvent.GetObject().GetNamespace()) {
 		return false
 	}
 	return true
