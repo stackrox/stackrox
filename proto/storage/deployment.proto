@@ -89,7 +89,7 @@ message Volume {
         HOST_TO_CONTAINER = 1;
         BIDIRECTIONAL     = 2;
     }
-    string name                        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
+    string name                        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\" sql:\"pk\""];
     string source                      = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
     string destination                 = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
     bool read_only                     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
@@ -157,8 +157,8 @@ message ContainerInstanceID {
 }
 
 message EmbeddedSecret {
-    string name = 1 [(gogoproto.moretags) = "search:\"Secret\""];
-    string path = 2 [(gogoproto.moretags) = "search:\"Secret Path\""];
+    string name = 1 [(gogoproto.moretags) = "search:\"Secret\" sql:\"pk\""];
+    string path = 2 [(gogoproto.moretags) = "search:\"Secret Path\" sql:\"pk\""];
 }
 
 // Next Available Tag: 6
@@ -176,7 +176,7 @@ message PortConfig {
 
         // only set if level is not HOST
         string service_name       = 2 [(gogoproto.moretags) = "search:\"Exposing Service,store\""];
-        string service_id         = 3;
+        string service_id         = 3 [(gogoproto.moretags) = "sql:\"pk\""];
         string service_cluster_ip = 4;
         int32 service_port        = 5 [(gogoproto.moretags) = "search:\"Exposing Service Port,store\""];
 
@@ -188,7 +188,7 @@ message PortConfig {
         repeated string external_hostnames = 8 [(gogoproto.moretags) = "search:\"External Hostname,store\""];
     }
 
-    string name             = 1;
+    string name             = 1 [(gogoproto.moretags) = "sql:\"pk\""];
     int32 container_port    = 2 [(gogoproto.moretags) = "search:\"Port,store\""];
     string protocol         = 3 [(gogoproto.moretags) = "search:\"Port Protocol,store\""];
 
