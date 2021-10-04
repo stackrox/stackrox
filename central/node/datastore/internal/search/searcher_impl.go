@@ -146,8 +146,8 @@ func formatSearcher(cveIndexer blevesearch.UnsafeSearcher,
 		nodeSearcher,
 	)
 	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), nodeSAC.GetSACFilter())
-
-	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
+	// To transform Component sort field to Component+Component Version.
+	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher, componentMappings.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher

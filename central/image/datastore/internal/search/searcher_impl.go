@@ -161,8 +161,8 @@ func formatSearcher(graphProvider graph.Provider,
 		deploymentSearcher,
 	)
 	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), imageSAC.GetSACFilter())
-
-	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
+	// To transform Image to Image Registry, Image Remote, and Image Tag.
+	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher, imageMappings.OptionsMap)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortSearcher)
 	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

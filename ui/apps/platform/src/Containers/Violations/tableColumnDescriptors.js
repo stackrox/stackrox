@@ -118,7 +118,7 @@ export default function getColumns(setSelectedAlertId) {
         {
             Header: 'Enforced',
             accessor: 'Enforcement Count',
-            searchField: 'Policy',
+            searchField: 'Enforcement',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: EnforcementColumn,

@@ -161,7 +161,7 @@ message ListAlert {
     ViolationState            state              = 6 [(gogoproto.moretags) = "search:\"Violation State,store\""];
     int32                     enforcement_count  = 7;
     repeated string           tags               = 8 [(gogoproto.moretags) = "search:\"Tag,store\""];
-    storage.EnforcementAction enforcement_action = 9;
+    storage.EnforcementAction enforcement_action = 9 [(gogoproto.moretags) = "search:\"Enforcement\""];
     CommonEntityInfo          common_entity_info = 10;
 
     // Tags 5, 11-15 reserved for this oneof. Next available tag: 12
