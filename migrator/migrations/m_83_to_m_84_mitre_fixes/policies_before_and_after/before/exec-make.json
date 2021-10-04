@@ -29,15 +29,15 @@
   ],
   "mitreAttackVectors": [
     {
-      "tactic": "TA0008",
-      "techniques": [
-        "T1570"
-      ]
-    },
-    {
       "tactic": "TA0011",
       "techniques": [
         "T1105"
+      ]
+    },
+    {
+      "tactic": "TA008",
+      "techniques": [
+        "T1570"
       ]
     }
   ],

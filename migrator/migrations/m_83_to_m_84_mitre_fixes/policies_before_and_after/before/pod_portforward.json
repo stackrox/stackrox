@@ -31,7 +31,7 @@
     {
       "tactic": "TA0002",
       "techniques": [
-        "T1609"
+        "TA0002"
       ]
     }
   ],

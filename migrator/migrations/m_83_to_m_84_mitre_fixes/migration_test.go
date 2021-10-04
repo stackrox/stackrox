@@ -1,4 +1,4 @@
-package m78to79
+package m83to84
 
 import (
 	"testing"
@@ -21,5 +21,5 @@ type policyUpdatesTestSuite struct {
 
 // Test that all unmodified policies are migrated
 func (suite *policyUpdatesTestSuite) TestMigration() {
-	suite.RunTests(updatePolicies, true)
+	suite.RunTests(updatePolicies, false)
 }

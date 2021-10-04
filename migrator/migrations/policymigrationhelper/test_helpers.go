@@ -40,10 +40,10 @@ func getAndNormalizePolicies(t *testing.T, bucket bolthelpers.BucketRef, policy 
 	}))
 
 	normalizedExpected = policy.Clone()
-	sort.Slice(normalizedExpected.Exclusions, func(i, j int) bool {
+	sort.Slice(normalizedExpected.GetExclusions(), func(i, j int) bool {
 		return normalizedExpected.Exclusions[i].Name < normalizedExpected.Exclusions[j].Name
 	})
-	sort.Slice(normalizedFromDB.Exclusions, func(i, j int) bool {
+	sort.Slice(normalizedFromDB.GetExclusions(), func(i, j int) bool {
 		return normalizedFromDB.Exclusions[i].Name < normalizedFromDB.Exclusions[j].Name
 	})
 	return normalizedExpected, normalizedFromDB
@@ -111,13 +111,15 @@ func (suite *DiffTestSuite) SetupTest() {
 }
 
 // RunTests runs the common tests we would expect to run for policy updates.
-func (suite *DiffTestSuite) RunTests(migrationFunc func(db *bolt.DB) error) {
+func (suite *DiffTestSuite) RunTests(migrationFunc func(db *bolt.DB) error, modifyPolicySectionAndTest bool) {
 	suite.Run("TestUnmodifiedPoliciesAreMigrated", func() {
 		suite.testUnmodifiedPolicies(migrationFunc)
 	})
-	suite.Run("TestModifiedPoliciesAreNotMigrated", func() {
-		suite.testModifiedPolicies(migrationFunc)
-	})
+	if modifyPolicySectionAndTest {
+		suite.Run("TestModifiedPoliciesAreNotMigrated", func() {
+			suite.testModifiedPolicies(migrationFunc)
+		})
+	}
 }
 
 func (suite *DiffTestSuite) testUnmodifiedPolicies(migrationFunc func(db *bolt.DB) error) {
