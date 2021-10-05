@@ -1,0 +1,22 @@
+const (
+	insert{{.NormalizedName}}Query = `INSERT INTO {{.Name}} {{.Fields | FieldsToQueries}}`
+)
+
+func insert{{.Name | PathToFn}}(tx *sql.Tx, {{.NormalizedName}} {{.Type}}) error {
+	{{- $variable := .NormalizedName }}
+	if _, err := tx.Exec(insert{{.NormalizedName}}Query,
+	{{range $field := .Fields}}
+	{{$variable}}.{{ .Name | ToGetter }},
+	{{- end}}
+	); err != nil {
+	    return err
+	}
+	{{range $childTable := .ChildTables}}
+    for _, val := range {{$variable}}.{{ .FieldName | ToGetter }} {
+        if err := insert{{$childTable.Name | PathToFn}}(tx, val); err != nil {
+            return err
+        }
+    }
+    {{- end}}
+    return nil
+}
