@@ -80,6 +80,12 @@ export type ClusterStatus = {
     };
 };
 
+export type ClusterManagerType =
+    | 'MANAGER_TYPE_UNKNOWN'
+    | 'MANAGER_TYPE_MANUAL'
+    | 'MANAGER_TYPE_HELM_CHART'
+    | 'MANAGER_TYPE_KUBERNETES_OPERATOR';
+
 export type Cluster = {
     id: string;
     name: string;
@@ -99,4 +105,5 @@ export type Cluster = {
     slimCollector: boolean;
     healthStatus: ClusterHealthStatus;
     labels: ClusterLabels;
+    managedBy: ClusterManagerType;
 };
