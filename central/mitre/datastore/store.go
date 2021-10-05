@@ -70,52 +70,9 @@ func (s *mitreAttackStoreImpl) loadBundledData() error {
 	}
 
 	// Flatten vectors from all matrices since we populate all enterprise.
-	vectors := flattenMatrices(attackBundle.GetMatrices()...)
+	vectors := mitre.FlattenMitreMatrices(attackBundle.GetMatrices()...)
 	for _, vector := range vectors {
 		s.mitreAttackVectors[vector.GetTactic().GetId()] = vector
 	}
 	return nil
-}
-
-func flattenMatrices(matrices ...*storage.MitreAttackMatrix) []*storage.MitreAttackVector {
-	tactics := make(map[string]*storage.MitreTactic)
-	techniques := make(map[string]*storage.MitreTechnique)
-	tacticsTechniques := make(map[string]map[string]struct{})
-	for _, matrix := range matrices {
-		for _, vector := range matrix.GetVectors() {
-			tacticID := vector.GetTactic().GetId()
-			if tactics[tacticID] == nil {
-				tactics[tacticID] = vector.GetTactic()
-			}
-
-			if tacticsTechniques[tacticID] == nil {
-				tacticsTechniques[tacticID] = make(map[string]struct{})
-			}
-
-			for _, technique := range vector.GetTechniques() {
-				if techniques[technique.GetId()] == nil {
-					techniques[technique.GetId()] = technique
-				}
-
-				if _, ok := tacticsTechniques[tacticID][technique.GetId()]; ok {
-					techniques[technique.GetId()] = technique
-				}
-				tacticsTechniques[tacticID][technique.GetId()] = struct{}{}
-			}
-		}
-	}
-
-	vectors := make([]*storage.MitreAttackVector, 0, len(tactics))
-	for tacticID, techniqueIDs := range tacticsTechniques {
-		techniquesForTactics := make([]*storage.MitreTechnique, 0, len(techniqueIDs))
-		for techniqueID := range techniqueIDs {
-			techniquesForTactics = append(techniquesForTactics, techniques[techniqueID])
-		}
-
-		vectors = append(vectors, &storage.MitreAttackVector{
-			Tactic:     tactics[tacticID],
-			Techniques: techniquesForTactics,
-		})
-	}
-	return vectors
 }
