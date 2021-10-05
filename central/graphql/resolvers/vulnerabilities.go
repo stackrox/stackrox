@@ -100,7 +100,7 @@ type VulnerabilityResolver interface {
 	SuppressActivation(ctx context.Context) (*graphql.Time, error)
 	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
 
-	ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error)
+	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 }
 
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).

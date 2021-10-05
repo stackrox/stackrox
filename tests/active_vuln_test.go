@@ -54,9 +54,8 @@ type ActiveVulnerability struct {
 	ActiveState ActiveState `json:"activeState"`
 }
 
-type DeploymentWithActiveState struct {
+type ComponentsAndVulnsWithActiveState struct {
 	IDStruct
-	Name       string                `json:"name"`
 	Components []ActiveComponent     `json:"components"`
 	Vulns      []ActiveVulnerability `json:"vulns"`
 }
@@ -70,7 +69,6 @@ func TestActiveVulnerability(t *testing.T) {
 }
 
 func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
-	t.Parallel()
 	log.Infof("test case %v", testCase)
 	imageID := fmt.Sprintf("docker.io/library/nginx:%s@%s", testCase.version, testCase.SHA)
 	deploymentName := fmt.Sprintf("%s-%d", avmDeploymentName, idx)
@@ -82,7 +80,6 @@ func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 }
 
 func TestActiveVulnerability_SetImage(t *testing.T) {
-	t.Parallel()
 	imageID := fmt.Sprintf("docker.io/library/nginx:%s@%s", nginxImages[0].version, nginxImages[0].SHA)
 	setupDeploymentWithReplicas(t, imageID, avmDeploymentName, 3)
 	defer teardownDeployment(t, avmDeploymentName)
@@ -103,50 +100,53 @@ func TestActiveVulnerability_SetImage(t *testing.T) {
 
 func checkActiveVulnerability(t *testing.T, image nginxImage, deploymentID string) {
 	waitForCondition(t, func() bool {
-		deployment := getActiveStates(t, deploymentID)
-		return image.activeComponents == getActiveComponentCount(t, deployment)
+		deployment := getDeploymentActiveStates(t, deploymentID)
+		return image.activeComponents == getActiveComponentCount(deployment)
 	}, "active components populated", 5*time.Minute, 30*time.Second)
-	deployment := getActiveStates(t, deploymentID)
-	assert.Equal(t, image.activeComponents, getActiveComponentCount(t, deployment))
+	fromDeployment := getDeploymentActiveStates(t, deploymentID)
+	assert.Equal(t, image.activeComponents, getActiveComponentCount(fromDeployment))
 	// The active vulns are not stable over time. But at least one vuln should exist.
-	assert.NotZero(t, getActiveVulnCount(t, deployment))
+	assert.NotZero(t, getActiveVulnCount(t, fromDeployment))
+
+	fromImage := getImageActiveStates(t, image.SHA, deploymentID)
+	assert.Equal(t, image.activeComponents, getActiveComponentCount(fromImage))
+	assert.Equal(t, getActiveVulnCount(t, fromDeployment), getActiveVulnCount(t, fromImage))
 }
 
-func getActiveComponentCount(t *testing.T, deployment DeploymentWithActiveState) int {
+func getActiveComponentCount(entity ComponentsAndVulnsWithActiveState) int {
 	var count int
 	var activeComponents []string
-	for _, component := range deployment.Components {
+	for _, component := range entity.Components {
 		if component.ActiveState.State == "Active" {
 			activeComponents = append(activeComponents, string(component.ID))
 			count++
 		}
 	}
-	log.Infof("Found %d active components(s) for deployment %s: %v", count, deployment.ID, activeComponents)
+	log.Infof("Found %d active components(s) for %s: %v", count, entity.ID, activeComponents)
 	return count
 }
 
-func getActiveVulnCount(t *testing.T, deployment DeploymentWithActiveState) int {
+func getActiveVulnCount(t *testing.T, entity ComponentsAndVulnsWithActiveState) int {
 	var count int
 	var activeVulns []string
-	for _, vuln := range deployment.Vulns {
+	for _, vuln := range entity.Vulns {
 		if vuln.ActiveState.State == "Active" {
 			activeVulns = append(activeVulns, string(vuln.ID))
 			count++
 		}
 	}
-	log.Infof("Found %d active vuln(s) for deployment %s: %v", count, deployment.ID, activeVulns)
+	log.Infof("Found %d active vuln(s) for %s: %v", count, entity.ID, activeVulns)
 	return count
 }
 
-func getActiveStates(t *testing.T, deploymentID string) DeploymentWithActiveState {
+func getDeploymentActiveStates(t *testing.T, deploymentID string) ComponentsAndVulnsWithActiveState {
 	var resp struct {
-		Deployment DeploymentWithActiveState `json:"deployment"`
+		Deployment ComponentsAndVulnsWithActiveState `json:"deployment"`
 	}
 	makeGraphQLRequest(t, `
 		query getDeploymentCVE($deploymentID: ID!) {
 			deployment(id: $deploymentID) {
 				id
-				name
 				components {
 					id
 					activeState {
@@ -171,4 +171,39 @@ func getActiveStates(t *testing.T, deploymentID string) DeploymentWithActiveStat
 		"deploymentID": deploymentID,
 	}, &resp, timeout)
 	return resp.Deployment
+}
+
+func getImageActiveStates(t *testing.T, imageID, deploymentID string) ComponentsAndVulnsWithActiveState {
+	var resp struct {
+		Image ComponentsAndVulnsWithActiveState `json:"image"`
+	}
+	makeGraphQLRequest(t, `
+		query getImageCVE($imageID: ID!, $scopeQuery: String) {
+			image(id: $imageID) {
+				id
+				components {
+					id
+					activeState(query: $scopeQuery) {
+						state
+						activeContexts {
+							containerName
+						}
+					}
+				}
+				vulns {
+					id
+					activeState(query: $scopeQuery) {
+						state
+						activeContexts {
+							containerName
+						}
+					}
+				}
+			}
+		}
+	`, map[string]interface{}{
+		"imageID":    imageID,
+		"scopeQuery": fmt.Sprintf("DEPLOYMENT ID:%q", deploymentID),
+	}, &resp, timeout)
+	return resp.Image
 }

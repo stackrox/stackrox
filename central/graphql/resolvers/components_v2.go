@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -319,14 +320,16 @@ func (eicr *imageComponentResolver) DeploymentCount(ctx context.Context, args Ra
 }
 
 // ActiveState shows the activeness of a component in a deployment context.
-func (eicr *imageComponentResolver) ActiveState(ctx context.Context, args PaginatedQuery) (*activeStateResolver, error) {
+func (eicr *imageComponentResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
 	if !features.ActiveVulnManagement.Enabled() {
 		return nil, nil
 	}
-	deploymentID := deploymentctx.FromContext(ctx)
-	if deploymentID == "" {
-		deploymentID = deploymentctx.FromContext(eicr.ctx)
+	scopeQuery, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
 	}
+
+	deploymentID := getDeploymentScope(scopeQuery, eicr.ctx)
 	if deploymentID == "" {
 		return nil, nil
 	}
@@ -447,4 +450,37 @@ func (eicr *imageComponentResolver) PlottedVulns(ctx context.Context, args RawQu
 // UnusedVarSink represents a query sink
 func (eicr *imageComponentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
+}
+
+func getDeploymentIDFromQuery(q *v1.Query) string {
+	if q == nil {
+		return ""
+	}
+	var deploymentID string
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.DeploymentID.String()) {
+			deploymentID = matchFieldQuery.MatchFieldQuery.Value
+			deploymentID = strings.TrimRight(deploymentID, `"`)
+			deploymentID = strings.TrimLeft(deploymentID, `"`)
+		}
+	})
+	return deploymentID
+}
+
+func getDeploymentScope(scopeQuery *v1.Query, contexts ...context.Context) string {
+	var deploymentID string
+	for _, ctx := range contexts {
+		deploymentID = deploymentctx.FromContext(ctx)
+		if deploymentID != "" {
+			return deploymentID
+		}
+	}
+	if scopeQuery != nil {
+		deploymentID = getDeploymentIDFromQuery(scopeQuery)
+	}
+	return deploymentID
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
@@ -782,15 +781,15 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuer
 }
 
 // ActiveState shows the activeness of a vulnerability in a deployment context.
-func (resolver *cVEResolver) ActiveState(ctx context.Context, _ PaginatedQuery) (*activeStateResolver, error) {
+func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error) {
 	if !features.ActiveVulnManagement.Enabled() {
 		return nil, nil
 	}
-	deploymentID := deploymentctx.FromContext(ctx)
-	if deploymentID == "" {
-		deploymentID = deploymentctx.FromContext(resolver.ctx)
+	scopeQuery, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
 	}
-
+	deploymentID := getDeploymentScope(scopeQuery, ctx, resolver.ctx)
 	if deploymentID == "" {
 		return nil, nil
 	}
