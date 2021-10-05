@@ -40,20 +40,33 @@ export const validationSchema = yup.object().shape({
             .min(1, 'Must have at least one type selected')
             .required('A category is required'),
         docker: yup.object().shape({
-            endpoint: yup.string().trim().required('An endpoint is required'),
-            username: yup.string(),
+            endpoint: yup
+                .string()
+                .trim()
+                .required('An endpoint is required, like, registry.access.redhat.com'),
+            username: yup.string().trim(),
             password: yup
                 .string()
                 .test(
                     'password-test',
                     'A password is required',
                     (value, context: yup.TestContext) => {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        const isNewIntegration = !context?.from[2]?.value?.config?.id;
                         const requirePasswordField =
                             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                             // @ts-ignore
                             context?.from[2]?.value?.updatePassword || false;
 
-                        if (!requirePasswordField) {
+                        // weirdest backend validation ever:
+                        //   we have to account for existing integrations:
+                        //     - no username or password
+                        //     - username but no password
+                        //     - no username but password
+                        //     - username and password
+                        //    basically, only require password on Edit when user checks updatePassword
+                        if (isNewIntegration || !requirePasswordField) {
                             return true;
                         }
 
@@ -141,7 +154,6 @@ function RhelIntegrationForm({
                             type="text"
                             id="config.name"
                             value={values.config.name}
-                            placeholder="(ex. Red Hat Registry)"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -153,12 +165,12 @@ function RhelIntegrationForm({
                         fieldId="config.docker.endpoint"
                         touched={touched}
                         errors={errors}
+                        helperText="(example, registry.access.redhat.com)"
                     >
                         <TextInput
                             type="text"
                             id="config.docker.endpoint"
                             value={values.config.docker.endpoint}
-                            placeholder="(ex. registry.access.redhat.com)"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -196,14 +208,14 @@ function RhelIntegrationForm({
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        isRequired={values.updatePassword}
+                        isRequired={values.updatePassword && !!values.config.id}
                         label="Password"
                         fieldId="config.docker.password"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired={values.updatePassword}
+                            isRequired={values.updatePassword && !!values.config.id}
                             type="password"
                             id="config.docker.password"
                             value={values.config.docker.password}
