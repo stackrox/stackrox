@@ -65,7 +65,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			err:  permissioncheck.ErrPermissionCheckOnly,
 		},
 		{
-			name: "built in scope auth check permissions not sufficient permissions",
+			name: "built-in scoped authz check permissions not sufficient permissions",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}, {
@@ -75,14 +75,14 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			err: errorhelpers.ErrNotAuthorized,
 		},
 		{
-			name: "built in scope auth check permissions",
+			name: "built-in scoped authz check permissions",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
 		},
 		{
-			name: "built in scope auth check permissions but nil permissions in ID",
+			name: "built-in scoped authz check permissions but nil permissions in ID",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
