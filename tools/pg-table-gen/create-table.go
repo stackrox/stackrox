@@ -37,22 +37,22 @@ func generateTableDeclarations(parentTable, table *Table) {
 	var fkRelationships []string
 
 	for _, field := range table.ForeignKeys {
-		localName := "parent_" + field.name
+		localName := "parent_" + field.Name
 		localName = normalizeName(localName)
 		fkNames = append(fkNames, localName)
-		fkRelationships = append(fkRelationships, field.name)
+		fkRelationships = append(fkRelationships, field.Name)
 
 		pks = append(pks, localName)
 
-		line := fieldDeclaration(localName, field.datatype)
+		line := fieldDeclaration(localName, field.DataType)
 		fields = append(fields, line)
 	}
 
 	for _, field := range table.Fields {
-		line := fieldDeclaration(field.name, field.datatype)
+		line := fieldDeclaration(field.Name, field.DataType)
 		fields = append(fields, line)
 		if field.pk {
-			pks = append(pks, field.name)
+			pks = append(pks, field.Name)
 		}
 	}
 	// add primary key field

@@ -41,9 +41,9 @@ func validateTable(t *Table) {
 }
 
 func printTable(t *Table) {
-	fmt.Println(t.Name)
+	fmt.Println(t.Name, t.FieldName)
 	for _, field := range t.Fields {
-		fmt.Printf("\tname=%s, type=%s, pk=%t\n", field.name, field.datatype, field.pk)
+		fmt.Printf("\tname=%s, type=%s, pk=%t\n", field.Name, field.DataType, field.pk)
 	}
 	for _, child := range t.ChildTables {
 		printTable(child)
@@ -54,17 +54,19 @@ func main() {
 	obj := (*storage.Deployment)(nil)
 
 	table := &Table{
-		Name: "deployment",
+		Name: "Deployment",
+		Type: reflect.ValueOf(obj).Type().String(),
 	}
 	walk(table, obj)
 
 	// Enrich with foreign key fields
 
+	genInsertion(table)
 
 	//printTable(table)
-	enrichTableWithFKs(table)
-	validateTable(table)
-	generateTableDeclarations(nil, table)
+	//enrichTableWithFKs(table)
+	//validateTable(table)
+	//generateTableDeclarations(nil, table)
 }
 
 func enrichTableWithFKs(table *Table) {
@@ -76,7 +78,7 @@ func enrichTableWithFKs(table *Table) {
 	}
 
 	for _, field := range table.ForeignKeys {
-		field.name = normalizeName("parent_" + field.name)
+		field.Name = normalizeName("parent_" + field.Name)
 		pkFields = append(pkFields, field)
 	}
 
@@ -87,13 +89,13 @@ func enrichTableWithFKs(table *Table) {
 }
 
 type Field struct {
-	name string
-	datatype DataType
-	pk bool
+	Name     string
+	DataType DataType
+	pk       bool
 }
 
 func (f Field) NormalizedName() string {
-	return normalizeName(f.name)
+	return normalizeName(f.Name)
 }
 
 type ForeignKeyField struct {
@@ -102,10 +104,16 @@ type ForeignKeyField struct {
 }
 
 type Table struct {
-	Name string
+	Name      string
+	FieldName string
+	Type      string
 	ChildTables []*Table
 	Fields 		[]Field
 	ForeignKeys []Field
+}
+
+func (t Table) NormalizedName() string {
+	return normalizeName(t.Name)
 }
 
 type walker struct {
@@ -121,7 +129,8 @@ func walk(table *Table, obj interface{}) {
 }
 
 func normalizeName(name string) string {
-	return strings.ToLower(strings.ReplaceAll(name,"-", "_"))
+	name =  strings.ToLower(strings.ReplaceAll(name,"-", "_"))
+	return strings.ReplaceAll(name, ".", "_")
 }
 
 // handleStruct takes in a struct object and properly handles all of the fields
@@ -136,17 +145,17 @@ func (s *walker) handleStruct(prefix string, table *Table, original reflect.Type
 		sqlTag := field.Tag.Get("sql")
 		isPK := strings.Contains(sqlTag, "pk")
 
-		fieldName := normalizeName(field.Name)
+		fieldName := field.Name
 		if prefix != "" {
-			fieldName = normalizeName(prefix + "_" + fieldName)
+			fieldName = prefix +"."+fieldName
 		}
 
 		// Special case proto timestamp because we actually want to index seconds
 		if field.Type.String() == "*types.Timestamp" {
 			table.Fields = append(table.Fields, Field{
-				name: fieldName,
-				datatype: DATETIME,
-				pk: isPK,
+				Name:     fieldName,
+				DataType: DATETIME,
+				pk:       isPK,
 			})
 			continue
 		}
@@ -185,7 +194,9 @@ func (s *walker) handleStruct(prefix string, table *Table, original reflect.Type
 		dataType := s.walkRecursive(fieldName, table, field.Type)
 		if dataType == ARRAY {
 			childTable := &Table{
-				Name: normalizeName(table.Name + "_" + fieldName),
+				FieldName: fieldName,
+				Type: field.Type.Elem().String(),
+				Name: table.Name + "_" + fieldName, // normalizeName(table.Name + "_" + fieldName),
 			}
 
 			table.ChildTables = append(table.ChildTables, childTable)
@@ -197,9 +208,9 @@ func (s *walker) handleStruct(prefix string, table *Table, original reflect.Type
 		}
 
 		table.Fields = append(table.Fields, Field{
-			name: normalizeName(fieldName),
-			datatype: dataType,
-			pk: isPK,
+			Name:     fieldName,
+			DataType: dataType,
+			pk:       isPK,
 		})
 	}
 }
