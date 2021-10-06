@@ -215,6 +215,7 @@ function AccessScopeForm({
             })
             .finally(() => {
                 setIsSubmitting(false);
+                resetForm({ values });
             });
     }
 
