@@ -134,7 +134,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Image Findings">
-                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative rounded mb-4 ml-4 mr-4">
+                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4">
                         <BinderTabs>
                             <Tab title="Fixable CVEs">
                                 <TableWidgetFixableCves

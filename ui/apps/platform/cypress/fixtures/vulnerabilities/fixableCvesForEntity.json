@@ -1,0 +1,227 @@
+{
+    "data": {
+        "result": {
+            "id": "bb1ef9f0-867d-4b7e-b8f5-86fb37c39a60",
+            "vulnCounter": {
+                "all": { "fixable": 7, "__typename": "VulnerabilityFixableCounterResolver" },
+                "__typename": "VulnerabilityCounter"
+            },
+            "vulnerabilities": [
+                {
+                    "id": "CVE-2021-20231",
+                    "cve": "CVE-2021-20231",
+                    "cvss": 9.800000190734863,
+                    "vulnerabilityTypes": ["IMAGE_CVE"],
+                    "scoreVersion": "V3",
+                    "envImpact": 0.0625,
+                    "impactScore": 5.900000095367432,
+                    "summary": "A flaw was found in gnutls. A use after free issue in client sending key_share extension may lead to memory corruption and other consequences.",
+                    "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+                    "fixedByVersion": "",
+                    "isFixable": true,
+                    "createdAt": "2021-08-30T14:18:17.118698Z",
+                    "discoveredAtImage": null,
+                    "publishedOn": "2021-03-12T19:15:00Z",
+                    "deploymentCount": 1,
+                    "imageCount": 1,
+                    "componentCount": 1,
+                    "activeState": {
+                        "state": "Active",
+                        "activeContexts": [
+                            {
+                                "containerName": "9f2zrpknp5",
+                                "__typename": "ActiveComponent_ActiveContext"
+                            },
+                            {
+                                "containerName": "5qj5fdq5f4",
+                                "__typename": "ActiveComponent_ActiveContext"
+                            }
+                        ],
+                        "__typename": "ActiveState"
+                    },
+                    "__typename": "EmbeddedVulnerability"
+                },
+                {
+                    "id": "CVE-2021-20232",
+                    "cve": "CVE-2021-20232",
+                    "cvss": 9.800000190734863,
+                    "vulnerabilityTypes": ["IMAGE_CVE"],
+                    "scoreVersion": "V3",
+                    "envImpact": 0.0625,
+                    "impactScore": 5.900000095367432,
+                    "summary": "A flaw was found in gnutls. A use after free issue in client_send_params in lib/ext/pre_shared_key.c may lead to memory corruption and other potential consequences.",
+                    "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+                    "fixedByVersion": "",
+                    "isFixable": true,
+                    "createdAt": "2021-08-30T14:18:17.118698Z",
+                    "discoveredAtImage": null,
+                    "publishedOn": "2021-03-12T19:15:00Z",
+                    "deploymentCount": 1,
+                    "imageCount": 1,
+                    "componentCount": 1,
+                    "activeState": {
+                        "state": "Inactive",
+                        "activeContexts": [],
+                        "__typename": "ActiveState"
+                    },
+                    "__typename": "EmbeddedVulnerability"
+                },
+                {
+                    "id": "CVE-2021-20305",
+                    "cve": "CVE-2021-20305",
+                    "cvss": 8.100000381469727,
+                    "vulnerabilityTypes": ["IMAGE_CVE"],
+                    "scoreVersion": "V3",
+                    "envImpact": 0.0625,
+                    "impactScore": 5.900000095367432,
+                    "summary": "A flaw was found in Nettle in versions before 3.7.2, where several Nettle signature verification functions (GOST DSA, EDDSA \u0026 ECDSA) result in the Elliptic Curve Cryptography point (ECC) multiply function being called with out-of-range scalers, possibly resulting in incorrect results. This flaw allows an attacker to force an invalid signature, causing an assertion failure or possible validation. The highest threat to this vulnerability is to confidentiality, integrity, as well as system availability.",
+                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                    "fixedByVersion": "",
+                    "isFixable": true,
+                    "createdAt": "2021-08-30T14:18:17.118698Z",
+                    "discoveredAtImage": null,
+                    "publishedOn": "2021-04-05T22:15:00Z",
+                    "deploymentCount": 1,
+                    "imageCount": 1,
+                    "componentCount": 1,
+                    "activeState": {
+                        "state": "Active",
+                        "activeContexts": [
+                            {
+                                "containerName": "twxrftx2cr",
+                                "__typename": "ActiveComponent_ActiveContext"
+                            }
+                        ],
+                        "__typename": "ActiveState"
+                    },
+                    "__typename": "EmbeddedVulnerability"
+                },
+                {
+                    "id": "CVE-2020-24659",
+                    "cve": "CVE-2020-24659",
+                    "cvss": 7.5,
+                    "vulnerabilityTypes": ["IMAGE_CVE"],
+                    "scoreVersion": "V3",
+                    "envImpact": 0.0625,
+                    "impactScore": 3.5999999046325684,
+                    "summary": "An issue was discovered in GnuTLS before 3.6.15. A server can trigger a NULL pointer dereference in a TLS 1.3 client if a no_renegotiation alert is sent with unexpected timing, and then an invalid second handshake occurs. The crash happens in the application's error handling path, where the gnutls_deinit function is called after detecting a handshake failure.",
+                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                    "fixedByVersion": "",
+                    "isFixable": true,
+                    "createdAt": "2021-08-30T14:18:17.118698Z",
+                    "discoveredAtImage": null,
+                    "publishedOn": "2020-09-04T15:15:00Z",
+                    "deploymentCount": 1,
+                    "imageCount": 1,
+                    "componentCount": 1,
+                    "activeState": {
+                        "state": "Active",
+                        "activeContexts": [
+                            {
+                                "containerName": "9f2zrpknp5",
+                                "__typename": "ActiveComponent_ActiveContext"
+                            },
+                            {
+                                "containerName": "5qj5fdq5f4",
+                                "__typename": "ActiveComponent_ActiveContext"
+                            }
+                        ],
+                        "__typename": "ActiveState"
+                    },
+                    "__typename": "EmbeddedVulnerability"
+                },
+                {
+                    "id": "CVE-2021-3580",
+                    "cve": "CVE-2021-3580",
+                    "cvss": 7.5,
+                    "vulnerabilityTypes": ["IMAGE_CVE"],
+                    "scoreVersion": "V3",
+                    "envImpact": 0.0625,
+                    "impactScore": 3.5999999046325684,
+                    "summary": "A flaw was found in the way nettle's RSA decryption functions handled specially crafted ciphertext. An attacker could use this flaw to provide a manipulated ciphertext leading to application crash and denial of service.",
+                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                    "fixedByVersion": "",
+                    "isFixable": true,
+                    "createdAt": "2021-08-30T18:00:17.0759685Z",
+                    "discoveredAtImage": null,
+                    "publishedOn": "2021-08-05T21:15:00Z",
+                    "deploymentCount": 1,
+                    "imageCount": 1,
+                    "componentCount": 1,
+                    "activeState": {
+                        "state": "Active",
+                        "activeContexts": [
+                            {
+                                "containerName": "twxrftx2cr",
+                                "__typename": "ActiveComponent_ActiveContext"
+                            }
+                        ],
+                        "__typename": "ActiveState"
+                    },
+                    "__typename": "EmbeddedVulnerability"
+                },
+                {
+                    "id": "CVE-2021-33560",
+                    "cve": "CVE-2021-33560",
+                    "cvss": 7.5,
+                    "vulnerabilityTypes": ["IMAGE_CVE"],
+                    "scoreVersion": "V3",
+                    "envImpact": 0.125,
+                    "impactScore": 3.5999999046325684,
+                    "summary": "Libgcrypt before 1.8.8 and 1.9.x before 1.9.3 mishandles ElGamal encryption because it lacks exponent blinding to address a side-channel attack against mpi_powm, and the window size is not chosen appropriately. (There is also an interoperability problem because the selection of the k integer value does not properly consider the differences between basic ElGamal encryption and generalized ElGamal encryption.) This, for example, affects use of ElGamal in OpenPGP.",
+                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                    "fixedByVersion": "",
+                    "isFixable": true,
+                    "createdAt": "2021-08-30T14:18:17.118698Z",
+                    "discoveredAtImage": null,
+                    "publishedOn": "2021-06-08T11:15:00Z",
+                    "deploymentCount": 2,
+                    "imageCount": 2,
+                    "componentCount": 2,
+                    "activeState": {
+                        "state": "Active",
+                        "activeContexts": [
+                            {
+                                "containerName": "5xz7wrrbg9",
+                                "__typename": "ActiveComponent_ActiveContext"
+                            }
+                        ],
+                        "__typename": "ActiveState"
+                    },
+                    "__typename": "EmbeddedVulnerability"
+                },
+                {
+                    "id": "CVE-2021-33910",
+                    "cve": "CVE-2021-33910",
+                    "cvss": 5.5,
+                    "vulnerabilityTypes": ["IMAGE_CVE"],
+                    "scoreVersion": "V3",
+                    "envImpact": 0.0625,
+                    "impactScore": 3.5999999046325684,
+                    "summary": "basic/unit-name.c in systemd prior to 246.15, 247.8, 248.5, and 249.1 has a Memory Allocation with an Excessive Size Value (involving strdupa and alloca for a pathname controlled by a local attacker) that results in an operating system crash.",
+                    "severity": "MODERATE_VULNERABILITY_SEVERITY",
+                    "fixedByVersion": "",
+                    "isFixable": true,
+                    "createdAt": "2021-08-30T14:18:17.118698Z",
+                    "discoveredAtImage": null,
+                    "publishedOn": "2021-07-20T19:15:00Z",
+                    "deploymentCount": 1,
+                    "imageCount": 1,
+                    "componentCount": 1,
+                    "activeState": {
+                        "state": "Active",
+                        "activeContexts": [
+                            {
+                                "containerName": "6hk7jp4xgs",
+                                "__typename": "ActiveComponent_ActiveContext"
+                            }
+                        ],
+                        "__typename": "ActiveState"
+                    },
+                    "__typename": "EmbeddedVulnerability"
+                }
+            ],
+            "__typename": "Deployment"
+        }
+    }
+}

@@ -102,6 +102,35 @@ export function getCveTableColumns(workflowState) {
             sortable: false,
         },
         {
+            Header: `Active`,
+            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original }) => {
+                const activeStatus = original.activeState?.state || 'Undetermined';
+                switch (activeStatus) {
+                    case 'Active': {
+                        return (
+                            <div className="mx-auto">
+                                <LabelChip text={activeStatus} type="alert" size="large" />
+                            </div>
+                        );
+                    }
+                    case 'Inactive': {
+                        return <div className="mx-auto">{activeStatus}</div>;
+                    }
+                    case 'Undetermined':
+                    default: {
+                        return <div className="mx-auto">Undetermined</div>;
+                    }
+                }
+            },
+            id: cveSortFields.FIXABLE,
+            accessor: 'isActive',
+            sortField: cveSortFields.FIXABLE,
+            sortable: false,
+        },
+        {
             Header: `Fixed in`,
             headerClassName: `w-1/12 ${defaultHeaderClassName}`,
             className: `w-1/12 word-break-all ${defaultColumnClassName}`,
@@ -205,7 +234,6 @@ export function getCveTableColumns(workflowState) {
         },
     ];
 
-    // TODO: remove this feature flag check after the flag is turned on for good
     const nonNullTableColumns = tableColumns.filter((col) => col);
 
     const cveColumnsBasedOnContext = getFilteredCVEColumns(nonNullTableColumns, workflowState);

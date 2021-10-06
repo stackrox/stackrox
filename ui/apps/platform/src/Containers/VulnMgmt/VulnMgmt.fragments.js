@@ -76,7 +76,12 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
         deploymentCount(query: $query)
         imageCount(query: $query)
         componentCount(query: $query)
-        # nodeCount(query: $query)
+        activeState(query: $query) {
+            state
+            activeContexts {
+                containerName
+            }
+        }
     }
 `;
 
@@ -255,6 +260,53 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
         topVuln {
             cvss
             scoreVersion
+        }
+        imageCount(query: $query)
+        deploymentCount(query: $query)
+        nodeCount(query: $query)
+        priority
+    }
+`;
+
+export const VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
+    fragment componentFields on EmbeddedImageScanComponent {
+        id
+        name
+        version
+        location
+        source
+        fixedIn
+        vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln {
+            cvss
+            scoreVersion
+        }
+        activeState(query: $scopeQuery) {
+            state
+            activeContexts {
+                containerName
+            }
         }
         imageCount(query: $query)
         deploymentCount(query: $query)

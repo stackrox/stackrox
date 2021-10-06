@@ -330,4 +330,51 @@ describe('Entities single views', () => {
             'not.exist'
         );
     });
+
+    it('should show the active state in Component overview when scoped under a deployment', () => {
+        const getDeploymentCOMPONENT = api.graphql(api.vulnMgmt.graphqlOps.getDeploymentCOMPONENT);
+        cy.intercept('POST', getDeploymentCOMPONENT).as('getDeploymentCOMPONENT');
+
+        cy.visit(url.list.deployments);
+
+        // click on the first deployment in the list
+        cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
+        // now, go the components for that deployment
+        cy.get(selectors.componentTileLink).click();
+        // click on the first component in that list
+        cy.get(`[data-testid="side-panel"] ${selectors.tableRows}`, { timeout: 10000 })
+            .eq(1)
+            .click();
+
+        cy.wait('@getDeploymentCOMPONENT');
+
+        cy.get(`[data-testid="Active status-value"]`)
+            .invoke('text')
+            .then((activeStatusText) => {
+                expect(activeStatusText).to.be.oneOf(['Active', 'Inactive', 'Undetermined']);
+            });
+    });
+
+    // TODO: when active status for CVEs becomes available
+    // unskip the following test
+    it.skip('should show the active state in the fixable CVES widget for a single deployment', () => {
+        const getFixableCvesForEntity = api.graphql(
+            api.vulnMgmt.graphqlOps.getFixableCvesForEntity
+        );
+        cy.intercept('POST', getFixableCvesForEntity, {
+            fixture: 'vulnerabilities/fixableCvesForEntity.json',
+        }).as('getFixableCvesForEntity');
+
+        cy.visit(url.list.deployments);
+
+        cy.get(`${selectors.tableRows}`, { timeout: 10000 }).eq(1).click();
+        cy.get('button:contains("Fixable CVEs")').click();
+        cy.wait('@getFixableCvesForEntity');
+        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20231")`).contains(
+            'Active'
+        );
+        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("CVE-2021-20232")`).contains(
+            'Inactive'
+        );
+    });
 });

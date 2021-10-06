@@ -39,6 +39,12 @@ const VulnMgmtComponent = ({
                 deploymentCount(query: $query)
                 imageCount(query: $query)
                 nodeCount(query: $query)
+                activeState(query: $scopeQuery) {
+                    state
+                    activeContexts {
+                        containerName
+                    }
+                }
                 topVuln {
                     cvss
                     scoreVersion
