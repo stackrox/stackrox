@@ -123,12 +123,11 @@ Development can either happen in GCP or locally with
 [Docker Desktop](https://docs.docker.com/docker-for-mac/#kubernetes) or [Minikube](https://minikube.sigs.k8s.io/docs/start/).
 
 ```bash
-# To mount local StackRox binaries into your pods, enable hotreload:
-# Note however that this will break the linter: https://stack-rox.atlassian.net/browse/ROX-6562
-$ export HOTRELOAD=true
-
 # To keep the StackRox central's rocksdb state between restarts, set:
 $ export STORAGE=pvc
+
+# To save time on rebuilds by skipping UI builds, set:
+$ export SKIP_UI_BUILD=1
 
 # When you deploy locally make sure your kube context points to the desired kubernetes cluster,
 # for example Docker Desktop.
@@ -143,7 +142,8 @@ $ ./deploy/k8s/deploy-local.sh
 $ logmein
 ```
 
-See the [deployment guide](#how-to-deploy) for further reading.
+See the [deployment guide](#how-to-deploy) for further reading. To read more about the environment variables see the
+[deploy/README.md](https://github.com/stackrox/rox/blob/master/deploy/README.md#env-variables).
 
 #### Common Makefile Targets
 
