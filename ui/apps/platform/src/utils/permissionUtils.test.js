@@ -37,7 +37,7 @@ describe('permissionUtils', () => {
             expect(errorMessage).toEqual('Network error');
         });
 
-        it('should return permissions message if error message includes lowercase "not authorized:"', () => {
+        it('should return permissions message if error message includes lowercase "not authorized" at start with colon', () => {
             const error = new Error('not authorized: "READ_ACCESS" for "Compliance"');
 
             const errorMessage = checkForPermissionErrorMessage(error);
@@ -47,14 +47,33 @@ describe('permissionUtils', () => {
             );
         });
 
-        it('should return permissions message if error message includes sentence case "Not authorized:"', () => {
-            const error = new Error('Not authorized: "READ_ACCESS" for "Compliance"');
+        it('should return permissions message if error message includes lowercase "not authorized" at start without colon', () => {
+            const error = new Error('not authorized"');
 
             const errorMessage = checkForPermissionErrorMessage(error);
 
             expect(errorMessage).toEqual(
                 'A database error has occurred. Please check that you have the correct permissions to view this information.'
             );
+        });
+
+        it('should return permissions message if error message includes lowercase "not authorized" not at start without colon', () => {
+            const error = new Error('Not at start not authorized"');
+
+            const errorMessage = checkForPermissionErrorMessage(error);
+
+            expect(errorMessage).toEqual(
+                'A database error has occurred. Please check that you have the correct permissions to view this information.'
+            );
+        });
+
+        it('should not return permissions message if error message includes sentence case "Not authorized" at start without colon', () => {
+            const message = 'Not authorized does not match';
+            const error = new Error(message);
+
+            const errorMessage = checkForPermissionErrorMessage(error);
+
+            expect(errorMessage).toEqual(message);
         });
 
         it('should return permissions message if error message includes "403"', () => {
