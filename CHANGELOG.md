@@ -25,6 +25,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   In some circumstances (for example if the instance was created without a `spec.admissionControl` section from the CLI),
   the default might not have been applied: a symptom of this is that the fields are not shown when printing the object.
   In these cases this update will change the behaviour of admission controller.
+- Scanner no longer supports Oracle Linux
 
 ## [65.0]
 - Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 
