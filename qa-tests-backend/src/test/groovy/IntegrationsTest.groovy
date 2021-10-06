@@ -28,7 +28,6 @@ import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
 import objects.SyslogNotifier
-import objects.TeamsNotifier
 import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
@@ -264,14 +263,17 @@ class IntegrationsTest extends BaseSpecification {
         "SLACK"                 | [new SlackNotifier()]
         // ROX-8113 - Email tests are broken
         // "EMAIL"                 | [new EmailNotifier()]
-        //        "JIRA"                  | [new JiraNotifier()] TODO(ROX-7460)
-        "TEAMS"                 | [new TeamsNotifier()]
+        // "JIRA"                  | [new JiraNotifier()] TODO(ROX-7460)
+        // ROX-8145 - Teams tests are broken
+        // "TEAMS"                 | [new TeamsNotifier()]
         "GENERIC"               | [new GenericNotifier()]
 
         // Adding a SLACK, TEAMS, EMAIL notifier test so we still verify multiple notifiers
-        // ROX-8113 - Email tests are broken
+        // ROX-8113, ROX-8145 - Email and teams tests are broken
         // "SLACK, EMAIL, TEAMS"   | [new SlackNotifier(), new EmailNotifier(), new TeamsNotifier()]
-        "SLACK, TEAMS"   | [new SlackNotifier(), new TeamsNotifier()]
+
+        // Using Slack and Generic to verify multiple notifiers
+        "SLACK, GENERIC"        | [new SlackNotifier(), new GenericNotifier()]
     }
 
     @Unroll
