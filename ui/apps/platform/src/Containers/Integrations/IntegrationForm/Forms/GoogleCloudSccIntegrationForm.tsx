@@ -38,17 +38,29 @@ export const validationSchema = yup.object().shape({
                 .string()
                 .trim()
                 .required('A service account is required')
-                .test('isValidJson', 'Service account must be valid JSON', (value) => {
-                    if (!value) {
-                        return false;
+                .test(
+                    'isValidJson',
+                    'Service account must be valid JSON',
+                    (value, context: yup.TestContext) => {
+                        const isRequired =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+
+                        if (!isRequired) {
+                            return true;
+                        }
+                        if (!value) {
+                            return false;
+                        }
+                        try {
+                            JSON.parse(value);
+                        } catch (e) {
+                            return false;
+                        }
+                        return true;
                     }
-                    try {
-                        JSON.parse(value);
-                    } catch (e) {
-                        return false;
-                    }
-                    return true;
-                }),
+                ),
             sourceId: yup
                 .string()
                 .trim()
