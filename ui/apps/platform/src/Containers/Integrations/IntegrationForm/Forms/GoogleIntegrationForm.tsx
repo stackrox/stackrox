@@ -134,6 +134,11 @@ function DockerIntegrationForm({
         return setFieldValue(id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.google.serviceAccount', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -210,7 +215,7 @@ function DockerIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
                             helperText="Setting this to false will use the currently stored credentials, if they exist."
@@ -220,7 +225,7 @@ function DockerIntegrationForm({
                                 id="updatePassword"
                                 label="Update stored credentials"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

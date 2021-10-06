@@ -128,6 +128,11 @@ function AnchoreIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.anchore.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -184,7 +189,7 @@ function AnchoreIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
                             helperText="Setting this to false will use the currently stored credentials, if they exist."
@@ -195,7 +200,7 @@ function AnchoreIntegrationForm({
                                 id="updatePassword"
                                 aria-label="update password"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

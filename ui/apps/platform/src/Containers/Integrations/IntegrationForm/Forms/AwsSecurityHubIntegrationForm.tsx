@@ -119,7 +119,7 @@ function AwsSecurityHubIntegrationForm({
             ...formInitialValues.notifier,
             ...initialValues,
         };
-        // We want to clear the password because backend returns '******' to represent that there
+        // We want to clear these values because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.awsSecurityHub.credentials.accessKeyId = '';
         formInitialValues.notifier.awsSecurityHub.credentials.secretAccessKey = '';
@@ -147,6 +147,13 @@ function AwsSecurityHubIntegrationForm({
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
     }
+
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('notifier.awsSecurityHub.credentials.accessKeyId', '');
+        setFieldValue('notifier.awsSecurityHub.credentials.secretAccessKey', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -201,7 +208,7 @@ function AwsSecurityHubIntegrationForm({
                             <AwsRegionOptions />
                         </FormSelect>
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
@@ -209,10 +216,10 @@ function AwsSecurityHubIntegrationForm({
                             errors={errors}
                         >
                             <Checkbox
-                                label="Update password"
+                                label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

@@ -142,6 +142,12 @@ function TenableIntegrationForm({
         return setFieldValue(id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.tenable.accessKey', '');
+        setFieldValue('config.tenable.secretKey', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -185,7 +191,7 @@ function TenableIntegrationForm({
                             </SelectOption>
                         </FormMultiSelect>
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
                             helperText="Setting this to false will use the currently stored credentials, if they exist."
@@ -196,7 +202,7 @@ function TenableIntegrationForm({
                                 id="updatePassword"
                                 label="Update stored credentials"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

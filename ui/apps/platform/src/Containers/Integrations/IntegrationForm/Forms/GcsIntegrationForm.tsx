@@ -150,6 +150,11 @@ function GcsIntegrationForm({
         }
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('externalBackup.gcs.serviceAccount', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -292,7 +297,7 @@ function GcsIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && !values.externalBackup.gcs.useWorkloadId && (
+                    {!isCreating && !values.externalBackup.gcs.useWorkloadId && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
@@ -304,7 +309,7 @@ function GcsIntegrationForm({
                                 label="Update service account"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

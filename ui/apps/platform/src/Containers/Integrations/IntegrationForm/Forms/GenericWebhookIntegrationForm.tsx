@@ -167,6 +167,11 @@ function GenericWebhookIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('notifier.generic.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -271,7 +276,7 @@ function GenericWebhookIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        {!isCreating && (
+                        {!isCreating && isEditable && (
                             <FormLabelGroup
                                 label=""
                                 fieldId="updatePassword"
@@ -282,7 +287,7 @@ function GenericWebhookIntegrationForm({
                                     label="Update password"
                                     id="updatePassword"
                                     isChecked={values.updatePassword}
-                                    onChange={onChange}
+                                    onChange={onUpdateCredentialsChange}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />

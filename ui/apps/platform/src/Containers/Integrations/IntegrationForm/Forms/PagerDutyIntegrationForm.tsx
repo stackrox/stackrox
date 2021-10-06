@@ -126,7 +126,7 @@ function PagerDutyIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup label="" fieldId="updateStoredCredential" errors={errors}>
                             <Checkbox
                                 label="Update PagerDuty Integration Key"

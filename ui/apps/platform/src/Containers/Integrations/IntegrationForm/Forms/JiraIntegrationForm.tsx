@@ -158,6 +158,11 @@ function JiraIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('notifier.jira.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -198,7 +203,7 @@ function JiraIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        {!isCreating && (
+                        {!isCreating && isEditable && (
                             <FormLabelGroup
                                 label=""
                                 fieldId="updatePassword"
@@ -209,7 +214,7 @@ function JiraIntegrationForm({
                                     label="Update password"
                                     id="updatePassword"
                                     isChecked={values.updatePassword}
-                                    onChange={onChange}
+                                    onChange={onUpdateCredentialsChange}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
@@ -436,7 +441,6 @@ function JiraIntegrationForm({
             )}
         </>
     );
-    return <div>Jira form</div>;
 }
 
 export default JiraIntegrationForm;

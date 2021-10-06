@@ -162,6 +162,12 @@ function S3IntegrationForm({
         }
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('externalBackup.s3.accessKeyId', '');
+        setFieldValue('externalBackup.s3.secretAccessKey', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -334,7 +340,7 @@ function S3IntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
@@ -345,7 +351,7 @@ function S3IntegrationForm({
                                 label="Update access key ID and secret access key"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

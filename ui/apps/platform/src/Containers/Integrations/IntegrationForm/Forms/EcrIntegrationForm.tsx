@@ -155,6 +155,12 @@ function EcrIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.ecr.accessKeyId', '');
+        setFieldValue('config.ecr.secretAccessKey', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -225,7 +231,7 @@ function EcrIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
                             helperText="Leave this off to use the currently stored credentials."
@@ -235,7 +241,7 @@ function EcrIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -268,7 +274,7 @@ function EcrIntegrationForm({
                                     value={values.config.ecr.accessKeyId}
                                     onChange={onChange}
                                     onBlur={handleBlur}
-                                    isDisabled={!isEditable}
+                                    isDisabled={!isEditable || !values.updatePassword}
                                 />
                             </FormLabelGroup>
                             <FormLabelGroup
@@ -285,7 +291,7 @@ function EcrIntegrationForm({
                                     value={values.config.ecr.secretAccessKey}
                                     onChange={onChange}
                                     onBlur={handleBlur}
-                                    isDisabled={!isEditable}
+                                    isDisabled={!isEditable || !values.updatePassword}
                                 />
                             </FormLabelGroup>
                         </>

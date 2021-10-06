@@ -129,6 +129,11 @@ function DtrIntegrationForm({
         return setFieldValue(id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.dtr.password', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -208,7 +213,7 @@ function DtrIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
                             helperText="Leave this off to use the currently stored credentials."
@@ -218,7 +223,7 @@ function DtrIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

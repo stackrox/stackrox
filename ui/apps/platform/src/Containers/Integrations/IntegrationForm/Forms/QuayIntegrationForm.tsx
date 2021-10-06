@@ -126,6 +126,11 @@ function QuayIntegrationForm({
         return setFieldValue(id, value);
     }
 
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('config.quay.oauthToken', '');
+        return setFieldValue(event.target.id, value);
+    }
+
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
@@ -188,7 +193,7 @@ function QuayIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
                             helperText="Leave this off to use the currently stored credentials."
@@ -198,7 +203,7 @@ function QuayIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onChange}
+                                onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
