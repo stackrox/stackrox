@@ -59,6 +59,7 @@ function ClusterEditForm({
                         helmConfig={selectedCluster.helmConfig}
                         handleChange={handleChange}
                         clusterType={selectedCluster.type}
+                        managerType={selectedCluster.managedBy}
                     />
                     {hasScopedAccessControl && (
                         <div className="pt-4">

@@ -187,7 +187,8 @@ describe.skip('Cluster Certificate Expiration', () => {
     });
 });
 
-describe('Cluster Creation Flow', () => {
+// TODO: re-enable and update these tests when we migrate Clusters section to PatternFly
+describe.skip('Cluster Creation Flow', () => {
     withAuth();
 
     beforeEach(() => {
@@ -221,7 +222,7 @@ describe('Cluster Creation Flow', () => {
         cy.wait('@clusters');
     });
 
-    xit('Should show a confirmation dialog when trying to delete clusters', () => {
+    it('Should show a confirmation dialog when trying to delete clusters', () => {
         cy.get(selectors.dialog).should('not.exist');
         cy.get(selectors.checkboxes).check();
         cy.get(selectors.buttons.delete).click({ force: true });
@@ -229,7 +230,7 @@ describe('Cluster Creation Flow', () => {
         cy.get(selectors.buttons.cancelDelete).click({ force: true });
     });
 
-    xit('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
+    it('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
         cy.get(selectors.buttons.new).click();
 
         const clusterName = 'Kubernetes Cluster TestInstance';
@@ -278,10 +279,10 @@ describe('Cluster Creation Flow', () => {
     });
 });
 
-describe('Cluster with Helm management', () => {
+describe('Cluster management', () => {
     withAuth();
 
-    it('should indicate which clusters are managed by Helm', () => {
+    it('should indicate which clusters are managed by Helm and the Operator', () => {
         cy.intercept('GET', clustersApi.list, {
             fixture: 'clusters/health.json',
         }).as('getClusters');
@@ -291,12 +292,23 @@ describe('Cluster with Helm management', () => {
             },
         }).as('getIsKernelSupportAvailable');
 
+        const currentDatetime = new Date('2020-08-31T13:01:00Z');
+        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+
         cy.visit(clustersUrl);
         cy.wait('@getClusters');
 
         const helmIndicator = '[data-testid="cluster-name"] img[alt="Managed by Helm"]';
+        const k8sOperatorIndicator =
+            '[data-testid="cluster-name"] img[alt="Managed by a Kubernetes Operator"]';
+        const anyIndicator = '[data-testid="cluster-name"] img';
         cy.get(`${selectors.clusters.tableRowGroup}:eq(0) ${helmIndicator}`).should('exist');
-        cy.get(`${selectors.clusters.tableRowGroup}:eq(1) ${helmIndicator}`).should('not.exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(1) ${anyIndicator}`).should('not.exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(2) ${k8sOperatorIndicator}`).should('exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(3) ${helmIndicator}`).should('exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(4) ${anyIndicator}`).should('not.exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(5) ${anyIndicator}`).should('not.exist');
+        cy.get(`${selectors.clusters.tableRowGroup}:eq(6) ${anyIndicator}`).should('not.exist');
     });
 });
 

@@ -15,10 +15,18 @@ import {
 import { clusterTypes } from './cluster.helpers';
 import HelmValueWarning from './Components/HelmValueWarning';
 
-const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, clusterType }) => {
+const DynamicConfigurationSection = ({
+    handleChange,
+    dynamicConfig,
+    helmConfig,
+    clusterType,
+    managerType,
+}) => {
     const { registryOverride, admissionControllerConfig } = dynamicConfig;
 
     const isLoggingSupported = clusterType === clusterTypes.OPENSHIFT_4;
+    const isOperatorManaged = managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR';
+
     // @TODO, replace open prop with dynamic logic, based on clusterType
     return (
         <CollapsibleSection
@@ -42,6 +50,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             value={registryOverride}
                             className={inputTextClassName}
                             placeholder="image-mirror.example.com"
+                            disabled={isOperatorManaged}
                         />
                     </div>
                     <HelmValueWarning
@@ -62,6 +71,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.enabled"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.enabled}
+                            disabled={isOperatorManaged}
                         />
                     </div>
                     {helmConfig &&
@@ -88,6 +98,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.enforceOnUpdates}
+                            disabled={isOperatorManaged}
                         />
                     </div>
                     <HelmValueWarning
@@ -112,6 +123,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.timeoutSeconds"
                             onChange={handleChange}
                             value={admissionControllerConfig.timeoutSeconds}
+                            disabled={isOperatorManaged}
                         />
                     </div>
                     <HelmValueWarning
@@ -134,6 +146,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.scanInline"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.scanInline}
+                            disabled={isOperatorManaged}
                         />
                     </div>
                     <HelmValueWarning
@@ -154,6 +167,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                             name="dynamicConfig.admissionControllerConfig.disableBypass"
                             toggleHandler={handleChange}
                             enabled={admissionControllerConfig.disableBypass}
+                            disabled={isOperatorManaged}
                         />
                     </div>
                     <HelmValueWarning
@@ -171,7 +185,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig, 
                         <ToggleSwitch
                             id="dynamicConfig.disableAuditLogs"
                             name="dynamicConfig.disableAuditLogs"
-                            disabled={!isLoggingSupported}
+                            disabled={!isLoggingSupported || isOperatorManaged}
                             toggleHandler={handleChange}
                             enabled={dynamicConfig.disableAuditLogs}
                             flipped

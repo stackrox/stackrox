@@ -115,6 +115,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 // don't want to cache or memoize, because we always want the latest real-time data
                 getClusterById(clusterIdToRetrieve)
                     .then((cluster) => {
+                        // eslint-disable-next-line no-param-reassign
+                        // cluster.managedBy = 'MANAGER_TYPE_MANUAL';
                         // TODO: refactor to use useReducer effect
                         setSelectedCluster(cluster);
 
@@ -123,7 +125,10 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             setPollingDelay(null);
                         }
 
-                        if (cluster.helmConfig) {
+                        if (
+                            (cluster.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN') ||
+                            cluster.managedBy === 'MANAGER_TYPE_HELM_CHART'
+                        ) {
                             if (wizardStep === wizardSteps.FORM) {
                                 setMessageState({
                                     type: 'warn',
@@ -135,6 +140,27 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                                 the cluster using the form below, please ask your
                                                 DevOps team to update the Helm values in source
                                                 control to ensure those changes are not overwritten.
+                                            </p>
+                                        </>
+                                    ),
+                                });
+                            }
+                        }
+
+                        if (cluster.managedBy === 'MANAGER_TYPE_KUBERNETES_OPERATOR') {
+                            if (wizardStep === wizardSteps.FORM) {
+                                setMessageState({
+                                    type: 'warn',
+                                    message: (
+                                        <>
+                                            <h3 className="font-700 mb-2">
+                                                Operator-managed cluster
+                                            </h3>
+                                            <p>
+                                                This is an operator-managed cluster. The settings of
+                                                operator-managed clusters cannot be changed here and
+                                                must instead be changed by updating its custom
+                                                resource definition (CRD).
                                             </p>
                                         </>
                                     ),
@@ -348,6 +374,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                 onFileDownload={onDownload}
                                 isDownloadingBundle={isDownloadingBundle}
                                 clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
+                                managerType={selectedCluster.managedBy}
                             />
                             {!!selectedCluster.id && (
                                 <DownloadHelmValues
