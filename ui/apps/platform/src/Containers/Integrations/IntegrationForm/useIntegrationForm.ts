@@ -53,12 +53,21 @@ function useIntegrationForm<T>({
 
     const { submitForm } = formik;
 
+    function scrollToFormAlert() {
+        const alertEl = document.getElementById('integration-form-alert');
+
+        if (alertEl) {
+            alertEl.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
     async function onTestHandler(optionsArg = {}) {
         setMessage(null);
         setIsTesting(true);
         setOptions(optionsArg);
         const response = await submitForm();
         setMessage(response);
+        scrollToFormAlert();
     }
 
     async function onSaveHandler(optionsArg = {}) {
@@ -67,6 +76,7 @@ function useIntegrationForm<T>({
         setOptions(optionsArg);
         const response = await submitForm();
         setMessage(response);
+        scrollToFormAlert();
     }
 
     return {

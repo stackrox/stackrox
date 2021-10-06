@@ -77,13 +77,13 @@ function ClusterInitBundleIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && (
-                    <div className="pf-u-pb-md">
+                <div id="integration-form-alert" className="pf-u-pb-md">
+                    {message && (
                         <ClusterInitBundleFormMessageAlert
                             message={message as ClusterInitBundleFormResponseMessage}
                         />
-                    </div>
-                )}
+                    )}
+                </div>
                 {isViewingDetails && initialValues ? (
                     <ClusterInitBundleDetails meta={initialValues} />
                 ) : (

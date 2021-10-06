@@ -170,7 +170,7 @@ function GenericWebhookIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && <FormMessage message={message} />}
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
                         <FormLabelGroup

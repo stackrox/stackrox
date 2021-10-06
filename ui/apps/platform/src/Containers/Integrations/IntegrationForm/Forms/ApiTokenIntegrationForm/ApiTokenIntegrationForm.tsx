@@ -104,13 +104,14 @@ function ApiTokenIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                {message && (
-                    <div className="pf-u-pb-md">
+                <div id="integration-form-alert" className="pf-u-pb-md">
+                    {message && (
                         <ApiTokenFormMessageAlert
                             message={message as ApiTokenFormResponseMessage}
                         />
-                    </div>
-                )}
+                    )}
+                </div>
+
                 {isViewingDetails && initialValues ? (
                     <DescriptionList>
                         <DescriptionListGroup>
