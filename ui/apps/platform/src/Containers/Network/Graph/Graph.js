@@ -54,7 +54,6 @@ class Graph extends Component {
 
         isSimulationOn: PropTypes.bool,
         // @TODO: merge this with networkNodeMap and networkEdgeMap somehow
-        // eslint-disable-next-line react/no-unused-prop-types
         simulatedBaselines: PropTypes.arrayOf(PropTypes.shape),
     };
 
@@ -100,7 +99,6 @@ class Graph extends Component {
         this.props.openSidePanel();
     };
 
-    // eslint-disable-next-line no-unused-vars
     onExternalEntitiesClick = () => {
         this.props.setSidePanelStage(sidepanelStages.externalDetails);
         this.props.openSidePanel();

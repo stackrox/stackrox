@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/control-has-associated-label */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { Download, ExternalLink } from 'react-feather';
 import { ClipLoader } from 'react-spinners';

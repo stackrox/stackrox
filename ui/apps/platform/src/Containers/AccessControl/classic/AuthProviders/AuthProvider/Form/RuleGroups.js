@@ -156,13 +156,11 @@ class RuleGroups extends Component {
                         </button>
                     </div>
                 ))}
-                {/* eslint-disable */}
                 <button
                     className="border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase ml-1 mb-4"
                     type="button"
                     onClick={addRule}
                 >
-                    {/* eslint-enable */}
                     Add New Rule
                 </button>
             </div>

@@ -38,7 +38,6 @@ const tableColumns = [
         Header: `Control Status`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName} capitalize`,
-        // eslint-disable-next-line
         Cell: ({ original, pdf }) => {
             if (original.status === COMPLIANCE_STATES['N/A']) {
                 return original.status;

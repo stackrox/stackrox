@@ -14,7 +14,6 @@ const CVETable = (props) => {
                 expander: true,
                 headerClassName: `w-1/8 ${defaultHeaderClassName} pointer-events-none bg-primary-200`,
                 className: 'w-1/8 flex items-center justify-end',
-                // eslint-disable-next-line react/prop-types
                 Expander: ({ isExpanded, ...rest }) => {
                     if (rest.original.vulns.length === 0) {
                         return '';
@@ -28,7 +27,6 @@ const CVETable = (props) => {
                 accessor: 'name',
                 headerClassName:
                     'pl-3 font-600 text-left border-b border-base-300 border-r-0 bg-primary-200',
-                // eslint-disable-next-line react/prop-types
                 Cell: ({ value }) => <div>{value}</div>,
             },
             {

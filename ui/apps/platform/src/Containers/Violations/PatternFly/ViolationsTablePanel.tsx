@@ -26,7 +26,6 @@ import TagConfirmation from './Modals/TagConfirmation';
 import { ListAlert } from './types/violationTypes';
 
 type TableCellProps = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     row: ListAlert;
     column: TableColumn;
 };

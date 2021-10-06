@@ -50,7 +50,6 @@ export function getColumnsForClusters({ metadata, rowActions }) {
         },
         {
             Header: 'Cloud Provider',
-            // eslint-disable-next-line react/prop-types
             Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
             headerClassName: `w-1/9 ${defaultHeaderClassName}`,
             className: `w-1/9 ${wrapClassName} ${defaultColumnClassName}`,

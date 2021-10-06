@@ -56,7 +56,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
-                  // eslint-disable-next-line
                   Cell: ({ original, pdf }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
@@ -79,7 +78,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                   className: `w-1/10 ${defaultColumnClassName}`,
                   accessor: 'namespace',
-                  // eslint-disable-next-line
                   Cell: ({ original, pdf }) => {
                       const {
                           id,
@@ -134,7 +132,6 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Deployments`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { id, deploymentCount } = original;
                 if (!deploymentCount) {

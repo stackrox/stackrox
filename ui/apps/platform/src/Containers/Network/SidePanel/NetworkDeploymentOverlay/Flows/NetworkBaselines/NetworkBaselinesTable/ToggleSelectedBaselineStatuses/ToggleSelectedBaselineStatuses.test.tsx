@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getSelectedRows } from './ToggleSelectedBaselineStatuses';
 
 import { Row } from '../tableTypes';

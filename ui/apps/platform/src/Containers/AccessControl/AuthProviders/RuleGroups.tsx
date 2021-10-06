@@ -1,5 +1,4 @@
 /* eslint-disable react/no-array-index-key */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { ReactElement } from 'react';
 import { FieldArray } from 'formik';
 import { Button, Flex, FlexItem, FormGroup, SelectOption, TextInput } from '@patternfly/react-core';

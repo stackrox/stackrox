@@ -1,5 +1,4 @@
 /* eslint-disable react/no-array-index-key */
-/* eslint-disable react/jsx-no-bind */
 import React, { ReactElement } from 'react';
 import {
     Button,
@@ -159,7 +158,6 @@ function ScopedAccessPluginIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return setFieldValue(event.target.id, value);
     }
 

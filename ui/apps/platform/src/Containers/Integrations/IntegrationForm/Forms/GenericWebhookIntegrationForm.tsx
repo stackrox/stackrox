@@ -164,7 +164,6 @@ function GenericWebhookIntegrationForm({
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return setFieldValue(event.target.id, value);
     }
 

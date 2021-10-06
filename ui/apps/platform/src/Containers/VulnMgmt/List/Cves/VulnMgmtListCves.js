@@ -72,8 +72,7 @@ export function getCveTableColumns(workflowState) {
             Header: `Type`,
             headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({original}) => {
+            Cell: ({ original }) => {
                 return (
                     <span className="mx-auto" data-testid="cve-type">
                         <CveType types={original.vulnerabilityTypes} />
@@ -89,7 +88,6 @@ export function getCveTableColumns(workflowState) {
             Header: `Fixable`,
             headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 const fixableFlag = original.isFixable ? (
                     <LabelChip text="Fixable" type="success" size="large" />
@@ -116,7 +114,6 @@ export function getCveTableColumns(workflowState) {
             Header: `Severity`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 text-center ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 return <CVSSSeverityLabel severity={original.severity} />;
             },
@@ -128,7 +125,6 @@ export function getCveTableColumns(workflowState) {
             Header: `CVSS Score`,
             headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { cvss, scoreVersion } = original;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
@@ -170,7 +166,6 @@ export function getCveTableColumns(workflowState) {
             Header: `Entities`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => (
                 <TableCountLinks row={original} textOnly={inFindingsSection || pdf} />
             ),

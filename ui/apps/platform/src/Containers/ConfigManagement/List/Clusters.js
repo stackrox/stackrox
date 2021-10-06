@@ -83,7 +83,6 @@ const buildTableColumns = (match, location) => {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { policyStatus } = original;
                 return <StatusChip status={policyStatus.status} asString={pdf} />;
@@ -97,7 +96,6 @@ const buildTableColumns = (match, location) => {
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'complianceControlCount',
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { complianceControlCount } = original;
                 const { passingCount, failingCount, unknownCount } = complianceControlCount;
@@ -122,7 +120,6 @@ const buildTableColumns = (match, location) => {
             Header: `Users & Groups`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { subjectCount } = original;
                 if (!subjectCount) {
@@ -147,7 +144,6 @@ const buildTableColumns = (match, location) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { serviceAccountCount } = original;
                 if (!serviceAccountCount) {
@@ -175,7 +171,6 @@ const buildTableColumns = (match, location) => {
             Header: `Roles`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { k8sRoleCount } = original;
                 if (!k8sRoleCount) {

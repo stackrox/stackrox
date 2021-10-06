@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { ReactElement, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {

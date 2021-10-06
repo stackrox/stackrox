@@ -23,7 +23,6 @@ import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
 
 type TableCellProps = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     row: Integration;
     column: {
         Header: string;

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import React, { ReactElement } from 'react';
 import { Card, CardBody, DescriptionList } from '@patternfly/react-core';
 

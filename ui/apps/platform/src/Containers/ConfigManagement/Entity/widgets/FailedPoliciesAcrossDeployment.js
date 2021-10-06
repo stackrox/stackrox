@@ -100,7 +100,6 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                         Header: `Severity`,
                         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                         className: `w-1/8 ${defaultColumnClassName}`,
-                        // eslint-disable-next-line
                         Cell: ({ original }) => {
                             const { severity } = original;
                             return <SeverityLabel severity={severity} />;

@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/control-has-associated-label */
 import React, { ReactElement, useState, useEffect } from 'react';
 import { Formik, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
