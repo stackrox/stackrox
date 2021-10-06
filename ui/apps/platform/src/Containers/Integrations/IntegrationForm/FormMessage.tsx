@@ -8,7 +8,7 @@ export type FormMessageProps = {
 };
 
 function FormMessage({ message }: FormMessageProps): ReactElement {
-    const title = message?.isError ? 'Could not save the integration' : 'Success';
+    const title = message?.isError ? 'Failure' : 'Success';
     const variant = message?.isError ? AlertVariant.danger : AlertVariant.success;
     return (
         <div id="integration-form-alert">
