@@ -116,9 +116,10 @@ export function getCveTableColumns(workflowState) {
                             </div>
                         );
                     }
-                    case 'Inactive': {
-                        return <div className="mx-auto">{activeStatus}</div>;
-                    }
+                    // TODO: uncomment the following case,  once Inactive can be determined with precision
+                    // case 'Inactive': {
+                    //     return <div className="mx-auto">{activeStatus}</div>;
+                    // }
                     case 'Undetermined':
                     default: {
                         return <div className="mx-auto">Undetermined</div>;
