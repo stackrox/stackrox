@@ -22,7 +22,7 @@ main() {
 
     api_hostname=localhost
     api_port=8000
-    lb_ip=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' || true)
+    lb_ip=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname' || true)
     if [ -n "${lb_ip}" ]; then
         api_hostname="${lb_ip}"
         api_port=443

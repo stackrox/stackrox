@@ -711,7 +711,7 @@ commands:
       - run:
           name: Pull the diagnostic bundle from Central
           command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir diagnostic-bundle
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug download-diagnostics --output-dir diagnostic-bundle --insecure-skip-tls-verify
             ls -l diagnostic-bundle
       - store_artifacts:
           path: diagnostic-bundle
@@ -739,9 +739,7 @@ commands:
       destination:
         type: string
         default: k8s-service-logs
-
     description: Stores StackRox and cluster logs as artifacts
-
     steps:
     - store_artifacts:
         path: /tmp/k8s-service-logs
@@ -753,7 +751,6 @@ commands:
         # In most jobs the logs are already grabbed by collect-k8s-logs
         type: boolean
         default: false
-
     description: Checks StackRox logs to ensure all services operated normally
     steps:
       - when:
@@ -763,7 +760,6 @@ commands:
                 name: Collect the StackRox logs
                 command: |
                   ./scripts/ci/collect-service-logs.sh stackrox
-
       - run:
           name: Verify that StackRox services did not restart during the runs
           command: |
@@ -779,7 +775,6 @@ commands:
                 fi
             fi
           when: always
-
       - run:
           name: Verify that StackRox service logs contain no suspicious entries
           command: |
@@ -1086,6 +1081,65 @@ commands:
               -e GOOGLE_CREDENTIALS="${GOOGLE_OPENSHIFT_4_CREDENTIALS}" \
               gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION destroy
           when: << parameters.when >>
+
+  destroy-rosa-cluster:
+    description: "Destroy ROSA cluster"
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - setup_remote_docker
+      - *loginToGCR
+      - run:
+          name: Destroy ROSA cluster
+          when: always
+          command: |
+            docker create -v /data --name artifacts alpine:3.9 /bin/true
+            docker cp "$PWD/artifacts/." artifacts:/data
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e OPENSHIFT_CLUSTER_MANAGER_API_TOKEN="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+              -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.15 \
+              destroy
+
+  destroy-aro-cluster:
+    description: "Destroy ARO cluster"
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - setup_remote_docker
+      - *loginToGCR
+      - run:
+          name: Destroy ARO cluster
+          when: always
+          command: |
+            docker create -v /data --name artifacts alpine:3.9 /bin/true
+            docker cp "$PWD/artifacts/." artifacts:/data
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.15 \
+              destroy
+
+  # ROSA and ARO teardown steps are not being run at the end of 'run-qa-tests'
+  # as expected, and troubleshooting is time prohibitive. So rather than passing
+  # teardown steps to 'run-qa-tests' I am passing a 'no-operation' and adding
+  # the steps just after the call to 'run-qa-tests'. This means the cluster
+  # destroy command is run under the api-e2e test context and not the 'run-qa-test'
+  # context.
+  nop-steps-stanza:
+    description: "nop-steps-stanza"
+    steps:
+      - run:
+          name: nop
+          command: echo &>/dev/null
 
   provision-gke-cluster:
     parameters:
@@ -1462,6 +1516,44 @@ commands:
       - teardown-clair:
           cluster-id: << parameters.cluster-id >>
 
+      - steps: << parameters.destroy-cluster >>
+
+  # Use this in place of 'run-qa-tests' to troubleshoot cluster bringup and
+  # teardown without waiting for real tests to run. Parameter signature should
+  # always match that of 'run-qa-tests'.
+  run-qa-tests-fake:
+    parameters:
+      cluster-id:
+        type: string
+      determine-whether-to-run:
+        type: steps
+      sensor-deploy-flavor:
+        type: string
+        default: kubectl
+      orchestrator-flavor:
+        type: string
+        default: k8s
+      use-websocket:
+        type: boolean
+        default: false
+      is-gke-cluster:
+        type: boolean
+        default: true
+      connect-to-cluster:
+        type: steps
+        default: []
+      destroy-cluster:
+        type: steps
+        default:
+          - teardown-gke
+    steps:
+      - checkout
+      - check-backend-changes
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - run:
+          name: QA Automation Platform
+          command: echo "there are no tests defined since this is a fake"
       - steps: << parameters.destroy-cluster >>
 
   provision-openshift-cluster:
@@ -2051,7 +2143,6 @@ commands:
       - store-test-results-and-artifacts:
           path: << parameters.path >>
 
-
   create-openshift-4-cluster:
     description: "Create an OpenShift 4 cluster"
     parameters:
@@ -2110,7 +2201,7 @@ jobs:
           name: Run Go unit tests
           command: GOTAGS= make go-unit-tests
       - post-go-unit-tests:
-          path: go-unit-junit-reports 
+          path: go-unit-junit-reports
 
   go-unit-tests-release:
     executor: custom
@@ -2120,7 +2211,7 @@ jobs:
           name: Run Go unit tests with release tag
           command: GOTAGS=release make go-unit-tests
       - post-go-unit-tests:
-          path: go-unit-release-junit-reports 
+          path: go-unit-release-junit-reports
 
   shell-unit-tests:
     executor: custom
@@ -2213,7 +2304,6 @@ jobs:
             # Matches comments of the form TODO(x), where x can be "DO NOT MERGE/don't-merge"/"dont-merge"/similar
             ./scripts/check-todos.sh 'do\s?n.*merge'
 
-
       # Only run checks after here if operator has changes
       - check-to-run:
           label: ci-openshift-4-operator-tests
@@ -2277,7 +2367,7 @@ jobs:
               echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
               circleci step halt
             fi
-            
+
       - run:
           name: Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)
           command: |
@@ -2400,12 +2490,12 @@ jobs:
             check_and_set "registry_username" "<< pipeline.parameters.registry_username >>"
             check_and_set "registry_password" "<< pipeline.parameters.registry_password >>"
             check_and_set "rox_license_key" "<< pipeline.parameters.rox_license_key >>"
-            
+
             if (( some_missing )); then
                 echo "Some required parameters are missing. Exiting."
                 exit 1
             fi
-          
+
       - provision-gke-cluster:
           cluster-id: "designated-image-tests"
 
@@ -2455,7 +2545,7 @@ jobs:
       - *storeQALogs
 
       # - teardown-gke
-  
+
   ###
   # Build jobs
   ###
@@ -2678,7 +2768,7 @@ jobs:
       - run:
           name: Check debugger presence in the main image
           command: make check-debugger
-      
+
       - run:
           name: Build roxctl image
           command: make docker-build-roxctl-image
@@ -3274,7 +3364,7 @@ jobs:
   ###
 
   gke-api-nongroovy-tests:
-    executor: 
+    executor:
       name: custom
       resource_class: medium+
     environment:
@@ -4388,7 +4478,6 @@ jobs:
             docker tag  docker.io/stackrox/docs:$DOCS_TAG docker.io/stackrox/docs:$MAIN_TAG
             ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/docs:$MAIN_TAG | cat
 
-
       - run:
           name: Push image into stackrox.io
           command: |
@@ -4574,11 +4663,165 @@ jobs:
                 fi
             done
 
+  provision-openshift-rosa-api-e2e-tests:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+      - check-to-run:
+          label: ci-openshift-rosa-tests
+          run-on-master: false
+          run-on-tags: true
+      - *loginToGCR
+      - setup_remote_docker
+      - run:
+          name: Launch ROSA cluster
+          timeout: 7200
+          command: |
+            docker create -v /data --name artifacts alpine:3.14 /bin/true
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e OPENSHIFT_CLUSTER_MANAGER_API_TOKEN="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+              -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-rosa:0.2.15 \
+              create
+            mkdir -p /home/circleci/artifacts
+            docker cp artifacts:/data/. /home/circleci/artifacts
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - artifacts
+
+  provision-openshift-aro-api-e2e-tests:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+      - check-to-run:
+          label: ci-openshift-aro-tests
+          run-on-master: false
+          run-on-tags: true
+      - *loginToGCR
+      - setup_remote_docker
+      - run:
+          name: Launch ARO cluster
+          timeout: 7200
+          command: |
+            docker create -v /data --name artifacts alpine:3.14 /bin/true
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.15 \
+              create
+            mkdir -p /home/circleci/artifacts
+            docker cp artifacts:/data/. /home/circleci/artifacts
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - artifacts
+
+  openshift-rosa-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_SYSLOG_INTEGRATION: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_AUDIT_LOG_DETECTION: true
+
+    steps:
+      - run-qa-tests:
+          cluster-id: openshift-rosa-api-e2e-tests
+          sensor-deploy-flavor: helm
+          orchestrator-flavor: openshift
+          determine-whether-to-run:
+            - check-to-run:
+                label: ci-openshift-rosa-tests
+                run-on-master: false
+                run-on-tags: true
+          use-websocket: true
+          is-gke-cluster: false
+          connect-to-cluster:
+            - run:
+                name: Restore KUBECONFIG and login to ROSA
+                command: |
+                  cci-export STORAGE pvc
+                  cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
+                  source "$PWD/artifacts/dotenv"
+                  oc_login_command=$(grep "oc login https.*username.*password" "$PWD/artifacts/log/rosa-create-admin.log")
+                  eval "$oc_login_command --insecure-skip-tls-verify=true"
+                  oc get nodes
+          destroy-cluster:
+            - nop-steps-stanza
+      - destroy-rosa-cluster
+
+  openshift-aro-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_SYSLOG_INTEGRATION: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_AUDIT_LOG_DETECTION: true
+
+    steps:
+      - run-qa-tests:
+          cluster-id: openshift-aro-api-e2e-tests
+          sensor-deploy-flavor: helm
+          orchestrator-flavor: openshift
+          determine-whether-to-run:
+            - check-to-run:
+                label: ci-openshift-aro-tests
+                run-on-master: false
+                run-on-tags: true
+          use-websocket: true
+          is-gke-cluster: false
+          connect-to-cluster:
+            - run:
+                name: Restore KUBECONFIG and login to ARO
+                command: |
+                  cci-export STORAGE pvc
+                  cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
+                  source "$PWD/artifacts/dotenv"
+                  source "/go/src/github.com/stackrox/rox/artifacts/dotenv"
+                  oc login "$API_ENDPOINT" --username "$CONSOLE_USER" --password "$CONSOLE_PASSWORD" --insecure-skip-tls-verify=true
+                  oc get nodes
+          destroy-cluster:
+            - nop-steps-stanza
+      - destroy-aro-cluster
+
 workflows:
   version: 2
 
   build_all:
-    when: 
+    when:
       not: << pipeline.parameters.trigger_on_demand >>
     jobs:
       - slack-notify:
@@ -4757,6 +5000,46 @@ workflows:
             - ui-unit-tests
             - push-release
 
+      - provision-openshift-rosa-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          context:
+            - com-redhat-cloud
+            - quay-cgorman1-readonly
+            - aws-setup
+
+      - openshift-rosa-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-rosa-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
+          context:
+            - com-redhat-cloud
+            - quay-cgorman1-readonly
+            - aws-setup
+
+      - provision-openshift-aro-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          context:
+            - com-redhat-cloud
+            - quay-cgorman1-readonly
+            - azure-ci
+            - aro-cluster-manager
+
+      - openshift-aro-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-aro-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
+          context:
+            - com-redhat-cloud
+            - quay-cgorman1-readonly
+            - azure-ci
+            - aro-cluster-manager
+
       - push-release:
           <<: *runOnlyOnReleaseBuilds
           context:
@@ -4842,4 +5125,4 @@ workflows:
       equal: [ "designated_image_test", << pipeline.parameters.workflow_name >> ]
     jobs:
       - designated-image-tests:
-          context: custom-executor-pull
+          context: quay-cgorman1-readonly

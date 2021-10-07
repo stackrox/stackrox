@@ -322,12 +322,17 @@ function launch_central {
         # wait for LB
         echo "Waiting for LB to provision"
         LB_IP=""
-        until [ -n "${LB_IP}" ]; do
+        until [[ -n "${LB_IP}" ]]; do
             echo -n "."
             sleep 1
-            LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
+            if [[ "$LB_IP" == "null" ]]; then
+              unset LB_IP
+            fi
         done
         export API_ENDPOINT="${LB_IP}:443"
+        echo
+        echo "API_ENDPOINT set to [$API_ENDPOINT]"
     elif [[ "${LOAD_BALANCER}" == "route" ]]; then
         # wait for route
         echo "Waiting for route to provision"
@@ -347,8 +352,9 @@ function launch_central {
     fi
 
     if [[ -n "$CI" ]]; then
-        echo "Sleep for 1 minute to allow for GKE stabilization"
-        sleep 60
+        # Needed for GKE and OpenShift clusters
+        echo "Sleep for 2 minutes to allow for stabilization"
+        sleep 120
     fi
 
     wait_for_central "${API_ENDPOINT}"

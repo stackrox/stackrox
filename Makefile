@@ -176,6 +176,11 @@ ui-lint:
 	@echo "+ $@"
 	make -C ui lint
 
+.PHONY: ci-config-validate
+ci-config-validate:
+	@echo "+ $@"
+	circleci config validate
+
 .PHONY: staticcheck
 staticcheck: $(STATICCHECK_BIN)
 	@echo "+ $@"

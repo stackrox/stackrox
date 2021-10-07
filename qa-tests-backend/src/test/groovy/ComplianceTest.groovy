@@ -1048,6 +1048,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "get compliance aggregation results"
         Assume.assumeTrue(ClusterService.isOpenShift4())
+        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
         println "Getting compliance results for ${standard}"
         ComplianceRunResults run = BASE_RESULTS.get(standard)
@@ -1084,6 +1085,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "get compliance aggregation results"
         Assume.assumeTrue(ClusterService.isOpenShift4())
+        Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
         println "Getting compliance results for ocp4-cis"
         ComplianceRunResults run = BASE_RESULTS.get("ocp4-cis")
