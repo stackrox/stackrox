@@ -189,7 +189,7 @@ function ClairifyIntegrationForm({
                     {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
-                            helperText="Leave this off to use the currently stored credentials."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox

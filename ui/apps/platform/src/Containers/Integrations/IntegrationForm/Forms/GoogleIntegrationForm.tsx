@@ -218,7 +218,7 @@ function DockerIntegrationForm({
                     {!isCreating && isEditable && (
                         <FormLabelGroup
                             fieldId="updatePassword"
-                            helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox
