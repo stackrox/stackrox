@@ -16,6 +16,6 @@ type Environment interface {
 	// GRPCConnection returns an authenticated grpc.ClientConn
 	GRPCConnection() (*grpc.ClientConn, error)
 
-	// InputOutput returns an IO which hols all input / output streams
+	// InputOutput returns an IO which holds all input / output streams
 	InputOutput() IO
 }

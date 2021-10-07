@@ -24,6 +24,21 @@ const (
 	jsonFailFlagName = "json-fail-on-policy-violations"
 )
 
+// Default values for tabular output to specify when using printer.ObjectPrinterFlags
+var (
+/*
+	defaultPolicyCheckHeaders = []string{
+		"POLICY", "SEVERITY", "DESCRIPTION", "VIOLATION", "REMEDIATION",
+	}
+	defaultPolicyCheckJSONPathExpressions = []string{
+		"result.violated-policies.#.name",
+		"result.violated-policies.#.severity",
+		"result.violated-policies.#.description",
+		"result.violated-policies.#.violation",
+		"result.violated-policies.#.remediation",
+	}*/
+)
+
 // Command checks the image against image build lifecycle policies
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageCheckCmd := &imageCheckCommand{env: cliEnvironment}

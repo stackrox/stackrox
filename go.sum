@@ -1841,12 +1841,12 @@ github.com/stackrox/scanner v0.0.0-20201218051228-bb42033af91b/go.mod h1:EQhODmC
 github.com/stackrox/scanner v0.0.0-20210602003504-057b882c8d87/go.mod h1:PhJN0RifIi+uF2VHzD9jeTmQnbDLVwcAfDRscYJOR5Y=
 github.com/stackrox/scanner v0.0.0-20210817231857-4acbccb682b8 h1:aE5+QUJ/hNgOVJ/1AhAYme5uYpU9g5x7RndQnFchtf8=
 github.com/stackrox/scanner v0.0.0-20210817231857-4acbccb682b8/go.mod h1:bMNCrv38vOauEWjHAOtXyb4bvobydRcQ0TdT8s7upO8=
+github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
+github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQo=
 github.com/stackrox/yaml/v2 v2.4.1/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
 github.com/stackrox/yaml/v3 v3.0.0 h1:GF9Xtco/eGpj6Ytivh7RcUJQR2jKxzEBfw2Qlrzci7g=
 github.com/stackrox/yaml/v3 v3.0.0/go.mod h1:360StwOazy3cplMWHzBAA9y6InmKu/v7WB0/eMiPXB8=
-github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
-github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f h1:Ofa3PAa609eSHcHP2kCJDUWUnuEWfiqXhsuppk/QtOE=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980/go.mod h1:AO3tvPzVZ/ayst6UlUKUv6rcPQInYe3IknH3jYhAKu8=
