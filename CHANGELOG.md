@@ -5,6 +5,9 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+
+## [66.0]
+
 - Default system policies `DockerHub NGINX 1.10`, `Shellshock: Multiple CVEs`, and `Heartbleed: CVE-2014-0160` have been deprecated.
 - Default system policy deletion is prohibited in fresh installations of 65 or greater. If the initial installation 
   was done in a version lower than 65, then default policies can be deleted even after an upgrade to 65 or greater.
