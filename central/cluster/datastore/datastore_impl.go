@@ -348,6 +348,9 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 		if cluster.GetName() != existingCluster.GetName() {
 			return errors.Errorf("cannot update cluster. Cluster name change from %s not permitted", existingCluster.GetName())
 		}
+		if cluster.GetManagedBy() != existingCluster.GetManagedBy() {
+			return errors.Errorf("Cannot update cluster. Cluster manager type change from %s not permitted.", existingCluster.GetManagedBy())
+		}
 		cluster.Status = existingCluster.GetStatus()
 	}
 
