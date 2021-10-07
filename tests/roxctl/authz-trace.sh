@@ -33,7 +33,48 @@ curl_central_token() {
   curl_central "$@" -H "Authorization: Bearer $(cat $TOKEN_FILE)"
 }
 
-TARGET_ENDPOINT="/v1/alertscount"
+verify_trace_for_endpoint() {
+  echo "Verifying trace for endpoint: " "$@"
+  target_endpoint="$@"
+  # Wait for a record triggered by the request to appear in the trace file.
+  ( tail -f trace.out & ) | grep -q $target_endpoint
+
+  # Extract the trace triggered by the request.
+  target_trace="$(jq <trace.out -cr 'select(.request.endpoint == "'$target_endpoint'") | .trace' | head -n 1)"
+
+  # Check if the trace is not null.
+  if [[ -z "$target_trace" || "$target_trace" == "null" ]]; then
+    eecho "Expected trace for '$target_endpoint' not found"
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+  fi
+  # Check if scopeCheckerType is built-in.
+  scope_checker_type=$(echo "$target_trace" | jq -r '.scopeCheckerType')
+  if [ "$scope_checker_type" != "built-in" ]; then
+    eecho "scopeCheckerType should be set to 'built-in'"
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+  fi
+  # Check clustersTotalNum > 0.
+  clusters_total_num=$(echo "$target_trace" | jq -r '.builtIn.clustersTotalNum')
+  if [ "$clusters_total_num" -le "0" ]; then
+    eecho "clustersTotalNum should be > 0"
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+  fi
+  # Check namespaceTotalNum > 0.
+  namespaces_total_num=$(echo "$target_trace" | jq -r '.builtIn.namespacesTotalNum')
+  if [ "$namespaces_total_num" -le "0" ]; then
+    eecho "namespacesTotalNum should be > 0"
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+  fi
+
+  if (( FAILED_CHECKS == 0 )); then
+    echo "Passed for endpoint: " "$@"
+  else
+    eecho "$FAILED_CHECKS checks failed"
+    eecho "Trace:"
+    echo "$target_trace" | jq . >&2
+    exit 1
+  fi
+}
 
 # Retrieve API token.
 echo "Retrieve API token"
@@ -44,48 +85,15 @@ curl_central_admin /v1/apitokens/generate -d '{"name": "test", "roles": ["Analys
 FAILED_CHECKS=0
 
 # Run authorization trace collection in the background.
-nohup roxctl --endpoint "$API_ENDPOINT" --insecure-skip-tls-verify --insecure -p "$ROX_PASSWORD" -t 10s central debug authz-trace > trace.out &
+nohup roxctl --endpoint "$API_ENDPOINT" --insecure-skip-tls-verify --insecure -p "$ROX_PASSWORD" -t 20s central debug authz-trace > trace.out &
 # Wait for roxctl to subscribe for authz traces.
 sleep 5
 
-# Query Central to get a specific authz trace.
-curl_central_token $TARGET_ENDPOINT -o /dev/null || die "Failed to query alerts count"
+# Query Central to get a specific non-GRPC authz trace.
+REQUEST_PAYLOAD='{"operationName":"getNodes","variables":{"query":""},"query":"query getNodes($query: String) {nodeCount(query: $query)}"}'
+curl_central_token "/api/graphql?opname=getNodes" -d "$REQUEST_PAYLOAD" -X POST -o /dev/null || die "Failed to query GraphQL getNodes"
+verify_trace_for_endpoint "/api/graphql?opname=getNodes"
 
-# Wait for a record triggered by the request to appear in the trace file.
-( tail -f trace.out & ) | grep -q $TARGET_ENDPOINT
-
-# Extract the trace triggered by the request.
-log_level_trace="$(jq <trace.out -cr 'select(.request.endpoint == "'$TARGET_ENDPOINT'") | .trace' | head -n 1)"
-
-# Check if the trace is not null.
-if [[ -z "$log_level_trace" || "$log_level_trace" == "null" ]]; then
-  eecho "Expected trace for '$TARGET_ENDPOINT' not found"
-  FAILED_CHECKS=$((FAILED_CHECKS + 1))
-fi
-# Check if scopeCheckerType is built-in.
-scope_checker_type=$(echo "$log_level_trace" | jq -r '.scopeCheckerType')
-if [ "$scope_checker_type" != "built-in" ]; then
-  eecho "scopeCheckerType should be set to 'built-in'"
-  FAILED_CHECKS=$((FAILED_CHECKS + 1))
-fi
-# Check clustersTotalNum > 0.
-clusters_total_num=$(echo "$log_level_trace" | jq -r '.builtIn.clustersTotalNum')
-if [ "$clusters_total_num" -le "0" ]; then
-  eecho "clustersTotalNum should be > 0"
-  FAILED_CHECKS=$((FAILED_CHECKS + 1))
-fi
-# Check namespaceTotalNum > 0.
-namespaces_total_num=$(echo "$log_level_trace" | jq -r '.builtIn.namespacesTotalNum')
-if [ "$namespaces_total_num" -le "0" ]; then
-  eecho "namespacesTotalNum should be > 0"
-  FAILED_CHECKS=$((FAILED_CHECKS + 1))
-fi
-
-if (( FAILED_CHECKS == 0 )); then
-  echo "Passed"
-else
-  eecho "$FAILED_CHECKS checks failed"
-  eecho "Trace:"
-  echo "$log_level_trace" | jq . >&2
-  exit 1
-fi
+# Query Central to get a specific GRPC authz trace.
+curl_central_token "/v1/alertscount" -o /dev/null || die "Failed to query alerts count"
+verify_trace_for_endpoint "/v1/alertscount"
