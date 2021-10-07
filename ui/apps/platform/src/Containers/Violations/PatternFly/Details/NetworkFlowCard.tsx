@@ -36,11 +36,11 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
                     <CardBody>
                         <DescriptionList>
                             <DescriptionListItem
-                                term="Source Entity Type"
+                                term="Source entity type"
                                 desc={networkFlowInfo.source.entityType}
                             />
                             <DescriptionListItem
-                                term="Source Name"
+                                term="Source name"
                                 desc={networkFlowInfo.source.name}
                             />
                             {(!!networkFlowInfo?.source?.deploymentType ||
@@ -48,24 +48,24 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
                                 <>
                                     {!!networkFlowInfo?.source?.deploymentType && (
                                         <DescriptionListItem
-                                            term="Source Deployment Type"
+                                            term="Source deployment type"
                                             desc={networkFlowInfo.source.deploymentType}
                                         />
                                     )}
                                     {!!networkFlowInfo?.source?.deploymentNamespace && (
                                         <DescriptionListItem
-                                            term="Source Namespace"
+                                            term="Source namespace"
                                             desc={networkFlowInfo.source.deploymentNamespace}
                                         />
                                     )}
                                 </>
                             )}
                             <DescriptionListItem
-                                term="Destination Entity Type"
+                                term="Destination entity type"
                                 desc={networkFlowInfo.destination.entityType}
                             />
                             <DescriptionListItem
-                                term="Destination Name"
+                                term="Destination name"
                                 desc={networkFlowInfo.destination.name}
                             />
                             {(!!networkFlowInfo?.destination?.deploymentType ||
@@ -73,20 +73,20 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
                                 <>
                                     {!!networkFlowInfo?.destination?.deploymentType && (
                                         <DescriptionListItem
-                                            term="Destination Deployment Type"
+                                            term="Destination deployment type"
                                             desc={networkFlowInfo.destination.deploymentType}
                                         />
                                     )}
                                     {!!networkFlowInfo?.destination?.deploymentNamespace && (
                                         <DescriptionListItem
-                                            term="Destination Namespace"
+                                            term="Destination namespace"
                                             desc={networkFlowInfo.destination.deploymentNamespace}
                                         />
                                     )}
                                 </>
                             )}
                             <DescriptionListItem
-                                term="Destination Port"
+                                term="Destination port"
                                 desc={networkFlowInfo.destination.port as string}
                             />
                             <DescriptionListItem term="Protocol" desc={networkFlowInfo.protocol} />

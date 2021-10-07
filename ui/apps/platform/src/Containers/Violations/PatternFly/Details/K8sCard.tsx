@@ -42,9 +42,13 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
                     <CardBody className="pf-u-mt-lg">
                         <DescriptionList isHorizontal>
                             <DescriptionListItem term="Time" desc={format(time, dateTimeFormat)} />
-                            <Divider component="div" />
+                            {keyValueAttrs.attrs?.length > 0 && <Divider component="div" />}
                             {keyValueAttrs.attrs.map(({ key, value }) => (
-                                <DescriptionListItem term={capitalize(key)} desc={value} />
+                                <DescriptionListItem
+                                    term={capitalize(key)}
+                                    desc={value}
+                                    key={key}
+                                />
                             ))}
                         </DescriptionList>
                     </CardBody>

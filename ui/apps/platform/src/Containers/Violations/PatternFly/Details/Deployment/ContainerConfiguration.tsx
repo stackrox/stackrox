@@ -7,11 +7,14 @@ import ContainerSecrets from './ContainerSecrets';
 import ContainerResources from './ContainerResources';
 import ContainerImage from './ContainerImage';
 
-function Commands({ command }) {
+function MultilineDescription({ descArr }) {
     return (
         <Flex direction={{ default: 'column' }}>
-            {command.map((line) => (
-                <FlexItem>{line}</FlexItem>
+            {descArr.map((desc, idx) => (
+                // eslint-disable-next-line react/no-array-index-key
+                <div key={idx}>
+                    <FlexItem>{desc}</FlexItem>
+                </div>
             ))}
         </Flex>
     );
@@ -24,16 +27,22 @@ function ContainerConfiguration({ container }): ReactElement {
         <DescriptionList data-testid="container-configuration" isHorizontal>
             <ContainerImage image={image} />
             <Divider component="div" />
-            {(command || args) && (
+            {(command?.length > 0 || args?.length > 0) && (
                 <>
                     {command.length > 0 && (
                         <DescriptionListItem
                             term="Commands"
-                            desc={<Commands command={command} />}
+                            desc={<MultilineDescription descArr={command} />}
                             data-testid="commands"
                         />
                     )}
-                    {args?.length > 0 && <DescriptionListItem term="Arguments" desc={args} />}
+                    {args?.length > 0 && (
+                        <DescriptionListItem
+                            term="Arguments"
+                            desc={<MultilineDescription descArr={args} />}
+                            data-testid="arguments"
+                        />
+                    )}
                     <Divider component="div" />
                 </>
             )}
@@ -70,8 +79,9 @@ function ContainerConfigurations({ deployment }): ReactElement {
         <Card isFlat>
             <CardBody>
                 {deployment?.containers?.length > 0
-                    ? deployment.containers.map((container) => (
-                          <ContainerConfiguration container={container} />
+                    ? deployment.containers.map((container, idx) => (
+                          // eslint-disable-next-line react/no-array-index-key
+                          <ContainerConfiguration container={container} key={idx} />
                       ))
                     : 'None'}
             </CardBody>
