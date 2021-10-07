@@ -78,7 +78,7 @@ const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit, isDisabled }
                                 data-testid="comment-header-subtitle"
                             >
                                 {createdTime && format(createdTime, dateTimeFormat)}
-                                {isCommentUpdated && '(edited)'}
+                                {isCommentUpdated && ' (edited)'}
                             </FlexItem>
                         </Flex>
                     </CardTitle>

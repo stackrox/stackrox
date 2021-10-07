@@ -43,11 +43,11 @@ function ProcessCard({ processes, message }) {
                         className="pf-u-my-md"
                     >
                         <DescriptionListItem
-                            term="First Occurrence"
+                            term="First occurrence"
                             desc={format(firstOccurrenceTimestamp, dateTimeFormat)}
                         />
                         <DescriptionListItem
-                            term="Last Occurrence"
+                            term="Last occurrence"
                             desc={format(lastOccurrenceTimestamp, dateTimeFormat)}
                         />
                     </DescriptionList>

@@ -2,14 +2,13 @@ import React, { useEffect, useState, ReactElement } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import Raven from 'raven-js';
-import { PageSection } from '@patternfly/react-core';
+import { PageSection, Bullseye, Alert } from '@patternfly/react-core';
 
 import { actions as alertActions } from 'reducers/alerts';
 import { SearchEntry } from 'reducers/pageSearch';
 import { selectors } from 'reducers';
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 
-import MessageCentered from 'Components/MessageCentered';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import VIOLATION_STATES from 'constants/violationStates';
@@ -44,7 +43,7 @@ function ViolationsTablePage(): ReactElement {
     const [isViewFiltered, setIsViewFiltered] = useState(false);
 
     // Handle changes in the current table page.
-    const [currentPage, setCurrentPage] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(50);
 
     // Handle changes in the currently displayed violations.
@@ -77,8 +76,10 @@ function ViolationsTablePage(): ReactElement {
 
     if (hasExecutableFilter && !isViewFiltered) {
         setIsViewFiltered(true);
+        setCurrentPage(1);
     } else if (hasNoFilter && isViewFiltered) {
         setIsViewFiltered(false);
+        setCurrentPage(1);
     }
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
@@ -165,7 +166,9 @@ function ViolationsTablePage(): ReactElement {
                 autoCompleteCategories={['ALERTS']}
             />
             {currentPageAlertsErrorMessage ? (
-                <MessageCentered type="error">{currentPageAlertsErrorMessage}</MessageCentered>
+                <Bullseye>
+                    <Alert variant="danger" title={currentPageAlertsErrorMessage} />
+                </Bullseye>
             ) : (
                 <ViolationsTablePanel
                     violations={currentPageAlerts}

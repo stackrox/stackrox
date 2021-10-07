@@ -181,19 +181,19 @@ function ViolationsTablePanel({
                     >
                         <SelectOption
                             key="0"
-                            value={`Add Tags for Violations (${numSelected})`}
+                            value={`Add tags for violations (${numSelected})`}
                             onClick={showTagConfirmationDialog}
                             data-testid="bulk-add-tags-btn"
                         />
                         <SelectOption
                             key="1"
-                            value={`Mark as Resolved (${numResolveable})`}
+                            value={`Mark as resolved (${numResolveable})`}
                             isDisabled={numResolveable === 0}
                             onClick={showResolveConfirmationDialog}
                         />
                         <SelectOption
                             key="2"
-                            value={`Exclude (${numScopesToExclude})`}
+                            value={`Exclude deployments from policy (${numScopesToExclude})`}
                             isDisabled={numScopesToExclude === 0}
                             onClick={showExcludeConfirmationDialog}
                         />
@@ -270,7 +270,7 @@ function ViolationsTablePanel({
                             }
                             if (!isDeployCreateAttemptedAlert && 'deployment' in violation) {
                                 actionItems.push({
-                                    title: 'Exclude deployment',
+                                    title: 'Exclude deployment from policy',
                                     onClick: () =>
                                         excludeDeployments(policy.id, [violation.deployment.name]),
                                 });

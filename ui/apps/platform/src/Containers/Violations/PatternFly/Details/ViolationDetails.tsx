@@ -26,7 +26,7 @@ function ViolationDetails({
         <Flex className="pf-u-mt-md">
             <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                 <FlexItem>
-                    <Title headingLevel="h3">Violation Events</Title>
+                    <Title headingLevel="h3">Violation events</Title>
                 </FlexItem>
                 {showRuntimeMessages && (
                     <FlexItem>
@@ -48,7 +48,7 @@ function ViolationDetails({
                 flex={{ default: 'flex_1' }}
             >
                 <FlexItem>
-                    <Title headingLevel="h3">Add Violation Metadata</Title>
+                    <Title headingLevel="h3">Add violation metadata</Title>
                 </FlexItem>
                 <FlexItem data-testid="violation-tags">
                     <ViolationTags resourceId={violationId} />

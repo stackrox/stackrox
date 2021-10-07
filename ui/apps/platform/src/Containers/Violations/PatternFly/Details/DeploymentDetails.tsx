@@ -100,21 +100,24 @@ const DeploymentDetails = ({ deployment }) => {
                         </Card>
                     </FlexItem>
                     <FlexItem>
-                        <Title headingLevel="h3">Port Configuration</Title>
+                        <Title headingLevel="h3">Port configuration</Title>
                     </FlexItem>
                     <FlexItem>
                         <Card isFlat data-testid="port-configuration">
                             <CardBody>
                                 {deploymentObj?.ports?.length > 0
-                                    ? formatDeploymentPorts(deploymentObj.ports).map((port) => (
-                                          <ObjectDescriptionList data={port} />
-                                      ))
+                                    ? formatDeploymentPorts(deploymentObj.ports).map(
+                                          (port, idx) => (
+                                              // eslint-disable-next-line react/no-array-index-key
+                                              <ObjectDescriptionList data={port} key={idx} />
+                                          )
+                                      )
                                     : 'None'}
                             </CardBody>
                         </Card>
                     </FlexItem>
                     <FlexItem>
-                        <Title headingLevel="h3">Security Context</Title>
+                        <Title headingLevel="h3">Security context</Title>
                     </FlexItem>
                     <FlexItem>
                         <SecurityContext deployment={relatedDeployment} />
@@ -122,7 +125,7 @@ const DeploymentDetails = ({ deployment }) => {
                 </Flex>
                 <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                     <FlexItem>
-                        <Title headingLevel="h3">Container Configuration</Title>
+                        <Title headingLevel="h3">Container configuration</Title>
                     </FlexItem>
                     <FlexItem>
                         <ContainerConfiguration deployment={relatedDeployment} />

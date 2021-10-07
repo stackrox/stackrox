@@ -28,11 +28,11 @@ function ContainerImage({ image }: ContainerImageProps): ReactElement {
                 <span className="pf-u-pl-sm">({unavailableText})</span>
             </div>
         );
-        return <DescriptionListItem term="Image Name" desc={NameComponent} />;
+        return <DescriptionListItem term="Image name" desc={NameComponent} />;
     }
     return (
         <DescriptionListItem
-            term="Image Name"
+            term="Image name"
             desc={<Link to={`${vulnManagementPath}/image/${image.id}`}>{image.name.fullName}</Link>}
         />
     );
