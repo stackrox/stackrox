@@ -147,13 +147,7 @@ func sortNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CVE,
 			return result
 		})
 	}
-	paginatedCVEs, err := paginationWrapper{
-		pv: query.GetPagination(),
-	}.paginate(cves, nil)
-	if err != nil {
-		return nil, err
-	}
-	return paginatedCVEs.([]*storage.CVE), nil
+	return cves, nil
 }
 
 func (resolver *cVEResolver) Cvss(ctx context.Context) float64 {
@@ -218,11 +212,15 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 
 	query = tryUnsuppressedQuery(query)
 
-	originalQuery := query
+	originalQuery := query.Clone()
 	var queryModified, postSortingNeeded bool
 	if distroctx.IsImageScoped(ctx) {
-		query, queryModified = search.InverseFilterQueryWithMap(query, cvePostFilteringOptionsMap)
+		query, queryModified = search.InverseFilterQueryWithMap(query, cvePostFilteringOptionsMap) // CVE queryModified
 		postSortingNeeded = needsPostSorting(originalQuery)
+		// We remove pagination since we want to ensure that result is correct by pushing the pagination to happen after the post sorting.
+		if postSortingNeeded {
+			query.Pagination = nil
+		}
 	}
 
 	vulns, err := vulnLoader.FromQuery(ctx, query)
@@ -241,8 +239,20 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 			return nil, err
 		}
 	}
-	vulnResolvers, err := resolver.wrapCVEs(vulns, err)
 
+	// If query was modified, it means the result was not paginated since the filtering removes pagination.
+	// If post sorting was needed, which means pagination was not performed because it was it was removed above.
+	if queryModified || postSortingNeeded {
+		paginatedVulns, err := paginationWrapper{
+			pv: originalQuery.GetPagination(),
+		}.paginate(vulns, nil)
+		if err != nil {
+			return nil, err
+		}
+		vulns = paginatedVulns.([]*storage.CVE)
+	}
+
+	vulnResolvers, err := resolver.wrapCVEs(vulns, err)
 	ret := make([]VulnerabilityResolver, 0, len(vulns))
 	for _, resolver := range vulnResolvers {
 		resolver.ctx = ctx
