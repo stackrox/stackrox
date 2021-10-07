@@ -2,13 +2,14 @@ package observe
 
 import (
 	"context"
+	"net/http"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"google.golang.org/grpc"
 )
-
-// TODO(ROX-7951): Support non-gRPC requests as well, e.g., `/api/graphql`.
 
 // AuthzTraceInterceptor supports tracing for authorization decisions by
 // extracting an instance of a specific struct from the context which was
@@ -23,6 +24,27 @@ func AuthzTraceInterceptor(authzTraceSink AuthzTraceSink) grpc.UnaryServerInterc
 
 		return resp, err
 	}
+}
+
+// AuthzTraceHTTPInterceptor serves as AuthzTraceInterceptor for non-GRPC requests.
+func AuthzTraceHTTPInterceptor(authzTraceSink AuthzTraceSink) httputil.HTTPInterceptor {
+	return func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
+			handler.ServeHTTP(statusTrackingWriter, r)
+			if trace := AuthzTraceFromContext(r.Context()); trace != nil {
+				err := statusCodeToError(statusTrackingWriter.GetStatusCode())
+				go sendAuthzTrace(r.Context(), authzTraceSink, "", err, trace)
+			}
+		})
+	}
+}
+
+func statusCodeToError(code *int) error {
+	if code == nil || *code == http.StatusOK {
+		return nil
+	}
+	return errors.Errorf("%d %s", *code, http.StatusText(*code))
 }
 
 func sendAuthzTrace(ctx context.Context, authzTraceSink AuthzTraceSink, rpcMethod string, handlerErr error, trace *AuthzTrace) {
