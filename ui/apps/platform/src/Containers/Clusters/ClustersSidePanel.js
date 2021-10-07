@@ -239,7 +239,11 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                     setSelectedCluster(clusterWithId);
 
                     setWizardStep(wizardSteps.DEPLOYMENT);
-                    if (clusterWithId.helmConfig) {
+                    if (
+                        (clusterWithId.helmConfig &&
+                            clusterWithId.managedBy === 'MANAGER_TYPE_UNKNOWN') ||
+                        clusterWithId.managedBy === 'MANAGER_TYPE_HELM_CHART'
+                    ) {
                         setMessageState({
                             type: 'error',
                             message: (
