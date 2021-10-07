@@ -301,7 +301,7 @@ function GcsIntegrationForm({
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
-                            helperText="Leave this off to use the currently stored credentials."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             touched={touched}
                             errors={errors}
                         >

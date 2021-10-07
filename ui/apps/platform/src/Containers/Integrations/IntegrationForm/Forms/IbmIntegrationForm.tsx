@@ -163,7 +163,7 @@ function IbmIntegrationForm({
                         <FormLabelGroup
                             fieldId="updatePassword"
                             isRequired
-                            helperText="Setting this to false will use the currently stored credentials, if they exist."
+                            helperText="Enable this option to replace currently stored credentials (if any)"
                             errors={errors}
                         >
                             <Checkbox
