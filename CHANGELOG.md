@@ -29,6 +29,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   the default might not have been applied: a symptom of this is that the fields are not shown when printing the object.
   In these cases this update will change the behaviour of admission controller.
 - Scanner no longer supports Oracle Linux
+- Added component `Active` state to individual component and list of components under Vulnerability Management within the scope of a specific deployment. The Active state can be:
+  - `Undetermined`: the component is not detected to be run in the specific deployment.
+  - `Active`: the component was run in the specific deployment.
 
 ## [65.0]
 - Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 
