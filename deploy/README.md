@@ -16,7 +16,7 @@ $ LOAD_BALANCER=route ./deploy/openshift/deploy.sh
 
 ## Env variables
 
-Most environment variables can be found in [common/env.sh](https://github.com/stackrox/rox/blob/e57c8fe3b98c3833f2b2ff0d634fc325b88e0372/deploy/common/env.sh).
+Most environment variables can be found in [common/env.sh](common/env.sh).
 
 | **Name**           | **Values**            | **Description**                                                                                                                                                            |
 |--------------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
