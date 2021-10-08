@@ -45,7 +45,7 @@ func StatusFromError(err error) int {
 		return he.HTTPStatusCode()
 	}
 
-	// `errors.ErrToHTTPStatus()` must handle both gRPC known internal
+	// `errors.ErrToHTTPStatus()` must handle both gRPC and known internal
 	// sentinel errors.
 	return errors.ErrToHTTPStatus(err)
 }

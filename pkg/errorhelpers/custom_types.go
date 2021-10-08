@@ -6,6 +6,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Sentinel errors for generic error classes. Must be convertible to gRPC's
+// status.Status (via the respective interceptor) and hence also mapped to HTTP
+// status codes. Note that error messages are the only reliable indicator of
+// the error type in some cases, e.g., when embedded into a GraphQL response,
+// thus changing them might break error matching for some clients, e.g., the UI.
 var (
 	// ErrAlreadyExists indicates that a object already exists.
 	ErrAlreadyExists = errors.New("already exists")
