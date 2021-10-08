@@ -87,22 +87,18 @@ ALLOWED_VULNS=$(jq -c '.[]' "$DIR/allowed_vulns.json")
 
 # check main images
 compare_fixable_vulns "main" "$RELEASE_TAG"
-compare_fixable_vulns "main-rhel" "$RELEASE_TAG"
 
 # check docs image - using the pre-release tag (not the release tag)
 compare_fixable_vulns "docs" "$DOCS_PRERELEASE_TAG"
 
 # check collector images
 compare_fixable_vulns "collector" "$COLLECTOR_TAG"
-compare_fixable_vulns "collector-rhel" "$COLLECTOR_TAG"
 
 # check scanner images
 compare_fixable_vulns "scanner" "$SCANNER_TAG"
-compare_fixable_vulns "scanner-rhel" "$SCANNER_TAG"
 
 # check scanner-db images
 compare_fixable_vulns "scanner-db" "$SCANNER_TAG"
-compare_fixable_vulns "scanner-db-rhel" "$SCANNER_TAG"
 
 # if fixable vulns found, return 1 so CI can fail the job
 [ "$FAIL_SCRIPT" = true ] && exit 1 || exit 0
