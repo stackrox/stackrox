@@ -380,19 +380,9 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 		return false, err
 	}
 
-	conjuncts := []*v1.Query{q}
-
-	ctx := resolver.ctx
-	if scope, ok := scoped.GetScope(ctx); !ok {
-		ctx = resolver.scopeContext(ctx)
-	} else if scope.Level != v1.SearchCategory_VULNERABILITIES {
-		// If the scope is not set to vulnerabilities then
-		// we need to add a query to scope the search to the current vuln
-		conjuncts = append(conjuncts, resolver.getCVEQuery())
-	}
-
+	ctx, query := resolver.addScopeContext(q)
 	if cve.ContainsComponentBasedCVE(resolver.data.GetTypes()) {
-		query := search.ConjunctionQuery(append(conjuncts, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())...)
+		query := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 		count, err := resolver.root.ComponentCVEEdgeDataStore.Count(ctx, query)
 		if err != nil {
 			return false, err
@@ -402,7 +392,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 		}
 	}
 	if cve.ContainsClusterCVE(resolver.data.GetTypes()) {
-		query := search.ConjunctionQuery(append(conjuncts, search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery())...)
+		query := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery())
 		count, err := resolver.root.clusterCVEEdgeDataStore.Count(ctx, query)
 		if err != nil {
 			return false, err
@@ -414,7 +404,7 @@ func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, 
 	return false, nil
 }
 
-func (resolver *cVEResolver) scopeContext(ctx context.Context) context.Context {
+func (resolver *cVEResolver) addVulnScopeContext(ctx context.Context) context.Context {
 	return scoped.Context(ctx, scoped.Scope{
 		ID:    resolver.data.GetId(),
 		Level: v1.SearchCategory_VULNERABILITIES,
@@ -433,7 +423,7 @@ func (resolver *cVEResolver) getEnvImpactComponentsForImages(ctx context.Context
 	if err != nil {
 		return 0, 0, err
 	}
-	withThisCVECount, err := deploymentLoader.CountFromQuery(resolver.scopeContext(ctx), search.EmptyQuery())
+	withThisCVECount, err := deploymentLoader.CountFromQuery(resolver.addVulnScopeContext(ctx), search.EmptyQuery())
 	if err != nil {
 		return 0, 0, err
 	}
@@ -452,7 +442,7 @@ func (resolver *cVEResolver) getEnvImpactComponentsForNodes(ctx context.Context)
 	if err != nil {
 		return 0, 0, err
 	}
-	withThisCVECount, err := nodeLoader.CountFromQuery(resolver.scopeContext(ctx), search.EmptyQuery())
+	withThisCVECount, err := nodeLoader.CountFromQuery(resolver.addVulnScopeContext(ctx), search.EmptyQuery())
 	if err != nil {
 		return 0, 0, err
 	}
@@ -528,7 +518,7 @@ func (resolver *cVEResolver) LastScanned(ctx context.Context) (*graphql.Time, er
 		},
 	}
 
-	images, err := imageLoader.FromQuery(resolver.scopeContext(ctx), q)
+	images, err := imageLoader.FromQuery(resolver.addVulnScopeContext(ctx), q)
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {
@@ -579,7 +569,7 @@ func (resolver *cVEResolver) Components(ctx context.Context, args PaginatedQuery
 		return nil, err
 	}
 
-	return resolver.root.componentsV2Query(resolver.scopeContext(ctx), query)
+	return resolver.root.componentsV2Query(resolver.addScopeContext(query))
 }
 
 // ComponentCount is the number of components that contain the CVE/Vulnerability.
@@ -598,7 +588,7 @@ func (resolver *cVEResolver) ComponentCount(ctx context.Context, args RawQuery) 
 	if err != nil {
 		return 0, err
 	}
-	return componentLoader.CountFromQuery(resolver.scopeContext(ctx), query)
+	return componentLoader.CountFromQuery(resolver.addScopeContext(query))
 }
 
 // Images are the images that contain the CVE/Vulnerability.
@@ -616,7 +606,7 @@ func (resolver *cVEResolver) Images(ctx context.Context, args PaginatedQuery) ([
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapImages(imageLoader.FromQuery(resolver.scopeContext(ctx), query))
+	return resolver.root.wrapImages(imageLoader.FromQuery(resolver.addScopeContext(query)))
 }
 
 // ImageCount is the number of images that contain the CVE/Vulnerability.
@@ -632,7 +622,7 @@ func (resolver *cVEResolver) ImageCount(ctx context.Context, args RawQuery) (int
 	if err != nil {
 		return 0, err
 	}
-	return imageLoader.CountFromQuery(resolver.scopeContext(ctx), query)
+	return imageLoader.CountFromQuery(resolver.addScopeContext(query))
 }
 
 // Deployments are the deployments that contain the CVE/Vulnerability.
@@ -649,7 +639,7 @@ func (resolver *cVEResolver) Deployments(ctx context.Context, args PaginatedQuer
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapDeployments(deploymentLoader.FromQuery(resolver.scopeContext(ctx), query))
+	return resolver.root.wrapDeployments(deploymentLoader.FromQuery(resolver.addScopeContext(query)))
 }
 
 // DeploymentCount is the number of deployments that contain the CVE/Vulnerability.
@@ -665,8 +655,7 @@ func (resolver *cVEResolver) DeploymentCount(ctx context.Context, args RawQuery)
 	if err != nil {
 		return 0, err
 	}
-
-	return deploymentLoader.CountFromQuery(resolver.scopeContext(ctx), query)
+	return deploymentLoader.CountFromQuery(resolver.addScopeContext(query))
 }
 
 // Nodes are the nodes that contain the CVE/Vulnerability.
@@ -683,7 +672,7 @@ func (resolver *cVEResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapNodes(nodeLoader.FromQuery(resolver.scopeContext(ctx), query))
+	return resolver.root.wrapNodes(nodeLoader.FromQuery(resolver.addScopeContext(query)))
 }
 
 // NodeCount is the number of nodes that contain the CVE/Vulnerability.
@@ -700,7 +689,7 @@ func (resolver *cVEResolver) NodeCount(ctx context.Context, args RawQuery) (int3
 		return 0, err
 	}
 
-	return nodeLoader.CountFromQuery(resolver.scopeContext(ctx), query)
+	return nodeLoader.CountFromQuery(resolver.addScopeContext(query))
 }
 
 // These return dummy values, as they should not be accessed from the top level vuln resolver, but the embedded
@@ -824,4 +813,18 @@ func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*a
 		state = Active
 	}
 	return &activeStateResolver{root: resolver.root, state: state, activeComponentIDs: ids}, nil
+}
+
+func (resolver *cVEResolver) addScopeContext(query *v1.Query) (context.Context, *v1.Query) {
+	ctx := resolver.ctx
+	scope, ok := scoped.GetScope(ctx)
+	if !ok {
+		return resolver.addVulnScopeContext(ctx), query
+	}
+	// If the scope is not set to vulnerabilities then
+	// we need to add a query to scope the search to the current vuln
+	if scope.Level != v1.SearchCategory_VULNERABILITIES {
+		return ctx, search.ConjunctionQuery(query, resolver.getCVEQuery())
+	}
+	return ctx, query
 }
