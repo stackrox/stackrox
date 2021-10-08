@@ -15,7 +15,9 @@ GITROOT="$(git rev-parse --show-toplevel)"
 [[ -n "${QUAY_PASSWORD}" ]] || { echo >&2 "Missing env QUAY_PASSWORD for organization account"; exit 1; }
 
 function pull {
-  local image=$1
+  local repo=$1
+  local tag=$2
+  local image="${repo}:${tag}"
 
   docker login -u "${QUAY_CGORMAN1_RO_USER}" --password-stdin <<<"${QUAY_CGORMAN1_RO_PASSWORD}" quay.io
   src="quay.io/cgorman1/${image}"
@@ -30,33 +32,19 @@ function pull {
   echo "Successfully pushed $dest"
 }
 
-function pull_without_rhel {
-  local repo=$1
-  local tag=$2
-  pull "${repo}:${tag}"
-}
-
-function pull_with_rhel {
-  local repo=$1
-  local tag=$2
-
-  pull "${repo}:${tag}"
-  pull "${repo}-rhel:${tag}"
-}
-
 # Main images
 RELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" tag)
-pull_with_rhel main "$RELEASE_TAG"
+pull main "$RELEASE_TAG"
 
 # Docs image
 DOCS_PRERELEASE_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" docs-tag)
-pull_without_rhel docs "$DOCS_PRERELEASE_TAG"
+pull docs "$DOCS_PRERELEASE_TAG"
 
 # Collector images
 COLLECTOR_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" collector-tag)
-pull_with_rhel "collector" "$COLLECTOR_TAG"
+pull "collector" "$COLLECTOR_TAG"
 
 # Legacy scanner images
 SCANNER_TAG=$(make --no-print-directory --quiet -C "${GITROOT}" scanner-tag)
-pull_with_rhel scanner "$SCANNER_TAG"
-pull_with_rhel "scanner-db" "$SCANNER_TAG"
+pull scanner "$SCANNER_TAG"
+pull "scanner-db" "$SCANNER_TAG"
