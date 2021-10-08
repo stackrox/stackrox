@@ -1,17 +1,27 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type nginxImage struct {
 	version          string
 	SHA              string
 	activeComponents int
+}
+
+func (i *nginxImage) getImage() string {
+	return fmt.Sprintf("docker.io/library/nginx:%s@%s", i.version, i.SHA)
 }
 
 var (
@@ -33,6 +43,7 @@ var (
 			activeComponents: 6,
 		},
 	}
+	once sync.Once
 )
 
 type ActiveContext struct {
@@ -61,6 +72,7 @@ type ComponentsAndVulnsWithActiveState struct {
 }
 
 func TestActiveVulnerability(t *testing.T) {
+	waitForImageScanned(t)
 	for idx, tc := range nginxImages {
 		t.Run(tc.version, func(t *testing.T) {
 			runTestActiveVulnerability(t, idx, tc)
@@ -70,9 +82,8 @@ func TestActiveVulnerability(t *testing.T) {
 
 func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 	log.Infof("test case %v", testCase)
-	imageID := fmt.Sprintf("docker.io/library/nginx:%s@%s", testCase.version, testCase.SHA)
 	deploymentName := fmt.Sprintf("%s-%d", avmDeploymentName, idx)
-	setupDeployment(t, imageID, deploymentName)
+	setupDeployment(t, testCase.getImage(), deploymentName)
 	defer teardownDeployment(t, deploymentName)
 	fmt.Println(idx, testCase, deploymentName)
 	deploymentID := getDeploymentID(t, deploymentName)
@@ -80,21 +91,19 @@ func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 }
 
 func TestActiveVulnerability_SetImage(t *testing.T) {
-	imageID := fmt.Sprintf("docker.io/library/nginx:%s@%s", nginxImages[0].version, nginxImages[0].SHA)
-	setupDeploymentWithReplicas(t, imageID, avmDeploymentName, 3)
+	waitForImageScanned(t)
+	setupDeploymentWithReplicas(t, nginxImages[0].getImage(), avmDeploymentName, 3)
 	defer teardownDeployment(t, avmDeploymentName)
 	deploymentID := getDeploymentID(t, avmDeploymentName)
 
 	checkActiveVulnerability(t, nginxImages[0], deploymentID)
 
 	// Upgrade image and check result
-	imageID = fmt.Sprintf("docker.io/library/nginx:%s@%s", nginxImages[1].version, nginxImages[1].SHA)
-	setImage(t, avmDeploymentName, deploymentID, "nginx", imageID)
+	setImage(t, avmDeploymentName, deploymentID, "nginx", nginxImages[1].getImage())
 	checkActiveVulnerability(t, nginxImages[1], deploymentID)
 
 	// Downgrade image and check result
-	imageID = fmt.Sprintf("docker.io/library/nginx:%s@%s", nginxImages[0].version, nginxImages[0].SHA)
-	setImage(t, avmDeploymentName, deploymentID, "nginx", imageID)
+	setImage(t, avmDeploymentName, deploymentID, "nginx", nginxImages[0].getImage())
 	checkActiveVulnerability(t, nginxImages[0], deploymentID)
 }
 
@@ -206,4 +215,25 @@ func getImageActiveStates(t *testing.T, imageID, deploymentID string) Components
 		"scopeQuery": fmt.Sprintf("DEPLOYMENT ID:%q", deploymentID),
 	}, &resp, timeout)
 	return resp.Image
+}
+
+func waitForImageScanned(t *testing.T) {
+	once.Do(func() {
+		conn := testutils.GRPCConnectionToCentral(t)
+		imageService := v1.NewImageServiceClient(conn)
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		defer cancel()
+		for _, image := range nginxImages {
+			log.Infof("wait for image %s scanned ...", image.getImage())
+			err := retry.WithRetry(func() error {
+				_, err := imageService.ScanImage(ctx, &v1.ScanImageRequest{
+					ImageName: image.getImage(),
+				})
+				return err
+			}, retry.Tries(3), retry.OnFailedAttempts(func(_ error) {
+				time.Sleep(5 * time.Second)
+			}))
+			require.NoError(t, err, "fail to prepare images for testing. This may be caused by network issue.")
+		}
+	})
 }
