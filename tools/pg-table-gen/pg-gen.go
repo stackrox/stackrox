@@ -61,9 +61,9 @@ func main() {
 
 	// Enrich with foreign key fields
 
-	genInsertion(table)
+	//genInsertion(table)
 
-	//printTable(table)
+	printTable(table)
 	//enrichTableWithFKs(table)
 	//validateTable(table)
 	//generateTableDeclarations(nil, table)

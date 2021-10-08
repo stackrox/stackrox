@@ -29,5 +29,6 @@ func init() {
 		datastoreFunctionDurationHistogramVec,
 		functionSegmentDurationHistogramVec,
 		k8sObjectProcessingDuration,
+		postgresOperationHistogramVec,
 	)
 }

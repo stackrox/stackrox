@@ -18,8 +18,14 @@ var (
 
 	registeredBuckets []registeredBucket
 
+	registeredTables []registeredTable
+
 	log = logging.LoggerForModule()
 )
+
+type registeredTable struct {
+	table, objType string
+}
 
 type registeredBucket struct {
 	prefix       []byte
@@ -33,6 +39,13 @@ func RegisterBucket(bucketName []byte, objType string) {
 		prefixString: string(bucketName),
 		prefix:       bucketName,
 		objType:      objType,
+	})
+}
+
+func RegisterTable(table string, objType string) {
+	registeredTables = append(registeredTables, registeredTable{
+		table: table,
+		objType: objType,
 	})
 }
 
