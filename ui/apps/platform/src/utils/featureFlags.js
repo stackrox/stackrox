@@ -11,7 +11,6 @@ export const UIfeatureFlags = {
 export const knownBackendFlags = {
     ROX_NETWORK_DETECTION_BASELINE_SIMULATION: 'ROX_NETWORK_DETECTION_BASELINE_SIMULATION',
     ROX_NETWORK_DETECTION_BLOCKED_FLOWS: 'ROX_NETWORK_DETECTION_BLOCKED_FLOWS',
-    ROX_SCOPED_ACCESS_CONTROL: 'ROX_SCOPED_ACCESS_CONTROL_V2',
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

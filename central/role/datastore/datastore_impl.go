@@ -22,10 +22,9 @@ var (
 )
 
 type dataStoreImpl struct {
-	roleStorage                rocksDBStore.RoleStore
-	permissionSetStorage       rocksDBStore.PermissionSetStore
-	accessScopeStorage         rocksDBStore.SimpleAccessScopeStore
-	useRolesWithPermissionSets bool
+	roleStorage          rocksDBStore.RoleStore
+	permissionSetStorage rocksDBStore.PermissionSetStore
+	accessScopeStorage   rocksDBStore.SimpleAccessScopeStore
 
 	lock sync.RWMutex
 }
@@ -63,7 +62,7 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := rolePkg.ValidateRole(role, ds.useRolesWithPermissionSets); err != nil {
+	if err := rolePkg.ValidateRole(role); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := verifyNotDefaultRole(role.GetName()); err != nil {
@@ -89,7 +88,7 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 	if err := sac.VerifyAuthzOK(roleSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if err := rolePkg.ValidateRole(role, ds.useRolesWithPermissionSets); err != nil {
+	if err := rolePkg.ValidateRole(role); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	if err := verifyNotDefaultRole(role.GetName()); err != nil {
@@ -385,13 +384,6 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 	role, found, err := ds.roleStorage.Get(name)
 	if err != nil || !found {
 		return nil, err
-	}
-
-	if !ds.useRolesWithPermissionSets {
-		resolvedRole := &resolvedOnlyRoleImpl{
-			role: role,
-		}
-		return resolvedRole, nil
 	}
 
 	permissionSet, err := ds.getRolePermissionSetOrError(role)

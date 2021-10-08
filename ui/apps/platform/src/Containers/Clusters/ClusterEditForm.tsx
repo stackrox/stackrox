@@ -2,8 +2,6 @@ import React, { ReactElement } from 'react';
 
 import Loader from 'Components/Loader';
 import { labelClassName } from 'constants/form.constants';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import ClusterSummary from './Components/ClusterSummary';
 import StaticConfigurationSection from './StaticConfigurationSection';
 import DynamicConfigurationSection from './DynamicConfigurationSection';
@@ -27,9 +25,6 @@ function ClusterEditForm({
     handleChangeLabels,
     isLoading,
 }: ClusterEditFormProps): ReactElement {
-    const hasScopedAccessControl = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_SCOPED_ACCESS_CONTROL
-    );
     if (isLoading) {
         return <Loader />;
     }
@@ -61,18 +56,16 @@ function ClusterEditForm({
                         clusterType={selectedCluster.type}
                         managerType={selectedCluster.managedBy}
                     />
-                    {hasScopedAccessControl && (
-                        <div className="pt-4">
-                            <label htmlFor="labels" className={labelClassName}>
-                                Cluster labels
-                            </label>
-                            <ClusterLabelsTable
-                                labels={selectedCluster?.labels ?? {}}
-                                handleChangeLabels={handleChangeLabels}
-                                hasAction
-                            />
-                        </div>
-                    )}
+                    <div className="pt-4">
+                        <label htmlFor="labels" className={labelClassName}>
+                            Cluster labels
+                        </label>
+                        <ClusterLabelsTable
+                            labels={selectedCluster?.labels ?? {}}
+                            handleChangeLabels={handleChangeLabels}
+                            hasAction
+                        />
+                    </div>
                 </div>
             </form>
         </div>

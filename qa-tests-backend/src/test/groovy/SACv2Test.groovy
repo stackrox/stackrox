@@ -7,19 +7,16 @@ import static services.ApiTokenService.generateToken
 
 import services.BaseService
 import services.DeploymentService
-import services.FeatureFlagService
 import services.RoleService
 
 import groups.BAT
 import org.junit.experimental.categories.Category
-import spock.lang.Requires
 import spock.lang.Shared
 
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.storage.RoleOuterClass
 
 @Category(BAT)
-@Requires({ FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2') })
 class SACv2Test extends SACTest {
 
     @Shared

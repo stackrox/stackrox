@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -31,8 +30,7 @@ func Singleton() DataStore {
 		utils.CrashOnError(err)
 
 		// Which role format is used is determined solely by the feature flag.
-		useRolesWithPermissionSets := features.ScopedAccessControl.Enabled()
-		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, useRolesWithPermissionSets)
+		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
 
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(roles))
@@ -94,18 +92,14 @@ func getDefaultObjects() ([]*storage.Role, []*storage.PermissionSet, []*storage.
 			Description: attributes.description,
 		}
 
-		if features.ScopedAccessControl.Enabled() {
-			permissionSet := &storage.PermissionSet{
-				Id:               rolePkg.EnsureValidPermissionSetID(attributes.idSuffix),
-				Name:             role.Name,
-				Description:      role.Description,
-				ResourceToAccess: resourceToAccess,
-			}
-			role.PermissionSetId = permissionSet.Id
-			permissionSets = append(permissionSets, permissionSet)
-		} else {
-			role.ResourceToAccess = resourceToAccess
+		permissionSet := &storage.PermissionSet{
+			Id:               rolePkg.EnsureValidPermissionSetID(attributes.idSuffix),
+			Name:             role.Name,
+			Description:      role.Description,
+			ResourceToAccess: resourceToAccess,
 		}
+		role.PermissionSetId = permissionSet.Id
+		permissionSets = append(permissionSets, permissionSet)
 
 		roles = append(roles, role)
 

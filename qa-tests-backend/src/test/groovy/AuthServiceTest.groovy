@@ -1,7 +1,6 @@
 import groups.BAT
 import io.stackrox.proto.api.v1.AuthServiceOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
-import services.FeatureFlagService
 
 import org.junit.Assume
 import org.junit.experimental.categories.Category
@@ -39,12 +38,6 @@ class AuthServiceTest extends BaseSpecification {
             }
             def adminRole = rolesList.find { it.name == "Admin" }
             assert adminRole
-            if (!FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
-                assert adminRole.resourceToAccessCount > 0
-                adminRole.resourceToAccessMap.each {
-                    assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
-                }
-            }
         }
 
         def attrMap = getAttrMap(status.userAttributesList)
@@ -72,12 +65,6 @@ class AuthServiceTest extends BaseSpecification {
 
             def tokenRole = rolesList.find { it.name.startsWith("Test Automation Role - ") }
             assert tokenRole
-            if (!FeatureFlagService.isFeatureFlagEnabled('ROX_SCOPED_ACCESS_CONTROL_V2')) {
-                assert tokenRole.resourceToAccessCount > 0
-                tokenRole.resourceToAccessMap.each {
-                    assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
-                }
-            }
         }
 
         def attrMap = getAttrMap(status.userAttributesList)

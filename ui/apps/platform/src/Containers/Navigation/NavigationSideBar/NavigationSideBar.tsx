@@ -13,25 +13,21 @@ import {
     clustersBasePath,
     policiesBasePath,
     integrationsPath,
-    accessControlPath,
     accessControlBasePathV2,
     systemConfigPath,
     systemHealthPath,
 } from 'routePaths';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 import LeftNavItem from './LeftNavItem';
 
 function NavigationSideBar(): ReactElement {
     const location: Location = useLocation();
-    const isAccessControlV2 = useFeatureFlagEnabled(knownBackendFlags.ROX_SCOPED_ACCESS_CONTROL);
 
     const pathsExpandable = [
         clustersBasePath,
         policiesBasePath,
         integrationsPath,
-        isAccessControlV2 ? accessControlBasePathV2 : accessControlPath,
+        accessControlBasePathV2,
         systemConfigPath,
         systemHealthPath,
     ];

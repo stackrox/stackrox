@@ -20,20 +20,3 @@ func (rsr *resolvedRoleImpl) GetPermissions() map[string]storage.Access {
 func (rsr *resolvedRoleImpl) GetAccessScope() *storage.SimpleAccessScope {
 	return rsr.accessScope
 }
-
-// ResolvedRole implementation for the old Role-only format.
-type resolvedOnlyRoleImpl struct {
-	role *storage.Role
-}
-
-func (rsor *resolvedOnlyRoleImpl) GetRoleName() string {
-	return rsor.role.GetName()
-}
-
-func (rsor *resolvedOnlyRoleImpl) GetPermissions() map[string]storage.Access {
-	return rsor.role.GetResourceToAccess()
-}
-
-func (rsor *resolvedOnlyRoleImpl) GetAccessScope() *storage.SimpleAccessScope {
-	return nil
-}

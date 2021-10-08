@@ -33,11 +33,10 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance.
-func New(roleStorage rocksDBStore.RoleStore, permissionSetStore rocksDBStore.PermissionSetStore, accessScopeStore rocksDBStore.SimpleAccessScopeStore, useRolesWithPermissionSets bool) DataStore {
+func New(roleStorage rocksDBStore.RoleStore, permissionSetStore rocksDBStore.PermissionSetStore, accessScopeStore rocksDBStore.SimpleAccessScopeStore) DataStore {
 	return &dataStoreImpl{
-		roleStorage:                roleStorage,
-		permissionSetStorage:       permissionSetStore,
-		accessScopeStorage:         accessScopeStore,
-		useRolesWithPermissionSets: useRolesWithPermissionSets,
+		roleStorage:          roleStorage,
+		permissionSetStorage: permissionSetStore,
+		accessScopeStorage:   accessScopeStore,
 	}
 }
