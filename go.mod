@@ -67,6 +67,7 @@ require (
 	github.com/joelanford/helm-operator v0.0.7
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1
+	github.com/lib/pq v1.9.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.5
 	github.com/mailru/easyjson v0.7.7
