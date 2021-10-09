@@ -20,20 +20,20 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	table = "risk"
+	table = "alerts"
 )
 
 type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
 	GetIDs() ([]string, error)
-	Get(id string) (*storage.Risk, bool, error)
-	GetMany(ids []string) ([]*storage.Risk, []int, error)
-	Upsert(obj *storage.Risk) error
-	UpsertMany(objs []*storage.Risk) error
+	Get(id string) (*storage.Alert, bool, error)
+	GetMany(ids []string) ([]*storage.Alert, []int, error)
+	Upsert(obj *storage.Alert) error
+	UpsertMany(objs []*storage.Alert) error
 	Delete(id string) error
 	DeleteMany(ids []string) error
-	Walk(fn func(obj *storage.Risk) error) error
+	Walk(fn func(obj *storage.Alert) error) error
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
 }
@@ -55,11 +55,11 @@ type storeImpl struct {
 }
 
 func alloc() proto.Message {
-	return &storage.Risk{}
+	return &storage.Alert{}
 }
 
 func keyFunc(msg proto.Message) string {
-	return msg.(*storage.Risk).GetId()
+	return msg.(*storage.Alert).GetId()
 }
 
 func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
@@ -70,11 +70,11 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 	return vulnStmt
 }
 
-const createTableQuery = "create table if not exists risk (id varchar primary key, value jsonb)"
+const createTableQuery = "create table if not exists alerts (id varchar primary key, value jsonb)"
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *sql.DB) Store {
-	globaldb.RegisterTable(table, "Risk")
+	globaldb.RegisterTable(table, "Alert")
 
 	_, err := db.Exec(createTableQuery)
 	if err != nil {
@@ -85,23 +85,23 @@ func New(db *sql.DB) Store {
 	return &storeImpl{
 		db: db,
 
-		countStmt: compileStmtOrPanic(db, "select count(*) from risk"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from risk where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from risk"),
-		getStmt: compileStmtOrPanic(db, "select value from risk where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from risk where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into risk(id, value) values($1, $2) on conflict(id) do update set value=$2"),
-		deleteStmt: compileStmtOrPanic(db, "delete from risk where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from risk where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from risk"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from risk"),
+		countStmt: compileStmtOrPanic(db, "select count(*) from alerts"),
+		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from alerts where id = $1)"),
+		getIDsStmt: compileStmtOrPanic(db, "select id from alerts"),
+		getStmt: compileStmtOrPanic(db, "select value from alerts where id = $1"),
+		getManyStmt: compileStmtOrPanic(db, "select value from alerts where id = ANY($1::text[])"),
+		upsertStmt: compileStmtOrPanic(db, "insert into alerts(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+		deleteStmt: compileStmtOrPanic(db, "delete from alerts where id = $1"),
+		deleteManyStmt: compileStmtOrPanic(db, "delete from alerts where id = ANY($1::text[])"),
+		walkStmt: compileStmtOrPanic(db, "select value from alerts"),
+		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from alerts"),
 	}
 //
 }
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count() (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Risk")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Alert")
 
 	row := s.countStmt.QueryRow()
 	if err := row.Err(); err != nil {
@@ -116,7 +116,7 @@ func (s *storeImpl) Count() (int, error) {
 
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Risk")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Alert")
 
 	row := s.existsStmt.QueryRow(id)
 	if err := row.Err(); err != nil {
@@ -131,7 +131,7 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs() ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "RiskIDs")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "AlertIDs")
 
 	rows, err := s.getIDsStmt.Query()
 	if err != nil {
@@ -157,35 +157,35 @@ func nilNoRows(err error) error {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(id string) (*storage.Risk, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Risk")
+func (s *storeImpl) Get(id string) (*storage.Alert, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Alert")
 
 	t := time.Now()
 	row := s.getStmt.QueryRow(id)
 	if err := row.Err(); err != nil {
 		return nil, false, nilNoRows(err)
 	}
-	log.Infof("Took %d to query a Risk", time.Since(t).Milliseconds())
+	log.Infof("Took %d to query a Alert", time.Since(t).Milliseconds())
 
 	var data []byte
 	t = time.Now()
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
 	}
-	log.Infof("Took %d to scan a Risk", time.Since(t).Milliseconds())
+	log.Infof("Took %d to scan a Alert", time.Since(t).Milliseconds())
 
 	msg := alloc()
 	t = time.Now()
 	if err := json.Unmarshal(data, msg); err != nil {
 		return nil, false, err
 	}
-	log.Infof("Took %d to unmarshal a Risk", time.Since(t).Milliseconds())
-	return msg.(*storage.Risk), true, nil
+	log.Infof("Took %d to unmarshal a Alert", time.Since(t).Milliseconds())
+	return msg.(*storage.Alert), true, nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice 
-func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Risk")
+func (s *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Alert")
 
 	rows, err := s.getManyStmt.Query(pq.Array(ids))
 	if err != nil {
@@ -199,7 +199,7 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
 		return nil, nil, err
 	}
 	defer rows.Close()
-	elems := make([]*storage.Risk, 0, len(ids))
+	elems := make([]*storage.Alert, 0, len(ids))
 	foundSet := set.NewStringSet()
 	for rows.Next() {
 		var data []byte
@@ -210,7 +210,7 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
 		if err := json.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
 		}
-		elem := msg.(*storage.Risk)
+		elem := msg.(*storage.Alert)
 		foundSet.Add(elem.GetId())
 		elems = append(elems, elem)
 	}
@@ -223,7 +223,7 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.Risk) error {
+func (s *storeImpl) upsert(id string, obj *storage.Alert) error {
 	value, err := json.Marshal(obj)
 	if err != nil {
 		return err
@@ -234,14 +234,14 @@ func (s *storeImpl) upsert(id string, obj *storage.Risk) error {
 
 
 // Upsert inserts the object into the DB
-func (s *storeImpl) Upsert(obj *storage.Risk) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "Risk")
+func (s *storeImpl) Upsert(obj *storage.Alert) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "Alert")
 	return s.upsert(keyFunc(obj), obj)
 }
 
 // UpsertMany batches objects into the DB
-func (s *storeImpl) UpsertMany(objs []*storage.Risk) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Risk")
+func (s *storeImpl) UpsertMany(objs []*storage.Alert) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Alert")
 
 	// Txn? or all errors to be passed through?
 	for _, obj := range objs {
@@ -254,7 +254,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.Risk) error {
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Risk")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Alert")
 
 	if _, err := s.deleteStmt.Exec(id); err != nil {
 		return err
@@ -264,7 +264,7 @@ func (s *storeImpl) Delete(id string) error {
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Risk")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
 
 	if _, err := s.deleteManyStmt.Exec(pq.Array(ids)); err != nil {
 		return err
@@ -273,7 +273,7 @@ func (s *storeImpl) DeleteMany(ids []string) error {
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(fn func(obj *storage.Risk) error) error {
+func (s *storeImpl) Walk(fn func(obj *storage.Alert) error) error {
 	rows, err := s.walkStmt.Query()
 	if err != nil {
 		return nilNoRows(err)
@@ -288,7 +288,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.Risk) error) error {
 		if err := json.Unmarshal(data, msg); err != nil {
 			return err
 		}
-		return fn(msg.(*storage.Risk))
+		return fn(msg.(*storage.Alert))
 	}
 	return nil
 }

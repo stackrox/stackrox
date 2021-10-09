@@ -32,4 +32,6 @@ var (
 
 	// AlternateProbeDownload enables alternate probe download solution for collector
 	AlternateProbeDownload = registerFeature("Enable alternate probe download solution for collector", "ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", false)
+
+	PostgresPOC = registerFeature("Enable Postgres POC", "ROX_POSTGRES_POC", true)
 )
