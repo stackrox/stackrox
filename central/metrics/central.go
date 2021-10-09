@@ -39,7 +39,7 @@ var (
 	postgresOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "rocksdb_op_duration",
+		Name:      "postgres_op_duration",
 		Help:      "Time taken to perform a rocksdb operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
