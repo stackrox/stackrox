@@ -3,6 +3,7 @@
 package postgres
 
 import (
+	"bytes"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"database/sql"
-	"encoding/json"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -20,7 +21,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	table = "process_indicators2"
+	table = "processindicators"
 )
 
 type Store interface {
@@ -70,7 +71,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 	return vulnStmt
 }
 
-const createTableQuery = "create table if not exists process_indicators2 (id varchar primary key, value jsonb)"
+const createTableQuery = "create table if not exists processindicators (id varchar primary key, value jsonb)"
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *sql.DB) Store {
@@ -85,16 +86,16 @@ func New(db *sql.DB) Store {
 	return &storeImpl{
 		db: db,
 
-		countStmt: compileStmtOrPanic(db, "select count(*) from process_indicators2"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from process_indicators2 where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from process_indicators2"),
-		getStmt: compileStmtOrPanic(db, "select value from process_indicators2 where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from process_indicators2 where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into process_indicators2(id, value) values($1, $2) on conflict(id) do update set value=$2"),
-		deleteStmt: compileStmtOrPanic(db, "delete from process_indicators2 where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from process_indicators2 where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from process_indicators2"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from process_indicators2"),
+		countStmt: compileStmtOrPanic(db, "select count(*) from processindicators"),
+		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from processindicators where id = $1)"),
+		getIDsStmt: compileStmtOrPanic(db, "select id from processindicators"),
+		getStmt: compileStmtOrPanic(db, "select value from processindicators where id = $1"),
+		getManyStmt: compileStmtOrPanic(db, "select value from processindicators where id = ANY($1::text[])"),
+		upsertStmt: compileStmtOrPanic(db, "insert into processindicators(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+		deleteStmt: compileStmtOrPanic(db, "delete from processindicators where id = $1"),
+		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicators where id = ANY($1::text[])"),
+		walkStmt: compileStmtOrPanic(db, "select value from processindicators"),
+		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from processindicators"),
 	}
 //
 }
@@ -176,7 +177,8 @@ func (s *storeImpl) Get(id string) (*storage.ProcessIndicator, bool, error) {
 
 	msg := alloc()
 	t = time.Now()
-	if err := json.Unmarshal(data, msg); err != nil {
+	buf := bytes.NewBuffer(data)
+	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
 	log.Infof("Took %d to unmarshal a ProcessIndicator", time.Since(t).Milliseconds())
@@ -207,7 +209,8 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, e
 			return nil, nil, err
 		}
 		msg := alloc()
-		if err := json.Unmarshal(data, msg); err != nil {
+		buf := bytes.NewBuffer(data)
+		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return nil, nil, err
 		}
 		elem := msg.(*storage.ProcessIndicator)
@@ -224,7 +227,7 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, e
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.ProcessIndicator) error {
-	value, err := json.Marshal(obj)
+	value, err := (&jsonpb.Marshaler{}).MarshalToString(obj)
 	if err != nil {
 		return err
 	}
@@ -285,7 +288,8 @@ func (s *storeImpl) Walk(fn func(obj *storage.ProcessIndicator) error) error {
 			return err
 		}
 		msg := alloc()
-		if err := json.Unmarshal(data, msg); err != nil {
+		buf := bytes.NewBuffer(data)
+		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}
 		return fn(msg.(*storage.ProcessIndicator))

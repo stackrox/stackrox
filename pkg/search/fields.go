@@ -4,6 +4,7 @@ import v1 "github.com/stackrox/rox/generated/api/v1"
 
 // Field describes a search field
 type Field struct {
+	Elems []PathElem
 	FieldPath string
 	Type      v1.SearchDataType
 	Store     bool
