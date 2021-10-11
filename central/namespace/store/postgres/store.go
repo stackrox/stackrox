@@ -3,6 +3,7 @@
 package postgres
 
 import (
+	"bytes"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"database/sql"
-	"encoding/json"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -176,7 +177,8 @@ func (s *storeImpl) Get(id string) (*storage.NamespaceMetadata, bool, error) {
 
 	msg := alloc()
 	t = time.Now()
-	if err := json.Unmarshal(data, msg); err != nil {
+	buf := bytes.NewBuffer(data)
+	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
 	log.Infof("Took %d to unmarshal a NamespaceMetadata", time.Since(t).Milliseconds())
@@ -207,7 +209,8 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NamespaceMetadata, []int, 
 			return nil, nil, err
 		}
 		msg := alloc()
-		if err := json.Unmarshal(data, msg); err != nil {
+		buf := bytes.NewBuffer(data)
+		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return nil, nil, err
 		}
 		elem := msg.(*storage.NamespaceMetadata)
@@ -224,7 +227,7 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NamespaceMetadata, []int, 
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.NamespaceMetadata) error {
-	value, err := json.Marshal(obj)
+	value, err := (&jsonpb.Marshaler{}).MarshalToString(obj)
 	if err != nil {
 		return err
 	}
@@ -285,7 +288,8 @@ func (s *storeImpl) Walk(fn func(obj *storage.NamespaceMetadata) error) error {
 			return err
 		}
 		msg := alloc()
-		if err := json.Unmarshal(data, msg); err != nil {
+		buf := bytes.NewBuffer(data)
+		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}
 		return fn(msg.(*storage.NamespaceMetadata))

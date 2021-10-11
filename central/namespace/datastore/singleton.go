@@ -7,8 +7,11 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/idmap"
 	"github.com/stackrox/rox/central/namespace/index"
+	"github.com/stackrox/rox/central/namespace/store"
+	"github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -20,7 +23,12 @@ var (
 )
 
 func initialize() {
-	storage := rocksdb.New(globaldb.GetRocksDB())
+	var storage store.Store
+	if features.PostgresPOC.Enabled() {
+		storage = postgres.New(globaldb.GetPostgresDB())
+	} else {
+		storage = rocksdb.New(globaldb.GetRocksDB())
+	}
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
 
 	var err error

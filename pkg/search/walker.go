@@ -10,18 +10,43 @@ import (
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
 
+type PathElem struct {
+	Name string
+	Slice bool
+}
+
+func deepCopyPathElems(o []PathElem) []PathElem {
+	copied := make([]PathElem, 0, len(o))
+	for _, e := range o {
+		copied = append(copied, e)
+	}
+	return copied
+}
+
 type searchWalker struct {
+	prefix string
 	category v1.SearchCategory
 	fields   map[FieldLabel]*Field
+}
+
+func (s *searchWalker) elemsToPath(elems []PathElem) string {
+	var names []string
+	names = append(names, s.prefix)
+	for _, e := range elems {
+		names = append(names, e.Name)
+	}
+	return strings.Join(names, ".")
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	sw := searchWalker{
+		prefix: prefix,
 		category: category,
 		fields:   make(map[FieldLabel]*Field),
 	}
-	sw.walkRecursive(prefix, reflect.TypeOf(obj))
+	var pathElems []PathElem
+	sw.walkRecursive(pathElems, reflect.TypeOf(obj))
 	return OptionsMapFromMap(category, sw.fields)
 }
 
@@ -68,8 +93,9 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 }
 
 // handleStruct takes in a struct object and properly handles all of the fields
-func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
+func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
+
 		field := original.Field(i)
 		jsonTag := strings.TrimSuffix(field.Tag.Get("json"), ",omitempty")
 		if jsonTag == "-" {
@@ -77,12 +103,20 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		} else if jsonTag == "" { // If no JSON tag, then Bleve takes the field name
 			jsonTag = field.Name
 		}
-		fullPath := fmt.Sprintf("%s.%s", prefix, jsonTag)
+
 		searchTag := field.Tag.Get("search")
 		if searchTag == "-" {
 			continue
 		}
+		pathElems := deepCopyPathElems(parentElems)
 
+		pathElems = append(pathElems, PathElem{
+			Name: jsonTag,
+			Slice: field.Type.Kind() == reflect.Slice,
+		})
+		fmt.Println(s.elemsToPath(pathElems), field.Type.Kind().String())
+
+		fullPath := s.elemsToPath(pathElems)
 		// Special case proto timestamp because we actually want to index seconds
 		if field.Type.String() == "*types.Timestamp" {
 			fieldName, searchField := s.getSearchField(fullPath+".seconds", searchTag)
@@ -90,6 +124,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 				continue
 			}
 			searchField.Type = v1.SearchDataType_SEARCH_DATETIME
+			searchField.Elems = pathElems
 			s.fields[FieldLabel(fieldName)] = searchField
 			continue
 		}
@@ -119,28 +154,29 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 			for _, f := range actualOneOfFields {
 				typ := reflect.TypeOf(f)
 				if typ.Implements(oneofInterface) {
-					s.walkRecursive(fullPath, typ)
+					s.walkRecursive(pathElems, typ)
 				}
 			}
 			continue
 		}
 
-		searchDataType := s.walkRecursive(fullPath, field.Type)
+		searchDataType := s.walkRecursive(pathElems, field.Type)
 		fieldName, searchField := s.getSearchField(fullPath, searchTag)
 		if searchField == nil {
 			continue
 		}
 		searchField.Type = searchDataType
+		searchField.Elems = pathElems
 		s.fields[FieldLabel(fieldName)] = searchField
 	}
 }
 
-func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.SearchDataType {
+func (s *searchWalker) walkRecursive(pathElems []PathElem, original reflect.Type) v1.SearchDataType {
 	switch original.Kind() {
 	case reflect.Ptr, reflect.Slice:
-		return s.walkRecursive(prefix, original.Elem())
+		return s.walkRecursive(pathElems, original.Elem())
 	case reflect.Struct:
-		s.handleStruct(prefix, original)
+		s.handleStruct(pathElems, original)
 	case reflect.Map:
 		return v1.SearchDataType_SEARCH_MAP
 	case reflect.String:
@@ -156,11 +192,11 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 		if err != nil {
 			panic(err)
 		}
-		enumregistry.Add(prefix, enumDesc)
+		enumregistry.Add(s.elemsToPath(pathElems), enumDesc)
 		return v1.SearchDataType_SEARCH_ENUM
 	case reflect.Interface:
 	default:
-		panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), prefix))
+		panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), s.elemsToPath(pathElems)))
 	}
 	return v1.SearchDataType_SEARCH_STRING
 }
