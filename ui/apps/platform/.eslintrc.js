@@ -158,6 +158,12 @@ const commonTypeScriptRules = {
     ],
 
     /*
+     * @typescript-eslint/eslint-plugin 5 removes the following rule from recommended.
+     * Simulate future upgrade and delete the override after upgrade to react-scripts 5.
+     */
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+
+    /*
      * Turn off rules from recommended-requiring-type-checking because of
      * irrelevant problems when TypeScript modules import from JavaScript modules.
      */
