@@ -2,10 +2,35 @@ package check
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 )
+
+type severity int
+
+const (
+	low severity = iota
+	medium
+	high
+	critical
+)
+
+func severityFromString(s string) severity {
+	switch s {
+	case "LOW":
+		return low
+	case "MEDIUM":
+		return medium
+	case "HIGH":
+		return high
+	case "CRITICAL":
+		return critical
+	default:
+		return 0
+	}
+}
 
 // newAlertSummaryForPrinting creates a JSON object containing all summaries and information of alerts that can be used
 // for printing. The returned interface CAN be passed to json.Marshal
@@ -40,10 +65,17 @@ func newAlertSummaryForPrinting(alerts []*storage.Alert, failedPolicies []*stora
 	return &policyJSONResult{
 		Result: policyJSONStructure{
 			Summary:               numFailuresBySeverity,
-			ViolatedPolicies:      getPoliciesFromMap(policies),
+			ViolatedPolicies:      sortPoliciesBySeverity(getPoliciesFromMap(policies)),
 			BuildBreakingPolicies: breakingPolicies,
 		},
 	}
+}
+
+func sortPoliciesBySeverity(policies []policyJSON) []policyJSON {
+	sort.SliceStable(policies, func(i, j int) bool {
+		return severityFromString(policies[i].Severity) > severityFromString(policies[j].Severity)
+	})
+	return policies
 }
 
 func getPoliciesFromMap(policyMap map[string]*policyJSON) []policyJSON {

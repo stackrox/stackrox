@@ -5,6 +5,12 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	// standardizedFormats holds all output formats that follow either an RFC standard or a de-facto standard
+	standardizedFormats = set.NewFrozenStringSet("json", "csv")
 )
 
 // UnsupportedOutputFormatError creates a standardized error for unsupported format inputs in combination with ObjectPrinter
@@ -15,7 +21,7 @@ type UnsupportedOutputFormatError struct {
 
 func (u UnsupportedOutputFormatError) Error() string {
 	return fmt.Sprintf("unsupported output format used: %q. Please choose one of the supported formats: %s",
-		u.OutputFormat, strings.Join(u.SupportedFormats, "|"))
+		u.OutputFormat, strings.Join(u.SupportedFormats, " | "))
 }
 
 // ObjectPrinterFactory holds all flags for specific printers implementing ObjectPrinter as well as the output format flag
@@ -50,16 +56,27 @@ func NewObjectPrinterFactory(defaultOutputFormat string, customPrinterFactories 
 		OutputFormat: defaultOutputFormat,
 	}
 
-	o.RegisteredPrinterFactories = make(map[string]CustomPrinterFactory, len(customPrinterFactories))
+	factoryMap := map[string]CustomPrinterFactory{}
 	for _, factory := range customPrinterFactories {
+		// if a nil pointer is given, ensure it will not be evaluated
+		if factory == nil {
+			continue
+		}
 		supportedFormatString := strings.Join(factory.SupportedFormats(), ",")
-		if _, ok := o.RegisteredPrinterFactories[supportedFormatString]; !ok {
-			o.RegisteredPrinterFactories[supportedFormatString] = factory
+		if _, ok := factoryMap[supportedFormatString]; !ok {
+			factoryMap[supportedFormatString] = factory
 		} else {
-			return nil, fmt.Errorf("tried to registere two printer factories which support the same output formats %q: %v and %v",
-				supportedFormatString, factory, o.RegisteredPrinterFactories[supportedFormatString])
+			return nil, fmt.Errorf("tried to register two printer factories which support the same output formats %q: %T and %T",
+				supportedFormatString, factory, factoryMap[supportedFormatString])
 		}
 	}
+
+	if len(factoryMap) == 0 {
+		return nil, fmt.Errorf("no custom printer factory added. You must specify at least one "+
+			"custom printer factory that supports the %q output format", defaultOutputFormat)
+	}
+
+	o.RegisteredPrinterFactories = factoryMap
 
 	if err := o.validate(); err != nil {
 		return nil, err
@@ -67,35 +84,16 @@ func NewObjectPrinterFactory(defaultOutputFormat string, customPrinterFactories 
 	return o, nil
 }
 
-// SupportedFormats creates a list of all supported formats based on the CustomPrinterFactory register within the ObjectPrinterFactory
-func (o *ObjectPrinterFactory) SupportedFormats() []string {
-	var supportedFormats []string
-	for _, printerFactory := range o.RegisteredPrinterFactories {
-		supportedFormats = append(supportedFormats, printerFactory.SupportedFormats()...)
-	}
-	return supportedFormats
-}
-
-// validate will validate whether the given output format can be satisfied by the registered CustomPrinterFactory. It also
-// verifies whether each registered CustomPrinterFactory is able to create a ObjectPrinter with the current configuration
-func (o *ObjectPrinterFactory) validate() error {
-	for _, printerFactory := range o.RegisteredPrinterFactories {
-		if err := printerFactory.validate(); err != nil {
-			return err
+// IsStandardizedFormat checks whether the currently set OutputFormat is a standardized format, i.e. JSON / CSV / YAML
+// etc. The caller is expected to not print additional information when this returns true to ensure being compatible
+// with the format
+func (o *ObjectPrinterFactory) IsStandardizedFormat() bool {
+	for _, format := range o.supportedFormats() {
+		if standardizedFormats.Contains(format) {
+			return true
 		}
 	}
-
-	return o.validateOutputFormat()
-}
-
-func (o *ObjectPrinterFactory) validateOutputFormat() error {
-	for supportedFormat := range o.RegisteredPrinterFactories {
-		if strings.Contains(o.OutputFormat, supportedFormat) {
-			return nil
-		}
-	}
-
-	return UnsupportedOutputFormatError{OutputFormat: o.OutputFormat, SupportedFormats: o.SupportedFormats()}
+	return false
 }
 
 // AddFlags will add all flags of registered CustomPrinterFactory as well as the format flag to specify the output format
@@ -105,7 +103,7 @@ func (o *ObjectPrinterFactory) AddFlags(cmd *cobra.Command) {
 	}
 
 	cmd.PersistentFlags().StringVar(&o.OutputFormat, "format", o.OutputFormat,
-		fmt.Sprintf("Output format. Choose one of: %s", strings.Join(o.SupportedFormats(), "|")))
+		fmt.Sprintf("Output format. Choose one of: %s", strings.Join(o.supportedFormats(), " | ")))
 }
 
 // CreatePrinter will iterate through the registered CustomPrinterFactory and try to create a ObjectPrinter for each.
@@ -120,11 +118,44 @@ func (o *ObjectPrinterFactory) CreatePrinter() (ObjectPrinter, error) {
 
 	for supportedFormats, printerFactory := range o.RegisteredPrinterFactories {
 		// only invoke factory when output format is a supported format
-		if strings.Contains(o.OutputFormat, supportedFormats) {
+		if strings.Contains(supportedFormats, o.OutputFormat) {
 			return printerFactory.CreatePrinter(o.OutputFormat)
 		}
 	}
 
 	// should never happen as output format is declared as supported within the validation
-	return nil, UnsupportedOutputFormatError{OutputFormat: o.OutputFormat, SupportedFormats: o.SupportedFormats()}
+	return nil, UnsupportedOutputFormatError{OutputFormat: o.OutputFormat, SupportedFormats: o.supportedFormats()}
+}
+
+// validate will validate whether the given output format can be satisfied by the registered CustomPrinterFactory. It also
+// verifies whether each registered CustomPrinterFactory is able to create a ObjectPrinter with the current configuration
+func (o *ObjectPrinterFactory) validate() error {
+	for _, printerFactory := range o.RegisteredPrinterFactories {
+		if err := printerFactory.validate(); err != nil {
+			return err
+		}
+	}
+
+	return o.validateOutputFormat()
+}
+
+// validateOutputFormat will verify whether the currently set OutputFormat is supported by a registered
+// CustomPrinterFactory
+func (o *ObjectPrinterFactory) validateOutputFormat() error {
+	for supportedFormat := range o.RegisteredPrinterFactories {
+		if strings.Contains(supportedFormat, o.OutputFormat) {
+			return nil
+		}
+	}
+
+	return UnsupportedOutputFormatError{OutputFormat: o.OutputFormat, SupportedFormats: o.supportedFormats()}
+}
+
+// supportedFormats creates a list of all supported formats based on the CustomPrinterFactory register within the ObjectPrinterFactory
+func (o *ObjectPrinterFactory) supportedFormats() []string {
+	var supportedFormats []string
+	for _, printerFactory := range o.RegisteredPrinterFactories {
+		supportedFormats = append(supportedFormats, printerFactory.SupportedFormats()...)
+	}
+	return supportedFormats
 }
