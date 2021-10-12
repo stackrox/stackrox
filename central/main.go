@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -134,7 +133,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
@@ -223,20 +221,7 @@ func main() {
 
 	proxy.WatchProxyConfig(context.Background(), proxyConfigPath, proxyConfigFile, true)
 
-	if devbuild.IsEnabled() {
-		if env.HotReload.BooleanSetting() {
-			log.Warn("***********************************************************************************")
-			log.Warn("This binary is being hot reloaded. It may be a different version from the image tag")
-			log.Warn("***********************************************************************************")
-		}
-
-		debughandler.MustStartServerAsync("")
-
-		devmode.StartBinaryWatchdog("central")
-
-		runtime.SetBlockProfileRate(1)
-		runtime.SetMutexProfileFraction(1)
-	}
+	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	ensureDB()

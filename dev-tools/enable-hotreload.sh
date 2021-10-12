@@ -4,7 +4,7 @@ set -eo pipefail
 # Mount local binaries to enable HOTRELOAD after a deployment.
 # It helps to run recently build binaries (i.e. from `make fast-central`) inside the cluster by
 # only deleting the pod, instead of building a new main image.
-# Usage: ./enable-hotreload.sh [sensor,central]
+# Usage: ./enable-hotreload.sh [sensor,central,migrator,admission]
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
