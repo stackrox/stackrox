@@ -342,9 +342,9 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	image.Scan = scan
 	FillScanStats(image)
 
-	// Clone the cachedScan because the scan is used within the image leading to race conditions
-	cachedScan := scan.Clone()
+	cachedScan := prepareImageScanForCache(scan)
 	e.scanCache.Add(getRef(image), cachedScan)
+
 	if image.GetId() == "" {
 		if digest := image.GetMetadata().GetV2().GetDigest(); digest != "" {
 			e.scanCache.Add(digest, cachedScan)
@@ -354,6 +354,16 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		}
 	}
 	return ScanSucceeded, nil
+}
+
+func prepareImageScanForCache(scan *storage.ImageScan) *storage.ImageScan {
+	// Clone the cachedScan because the scan is used within the image leading to race conditions
+	clonedScan := scan.Clone()
+	// Executables are processed and stored in active component updater executable cache and hence we remove them here.
+	for _, component := range clonedScan.GetComponents() {
+		component.Executables = nil
+	}
+	return clonedScan
 }
 
 // FillScanStats fills in the higher level stats from the scan data.
