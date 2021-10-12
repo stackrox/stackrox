@@ -29,4 +29,7 @@ var (
 
 	// AlternateProbeDownload enables alternate probe download solution for collector
 	AlternateProbeDownload = registerFeature("Enable alternate probe download solution for collector", "ROX_COLLECTOR_ALT_PROBE_DOWNLOAD", false)
+
+	// VulnRiskManagement enables the vulnerability risk management workflow that allows accepting risk for vulnerabilities.
+	VulnRiskManagement = registerFeature("Enable Vulnerability Risk Management workflow", "ROX_VULN_RISK_MANAGEMENT", false)
 )

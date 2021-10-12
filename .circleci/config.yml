@@ -2389,6 +2389,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - checkout
@@ -3308,6 +3309,7 @@ jobs:
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
       - ROX_ACTIVE_VULN_MANAGEMENT: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - checkout
@@ -3622,6 +3624,7 @@ jobs:
       - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - checkout
@@ -3692,6 +3695,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - run-qa-tests:
@@ -3721,6 +3725,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - run-qa-tests:
@@ -3882,6 +3887,7 @@ jobs:
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - check-label-exists-or-skip:
@@ -3907,6 +3913,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - check-label-exists-or-skip:
@@ -3933,6 +3940,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - checkout
@@ -4025,6 +4033,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - checkout
@@ -4133,6 +4142,7 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - run-qa-tests:
@@ -4171,10 +4181,9 @@ jobs:
       - ROX_NETWORK_GRAPH_PORTS: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
-      - ROX_NETWORK_DETECTION: true
-      - ROX_NETWORK_DETECTION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - run-qa-tests:
@@ -4327,9 +4336,9 @@ jobs:
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       ROX_SCOPED_ACCESS_CONTROL_V2: "true"
       ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
-      ROX_SYSTEM_POLICY_MITRE_FRAMEWORK: "true"
       ROX_COLLECTOR_ALT_PROBE_DOWNLOAD: "true"
       IS_RACE_BUILD: "true"
+      ROX_VULN_RISK_MANAGEMENT: "true"
 
     steps:
       - run-qa-tests:
@@ -4669,10 +4678,8 @@ jobs:
       - ROX_NETWORK_GRAPH_PORTS: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
-      - ROX_NETWORK_DETECTION: true
-      - ROX_NETWORK_DETECTION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_K8S_AUDIT_LOG_DETECTION: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - run-qa-tests:
@@ -4714,10 +4721,8 @@ jobs:
       - ROX_NETWORK_GRAPH_PORTS: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
-      - ROX_NETWORK_DETECTION: true
-      - ROX_NETWORK_DETECTION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_K8S_AUDIT_LOG_DETECTION: true
+      - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
       - run-qa-tests:
