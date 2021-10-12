@@ -556,51 +556,6 @@ commands:
               circleci step halt
             fi
 
-  validate-upgrade:
-    description: "Validates the upgrade was successful against upgrade tests"
-    parameters:
-      upgrade-cluster-id:
-        type: string
-      desc:
-        type: string
-      policies-dir:
-        type: string
-        default: "../pkg/defaults/policies/files"
-    steps:
-      - run:
-          name: "<< parameters.desc >>"
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID << parameters.upgrade-cluster-id >>
-            cci-export POLICIES_JSON_RELATIVE_PATH << parameters.policies-dir >>
-            make -C qa-tests-backend upgrade-test
-
-  validate-upgrade-and-check-logs-with-bouncing:
-    description: "Validates the upgrade was successful against upgrade tests, bounces Central, then repeats"
-    parameters:
-      upgrade-cluster-id:
-        type: string
-      desc:
-        type: string
-      policies-dir:
-        type: string
-        default: "../pkg/defaults/policies/files"
-    steps:
-      - validate-upgrade:
-          upgrade-cluster-id: "<< parameters.upgrade-cluster-id >>"
-          desc: "<< parameters.desc >> (pre bounce)"
-          policies-dir: "<< parameters.policies-dir >>"
-      - check-stackrox-logs:
-          collect: true
-      - *bounceCentral
-      - *waitForAPI
-      - validate-upgrade:
-          upgrade-cluster-id: "<< parameters.upgrade-cluster-id >>"
-          desc: "<< parameters.desc >> (post bounce)"
-          policies-dir: "<< parameters.policies-dir >>"
-      - check-stackrox-logs:
-          collect: true
-
   check-label-exists-or-skip:
     description: "Checks GitHub for the given label, and skips the test if we're on a PR and the label is NOT present."
     parameters:
@@ -1203,33 +1158,6 @@ commands:
           root: /go/src/github.com/stackrox/rox
           paths:
             - .ci-clusters/<< parameters.cluster-id >>
-
-  deploy-sensor-via-upgrader-for-upgrade-tests:
-    parameters:
-      desc:
-        type: string
-      upgrade-process-id:
-        type: string
-
-    steps:
-      - run:
-          name: Deploy sensor via upgrader (<< parameters.desc >>)
-          command: |
-            kubectl proxy --port 28001 &
-            proxy_pid=$!
-            sleep 5
-
-            ROX_UPGRADE_PROCESS_ID=<< parameters.upgrade-process-id >> \
-                ROX_CENTRAL_ENDPOINT="${API_ENDPOINT}" \
-                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
-                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
-                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
-                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
-              ./bin/linux/upgrader -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
-
-            kill "$proxy_pid"
-
-      - *waitForSensorK8s
 
   attach-gke-cluster:
     parameters:
