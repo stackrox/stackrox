@@ -45,7 +45,15 @@ describe('Cluster Init Bundle tests', () => {
         );
         cy.get(selectors.buttons.generate).should('be.disabled');
 
-        // Step 2, check valid from and generate
+        // Step 2, check fields for invalid formats
+        getInputByLabel('Cluster init bundle name').type('Name with space/stuff').blur();
+
+        getHelperElementByLabel('Cluster init bundle name').contains(
+            'Name must contain only alphanumeric, ., _, or - (no spaces).'
+        );
+        cy.get(selectors.buttons.generate).should('be.disabled');
+
+        // Step 3, check valid from and generate
         getInputByLabel('Cluster init bundle name').clear().type(clusterInitBundleName);
 
         cy.get(selectors.buttons.generate).should('be.enabled').click();

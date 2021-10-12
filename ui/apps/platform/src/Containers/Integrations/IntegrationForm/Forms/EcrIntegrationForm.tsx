@@ -42,7 +42,7 @@ export const validationSchema = yup.object().shape({
             .min(1, 'Must have at least one type selected')
             .required('A category is required'),
         ecr: yup.object().shape({
-            registryId: yup.string().trim().required('A registry id is required'),
+            registryId: yup.string().trim().required('A registry ID is required'),
             endpoint: yup.string().trim().required('An endpoint is required'),
             region: yup.string().trim().required('An AWS region is required'),
             useIam: yup.bool(),
@@ -52,7 +52,7 @@ export const validationSchema = yup.object().shape({
                     .string()
                     .test(
                         'acessKeyId-test',
-                        'An access key id is required',
+                        'An access key ID is required',
                         (value, context: yup.TestContext) => {
                             const requirePasswordField =
                                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -183,7 +183,7 @@ function EcrIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Registry id"
+                        label="Registry ID"
                         isRequired
                         fieldId="config.ecr.registryId"
                         touched={touched}
@@ -262,7 +262,7 @@ function EcrIntegrationForm({
                         <>
                             <FormLabelGroup
                                 isRequired={values.updatePassword}
-                                label="Access key id"
+                                label="Access key ID"
                                 fieldId="config.ecr.accessKeyId"
                                 touched={touched}
                                 errors={errors}

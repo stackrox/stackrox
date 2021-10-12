@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Form, PageSection, Switch, TextInput } from '@patternfly/react-core';
+import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import merge from 'lodash/merge';
 import * as yup from 'yup';
 
@@ -116,17 +116,13 @@ function SumoLogicIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        label="Disable TLS Certificate Validation (Insecure)"
-                        fieldId="sumologic.skipTLSVerify"
-                        errors={errors}
-                    >
-                        <Switch
+                    <FormLabelGroup label="" fieldId="sumologic.skipTLSVerify" errors={errors}>
+                        <Checkbox
+                            label="Disable TLS certificate validation (insecure)"
                             id="sumologic.skipTLSVerify"
-                            name="sumologic.skipTLSVerify"
-                            aria-label="disable tls certificate validation"
                             isChecked={values.sumologic.skipTLSVerify}
                             onChange={onChange}
+                            onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>

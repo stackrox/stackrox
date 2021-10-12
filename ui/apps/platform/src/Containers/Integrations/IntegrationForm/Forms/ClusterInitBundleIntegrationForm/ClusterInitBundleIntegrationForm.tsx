@@ -27,8 +27,17 @@ export type ClusterInitBundleIntegrationFormProps = {
     isEditable?: boolean;
 };
 
+const validBundleNameRegex = /^[A-Za-z0-9._-]+$/;
+
 export const validationSchema = yup.object().shape({
-    name: yup.string().trim().required('A cluster init bundle name is required'),
+    name: yup
+        .string()
+        .trim()
+        .required('A cluster init bundle name is required')
+        .matches(
+            validBundleNameRegex,
+            'Name must contain only alphanumeric, ., _, or - (no spaces).'
+        ),
 });
 
 export const defaultValues: ClusterInitBundleIntegrationFormValues = {
@@ -126,7 +135,7 @@ function ClusterInitBundleIntegrationForm({
                 ) : (
                     <IntegrationFormActions>
                         <FormCancelButton onCancel={onCancel} isDisabled={isSubmitting}>
-                            Close
+                            Back
                         </FormCancelButton>
                     </IntegrationFormActions>
                 ))}

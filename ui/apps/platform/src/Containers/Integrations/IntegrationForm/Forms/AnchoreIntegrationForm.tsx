@@ -161,6 +161,7 @@ function AnchoreIntegrationForm({
                         fieldId="config.anchore.endpoint"
                         touched={touched}
                         errors={errors}
+                        helperText="example, scanner.anchore.com"
                     >
                         <TextInput
                             isRequired

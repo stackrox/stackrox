@@ -207,7 +207,7 @@ function ApiTokenIntegrationForm({
                 ) : (
                     <IntegrationFormActions>
                         <FormCancelButton onCancel={onCancel} isDisabled={isSubmitting}>
-                            Close
+                            Back
                         </FormCancelButton>
                     </IntegrationFormActions>
                 ))}

@@ -56,7 +56,7 @@ const validHostnameRegex =
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
-        name: yup.string().trim().required('Required'),
+        name: yup.string().trim().required('Email integration name is required'),
         labelDefault: yup
             .string()
             .trim()
@@ -280,7 +280,7 @@ function EmailIntegrationForm({
                         errors={errors}
                         helperText={
                             <span className="pf-u-font-size-sm">
-                                (optional) Specifies the email FROM header
+                                Specifies the email FROM header
                             </span>
                         }
                     >
@@ -288,7 +288,7 @@ function EmailIntegrationForm({
                             type="text"
                             id="notifier.email.from"
                             value={values.notifier.email.from}
-                            placeholder="example, Advanced Cluster Management"
+                            placeholder="example, Advanced Cluster Security"
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}

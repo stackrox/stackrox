@@ -95,7 +95,9 @@ describe('Notifiers Test', () => {
             getInputByLabel('Sender').type(' ');
             getInputByLabel('Default recipient').type(' ').blur();
 
-            getHelperElementByLabel('Integration name').contains('Required');
+            getHelperElementByLabel('Integration name').contains(
+                'Email integration name is required'
+            );
             getHelperElementByLabel('Email server').contains('A server address is required');
             getHelperElementByLabel('Username').contains('A username is required');
             getHelperElementByLabel('Password').contains('A password is required');

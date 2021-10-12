@@ -3,6 +3,7 @@ import React from 'react';
 export type UseTableSelection = {
     selected: boolean[];
     allRowsSelected: boolean;
+    numSelected: number;
     hasSelections: boolean;
     onSelect: (
         event: React.FormEvent<HTMLInputElement>,
@@ -21,7 +22,8 @@ type Base = {
 function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
     const [allRowsSelected, setAllRowsSelected] = React.useState(false);
     const [selected, setSelected] = React.useState(data.map(() => false));
-    const hasSelections = selected.some((sel) => sel === true);
+    const numSelected = selected.reduce((acc, sel) => (sel ? acc + 1 : acc), 0);
+    const hasSelections = numSelected > 0;
 
     React.useEffect(() => {
         setSelected(data.map(() => false));
@@ -71,6 +73,7 @@ function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
     return {
         selected,
         allRowsSelected,
+        numSelected,
         hasSelections,
         onSelect,
         onSelectAll,

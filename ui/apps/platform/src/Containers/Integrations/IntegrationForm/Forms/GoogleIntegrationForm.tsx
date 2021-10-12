@@ -188,11 +188,11 @@ function DockerIntegrationForm({
                         fieldId="config.google.endpoint"
                         touched={touched}
                         errors={errors}
+                        helperText="example, gcr.io"
                     >
                         <TextInput
                             type="text"
                             id="config.google.endpoint"
-                            placeholder="(ex. gcr.io)"
                             value={values.config.google.endpoint}
                             onChange={onChange}
                             onBlur={handleBlur}
