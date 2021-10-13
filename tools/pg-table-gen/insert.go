@@ -35,10 +35,10 @@ func PathToFn(path string) string {
 
 func genInsertion(table *Table) {
 	funcMap := template.FuncMap{
-		"ToLower": strings.ToLower,
-		"ToGetter": ToGetter,
+		"ToLower":         strings.ToLower,
+		"ToGetter":        ToGetter,
 		"FieldsToQueries": FieldsToQueries,
-		"PathToFn": PathToFn,
+		"PathToFn":        PathToFn,
 	}
 
 	tmplStr, _ := os.ReadFile("/Users/connorgorman/repos/src/github.com/stackrox/rox/tools/pg-table-gen/templates/insert.tmpl")
@@ -66,8 +66,6 @@ func insert(tx *sql.Tx, deployment *storage.Deployment) error {
 	// Insert deployment
 	// iterate over containers
 	// add container fields
-
-
 
 	return nil
 }

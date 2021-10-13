@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"database/sql"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -21,7 +21,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	table = "processindicators"
+	table = "processindicator"
 )
 
 type Store interface {
@@ -71,7 +71,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 	return vulnStmt
 }
 
-const createTableQuery = "create table if not exists processindicators (id varchar primary key, value jsonb)"
+const createTableQuery = "create table if not exists processindicator (id varchar primary key, value jsonb)"
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *sql.DB) Store {
@@ -86,16 +86,16 @@ func New(db *sql.DB) Store {
 	return &storeImpl{
 		db: db,
 
-		countStmt: compileStmtOrPanic(db, "select count(*) from processindicators"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from processindicators where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from processindicators"),
-		getStmt: compileStmtOrPanic(db, "select value from processindicators where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from processindicators where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into processindicators(id, value) values($1, $2) on conflict(id) do update set value=$2"),
-		deleteStmt: compileStmtOrPanic(db, "delete from processindicators where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicators where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from processindicators"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from processindicators"),
+		countStmt: compileStmtOrPanic(db, "select count(*) from processindicator"),
+		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from processindicator where id = $1)"),
+		getIDsStmt: compileStmtOrPanic(db, "select id from processindicator"),
+		getStmt: compileStmtOrPanic(db, "select value from processindicator where id = $1"),
+		getManyStmt: compileStmtOrPanic(db, "select value from processindicator where id = ANY($1::text[])"),
+		upsertStmt: compileStmtOrPanic(db, "insert into processindicator(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+		deleteStmt: compileStmtOrPanic(db, "delete from processindicator where id = $1"),
+		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicator where id = ANY($1::text[])"),
+		walkStmt: compileStmtOrPanic(db, "select value from processindicator"),
+		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from processindicator"),
 	}
 //
 }
@@ -227,7 +227,10 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, e
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.ProcessIndicator) error {
-	value, err := (&jsonpb.Marshaler{}).MarshalToString(obj)
+	value, err := (&jsonpb.Marshaler{
+		EnumsAsInts:  true,
+		EmitDefaults: true,
+	}).MarshalToString(obj)
 	if err != nil {
 		return err
 	}

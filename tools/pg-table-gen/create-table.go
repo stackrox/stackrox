@@ -61,7 +61,6 @@ func generateTableDeclarations(parentTable, table *Table) {
 	}
 	fields = append(fields, fmt.Sprintf("primary key (%s)", strings.Join(pks, ", ")))
 
-
 	for i := range fields {
 		fields[i] = "\t" + fields[i]
 	}

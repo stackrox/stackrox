@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=ProcessBaseline --table=processWhitelists2 
+//go:generate pg-bindings-wrapper --type=ProcessBaseline --table=processWhitelists2

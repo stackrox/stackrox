@@ -1,4 +1,4 @@
 package postgres
 
-//go:generate pgsearchbindings-wrapper --object Deployment --singular deployment --search-category DEPLOYMENTS
-//go:generate mockgen-wrapper Indexer
+//go:generate pgsearchbindings-wrapper --type Deployment --table deployment --search-category DEPLOYMENTS --options-path "pkg/search/options/deployments"
+// //go:generate mockgen-wrapper Indexer

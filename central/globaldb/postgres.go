@@ -23,7 +23,7 @@ type registeredTable struct {
 
 func RegisterTable(table string, objType string) {
 	registeredTables = append(registeredTables, registeredTable{
-		table: table,
+		table:   table,
 		objType: objType,
 	})
 }
@@ -50,7 +50,7 @@ func startMonitoringPostgresDB(db *sql.DB) {
 	ticker := time.NewTicker(pgGatherFreq)
 	for range ticker.C {
 		for _, registeredTable := range registeredTables {
-			row := db.QueryRow("select count(*) from "+ registeredTable.table)
+			row := db.QueryRow("select count(*) from " + registeredTable.table)
 			if err := row.Err(); err != nil {
 				log.Errorf("error getting size of table %s: %v", registeredTable.table, err)
 				continue

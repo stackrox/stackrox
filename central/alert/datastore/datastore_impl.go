@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -409,6 +410,9 @@ func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 }
 
 func (ds *datastoreImpl) fullReindex() error {
+	if features.PostgresPOC.Enabled() {
+		return nil
+	}
 	log.Info("[STARTUP] Reindexing all alerts")
 
 	alertIDs, err := ds.storage.GetIDs()

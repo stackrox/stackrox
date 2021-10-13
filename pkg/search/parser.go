@@ -162,3 +162,46 @@ func docIDQuery(ids []string) *v1.Query {
 		Query: &v1.BaseQuery_DocIdQuery{DocIdQuery: &v1.DocIDQuery{Ids: ids}},
 	})
 }
+
+//go:generate stringer -type=QueryModifier
+type QueryModifier int
+
+const (
+	AtLeastOne QueryModifier = iota
+	Negation
+	Regex
+	Equality
+)
+
+func GetValueAndModifiersFromString(value string) (string, []QueryModifier) {
+	var queryModifiers []QueryModifier
+	trimmedValue := value
+	// We only allow at most one modifier from the set {atleastone, negation}.
+	// Anything more, we treat as part of the string to query for.
+	var negationOrAtLeastOneFound bool
+forloop:
+	for {
+		switch {
+		// AtLeastOnePrefix is !! so it must come before negation prefix
+		case !negationOrAtLeastOneFound && strings.HasPrefix(trimmedValue, AtLeastOnePrefix) && len(trimmedValue) > len(AtLeastOnePrefix):
+			trimmedValue = trimmedValue[len(AtLeastOnePrefix):]
+			queryModifiers = append(queryModifiers, AtLeastOne)
+			negationOrAtLeastOneFound = true
+		case !negationOrAtLeastOneFound && strings.HasPrefix(trimmedValue, NegationPrefix) && len(trimmedValue) > len(NegationPrefix):
+			trimmedValue = trimmedValue[len(NegationPrefix):]
+			queryModifiers = append(queryModifiers, Negation)
+			negationOrAtLeastOneFound = true
+		case strings.HasPrefix(trimmedValue, RegexPrefix) && len(trimmedValue) > len(RegexPrefix):
+			trimmedValue = strings.ToLower(trimmedValue[len(RegexPrefix):])
+			queryModifiers = append(queryModifiers, Regex)
+			break forloop // Once we see that it's a regex, we don't check for special-characters in the rest of the string.
+		case strings.HasPrefix(trimmedValue, EqualityPrefixSuffix) && strings.HasSuffix(trimmedValue, EqualityPrefixSuffix) && len(trimmedValue) > 2*len(EqualityPrefixSuffix):
+			trimmedValue = trimmedValue[len(EqualityPrefixSuffix) : len(trimmedValue)-len(EqualityPrefixSuffix)]
+			queryModifiers = append(queryModifiers, Equality)
+			break forloop // Once it's within quotes, we take the value inside as is, and don't try to extract modifiers.
+		default:
+			break forloop
+		}
+	}
+	return trimmedValue, queryModifiers
+}

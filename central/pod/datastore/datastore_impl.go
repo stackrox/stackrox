@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -62,6 +63,9 @@ func newDatastoreImpl(storage podStore.Store, indexer podIndex.Indexer, searcher
 }
 
 func (ds *datastoreImpl) buildIndex() error {
+	if features.PostgresPOC.Enabled() {
+		return nil
+	}
 	defer debug.FreeOSMemory()
 
 	needsReindexing, err := ds.podIndexer.NeedsInitialIndexing()
