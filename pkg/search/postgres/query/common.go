@@ -18,6 +18,19 @@ type QueryEntry struct {
 	Query  string
 	Values []interface{}
 }
+
+func NewFalseQuery() *QueryEntry {
+	return &QueryEntry{
+		Query: "false",
+	}
+}
+
+func NewTrueQuery() *QueryEntry {
+	return &QueryEntry{
+		Query: "true",
+	}
+}
+
 func generateShortestElemPath(table string, elems []searchPkg.PathElem) string {
 	if len(elems) == 1 {
 		return fmt.Sprintf("%s.value", table)
@@ -45,6 +58,7 @@ func MatchFieldQuery(table string, query *v1.MatchFieldQuery, optionsMap searchP
 	// Need to find base value
 	field, ok := optionsMap.Get(query.GetField())
 	if !ok {
+		log.Infof("Options Map for %s does not have field: %v", table, query.GetField())
 		return nil, nil
 	}
 	return matchFieldQuery(table, field, query.Value)

@@ -14,8 +14,8 @@ package storage;
 
 message Alert {
     message Deployment {
-        string                  id                  = 1;
-        string                  name                = 2;
+        string                  id                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store\""];
+        string                  name                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
         string                  type                = 4;
         string                  namespace           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
         string                  namespace_id        = 16 [(gogoproto.moretags) = "search:\"Namespace ID\""];

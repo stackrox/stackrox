@@ -161,7 +161,7 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 	}
 
 	// Building the where clause is the hardest part
-	printTree(tree, "")
+	//printTree(tree, "")
 	queryEntry, err := compileBaseQuery(table, q, optionsMap)
 	if err != nil {
 		return "", nil, err
@@ -174,6 +174,9 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 }
 
 func multiQueryFromQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
+	if len(entries) == 0 {
+		return nil
+	}
 	if len(entries) == 1 {
 		return entries[0]
 	}
@@ -251,13 +254,18 @@ func compileBaseQuery(table string, q *v1.Query, optionsMap searchPkg.OptionsMap
 			return nil, err
 		}
 		cqe := multiQueryFromQueryEntries(entries, " and ")
+		if cqe == nil {
+			cqe = pgsearch.NewTrueQuery()
+		}
 
 		entries, err = entriesFromQueries(table, sub.BooleanQuery.MustNot.Queries, optionsMap)
 		if err != nil {
 			return nil, err
 		}
 		dqe := multiQueryFromQueryEntries(entries, " or ")
-
+		if dqe == nil {
+			dqe = pgsearch.NewFalseQuery()
+		}
 		return &pgsearch.QueryEntry{
 			Query:  fmt.Sprintf("(%s and not (%s))", cqe.Query, dqe.Query),
 			Values: append(cqe.Values, dqe.Values...),

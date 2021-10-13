@@ -166,9 +166,7 @@ func newEnumQuery(table string, field *pkgSearch.Field, value string, queryModif
 		}
 		enumValues = enumregistry.Get(field.FieldPath, value)
 		if len(enumValues) == 0 {
-			return &QueryEntry{
-				Query: "false",
-			}, nil
+			return NewFalseQuery(), nil
 		}
 
 		var queries []string
