@@ -24,6 +24,7 @@ const PercentageStackedPill = ({ data, tooltip }) => {
             className = `${className} rounded-r-full`;
         }
 
+        // eslint-disable-next-line react/no-array-index-key
         return <div className={className} key={i} style={{ width: `${value}%` }} />;
     });
     const { title: tooltipTitle, body: tooltipBody } = tooltip || {};

@@ -45,11 +45,8 @@ const RiskDetails = ({ risk }) => {
             >
                 <CollapsibleCard title={result.name}>
                     {result.factors.map((factor, index) => (
-                        <Factor
-                            key={`factor.message-${index}`}
-                            message={factor.message}
-                            url={factor.url}
-                        />
+                        // eslint-disable-next-line react/no-array-index-key
+                        <Factor key={index} message={factor.message} url={factor.url} />
                     ))}
                 </CollapsibleCard>
             </div>

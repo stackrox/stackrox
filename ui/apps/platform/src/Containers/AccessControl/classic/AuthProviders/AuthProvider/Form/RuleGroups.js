@@ -117,6 +117,7 @@ class RuleGroups extends Component {
         return (
             <div className="w-full p-2">
                 {fields.map((group, idx, value) => (
+                    // eslint-disable-next-line react/no-array-index-key
                     <div className="flex" key={idx}>
                         <div className="w-full">
                             <Labeled label="Key">

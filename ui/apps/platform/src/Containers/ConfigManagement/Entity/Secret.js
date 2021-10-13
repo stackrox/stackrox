@@ -114,7 +114,7 @@ const SecretValues = ({ files }) => {
     );
     const filesCount = filesWithoutImagePullSecrets.length;
     const widgetHeader = `${filesCount} ${pluralize('value', filesCount)}`;
-    const secretValues = filesWithoutImagePullSecrets.map((file, i) => {
+    const secretValues = filesWithoutImagePullSecrets.map((file) => {
         const { name, type, metadata } = file;
         const { algorithm } = metadata || {};
         const collapsibleRowHeader = (
@@ -129,7 +129,7 @@ const SecretValues = ({ files }) => {
             </div>
         );
         return (
-            <CollapsibleRow key={i} header={collapsibleRowHeader} isCollapsible={!!metadata}>
+            <CollapsibleRow key={name} header={collapsibleRowHeader} isCollapsible={!!metadata}>
                 <SecretDataMetadata metadata={metadata} />
             </CollapsibleRow>
         );

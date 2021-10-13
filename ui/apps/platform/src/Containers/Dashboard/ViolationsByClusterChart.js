@@ -40,6 +40,7 @@ const ViolationsByClusterChart = ({ history, violationsByCluster }) => {
         <div className="p-0 h-64 w-full">
             <Slider {...slickSettings}>
                 {violationsByCluster.map((data, index) => (
+                    // eslint-disable-next-line react/no-array-index-key
                     <div key={index}>
                         <ResponsiveContainer className="flex-1 h-full w-full">
                             <BarChart

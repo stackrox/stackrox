@@ -114,7 +114,6 @@ const commonReactRules = {
             forbid: ['data-test-id'],
         },
     ],
-    'react/no-array-index-key': 'warn', // TODO: eventually switch this rule to error
     'react-hooks/exhaustive-deps': 'warn',
 
     // DEPRECATED in favor of label-has-associated-control

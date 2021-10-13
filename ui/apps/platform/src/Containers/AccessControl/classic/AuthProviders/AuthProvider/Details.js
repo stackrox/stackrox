@@ -63,6 +63,7 @@ const Details = (props) => {
                                 </div>
                             </div>
                             {groups.map((group, idx) => (
+                                // eslint-disable-next-line react/no-array-index-key
                                 <div className="p-4 flex w-full" key={idx}>
                                     <div className="w-full">
                                         <div className="text-base-600 font-700 pb-2">Key</div>
