@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=Alert --table=alert
+//go:generate pg-bindings-wrapper --type=Alert --table=alerts
