@@ -79,7 +79,7 @@ const commonRules = {
 const commonReactRules = {
     'react/display-name': 'off',
     'react/jsx-props-no-spreading': 'off',
-    'react/static-property-placement': ['warn', 'static public field'],
+    'react/static-property-placement': ['error', 'static public field'],
     'react/prop-types': [
         'error',
         {

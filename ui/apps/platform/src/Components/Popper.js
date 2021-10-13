@@ -5,6 +5,22 @@ import onClickOutside from 'react-onclickoutside';
 import { Manager, Target, Popper } from 'react-popper';
 
 class CustomPopper extends Component {
+    static propTypes = {
+        disabled: PropTypes.bool,
+        placement: PropTypes.string,
+        reactOutsideClassName: PropTypes.string,
+        buttonClass: PropTypes.string,
+        buttonContent: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
+        popperContent: PropTypes.element.isRequired,
+    };
+
+    static defaultProps = {
+        disabled: false,
+        reactOutsideClassName: 'ignore-react-onclickoutside',
+        placement: 'right',
+        buttonClass: '',
+    };
+
     constructor(props) {
         super(props);
 
@@ -55,22 +71,6 @@ class CustomPopper extends Component {
         );
     }
 }
-
-CustomPopper.propTypes = {
-    disabled: PropTypes.bool,
-    placement: PropTypes.string,
-    reactOutsideClassName: PropTypes.string,
-    buttonClass: PropTypes.string,
-    buttonContent: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
-    popperContent: PropTypes.element.isRequired,
-};
-
-CustomPopper.defaultProps = {
-    disabled: false,
-    reactOutsideClassName: 'ignore-react-onclickoutside',
-    placement: 'right',
-    buttonClass: '',
-};
 
 const CustomPopperContainer = (props) => {
     const EnhancedCustomPopper = onClickOutside(CustomPopper);
