@@ -155,30 +155,27 @@ setupDefaultTLSCerts: &setupDefaultTLSCerts
   run:
     name: Setup default TLS certificates
     command: |
-      cert_dir="$(mktemp -d)"
-      ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
-      cci-export ROX_DEFAULT_TLS_CERT_FILE "${cert_dir}/tls.crt"
-      cci-export ROX_DEFAULT_TLS_KEY_FILE "${cert_dir}/tls.key"
-      cci-export DEFAULT_CA_FILE "${cert_dir}/ca.crt"
-      cci-export ROX_TEST_CA_PEM "$(cat "${cert_dir}/ca.crt")"
-      cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
+      source ./tests/scripts/setup-certs.sh
+      setup_default_TLS_certs
 
-      cci-export TRUSTSTORE_PATH "${cert_dir}/keystore.p12"
-
-      echo "Contents of ${cert_dir}:"
-      ls -al "${cert_dir}"
+      cci-export ROX_DEFAULT_TLS_CERT_FILE "$ROX_DEFAULT_TLS_CERT_FILE"
+      cci-export ROX_DEFAULT_TLS_KEY_FILE "$ROX_DEFAULT_TLS_KEY_FILE"
+      cci-export DEFAULT_CA_FILE "$DEFAULT_CA_FILE"
+      cci-export ROX_TEST_CA_PEM "$ROX_TEST_CA_PEM"
+      cci-export ROX_TEST_CENTRAL_CN "$ROX_TEST_CENTRAL_CN"
+      cci-export TRUSTSTORE_PATH "$TRUSTSTORE_PATH"
 
 setupClientTLSCerts: &setupClientTLSCerts
   run:
     name: Setup client auth TLS certificates
     command: |
-      cert_dir="$(mktemp -d)"
-      ./tests/scripts/setup-certs.sh "$cert_dir" "Client Certificate User" "Client CA"
+      source ./tests/scripts/setup-certs.sh
+      setup_client_TLS_certs
 
-      cci-export KEYSTORE_PATH "${cert_dir}/keystore.p12"
-      cci-export CLIENT_CA_PATH "${cert_dir}/ca.crt"
-      cci-export CLIENT_CERT_PATH "${cert_dir}/tls.crt"
-      cci-export CLIENT_KEY_PATH "${cert_dir}/tls.key"
+      cci-export KEYSTORE_PATH "$KEYSTORE_PATH"
+      cci-export CLIENT_CA_PATH "$CLIENT_CA_PATH"
+      cci-export CLIENT_CERT_PATH "$CLIENT_CERT_PATH"
+      cci-export CLIENT_KEY_PATH "$CLIENT_KEY_PATH"
 
 bounceCentral: &bounceCentral
   run:
@@ -190,7 +187,7 @@ waitForAPI: &waitForAPI
   run:
     name: Wait for the API server to be up
     command: |
-      source scripts/lib.sh
+      source tests/e2e/lib.sh
       wait_for_api
       cci-export API_HOSTNAME "$API_HOSTNAME"
       cci-export API_PORT "$API_PORT"
@@ -200,7 +197,7 @@ alwaysWaitForAPI: &alwaysWaitForAPI
   run:
     name: Wait for the API server to be up
     command: |
-      source scripts/lib.sh
+      source tests/e2e/lib.sh
       wait_for_api
       cci-export API_HOSTNAME "$API_HOSTNAME"
       cci-export API_PORT "$API_PORT"
@@ -1205,7 +1202,7 @@ commands:
       - run:
           name: Remove all the existing StackRox resources (they can exist when Circle restarts a container)
           command: |
-            source scripts/lib.sh
+            source tests/e2e/lib.sh
             remove_existing_stackrox_resources
 
   deploy-webhook-server:
@@ -1785,29 +1782,17 @@ commands:
       orchestrator-flavor:
         type: string
         default: k8s
-      require-cluster-admin:
-        type: boolean
-        default: false
       validate-autoupgrade-label:
         type: boolean
         default: false
       post-central-deploy-steps:
         type: steps
         default: []
-      helm-from-repo:
-        type: boolean
-        default: false
       validate-sensor-bundle:
         type: boolean
         default: true
 
     steps:
-      - run:
-          name: Monitor cluster & deployment
-          command: |
-            scripts/ci/deployment-minder.sh
-          background: true
-
       - run:
           name: Deploy central to remote cluster
           command: |
@@ -1819,15 +1804,6 @@ commands:
 
             if .circleci/pr_has_label.sh ci-race-tests; then
                 cci-export IS_RACE_BUILD "true"
-            fi
-
-            # Use stackrox.io if helm-from-repo is true
-            if [[ << parameters.helm-from-repo >> == "true" ]]; then
-              cci-export MAIN_IMAGE_REPO "stackrox.io/main"
-              cci-export REGISTRY_USERNAME "$STACKROX_IO_USERNAME"
-              cci-export REGISTRY_PASSWORD "$STACKROX_IO_PASSWORD"
-              docker login -u "$STACKROX_IO_USERNAME" --password-stdin \<<<"$STACKROX_IO_PASSWORD" stackrox.io
-              docker login -u "$STACKROX_IO_USERNAME" --password-stdin \<<<"$STACKROX_IO_PASSWORD" collector.stackrox.io
             fi
 
             if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
@@ -2443,7 +2419,6 @@ jobs:
 
       - deploy-stackrox:
           validate-sensor-bundle: false
-          require-cluster-admin: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
 
@@ -3337,7 +3312,7 @@ jobs:
       - remove-existing-stackrox-resources
 
       - run:
-          name: Export Trusted CA file
+          name: Export Trusted CA file for ca_setup_test.go
           command: cci-export TRUSTED_CA_FILE "$PWD/tests/bad-ca/untrusted-root-badssl-com.pem"
 
       - *setupGoogleAppCreds
@@ -3351,219 +3326,47 @@ jobs:
              ./tests/complianceoperator/create.sh
 
       - deploy-stackrox:
-          require-cluster-admin: true
           validate-autoupgrade-label: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
             - setup-egress-proxies
 
       - run:
-          name: Set up client CA auth provider
+          name: Preparation for endpoints_test.go
           command: |
-            roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-              central userpki create test-userpki -r None -c "$CLIENT_CA_PATH"
+            source tests/e2e/run.sh
+            prepare_for_endpoints_test
+            cci-export "SERVICE_CA_FILE" "$SERVICE_CA_FILE"
+            cci-export "SERVICE_CERT_FILE" "$SERVICE_CERT_FILE"
+            cci-export "SERVICE_KEY_FILE" "$SERVICE_KEY_FILE"
 
       - run:
-          name: Test roxctl command for cert gen
+          name: Run roxctl tests
           command: |
-            mkdir gencerts
-            roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-              sensor generate-certs remote --output-dir gencerts
-            [[ -f gencerts/cluster-remote-tls.yaml ]]
-            # Use the certs in future steps that will use client auth.
-            # This will ensure that the certs are valid.
-            sensor_tls_cert="$(kubectl create --dry-run=client -o json -f gencerts/cluster-remote-tls.yaml | jq 'select(.metadata.name=="sensor-tls")')"
-            for file in ca.pem sensor-cert.pem sensor-key.pem; do
-              echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.stringData[$filename]' -r > "gencerts/${file}"
-            done
+            source tests/e2e/run.sh
+            MAIN_TAG=$(make --quiet tag) \
+            run_roxctl_tests
 
       - run:
-          name: Patch LB and netpol for endpoints test
+          name: Run API tests
           command: |
-            kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat .circleci/endpoints-test-lb-patch.yaml)"
-            kubectl -n stackrox apply -f .circleci/endpoints-test-netpol.yaml
-            for i in `seq 1 20`; do
-              if curl -sk --fail "https://${API_HOSTNAME}:8446/v1/metadata" &>/dev/null; then
-                exit 0
-              fi
-              sleep 1
-            done
-            echo >&2 "Port 8446 did not become reachable in time"
-            exit 1
-
-      - run:
-          name: Set up environment for endpoints test
-          command: |
-            # Use the files from the ones generated by the generate-certs command above.
-            cci-export "SERVICE_CA_FILE" "${PWD}/gencerts/ca.pem"
-            cci-export "SERVICE_CERT_FILE" "${PWD}/gencerts/sensor-cert.pem"
-            cci-export "SERVICE_KEY_FILE" "${PWD}/gencerts/sensor-key.pem"
-
-            central_pod="$(kubectl -n stackrox get po -lapp=central -oname | head -n 1)"
-            for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
-              nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" </dev/null &>/dev/null &
-            done
-            sleep 1
-
-      - run:
-          name: Test roxctl semantics of --token-file parameter
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/token-file.sh
-
-      - run:
-          name: Test slim collector mode with roxctl
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/slim-collector.sh
-
-      - run:
-          name: Test authz trace with roxctl
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/authz-trace.sh
-
-      - run:
-          name: Test istio-support flag in roxctl
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/istio-support.sh
-
-      - run:
-          name: Test YAML bundle generation in roxctl
-          command: |
-            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/bundle-generation.sh
-
-      - run:
-          name: Test Helm chart generation in roxctl
-          command: |
-             MAIN_TAG=$(make --quiet tag) ./tests/roxctl/helm-chart-generation.sh
-
-      - run:
-          name: API tests
-          command: |
-            CA="${SERVICE_CA_FILE}" ./tests/yamls/roxctl_verification.sh
             make -C tests
 
       - store-test-results-and-artifacts:
           path: tests/all-tests-results
 
       - run:
-          name: Deploy NGINX proxies
+          name: Setup for proxy tests
           command: |
-            export PROXY_CERTS_DIR="$(mktemp -d)"
-            scripts/ci/proxy/deploy.sh
+            source tests/e2e/run.sh
+            setup_proxy_tests
             cci-export PROXY_CERTS_DIR "$PROXY_CERTS_DIR"
 
       - run:
-          name: Port-forward to NGINX proxies
+          name: Run proxy tests
           command: |
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-plain-http 10080:80 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-multiplexed 10443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-multiplexed-tls-be 11443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http1 12443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http1-plain 13443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2 14443:443 </dev/null &>/dev/null &
-            nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-http2-plain 15443:443 </dev/null &>/dev/null &
-            sleep 1
-
-      - run:
-          name: Add an /etc/hosts entry
-          command: |
-            sudo bash -c 'echo "127.0.0.1 central-proxy.stackrox.local" >>/etc/hosts'
-
-      - run:
-          name: Test HTTP access to plain HTTP proxy
-          command: |
-            # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-            license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://central-proxy.stackrox.local:10080/v1/metadata' | jq -r '.licenseStatus')"
-            echo "Got license status ${license_status} from server"
-            [[ "$license_status" == "VALID" ]]
-
-      - run:
-          name: Test HTTPS access to multiplexed TLS proxy
-          command: |
-            # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-            license_status="$(
-              curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
-                --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
-                -f \
-                'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.licenseStatus')"
-            echo "Got license status ${license_status} from server"
-            [[ "$license_status" == "VALID" ]]
-
-      - run:
-          name: Test roxctl access to proxies
-          command: |
-            proxies=(
-              "Plaintext proxy:10080:plaintext"
-              "Multiplexed TLS proxy with plain backends:10443"
-              "Multiplexed TLS proxy with TLS backends:11443"
-              "Multiplexed TLS proxy with plain backends (direct gRPC):10443:direct"
-              "Multiplexed TLS proxy with TLS backends (direct gRPC):11443:direct"
-              "HTTP/1 proxy with TLS backends:12443"
-              "HTTP/1 proxy with plain backends:13443"
-              "HTTP/2 proxy with TLS backends:14443"
-              "HTTP/2 proxy with plain backends:15443"
-            )
-
-            failures=()
-            for p in "${proxies[@]}"; do
-              name="$(echo "$p" | cut -d: -f1)"
-              port="$(echo "$p" | cut -d: -f2)"
-              opt="$(echo "$p" | cut -d: -f3)"
-              mkdir -p "/tmp/proxy-test-${port}-${opt}" && cd "/tmp/proxy-test-${port}-${opt}"
-
-              extra_args=()
-              scheme="https"
-              plaintext="false"
-              plaintext_neg="true"
-              direct=0
-              case "$opt" in
-                plaintext)
-                  extra_args=(--insecure)
-                  plaintext="true"
-                  plaintext_neg="false"
-                  scheme="http"
-                  ;;
-                direct)
-                  extra_args=(--direct-grpc)
-                  direct=1
-                  ;;
-              esac
-
-              echo "Testing roxctl access through ${name}..."
-              endpoint="central-proxy.stackrox.local:${port}"
-              for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
-                roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
-                  failures+=("$p")
-
-                if (( direct )); then
-                  roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
-                    failures+=("${p},force-http1")
-                else
-                  roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
-                    failures+=("${p},force-http1")
-                fi
-
-                if [[ "$endpoint_tgt" = *://* ]]; then
-                  # Auto-sense plaintext or TLS when specifying a scheme
-                  roxctl "${extra_args[@]}" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
-                    failures+=("${p},tls-autosense")
-
-                  # Incompatible plaintext configuration should fail
-                  roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
-                    failures+=("${p},incompatible-tls")
-                fi
-
-              done
-              roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "central-proxy.stackrox.local:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
-                failures+=("${p},sensor-generate")
-              echo "Done."
-              rm -rf "/tmp/proxy-test-${port}"
-            done
-
-            echo "Total: ${#failures[@]} failures."
-            if (( ${#failures[@]} > 0 )); then
-              printf " - %s\n" "${failures[@]}"
-              exit 1
-            fi
+            source tests/e2e/run.sh
+            run_proxy_tests
 
       - collect-k8s-logs
       - get-and-store-debug-dump
@@ -3584,8 +3387,8 @@ jobs:
       - run:
           name: Deploy and restore DB to version 56.1
           command: |
-            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+            source tests/e2e/lib.sh
+            restore_56_1_backup
 
       - *waitForAPI
 
@@ -3648,7 +3451,6 @@ jobs:
       - *setupDefaultTLSCerts
 
       - deploy-stackrox:
-          require-cluster-admin: true
           validate-autoupgrade-label: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
