@@ -17,11 +17,11 @@ message Alert {
         string                  id                  = 1;
         string                  name                = 2;
         string                  type                = 4;
-        string                  namespace           = 5;
-        string                  namespace_id        = 16;
+        string                  namespace           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+        string                  namespace_id        = 16 [(gogoproto.moretags) = "search:\"Namespace ID\""];
         map<string, string>     labels              = 7;
-        string                  cluster_id          = 9;
-        string                  cluster_name        = 10;
+        string                  cluster_id          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
+        string                  cluster_name        = 10 [(gogoproto.moretags) = "search:\"Cluster,store\""];
         message Container {
             ContainerImage      image               = 3;
             string              name                = 10;
@@ -39,8 +39,8 @@ message Alert {
             CONFIGMAPS  = 2;
         }
 
-        ResourceType            resource_type       = 1;
-        string                  name                = 2;
+        ResourceType            resource_type       = 1 [(gogoproto.moretags) = "search:\"Resource Type,store\""];
+        string                  name                = 2 [(gogoproto.moretags) = "search:\"Resource\""];
         string                  cluster_id          = 3;
         string                  cluster_name        = 4;
         string                  namespace           = 5;
@@ -115,20 +115,20 @@ message Alert {
     }
 
     // For run-time phase alert, a maximum of 40 violations are retained.
-    repeated Violation        violations        = 5;
-    ProcessViolation          process_violation = 13;
+    repeated Violation        violations        = 5 [(gogoproto.moretags) = "search:\"-\""];
+    ProcessViolation          process_violation = 13 [(gogoproto.moretags) = "search:\"-\""];
 
     Enforcement               enforcement       = 6;
 
-    google.protobuf.Timestamp time              = 7 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+    google.protobuf.Timestamp time              = 7 [(gogoproto.moretags) = "sensorhash:\"ignore\" search:\"Violation Time\""];
     google.protobuf.Timestamp first_occurred    = 10 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
 
     // The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
     google.protobuf.Timestamp resolved_at       = 17 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
 
-    ViolationState            state             = 11;
+    ViolationState            state             = 11 [(gogoproto.moretags) = "search:\"Violation State,store\""];
     google.protobuf.Timestamp snooze_till       = 12;
-    repeated string           tags              = 14;
+    repeated string           tags              = 14 [(gogoproto.moretags) = "search:\"Tag,store\""];
 
 }
 

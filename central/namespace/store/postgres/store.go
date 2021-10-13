@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"database/sql"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -227,7 +227,10 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NamespaceMetadata, []int, 
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.NamespaceMetadata) error {
-	value, err := (&jsonpb.Marshaler{}).MarshalToString(obj)
+	value, err := (&jsonpb.Marshaler{
+		EnumsAsInts:  true,
+		EmitDefaults: true,
+	}).MarshalToString(obj)
 	if err != nil {
 		return err
 	}

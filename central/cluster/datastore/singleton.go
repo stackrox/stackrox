@@ -3,6 +3,7 @@ package datastore
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
+	"github.com/stackrox/rox/central/cluster/store"
 	"github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterRocksDB "github.com/stackrox/rox/central/cluster/store/cluster/rocksdb"
 	healthRocksDB "github.com/stackrox/rox/central/cluster/store/cluster_health_status/rocksdb"
@@ -23,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/central/cluster/store"
 )
 
 var (

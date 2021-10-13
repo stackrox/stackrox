@@ -4,13 +4,17 @@ import v1 "github.com/stackrox/rox/generated/api/v1"
 
 // Field describes a search field
 type Field struct {
-	Elems []PathElem
+	Elems     []PathElem
 	FieldPath string
 	Type      v1.SearchDataType
 	Store     bool
 	Hidden    bool
 	Category  v1.SearchCategory
 	Analyzer  string
+}
+
+func (f *Field) LastElem() PathElem {
+	return f.Elems[len(f.Elems)-1]
 }
 
 // GetFieldPath returns the field path

@@ -11,7 +11,8 @@ import (
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
-	"github.com/stackrox/rox/central/processindicator/store/postgres"
+	pgStore "github.com/stackrox/rox/central/processindicator/store/postgres"
+	pgIndex"github.com/stackrox/rox/central/processindicator/index/postgres"
 	"github.com/stackrox/rox/central/processindicator/store/rocksdb"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -34,13 +35,15 @@ var (
 
 func initialize() {
 	var storage store.Store
+	var indexer index.Indexer
 	if features.PostgresPOC.Enabled() {
-		storage = postgres.New(globaldb.GetPostgresDB())
+		storage = pgStore.New(globaldb.GetPostgresDB())
+		indexer = pgIndex.NewIndexer(globaldb.GetPostgresDB())
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())
+		indexer = index.New(globalindex.GetProcessIndex())
 	}
 	commentsStorage := commentsstore.New(globaldb.GetGlobalDB())
-	indexer := index.New(globalindex.GetProcessIndex())
 	searcher := search.New(storage, indexer)
 
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)

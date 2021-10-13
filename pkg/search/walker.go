@@ -11,7 +11,7 @@ import (
 )
 
 type PathElem struct {
-	Name string
+	Name  string
 	Slice bool
 }
 
@@ -24,7 +24,7 @@ func deepCopyPathElems(o []PathElem) []PathElem {
 }
 
 type searchWalker struct {
-	prefix string
+	prefix   string
 	category v1.SearchCategory
 	fields   map[FieldLabel]*Field
 }
@@ -41,7 +41,7 @@ func (s *searchWalker) elemsToPath(elems []PathElem) string {
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	sw := searchWalker{
-		prefix: prefix,
+		prefix:   prefix,
 		category: category,
 		fields:   make(map[FieldLabel]*Field),
 	}
@@ -104,6 +104,20 @@ func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Typ
 			jsonTag = field.Name
 		}
 
+		// proto json flag
+		protoTag := field.Tag.Get("protobuf")
+		var jsonProtoTag string
+		spl := strings.Split(protoTag, ",")
+		// Find json
+		for _, s := range spl {
+			if strings.HasPrefix(s, "json=") {
+				jsonProtoTag = strings.TrimPrefix(s, "json=")
+			}
+		}
+		if jsonProtoTag == "" {
+			jsonProtoTag = jsonTag
+		}
+
 		searchTag := field.Tag.Get("search")
 		if searchTag == "-" {
 			continue
@@ -111,10 +125,9 @@ func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Typ
 		pathElems := deepCopyPathElems(parentElems)
 
 		pathElems = append(pathElems, PathElem{
-			Name: jsonTag,
+			Name:  jsonProtoTag,
 			Slice: field.Type.Kind() == reflect.Slice,
 		})
-		fmt.Println(s.elemsToPath(pathElems), field.Type.Kind().String())
 
 		fullPath := s.elemsToPath(pathElems)
 		// Special case proto timestamp because we actually want to index seconds
@@ -131,6 +144,8 @@ func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Typ
 		// If it is a oneof then call XXX_OneofWrappers to get the types.
 		// The return values is a slice of interfaces that are nil type pointers
 		if field.Tag.Get("protobuf_oneof") != "" {
+			// cut off the elem we just added because jsonpb removes it
+			pathElems := pathElems[:len(pathElems)-1]
 			ptrToOriginal := reflect.PtrTo(original)
 
 			methodName := fmt.Sprintf("Get%s", field.Name)

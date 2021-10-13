@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -392,6 +393,9 @@ func (ds *datastoreImpl) fullReindex() error {
 }
 
 func (ds *datastoreImpl) buildIndex() error {
+	if features.PostgresPOC.Enabled() {
+		return nil
+	}
 	defer debug.FreeOSMemory()
 
 	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()

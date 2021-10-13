@@ -13,15 +13,15 @@ import (
 type DataType int
 
 const (
-	BOOL     			DataType = 0
-	NUMERIC  			DataType = 1
-	STRING 				DataType = 2
-	DATETIME  		    DataType = 3
-	MAP       			DataType = 4
-	ENUM      			DataType = 5
-	ARRAY 				DataType = 6
-	STRING_ARRAY 		DataType = 7
-	STRUCT 				DataType = 8
+	BOOL         DataType = 0
+	NUMERIC      DataType = 1
+	STRING       DataType = 2
+	DATETIME     DataType = 3
+	MAP          DataType = 4
+	ENUM         DataType = 5
+	ARRAY        DataType = 6
+	STRING_ARRAY DataType = 7
+	STRUCT       DataType = 8
 )
 
 func validateTable(t *Table) {
@@ -104,11 +104,11 @@ type ForeignKeyField struct {
 }
 
 type Table struct {
-	Name      string
-	FieldName string
-	Type      string
+	Name        string
+	FieldName   string
+	Type        string
 	ChildTables []*Table
-	Fields 		[]Field
+	Fields      []Field
 	ForeignKeys []Field
 }
 
@@ -129,7 +129,7 @@ func walk(table *Table, obj interface{}) {
 }
 
 func normalizeName(name string) string {
-	name =  strings.ToLower(strings.ReplaceAll(name,"-", "_"))
+	name = strings.ToLower(strings.ReplaceAll(name, "-", "_"))
 	return strings.ReplaceAll(name, ".", "_")
 }
 
@@ -147,7 +147,7 @@ func (s *walker) handleStruct(prefix string, table *Table, original reflect.Type
 
 		fieldName := field.Name
 		if prefix != "" {
-			fieldName = prefix +"."+fieldName
+			fieldName = prefix + "." + fieldName
 		}
 
 		// Special case proto timestamp because we actually want to index seconds
@@ -195,8 +195,8 @@ func (s *walker) handleStruct(prefix string, table *Table, original reflect.Type
 		if dataType == ARRAY {
 			childTable := &Table{
 				FieldName: fieldName,
-				Type: field.Type.Elem().String(),
-				Name: table.Name + "_" + fieldName, // normalizeName(table.Name + "_" + fieldName),
+				Type:      field.Type.Elem().String(),
+				Name:      table.Name + "_" + fieldName, // normalizeName(table.Name + "_" + fieldName),
 			}
 
 			table.ChildTables = append(table.ChildTables, childTable)
