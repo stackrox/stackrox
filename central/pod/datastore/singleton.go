@@ -4,7 +4,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/pod/store/postgres"
+	"github.com/stackrox/rox/central/pod/datastore/internal/search"
+	"github.com/stackrox/rox/central/pod/index"
+	"github.com/stackrox/rox/central/pod/store"
+	pgStore "github.com/stackrox/rox/central/pod/store/postgres"
+	pgIndex "github.com/stackrox/rox/central/pod/index/postgres"
 	"github.com/stackrox/rox/central/pod/store/rocksdb"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
@@ -26,22 +30,23 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		var err error
-
+		var storage store.Store
+		var indexer index.Indexer
 		if features.PostgresPOC.Enabled() {
-			ps, err = New(
-				postgres.New(globaldb.GetPostgresDB()),
-				globalindex.GetPodIndex(),
-				piDS.Singleton(),
-				filter.Singleton(),
-			)
+			storage = pgStore.New(globaldb.GetPostgresDB())
+			indexer = pgIndex.NewIndexer(globaldb.GetPostgresDB())
 		} else {
-			ps, err = New(
-				rocksdb.New(globaldb.GetRocksDB()),
-				globalindex.GetPodIndex(),
-				piDS.Singleton(),
-				filter.Singleton(),
-			)
+			storage = rocksdb.New(globaldb.GetRocksDB())
+			indexer = index.New(globalindex.GetPodIndex())
 		}
+		searcher := search.New(storage, indexer)
+		ps, err = New(
+			storage,
+			indexer,
+			searcher,
+			piDS.Singleton(),
+			filter.Singleton(),
+		)
 		utils.CrashOnError(errors.Wrap(err, "unable to load datastore for pods"))
 	})
 	return ps

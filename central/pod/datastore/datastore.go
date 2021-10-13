@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/central/pod/index"
 	"github.com/stackrox/rox/central/pod/store"
@@ -31,8 +30,6 @@ type DataStore interface {
 }
 
 // New creates a pod datastore based on RocksDB
-func New(store store.Store, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	indexer := index.New(bleveIndex)
-	searcher := search.New(store, indexer)
+func New(store store.Store, indexer index.Indexer, searcher search.Searcher, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
 }

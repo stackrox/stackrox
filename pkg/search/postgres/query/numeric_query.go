@@ -159,7 +159,7 @@ func createNumericQuery(table string, field *search.Field, prefix string, value 
 		value = adjustValue(value, delta)
 	default:
 		equality = true
-		if value != nil {
+		if value != nil && delta != 0 {
 			min = adjustValue(value, -delta)
 			max = adjustValue(value, delta)
 		}
@@ -169,6 +169,13 @@ func createNumericQuery(table string, field *search.Field, prefix string, value 
 
 	root := fmt.Sprintf("(%s)::numeric", renderFinalPath(elemPath, field.LastElem().Name))
 	if equality {
+		if delta == 0 {
+			// min and max are the same
+			return &QueryEntry{
+				Query:  fmt.Sprintf("%s = $$", root),
+				Values: []interface{}{*value},
+			}
+		}
 		return &QueryEntry{
 			Query:  fmt.Sprintf("%s >= $$ and %s <= $$", root, root),
 			Values: []interface{}{*min, *max},
