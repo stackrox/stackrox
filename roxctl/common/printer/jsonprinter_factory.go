@@ -11,11 +11,14 @@ import (
 // It is an implementation of CustomPrinterFactory and acts as a factory for JSONPrinter
 type JSONPrinterFactory struct {
 	Compact bool
+	// EscapeHTMLCharacters will escape HTML characters when set when Marshalling JSON objects. This setting is not
+	// expected to be added as flags to the cobra.Command for user input, it should be decided by the command itself
+	EscapeHTMLCharacters bool
 }
 
 // NewJSONPrinterFactory creates new JSONPrinterFactory with the injected default values
-func NewJSONPrinterFactory(compact bool) *JSONPrinterFactory {
-	return &JSONPrinterFactory{Compact: compact}
+func NewJSONPrinterFactory(compact bool, escapeHTML bool) *JSONPrinterFactory {
+	return &JSONPrinterFactory{Compact: compact, EscapeHTMLCharacters: escapeHTML}
 }
 
 // AddFlags will add all JSONPrinter specific flags to the cobra.Command
@@ -36,7 +39,7 @@ func (j *JSONPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error)
 	}
 	switch strings.ToLower(format) {
 	case "json":
-		panic("json printer implementation missing")
+		return newJSONPrinter(j.Compact, j.EscapeHTMLCharacters), nil
 	default:
 		return nil, fmt.Errorf("invalid output format used for JSON Printer: %q", format)
 	}

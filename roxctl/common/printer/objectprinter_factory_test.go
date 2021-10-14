@@ -38,13 +38,13 @@ func TestNewObjectPrinterFactory(t *testing.T) {
 			defaultFormat:  "table",
 			shouldFail:     true,
 			errMsg:         `unsupported output format used: "table". Please choose one of the supported formats: json`,
-			printerFactory: []CustomPrinterFactory{NewJSONPrinterFactory(false)},
+			printerFactory: []CustomPrinterFactory{NewJSONPrinterFactory(false, false)},
 		},
 		"should fail if duplicate CustomPrinterFactory is being registered": {
 			defaultFormat:  "json",
 			shouldFail:     true,
 			errMsg:         `tried to register two printer factories which support the same output formats "json": *printer.JSONPrinterFactory and *printer.JSONPrinterFactory`,
-			printerFactory: []CustomPrinterFactory{NewJSONPrinterFactory(false), NewJSONPrinterFactory(false)},
+			printerFactory: []CustomPrinterFactory{NewJSONPrinterFactory(false, false), NewJSONPrinterFactory(false, false)},
 		},
 	}
 
@@ -65,7 +65,7 @@ func TestObjectPrinterFactory_AddFlags(t *testing.T) {
 	o := ObjectPrinterFactory{
 		OutputFormat: "table",
 		RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-			"json":      NewJSONPrinterFactory(false),
+			"json":      NewJSONPrinterFactory(false, false),
 			"table,csv": NewTabularPrinterFactory(false, nil, "", false, false),
 		},
 	}
@@ -91,7 +91,7 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 				OutputFormat: "table",
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
 					"table,csv": NewTabularPrinterFactory(false, nil, "", false, false),
-					"json":      NewJSONPrinterFactory(false),
+					"json":      NewJSONPrinterFactory(false, false),
 				},
 			},
 			shouldFail: false,
@@ -101,7 +101,7 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 				OutputFormat: "junit",
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
 					"table,csv": NewTabularPrinterFactory(false, nil, "", false, false),
-					"json":      NewJSONPrinterFactory(false),
+					"json":      NewJSONPrinterFactory(false, false),
 				},
 			},
 			shouldFail: true,
@@ -132,7 +132,7 @@ func TestObjectPrinterFactory_CreatePrinter(t *testing.T) {
 			o: ObjectPrinterFactory{
 				OutputFormat: "table",
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-					"json": NewJSONPrinterFactory(false),
+					"json": NewJSONPrinterFactory(false, false),
 				},
 			},
 		},
@@ -156,7 +156,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 		"should not fail with valid CustomPrinterFactory and valid output format": {
 			o: ObjectPrinterFactory{
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-					"json": NewJSONPrinterFactory(false),
+					"json": NewJSONPrinterFactory(false, false),
 				},
 				OutputFormat: "json",
 			},
@@ -176,7 +176,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 		"should fail with unsupported OutputFormat": {
 			o: ObjectPrinterFactory{
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-					"json": NewJSONPrinterFactory(false),
+					"json": NewJSONPrinterFactory(false, false),
 				},
 				OutputFormat: "table",
 			},
