@@ -69,7 +69,12 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 func (t *TabularPrinterFactory) validate() error {
 	// verify that the GJSON multi path expression matches the amount of headers.
 	// Example: multi-path expression: {some.expression,another.expression}
-	if len(t.Headers) != len(strings.Split(t.RowJSONPathExpression, ",")) {
+	amountJSONPathExpressions := 0
+	if t.RowJSONPathExpression != "" {
+		amountJSONPathExpressions = len(strings.Split(t.RowJSONPathExpression, ","))
+	}
+
+	if len(t.Headers) != amountJSONPathExpressions {
 		return errors.New("Different number of headers and JSON Path expressions specified. Make sure you " +
 			"specify the same number of arguments for both")
 	}

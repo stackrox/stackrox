@@ -26,7 +26,13 @@ func TestNewObjectPrinterFactory(t *testing.T) {
 			defaultFormat:  "table",
 			shouldFail:     false,
 			errMsg:         "",
-			printerFactory: []CustomPrinterFactory{NewTabularPrinterFactory(false, nil, nil, false, false)},
+			printerFactory: []CustomPrinterFactory{NewTabularPrinterFactory(false, nil, "", false, false)},
+		},
+		"should not fail if format is supported and valid values for CustomPrinterFactory": {
+			defaultFormat:  "table",
+			shouldFail:     false,
+			errMsg:         "",
+			printerFactory: []CustomPrinterFactory{NewTabularPrinterFactory(false, []string{"a", "b"}, "a,b", false, false)},
 		},
 		"should fail if default output format is not supported by registered CustomPrinterFactory": {
 			defaultFormat:  "table",
@@ -60,7 +66,7 @@ func TestObjectPrinterFactory_AddFlags(t *testing.T) {
 		OutputFormat: "table",
 		RegisteredPrinterFactories: map[string]CustomPrinterFactory{
 			"json":      NewJSONPrinterFactory(false),
-			"table,csv": NewTabularPrinterFactory(false, nil, nil, false, false),
+			"table,csv": NewTabularPrinterFactory(false, nil, "", false, false),
 		},
 	}
 	cmd := &cobra.Command{
@@ -84,7 +90,7 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 			o: ObjectPrinterFactory{
 				OutputFormat: "table",
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-					"table,csv": NewTabularPrinterFactory(false, nil, nil, false, false),
+					"table,csv": NewTabularPrinterFactory(false, nil, "", false, false),
 					"json":      NewJSONPrinterFactory(false),
 				},
 			},
@@ -94,7 +100,7 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 			o: ObjectPrinterFactory{
 				OutputFormat: "junit",
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-					"table,csv": NewTabularPrinterFactory(false, nil, nil, false, false),
+					"table,csv": NewTabularPrinterFactory(false, nil, "", false, false),
 					"json":      NewJSONPrinterFactory(false),
 				},
 			},
@@ -120,16 +126,6 @@ func TestObjectPrinterFactory_CreatePrinter(t *testing.T) {
 		shouldPanic bool
 		o           ObjectPrinterFactory
 	}{
-		"should panic when using a printer that is not yet implemented but not return an error": {
-			shouldFail:  false,
-			shouldPanic: true,
-			o: ObjectPrinterFactory{
-				OutputFormat: "table",
-				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-					"table,csv": NewTabularPrinterFactory(false, nil, nil, false, false),
-				},
-			},
-		},
 		"should return an error when the output format is not supported": {
 			shouldFail:  true,
 			shouldPanic: false,
@@ -144,15 +140,9 @@ func TestObjectPrinterFactory_CreatePrinter(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			if c.shouldPanic {
-				require.Panics(t, func() {
-					_, _ = c.o.CreatePrinter()
-				})
-			} else {
-				printer, err := c.o.CreatePrinter()
-				assert.Error(t, err)
-				assert.Nil(t, printer)
-			}
+			printer, err := c.o.CreatePrinter()
+			assert.Error(t, err)
+			assert.Nil(t, printer)
 		})
 	}
 }
@@ -176,12 +166,12 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 		"should fail with invalid CustomPrinterFactory": {
 			o: ObjectPrinterFactory{
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-					"table": NewTabularPrinterFactory(false, []string{"a", "b"}, []string{"a"}, false, false),
+					"table": NewTabularPrinterFactory(false, []string{"a", "b"}, "a", false, false),
 				},
 				OutputFormat: "table",
 			},
 			shouldFail: true,
-			errMsg:     "Different number of columns and JSON Path expressions specified. Make sure you specify the same number of arguments for both",
+			errMsg:     "Different number of headers and JSON Path expressions specified. Make sure you specify the same number of arguments for both",
 		},
 		"should fail with unsupported OutputFormat": {
 			o: ObjectPrinterFactory{
