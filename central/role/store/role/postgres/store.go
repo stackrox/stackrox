@@ -161,27 +161,21 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.Role, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Role")
 
-	t := time.Now()
 	row := s.getStmt.QueryRow(id)
 	if err := row.Err(); err != nil {
 		return nil, false, nilNoRows(err)
 	}
-	log.Infof("Took %d to query a Role", time.Since(t).Milliseconds())
 
 	var data []byte
-	t = time.Now()
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
 	}
-	log.Infof("Took %d to scan a Role", time.Since(t).Milliseconds())
 
 	msg := alloc()
-	t = time.Now()
 	buf := bytes.NewBuffer(data)
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
-	log.Infof("Took %d to unmarshal a Role", time.Since(t).Milliseconds())
 	return msg.(*storage.Role), true, nil
 }
 
