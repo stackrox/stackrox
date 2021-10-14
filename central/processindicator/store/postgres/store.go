@@ -21,7 +21,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	table = "processindicator"
+	table = "processindicators"
 )
 
 type Store interface {
@@ -71,7 +71,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 	return vulnStmt
 }
 
-const createTableQuery = "create table if not exists processindicator (id varchar primary key, value jsonb)"
+const createTableQuery = "create table if not exists processindicators (id varchar primary key, value jsonb)"
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *sql.DB) Store {
@@ -86,16 +86,16 @@ func New(db *sql.DB) Store {
 	return &storeImpl{
 		db: db,
 
-		countStmt: compileStmtOrPanic(db, "select count(*) from processindicator"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from processindicator where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from processindicator"),
-		getStmt: compileStmtOrPanic(db, "select value from processindicator where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from processindicator where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into processindicator(id, value) values($1, $2) on conflict(id) do update set value=$2"),
-		deleteStmt: compileStmtOrPanic(db, "delete from processindicator where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicator where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from processindicator"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from processindicator"),
+		countStmt: compileStmtOrPanic(db, "select count(*) from processindicators"),
+		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from processindicators where id = $1)"),
+		getIDsStmt: compileStmtOrPanic(db, "select id from processindicators"),
+		getStmt: compileStmtOrPanic(db, "select value from processindicators where id = $1"),
+		getManyStmt: compileStmtOrPanic(db, "select value from processindicators where id = ANY($1::text[])"),
+		upsertStmt: compileStmtOrPanic(db, "insert into processindicators(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+		deleteStmt: compileStmtOrPanic(db, "delete from processindicators where id = $1"),
+		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicators where id = ANY($1::text[])"),
+		walkStmt: compileStmtOrPanic(db, "select value from processindicators"),
+		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from processindicators"),
 	}
 //
 }
@@ -161,27 +161,21 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.ProcessIndicator, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessIndicator")
 
-	t := time.Now()
 	row := s.getStmt.QueryRow(id)
 	if err := row.Err(); err != nil {
 		return nil, false, nilNoRows(err)
 	}
-	log.Infof("Took %d to query a ProcessIndicator", time.Since(t).Milliseconds())
 
 	var data []byte
-	t = time.Now()
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
 	}
-	log.Infof("Took %d to scan a ProcessIndicator", time.Since(t).Milliseconds())
 
 	msg := alloc()
-	t = time.Now()
 	buf := bytes.NewBuffer(data)
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
-	log.Infof("Took %d to unmarshal a ProcessIndicator", time.Since(t).Milliseconds())
 	return msg.(*storage.ProcessIndicator), true, nil
 }
 

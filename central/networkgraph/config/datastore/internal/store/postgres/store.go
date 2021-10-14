@@ -157,27 +157,21 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.NetworkGraphConfig, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkGraphConfig")
 
-	t := time.Now()
 	row := s.getStmt.QueryRow(id)
 	if err := row.Err(); err != nil {
 		return nil, false, nilNoRows(err)
 	}
-	log.Infof("Took %d to query a NetworkGraphConfig", time.Since(t).Milliseconds())
 
 	var data []byte
-	t = time.Now()
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
 	}
-	log.Infof("Took %d to scan a NetworkGraphConfig", time.Since(t).Milliseconds())
 
 	msg := alloc()
-	t = time.Now()
 	buf := bytes.NewBuffer(data)
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
-	log.Infof("Took %d to unmarshal a NetworkGraphConfig", time.Since(t).Milliseconds())
 	return msg.(*storage.NetworkGraphConfig), true, nil
 }
 

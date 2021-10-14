@@ -17,7 +17,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "k8srolebindings"
+const table = "rolebindings"
 
 func init() {
 	postgres.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, table)

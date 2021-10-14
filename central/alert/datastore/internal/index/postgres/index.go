@@ -17,7 +17,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "alert"
+const table = "alerts"
 
 func init() {
 	postgres.RegisterCategoryToTable(v1.SearchCategory_ALERTS, table)

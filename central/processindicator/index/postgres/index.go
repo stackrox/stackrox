@@ -17,7 +17,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "processindicator"
+const table = "processindicators"
 
 func init() {
 	postgres.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, table)
