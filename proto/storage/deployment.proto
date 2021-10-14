@@ -21,7 +21,7 @@ message Deployment {
     uint64 hash                                = 26 [(gogoproto.moretags) = "hash:\"ignore\""];
     string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\""];
+    string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\" postgres:\"fk=namespaces\""];
     bool orchestrator_component                = 33 [(gogoproto.moretags) = "search:\"Orchestrator Component\""];
     int64 replicas                             = 6;
     // TODO(ROX-6895): "Label" search term is ambiguous.
@@ -29,7 +29,7 @@ message Deployment {
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"Pod Label,store\""];
     LabelSelector label_selector               = 20;
     google.protobuf.Timestamp created          = 8 [(gogoproto.moretags) = "search:\"Created,store,hidden\" hash:\"ignore\""];
-    string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
+    string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\" postgres:\"fk=clusters\""];
     string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     repeated Container containers              = 11;
     reserved 12;
@@ -56,7 +56,7 @@ message ContainerImage {
     option (gogoproto.goproto_unrecognized) = false;
 
     // These tags maintain backwards compatibility with the previously embedded storage.Image
-    string id = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
+    string id = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\" postgres:\"fk=images\""];
     ImageName name = 1;
     bool not_pullable  = 10;
 }

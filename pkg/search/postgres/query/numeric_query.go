@@ -165,9 +165,9 @@ func createNumericQuery(table string, field *search.Field, prefix string, value 
 		}
 	}
 
-	elemPath := generateShortestElemPath(table, field.Elems)
+	elemPath := GenerateShortestElemPath(table, field.Elems)
 
-	root := fmt.Sprintf("(%s)::numeric", renderFinalPath(elemPath, field.LastElem().Name))
+	root := fmt.Sprintf("(%s)::numeric", RenderFinalPath(elemPath, field.LastElem().Name))
 	if equality {
 		if delta == 0 {
 			// min and max are the same

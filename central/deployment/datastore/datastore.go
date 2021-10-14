@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/analystnotes"
@@ -29,6 +30,8 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/process/filter"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	pgSearcher "github.com/stackrox/rox/central/deployment/datastore/internal/search/postgres"
+	pgStore "github.com/stackrox/rox/central/deployment/store/postgres"
 )
 
 // DataStore is an intermediary to AlertStorage.
@@ -75,7 +78,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 		imageIndexer.New(bleveIndex),
 		indexer)
 
-	ds := newDatastoreImpl(storage, processTagsStore, indexer, searcher, images, baselines, networkFlows, risks,
+	ds := newDatastoreImpl(storage, processTagsStore, searcher, images, baselines, networkFlows, risks,
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
@@ -89,4 +92,19 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
 	storage := dackBoxStore.New(dacky, keyFence)
 	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+}
+
+// New creates a deployment datastore based on dackbox
+func NewPostgres(db *sql.DB, processTagsStore processtagsstore.Store, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
+	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
+
+	storage := cache.NewCachedStore(pgStore.NewFullStore(db))
+	searcher := pgSearcher.New(db, storage)
+
+	ds := newDatastoreImpl(storage, processTagsStore, searcher, images, baselines, networkFlows, risks,
+		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+
+	ds.initializeRanker()
+	return ds
 }

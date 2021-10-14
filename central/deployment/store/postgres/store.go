@@ -21,7 +21,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	table = "deployment"
+	table = "deployments"
 )
 
 type Store interface {
@@ -71,7 +71,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 	return vulnStmt
 }
 
-const createTableQuery = "create table if not exists deployment (id varchar primary key, value jsonb)"
+const createTableQuery = "create table if not exists deployments (id varchar primary key, value jsonb)"
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *sql.DB) Store {
@@ -86,16 +86,16 @@ func New(db *sql.DB) Store {
 	return &storeImpl{
 		db: db,
 
-		countStmt: compileStmtOrPanic(db, "select count(*) from deployment"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from deployment where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from deployment"),
-		getStmt: compileStmtOrPanic(db, "select value from deployment where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from deployment where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into deployment(id, value) values($1, $2) on conflict(id) do update set value=$2"),
-		deleteStmt: compileStmtOrPanic(db, "delete from deployment where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from deployment where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from deployment"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from deployment"),
+		countStmt: compileStmtOrPanic(db, "select count(*) from deployments"),
+		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from deployments where id = $1)"),
+		getIDsStmt: compileStmtOrPanic(db, "select id from deployments"),
+		getStmt: compileStmtOrPanic(db, "select value from deployments where id = $1"),
+		getManyStmt: compileStmtOrPanic(db, "select value from deployments where id = ANY($1::text[])"),
+		upsertStmt: compileStmtOrPanic(db, "insert into deployments(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+		deleteStmt: compileStmtOrPanic(db, "delete from deployments where id = $1"),
+		deleteManyStmt: compileStmtOrPanic(db, "delete from deployments where id = ANY($1::text[])"),
+		walkStmt: compileStmtOrPanic(db, "select value from deployments"),
+		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from deployments"),
 	}
 //
 }

@@ -54,7 +54,7 @@ func matchFieldQuery(table string, field *pkgSearch.Field, value string) (*Query
 //	return wq
 //}
 
-func renderFinalPath(elemPath string, field string) string {
+func RenderFinalPath(elemPath string, field string) string {
 	if elemPath == "" {
 		return field + " "
 	}
@@ -67,13 +67,10 @@ func newStringQuery(table string, field *pkgSearch.Field, value string, queryMod
 	}
 
 	lastElem := field.LastElem()
-	//if lastElem.Slice {
-	//	panic("need to fix the array attribution to expand this")
-	//}
-	elemPath := generateShortestElemPath(table, field.Elems)
+	elemPath := GenerateShortestElemPath(table, field.Elems)
 	if len(queryModifiers) == 0 {
 		return &QueryEntry{
-			Query:  renderFinalPath(elemPath, lastElem.Name) + "ilike $$",
+			Query:  RenderFinalPath(elemPath, lastElem.Name) + "ilike $$",
 			Values: []interface{}{value + "%"},
 		}, nil
 	}
@@ -89,12 +86,12 @@ func newStringQuery(table string, field *pkgSearch.Field, value string, queryMod
 	switch queryModifiers[0] {
 	case pkgSearch.Regex:
 		return &QueryEntry{
-			Query:  renderFinalPath(elemPath, lastElem.Name) + fmt.Sprintf("%s~* $$", negationString),
+			Query:  RenderFinalPath(elemPath, lastElem.Name) + fmt.Sprintf("%s~* $$", negationString),
 			Values: []interface{}{value},
 		}, nil
 	case pkgSearch.Equality:
 		return &QueryEntry{
-			Query:  renderFinalPath(elemPath, lastElem.Name) + fmt.Sprintf("%s= $$", negationString),
+			Query:  RenderFinalPath(elemPath, lastElem.Name) + fmt.Sprintf("%s= $$", negationString),
 			Values: []interface{}{value},
 		}, nil
 	}

@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	processPGIndex "github.com/stackrox/rox/central/processindicator/index/postgres"
+	processPGStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 )
 
 func getDeployment() *storage.Deployment {
@@ -58,19 +60,39 @@ func TestT(t *testing.T) {
 	}
 	defer db.Close()
 
+	processStore := processPGStore.New(db)
+	fmt.Println(processStore)
+	processIndex := processPGIndex.NewIndexer(db)
+	fmt.Println(processIndex)
+
+	results, err := processIndex.Search(search.NewQueryBuilder().AddStrings(search.ProcessName, "postgres").
+		AddStrings(search.DeploymentName, "central-db").ProtoQuery())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Process results: %d\n", len(results))
+
 	depStore := deploymentPGStore.New(db)
 	fmt.Println(depStore)
 	depIndex := deploymentPGIndex.NewIndexer(db)
 	fmt.Println(depIndex)
+
+	results, err = depIndex.Search(search.NewQueryBuilder().AddStrings(search.ProcessName, "postgres").ProtoQuery())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Deployment results: %d\n", len(results))
+
+	depStore.Upsert(fixtures.GetDeployment())
 
 	alertStore := alertPGStore.New(db)
 	fmt.Println(alertStore)
 	alertIndex := alertPGIndex.NewIndexer(db)
 	fmt.Println(alertIndex)
 
-	//if err := alertStore.Upsert(fixtures.GetAlert()); err != nil {
-	//	panic(err)
-	//}
+	////if err := alertStore.Upsert(fixtures.GetAlert()); err != nil {
+	////	panic(err)
+	////}
 	qb := search.NewQueryBuilder().
 		//AddStrings(search.ResourceType, "deployment")
 		AddStrings(
@@ -78,7 +100,7 @@ func TestT(t *testing.T) {
 			storage.ViolationState_ACTIVE.String(),
 			storage.ViolationState_ATTEMPTED.String()).
 		AddStrings(search.Cluster, "remote")
-	results, err := alertIndex.Search(qb.ProtoQuery(), nil)
+	results, err = alertIndex.Search(qb.ProtoQuery(), nil)
 	if err != nil {
 		panic(err)
 	}

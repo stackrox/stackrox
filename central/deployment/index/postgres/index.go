@@ -8,6 +8,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"time"
 	"database/sql"
@@ -17,10 +18,10 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "deployment"
+const table = "deployments"
 
 func init() {
-	postgres.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, table)
+	mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, table)
 }
 
 func NewIndexer(db *sql.DB) *indexerImpl {
