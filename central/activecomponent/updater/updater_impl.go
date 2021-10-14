@@ -45,8 +45,8 @@ type updaterImpl struct {
 }
 
 type imageExecutable struct {
-	execToComponent map[string]string
-	scanTime        time.Time
+	execToComponents map[string][]string
+	scanTime         time.Time
 	// Todo(cdu) add scannerVersion string
 }
 
@@ -72,15 +72,15 @@ func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storag
 	}
 
 	// Create or update executable cache
-	execToComponent := u.getExecToComponentMap(scan)
-	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponent: execToComponent, scanTime: scanTime})
+	execToComponents := u.getExecToComponentsMap(scan)
+	u.executableCache.Add(image.GetId(), &imageExecutable{execToComponents: execToComponents, scanTime: scanTime})
 
-	log.Debugf("Executable cache updated for image %s with %d paths", image.GetId(), len(execToComponent))
+	log.Debugf("Executable cache updated for image %s with %d paths", image.GetId(), len(execToComponents))
 	return nil
 }
 
-func (u *updaterImpl) getExecToComponentMap(imageScan *storage.ImageScan) map[string]string {
-	execToComponent := make(map[string]string)
+func (u *updaterImpl) getExecToComponentsMap(imageScan *storage.ImageScan) map[string][]string {
+	execToComponents := make(map[string][]string)
 
 	for _, component := range imageScan.GetComponents() {
 		// We do not support non-OS level active components at this time.
@@ -89,12 +89,12 @@ func (u *updaterImpl) getExecToComponentMap(imageScan *storage.ImageScan) map[st
 		}
 		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
 		for _, exec := range component.GetExecutables() {
-			execToComponent[exec.GetPath()] = componentID
+			execToComponents[exec.GetPath()] = append(execToComponents[exec.GetPath()], componentID)
 		}
 		// Remove the executables to save some memory. The same image won't be processed again.
 		component.Executables = nil
 	}
-	return execToComponent
+	return execToComponents
 }
 
 // Update detects active components with most recent process run.
@@ -156,23 +156,25 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 			utils.Should(errors.New("cannot find image scan"))
 			continue
 		}
-		execToComponent := result.(*imageExecutable).execToComponent
+		execToComponents := result.(*imageExecutable).execToComponents
 		execPaths, err := u.getActiveExecPath(deploymentID, update)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get active executables for deployment %s container %s", deploymentID, update.ContainerName)
 		}
 
 		for _, execPath := range execPaths.AsSlice() {
-			componentID, ok := execToComponent[execPath]
+			componentIDs, ok := execToComponents[execPath]
 			if !ok {
 				continue
 			}
-			id := converter.ComposeID(deploymentID, componentID)
-			if _, ok := idToContainers[id]; !ok {
-				idToContainers[id] = set.NewStringSet()
+			for _, componentID := range componentIDs {
+				id := converter.ComposeID(deploymentID, componentID)
+				if _, ok := idToContainers[id]; !ok {
+					idToContainers[id] = set.NewStringSet()
+				}
+				containerNameSet := idToContainers[id]
+				containerNameSet.Add(update.ContainerName)
 			}
-			containerNameSet := idToContainers[id]
-			containerNameSet.Add(update.ContainerName)
 		}
 	}
 	return u.createActiveComponentsAndUpdateDb(ctx, deploymentID, idToContainers, containersToRemove)

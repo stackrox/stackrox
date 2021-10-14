@@ -319,7 +319,7 @@ func (s *acUpdaterTestSuite) verifyExecutableCache(updater *updaterImpl, image *
 	s.Assert().Len(updater.executableCache.Keys(), 1)
 	result, ok := updater.executableCache.Get(image.GetId())
 	s.Assert().True(ok)
-	execToComponent := result.(*imageExecutable).execToComponent
+	execToComponents := result.(*imageExecutable).execToComponents
 	allExecutables := set.NewStringSet()
 	for _, component := range image.GetScan().GetComponents() {
 		if component.Source != storage.SourceType_OS {
@@ -327,12 +327,12 @@ func (s *acUpdaterTestSuite) verifyExecutableCache(updater *updaterImpl, image *
 		}
 		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
 		for _, exec := range component.Executables {
-			s.Assert().Contains(execToComponent, exec.GetPath())
-			s.Assert().Equal(componentID, execToComponent[exec.GetPath()])
+			s.Assert().Contains(execToComponents, exec.GetPath())
+			s.Assert().Equal(componentID, execToComponents[exec.GetPath()])
 			allExecutables.Add(exec.GetPath())
 		}
 	}
-	s.Assert().Len(execToComponent, len(allExecutables))
+	s.Assert().Len(execToComponents, len(allExecutables))
 }
 func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	updater := &updaterImpl{
@@ -355,7 +355,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
 						{Path: "/usr/bin/component1_file1"},
 						{Path: "/usr/bin/component1_file2"},
-						{Path: "/usr/bin/component1_file3"},
+						{Path: "/usr/bin/component1and2_file3"},
 					},
 				},
 				{
@@ -365,7 +365,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
 						{Path: "/usr/bin/component2_file1"},
 						{Path: "/usr/bin/component2_file2"},
-						{Path: "/usr/bin/component2_file3"},
+						{Path: "/usr/bin/component1and2_file3"},
 					},
 				},
 			},
@@ -396,7 +396,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 		description string
 
 		updates     []*aggregatorPkg.ProcessUpdate
-		indicatiors map[string]indicatorModel
+		indicators  map[string]indicatorModel
 		existingAcs map[string]set.StringSet // componentID to container name map
 
 		acsToUpdate map[string]set.StringSet // expected Acs to be updated, componentID to container name map
@@ -408,7 +408,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.FromDatabase),
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(), aggregatorPkg.FromDatabase),
 			},
-			indicatiors: map[string]indicatorModel{
+			indicators: map[string]indicatorModel{
 				containerNames[0]: {
 					DeploymentID:  deployment.GetId(),
 					ContainerName: containerNames[0],
@@ -438,7 +438,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.FromDatabase),
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(), aggregatorPkg.FromDatabase),
 			},
-			indicatiors: map[string]indicatorModel{
+			indicators: map[string]indicatorModel{
 				containerNames[0]: {
 					DeploymentID:  deployment.GetId(),
 					ContainerName: containerNames[0],
@@ -468,7 +468,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.FromDatabase),
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(), aggregatorPkg.FromDatabase),
 			},
-			indicatiors: map[string]indicatorModel{
+			indicators: map[string]indicatorModel{
 				containerNames[0]: {
 					DeploymentID:  deployment.GetId(),
 					ContainerName: containerNames[0],
@@ -502,7 +502,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.FromDatabase),
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(), aggregatorPkg.FromDatabase),
 			},
-			indicatiors: map[string]indicatorModel{
+			indicators: map[string]indicatorModel{
 				containerNames[0]: {
 					DeploymentID:  deployment.GetId(),
 					ContainerName: containerNames[0],
@@ -536,7 +536,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.ToBeRemoved),
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(), aggregatorPkg.FromDatabase),
 			},
-			indicatiors: map[string]indicatorModel{
+			indicators: map[string]indicatorModel{
 				containerNames[0]: {
 					DeploymentID:  deployment.GetId(),
 					ContainerName: containerNames[0],
@@ -595,7 +595,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[0].Executables[1].Path), aggregatorPkg.FromCache),
 			},
 			// This should not be used in this test case.
-			indicatiors: map[string]indicatorModel{
+			indicators: map[string]indicatorModel{
 				containerNames[0]: {
 					DeploymentID:  deployment.GetId(),
 					ContainerName: containerNames[0],
@@ -622,6 +622,49 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[1]},
+		},
+		{
+			description: "First populate from database multiple component",
+			updates: []*aggregatorPkg.ProcessUpdate{
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.FromDatabase),
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(), aggregatorPkg.FromDatabase),
+			},
+			indicators: map[string]indicatorModel{
+				containerNames[0]: {
+					DeploymentID:  deployment.GetId(),
+					ContainerName: containerNames[0],
+					ImageID:       image.GetId(),
+					ExePaths: []string{
+						components[0].Executables[2].Path,
+					},
+				},
+				containerNames[1]: {
+					DeploymentID:  deployment.GetId(),
+					ContainerName: containerNames[1],
+					ImageID:       image.GetId(),
+					ExePaths: []string{
+						components[1].Executables[2].Path,
+					},
+				},
+			},
+			acsToUpdate: map[string]set.StringSet{
+				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+			},
+		},
+		{
+			description: "update from cache with removal request with multiple components",
+			updates: []*aggregatorPkg.ProcessUpdate{
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.ToBeRemoved),
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[0].Executables[2].Path), aggregatorPkg.FromCache),
+			},
+			existingAcs: map[string]set.StringSet{
+				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+			},
+			acsToUpdate: map[string]set.StringSet{
+				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.Containers[1].GetName()),
+			},
 		},
 	}
 
@@ -660,10 +703,10 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 
 						var ret []*storage.ProcessIndicator
 
-						for _, exec := range testCase.indicatiors[containerName].ExePaths {
+						for _, exec := range testCase.indicators[containerName].ExePaths {
 							ret = append(ret, &storage.ProcessIndicator{
 								Id:            uuid.NewV4().String(),
-								ImageId:       testCase.indicatiors[containerName].ImageID,
+								ImageId:       testCase.indicators[containerName].ImageID,
 								DeploymentId:  deployment.GetId(),
 								ContainerName: containerName,
 								Signal:        &storage.ProcessSignal{ExecFilePath: exec}},
