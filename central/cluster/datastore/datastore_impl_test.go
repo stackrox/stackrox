@@ -521,36 +521,26 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 	const bundleID = "aW5pdC1idW5kbGUtaWQK"
 	const policyVersion = "1"
-	someHelmConfigJSON := `{
-		"dynamicConfig": {
-		  "admissionControllerConfig": {
-			"enabled": false,
-			"timeoutSeconds": 3,
-			"scanInline": false,
-			"disableBypass": false,
-			"enforceOnUpdates": false
-		  },
-		  "registryOverride": "",
-		  "disableAuditLogs": true
-		},
+	const someHelmConfigJSON = `{
 		"staticConfig": {
 		  "type": "KUBERNETES_CLUSTER",
 		  "mainImage": "docker.io/stackrox/main",
 		  "centralApiEndpoint": "central.stackrox.svc:443",
-		  "collectionMethod": "KERNEL_MODULE",
-		  "collectorImage": "docker.io/stackrox/collector",
-		  "admissionController": false,
-		  "admissionControllerUpdates": false,
-		  "tolerationsConfig": {
-			"disabled": false
-		  },
-		  "slimCollector": true,
-		  "admissionControllerEvents": true
+		  "collectorImage": "docker.io/stackrox/collector"
 		},
-		"configFingerprint": "0997bd59ef49b538590422d15156ab33b04068881e499ab5209909bd7e28d75e-1",
-		"clusterLabels": {}
+		"configFingerprint": "1234"
+	  }`
+	const differentConfigFPHelmConfigJSON = `{
+		"staticConfig": {
+		  "type": "KUBERNETES_CLUSTER",
+		  "mainImage": "docker.io/stackrox/main",
+		  "centralApiEndpoint": "central.stackrox.svc:443",
+		  "collectorImage": "docker.io/stackrox/collector"
+		},
+		"configFingerprint": "12345"
 	  }`
 	var someHelmConfig storage.CompleteClusterConfig
+	var differentConfigFPHelmConfig storage.CompleteClusterConfig
 	ts := protoconv.ConvertTimeToTimestamp(time.Now())
 	clusterHealth := &storage.ClusterHealthStatus{
 		SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
@@ -560,12 +550,15 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 	err := jsonpb.Unmarshal(bytes.NewReader([]byte(someHelmConfigJSON)), &someHelmConfig)
 	suite.NoError(err)
 
-	someClusterWithManagerType := func(managerType storage.ManagerType) *storage.Cluster {
+	err = jsonpb.Unmarshal(bytes.NewReader([]byte(differentConfigFPHelmConfigJSON)), &differentConfigFPHelmConfig)
+	suite.NoError(err)
+
+	someClusterWithManagerType := func(managerType storage.ManagerType, helmConfig *storage.CompleteClusterConfig) *storage.Cluster {
 		return &storage.Cluster{
 			Id:                 "",
 			Name:               "",
 			InitBundleId:       bundleID,
-			HelmConfig:         &storage.CompleteClusterConfig{},
+			HelmConfig:         helmConfig,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
 			ManagedBy:          managerType,
@@ -590,7 +583,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 	}{
 		{
 			description: "existing cluster's UNKNOWN manager type unchanged if notHelmManaged=false and managedBy=null",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_UNKNOWN),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_UNKNOWN, &someHelmConfig),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				NotHelmManaged: false,
 				ClusterConfig:  &someHelmConfig,
@@ -602,7 +595,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		// Test if clusters UNKNOWN manager type can be upgraded to MANUAL/HELM_CHART/KUBERNETES_OPERATOR.
 		{
 			description: "existing cluster's UNKNOWN manager type can be upgraded to MANUAL if notHelmManaged=true and managedBy=null",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_UNKNOWN),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_UNKNOWN, &someHelmConfig),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				NotHelmManaged: true,
 			}),
@@ -612,7 +605,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		},
 		{
 			description: "existing cluster's UNKNOWN manager type can be upgraded to HELM_CHART",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_UNKNOWN),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_UNKNOWN, &someHelmConfig),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ManagedBy:      storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 				NotHelmManaged: false,
@@ -624,7 +617,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		},
 		{
 			description: "existing cluster's UNKNOWN manager type can be upgraded to KUBERNETES_OPERATOR",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_UNKNOWN),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_UNKNOWN, &someHelmConfig),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ManagedBy:      storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR,
 				NotHelmManaged: false,
@@ -637,7 +630,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		// Test if clusters non-MANUAL manager type can be changed to MANUAL using notHelmManaged=true.
 		{
 			description: "existing cluster's HELM_CHART manager type can be changed to MANUAL if notHelmManaged=true",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				NotHelmManaged: true,
 				ClusterConfig:  &someHelmConfig,
@@ -648,7 +641,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		},
 		{
 			description: "existing cluster's HELM_CHART manager type can be changed to MANUAL if notHelmManaged=true and managedBy=MANUAL",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ManagedBy:      storage.ManagerType_MANAGER_TYPE_MANUAL,
 				NotHelmManaged: true,
@@ -660,7 +653,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		},
 		{
 			description: "existing cluster's KUBERNETES_OPERATOR manager type can be changed to MANUAL if notHelmManaged=true",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR, &someHelmConfig),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				NotHelmManaged: true,
 				ClusterConfig:  &someHelmConfig,
@@ -671,7 +664,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 		},
 		{
 			description: "existing cluster's KUBERNETES_OPERATOR manager type can be changed to MANUAL if notHelmManaged=true and managedBy=MANUAL",
-			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR),
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR, &someHelmConfig),
 			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
 				ManagedBy:      storage.ManagerType_MANAGER_TYPE_MANUAL,
 				NotHelmManaged: true,
@@ -718,6 +711,19 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 			expectedManagerType: storage.ManagerType_MANAGER_TYPE_MANUAL,
 			expectedHelmConfig:  nil,
 		},
+		// Updating Helm configuration
+		{
+			description: "existing cluster's Helm configuration can be updated for Helm-managed clusters",
+			cluster:     someClusterWithManagerType(storage.ManagerType_MANAGER_TYPE_HELM_CHART, &someHelmConfig),
+			sensorHello: sensorHelloWithHelmManagedConfigInit(&central.HelmManagedConfigInit{
+				ManagedBy:      storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+				NotHelmManaged: false,
+				ClusterConfig:  &differentConfigFPHelmConfig,
+			}),
+			bundleID:            bundleID,
+			expectedManagerType: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			expectedHelmConfig:  &differentConfigFPHelmConfig,
+		},
 	}
 
 	for i, c := range cases {
@@ -734,15 +740,25 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 				helmCfg.ClusterName = clusterName
 			}
 
-			// Add cluster, if test case expects a cluster to exist.
-			suite.indexer.EXPECT().AddCluster(gomock.Any()).Do(func(addedCluster *storage.Cluster) {
-				clusterID = addedCluster.GetId()
-				newCluster = addedCluster
-			}).Return(nil).Times(2)
-			suite.clusters.EXPECT().Upsert(gomock.Any()).Do(func(updatedCluster *storage.Cluster) {
+			addedClusterMock := suite.indexer.EXPECT().AddCluster(gomock.Any()).Do(func(updatedCluster *storage.Cluster) {
 				clusterID = updatedCluster.GetId()
 				newCluster = updatedCluster
-			}).Return(nil).Times(2)
+			}).Return(nil)
+
+			upsertMock := suite.clusters.EXPECT().Upsert(gomock.Any()).Do(func(updatedCluster *storage.Cluster) {
+				clusterID = updatedCluster.GetId()
+				newCluster = updatedCluster
+			}).Return(nil)
+
+			if clusterConfigurationUnchanged(c.bundleID, c.cluster, c.sensorHello) &&
+				!clusterManagerTypeChange(c.cluster, c.sensorHello) {
+				addedClusterMock.Times(1)
+				upsertMock.Times(1)
+			} else {
+				addedClusterMock.Times(2)
+				upsertMock.Times(2)
+			}
+
 			suite.flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(suite.mockCtrl), nil)
 			if cluster := c.cluster; cluster != nil {
 				clusterID, err = suite.clusterDataStore.AddCluster(suite.hasWriteCtx, cluster)
@@ -761,6 +777,20 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 			suite.Equal(c.expectedHelmConfig, newCluster.GetHelmConfig())
 		})
 	}
+}
+
+func clusterConfigurationUnchanged(bundleID string, cluster *storage.Cluster, sensorHello *central.SensorHello) bool {
+	return cluster.GetInitBundleId() == bundleID &&
+		cluster.GetHelmConfig().GetConfigFingerprint() == sensorHello.GetHelmManagedConfigInit().GetClusterConfig().GetConfigFingerprint() &&
+		cluster.GetManagedBy() == sensorHello.GetHelmManagedConfigInit().GetManagedBy()
+}
+
+func clusterNonManuallyManaged(cluster *storage.Cluster) bool {
+	return cluster.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
+}
+
+func clusterManagerTypeChange(cluster *storage.Cluster, sensorHello *central.SensorHello) bool {
+	return clusterNonManuallyManaged(cluster) && sensorHello.GetHelmManagedConfigInit().GetNotHelmManaged()
 }
 
 func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
