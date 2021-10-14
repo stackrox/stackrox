@@ -78,6 +78,7 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/nilslice/protolock v0.0.0
 	github.com/nxadm/tail v1.4.8
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0
 	github.com/opencontainers/go-digest v1.0.0
@@ -105,6 +106,7 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
+	github.com/tidwall/gjson v1.9.2
 	github.com/tkuchiki/go-timezone v0.1.3
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.6
