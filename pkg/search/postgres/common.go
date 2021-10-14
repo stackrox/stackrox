@@ -27,13 +27,13 @@ func RegisterCategoryToTable(category v1.SearchCategory, table string) {
 }
 
 type queryTree struct {
-	elem searchPkg.PathElem
+	elem     searchPkg.PathElem
 	children map[string]*queryTree
 }
 
-func newQueryTree(elem searchPkg.PathElem) *queryTree  {
+func newQueryTree(elem searchPkg.PathElem) *queryTree {
 	return &queryTree{
-		elem: elem,
+		elem:     elem,
 		children: make(map[string]*queryTree),
 	}
 }
@@ -149,7 +149,7 @@ func replaceVars(s string) string {
 
 func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count bool) (string, []interface{}, error) {
 	tree := newQueryTree(searchPkg.PathElem{
-		Name:  table,
+		Name: table,
 	})
 	populatePathRecursive(tree, q, optionsMap)
 	fromClause := createFROMClause(tree)
@@ -297,7 +297,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optio
 			return nil, err
 		}
 		searchResults = append(searchResults, searchPkg.Result{
-			ID:      id,
+			ID: id,
 		})
 	}
 	return searchResults, nil

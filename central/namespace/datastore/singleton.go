@@ -25,7 +25,7 @@ func initialize() {
 	//if features.PostgresPOC.Enabled() {
 	//	storage = postgres.New(globaldb.GetPostgresDB())
 	//} else {
-		storage = rocksdb.New(globaldb.GetRocksDB())
+	storage = rocksdb.New(globaldb.GetRocksDB())
 	//}
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
 

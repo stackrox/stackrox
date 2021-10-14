@@ -17,31 +17,31 @@ import (
 
 func getDeployment() *storage.Deployment {
 	dep := fixtures.GetDeployment()
-	dep.Ports = []*storage.PortConfig {
+	dep.Ports = []*storage.PortConfig{
 		{
-			ExposureInfos:        []*storage.PortConfig_ExposureInfo {
+			ExposureInfos: []*storage.PortConfig_ExposureInfo{
 				{
-					ServiceName: "pc1",
+					ServiceName:      "pc1",
 					ServiceClusterIp: "ip1",
 				},
 				{
-					ServiceName: "pc2",
+					ServiceName:      "pc2",
 					ServiceClusterIp: "ip2",
 				},
 			},
 		},
 		{
-			ExposureInfos:        []*storage.PortConfig_ExposureInfo {
+			ExposureInfos: []*storage.PortConfig_ExposureInfo{
 				{
-					ServiceName: "pc1",
+					ServiceName:      "pc1",
 					ServiceClusterIp: "ip2",
 				},
 				{
-					ServiceName: "pc2",
+					ServiceName:      "pc2",
 					ServiceClusterIp: "ip1",
 				},
 				{
-					ServiceName: "pc1",
+					ServiceName:      "pc1",
 					ServiceClusterIp: "ip3",
 				},
 			},
@@ -72,18 +72,17 @@ func TestT(t *testing.T) {
 	//	panic(err)
 	//}
 	qb := search.NewQueryBuilder().
-		AddStrings(search.ResourceType, "deployment")
-		//AddStrings(
-		//	search.ViolationState,
-		//	storage.ViolationState_ACTIVE.String(),
-		//	storage.ViolationState_ATTEMPTED.String()).
-		//AddStrings(search.Cluster, "remote").
+		//AddStrings(search.ResourceType, "deployment")
+		AddStrings(
+			search.ViolationState,
+			storage.ViolationState_ACTIVE.String(),
+			storage.ViolationState_ATTEMPTED.String()).
+		AddStrings(search.Cluster, "remote")
 	results, err := alertIndex.Search(qb.ProtoQuery(), nil)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("alert results", len(results))
-
 
 	//
 	//for i := 0; i < 10000; i++ {
@@ -120,9 +119,6 @@ func TestT(t *testing.T) {
 	for _, res := range results {
 		fmt.Println(res)
 	}
-
-
-
 
 	//
 	//_, err = db.Exec(createTable)

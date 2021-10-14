@@ -4,14 +4,14 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/store/rocksdb"
+	pgIndex "github.com/stackrox/rox/central/rbac/k8srole/internal/index/postgres"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
+	pgStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/postgres"
+	"github.com/stackrox/rox/central/rbac/k8srole/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	pgIndex "github.com/stackrox/rox/central/rbac/k8srole/internal/index/postgres"
-	pgStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/postgres"
 )
 
 var (

@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/parse"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
-
 	//"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -74,8 +73,8 @@ func newStringQuery(table string, field *pkgSearch.Field, value string, queryMod
 	elemPath := generateShortestElemPath(table, field.Elems)
 	if len(queryModifiers) == 0 {
 		return &QueryEntry{
-			Query: renderFinalPath(elemPath, lastElem.Name) + "ilike $$",
-			Values: []interface{}{value+"%"},
+			Query:  renderFinalPath(elemPath, lastElem.Name) + "ilike $$",
+			Values: []interface{}{value + "%"},
 		}, nil
 	}
 	if queryModifiers[0] == pkgSearch.AtLeastOne {
@@ -95,7 +94,7 @@ func newStringQuery(table string, field *pkgSearch.Field, value string, queryMod
 		}, nil
 	case pkgSearch.Equality:
 		return &QueryEntry{
-			Query:   renderFinalPath(elemPath, lastElem.Name) + fmt.Sprintf("%s= $$", negationString),
+			Query:  renderFinalPath(elemPath, lastElem.Name) + fmt.Sprintf("%s= $$", negationString),
 			Values: []interface{}{value},
 		}, nil
 	}

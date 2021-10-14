@@ -1,4 +1,5 @@
 package pgsearch
+
 //
 //import (
 //	"github.com/blevesearch/bleve"

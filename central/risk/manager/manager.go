@@ -105,6 +105,8 @@ func New(nodeStorage nodeDS.GlobalDataStore,
 func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Deployment")
 
+	log.Infof("Inside reprocess deployment risk: %+v", deployment.GetName())
+
 	oldRisk, exists, err := e.riskStorage.GetRiskForDeployment(allAccessCtx, deployment)
 	if err != nil {
 		log.Errorf("error getting risk for deployment %s: %v", deployment.GetName(), err)
@@ -128,11 +130,13 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 
 	risk := e.deploymentScorer.Score(allAccessCtx, deployment, imageRisks)
 	if risk == nil {
+		log.Infof("risk is nil from scorer: %+v", deployment.GetName())
 		return
 	}
 
 	// No need to insert if it hasn't changed
 	if exists && proto.Equal(oldRisk, risk) {
+		log.Infof("risk is equal to old: %+v", deployment.GetName())
 		return
 	}
 
