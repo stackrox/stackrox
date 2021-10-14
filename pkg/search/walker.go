@@ -11,8 +11,9 @@ import (
 )
 
 type PathElem struct {
-	Name  string
-	Slice bool
+	Name      string
+	JSONField string
+	Slice     bool
 }
 
 func deepCopyPathElems(o []PathElem) []PathElem {
@@ -30,12 +31,12 @@ type searchWalker struct {
 }
 
 func (s *searchWalker) elemsToPath(elems []PathElem) string {
-	var names []string
-	names = append(names, s.prefix)
+	var fields []string
+	fields = append(fields, s.prefix)
 	for _, e := range elems {
-		names = append(names, e.Name)
+		fields = append(fields, e.JSONField)
 	}
-	return strings.Join(names, ".")
+	return strings.Join(fields, ".")
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
@@ -46,7 +47,7 @@ func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap
 		fields:   make(map[FieldLabel]*Field),
 	}
 	var pathElems []PathElem
-	sw.walkRecursive(pathElems, reflect.TypeOf(obj))
+	sw.walkRecursive(prefix, pathElems, reflect.TypeOf(obj))
 	return OptionsMapFromMap(category, sw.fields)
 }
 
@@ -93,7 +94,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 }
 
 // handleStruct takes in a struct object and properly handles all of the fields
-func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Type) {
+func (s *searchWalker) handleStruct(prefix string, parentElems []PathElem, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
 
 		field := original.Field(i)
@@ -103,7 +104,7 @@ func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Typ
 		} else if jsonTag == "" { // If no JSON tag, then Bleve takes the field name
 			jsonTag = field.Name
 		}
-
+		fullPath := fmt.Sprintf("%s.%s", prefix, jsonTag)
 		// proto json flag
 		protoTag := field.Tag.Get("protobuf")
 		var jsonProtoTag string
@@ -125,11 +126,11 @@ func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Typ
 		pathElems := deepCopyPathElems(parentElems)
 
 		pathElems = append(pathElems, PathElem{
-			Name:  jsonProtoTag,
-			Slice: field.Type.Kind() == reflect.Slice,
+			Name:      jsonProtoTag,
+			Slice:     field.Type.Kind() == reflect.Slice,
+			JSONField: jsonTag,
 		})
 
-		fullPath := s.elemsToPath(pathElems)
 		// Special case proto timestamp because we actually want to index seconds
 		if field.Type.String() == "*types.Timestamp" {
 			fieldName, searchField := s.getSearchField(fullPath+".seconds", searchTag)
@@ -169,13 +170,13 @@ func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Typ
 			for _, f := range actualOneOfFields {
 				typ := reflect.TypeOf(f)
 				if typ.Implements(oneofInterface) {
-					s.walkRecursive(pathElems, typ)
+					s.walkRecursive(fullPath, pathElems, typ)
 				}
 			}
 			continue
 		}
 
-		searchDataType := s.walkRecursive(pathElems, field.Type)
+		searchDataType := s.walkRecursive(fullPath, pathElems, field.Type)
 		fieldName, searchField := s.getSearchField(fullPath, searchTag)
 		if searchField == nil {
 			continue
@@ -186,12 +187,12 @@ func (s *searchWalker) handleStruct(parentElems []PathElem, original reflect.Typ
 	}
 }
 
-func (s *searchWalker) walkRecursive(pathElems []PathElem, original reflect.Type) v1.SearchDataType {
+func (s *searchWalker) walkRecursive(prefix string, pathElems []PathElem, original reflect.Type) v1.SearchDataType {
 	switch original.Kind() {
 	case reflect.Ptr, reflect.Slice:
-		return s.walkRecursive(pathElems, original.Elem())
+		return s.walkRecursive(prefix, pathElems, original.Elem())
 	case reflect.Struct:
-		s.handleStruct(pathElems, original)
+		s.handleStruct(prefix, pathElems, original)
 	case reflect.Map:
 		return v1.SearchDataType_SEARCH_MAP
 	case reflect.String:

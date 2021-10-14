@@ -36,8 +36,8 @@ func initialize() {
 	//if features.PostgresPOC.Enabled() {
 	//	clusterStorage = postgres.New(globaldb.GetPostgresDB())
 	//} else {
-		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())
-		utils.CrashOnError(err)
+	clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())
+	utils.CrashOnError(err)
 	//}
 	clusterHealthStorage, err := healthRocksDB.New(globaldb.GetRocksDB())
 	utils.CrashOnError(err)

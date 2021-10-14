@@ -139,6 +139,3 @@ func getValueFromField(val interface{}) string {
 //
 //	return sortOrder, searchAfter, nil
 //}
-
-
-

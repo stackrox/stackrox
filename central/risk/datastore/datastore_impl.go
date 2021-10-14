@@ -126,7 +126,11 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 	}
 
 	risk.Id = id
+
+	log.Infof("Trying to insert risk: %+v", risk)
+
 	if err := d.storage.Upsert(risk); err != nil {
+		log.Errorf("Risk: %+v", err)
 		return err
 	}
 	upsertRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId(), risk.GetScore())
