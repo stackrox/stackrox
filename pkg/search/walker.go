@@ -8,7 +8,27 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+var (
+	registeredPaths = make(map[v1.SearchCategory]map[string][]PathElem)
+)
+
+func registerCategoryToTablePath(category v1.SearchCategory, table string, path []PathElem) {
+	tableToPath := registeredPaths[category]
+	if tableToPath == nil {
+		tableToPath = make(map[string][]PathElem)
+		registeredPaths[category] = tableToPath
+	}
+	tableToPath[table] = path
+}
+
+func GetTableToTablePath(fromTable, toTable string) []PathElem {
+	fmt.Println(registeredPaths)
+	category := mapping.GetCategoryFromTable(fromTable)
+	return registeredPaths[category][toTable]
+}
 
 type PathElem struct {
 	Name      string
@@ -131,6 +151,12 @@ func (s *searchWalker) handleStruct(prefix string, parentElems []PathElem, origi
 			JSONField: jsonTag,
 		})
 
+		postgresTag := field.Tag.Get("postgres")
+		if strings.HasPrefix(postgresTag, "fk=") {
+			fk := strings.TrimPrefix(postgresTag, "fk=")
+			registerCategoryToTablePath(s.category, fk, pathElems)
+		}
+
 		// Special case proto timestamp because we actually want to index seconds
 		if field.Type.String() == "*types.Timestamp" {
 			fieldName, searchField := s.getSearchField(fullPath+".seconds", searchTag)
@@ -183,6 +209,11 @@ func (s *searchWalker) handleStruct(prefix string, parentElems []PathElem, origi
 		}
 		searchField.Type = searchDataType
 		searchField.Elems = pathElems
+
+		if _, ok := s.fields[FieldLabel(fieldName)]; ok {
+			log.Errorf("UNEXPECTED: COLLISION IN SEARCH WALKER %s: Ambiguous use of %s", s.prefix, fieldName)
+		}
+
 		s.fields[FieldLabel(fieldName)] = searchField
 	}
 }

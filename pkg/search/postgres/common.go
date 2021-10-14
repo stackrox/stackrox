@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -10,21 +11,13 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 )
 
 var (
-	categoryToTableMap = make(map[v1.SearchCategory]string)
-
 	log = logging.LoggerForModule()
 )
-
-func RegisterCategoryToTable(category v1.SearchCategory, table string) {
-	if val, ok := categoryToTableMap[category]; ok {
-		log.Fatalf("Cannot register category %s with table %s, it is already registered with %s", category, table, val)
-	}
-	categoryToTableMap[category] = table
-}
 
 type queryTree struct {
 	elem     searchPkg.PathElem
@@ -147,7 +140,22 @@ func replaceVars(s string) string {
 	return s
 }
 
-func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count bool) (string, []interface{}, error) {
+type Query struct {
+	Select string
+	From   string
+	Where  string
+	Data   []interface{}
+}
+
+func (q *Query) String() string {
+	query := q.Select + " " + q.From
+	if q.Where != "" {
+		query += " where " + q.Where
+	}
+	return query
+}
+
+func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count bool) (*Query, error) {
 	tree := newQueryTree(searchPkg.PathElem{
 		Name: table,
 	})
@@ -164,13 +172,20 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 	//printTree(tree, "")
 	queryEntry, err := compileBaseQuery(table, q, optionsMap)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 	if queryEntry == nil {
-		return fmt.Sprintf("%s %s;", selectClause, fromClause), nil, nil
+		return &Query{
+			Select: selectClause,
+			From:   fromClause,
+		}, nil
 	}
-	query := fmt.Sprintf("%s %s where %s;", selectClause, fromClause, queryEntry.Query)
-	return replaceVars(query), queryEntry.Values, nil
+	return &Query{
+		Select: selectClause,
+		From:   fromClause,
+		Where:  queryEntry.Query,
+		Data:   queryEntry.Values,
+	}, nil
 }
 
 func multiQueryFromQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
@@ -207,9 +222,64 @@ func entriesFromQueries(table string, queries []*v1.Query, optionsMap searchPkg.
 	return entries, nil
 }
 
+func joinWrap(baseTable, joinTable string, query *Query) string {
+	//GetTableToTablePath
+	pathElems := searchPkg.GetTableToTablePath(baseTable, joinTable)
+	if len(pathElems) == 0 {
+		// This means that there is only pointers from joinTable to baseTable (which for now is just ID)
+		pathElems = searchPkg.GetTableToTablePath(joinTable, baseTable)
+		if len(pathElems) == 0 {
+			log.Fatalf("No existing path between table %s to %s", baseTable, joinTable)
+		}
+		path := pgsearch.GenerateShortestElemPath(joinTable, pathElems)
+		query.Select = fmt.Sprintf("select distinct(%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].Name))
+		return fmt.Sprintf("%s.id in (%s)", baseTable, query.String())
+	}
+	path := pgsearch.GenerateShortestElemPath(baseTable, pathElems)
+	return fmt.Sprintf("%s in (%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].Name), query.String())
+}
+
+func tableFromBaseQuery(bq *v1.BaseQuery, optionsMap searchPkg.OptionsMap) (string, bool) {
+	switch subBQ := bq.Query.(type) {
+	case *v1.BaseQuery_DocIdQuery:
+		return "", false
+	case *v1.BaseQuery_MatchFieldQuery:
+		field, ok := optionsMap.Get(subBQ.MatchFieldQuery.GetField())
+		if !ok {
+			return "", false
+		}
+		return mapping.GetTableFromCategory(field.Category), true
+	case *v1.BaseQuery_MatchNoneQuery:
+		return "", false
+	case *v1.BaseQuery_MatchLinkedFieldsQuery:
+		if queries := subBQ.MatchLinkedFieldsQuery.Query; len(queries) != 0 {
+			field, ok := optionsMap.Get(queries[0].GetField())
+			if !ok {
+				return "", false
+			}
+			return mapping.GetTableFromCategory(field.Category), true
+		}
+	default:
+		panic("unsupported")
+	}
+	return "", false
+}
+
 func compileBaseQuery(table string, q *v1.Query, optionsMap searchPkg.OptionsMap) (*pgsearch.QueryEntry, error) {
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
+		queryTable, ok := tableFromBaseQuery(sub.BaseQuery, optionsMap)
+		if ok && queryTable != table {
+			// Need to regen the whole query and join it
+			query, err := populatePath(q, optionsMap, queryTable, false)
+			if err != nil {
+				return nil, err
+			}
+			return &pgsearch.QueryEntry{
+				Query:  joinWrap(table, queryTable, query),
+				Values: query.Data,
+			}, nil
+		}
 		switch subBQ := q.GetBaseQuery().Query.(type) {
 		case *v1.BaseQuery_DocIdQuery:
 			return &pgsearch.QueryEntry{
@@ -275,17 +345,18 @@ func compileBaseQuery(table string, q *v1.Query, optionsMap searchPkg.OptionsMap
 }
 
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
-	query, data, err := populatePath(q, optionsMap, categoryToTableMap[category], false)
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), false)
 	if err != nil {
 		return nil, err
 	}
 	t := time.Now()
 	defer func() {
-		log.Infof("Took %d milliseconds to run: %s %+v", time.Since(t).Milliseconds(), query, data)
+		log.Infof("Took %d milliseconds to run: %s %+v", time.Since(t).Milliseconds(), query, query.Data)
 	}()
-	rows, err := db.Query(query, data...)
+	rows, err := db.Query(replaceVars(query.String()), query.Data...)
 	if err != nil {
-		log.Errorf("Query issue: %s %+v: %v", query, data, err)
+		debug.PrintStack()
+		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -304,17 +375,20 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optio
 }
 
 func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optionsMap searchPkg.OptionsMap) (int, error) {
-	query, data, err := populatePath(q, optionsMap, categoryToTableMap[category], true)
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), true)
 	if err != nil {
 		return 0, err
 	}
+
 	t := time.Now()
 	defer func() {
-		log.Infof("Took %d milliseconds to run: %s %+v", time.Since(t).Milliseconds(), query, data)
+		log.Infof("Took %d milliseconds to run: %s %+v", time.Since(t).Milliseconds(), query, query.Data)
 	}()
-	row := db.QueryRow(query, data...)
+
+	row := db.QueryRow(replaceVars(query.String()), query.Data...)
 	if err := row.Err(); err != nil {
-		log.Errorf("Query issue: %s %+v: %v", query, data, err)
+		debug.PrintStack()
+		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
 		return 0, err
 	}
 	var count int

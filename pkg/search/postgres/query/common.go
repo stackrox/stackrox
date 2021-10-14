@@ -31,7 +31,7 @@ func NewTrueQuery() *QueryEntry {
 	}
 }
 
-func generateShortestElemPath(table string, elems []searchPkg.PathElem) string {
+func GenerateShortestElemPath(table string, elems []searchPkg.PathElem) string {
 	if len(elems) == 1 {
 		return fmt.Sprintf("%s.value", table)
 	}

@@ -2,7 +2,7 @@
 package postgres
 
 import (
-	mappings "github.com/stackrox/rox/central/risk/mappings"
+	mappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -18,10 +18,10 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "risks"
+const table = "clusters"
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_RISKS, table)
+	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, table)
 }
 
 func NewIndexer(db *sql.DB) *indexerImpl {
@@ -34,22 +34,22 @@ type indexerImpl struct {
 	db *sql.DB
 }
 
-func (b *indexerImpl) AddRisk(deployment *storage.Risk) error {
+func (b *indexerImpl) AddCluster(deployment *storage.Cluster) error {
 	// Added as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) AddRisks(_ []*storage.Risk) error {
+func (b *indexerImpl) AddClusters(_ []*storage.Cluster) error {
 	// Added as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) DeleteRisk(id string) error {
+func (b *indexerImpl) DeleteCluster(id string) error {
 	// Removed as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) DeleteRisks(_ []string) error {
+func (b *indexerImpl) DeleteClusters(_ []string) error {
 	// Added as a part of normal DB op
 	return nil
 }
@@ -63,11 +63,11 @@ func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
 }
 
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Risk")
-	return postgres.RunCountRequest(v1.SearchCategory_RISKS, q, b.db, mappings.OptionsMap)
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Cluster")
+	return postgres.RunCountRequest(v1.SearchCategory_CLUSTERS, q, b.db, mappings.OptionsMap)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Risk")
-	return postgres.RunSearchRequest(v1.SearchCategory_RISKS, q, b.db, mappings.OptionsMap)
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Cluster")
+	return postgres.RunSearchRequest(v1.SearchCategory_CLUSTERS, q, b.db, mappings.OptionsMap)
 }

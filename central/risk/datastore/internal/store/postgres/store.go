@@ -21,7 +21,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	table = "risk"
+	table = "risks"
 )
 
 type Store interface {
@@ -71,7 +71,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 	return vulnStmt
 }
 
-const createTableQuery = "create table if not exists risk (id varchar primary key, value jsonb)"
+const createTableQuery = "create table if not exists risks (id varchar primary key, value jsonb)"
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *sql.DB) Store {
@@ -86,16 +86,16 @@ func New(db *sql.DB) Store {
 	return &storeImpl{
 		db: db,
 
-		countStmt: compileStmtOrPanic(db, "select count(*) from risk"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from risk where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from risk"),
-		getStmt: compileStmtOrPanic(db, "select value from risk where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from risk where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into risk(id, value) values($1, $2) on conflict(id) do update set value=$2"),
-		deleteStmt: compileStmtOrPanic(db, "delete from risk where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from risk where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from risk"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from risk"),
+		countStmt: compileStmtOrPanic(db, "select count(*) from risks"),
+		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from risks where id = $1)"),
+		getIDsStmt: compileStmtOrPanic(db, "select id from risks"),
+		getStmt: compileStmtOrPanic(db, "select value from risks where id = $1"),
+		getManyStmt: compileStmtOrPanic(db, "select value from risks where id = ANY($1::text[])"),
+		upsertStmt: compileStmtOrPanic(db, "insert into risks(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+		deleteStmt: compileStmtOrPanic(db, "delete from risks where id = $1"),
+		deleteManyStmt: compileStmtOrPanic(db, "delete from risks where id = ANY($1::text[])"),
+		walkStmt: compileStmtOrPanic(db, "select value from risks"),
+		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from risks"),
 	}
 //
 }

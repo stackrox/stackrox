@@ -2,7 +2,7 @@
 package postgres
 
 import (
-	mappings "github.com/stackrox/rox/central/risk/mappings"
+	mappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -18,10 +18,10 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "risks"
+const table = "namespaces"
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_RISKS, table)
+	mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, table)
 }
 
 func NewIndexer(db *sql.DB) *indexerImpl {
@@ -34,22 +34,22 @@ type indexerImpl struct {
 	db *sql.DB
 }
 
-func (b *indexerImpl) AddRisk(deployment *storage.Risk) error {
+func (b *indexerImpl) AddNamespaceMetadata(deployment *storage.NamespaceMetadata) error {
 	// Added as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) AddRisks(_ []*storage.Risk) error {
+func (b *indexerImpl) AddNamespaceMetadatas(_ []*storage.NamespaceMetadata) error {
 	// Added as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) DeleteRisk(id string) error {
+func (b *indexerImpl) DeleteNamespaceMetadata(id string) error {
 	// Removed as a part of normal DB op
 	return nil
 }
 
-func (b *indexerImpl) DeleteRisks(_ []string) error {
+func (b *indexerImpl) DeleteNamespaceMetadatas(_ []string) error {
 	// Added as a part of normal DB op
 	return nil
 }
@@ -63,11 +63,11 @@ func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
 }
 
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Risk")
-	return postgres.RunCountRequest(v1.SearchCategory_RISKS, q, b.db, mappings.OptionsMap)
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "NamespaceMetadata")
+	return postgres.RunCountRequest(v1.SearchCategory_NAMESPACES, q, b.db, mappings.OptionsMap)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Risk")
-	return postgres.RunSearchRequest(v1.SearchCategory_RISKS, q, b.db, mappings.OptionsMap)
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "NamespaceMetadata")
+	return postgres.RunSearchRequest(v1.SearchCategory_NAMESPACES, q, b.db, mappings.OptionsMap)
 }
