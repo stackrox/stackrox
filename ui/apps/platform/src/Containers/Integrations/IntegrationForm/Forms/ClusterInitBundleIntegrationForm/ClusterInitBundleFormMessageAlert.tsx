@@ -12,8 +12,10 @@ export type ClusterInitBundleResponse = {
     kubectlBundle: string;
 };
 
-const onDownloadHandler = (fileName: string, decodedHelmValuesBundle: string) => () => {
-    const file = new Blob([decodedHelmValuesBundle], {
+const onDownloadHandler = (fileName: string, currentBundle: string) => () => {
+    const decodedValuesBundle = typeof currentBundle === 'string' ? atob(currentBundle) : '';
+
+    const file = new Blob([decodedValuesBundle], {
         type: 'application/x-yaml',
     });
 
