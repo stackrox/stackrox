@@ -60,7 +60,7 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 		merge          bool
 		noHeader       bool
 	}{
-		"pretty print output without merging duplicate cells & rows": {
+		"table output without merging duplicate cells & rows": {
 			merge:    false,
 			noHeader: false,
 			expectedOutput: `+-------+-------+------------+
@@ -76,7 +76,7 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 +-------+-------+------------+
 `,
 		},
-		"pretty print output with merging duplicate cells & rows": {
+		"table output with merging duplicate cells & rows": {
 			merge:    true,
 			noHeader: false,
 			expectedOutput: `+-------+-------+------------+
@@ -92,7 +92,7 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 +-------+-------+------------+
 `,
 		},
-		"pretty print output without merging duplicate cells & rows without headers": {
+		"table output without merging duplicate cells & rows without headers": {
 			merge:    false,
 			noHeader: true,
 			expectedOutput: `+-------+-------+------------+
@@ -106,7 +106,7 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 +-------+-------+------------+
 `,
 		},
-		"pretty print output with merging duplicate cells & rows without headers": {
+		"table output with merging duplicate cells & rows without headers": {
 			merge:    true,
 			noHeader: true,
 			expectedOutput: `+-------+-------+------------+

@@ -15,8 +15,8 @@ type tablePrinter struct {
 	noHeader       bool
 }
 
-// newTablePrinter returns a pretty printer with injected options capable of printing data in
-// prettified tabular output.
+// newTablePrinter returns a table printer with injected options capable of printing data in
+// prettified tabular format.
 func newTablePrinter(headers []string, rowJSONPathExpression string, merge, noHeader bool) *tablePrinter {
 	return &tablePrinter{
 		headers:               headers,

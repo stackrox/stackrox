@@ -2,10 +2,23 @@ package printer
 
 import (
 	"encoding/json"
+	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
+
+// JaggedArrayError creates a standardized error for jagged arrays when yielding values via gjson
+type JaggedArrayError struct {
+	maxAmount      int
+	violatedAmount int
+	rowIndex       int
+}
+
+func (j JaggedArrayError) Error() string {
+	return fmt.Sprintf("jagged array found: yielded values within each array are not matching. "+
+		"Expected each array to hold %d elements but found an array with %d at row index %d",
+		j.maxAmount, j.violatedAmount, j.rowIndex+1)
+}
 
 // getRowsFromObject will retrieve all rows from the json object. It will use gjson and the
 // rowExpression to retrieve all row values and return them as an array.
@@ -29,15 +42,14 @@ func getRowsFromObject(jsonObj interface{}, rowExpression string) ([][]string, e
 // isJaggedArray will verify whether the given rows array is jagged or not, meaning whether all arrays
 // have the same length. It will return an error if the array is jagged.
 func isJaggedArray(rows [][]string) error {
-	maxRowLength := 0
-	for rowIndex, row := range rows {
-		if rowIndex == 0 {
-			maxRowLength = len(row)
-		}
+	if len(rows) == 0 {
+		return nil
+	}
+
+	maxRowLength := len(rows[0])
+	for rowIndex, row := range rows[1:] {
 		if maxRowLength != len(row) {
-			return errors.Errorf("number of values within each row are not matching. Expected "+
-				"each row to hold %d values, but got %d values in a row",
-				maxRowLength, len(row))
+			return JaggedArrayError{maxAmount: maxRowLength, violatedAmount: len(row), rowIndex: rowIndex}
 		}
 	}
 	return nil

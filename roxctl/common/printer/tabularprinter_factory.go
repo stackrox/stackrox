@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TabularPrinterFactory holds all configuration options of tabular printers, specifically CSVPrinter and PrettyPrinter
+// TabularPrinterFactory holds all configuration options of tabular printers, specifically CSVPrinter and TablePrinter
 // It is an implementation of CustomPrinterFactory and acts as a factory for tabular printers
 type TabularPrinterFactory struct {
 	// Merge only applies to the "table" format and merges certain cells within the output
@@ -50,6 +50,43 @@ func (t *TabularPrinterFactory) SupportedFormats() []string {
 
 // CreatePrinter creates a tabular printer from the options set. If the format is unsupported, or it is not possible
 // to create an ObjectPrinter with the current configuration it will return an error
+// A tabular printer expects a JSON Object and JSON Path expression that is compatible
+// with GJSON (https://github.com/tidwall/gjson).
+// When printing, the tabular printerss will take the given JSON object, apply a row expression via a gjson
+// multi path expression to retrieve the data from the JSON object and print the result in tabular format.
+// The JSON Object itself MUST be passable to json.Marshal, so it CAN NOT be a direct JSON input.
+// For the structure of the JSON object, it is preferred to have arrays of structs instead of
+// array of elements, since structs will provide default values if the field is missing.
+// The gjson expression syntax (https://github.com/tidwall/gjson/blob/master/SYNTAX.md) offers more complex
+// and advanced scenarios, if you require them and the below example is not sufficient.
+// The following example illustrates a JSON compatible structure and its gjson multi path expression
+// JSON structure:
+// type data struct {
+//		Infos 	[]info `json:"infos"`
+//		Name 	string `json:"name"`
+// }
+// type info struct {
+//		info 	string `json:"info"`
+//		topic 	string `json:"topic"`
+// }
+// Data:
+// data := &data{Name: "example", Infos: []info{
+//										{info: "info1", topic: "topic1"},
+//										{info: "info2", topic: "topic2"},
+//										{info: "info3", topic: "topic3"},
+//										}
+// gjson multi path expression: "{name,infos.#.info,infos.#.topic}"
+// 	- bundle multiple gjson expression surrounded by "{}" to form a multi path expression
+// 	- specify "#" to visit each element in the array
+// 	- each expression in the multi path expression is correlated with the given header(s)!
+//
+// headers := []string{"name", "info", "topic"}
+//
+// This would result in the following rows for the tabular printers
+// | name	 | info  | topic  |
+// | example | info1 | topic1 |
+// | example | info2 | topic2 |
+// | example | info3 | topic3 |
 func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error) {
 	if err := t.validate(); err != nil {
 		return nil, err
@@ -58,7 +95,7 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	case "table":
 		return newTablePrinter(t.Headers, t.RowJSONPathExpression, t.Merge, t.NoHeader), nil
 	case "csv":
-		panic("csv printer is not implemented")
+		return newCSVPrinter(t.Headers, t.RowJSONPathExpression, t.NoHeader, t.HeaderAsComment), nil
 	default:
 		return nil, fmt.Errorf("invalid output format used for Tabular Printer: %q", format)
 	}
