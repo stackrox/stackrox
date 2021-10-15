@@ -1,6 +1,7 @@
 import cloneDeep from 'lodash/cloneDeep';
 
 import { selectors, clustersUrl } from '../constants/ClustersPage';
+import navigationSelectors from '../selectors/navigation';
 import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 
@@ -10,8 +11,12 @@ describe('Clusters page', () => {
     describe('smoke tests', () => {
         beforeEach(() => {
             cy.visit('/');
-            cy.get(selectors.configure).click();
-            cy.get(selectors.navLink).click({ force: true });
+            cy.get(
+                `${navigationSelectors.navExpandable}:contains("Platform Configuration")`
+            ).click();
+            cy.get(
+                `.pf-c-nav__subnav[aria-labelledby="Platform Configuration"] li a:contains("Clusters")`
+            ).click();
         });
 
         it('should be linked in the Platform Configuration menu', () => {

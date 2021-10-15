@@ -1,14 +1,7 @@
 import selectors, { systemConfigUrl, text } from '../constants/SystemConfigPage';
+import navigationSelectors from '../selectors/navigation';
 import withAuth from '../helpers/basicAuth';
 import { system as configApi } from '../constants/apiEndpoints';
-
-function openConfigNav() {
-    cy.get(selectors.navLinks.configure).click();
-}
-
-function openTopNav() {
-    cy.get(selectors.navLinks.topNav).last().click();
-}
 
 function editBaseConfig(type) {
     cy.get(selectors.pageHeader.editButton, { timeout: 10000 }).click();
@@ -57,6 +50,18 @@ describe('System Configuration', () => {
         cy.route('GET', configApi.config).as('getSystemConfig');
     });
 
+    it('should go to System Configuration from main navigation', () => {
+        cy.visit('/');
+        cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
+        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Configuration")`).click();
+        cy.url().should('contain', systemConfigUrl);
+        cy.wait('@getSystemConfig');
+        cy.get(selectors.dataRetention.widget).should('exist');
+        cy.get(selectors.header.widget).should('exist');
+        cy.get(selectors.footer.widget).should('exist');
+        cy.get(selectors.loginNotice.widget).should('exist');
+    });
+
     it('should allow the user to set data retention to "never delete"', () => {
         const neverDeletedText = 'Never deleted';
 
@@ -98,24 +103,6 @@ describe('System Configuration', () => {
         );
     });
 
-    it('should have link from Platform Configuration side nav sub-menu', () => {
-        cy.visit('/');
-        openConfigNav();
-        cy.get(selectors.navLinks.systemConfig).should('have.text', 'System Configuration');
-    });
-
-    it('should go to page', () => {
-        cy.visit('/');
-        openConfigNav();
-        cy.get(selectors.navLinks.systemConfig).click();
-        cy.url().should('contain', systemConfigUrl);
-        cy.wait('@getSystemConfig');
-        cy.get(selectors.dataRetention.widget).should('exist');
-        cy.get(selectors.header.widget).should('exist');
-        cy.get(selectors.footer.widget).should('exist');
-        cy.get(selectors.loginNotice.widget).should('exist');
-    });
-
     it('should be able to edit and enable header', () => {
         cy.visit(systemConfigUrl);
         cy.wait('@getSystemConfig');
@@ -140,12 +127,12 @@ describe('System Configuration', () => {
     });
 
     // TODO: re-enable when PatternFly masthead style is integrated
-    xit('should be able to edit and enable login notice', () => {
+    it('should be able to edit and enable login notice', () => {
         cy.visit(systemConfigUrl);
         cy.wait('@getSystemConfig');
         editBaseConfig('loginNotice');
         saveConfig('loginNotice');
-        openTopNav();
+        cy.get(selectors.navLinks.topNav).click();
         cy.get(selectors.navLinks.logout).click();
         cy.get(selectors.loginNotice.banner).should('exist');
     });

@@ -32,7 +32,7 @@ describe('System Health Integrations local deployment', () => {
     it('should go from left navigation to Dashboard and have widgets', () => {
         cy.visit('/');
         cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
-        cy.get(`${navigationSelectors.navLinks}:contains("System Health")`).click();
+        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Health")`).click();
         cy.wait(allApis);
 
         cy.get('[data-testid="header-text"]').should('have.text', 'System Health');

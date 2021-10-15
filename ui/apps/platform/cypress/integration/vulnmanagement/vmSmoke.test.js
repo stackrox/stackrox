@@ -5,7 +5,8 @@ describe('Smoke test for vulnmanagement', () => {
     withAuth();
     it('VulnManagement tile link is present and lands on dashboard page', () => {
         cy.visit('/main/dashboard');
-        cy.get(selectors.vmDBPageTileLink).click({ force: true });
+        cy.get(selectors.vulnManagementNavLink).click({ force: true });
+        cy.get(selectors.vulnManagementDashboardNavLink).click({ force: true });
         cy.url().should('contain', url.dashboard);
     });
 });

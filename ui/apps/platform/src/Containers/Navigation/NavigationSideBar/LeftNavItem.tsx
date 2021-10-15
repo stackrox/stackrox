@@ -1,18 +1,18 @@
 import React, { ReactElement } from 'react';
-import { NavLink, Location } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { NavItem } from '@patternfly/react-core';
 
 import { basePathToLabelMap } from 'routePaths';
 
 export type LeftNavItemProps = {
-    location: Location;
+    isActive: boolean;
     path: string;
 };
 
-function LeftNavItem({ location, path }: LeftNavItemProps): ReactElement {
+function LeftNavItem({ isActive, path }: LeftNavItemProps): ReactElement {
     const label = basePathToLabelMap[path];
     return (
-        <NavItem id={label} isActive={location.pathname.includes(path)}>
+        <NavItem id={label} isActive={isActive}>
             <NavLink exact to={path} activeClassName="pf-m-current">
                 {label}
             </NavLink>

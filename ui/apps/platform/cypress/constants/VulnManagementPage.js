@@ -27,7 +27,8 @@ export const url = {
 };
 
 export const vmHomePageSelectors = {
-    vmDBPageTileLink: `${navigationSelectors.navLinks}:contains("Vulnerability Management")`,
+    vulnManagementNavLink: `${navigationSelectors.navExpandable}:contains("Vulnerability Management")`,
+    vulnManagementDashboardNavLink: `${navigationSelectors.nestedNavLinks}:contains("Dashboard")`,
 };
 export const listSelectors = {
     riskScoreCol: '.rt-table > .rt-tbody > div > div > div:nth-child(10)',

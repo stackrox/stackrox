@@ -39,10 +39,21 @@ export const systemConfigPath = `${mainPath}/systemconfig`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
 export const configManagementPath = `${mainPath}/configmanagement`;
-export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
 export const productDocsPath = '/docs/product';
+
+// Vuln Management Paths
+
+export const vulnManagementPath = `${mainPath}/vulnerability-management`;
+export const vulnManagementPoliciesPath = `${vulnManagementPath}/policies`;
+export const vulnManagementCVEsPath = `${vulnManagementPath}/cves`;
+export const vulnManagementClustersPath = `${vulnManagementPath}/clusters`;
+export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
+export const vulnManagementDeploymentsPath = `${vulnManagementPath}/deployments`;
+export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
+export const vulnManagementComponentsPath = `${vulnManagementPath}/components`;
+export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
 /**
  * New Framwork-related route paths
@@ -85,12 +96,24 @@ export const useCasePaths = {
     [useCaseTypes.VULN_MANAGEMENT]: 'vulnerability-management',
 };
 
+const vulnManagementPathToLabelMap = {
+    [vulnManagementPath]: 'Dashboard',
+    [vulnManagementPoliciesPath]: 'Policies',
+    [vulnManagementCVEsPath]: 'CVEs',
+    [vulnManagementClustersPath]: 'Clusters',
+    [vulnManagementNamespacesPath]: 'Namespaces',
+    [vulnManagementDeploymentsPath]: 'Deployments',
+    [vulnManagementImagesPath]: 'Images',
+    [vulnManagementComponentsPath]: 'Components',
+    [vulnManagementNodesPath]: 'Nodes',
+};
+
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
-    [vulnManagementPath]: 'Vulnerability Management',
+    ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
     [riskBasePath]: 'Risk',
     [apidocsPath]: 'API Reference',

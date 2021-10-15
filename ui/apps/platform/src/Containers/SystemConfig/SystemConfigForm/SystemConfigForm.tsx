@@ -351,7 +351,7 @@ const SystemConfigForm = ({
                     </Card>
                 </GridItem>
                 <GridItem md={6}>
-                    <Card>
+                    <Card data-testid="login-notice-config">
                         <CardHeader>
                             <CardHeaderMain>
                                 <CardTitle>Login Configuration</CardTitle>
