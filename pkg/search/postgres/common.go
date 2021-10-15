@@ -21,13 +21,16 @@ var (
 
 	printerOnce sync.Once
 
-	queryLock sync.Mutex
+	queryLock   sync.Mutex
 	queryCounts = make(map[string]*queryStats)
+
+	queryCache     = make(map[string]*sql.Stmt)
+	queryCacheLock sync.Mutex
 )
 
 type queryStats struct {
 	counts int
-	nanos int64
+	nanos  int64
 }
 
 func incQueryCount(query string, t time.Time) {
@@ -38,7 +41,7 @@ func incQueryCount(query string, t time.Time) {
 	if !ok {
 		queryCounts[query] = &queryStats{
 			counts: 1,
-			nanos: int64(took),
+			nanos:  int64(took),
 		}
 		return
 	}
@@ -397,19 +400,39 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optio
 	}
 
 	queryStr := query.String()
+	queryCacheLock.Lock()
+	stmt := queryCache[queryStr]
+	queryCacheLock.Unlock()
+
 	runQueryPrinter()
 	t := time.Now()
 	defer func() {
 		incQueryCount(queryStr, t)
 	}()
 
-	rows, err := db.Query(replaceVars(queryStr), query.Data...)
+	var rows *sql.Rows
+	if stmt != nil {
+		rows, err = stmt.Query(query.Data...)
+	} else {
+		rows, err = db.Query(replaceVars(queryStr), query.Data...)
+	}
 	if err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
 		return nil, err
 	}
 	defer rows.Close()
+
+	if stmt == nil {
+		stmt, err = db.Prepare(replaceVars(queryStr))
+		if err != nil {
+			log.Errorf("error preparing query")
+		} else {
+			queryCacheLock.Lock()
+			queryCache[queryStr] = stmt
+			queryCacheLock.Unlock()
+		}
+	}
 
 	var searchResults []searchPkg.Result
 	for rows.Next() {

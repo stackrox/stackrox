@@ -8,6 +8,7 @@ import (
 
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
+	_ "github.com/stackrox/rox/central/deployment/index/postgres"
 	"github.com/stackrox/rox/central/deployment/store"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
@@ -19,8 +20,6 @@ import (
 	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
 	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-
-	_ "github.com/stackrox/rox/central/deployment/index/postgres"
 )
 
 var (
@@ -50,18 +49,18 @@ var (
 	)
 
 	finalOptions = search.NewOptionsMap(v1.SearchCategory_DEPLOYMENTS).
-		Merge(cveMappings.OptionsMap).
-		Merge(componentCVEEdgeMappings.OptionsMap).
-		Merge(componentOptionsMap).
-		Merge(imageComponentEdgeMappings.OptionsMap).
-		Merge(imageOnlyOptionsMap).
-		Merge(deploymentOnlyOptionsMap)
+			Merge(cveMappings.OptionsMap).
+			Merge(componentCVEEdgeMappings.OptionsMap).
+			Merge(componentOptionsMap).
+			Merge(imageComponentEdgeMappings.OptionsMap).
+			Merge(imageOnlyOptionsMap).
+			Merge(deploymentOnlyOptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage store.Store
-	db *sql.DB
+	db      *sql.DB
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
