@@ -29,6 +29,7 @@ var (
 )
 
 func init() {
+	return
 	// Deliberately initialize lockTimeout in an init function instead of via a sync.Once to keep the overhead
 	// when creating mutexes as low as possible.
 	timeoutSettingStr := os.Getenv(lockTimeoutSettingEnvVar)
@@ -43,6 +44,7 @@ func init() {
 }
 
 func panicIfTooMuchTimeElapsed(action string, startTime time.Time, limit time.Duration, skip int) {
+	return
 	if limit <= 0 || time.Since(startTime) <= limit {
 		return
 	}
@@ -51,6 +53,7 @@ func panicIfTooMuchTimeElapsed(action string, startTime time.Time, limit time.Du
 }
 
 func panicOnTimeout(action string, do func(), timeout time.Duration) {
+	return
 	panicOnTimeoutMarked(action, do, timeout, time.Now().UnixNano())
 }
 
@@ -58,6 +61,7 @@ func panicOnTimeout(action string, do func(), timeout time.Duration) {
 // stack. The noinline directive is supposed to prevent the optimizer from removing it.
 //go:noinline
 func panicOnTimeoutMarked(action string, do func(), timeout time.Duration, nowNanos int64) {
+	return
 	do()
 	panicIfTooMuchTimeElapsed(action, time.Unix(0, nowNanos), timeout, 3)
 }
