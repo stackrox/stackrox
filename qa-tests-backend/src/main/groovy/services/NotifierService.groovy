@@ -11,11 +11,9 @@ class NotifierService extends BaseService {
     private static final PAGERDUTY_API_KEY = "9e2d142a2946419c9192a0b224dd811b"
 
     // SLACK_MAIN_WEBHOOK is the webhook URL for #slack-test
-    public static final SLACK_MAIN_WEBHOOK =
-            "https://hooks.slack.com/services/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"
+    public static final SLACK_MAIN_WEBHOOK = Env.mustGetSlackMainWebhook()
     // SLACK_ALT_WEBHOOK is the webhook URL for #stackrox-alerts-2
-    public static final SLACK_ALT_WEBHOOK =
-            "https://hooks.slack.com/services/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"
+    public static final SLACK_ALT_WEBHOOK = Env.mustGetSlackAltWebhook()
 
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())

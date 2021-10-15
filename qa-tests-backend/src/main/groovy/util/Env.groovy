@@ -243,5 +243,12 @@ class Env {
     static String mustGetSlackFixableVulnsChannel() {
         return mustGet("SLACK_FIXABLE_VULNS_CHANNEL")
     }
-}
 
+    static String mustGetSlackMainWebhook() {
+        return mustGet("SLACK_MAIN_WEBHOOK")
+    }
+
+    static String mustGetSlackAltWebhook() {
+        return mustGet("SLACK_ALT_WEBHOOK")
+    }
+}
