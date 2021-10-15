@@ -29,7 +29,7 @@ type Searcher interface {
 // New returns a new instance of Searcher for the given storage and indexer.
 func New(db *sql.DB, storage store.Store) Searcher {
 	return &searcherImpl{
-		db: db,
+		db:      db,
 		storage: storage,
 	}
 }

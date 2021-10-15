@@ -10,10 +10,12 @@ import (
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
+	pgSearcher "github.com/stackrox/rox/central/deployment/datastore/internal/search/postgres"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
+	pgStore "github.com/stackrox/rox/central/deployment/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -30,8 +32,6 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/process/filter"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	pgSearcher "github.com/stackrox/rox/central/deployment/datastore/internal/search/postgres"
-	pgStore "github.com/stackrox/rox/central/deployment/store/postgres"
 )
 
 // DataStore is an intermediary to AlertStorage.

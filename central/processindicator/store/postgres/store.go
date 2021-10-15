@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -91,7 +92,7 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from processindicators"),
 		getStmt: compileStmtOrPanic(db, "select value from processindicators where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from processindicators where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into processindicators(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+		upsertStmt: compileStmtOrPanic(db, "insert into processindicators(id, value) values($1, $2) on conflict(id) do update set value=EXCLUDED.value;"),
 		deleteStmt: compileStmtOrPanic(db, "delete from processindicators where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicators where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from processindicators"),
@@ -239,15 +240,37 @@ func (s *storeImpl) Upsert(obj *storage.ProcessIndicator) error {
 	return s.upsert(keyFunc(obj), obj)
 }
 
+const (
+	batchInsertTemplate = `insert into processindicators (id, value) values %s on conflict(id) do update set value=EXCLUDED.value;`
+)
+
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
+	if len(objs) == 0 {
+		return nil
+	}
 
-	// Txn? or all errors to be passed through?
-	for _, obj := range objs {
-		if err := s.upsert(keyFunc(obj), obj); err != nil {
+	var placeholderStr string
+
+	data := make([]interface{}, 0, 2 * len(objs))
+	for i, obj := range objs {
+		placeholderStr += fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2)
+		if i != len(objs) - 1 {
+			placeholderStr += ","
+		}
+		value, err := (&jsonpb.Marshaler{
+			EnumsAsInts:  true,
+			EmitDefaults: true,
+		}).MarshalToString(obj)
+		if err != nil {
 			return err
 		}
+		data = append(data, keyFunc(obj), value)
+	}
+
+	if _, err := s.db.Exec(fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
+		return err
 	}
 	return nil
 }

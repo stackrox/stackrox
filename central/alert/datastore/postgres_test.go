@@ -10,11 +10,11 @@ import (
 	alertPGStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	deploymentPGIndex "github.com/stackrox/rox/central/deployment/index/postgres"
 	deploymentPGStore "github.com/stackrox/rox/central/deployment/store/postgres"
+	processPGIndex "github.com/stackrox/rox/central/processindicator/index/postgres"
+	processPGStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
-	processPGIndex "github.com/stackrox/rox/central/processindicator/index/postgres"
-	processPGStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 )
 
 func getDeployment() *storage.Deployment {
