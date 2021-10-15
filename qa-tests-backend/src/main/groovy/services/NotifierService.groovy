@@ -8,7 +8,7 @@ import io.stackrox.proto.storage.NotifierOuterClass
 import util.Env
 
 class NotifierService extends BaseService {
-    private static final PAGERDUTY_API_KEY = "9e2d142a2946419c9192a0b224dd811b"
+    private static final PAGERDUTY_API_KEY = "fix-me-ROX-7589-and-this-should-be-secret"
 
     // SLACK_MAIN_WEBHOOK is the webhook URL for #slack-test
     public static final SLACK_MAIN_WEBHOOK = Env.mustGetSlackMainWebhook()
@@ -128,7 +128,7 @@ class NotifierService extends BaseService {
                 .setUiEndpoint(getStackRoxEndpoint())
                 .setJira(NotifierOuterClass.Jira.newBuilder()
                         .setUsername("k+automation@stackrox.com")
-                        .setPassword("xvOOtL7nCOANMbD7ed0522B5")
+                        .setPassword("fix-me-ROX-7460-and-this-should-be-secret")
                         .setUrl("https://stack-rox.atlassian.net")
                         .setIssueType("Task")
                 )
@@ -140,10 +140,7 @@ class NotifierService extends BaseService {
                 .setType("teams")
                 .setName(name)
                 .setLabelKey("#teams-test")
-                .setLabelDefault(
-                        "https://outlook.office.com/webhook/8a021ef7-9845-449a-a0c0-7bf85eab3955@" +
-                                "6aec22ae-2b26-45bd-b17f-d60e89828e89/IncomingWebhook/9bb3b3574ea2" +
-                                "4655b6482116848bf175/6de97827-1fef-4f8c-a8ab-edac7629df89")
+                .setLabelDefault("fix-me-ROX-8145-and-this-should-be-secret")
                 .setUiEndpoint(getStackRoxEndpoint())
                 .build()
     }
