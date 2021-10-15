@@ -13,11 +13,57 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	printerOnce sync.Once
+
+	queryLock sync.Mutex
+	queryCounts = make(map[string]*queryStats)
 )
+
+type queryStats struct {
+	counts int
+	nanos int64
+}
+
+func incQueryCount(query string, t time.Time) {
+	took := time.Since(t)
+	queryLock.Lock()
+	defer queryLock.Unlock()
+	val, ok := queryCounts[query]
+	if !ok {
+		queryCounts[query] = &queryStats{
+			counts: 1,
+			nanos: int64(took),
+		}
+		return
+	}
+	val.counts++
+	val.nanos += int64(took)
+}
+
+func printCounts() {
+	queryLock.Lock()
+	defer queryLock.Unlock()
+	for k, v := range queryCounts {
+		fmt.Printf("%s %d ms avg (%d/%d)\n", k, time.Duration(float64(v.nanos)/float64(v.counts)).Milliseconds(), v.nanos, v.counts)
+	}
+}
+
+func runQueryPrinter() {
+	printerOnce.Do(func() {
+		go func() {
+			t := time.NewTicker(30 * time.Second)
+			for range t.C {
+				printCounts()
+			}
+		}()
+	})
+}
 
 type queryTree struct {
 	elem     searchPkg.PathElem
@@ -349,16 +395,15 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optio
 	if err != nil {
 		return nil, err
 	}
+
+	queryStr := query.String()
+	runQueryPrinter()
 	t := time.Now()
 	defer func() {
-		log.Infof("Took %d milliseconds to run: %s %+v", time.Since(t).Milliseconds(), query, query.Data)
+		incQueryCount(queryStr, t)
 	}()
 
-	if query.String() == "select distinct id from processindicators where processindicators.value ->>'podUid' = $$" {
-		debug.PrintStack()
-	}
-
-	rows, err := db.Query(replaceVars(query.String()), query.Data...)
+	rows, err := db.Query(replaceVars(queryStr), query.Data...)
 	if err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
@@ -385,12 +430,14 @@ func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, option
 		return 0, err
 	}
 
+	queryStr := query.String()
+	runQueryPrinter()
 	t := time.Now()
 	defer func() {
-		log.Infof("Took %d milliseconds to run: %s %+v", time.Since(t).Milliseconds(), query, query.Data)
+		incQueryCount(queryStr, t)
 	}()
 
-	row := db.QueryRow(replaceVars(query.String()), query.Data...)
+	row := db.QueryRow(replaceVars(queryStr), query.Data...)
 	if err := row.Err(); err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
