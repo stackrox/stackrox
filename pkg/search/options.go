@@ -233,6 +233,11 @@ var (
 	// Resource alerts search fields
 	ResourceName = newFieldLabel("Resource")
 	ResourceType = newFieldLabel("Resource Type")
+
+	// Vulnerability Watch Request fields
+	RequestStatus               = newFieldLabel("Request Status")
+	ActiveRequest               = newFieldLabel("Active Request")
+	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
 )
 
 func newFieldLabel(s string) FieldLabel {
