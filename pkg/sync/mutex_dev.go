@@ -69,6 +69,7 @@ type Mutex struct {
 
 // Lock acquires the lock on the mutex.
 func (m *Mutex) Lock() {
+	panicOnTimeout("Mutex.Lock", m.Mutex.Lock, lockTimeout)
 	m.acquireTime = time.Now()
 }
 
@@ -85,14 +86,17 @@ type RWMutex struct {
 
 // RLock acquires a reader lock on the mutex.
 func (m *RWMutex) RLock() {
+	panicOnTimeout("RWMutex.RLock", m.RWMutex.RLock, lockTimeout)
 }
 
 // Lock acquires a writer (exclusive) lock on the mutex.
 func (m *RWMutex) Lock() {
+	panicOnTimeout("RWMutex.Lock", m.RWMutex.Lock, lockTimeout)
 	m.acquireTime = time.Now()
 }
 
 // Unlock releases an acquired writer (exclusive) lock on the mutex.
 func (m *RWMutex) Unlock() {
+	panicIfTooMuchTimeElapsed("RWMutex.Unlock", m.acquireTime, lockTimeout, 1)
 	m.RWMutex.Unlock()
 }

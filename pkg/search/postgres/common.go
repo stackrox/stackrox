@@ -353,6 +353,11 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optio
 	defer func() {
 		log.Infof("Took %d milliseconds to run: %s %+v", time.Since(t).Milliseconds(), query, query.Data)
 	}()
+
+	if query.String() == "select distinct id from processindicators where processindicators.value ->>'podUid' = $$" {
+		debug.PrintStack()
+	}
+
 	rows, err := db.Query(replaceVars(query.String()), query.Data...)
 	if err != nil {
 		debug.PrintStack()
