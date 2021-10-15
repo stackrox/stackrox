@@ -109,6 +109,7 @@ message SensorDeploymentIdentification {
     string app_namespace         = 3;
     string app_namespace_id      = 4;
     string app_serviceaccount_id = 5;
+    string k8s_node_name         = 6;
 }
 
 message Cluster {

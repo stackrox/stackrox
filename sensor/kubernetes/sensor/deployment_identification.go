@@ -68,6 +68,8 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface, out *storage.SensorDeploymentIdentification) error {
 	nsClient := k8sClient.CoreV1().Namespaces()
 
+	out.K8SNodeName = k8sNodeName.Setting()
+
 	var errResult error
 	systemNS, err := k8sClient.CoreV1().Namespaces().Get(ctx, namespaces.KubeSystem, metav1.GetOptions{})
 	if err != nil {

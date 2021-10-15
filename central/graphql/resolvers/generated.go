@@ -1191,6 +1191,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"appNamespaceId: String!",
 		"appServiceaccountId: String!",
 		"defaultNamespaceId: String!",
+		"k8SNodeName: String!",
 		"systemNamespaceId: String!",
 	}))
 	utils.Must(builder.AddType("ServiceAccount", []string{
@@ -10287,6 +10288,11 @@ func (resolver *sensorDeploymentIdentificationResolver) AppServiceaccountId(ctx 
 
 func (resolver *sensorDeploymentIdentificationResolver) DefaultNamespaceId(ctx context.Context) string {
 	value := resolver.data.GetDefaultNamespaceId()
+	return value
+}
+
+func (resolver *sensorDeploymentIdentificationResolver) K8SNodeName(ctx context.Context) string {
+	value := resolver.data.GetK8SNodeName()
 	return value
 }
 
