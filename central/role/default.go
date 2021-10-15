@@ -24,10 +24,16 @@ const (
 
 	// SensorCreator is a role that has the minimal privileges required to create a sensor.
 	SensorCreator = "Sensor Creator"
+
+	// VulnMgmtApprover is a role that has the minimal privileges required to approve vulnerability deferrals or false positive requests.
+	VulnMgmtApprover = "Vulnerability Management Approver"
+
+	// VulnMgmtRequester is a role that has the minimal privileges required to request vulnerability deferrals or false positives.
+	VulnMgmtRequester = "Vulnerability Management Requester"
 )
 
 // DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
-var DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, SensorCreator)
+var DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, SensorCreator, VulnMgmtApprover, VulnMgmtRequester)
 
 // AccessScopeExcludeAll has empty rules and hence excludes all
 // scoped resources. Global resources must be unaffected.

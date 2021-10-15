@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -31,6 +32,13 @@ func Singleton() DataStore {
 
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
+
+		// extend default roles if vuln risk management feature flag is enabled
+		if features.VulnRiskManagement.Enabled() {
+			for r, a := range vulnRiskManagementDefaultRoles {
+				defaultRoles[r] = a
+			}
+		}
 
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(roles))
@@ -76,6 +84,25 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.View(resources.Cluster),
 			permissions.Modify(resources.Cluster),
 			permissions.Modify(resources.ServiceIdentity),
+		},
+	},
+}
+
+var vulnRiskManagementDefaultRoles = map[string]roleAttributes{
+	rolePkg.VulnMgmtApprover: {
+		idSuffix:    "vulnmgmtapprover",
+		description: "For users: use it to provide access to approve vulnerability deferrals or false positive requests",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.VulnerabilityManagementApprovals),
+			permissions.Modify(resources.VulnerabilityManagementApprovals),
+		},
+	},
+	rolePkg.VulnMgmtRequester: {
+		idSuffix:    "vulnmgmtrequester",
+		description: "For users: use it to provide access to request vulnerability deferrals or false positives",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.VulnerabilityManagementRequests),
+			permissions.Modify(resources.VulnerabilityManagementRequests),
 		},
 	},
 }
