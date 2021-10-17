@@ -116,7 +116,8 @@ func newBoolQuery(table string, field *pkgSearch.Field, value string, modifiers 
 	if err != nil {
 		return nil, err
 	}
-	return newStringQuery(table, field, value, modifiers...)
+	// explicitly apply equality check
+	return newStringQuery(table, field, value, pkgSearch.Equality)
 }
 
 func newEnumQuery(table string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
