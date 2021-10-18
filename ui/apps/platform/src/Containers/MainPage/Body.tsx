@@ -17,6 +17,7 @@ import {
     userBasePath,
     systemConfigPath,
     systemHealthPath,
+    systemHealthPathPF,
     vulnManagementPath,
     configManagementPath,
 } from 'routePaths';
@@ -25,6 +26,8 @@ import { useTheme } from 'Containers/ThemeProvider';
 import asyncComponent from 'Components/AsyncComponent';
 import ProtectedRoute from 'Components/ProtectedRoute';
 import ErrorBoundary from 'Containers/ErrorBoundary';
+import { knownBackendFlags } from 'utils/featureFlags';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
@@ -49,10 +52,15 @@ const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConf
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
+const AsyncSystemHealthPagePF = asyncComponent(
+    () => import('Containers/SystemHealth/PatternFly/SystemHealthDashboard')
+);
 
 function Body(): ReactElement {
     const { isDarkMode } = useTheme();
-
+    const isSystemHealthPatternFlyEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_SYSTEM_HEALTH_PF
+    );
     return (
         <div
             className={`flex flex-col h-full w-full relative overflow-auto ${
@@ -85,6 +93,11 @@ function Body(): ReactElement {
                         <ProtectedRoute path={clustersListPath} component={AsyncPFClustersPage} />
                     )}
                     <ProtectedRoute path={systemHealthPath} component={AsyncSystemHealthPage} />
+                    <ProtectedRoute
+                        path={systemHealthPathPF}
+                        component={AsyncSystemHealthPagePF}
+                        featureFlagEnabled={isSystemHealthPatternFlyEnabled}
+                    />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>

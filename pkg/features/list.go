@@ -32,4 +32,7 @@ var (
 
 	// VulnRiskManagement enables the vulnerability risk management workflow that allows accepting risk for vulnerabilities.
 	VulnRiskManagement = registerFeature("Enable Vulnerability Risk Management workflow", "ROX_VULN_RISK_MANAGEMENT", false)
+
+	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
+	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
 )

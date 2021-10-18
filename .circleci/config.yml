@@ -66,7 +66,7 @@ saveGoBuildCache: &saveGoBuildCache
     paths:
       - /home/circleci/.cache/go-build
 
-goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v2-{{ checksum "go.sum" }}'
+goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v3-{{ checksum "go.sum" }}'
 restoreGoModCache: &restoreGoModCache
   restore_cache:
     name: Restore Go module cache
@@ -3428,6 +3428,7 @@ jobs:
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - ROX_VULN_RISK_MANAGEMENT: true
+      - ROX_SYSTEM_HEALTH_PF: true
 
     steps:
       - checkout

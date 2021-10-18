@@ -41,6 +41,7 @@ export const compliancePath = `${mainPath}/:context(compliance)`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
+export const systemHealthPathPF = `${mainPath}/system-health-pf`;
 export const productDocsPath = '/docs/product';
 
 // Vuln Management Paths
