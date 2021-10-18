@@ -290,7 +290,7 @@ func getProtoSecret(secret *v1.Secret) *storage.Secret {
 
 func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) *central.SensorEvent {
 	return &central.SensorEvent{
-		Id:     string(secret.GetId()),
+		Id:     secret.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Secret{
 			Secret: secret,
@@ -298,12 +298,11 @@ func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) 
 	}
 }
 
-// Process processes a secret resource event, and returns the sensor events to emit in response.
+// ProcessEvent processes a secret resource event, and returns the sensor events to emit in response.
 func (*secretDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
 	secret := obj.(*v1.Secret)
 
 	// Filter out service account tokens because we have a service account field.
-	// Also filter out DockerConfigJson/DockerCfgs because we don't really care about them.
 	switch secret.Type {
 	case v1.SecretTypeDockerConfigJson, v1.SecretTypeDockercfg:
 		return getImageIntegrationSensorEvents(secret, action)
