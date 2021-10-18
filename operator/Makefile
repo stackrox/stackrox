@@ -48,11 +48,6 @@ IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
 TEST_NAMESPACE ?= stackrox-operator
 
-# ENABLE_WEBHOOKS determines if webhooks should be set up in manager when running locally.
-# Disabled by default since it requires setting up of custom routing from your k8s API server
-# to your manager process.
-ENABLE_WEBHOOKS ?= false
-
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -203,7 +198,7 @@ test: manifests generate fmt vet ## Run tests.
 
 test-e2e: build install kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
+	$(KUTTL) test
 
 test-e2e-deployed: kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
@@ -223,7 +218,7 @@ stackrox-image-pull-secret: ## Create default image pull secret for StackRox ima
 
 .PHONY: run
 run: manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
-	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) ../scripts/go-run.sh ./main.go
+	../scripts/go-run.sh ./main.go
 
 .PHONY: ensure-rox-main-image-exists
 ensure-rox-main-image-exists:

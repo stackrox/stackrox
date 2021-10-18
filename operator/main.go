@@ -20,13 +20,11 @@ import (
 	"flag"
 	"os"
 
-	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
 	"github.com/stackrox/rox/operator/pkg/client"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -41,24 +39,21 @@ import (
 )
 
 var (
-	setupLog       = ctrl.Log.WithName("setup")
-	scheme         = runtime.NewScheme()
-	enableWebhooks = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+	setupLog = ctrl.Log.WithName("setup")
+	scheme   = runtime.NewScheme()
 )
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(platform.AddToScheme(scheme))
-}
 
-func main() {
-	if err := run(); err != nil {
-		setupLog.Error(err, "fatal error")
+	err := platform.AddToScheme(scheme)
+	if err != nil {
+		setupLog.Error(err, "could not register stackrox platform scheme")
 		os.Exit(1)
 	}
 }
 
-func run() error {
+func main() {
 	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
 
 	var metricsAddr string
@@ -86,39 +81,34 @@ func run() error {
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
 	})
 	if err != nil {
-		return errors.Wrap(err, "unable to create manager")
+		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
 	}
-
-	if !enableWebhooks.BooleanSetting() {
-		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
-	} else {
-		if err = (&platform.Central{}).SetupWebhookWithManager(mgr); err != nil {
-			return errors.Wrap(err, "unable to create Central webhook")
-		}
-	}
-	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
-	//+kubebuilder:scaffold:builder
 
 	// TODO(ROX-7251): make sure that the client we create here is kosher
 	k8sClient := client.NewForConfigOrDie(mgr.GetConfig())
-	if err = centralReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
-		return errors.Wrap(err, "unable to set up Central reconciler")
+	if err := centralReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
+		setupLog.Error(err, "unable to setup central reconciler")
+		os.Exit(1)
 	}
 
-	if err = securedClusterReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
-		return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
+	if err := securedClusterReconciler.RegisterNewReconciler(mgr, k8sClient); err != nil {
+		setupLog.Error(err, "unable to setup secured cluster reconciler")
+		os.Exit(1)
 	}
 
-	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		return errors.Wrap(err, "unable to set up health check")
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up health check")
+		os.Exit(1)
 	}
-	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		return errors.Wrap(err, "unable to set up readiness check")
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
-	if err = mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		return errors.Wrap(err, "problem running manager")
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		setupLog.Error(err, "problem running manager")
+		os.Exit(1)
 	}
-	return nil
 }
