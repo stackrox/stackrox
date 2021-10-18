@@ -71,7 +71,10 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 	return vulnStmt
 }
 
-const createTableQuery = "create table if not exists pods (id varchar primary key, value jsonb)"
+const (
+	createTableQuery = "create table if not exists pods (id varchar primary key, value jsonb)"
+	createIDIndexQuery = "create index pods_id on pods using hash ((id))"
+)
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *sql.DB) Store {
@@ -80,6 +83,11 @@ func New(db *sql.DB) Store {
 	_, err := db.Exec(createTableQuery)
 	if err != nil {
 		panic("error creating table")
+	}
+
+	_, err = db.Exec(createIDIndexQuery)
+	if err != nil {
+		panic("error creating index")
 	}
 
 //

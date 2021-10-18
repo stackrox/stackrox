@@ -261,6 +261,7 @@ func main() {
 
 	go startGRPCServer()
 
+
 	waitForTerminationSignal()
 }
 
@@ -364,6 +365,28 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
+	}
+
+	// Complete hack
+	indexes := []string {
+		`create index deployments_clusterid on deployments using hash ((deployments.value ->>'clusterId'));`,
+
+		`create index processindicators_poduid on processindicators using hash ((processindicators.value ->>'podUid'));`,
+		`create index processindicators_signal_containerid on processindicators using hash ((processindicators.value->'signal' ->>'containerId'));`,
+
+		`create index namespaces_name on namespaces using hash ((namespaces.value ->>'name'));`,
+
+		`create index alerts_policy_id on alerts using hash ((alerts.value->'policy' ->>'id'));`,
+		`create index alerts_deployment_id on alerts using hash ((alerts.value->'deployment' ->>'id'));`,
+
+		`create index processindicators_id on processindicators using hash ((id));`,
+	}
+
+	for _, index := range indexes {
+		_, err := globaldb.GetPostgresDB().Exec(index)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return servicesToRegister

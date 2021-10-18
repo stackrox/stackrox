@@ -3,6 +3,7 @@ package pgsearch
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -125,6 +126,7 @@ func newEnumQuery(table string, field *pkgSearch.Field, value string, queryModif
 	if len(queryModifiers) > 2 {
 		return nil, errors.Errorf("unsupported: more than 2 query modifiers for enum query: %+v", queryModifiers)
 	}
+	var equality bool
 	switch len(queryModifiers) {
 	case 2:
 		if queryModifiers[0] == pkgSearch.Negation && queryModifiers[1] == pkgSearch.Regex {
@@ -153,17 +155,36 @@ func newEnumQuery(table string, field *pkgSearch.Field, value string, queryModif
 			enumValues = enumregistry.GetValuesMatchingRegex(field.FieldPath, re)
 		case pkgSearch.Equality:
 			enumValues = enumregistry.GetExactMatches(field.FieldPath, value)
+			equality = true
 		default:
 			return nil, errors.Errorf("unsupported query modifier for enum query: %v", queryModifiers[0])
 		}
 	case 0:
 		prefix, value := parseNumericPrefix(value)
 		if prefix == "" {
-			prefix = "="
+			equality = true
 		}
 		enumValues = enumregistry.Get(field.FieldPath, value)
 		if len(enumValues) == 0 {
 			return NewFalseQuery(), nil
+		}
+
+		// Equality means no numeric cast required, and could benefit from hash indexes
+		if equality {
+			var queries []string
+			var values []interface{}
+			for _, s := range enumValues {
+				entry, err := newStringQuery(table, field, strconv.Itoa(int(s)), pkgSearch.Equality)
+				if err != nil {
+					return nil, err
+				}
+				queries = append(queries, entry.Query)
+				values = append(values, entry.Values...)
+			}
+			return &QueryEntry{
+				Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
+				Values: values,
+			}, nil
 		}
 
 		var queries []string
