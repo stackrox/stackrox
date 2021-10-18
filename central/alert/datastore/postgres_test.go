@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/protobuf/jsonpb"
 	_ "github.com/lib/pq"
 	alertPGIndex "github.com/stackrox/rox/central/alert/datastore/internal/index/postgres"
 	alertPGStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
@@ -89,6 +90,19 @@ func TestT(t *testing.T) {
 	fmt.Println(alertStore)
 	alertIndex := alertPGIndex.NewIndexer(db)
 	fmt.Println(alertIndex)
+
+	alert, exists, err := alertStore.Get("9d42606c-3177-4e26-9eb5-de760dd96aad")
+	if err != nil {
+		panic(err)
+	}
+	if !exists {
+		panic("no")
+	}
+	s, err := (&jsonpb.Marshaler{}).MarshalToString(alert)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(s)
 
 	////if err := alertStore.Upsert(fixtures.GetAlert()); err != nil {
 	////	panic(err)

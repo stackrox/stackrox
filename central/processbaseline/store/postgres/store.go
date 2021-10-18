@@ -73,7 +73,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 
 const (
 	createTableQuery = "create table if not exists processWhitelists2 (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index processWhitelists2_id on processWhitelists2 using hash ((id))"
+	createIDIndexQuery = "create index if not exists processWhitelists2_id on processWhitelists2 using hash ((id))"
 )
 
 // New returns a new Store instance using the provided sql instance.

@@ -369,17 +369,17 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 
 	// Complete hack
 	indexes := []string {
-		`create index deployments_clusterid on deployments using hash ((deployments.value ->>'clusterId'));`,
+		`create index if not exists deployments_clusterid on deployments using hash ((deployments.value ->>'clusterId'));`,
 
-		`create index processindicators_poduid on processindicators using hash ((processindicators.value ->>'podUid'));`,
-		`create index processindicators_signal_containerid on processindicators using hash ((processindicators.value->'signal' ->>'containerId'));`,
+		`create index if not exists processindicators_poduid on processindicators using hash ((processindicators.value ->>'podUid'));`,
+		`create index if not exists processindicators_signal_containerid on processindicators using hash ((processindicators.value->'signal' ->>'containerId'));`,
 
-		`create index namespaces_name on namespaces using hash ((namespaces.value ->>'name'));`,
+		`create index if not exists namespaces_name on namespaces using hash ((namespaces.value ->>'name'));`,
 
-		`create index alerts_policy_id on alerts using hash ((alerts.value->'policy' ->>'id'));`,
-		`create index alerts_deployment_id on alerts using hash ((alerts.value->'deployment' ->>'id'));`,
+		`create index if not exists alerts_policy_id on alerts using hash ((alerts.value->'policy' ->>'id'));`,
+		`create index if not exists alerts_deployment_id on alerts using hash ((alerts.value->'deployment' ->>'id'));`,
 
-		`create index processindicators_id on processindicators using hash ((id));`,
+		`create index if not exists processindicators_id on processindicators using hash ((id));`,
 	}
 
 	for _, index := range indexes {
