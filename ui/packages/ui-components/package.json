@@ -48,7 +48,7 @@
         "lodash.get": "^4.4.2",
         "react-feather": "^2.0.9",
         "tippy.js": "^6.3.0",
-        "yup": "^0.32.9"
+        "yup": "^0.32.11"
     },
     "devDependencies": {
         "@babel/core": "7.12.3",
