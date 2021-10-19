@@ -231,35 +231,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainersByPod(ctx context.Context, pod *storage.Pod) error {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	mustConjunction := &v1.ConjunctionQuery{
-		Queries: []*v1.Query{
-			pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, pod.GetId()).ProtoQuery(),
-		},
-	}
-
-	currentContainerIDs := containerIdsByPod(pod)
-	queries := make([]*v1.Query, 0, len(currentContainerIDs))
-	for _, containerID := range currentContainerIDs {
-		queries = append(queries, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ContainerID, containerID).ProtoQuery())
-	}
-
-	mustNotDisjunction := &v1.DisjunctionQuery{
-		Queries: queries,
-	}
-
-	booleanQuery := pkgSearch.NewBooleanQuery(mustConjunction, mustNotDisjunction)
-
-	results, err := ds.Search(ctx, booleanQuery)
-	if err != nil {
-		return err
-	}
-	return ds.removeMatchingIndicators(results)
+	return nil
 }
 
 func (ds *datastoreImpl) prunePeriodically() {
