@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"runtime/debug"
+	"sort"
 	"strings"
 	"time"
 
@@ -29,6 +30,7 @@ var (
 )
 
 type queryStats struct {
+	query string
 	counts int
 	nanos  int64
 }
@@ -40,6 +42,7 @@ func incQueryCount(query string, t time.Time) {
 	val, ok := queryCounts[query]
 	if !ok {
 		queryCounts[query] = &queryStats{
+			query: query,
 			counts: 1,
 			nanos:  int64(took),
 		}
@@ -52,8 +55,16 @@ func incQueryCount(query string, t time.Time) {
 func printCounts() {
 	queryLock.Lock()
 	defer queryLock.Unlock()
-	for k, v := range queryCounts {
-		fmt.Printf("%s %d ms avg (%d/%d)\n", k, time.Duration(float64(v.nanos)/float64(v.counts)).Milliseconds(), v.nanos, v.counts)
+
+	var stats []*queryStats
+	for _, v := range queryCounts {
+		stats = append(stats, v)
+	}
+	sort.Slice(stats, func(i, j int) bool {
+		return stats[i].counts > stats[j].counts
+	})
+	for _, stat := range stats {
+		fmt.Printf("%s %d ms avg (%d/%d)\n", stat.query, time.Duration(float64(stat.nanos)/float64(stat.counts)).Milliseconds(), stat.nanos, stat.counts)
 	}
 }
 
