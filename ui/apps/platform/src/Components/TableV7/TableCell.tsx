@@ -10,8 +10,6 @@ export type TableCellProps = {
 };
 
 export function TableCell({ cell, colorStyles, isSticky = false }: TableCellProps): ReactElement {
-    const { key } = cell.getCellProps();
-
     const isSubRowExpanderCell = !cell.row.isGrouped && isExpanderCell(cell);
     const { bgColor, borderColor } = colorStyles;
 
@@ -27,7 +25,7 @@ export function TableCell({ cell, colorStyles, isSticky = false }: TableCellProp
     }
 
     return (
-        <td key={key} className={className} data-testid="data-cell">
+        <td className={className} data-testid="data-cell">
             {cell.render('Cell')}
         </td>
     );
