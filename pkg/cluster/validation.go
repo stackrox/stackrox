@@ -27,10 +27,13 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		if err != nil {
 			errorList.AddError(errors.Wrapf(err, "invalid collector image '%s'", cluster.GetCollectorImage()))
 		}
-		namedTagged, ok := ref.(reference.NamedTagged)
-		if ok {
-			errorList.AddError(fmt.Errorf("collector image may not specify a tag.  Please "+
-				"remove tag '%s' to continue", namedTagged.Tag()))
+
+		if cluster.GetHelmConfig() == nil {
+			namedTagged, ok := ref.(reference.NamedTagged)
+			if ok {
+				errorList.AddStringf("collector image may not specify a tag.  Please "+
+					"remove tag '%s' to continue", namedTagged.Tag())
+			}
 		}
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
