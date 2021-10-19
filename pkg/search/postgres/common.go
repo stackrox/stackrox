@@ -156,6 +156,18 @@ func printTree(t *queryTree, indent string) {
 	}
 }
 
+func needsDistinct(t *queryTree) bool {
+	for _, childTree := range t.children {
+		if childTree.elem.Slice && len(childTree.children) != 0 {
+			return true
+		}
+		if needsDistinct(childTree) {
+			return true
+		}
+	}
+	return false
+}
+
 func createFromClauseRecursive(t *queryTree, parent string) []string {
 	var results []string
 	if parent == "" {
@@ -222,10 +234,15 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 	populatePathRecursive(tree, q, optionsMap)
 	fromClause := createFROMClause(tree)
 
+	var distinct string
+	if needsDistinct(tree) {
+		distinct = "distinct"
+	}
+
 	// Initial select, need to support highlights as well
-	selectClause := "select distinct id"
+	selectClause := fmt.Sprintf("select %s id", distinct)
 	if count {
-		selectClause = "select count(distinct id)"
+		selectClause = fmt.Sprintf("select count(%s id)", distinct)
 	}
 
 	// Building the where clause is the hardest part
