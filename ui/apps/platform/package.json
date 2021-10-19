@@ -91,7 +91,7 @@
         "tippy.js": "^6.3.0",
         "typeface-open-sans": "^1.1.13",
         "typeface-open-sans-condensed": "^1.1.13",
-        "use-deep-compare-effect": "^1.6.1",
+        "use-deep-compare-effect": "^1.8.1",
         "yup": "^0.32.11"
     },
     "resolutions": {
