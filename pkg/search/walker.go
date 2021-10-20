@@ -9,10 +9,13 @@ import (
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	registeredPaths = make(map[v1.SearchCategory]map[string][]PathElem)
+
+	printed = set.NewStringSet()
 )
 
 func registerCategoryToTablePath(category v1.SearchCategory, table string, path []PathElem) {
@@ -45,6 +48,7 @@ func deepCopyPathElems(o []PathElem) []PathElem {
 }
 
 type searchWalker struct {
+	print bool
 	prefix   string
 	category v1.SearchCategory
 	fields   map[FieldLabel]*Field
@@ -61,11 +65,19 @@ func (s *searchWalker) elemsToPath(elems []PathElem) string {
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
-	sw := searchWalker{
+	walker := searchWalker{
+		print: printed.Add(prefix),
 		prefix:   prefix,
 		category: category,
 		fields:   make(map[FieldLabel]*Field),
 	}
+	sw := walker
+
+	if walker.print {
+		fmt.Println()
+		fmt.Println(prefix)
+	}
+
 	var pathElems []PathElem
 	sw.walkRecursive(prefix, pathElems, reflect.TypeOf(obj))
 	return OptionsMapFromMap(category, sw.fields)
@@ -113,6 +125,16 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 	}
 }
 
+func spaces (pathElems []PathElem) string {
+	var spaces string
+	for _, e := range pathElems {
+		if e.Slice {
+			spaces += "  "
+		}
+	}
+	return spaces
+}
+
 // handleStruct takes in a struct object and properly handles all of the fields
 func (s *searchWalker) handleStruct(prefix string, parentElems []PathElem, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
@@ -150,6 +172,18 @@ func (s *searchWalker) handleStruct(prefix string, parentElems []PathElem, origi
 			Slice:     field.Type.Kind() == reflect.Slice,
 			JSONField: jsonTag,
 		})
+		if s.print {
+			if field.Type.Kind() == reflect.Slice {
+				switch field.Type.Elem().Kind() {
+				case reflect.Struct:
+					fmt.Println(spaces(pathElems), field.Name)
+				case reflect.Ptr:
+					if field.Type.Elem().Elem().Kind() == reflect.Struct {
+						fmt.Println(spaces(pathElems), field.Name)
+					}
+				}
+			}
+		}
 
 		postgresTag := field.Tag.Get("postgres")
 		if strings.HasPrefix(postgresTag, "fk=") {
