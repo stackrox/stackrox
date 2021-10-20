@@ -35,4 +35,7 @@ var (
 
 	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
 	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
+
+	// PoliciesPatternFly enables the PatternFly version of Policies. (used in the front-end app only)
+	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", false)
 )

@@ -11,6 +11,7 @@ import {
     clustersListPath,
     integrationsPath,
     policiesPath,
+    policiesPathPatternFly,
     riskPath,
     apidocsPath,
     accessControlPathV2,
@@ -42,6 +43,9 @@ const AsyncViolationsPage = asyncComponent(
 );
 
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
+const AsyncPoliciesPagePatternFly = asyncComponent(
+    () => import('Containers/Policies/PatternFly/PoliciesPage')
+);
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPageV2 = asyncComponent(
@@ -61,6 +65,9 @@ function Body(): ReactElement {
     const isSystemHealthPatternFlyEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
+    const isPoliciesPatternFlyEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_POLICIES_PATTERNFLY
+    );
     return (
         <div
             className={`flex flex-col h-full w-full relative overflow-auto ${
@@ -75,6 +82,11 @@ function Body(): ReactElement {
                     <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
                     <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />
                     <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
+                    <ProtectedRoute
+                        path={policiesPathPatternFly}
+                        component={AsyncPoliciesPagePatternFly}
+                        featureFlagEnabled={isPoliciesPatternFlyEnabled}
+                    />
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
                     <ProtectedRoute
                         path={accessControlPathV2}
