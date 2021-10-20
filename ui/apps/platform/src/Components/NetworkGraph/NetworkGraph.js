@@ -673,6 +673,7 @@ const NetworkGraph = ({
         CY.nodes(`.deployment`).ungrabify();
     }
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
     useEffect(runLayout, [
@@ -684,6 +685,7 @@ const NetworkGraph = ({
         match.params.deploymentId,
         simulatedBaselines,
     ]);
+    /* eslint-enable react-hooks/exhaustive-deps */
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
 
