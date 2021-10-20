@@ -58,27 +58,24 @@ func (VulnerabilityState) EnumDescriptor() ([]byte, []int) {
 type RequestStatus int32
 
 const (
-	RequestStatus_NOT_KNOWN RequestStatus = 0
-	// Indicates that the request has not been fulfilled (/forwarded to an approval workflow, if any).
-	RequestStatus_PENDING RequestStatus = 1
+	// Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
+	RequestStatus_PENDING RequestStatus = 0
 	// Indicates that the request has been approved by the approver.
-	RequestStatus_APPROVED RequestStatus = 2
+	RequestStatus_APPROVED RequestStatus = 1
 	// Indicates that the request has been denied by the approver.
-	RequestStatus_DENIED RequestStatus = 3
+	RequestStatus_DENIED RequestStatus = 2
 )
 
 var RequestStatus_name = map[int32]string{
-	0: "NOT_KNOWN",
-	1: "PENDING",
-	2: "APPROVED",
-	3: "DENIED",
+	0: "PENDING",
+	1: "APPROVED",
+	2: "DENIED",
 }
 
 var RequestStatus_value = map[string]int32{
-	"NOT_KNOWN": 0,
-	"PENDING":   1,
-	"APPROVED":  2,
-	"DENIED":    3,
+	"PENDING":  0,
+	"APPROVED": 1,
+	"DENIED":   2,
 }
 
 func (x RequestStatus) String() string {
@@ -90,13 +87,13 @@ func (RequestStatus) EnumDescriptor() ([]byte, []int) {
 }
 
 type RequestComment struct {
-	Id                   string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Message              string               `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	User                 *RequestComment_User `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
-	CreatedAt            *types.Timestamp     `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Message              string           `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	User                 *SlimUser        `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
+	CreatedAt            *types.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *RequestComment) Reset()         { *m = RequestComment{} }
@@ -146,7 +143,7 @@ func (m *RequestComment) GetMessage() string {
 	return ""
 }
 
-func (m *RequestComment) GetUser() *RequestComment_User {
+func (m *RequestComment) GetUser() *SlimUser {
 	if m != nil {
 		return m.User
 	}
@@ -172,82 +169,6 @@ func (m *RequestComment) Clone() *RequestComment {
 
 	cloned.User = m.User.Clone()
 	cloned.CreatedAt = m.CreatedAt.Clone()
-	return cloned
-}
-
-type RequestComment_User struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Email                string   `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *RequestComment_User) Reset()         { *m = RequestComment_User{} }
-func (m *RequestComment_User) String() string { return proto.CompactTextString(m) }
-func (*RequestComment_User) ProtoMessage()    {}
-func (*RequestComment_User) Descriptor() ([]byte, []int) {
-	return fileDescriptor_878c2c8004fa26b3, []int{0, 0}
-}
-func (m *RequestComment_User) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RequestComment_User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_RequestComment_User.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *RequestComment_User) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RequestComment_User.Merge(m, src)
-}
-func (m *RequestComment_User) XXX_Size() int {
-	return m.Size()
-}
-func (m *RequestComment_User) XXX_DiscardUnknown() {
-	xxx_messageInfo_RequestComment_User.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RequestComment_User proto.InternalMessageInfo
-
-func (m *RequestComment_User) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
-func (m *RequestComment_User) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *RequestComment_User) GetEmail() string {
-	if m != nil {
-		return m.Email
-	}
-	return ""
-}
-
-func (m *RequestComment_User) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *RequestComment_User) Clone() *RequestComment_User {
-	if m == nil {
-		return nil
-	}
-	cloned := new(RequestComment_User)
-	*cloned = *m
-
 	return cloned
 }
 
@@ -428,9 +349,8 @@ func (m *FalsePositiveRequest) Clone() *FalsePositiveRequest {
 }
 
 // Next available tag: 21
-// UnwatchVulnerabilityRequest encapsulates the request, deferral request and false-positive request,
-// to unwatch vulnerabilities in the environment.
-type UnwatchVulnerabilityRequest struct {
+// VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
+type VulnerabilityRequest struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Indicates the state the vulnerabilities will move to once the request is complete.
 	TargetState VulnerabilityState `protobuf:"varint,2,opt,name=target_state,json=targetState,proto3,enum=storage.VulnerabilityState" json:"target_state,omitempty" search:"Requested Vulnerability State"`
@@ -438,41 +358,41 @@ type UnwatchVulnerabilityRequest struct {
 	Status RequestStatus `protobuf:"varint,3,opt,name=status,proto3,enum=storage.RequestStatus" json:"status,omitempty" search:"Request Status"`
 	// Indicates if this request is active (in effect) or if it is a historical request that is no longer in effect
 	// due to deferral expiry, cancellation, or restarting observation.
-	Active          bool                               `protobuf:"varint,4,opt,name=active,proto3" json:"active,omitempty" search:"Active Request"`
-	RequestorUserId string                             `protobuf:"bytes,5,opt,name=requestor_user_id,json=requestorUserId,proto3" json:"requestor_user_id,omitempty"`
-	ApproverUserIds []string                           `protobuf:"bytes,6,rep,name=approver_user_ids,json=approverUserIds,proto3" json:"approver_user_ids,omitempty"`
-	CreatedAt       *types.Timestamp                   `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastUpdated     *types.Timestamp                   `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	Comments        []*RequestComment                  `protobuf:"bytes,9,rep,name=comments,proto3" json:"comments,omitempty"`
-	Scope           *UnwatchVulnerabilityRequest_Scope `protobuf:"bytes,10,opt,name=scope,proto3" json:"scope,omitempty"`
+	Active      bool                        `protobuf:"varint,4,opt,name=active,proto3" json:"active,omitempty" search:"Active Request"`
+	Requestor   *SlimUser                   `protobuf:"bytes,5,opt,name=requestor,proto3" json:"requestor,omitempty"`
+	Approvers   []*SlimUser                 `protobuf:"bytes,6,rep,name=approvers,proto3" json:"approvers,omitempty"`
+	CreatedAt   *types.Timestamp            `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"`
+	LastUpdated *types.Timestamp            `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	Comments    []*RequestComment           `protobuf:"bytes,9,rep,name=comments,proto3" json:"comments,omitempty"`
+	Scope       *VulnerabilityRequest_Scope `protobuf:"bytes,10,opt,name=scope,proto3" json:"scope,omitempty"`
 	// 11 to 15 reserved for the request type oneof.
 	//
 	// Types that are valid to be assigned to Req:
-	//	*UnwatchVulnerabilityRequest_DeferralReq
-	//	*UnwatchVulnerabilityRequest_FpRequest
-	Req isUnwatchVulnerabilityRequest_Req `protobuf_oneof:"req"`
+	//	*VulnerabilityRequest_DeferralReq
+	//	*VulnerabilityRequest_FpRequest
+	Req isVulnerabilityRequest_Req `protobuf_oneof:"req"`
 	// 16 to 20 reserved for entities oneof.
 	//
 	// Types that are valid to be assigned to Entities:
-	//	*UnwatchVulnerabilityRequest_Cves
-	Entities             isUnwatchVulnerabilityRequest_Entities `protobuf_oneof:"entities"`
-	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
-	XXX_unrecognized     []byte                                 `json:"-"`
-	XXX_sizecache        int32                                  `json:"-"`
+	//	*VulnerabilityRequest_Cves
+	Entities             isVulnerabilityRequest_Entities `protobuf_oneof:"entities"`
+	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
+	XXX_unrecognized     []byte                          `json:"-"`
+	XXX_sizecache        int32                           `json:"-"`
 }
 
-func (m *UnwatchVulnerabilityRequest) Reset()         { *m = UnwatchVulnerabilityRequest{} }
-func (m *UnwatchVulnerabilityRequest) String() string { return proto.CompactTextString(m) }
-func (*UnwatchVulnerabilityRequest) ProtoMessage()    {}
-func (*UnwatchVulnerabilityRequest) Descriptor() ([]byte, []int) {
+func (m *VulnerabilityRequest) Reset()         { *m = VulnerabilityRequest{} }
+func (m *VulnerabilityRequest) String() string { return proto.CompactTextString(m) }
+func (*VulnerabilityRequest) ProtoMessage()    {}
+func (*VulnerabilityRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{3}
 }
-func (m *UnwatchVulnerabilityRequest) XXX_Unmarshal(b []byte) error {
+func (m *VulnerabilityRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UnwatchVulnerabilityRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UnwatchVulnerabilityRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VulnerabilityRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -482,201 +402,204 @@ func (m *UnwatchVulnerabilityRequest) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-func (m *UnwatchVulnerabilityRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UnwatchVulnerabilityRequest.Merge(m, src)
+func (m *VulnerabilityRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityRequest.Merge(m, src)
 }
-func (m *UnwatchVulnerabilityRequest) XXX_Size() int {
+func (m *VulnerabilityRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *UnwatchVulnerabilityRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_UnwatchVulnerabilityRequest.DiscardUnknown(m)
+func (m *VulnerabilityRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UnwatchVulnerabilityRequest proto.InternalMessageInfo
+var xxx_messageInfo_VulnerabilityRequest proto.InternalMessageInfo
 
-type isUnwatchVulnerabilityRequest_Req interface {
-	isUnwatchVulnerabilityRequest_Req()
+type isVulnerabilityRequest_Req interface {
+	isVulnerabilityRequest_Req()
 	MarshalTo([]byte) (int, error)
 	Size() int
-	Clone() isUnwatchVulnerabilityRequest_Req
+	Clone() isVulnerabilityRequest_Req
 }
-type isUnwatchVulnerabilityRequest_Entities interface {
-	isUnwatchVulnerabilityRequest_Entities()
+type isVulnerabilityRequest_Entities interface {
+	isVulnerabilityRequest_Entities()
 	MarshalTo([]byte) (int, error)
 	Size() int
-	Clone() isUnwatchVulnerabilityRequest_Entities
+	Clone() isVulnerabilityRequest_Entities
 }
 
-type UnwatchVulnerabilityRequest_DeferralReq struct {
+type VulnerabilityRequest_DeferralReq struct {
 	DeferralReq *DeferralRequest `protobuf:"bytes,11,opt,name=deferral_req,json=deferralReq,proto3,oneof" json:"deferral_req,omitempty"`
 }
-type UnwatchVulnerabilityRequest_FpRequest struct {
+type VulnerabilityRequest_FpRequest struct {
 	FpRequest *FalsePositiveRequest `protobuf:"bytes,12,opt,name=fp_request,json=fpRequest,proto3,oneof" json:"fp_request,omitempty"`
 }
-type UnwatchVulnerabilityRequest_Cves struct {
-	Cves *UnwatchVulnerabilityRequest_CVEs `protobuf:"bytes,16,opt,name=cves,proto3,oneof" json:"cves,omitempty"`
+type VulnerabilityRequest_Cves struct {
+	Cves *VulnerabilityRequest_CVEs `protobuf:"bytes,16,opt,name=cves,proto3,oneof" json:"cves,omitempty"`
 }
 
-func (*UnwatchVulnerabilityRequest_DeferralReq) isUnwatchVulnerabilityRequest_Req() {}
-func (m *UnwatchVulnerabilityRequest_DeferralReq) Clone() isUnwatchVulnerabilityRequest_Req {
+func (*VulnerabilityRequest_DeferralReq) isVulnerabilityRequest_Req() {}
+func (m *VulnerabilityRequest_DeferralReq) Clone() isVulnerabilityRequest_Req {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_DeferralReq)
+	cloned := new(VulnerabilityRequest_DeferralReq)
 	*cloned = *m
 
 	cloned.DeferralReq = m.DeferralReq.Clone()
 	return cloned
 }
-func (*UnwatchVulnerabilityRequest_FpRequest) isUnwatchVulnerabilityRequest_Req() {}
-func (m *UnwatchVulnerabilityRequest_FpRequest) Clone() isUnwatchVulnerabilityRequest_Req {
+func (*VulnerabilityRequest_FpRequest) isVulnerabilityRequest_Req() {}
+func (m *VulnerabilityRequest_FpRequest) Clone() isVulnerabilityRequest_Req {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_FpRequest)
+	cloned := new(VulnerabilityRequest_FpRequest)
 	*cloned = *m
 
 	cloned.FpRequest = m.FpRequest.Clone()
 	return cloned
 }
-func (*UnwatchVulnerabilityRequest_Cves) isUnwatchVulnerabilityRequest_Entities() {}
-func (m *UnwatchVulnerabilityRequest_Cves) Clone() isUnwatchVulnerabilityRequest_Entities {
+func (*VulnerabilityRequest_Cves) isVulnerabilityRequest_Entities() {}
+func (m *VulnerabilityRequest_Cves) Clone() isVulnerabilityRequest_Entities {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_Cves)
+	cloned := new(VulnerabilityRequest_Cves)
 	*cloned = *m
 
 	cloned.Cves = m.Cves.Clone()
 	return cloned
 }
 
-func (m *UnwatchVulnerabilityRequest) GetReq() isUnwatchVulnerabilityRequest_Req {
+func (m *VulnerabilityRequest) GetReq() isVulnerabilityRequest_Req {
 	if m != nil {
 		return m.Req
 	}
 	return nil
 }
-func (m *UnwatchVulnerabilityRequest) GetEntities() isUnwatchVulnerabilityRequest_Entities {
+func (m *VulnerabilityRequest) GetEntities() isVulnerabilityRequest_Entities {
 	if m != nil {
 		return m.Entities
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest) GetId() string {
+func (m *VulnerabilityRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *UnwatchVulnerabilityRequest) GetTargetState() VulnerabilityState {
+func (m *VulnerabilityRequest) GetTargetState() VulnerabilityState {
 	if m != nil {
 		return m.TargetState
 	}
 	return VulnerabilityState_OBSERVED
 }
 
-func (m *UnwatchVulnerabilityRequest) GetStatus() RequestStatus {
+func (m *VulnerabilityRequest) GetStatus() RequestStatus {
 	if m != nil {
 		return m.Status
 	}
-	return RequestStatus_NOT_KNOWN
+	return RequestStatus_PENDING
 }
 
-func (m *UnwatchVulnerabilityRequest) GetActive() bool {
+func (m *VulnerabilityRequest) GetActive() bool {
 	if m != nil {
 		return m.Active
 	}
 	return false
 }
 
-func (m *UnwatchVulnerabilityRequest) GetRequestorUserId() string {
+func (m *VulnerabilityRequest) GetRequestor() *SlimUser {
 	if m != nil {
-		return m.RequestorUserId
-	}
-	return ""
-}
-
-func (m *UnwatchVulnerabilityRequest) GetApproverUserIds() []string {
-	if m != nil {
-		return m.ApproverUserIds
+		return m.Requestor
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest) GetCreatedAt() *types.Timestamp {
+func (m *VulnerabilityRequest) GetApprovers() []*SlimUser {
+	if m != nil {
+		return m.Approvers
+	}
+	return nil
+}
+
+func (m *VulnerabilityRequest) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest) GetLastUpdated() *types.Timestamp {
+func (m *VulnerabilityRequest) GetLastUpdated() *types.Timestamp {
 	if m != nil {
 		return m.LastUpdated
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest) GetComments() []*RequestComment {
+func (m *VulnerabilityRequest) GetComments() []*RequestComment {
 	if m != nil {
 		return m.Comments
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest) GetScope() *UnwatchVulnerabilityRequest_Scope {
+func (m *VulnerabilityRequest) GetScope() *VulnerabilityRequest_Scope {
 	if m != nil {
 		return m.Scope
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest) GetDeferralReq() *DeferralRequest {
-	if x, ok := m.GetReq().(*UnwatchVulnerabilityRequest_DeferralReq); ok {
+func (m *VulnerabilityRequest) GetDeferralReq() *DeferralRequest {
+	if x, ok := m.GetReq().(*VulnerabilityRequest_DeferralReq); ok {
 		return x.DeferralReq
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest) GetFpRequest() *FalsePositiveRequest {
-	if x, ok := m.GetReq().(*UnwatchVulnerabilityRequest_FpRequest); ok {
+func (m *VulnerabilityRequest) GetFpRequest() *FalsePositiveRequest {
+	if x, ok := m.GetReq().(*VulnerabilityRequest_FpRequest); ok {
 		return x.FpRequest
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest) GetCves() *UnwatchVulnerabilityRequest_CVEs {
-	if x, ok := m.GetEntities().(*UnwatchVulnerabilityRequest_Cves); ok {
+func (m *VulnerabilityRequest) GetCves() *VulnerabilityRequest_CVEs {
+	if x, ok := m.GetEntities().(*VulnerabilityRequest_Cves); ok {
 		return x.Cves
 	}
 	return nil
 }
 
 // XXX_OneofWrappers is for the internal use of the proto package.
-func (*UnwatchVulnerabilityRequest) XXX_OneofWrappers() []interface{} {
+func (*VulnerabilityRequest) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*UnwatchVulnerabilityRequest_DeferralReq)(nil),
-		(*UnwatchVulnerabilityRequest_FpRequest)(nil),
-		(*UnwatchVulnerabilityRequest_Cves)(nil),
+		(*VulnerabilityRequest_DeferralReq)(nil),
+		(*VulnerabilityRequest_FpRequest)(nil),
+		(*VulnerabilityRequest_Cves)(nil),
 	}
 }
 
-func (m *UnwatchVulnerabilityRequest) MessageClone() proto.Message {
+func (m *VulnerabilityRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *UnwatchVulnerabilityRequest) Clone() *UnwatchVulnerabilityRequest {
+func (m *VulnerabilityRequest) Clone() *VulnerabilityRequest {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest)
+	cloned := new(VulnerabilityRequest)
 	*cloned = *m
 
-	if m.ApproverUserIds != nil {
-		cloned.ApproverUserIds = make([]string, len(m.ApproverUserIds))
-		copy(cloned.ApproverUserIds, m.ApproverUserIds)
+	cloned.Requestor = m.Requestor.Clone()
+	if m.Approvers != nil {
+		cloned.Approvers = make([]*SlimUser, len(m.Approvers))
+		for idx, v := range m.Approvers {
+			cloned.Approvers[idx] = v.Clone()
+		}
 	}
 	cloned.CreatedAt = m.CreatedAt.Clone()
 	cloned.LastUpdated = m.LastUpdated.Clone()
@@ -696,25 +619,25 @@ func (m *UnwatchVulnerabilityRequest) Clone() *UnwatchVulnerabilityRequest {
 	return cloned
 }
 
-type UnwatchVulnerabilityRequest_CVEs struct {
+type VulnerabilityRequest_CVEs struct {
 	Ids                  []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty" search:"CVE"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UnwatchVulnerabilityRequest_CVEs) Reset()         { *m = UnwatchVulnerabilityRequest_CVEs{} }
-func (m *UnwatchVulnerabilityRequest_CVEs) String() string { return proto.CompactTextString(m) }
-func (*UnwatchVulnerabilityRequest_CVEs) ProtoMessage()    {}
-func (*UnwatchVulnerabilityRequest_CVEs) Descriptor() ([]byte, []int) {
+func (m *VulnerabilityRequest_CVEs) Reset()         { *m = VulnerabilityRequest_CVEs{} }
+func (m *VulnerabilityRequest_CVEs) String() string { return proto.CompactTextString(m) }
+func (*VulnerabilityRequest_CVEs) ProtoMessage()    {}
+func (*VulnerabilityRequest_CVEs) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{3, 0}
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) XXX_Unmarshal(b []byte) error {
+func (m *VulnerabilityRequest_CVEs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityRequest_CVEs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UnwatchVulnerabilityRequest_CVEs.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VulnerabilityRequest_CVEs.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -724,33 +647,33 @@ func (m *UnwatchVulnerabilityRequest_CVEs) XXX_Marshal(b []byte, deterministic b
 		return b[:n], nil
 	}
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UnwatchVulnerabilityRequest_CVEs.Merge(m, src)
+func (m *VulnerabilityRequest_CVEs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityRequest_CVEs.Merge(m, src)
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) XXX_Size() int {
+func (m *VulnerabilityRequest_CVEs) XXX_Size() int {
 	return m.Size()
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) XXX_DiscardUnknown() {
-	xxx_messageInfo_UnwatchVulnerabilityRequest_CVEs.DiscardUnknown(m)
+func (m *VulnerabilityRequest_CVEs) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityRequest_CVEs.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UnwatchVulnerabilityRequest_CVEs proto.InternalMessageInfo
+var xxx_messageInfo_VulnerabilityRequest_CVEs proto.InternalMessageInfo
 
-func (m *UnwatchVulnerabilityRequest_CVEs) GetIds() []string {
+func (m *VulnerabilityRequest_CVEs) GetIds() []string {
 	if m != nil {
 		return m.Ids
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest_CVEs) MessageClone() proto.Message {
+func (m *VulnerabilityRequest_CVEs) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) Clone() *UnwatchVulnerabilityRequest_CVEs {
+func (m *VulnerabilityRequest_CVEs) Clone() *VulnerabilityRequest_CVEs {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_CVEs)
+	cloned := new(VulnerabilityRequest_CVEs)
 	*cloned = *m
 
 	if m.Ids != nil {
@@ -760,28 +683,28 @@ func (m *UnwatchVulnerabilityRequest_CVEs) Clone() *UnwatchVulnerabilityRequest_
 	return cloned
 }
 
-type UnwatchVulnerabilityRequest_Scope struct {
+type VulnerabilityRequest_Scope struct {
 	// Types that are valid to be assigned to Info:
-	//	*UnwatchVulnerabilityRequest_Scope_ImageScope
-	//	*UnwatchVulnerabilityRequest_Scope_GlobalScope
-	Info                 isUnwatchVulnerabilityRequest_Scope_Info `protobuf_oneof:"info"`
-	XXX_NoUnkeyedLiteral struct{}                                 `json:"-"`
-	XXX_unrecognized     []byte                                   `json:"-"`
-	XXX_sizecache        int32                                    `json:"-"`
+	//	*VulnerabilityRequest_Scope_ImageScope
+	//	*VulnerabilityRequest_Scope_GlobalScope
+	Info                 isVulnerabilityRequest_Scope_Info `protobuf_oneof:"info"`
+	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
+	XXX_unrecognized     []byte                            `json:"-"`
+	XXX_sizecache        int32                             `json:"-"`
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) Reset()         { *m = UnwatchVulnerabilityRequest_Scope{} }
-func (m *UnwatchVulnerabilityRequest_Scope) String() string { return proto.CompactTextString(m) }
-func (*UnwatchVulnerabilityRequest_Scope) ProtoMessage()    {}
-func (*UnwatchVulnerabilityRequest_Scope) Descriptor() ([]byte, []int) {
+func (m *VulnerabilityRequest_Scope) Reset()         { *m = VulnerabilityRequest_Scope{} }
+func (m *VulnerabilityRequest_Scope) String() string { return proto.CompactTextString(m) }
+func (*VulnerabilityRequest_Scope) ProtoMessage()    {}
+func (*VulnerabilityRequest_Scope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{3, 1}
 }
-func (m *UnwatchVulnerabilityRequest_Scope) XXX_Unmarshal(b []byte) error {
+func (m *VulnerabilityRequest_Scope) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UnwatchVulnerabilityRequest_Scope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityRequest_Scope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UnwatchVulnerabilityRequest_Scope.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VulnerabilityRequest_Scope.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -791,92 +714,92 @@ func (m *UnwatchVulnerabilityRequest_Scope) XXX_Marshal(b []byte, deterministic 
 		return b[:n], nil
 	}
 }
-func (m *UnwatchVulnerabilityRequest_Scope) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UnwatchVulnerabilityRequest_Scope.Merge(m, src)
+func (m *VulnerabilityRequest_Scope) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityRequest_Scope.Merge(m, src)
 }
-func (m *UnwatchVulnerabilityRequest_Scope) XXX_Size() int {
+func (m *VulnerabilityRequest_Scope) XXX_Size() int {
 	return m.Size()
 }
-func (m *UnwatchVulnerabilityRequest_Scope) XXX_DiscardUnknown() {
-	xxx_messageInfo_UnwatchVulnerabilityRequest_Scope.DiscardUnknown(m)
+func (m *VulnerabilityRequest_Scope) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityRequest_Scope.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UnwatchVulnerabilityRequest_Scope proto.InternalMessageInfo
+var xxx_messageInfo_VulnerabilityRequest_Scope proto.InternalMessageInfo
 
-type isUnwatchVulnerabilityRequest_Scope_Info interface {
-	isUnwatchVulnerabilityRequest_Scope_Info()
+type isVulnerabilityRequest_Scope_Info interface {
+	isVulnerabilityRequest_Scope_Info()
 	MarshalTo([]byte) (int, error)
 	Size() int
-	Clone() isUnwatchVulnerabilityRequest_Scope_Info
+	Clone() isVulnerabilityRequest_Scope_Info
 }
 
-type UnwatchVulnerabilityRequest_Scope_ImageScope struct {
-	ImageScope *UnwatchVulnerabilityRequest_Scope_Image `protobuf:"bytes,1,opt,name=image_scope,json=imageScope,proto3,oneof" json:"image_scope,omitempty"`
+type VulnerabilityRequest_Scope_ImageScope struct {
+	ImageScope *VulnerabilityRequest_Scope_Image `protobuf:"bytes,1,opt,name=image_scope,json=imageScope,proto3,oneof" json:"image_scope,omitempty"`
 }
-type UnwatchVulnerabilityRequest_Scope_GlobalScope struct {
-	GlobalScope *UnwatchVulnerabilityRequest_Scope_Global `protobuf:"bytes,2,opt,name=global_scope,json=globalScope,proto3,oneof" json:"global_scope,omitempty"`
+type VulnerabilityRequest_Scope_GlobalScope struct {
+	GlobalScope *VulnerabilityRequest_Scope_Global `protobuf:"bytes,2,opt,name=global_scope,json=globalScope,proto3,oneof" json:"global_scope,omitempty"`
 }
 
-func (*UnwatchVulnerabilityRequest_Scope_ImageScope) isUnwatchVulnerabilityRequest_Scope_Info() {}
-func (m *UnwatchVulnerabilityRequest_Scope_ImageScope) Clone() isUnwatchVulnerabilityRequest_Scope_Info {
+func (*VulnerabilityRequest_Scope_ImageScope) isVulnerabilityRequest_Scope_Info() {}
+func (m *VulnerabilityRequest_Scope_ImageScope) Clone() isVulnerabilityRequest_Scope_Info {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_Scope_ImageScope)
+	cloned := new(VulnerabilityRequest_Scope_ImageScope)
 	*cloned = *m
 
 	cloned.ImageScope = m.ImageScope.Clone()
 	return cloned
 }
-func (*UnwatchVulnerabilityRequest_Scope_GlobalScope) isUnwatchVulnerabilityRequest_Scope_Info() {}
-func (m *UnwatchVulnerabilityRequest_Scope_GlobalScope) Clone() isUnwatchVulnerabilityRequest_Scope_Info {
+func (*VulnerabilityRequest_Scope_GlobalScope) isVulnerabilityRequest_Scope_Info() {}
+func (m *VulnerabilityRequest_Scope_GlobalScope) Clone() isVulnerabilityRequest_Scope_Info {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_Scope_GlobalScope)
+	cloned := new(VulnerabilityRequest_Scope_GlobalScope)
 	*cloned = *m
 
 	cloned.GlobalScope = m.GlobalScope.Clone()
 	return cloned
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) GetInfo() isUnwatchVulnerabilityRequest_Scope_Info {
+func (m *VulnerabilityRequest_Scope) GetInfo() isVulnerabilityRequest_Scope_Info {
 	if m != nil {
 		return m.Info
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) GetImageScope() *UnwatchVulnerabilityRequest_Scope_Image {
-	if x, ok := m.GetInfo().(*UnwatchVulnerabilityRequest_Scope_ImageScope); ok {
+func (m *VulnerabilityRequest_Scope) GetImageScope() *VulnerabilityRequest_Scope_Image {
+	if x, ok := m.GetInfo().(*VulnerabilityRequest_Scope_ImageScope); ok {
 		return x.ImageScope
 	}
 	return nil
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) GetGlobalScope() *UnwatchVulnerabilityRequest_Scope_Global {
-	if x, ok := m.GetInfo().(*UnwatchVulnerabilityRequest_Scope_GlobalScope); ok {
+func (m *VulnerabilityRequest_Scope) GetGlobalScope() *VulnerabilityRequest_Scope_Global {
+	if x, ok := m.GetInfo().(*VulnerabilityRequest_Scope_GlobalScope); ok {
 		return x.GlobalScope
 	}
 	return nil
 }
 
 // XXX_OneofWrappers is for the internal use of the proto package.
-func (*UnwatchVulnerabilityRequest_Scope) XXX_OneofWrappers() []interface{} {
+func (*VulnerabilityRequest_Scope) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*UnwatchVulnerabilityRequest_Scope_ImageScope)(nil),
-		(*UnwatchVulnerabilityRequest_Scope_GlobalScope)(nil),
+		(*VulnerabilityRequest_Scope_ImageScope)(nil),
+		(*VulnerabilityRequest_Scope_GlobalScope)(nil),
 	}
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) MessageClone() proto.Message {
+func (m *VulnerabilityRequest_Scope) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *UnwatchVulnerabilityRequest_Scope) Clone() *UnwatchVulnerabilityRequest_Scope {
+func (m *VulnerabilityRequest_Scope) Clone() *VulnerabilityRequest_Scope {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_Scope)
+	cloned := new(VulnerabilityRequest_Scope)
 	*cloned = *m
 
 	if m.Info != nil {
@@ -885,7 +808,7 @@ func (m *UnwatchVulnerabilityRequest_Scope) Clone() *UnwatchVulnerabilityRequest
 	return cloned
 }
 
-type UnwatchVulnerabilityRequest_Scope_Image struct {
+type VulnerabilityRequest_Scope_Image struct {
 	// Full image name including the registry part but without the tag.
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	TagRegex             string   `protobuf:"bytes,2,opt,name=tag_regex,json=tagRegex,proto3" json:"tag_regex,omitempty"`
@@ -894,20 +817,18 @@ type UnwatchVulnerabilityRequest_Scope_Image struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Image) Reset() {
-	*m = UnwatchVulnerabilityRequest_Scope_Image{}
-}
-func (m *UnwatchVulnerabilityRequest_Scope_Image) String() string { return proto.CompactTextString(m) }
-func (*UnwatchVulnerabilityRequest_Scope_Image) ProtoMessage()    {}
-func (*UnwatchVulnerabilityRequest_Scope_Image) Descriptor() ([]byte, []int) {
+func (m *VulnerabilityRequest_Scope_Image) Reset()         { *m = VulnerabilityRequest_Scope_Image{} }
+func (m *VulnerabilityRequest_Scope_Image) String() string { return proto.CompactTextString(m) }
+func (*VulnerabilityRequest_Scope_Image) ProtoMessage()    {}
+func (*VulnerabilityRequest_Scope_Image) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{3, 1, 0}
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) XXX_Unmarshal(b []byte) error {
+func (m *VulnerabilityRequest_Scope_Image) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityRequest_Scope_Image) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UnwatchVulnerabilityRequest_Scope_Image.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VulnerabilityRequest_Scope_Image.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -917,65 +838,63 @@ func (m *UnwatchVulnerabilityRequest_Scope_Image) XXX_Marshal(b []byte, determin
 		return b[:n], nil
 	}
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UnwatchVulnerabilityRequest_Scope_Image.Merge(m, src)
+func (m *VulnerabilityRequest_Scope_Image) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityRequest_Scope_Image.Merge(m, src)
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) XXX_Size() int {
+func (m *VulnerabilityRequest_Scope_Image) XXX_Size() int {
 	return m.Size()
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) XXX_DiscardUnknown() {
-	xxx_messageInfo_UnwatchVulnerabilityRequest_Scope_Image.DiscardUnknown(m)
+func (m *VulnerabilityRequest_Scope_Image) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityRequest_Scope_Image.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UnwatchVulnerabilityRequest_Scope_Image proto.InternalMessageInfo
+var xxx_messageInfo_VulnerabilityRequest_Scope_Image proto.InternalMessageInfo
 
-func (m *UnwatchVulnerabilityRequest_Scope_Image) GetName() string {
+func (m *VulnerabilityRequest_Scope_Image) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Image) GetTagRegex() string {
+func (m *VulnerabilityRequest_Scope_Image) GetTagRegex() string {
 	if m != nil {
 		return m.TagRegex
 	}
 	return ""
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Image) MessageClone() proto.Message {
+func (m *VulnerabilityRequest_Scope_Image) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) Clone() *UnwatchVulnerabilityRequest_Scope_Image {
+func (m *VulnerabilityRequest_Scope_Image) Clone() *VulnerabilityRequest_Scope_Image {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_Scope_Image)
+	cloned := new(VulnerabilityRequest_Scope_Image)
 	*cloned = *m
 
 	return cloned
 }
 
-type UnwatchVulnerabilityRequest_Scope_Global struct {
+type VulnerabilityRequest_Scope_Global struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Global) Reset() {
-	*m = UnwatchVulnerabilityRequest_Scope_Global{}
-}
-func (m *UnwatchVulnerabilityRequest_Scope_Global) String() string { return proto.CompactTextString(m) }
-func (*UnwatchVulnerabilityRequest_Scope_Global) ProtoMessage()    {}
-func (*UnwatchVulnerabilityRequest_Scope_Global) Descriptor() ([]byte, []int) {
+func (m *VulnerabilityRequest_Scope_Global) Reset()         { *m = VulnerabilityRequest_Scope_Global{} }
+func (m *VulnerabilityRequest_Scope_Global) String() string { return proto.CompactTextString(m) }
+func (*VulnerabilityRequest_Scope_Global) ProtoMessage()    {}
+func (*VulnerabilityRequest_Scope_Global) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{3, 1, 1}
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Global) XXX_Unmarshal(b []byte) error {
+func (m *VulnerabilityRequest_Scope_Global) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Global) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityRequest_Scope_Global) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UnwatchVulnerabilityRequest_Scope_Global.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VulnerabilityRequest_Scope_Global.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -985,26 +904,26 @@ func (m *UnwatchVulnerabilityRequest_Scope_Global) XXX_Marshal(b []byte, determi
 		return b[:n], nil
 	}
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Global) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UnwatchVulnerabilityRequest_Scope_Global.Merge(m, src)
+func (m *VulnerabilityRequest_Scope_Global) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityRequest_Scope_Global.Merge(m, src)
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Global) XXX_Size() int {
+func (m *VulnerabilityRequest_Scope_Global) XXX_Size() int {
 	return m.Size()
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Global) XXX_DiscardUnknown() {
-	xxx_messageInfo_UnwatchVulnerabilityRequest_Scope_Global.DiscardUnknown(m)
+func (m *VulnerabilityRequest_Scope_Global) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityRequest_Scope_Global.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UnwatchVulnerabilityRequest_Scope_Global proto.InternalMessageInfo
+var xxx_messageInfo_VulnerabilityRequest_Scope_Global proto.InternalMessageInfo
 
-func (m *UnwatchVulnerabilityRequest_Scope_Global) MessageClone() proto.Message {
+func (m *VulnerabilityRequest_Scope_Global) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Global) Clone() *UnwatchVulnerabilityRequest_Scope_Global {
+func (m *VulnerabilityRequest_Scope_Global) Clone() *VulnerabilityRequest_Scope_Global {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UnwatchVulnerabilityRequest_Scope_Global)
+	cloned := new(VulnerabilityRequest_Scope_Global)
 	*cloned = *m
 
 	return cloned
@@ -1014,78 +933,74 @@ func init() {
 	proto.RegisterEnum("storage.VulnerabilityState", VulnerabilityState_name, VulnerabilityState_value)
 	proto.RegisterEnum("storage.RequestStatus", RequestStatus_name, RequestStatus_value)
 	proto.RegisterType((*RequestComment)(nil), "storage.RequestComment")
-	proto.RegisterType((*RequestComment_User)(nil), "storage.RequestComment.User")
 	proto.RegisterType((*DeferralRequest)(nil), "storage.DeferralRequest")
 	proto.RegisterType((*FalsePositiveRequest)(nil), "storage.FalsePositiveRequest")
-	proto.RegisterType((*UnwatchVulnerabilityRequest)(nil), "storage.UnwatchVulnerabilityRequest")
-	proto.RegisterType((*UnwatchVulnerabilityRequest_CVEs)(nil), "storage.UnwatchVulnerabilityRequest.CVEs")
-	proto.RegisterType((*UnwatchVulnerabilityRequest_Scope)(nil), "storage.UnwatchVulnerabilityRequest.Scope")
-	proto.RegisterType((*UnwatchVulnerabilityRequest_Scope_Image)(nil), "storage.UnwatchVulnerabilityRequest.Scope.Image")
-	proto.RegisterType((*UnwatchVulnerabilityRequest_Scope_Global)(nil), "storage.UnwatchVulnerabilityRequest.Scope.Global")
+	proto.RegisterType((*VulnerabilityRequest)(nil), "storage.VulnerabilityRequest")
+	proto.RegisterType((*VulnerabilityRequest_CVEs)(nil), "storage.VulnerabilityRequest.CVEs")
+	proto.RegisterType((*VulnerabilityRequest_Scope)(nil), "storage.VulnerabilityRequest.Scope")
+	proto.RegisterType((*VulnerabilityRequest_Scope_Image)(nil), "storage.VulnerabilityRequest.Scope.Image")
+	proto.RegisterType((*VulnerabilityRequest_Scope_Global)(nil), "storage.VulnerabilityRequest.Scope.Global")
 }
 
 func init() { proto.RegisterFile("storage/vuln_requests.proto", fileDescriptor_878c2c8004fa26b3) }
 
 var fileDescriptor_878c2c8004fa26b3 = []byte{
-	// 913 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0xcd, 0x6e, 0xdb, 0x46,
-	0x10, 0x16, 0xf5, 0x67, 0x6a, 0xa4, 0x28, 0xea, 0x22, 0x48, 0x58, 0xa9, 0xb5, 0x05, 0x1e, 0x0a,
-	0x57, 0x07, 0x3a, 0xb5, 0x7b, 0xe8, 0x0f, 0xda, 0xc6, 0xb4, 0xe8, 0x48, 0x48, 0x21, 0x09, 0x2b,
-	0x5b, 0x01, 0x7a, 0x21, 0xd6, 0xe2, 0x8a, 0x66, 0x4b, 0x91, 0x0c, 0x77, 0xe5, 0x38, 0xb7, 0x1e,
-	0xfb, 0x08, 0x7d, 0xa4, 0x1e, 0xfb, 0x04, 0x46, 0xe1, 0x02, 0x05, 0x7a, 0xf5, 0x13, 0x14, 0xbb,
-	0x4b, 0xaa, 0x95, 0xd2, 0xa6, 0xc9, 0x8d, 0x33, 0xf3, 0xcd, 0xb7, 0xdf, 0xce, 0xce, 0x0c, 0xa1,
-	0xc3, 0x78, 0x9c, 0x12, 0x9f, 0x1e, 0x5c, 0xad, 0xc2, 0xc8, 0x4d, 0xe9, 0x8b, 0x15, 0x65, 0x9c,
-	0x59, 0x49, 0x1a, 0xf3, 0x18, 0xed, 0x64, 0xc1, 0xf6, 0x9e, 0x1f, 0xc7, 0x7e, 0x48, 0x0f, 0xa4,
-	0xfb, 0x62, 0xb5, 0x38, 0xe0, 0xc1, 0x92, 0x32, 0x4e, 0x96, 0x89, 0x42, 0xb6, 0x1f, 0xf8, 0xb1,
-	0x1f, 0xcb, 0xcf, 0x03, 0xf1, 0xa5, 0xbc, 0xe6, 0x9f, 0x1a, 0x34, 0xb1, 0xa2, 0x3c, 0x89, 0x97,
-	0x4b, 0x1a, 0x71, 0xd4, 0x84, 0x62, 0xe0, 0x19, 0x5a, 0x57, 0xdb, 0xaf, 0xe1, 0x62, 0xe0, 0x21,
-	0x03, 0x76, 0x96, 0x94, 0x31, 0xe2, 0x53, 0xa3, 0x28, 0x9d, 0xb9, 0x89, 0x1e, 0x43, 0x79, 0xc5,
-	0x68, 0x6a, 0x94, 0xba, 0xda, 0x7e, 0xfd, 0xf0, 0x03, 0x2b, 0xd3, 0x62, 0x6d, 0x12, 0x5a, 0xe7,
-	0x8c, 0xa6, 0x58, 0x22, 0xd1, 0xe7, 0x00, 0xf3, 0x94, 0x12, 0x4e, 0x3d, 0x97, 0x70, 0xa3, 0x2c,
-	0xf3, 0xda, 0x96, 0x92, 0x6e, 0xe5, 0xd2, 0xad, 0xb3, 0x5c, 0x3a, 0xae, 0x65, 0xe8, 0x63, 0xde,
-	0x7e, 0x02, 0x65, 0x41, 0xf4, 0x9a, 0x3c, 0x04, 0xe5, 0x88, 0x2c, 0x73, 0x6d, 0xf2, 0x1b, 0x3d,
-	0x80, 0x0a, 0x5d, 0x92, 0x20, 0x94, 0xca, 0x6a, 0x58, 0x19, 0xe6, 0x4f, 0x1a, 0xdc, 0xef, 0xd3,
-	0x05, 0x4d, 0x53, 0x12, 0x66, 0x12, 0x91, 0x05, 0x88, 0x5e, 0x27, 0x41, 0x4a, 0x99, 0xfb, 0xf2,
-	0x92, 0x46, 0xee, 0x22, 0xb8, 0xa6, 0x8a, 0x5d, 0x1f, 0x14, 0x70, 0x2b, 0x8b, 0x3d, 0xbf, 0xa4,
-	0xd1, 0xa9, 0x88, 0xa0, 0x2f, 0x01, 0x72, 0x7c, 0x1c, 0xc9, 0x33, 0xdf, 0x78, 0x81, 0x41, 0x01,
-	0xd7, 0x32, 0xfc, 0x38, 0xb2, 0x75, 0xa8, 0x4a, 0xe3, 0x95, 0xf9, 0x10, 0x1e, 0x9c, 0x92, 0x90,
-	0xd1, 0x49, 0xcc, 0x02, 0x1e, 0x5c, 0xd1, 0x4c, 0x8e, 0xf9, 0x87, 0x0e, 0x9d, 0xf3, 0xe8, 0x25,
-	0xe1, 0xf3, 0xcb, 0xd9, 0x2a, 0x8c, 0x68, 0x4a, 0x2e, 0x82, 0x30, 0xe0, 0xaf, 0x72, 0xb9, 0xdb,
-	0x97, 0xff, 0x1e, 0x1a, 0x9c, 0xa4, 0x3e, 0xe5, 0x2e, 0xe3, 0x84, 0xab, 0x22, 0x34, 0x0f, 0x3b,
-	0xeb, 0x97, 0xd8, 0x20, 0x99, 0x0a, 0x88, 0xdd, 0xbb, 0xbb, 0xd9, 0xfb, 0x88, 0x51, 0x92, 0xce,
-	0x2f, 0xbf, 0x30, 0x33, 0x5e, 0xea, 0x75, 0x37, 0x90, 0x5d, 0x09, 0x35, 0x71, 0x5d, 0x91, 0x4b,
-	0x0b, 0x3d, 0x83, 0xaa, 0x38, 0x64, 0xc5, 0x64, 0x55, 0x9b, 0x87, 0x0f, 0xb7, 0xdf, 0x7b, 0x2a,
-	0xa3, 0x76, 0xe7, 0xee, 0x66, 0xef, 0xd1, 0xd6, 0x01, 0x5d, 0x15, 0x33, 0x71, 0x46, 0x81, 0x8e,
-	0xa0, 0x4a, 0xe6, 0xe2, 0xe6, 0xb2, 0x09, 0xf4, 0xcd, 0xa4, 0x63, 0x19, 0xe9, 0xe6, 0x45, 0xc1,
-	0x19, 0x14, 0xf5, 0xe0, 0xbd, 0xac, 0xfd, 0xe3, 0xd4, 0x15, 0xfd, 0xe4, 0x06, 0x9e, 0x51, 0x91,
-	0xc5, 0xb8, 0xbf, 0x0e, 0x88, 0x26, 0x19, 0x7a, 0x02, 0x4b, 0x92, 0x24, 0x8d, 0xaf, 0xe8, 0x1a,
-	0xca, 0x8c, 0x6a, 0xb7, 0x24, 0xb0, 0x79, 0x40, 0x41, 0xd9, 0x56, 0x57, 0xee, 0xbc, 0x43, 0x57,
-	0xa2, 0xaf, 0xa0, 0x11, 0x12, 0xc6, 0xdd, 0x55, 0xe2, 0x09, 0x8f, 0xa1, 0xff, 0x6f, 0x72, 0x5d,
-	0xe0, 0xcf, 0x15, 0x1c, 0x1d, 0x81, 0x3e, 0x57, 0x53, 0xc2, 0x8c, 0x5a, 0xb7, 0xb4, 0x5f, 0x3f,
-	0x7c, 0xf4, 0x1f, 0x53, 0x84, 0xd7, 0x40, 0xf4, 0x04, 0x2a, 0x6c, 0x1e, 0x27, 0xd4, 0x00, 0x79,
-	0x58, 0x6f, 0x9d, 0xf1, 0x86, 0xce, 0xb1, 0xa6, 0x22, 0x03, 0xab, 0x44, 0xa1, 0xda, 0xcb, 0x06,
-	0x41, 0x2c, 0x14, 0xa3, 0x2e, 0x89, 0x8c, 0x35, 0xd1, 0xd6, 0x94, 0x0c, 0x0a, 0xb8, 0xee, 0xfd,
-	0xed, 0x42, 0x5f, 0x03, 0x2c, 0x92, 0x7c, 0x13, 0x19, 0x0d, 0x99, 0xfc, 0xe1, 0x3a, 0xf9, 0xdf,
-	0x1a, 0x5b, 0xcc, 0xc1, 0x22, 0xc9, 0xbb, 0xf8, 0x1b, 0x28, 0xcf, 0xaf, 0x28, 0x33, 0x5a, 0x32,
-	0xf3, 0xe3, 0xb7, 0xd2, 0x7f, 0x32, 0x73, 0xd8, 0x40, 0xc3, 0x32, 0xb1, 0xdd, 0x83, 0xb2, 0xb0,
-	0x91, 0x09, 0x25, 0xf1, 0xac, 0x9a, 0x78, 0x56, 0xbb, 0x75, 0x77, 0xb3, 0xd7, 0xc8, 0x5b, 0xe8,
-	0x64, 0xe6, 0x98, 0x58, 0x04, 0xdb, 0x3f, 0x16, 0xa1, 0x22, 0x2f, 0x8f, 0xa6, 0x50, 0x0f, 0x96,
-	0xc4, 0xa7, 0xae, 0xaa, 0x9e, 0x26, 0x4f, 0x7f, 0xfc, 0xf6, 0xd5, 0xb3, 0x86, 0x22, 0x7b, 0x50,
-	0xc0, 0x20, 0x69, 0x14, 0xe9, 0x0c, 0x1a, 0x7e, 0x18, 0x5f, 0x90, 0x30, 0x63, 0x55, 0x2b, 0xe1,
-	0x93, 0x77, 0x60, 0x7d, 0x2a, 0xd3, 0x45, 0x8d, 0x15, 0x91, 0xf4, 0xb6, 0x3f, 0x83, 0x8a, 0x3c,
-	0x6e, 0xbd, 0xdf, 0xb4, 0x7f, 0xec, 0xb7, 0x0e, 0xd4, 0x38, 0xf1, 0xdd, 0x94, 0xfa, 0xf4, 0x3a,
-	0x5b, 0x7c, 0x3a, 0x27, 0x3e, 0x16, 0x76, 0x5b, 0x87, 0xaa, 0xa2, 0xb4, 0xab, 0x50, 0x0e, 0xa2,
-	0x45, 0x6c, 0x57, 0xa0, 0x94, 0xd2, 0x17, 0x36, 0x80, 0x4e, 0x23, 0x1e, 0xf0, 0x80, 0xb2, 0x5e,
-	0x1f, 0xd0, 0xeb, 0xbb, 0x01, 0x35, 0x40, 0x1f, 0xdb, 0x53, 0x07, 0xcf, 0x9c, 0x7e, 0xab, 0x20,
-	0xac, 0xbe, 0x73, 0xea, 0x60, 0xec, 0xf4, 0x5b, 0x1a, 0x42, 0xd0, 0x3c, 0x3d, 0xfe, 0x76, 0xea,
-	0xb8, 0x93, 0xf1, 0x74, 0x78, 0x36, 0x9c, 0x39, 0xad, 0x62, 0xcf, 0x81, 0x7b, 0x1b, 0xb3, 0x8f,
-	0xee, 0x41, 0x6d, 0x34, 0x3e, 0x73, 0x9f, 0x8d, 0xc6, 0xcf, 0x47, 0xad, 0x02, 0xaa, 0xc3, 0xce,
-	0xc4, 0x19, 0xf5, 0x87, 0xa3, 0xa7, 0x2d, 0x4d, 0xd0, 0x1d, 0x4f, 0x26, 0x78, 0x2c, 0xc8, 0x8b,
-	0x08, 0xa0, 0xda, 0x77, 0x46, 0x43, 0xa7, 0xdf, 0x2a, 0xd9, 0x9f, 0xfe, 0x72, 0xbb, 0xab, 0xfd,
-	0x7a, 0xbb, 0xab, 0xfd, 0x76, 0xbb, 0xab, 0xfd, 0xfc, 0xfb, 0x6e, 0x01, 0xde, 0x0f, 0x62, 0x8b,
-	0x71, 0x32, 0xff, 0x21, 0x8d, 0xaf, 0xd5, 0x10, 0xe5, 0x05, 0xfd, 0x2e, 0xff, 0xe3, 0x5d, 0x54,
-	0xa5, 0xff, 0xe8, 0xaf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x4d, 0x3f, 0x43, 0x73, 0x20, 0x07, 0x00,
-	0x00,
+	// 880 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0xdd, 0x6e, 0xe3, 0x44,
+	0x14, 0x8e, 0x9b, 0x9f, 0x3a, 0x27, 0x21, 0x84, 0x51, 0xd9, 0xf5, 0xa6, 0xa2, 0x89, 0x8c, 0x40,
+	0x25, 0x17, 0x8e, 0xd4, 0x22, 0xb4, 0x0b, 0x02, 0xa9, 0x6e, 0xdc, 0x4d, 0xc4, 0xaa, 0x89, 0x26,
+	0xdd, 0x20, 0x71, 0x13, 0x4d, 0x93, 0x89, 0x6b, 0x70, 0xec, 0xec, 0xcc, 0xa4, 0x74, 0xdf, 0x80,
+	0x47, 0xe0, 0x82, 0x07, 0xe2, 0x92, 0x27, 0xa8, 0x50, 0xb9, 0xe1, 0x3a, 0x4f, 0x80, 0xe6, 0xc7,
+	0x59, 0x52, 0xf6, 0xef, 0xce, 0x73, 0xce, 0xf7, 0x7d, 0xe7, 0x67, 0xce, 0x19, 0xc3, 0x3e, 0x17,
+	0x29, 0x23, 0x21, 0xed, 0x5c, 0xaf, 0xe2, 0x64, 0xc2, 0xe8, 0x8b, 0x15, 0xe5, 0x82, 0x7b, 0x4b,
+	0x96, 0x8a, 0x14, 0xed, 0x1a, 0x67, 0xa3, 0x19, 0xa6, 0x69, 0x18, 0xd3, 0x8e, 0x32, 0x5f, 0xae,
+	0xe6, 0x1d, 0x11, 0x2d, 0x28, 0x17, 0x64, 0xb1, 0xd4, 0xc8, 0xc6, 0x5e, 0x98, 0x86, 0xa9, 0xfa,
+	0xec, 0xc8, 0x2f, 0x63, 0x45, 0x99, 0xf8, 0x8a, 0x53, 0xa6, 0x6d, 0xee, 0xef, 0x16, 0xd4, 0xb0,
+	0x0e, 0x73, 0x9a, 0x2e, 0x16, 0x34, 0x11, 0xa8, 0x06, 0x3b, 0xd1, 0xcc, 0xb1, 0x5a, 0xd6, 0x61,
+	0x19, 0xef, 0x44, 0x33, 0xe4, 0xc0, 0xee, 0x82, 0x72, 0x4e, 0x42, 0xea, 0xec, 0x28, 0x63, 0x76,
+	0x44, 0x9f, 0x41, 0x41, 0x4a, 0x39, 0xf9, 0x96, 0x75, 0x58, 0x39, 0xfa, 0xc8, 0x33, 0xfa, 0xde,
+	0x28, 0x8e, 0x16, 0xcf, 0x39, 0x65, 0x58, 0xb9, 0xd1, 0x13, 0x80, 0x29, 0xa3, 0x44, 0xd0, 0xd9,
+	0x84, 0x08, 0xa7, 0xa0, 0xc0, 0x0d, 0x4f, 0xd7, 0xe0, 0x65, 0x35, 0x78, 0x17, 0x59, 0x0d, 0xb8,
+	0x6c, 0xd0, 0x27, 0xc2, 0xfd, 0xd5, 0x82, 0x0f, 0xbb, 0x74, 0x4e, 0x19, 0x23, 0xb1, 0x49, 0x13,
+	0x79, 0x80, 0xe8, 0xcd, 0x32, 0x62, 0x94, 0x4f, 0x7e, 0xb9, 0xa2, 0xc9, 0x64, 0x1e, 0xdd, 0x50,
+	0x9d, 0xaf, 0xdd, 0xcb, 0xe1, 0xba, 0xf1, 0xfd, 0x70, 0x45, 0x93, 0x33, 0xe9, 0x41, 0xdf, 0x00,
+	0x64, 0xf8, 0x34, 0x51, 0x25, 0xbc, 0x35, 0x7c, 0x2f, 0x87, 0xcb, 0x06, 0x3f, 0x48, 0x7c, 0x1b,
+	0x4a, 0xea, 0xf0, 0xd2, 0x7d, 0x00, 0x7b, 0x67, 0x24, 0xe6, 0x74, 0x98, 0xf2, 0x48, 0x44, 0xd7,
+	0xd4, 0xa4, 0xe3, 0xfe, 0x63, 0xc3, 0xde, 0x78, 0x15, 0x27, 0x94, 0x91, 0xcb, 0x28, 0x8e, 0xc4,
+	0xcb, 0x2c, 0xcf, 0xfb, 0x7d, 0xfc, 0x09, 0xaa, 0x82, 0xb0, 0x90, 0x8a, 0x09, 0x17, 0x44, 0xe8,
+	0x66, 0xd6, 0x8e, 0xf6, 0x37, 0x5d, 0xdb, 0x12, 0x19, 0x49, 0x88, 0xdf, 0x5e, 0xdf, 0x36, 0x3f,
+	0xe7, 0x94, 0xb0, 0xe9, 0xd5, 0xd7, 0xae, 0xd1, 0xa5, 0xb3, 0xd6, 0x16, 0xb2, 0xa5, 0xa0, 0x2e,
+	0xae, 0x68, 0x71, 0x75, 0x42, 0xdf, 0x43, 0x49, 0x06, 0x59, 0x71, 0x75, 0x37, 0xb5, 0xa3, 0x07,
+	0x9b, 0x28, 0x46, 0x65, 0xa4, 0xbc, 0xfe, 0xfe, 0xfa, 0xb6, 0xf9, 0xf0, 0x5e, 0x80, 0x96, 0xf6,
+	0xb9, 0xd8, 0x48, 0xa0, 0x63, 0x28, 0x91, 0xa9, 0x2c, 0x59, 0xdd, 0x9d, 0xbd, 0x4d, 0x3a, 0x51,
+	0x9e, 0x56, 0xd6, 0x0d, 0x6c, 0xa0, 0xa8, 0x03, 0x65, 0x33, 0xbe, 0x29, 0x73, 0x8a, 0x6f, 0x1a,
+	0x90, 0x57, 0x18, 0x49, 0x20, 0xcb, 0x25, 0x4b, 0xaf, 0x29, 0xe3, 0x4e, 0xa9, 0x95, 0x7f, 0x03,
+	0x61, 0x83, 0x41, 0x17, 0x5b, 0x63, 0xb5, 0xfb, 0xae, 0x7b, 0xf5, 0x1f, 0xad, 0x6f, 0x9b, 0x1f,
+	0x67, 0x69, 0x9f, 0x6a, 0x66, 0x4b, 0xba, 0xdd, 0xff, 0x4c, 0x1c, 0xfa, 0x16, 0xaa, 0x31, 0xe1,
+	0x62, 0xb2, 0x5a, 0xce, 0xa4, 0xc5, 0xb1, 0xdf, 0x39, 0xae, 0x15, 0x89, 0x7f, 0xae, 0xe1, 0xe8,
+	0x18, 0xec, 0xa9, 0xde, 0x23, 0xee, 0x94, 0x55, 0x11, 0x0f, 0xef, 0xb7, 0xde, 0xec, 0x19, 0xde,
+	0x00, 0xd1, 0x13, 0x28, 0xf2, 0x69, 0xba, 0xa4, 0x0e, 0xa8, 0x60, 0x9f, 0xbe, 0x7e, 0x24, 0x0c,
+	0xdd, 0x1b, 0x49, 0x28, 0xd6, 0x0c, 0x99, 0xee, 0xcc, 0xec, 0x87, 0x7c, 0x2e, 0x9c, 0x8a, 0x52,
+	0x70, 0x36, 0x0a, 0xf7, 0x96, 0xa7, 0x97, 0xc3, 0x95, 0xd9, 0x2b, 0x13, 0xfa, 0x0e, 0x60, 0xbe,
+	0xcc, 0xde, 0x19, 0xa7, 0xaa, 0xc8, 0x9f, 0x6c, 0xc8, 0xaf, 0x9b, 0x77, 0xb9, 0x1e, 0xf3, 0x65,
+	0x36, 0xe3, 0x8f, 0xa1, 0x30, 0xbd, 0xa6, 0xdc, 0xa9, 0x2b, 0xa6, 0xfb, 0xf6, 0xc4, 0x4f, 0xc7,
+	0x01, 0xef, 0x59, 0x58, 0x31, 0x1a, 0x6d, 0x28, 0xc8, 0x33, 0x72, 0x21, 0x1f, 0xcd, 0xb8, 0x63,
+	0xb5, 0xf2, 0x87, 0x65, 0xbf, 0xbe, 0xbe, 0x6d, 0x56, 0x37, 0x57, 0x34, 0x0e, 0x5c, 0x2c, 0x9d,
+	0x8d, 0xb5, 0x05, 0x45, 0x55, 0x35, 0x7a, 0x06, 0x95, 0x68, 0x41, 0x42, 0x3a, 0xd1, 0xfd, 0xb2,
+	0x54, 0xd8, 0x2f, 0xde, 0xa3, 0x5f, 0x5e, 0x5f, 0xd2, 0x7a, 0x39, 0x0c, 0x8a, 0xaf, 0xd5, 0x06,
+	0x50, 0x0d, 0xe3, 0xf4, 0x92, 0xc4, 0x46, 0x4e, 0xbf, 0x0d, 0xed, 0xf7, 0x91, 0x7b, 0xaa, 0x78,
+	0xb2, 0x9d, 0x5a, 0x41, 0x59, 0x1b, 0x8f, 0xa1, 0xa8, 0xe2, 0x20, 0x04, 0x85, 0x84, 0x2c, 0xa8,
+	0xd9, 0x7e, 0xf5, 0x8d, 0xf6, 0xa1, 0x2c, 0x48, 0x38, 0x61, 0x34, 0xa4, 0x37, 0xe6, 0x25, 0xb5,
+	0x05, 0x09, 0xb1, 0x3c, 0x37, 0x6c, 0x28, 0x69, 0x49, 0xbf, 0x04, 0x85, 0x28, 0x99, 0xa7, 0x7e,
+	0x11, 0xf2, 0x8c, 0xbe, 0xf0, 0x01, 0x6c, 0x9a, 0x88, 0x48, 0x44, 0x94, 0xb7, 0xbb, 0x80, 0xfe,
+	0xff, 0x48, 0xa0, 0x2a, 0xd8, 0x03, 0x7f, 0x14, 0xe0, 0x71, 0xd0, 0xad, 0xe7, 0xe4, 0xa9, 0x1b,
+	0x9c, 0x05, 0x18, 0x07, 0xdd, 0xba, 0x85, 0x10, 0xd4, 0xce, 0x4e, 0x9e, 0x8d, 0x82, 0xc9, 0x70,
+	0x30, 0xea, 0x5f, 0xf4, 0xc7, 0x41, 0x7d, 0xa7, 0xfd, 0x15, 0x7c, 0xb0, 0xf5, 0x08, 0xa0, 0x0a,
+	0xec, 0x0e, 0x83, 0xf3, 0x6e, 0xff, 0xfc, 0xa9, 0xe6, 0x9f, 0x0c, 0x87, 0x78, 0x30, 0x56, 0x7c,
+	0x80, 0x52, 0x37, 0x38, 0xef, 0x07, 0xdd, 0xfa, 0x8e, 0xff, 0xe5, 0x1f, 0x77, 0x07, 0xd6, 0x9f,
+	0x77, 0x07, 0xd6, 0x5f, 0x77, 0x07, 0xd6, 0x6f, 0x7f, 0x1f, 0xe4, 0xe0, 0x51, 0x94, 0x7a, 0x5c,
+	0x90, 0xe9, 0xcf, 0x2c, 0xbd, 0xd1, 0x9b, 0x91, 0xb5, 0xee, 0xc7, 0xec, 0x5f, 0x75, 0x59, 0x52,
+	0xf6, 0xe3, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x37, 0x28, 0x11, 0xeb, 0xda, 0x06, 0x00, 0x00,
 }
 
 func (m *RequestComment) Marshal() (dAtA []byte, err error) {
@@ -1140,54 +1055,6 @@ func (m *RequestComment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Message)
 		copy(dAtA[i:], m.Message)
 		i = encodeVarintVulnRequests(dAtA, i, uint64(len(m.Message)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = encodeVarintVulnRequests(dAtA, i, uint64(len(m.Id)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *RequestComment_User) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RequestComment_User) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RequestComment_User) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Email) > 0 {
-		i -= len(m.Email)
-		copy(dAtA[i:], m.Email)
-		i = encodeVarintVulnRequests(dAtA, i, uint64(len(m.Email)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintVulnRequests(dAtA, i, uint64(len(m.Name)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -1302,7 +1169,7 @@ func (m *FalsePositiveRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UnwatchVulnerabilityRequest) Marshal() (dAtA []byte, err error) {
+func (m *VulnerabilityRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1312,12 +1179,12 @@ func (m *UnwatchVulnerabilityRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UnwatchVulnerabilityRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1394,19 +1261,29 @@ func (m *UnwatchVulnerabilityRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 		i--
 		dAtA[i] = 0x3a
 	}
-	if len(m.ApproverUserIds) > 0 {
-		for iNdEx := len(m.ApproverUserIds) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ApproverUserIds[iNdEx])
-			copy(dAtA[i:], m.ApproverUserIds[iNdEx])
-			i = encodeVarintVulnRequests(dAtA, i, uint64(len(m.ApproverUserIds[iNdEx])))
+	if len(m.Approvers) > 0 {
+		for iNdEx := len(m.Approvers) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Approvers[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintVulnRequests(dAtA, i, uint64(size))
+			}
 			i--
 			dAtA[i] = 0x32
 		}
 	}
-	if len(m.RequestorUserId) > 0 {
-		i -= len(m.RequestorUserId)
-		copy(dAtA[i:], m.RequestorUserId)
-		i = encodeVarintVulnRequests(dAtA, i, uint64(len(m.RequestorUserId)))
+	if m.Requestor != nil {
+		{
+			size, err := m.Requestor.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintVulnRequests(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x2a
 	}
@@ -1440,12 +1317,12 @@ func (m *UnwatchVulnerabilityRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *UnwatchVulnerabilityRequest_DeferralReq) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_DeferralReq) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_DeferralReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_DeferralReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.DeferralReq != nil {
 		{
@@ -1461,12 +1338,12 @@ func (m *UnwatchVulnerabilityRequest_DeferralReq) MarshalToSizedBuffer(dAtA []by
 	}
 	return len(dAtA) - i, nil
 }
-func (m *UnwatchVulnerabilityRequest_FpRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_FpRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_FpRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_FpRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.FpRequest != nil {
 		{
@@ -1482,12 +1359,12 @@ func (m *UnwatchVulnerabilityRequest_FpRequest) MarshalToSizedBuffer(dAtA []byte
 	}
 	return len(dAtA) - i, nil
 }
-func (m *UnwatchVulnerabilityRequest_Cves) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Cves) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_Cves) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Cves) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Cves != nil {
 		{
@@ -1505,7 +1382,7 @@ func (m *UnwatchVulnerabilityRequest_Cves) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) Marshal() (dAtA []byte, err error) {
+func (m *VulnerabilityRequest_CVEs) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1515,12 +1392,12 @@ func (m *UnwatchVulnerabilityRequest_CVEs) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UnwatchVulnerabilityRequest_CVEs) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_CVEs) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_CVEs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_CVEs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1541,7 +1418,7 @@ func (m *UnwatchVulnerabilityRequest_CVEs) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) Marshal() (dAtA []byte, err error) {
+func (m *VulnerabilityRequest_Scope) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1551,12 +1428,12 @@ func (m *UnwatchVulnerabilityRequest_Scope) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1577,12 +1454,12 @@ func (m *UnwatchVulnerabilityRequest_Scope) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_ImageScope) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope_ImageScope) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_ImageScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope_ImageScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ImageScope != nil {
 		{
@@ -1598,12 +1475,12 @@ func (m *UnwatchVulnerabilityRequest_Scope_ImageScope) MarshalToSizedBuffer(dAtA
 	}
 	return len(dAtA) - i, nil
 }
-func (m *UnwatchVulnerabilityRequest_Scope_GlobalScope) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope_GlobalScope) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_GlobalScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope_GlobalScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.GlobalScope != nil {
 		{
@@ -1619,7 +1496,7 @@ func (m *UnwatchVulnerabilityRequest_Scope_GlobalScope) MarshalToSizedBuffer(dAt
 	}
 	return len(dAtA) - i, nil
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) Marshal() (dAtA []byte, err error) {
+func (m *VulnerabilityRequest_Scope_Image) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1629,12 +1506,12 @@ func (m *UnwatchVulnerabilityRequest_Scope_Image) Marshal() (dAtA []byte, err er
 	return dAtA[:n], nil
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Image) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope_Image) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope_Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1660,7 +1537,7 @@ func (m *UnwatchVulnerabilityRequest_Scope_Image) MarshalToSizedBuffer(dAtA []by
 	return len(dAtA) - i, nil
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Global) Marshal() (dAtA []byte, err error) {
+func (m *VulnerabilityRequest_Scope_Global) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1670,12 +1547,12 @@ func (m *UnwatchVulnerabilityRequest_Scope_Global) Marshal() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Global) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope_Global) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Global) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityRequest_Scope_Global) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1718,30 +1595,6 @@ func (m *RequestComment) Size() (n int) {
 	}
 	if m.CreatedAt != nil {
 		l = m.CreatedAt.Size()
-		n += 1 + l + sovVulnRequests(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *RequestComment_User) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Id)
-	if l > 0 {
-		n += 1 + l + sovVulnRequests(uint64(l))
-	}
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovVulnRequests(uint64(l))
-	}
-	l = len(m.Email)
-	if l > 0 {
 		n += 1 + l + sovVulnRequests(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -1798,7 +1651,7 @@ func (m *FalsePositiveRequest) Size() (n int) {
 	return n
 }
 
-func (m *UnwatchVulnerabilityRequest) Size() (n int) {
+func (m *VulnerabilityRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1817,13 +1670,13 @@ func (m *UnwatchVulnerabilityRequest) Size() (n int) {
 	if m.Active {
 		n += 2
 	}
-	l = len(m.RequestorUserId)
-	if l > 0 {
+	if m.Requestor != nil {
+		l = m.Requestor.Size()
 		n += 1 + l + sovVulnRequests(uint64(l))
 	}
-	if len(m.ApproverUserIds) > 0 {
-		for _, s := range m.ApproverUserIds {
-			l = len(s)
+	if len(m.Approvers) > 0 {
+		for _, e := range m.Approvers {
+			l = e.Size()
 			n += 1 + l + sovVulnRequests(uint64(l))
 		}
 	}
@@ -1857,7 +1710,7 @@ func (m *UnwatchVulnerabilityRequest) Size() (n int) {
 	return n
 }
 
-func (m *UnwatchVulnerabilityRequest_DeferralReq) Size() (n int) {
+func (m *VulnerabilityRequest_DeferralReq) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1869,7 +1722,7 @@ func (m *UnwatchVulnerabilityRequest_DeferralReq) Size() (n int) {
 	}
 	return n
 }
-func (m *UnwatchVulnerabilityRequest_FpRequest) Size() (n int) {
+func (m *VulnerabilityRequest_FpRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1881,7 +1734,7 @@ func (m *UnwatchVulnerabilityRequest_FpRequest) Size() (n int) {
 	}
 	return n
 }
-func (m *UnwatchVulnerabilityRequest_Cves) Size() (n int) {
+func (m *VulnerabilityRequest_Cves) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1893,7 +1746,7 @@ func (m *UnwatchVulnerabilityRequest_Cves) Size() (n int) {
 	}
 	return n
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) Size() (n int) {
+func (m *VulnerabilityRequest_CVEs) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1911,7 +1764,7 @@ func (m *UnwatchVulnerabilityRequest_CVEs) Size() (n int) {
 	return n
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope) Size() (n int) {
+func (m *VulnerabilityRequest_Scope) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1926,7 +1779,7 @@ func (m *UnwatchVulnerabilityRequest_Scope) Size() (n int) {
 	return n
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_ImageScope) Size() (n int) {
+func (m *VulnerabilityRequest_Scope_ImageScope) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1938,7 +1791,7 @@ func (m *UnwatchVulnerabilityRequest_Scope_ImageScope) Size() (n int) {
 	}
 	return n
 }
-func (m *UnwatchVulnerabilityRequest_Scope_GlobalScope) Size() (n int) {
+func (m *VulnerabilityRequest_Scope_GlobalScope) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1950,7 +1803,7 @@ func (m *UnwatchVulnerabilityRequest_Scope_GlobalScope) Size() (n int) {
 	}
 	return n
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) Size() (n int) {
+func (m *VulnerabilityRequest_Scope_Image) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1970,7 +1823,7 @@ func (m *UnwatchVulnerabilityRequest_Scope_Image) Size() (n int) {
 	return n
 }
 
-func (m *UnwatchVulnerabilityRequest_Scope_Global) Size() (n int) {
+func (m *VulnerabilityRequest_Scope_Global) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2111,7 +1964,7 @@ func (m *RequestComment) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.User == nil {
-				m.User = &RequestComment_User{}
+				m.User = &SlimUser{}
 			}
 			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2152,153 +2005,6 @@ func (m *RequestComment) Unmarshal(dAtA []byte) error {
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipVulnRequests(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthVulnRequests
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RequestComment_User) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowVulnRequests
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: User: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: User: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVulnRequests
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVulnRequests
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthVulnRequests
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Id = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVulnRequests
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVulnRequests
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthVulnRequests
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Email", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVulnRequests
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVulnRequests
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthVulnRequests
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Email = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2480,7 +2186,7 @@ func (m *FalsePositiveRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2503,10 +2209,10 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: UnwatchVulnerabilityRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: VulnerabilityRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UnwatchVulnerabilityRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: VulnerabilityRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2601,9 +2307,9 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 			m.Active = bool(v != 0)
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestorUserId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Requestor", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowVulnRequests
@@ -2613,29 +2319,33 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthVulnRequests
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthVulnRequests
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.RequestorUserId = string(dAtA[iNdEx:postIndex])
+			if m.Requestor == nil {
+				m.Requestor = &SlimUser{}
+			}
+			if err := m.Requestor.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ApproverUserIds", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Approvers", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowVulnRequests
@@ -2645,23 +2355,25 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthVulnRequests
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthVulnRequests
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ApproverUserIds = append(m.ApproverUserIds, string(dAtA[iNdEx:postIndex]))
+			m.Approvers = append(m.Approvers, &SlimUser{})
+			if err := m.Approvers[len(m.Approvers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
@@ -2799,7 +2511,7 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Scope == nil {
-				m.Scope = &UnwatchVulnerabilityRequest_Scope{}
+				m.Scope = &VulnerabilityRequest_Scope{}
 			}
 			if err := m.Scope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2838,7 +2550,7 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Req = &UnwatchVulnerabilityRequest_DeferralReq{v}
+			m.Req = &VulnerabilityRequest_DeferralReq{v}
 			iNdEx = postIndex
 		case 12:
 			if wireType != 2 {
@@ -2873,7 +2585,7 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Req = &UnwatchVulnerabilityRequest_FpRequest{v}
+			m.Req = &VulnerabilityRequest_FpRequest{v}
 			iNdEx = postIndex
 		case 16:
 			if wireType != 2 {
@@ -2904,11 +2616,11 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &UnwatchVulnerabilityRequest_CVEs{}
+			v := &VulnerabilityRequest_CVEs{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Entities = &UnwatchVulnerabilityRequest_Cves{v}
+			m.Entities = &VulnerabilityRequest_Cves{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2932,7 +2644,7 @@ func (m *UnwatchVulnerabilityRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnwatchVulnerabilityRequest_CVEs) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest_CVEs) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3015,7 +2727,7 @@ func (m *UnwatchVulnerabilityRequest_CVEs) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnwatchVulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3073,11 +2785,11 @@ func (m *UnwatchVulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &UnwatchVulnerabilityRequest_Scope_Image{}
+			v := &VulnerabilityRequest_Scope_Image{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Info = &UnwatchVulnerabilityRequest_Scope_ImageScope{v}
+			m.Info = &VulnerabilityRequest_Scope_ImageScope{v}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -3108,11 +2820,11 @@ func (m *UnwatchVulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &UnwatchVulnerabilityRequest_Scope_Global{}
+			v := &VulnerabilityRequest_Scope_Global{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Info = &UnwatchVulnerabilityRequest_Scope_GlobalScope{v}
+			m.Info = &VulnerabilityRequest_Scope_GlobalScope{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3136,7 +2848,7 @@ func (m *UnwatchVulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Image) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest_Scope_Image) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3251,7 +2963,7 @@ func (m *UnwatchVulnerabilityRequest_Scope_Image) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnwatchVulnerabilityRequest_Scope_Global) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest_Scope_Global) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

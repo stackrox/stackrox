@@ -74,7 +74,7 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "UNWATCH_VULN_REQUEST"
+                "VULN_REQUEST"
               ]
             },
             "collectionFormat": "multi"
@@ -148,7 +148,7 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "UNWATCH_VULN_REQUEST"
+                "VULN_REQUEST"
               ]
             },
             "collectionFormat": "multi"
@@ -216,7 +216,7 @@
                 "COMPONENT_VULN_EDGE",
                 "CLUSTER_VULN_EDGE",
                 "NETWORK_ENTITY",
-                "UNWATCH_VULN_REQUEST"
+                "VULN_REQUEST"
               ]
             },
             "collectionFormat": "multi"
@@ -333,7 +333,7 @@
         "COMPONENT_VULN_EDGE",
         "CLUSTER_VULN_EDGE",
         "NETWORK_ENTITY",
-        "UNWATCH_VULN_REQUEST"
+        "VULN_REQUEST"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 32"

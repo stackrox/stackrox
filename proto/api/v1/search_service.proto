@@ -42,7 +42,7 @@ enum SearchCategory {
     COMPONENT_VULN_EDGE       = 22;
     CLUSTER_VULN_EDGE         = 24;
     NETWORK_ENTITY            = 26;
-    UNWATCH_VULN_REQUEST      = 32;
+    VULN_REQUEST              = 32;
 }
 
 enum SearchDataType {

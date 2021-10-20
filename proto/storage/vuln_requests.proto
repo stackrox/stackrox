@@ -4,21 +4,15 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-
 import "gogoproto/gogo.proto";
+import "storage/user.proto";
 
 package storage;
 
 message RequestComment {
-    message User {
-        string id    = 1;
-        string name  = 2;
-        string email = 3;
-    }
-
     string                    id         = 1;
     string                    message    = 2;
-    User                      user       = 3;
+    SlimUser                  user       = 3;
     google.protobuf.Timestamp created_at = 4;
 }
 
@@ -32,13 +26,12 @@ enum VulnerabilityState {
 // Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver
 // are not tracked/persisted (with the exception of audit logs if it is turned on).
 enum RequestStatus {
-    NOT_KNOWN  = 0;
-    // Indicates that the request has not been fulfilled (/forwarded to an approval workflow, if any).
-    PENDING    = 1;
+    // Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
+    PENDING    = 0;
     // Indicates that the request has been approved by the approver.
-    APPROVED   = 2;
+    APPROVED   = 1;
     // Indicates that the request has been denied by the approver.
-    DENIED     = 3;
+    DENIED     = 2;
 }
 
 message DeferralRequest {
@@ -53,9 +46,8 @@ message DeferralRequest {
 message FalsePositiveRequest { }
 
 // Next available tag: 21
-// UnwatchVulnerabilityRequest encapsulates the request, deferral request and false-positive request,
-// to unwatch vulnerabilities in the environment.
-message UnwatchVulnerabilityRequest {
+// VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
+message VulnerabilityRequest {
     message CVEs {
         repeated string ids = 1 [(gogoproto.moretags) = "search:\"CVE\""];
     }
@@ -91,9 +83,9 @@ message UnwatchVulnerabilityRequest {
     // Indicates if this request is active (in effect) or if it is a historical request that is no longer in effect
     // due to deferral expiry, cancellation, or restarting observation.
     bool                             active             = 4 [(gogoproto.moretags) = "search:\"Active Request\""];
-    string                           requestor_user_id  = 5;
-    repeated string                  approver_user_ids  = 6;
-    google.protobuf.Timestamp        created_at         = 7;
+    SlimUser                         requestor          = 5;
+    repeated SlimUser                approvers          = 6;
+    google.protobuf.Timestamp        created_at         = 7 [(gogoproto.moretags) = "search:\"Created Time\""];
     google.protobuf.Timestamp        last_updated       = 8;
     repeated RequestComment          comments           = 9;
     Scope                            scope              = 10;
