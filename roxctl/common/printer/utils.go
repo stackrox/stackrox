@@ -93,3 +93,16 @@ func getRowsFromColumns(columns [][]string) [][]string {
 	}
 	return rows
 }
+
+// getStringsFromGJSONResult retrieves all results from a non-multipath
+// expression and return a string array.
+func getStringsFromGJSONResult(results []gjson.Result) []string {
+	var stringResults []string
+	for _, result := range results {
+		result.ForEach(func(key, value gjson.Result) bool {
+			stringResults = append(stringResults, value.String())
+			return true
+		})
+	}
+	return stringResults
+}

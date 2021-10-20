@@ -52,7 +52,7 @@ func (t *TabularPrinterFactory) SupportedFormats() []string {
 // to create an ObjectPrinter with the current configuration it will return an error
 // A tabular printer expects a JSON Object and JSON Path expression that is compatible
 // with GJSON (https://github.com/tidwall/gjson).
-// When printing, the tabular printerss will take the given JSON object, apply a row expression via a gjson
+// When printing, the tabular printers will take the given JSON object, apply a row expression via a gjson
 // multi path expression to retrieve the data from the JSON object and print the result in tabular format.
 // The JSON Object itself MUST be passable to json.Marshal, so it CAN NOT be a direct JSON input.
 // For the structure of the JSON object, it is preferred to have arrays of structs instead of

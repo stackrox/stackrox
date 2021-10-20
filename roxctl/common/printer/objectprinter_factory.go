@@ -10,7 +10,7 @@ import (
 
 var (
 	// standardizedFormats holds all output formats that follow either an RFC standard or a de-facto standard
-	standardizedFormats = set.NewFrozenStringSet("json", "csv")
+	standardizedFormats = set.NewFrozenStringSet("json", "csv", "junit")
 )
 
 // UnsupportedOutputFormatError creates a standardized error for unsupported format inputs in combination with ObjectPrinter
