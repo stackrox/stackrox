@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPolicyResourceTransformer_JSONFormat(t *testing.T) {
+func TestNewPolicySummaryForPrinting(t *testing.T) {
 	cases := map[string]struct {
 		alerts         []*storage.Alert
 		failedPolicies []*storage.Policy
@@ -19,7 +19,7 @@ func TestPolicyResourceTransformer_JSONFormat(t *testing.T) {
 			summary:        map[string]int{"TOTAL": 0, "LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0},
 			failedPolicies: nil,
 			expectedOutput: &policyJSONResult{
-				policyJSONStructure{
+				Result: policyJSONStructure{
 					Summary: map[string]int{
 						"TOTAL":    0,
 						"LOW":      0,
@@ -55,7 +55,7 @@ func TestPolicyResourceTransformer_JSONFormat(t *testing.T) {
 			summary:        map[string]int{"HIGH": 1, "TOTAL": 1, "LOW": 0, "MEDIUM": 0, "CRITICAL": 0},
 			failedPolicies: nil,
 			expectedOutput: &policyJSONResult{
-				policyJSONStructure{
+				Result: policyJSONStructure{
 					Summary: map[string]int{
 						"TOTAL":    1,
 						"LOW":      0,
@@ -121,7 +121,7 @@ func TestPolicyResourceTransformer_JSONFormat(t *testing.T) {
 				},
 			},
 			expectedOutput: &policyJSONResult{
-				policyJSONStructure{
+				Result: policyJSONStructure{
 					Summary: map[string]int{
 						"TOTAL":    2,
 						"LOW":      1,
@@ -158,8 +158,8 @@ func TestPolicyResourceTransformer_JSONFormat(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			alertSummary := newAlertSummaryForPrinting(c.alerts, c.failedPolicies, c.summary)
-			assert.Equal(t, c.expectedOutput, alertSummary.(*policyJSONResult))
+			policySummary := newPolicySummaryForPrinting(c.alerts, c.failedPolicies)
+			assert.Equal(t, c.expectedOutput, policySummary)
 		})
 	}
 }

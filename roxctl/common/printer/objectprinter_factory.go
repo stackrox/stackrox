@@ -88,12 +88,7 @@ func NewObjectPrinterFactory(defaultOutputFormat string, customPrinterFactories 
 // etc. The caller is expected to not print additional information when this returns true to ensure being compatible
 // with the format
 func (o *ObjectPrinterFactory) IsStandardizedFormat() bool {
-	for _, format := range o.supportedFormats() {
-		if standardizedFormats.Contains(format) {
-			return true
-		}
-	}
-	return false
+	return standardizedFormats.Contains(o.OutputFormat)
 }
 
 // AddFlags will add all flags of registered CustomPrinterFactory as well as the format flag to specify the output format

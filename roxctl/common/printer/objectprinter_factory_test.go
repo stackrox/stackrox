@@ -120,6 +120,33 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 	}
 }
 
+func TestObjectPrinterFactory_IsStandardizedFormat(t *testing.T) {
+	cases := map[string]struct {
+		res    bool
+		format string
+	}{
+		"should be true for JSON format": {
+			res:    true,
+			format: "json",
+		},
+		"should be true for CSV format": {
+			res:    true,
+			format: "csv",
+		},
+		"should be false for table format": {
+			res:    false,
+			format: "table",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			o := ObjectPrinterFactory{OutputFormat: c.format}
+			assert.Equal(t, c.res, o.IsStandardizedFormat())
+		})
+	}
+}
+
 func TestObjectPrinterFactory_CreatePrinter(t *testing.T) {
 	cases := map[string]struct {
 		shouldFail  bool

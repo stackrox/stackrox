@@ -3,6 +3,7 @@ package check
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,8 +16,8 @@ import (
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/report"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -24,30 +25,39 @@ const (
 	jsonFailFlagName = "json-fail-on-policy-violations"
 )
 
-// Default values for tabular output to specify when using printer.ObjectPrinterFlags
 var (
-/*
-	defaultPolicyCheckHeaders = []string{
+	// Default headers to use when printing tabular output
+	defaultImageCheckHeaders = []string{
 		"POLICY", "SEVERITY", "DESCRIPTION", "VIOLATION", "REMEDIATION",
 	}
-	defaultPolicyCheckJSONPathExpressions = []string{
-		"result.violated-policies.#.name",
-		"result.violated-policies.#.severity",
-		"result.violated-policies.#.description",
-		"result.violated-policies.#.violation",
-		"result.violated-policies.#.remediation",
-	}*/
+	// Default JSON path expression which retrieves the data from the policyJSONResult
+	defaultImageCheckJSONPathExpression = "{result.violatedPolicies.#.name," +
+		"result.violatedPolicies.#.severity," +
+		"result.violatedPolicies.#.description," +
+		"result.violatedPolicies.#.violation," +
+		"result.violatedPolicies.#.remediation}"
+	// supported output formats with default values
+	supportedObjectPrinters = []printer.CustomPrinterFactory{
+		printer.NewTabularPrinterFactory(false, defaultImageCheckHeaders, defaultImageCheckJSONPathExpression, false, false),
+		printer.NewJSONPrinterFactory(false, false),
+	}
 )
 
 // Command checks the image against image build lifecycle policies
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageCheckCmd := &imageCheckCommand{env: cliEnvironment}
 
+	// object printer factory - allows output formats of JSON, csv, table with table being the default
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	// the returned error only occurs when default values do not allow the creation of any printer, this should be considered
+	// a programming error rather than a user error
+	pkgUtils.Must(err)
+
 	c := &cobra.Command{
 		Use:  "check",
 		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := imageCheckCmd.Construct(nil, c); err != nil {
+			if err := imageCheckCmd.Construct(nil, c, objectPrinterFactory); err != nil {
 				return err
 			}
 			if err := imageCheckCmd.Validate(); err != nil {
@@ -57,56 +67,88 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
+	// Add all flags required by the printer factories with the provided default values
+	objectPrinterFactory.AddFlags(c)
+
+	// Image Check specific flags
 	c.Flags().StringVarP(&imageCheckCmd.image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	pkgUtils.Must(c.MarkFlagRequired("image"))
-
-	c.Flags().BoolVar(&imageCheckCmd.json, jsonFlagName, false, "Output policy results as JSON")
-	c.Flags().BoolVar(&imageCheckCmd.failViolationsWithJSON, jsonFailFlagName, true,
-		"Whether policy violations should cause the command to exit non-zero in JSON output mode too. "+
-			"This flag only has effect when --json is also specified.")
 	c.Flags().IntVarP(&imageCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds.")
 	c.Flags().IntVarP(&imageCheckCmd.retryCount, "retries", "r", 0, "number of retries before exiting as error.")
 	c.Flags().BoolVar(&imageCheckCmd.sendNotifications, "send-notifications", false,
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
 	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+
+	// deprecated, old output format specific flags
 	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
+	c.Flags().BoolVar(&imageCheckCmd.json, jsonFlagName, false, "Output policy results as JSON")
+	c.Flags().BoolVar(&imageCheckCmd.failViolationsWithJSON, jsonFailFlagName, true,
+		"Whether policy violations should cause the command to exit non-zero in JSON output mode too. "+
+			"This flag only has effect when --json is also specified.")
+	// mark old output format flags as deprecated, but do not fully remove them to not break API for customer
+	// each deprecation message will be prefixed with "<flag-name> is deprecated,"
+	pkgUtils.Must(c.Flags().MarkDeprecated("print-all-violations", "use the new output format which handles this by default. The flag is only "+
+		"relevant in combination with the --json flag"))
+	pkgUtils.Must(c.Flags().MarkDeprecated(jsonFlagName, "use the new output format which also offers JSON. NOTE: The new output format's structure "+
+		"has changed in a non-backward compatible way."))
+	pkgUtils.Must(c.Flags().MarkDeprecated(jsonFailFlagName, "use the new output format which will always fail with policy violations."))
+
 	return c
 }
 
 // imageCheckCommand holds all configurations and metadata to execute an image check
 type imageCheckCommand struct {
-	image                  string
+	// properties bound to cobra flags
+	image              string
+	retryDelay         int
+	retryCount         int
+	sendNotifications  bool
+	policyCategories   []string
+	printAllViolations bool
+	timeout            time.Duration
+
+	// values injected from either Construct, parent command or for abstracting external dependencies
+	env                      environment.Environment
+	objectPrinter            printer.ObjectPrinter
+	standardizedOutputFormat bool
+
+	// TODO: Remove these values once the old format is fully deprecated
+	// values of deprecated flags
 	json                   bool
 	failViolationsWithJSON bool
-	retryDelay             int
-	retryCount             int
-	sendNotifications      bool
-	policyCategories       []string
-	printAllViolations     bool
-	timeout                time.Duration
-	env                    environment.Environment
-	centralDetectionSvc    centralDetectionService
-}
-
-// centralDetectionService abstracts away the gRPC call to the detection service within central.
-// this is especially useful for testing
-type centralDetectionService interface {
-	DetectBuildTime(ctx context.Context, in *v1.BuildDetectionRequest, opts ...grpc.CallOption) (*v1.BuildDetectionResponse, error)
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command) error {
+func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
+
+	// TODO: remove this once we have fully deprecated the old output format
+	// Only create a printer when --json is not given
+	if !i.json {
+		p, err := f.CreatePrinter()
+		if err != nil {
+			return err
+		}
+		i.objectPrinter = p
+		i.standardizedOutputFormat = f.IsStandardizedFormat()
+	}
+
 	return nil
 }
 
 // Validate will validate the injected values and check whether it's possible to execute the operation with the
 // provided values
 func (i *imageCheckCommand) Validate() error {
-	if i.failViolationsWithJSON && !i.json {
-		fmt.Fprintf(i.env.InputOutput().ErrOut, "Note: --%s has no effect when --%s is not specified.\n", jsonFailFlagName, jsonFlagName)
+
+	// TODO: remove this once we have fully deprecated the old output format
+	// Only print warnings specific to old --json format when no printer is created
+	if i.objectPrinter == nil {
+		if i.failViolationsWithJSON && !i.json {
+			fmt.Fprintf(i.env.InputOutput().ErrOut, "Note: --%s has no effect when --%s is not specified.\n", jsonFailFlagName, jsonFlagName)
+		}
 	}
+
 	return nil
 }
 
@@ -136,30 +178,42 @@ func (i *imageCheckCommand) checkImage() error {
 	if err != nil {
 		return err
 	}
-
-	return i.reportCheckResults(alerts)
+	// retrieve failing policies
+	failingPolicies := getBuildFailingPolicies(alerts)
+	return i.printResults(alerts, failingPolicies)
 }
 
-func (i *imageCheckCommand) reportCheckResults(alerts []*storage.Alert) error {
-	// If json mode was given, print results (as json) and either immediately return or check policy,
-	// depending on a flag.
+func (i *imageCheckCommand) printResults(alerts []*storage.Alert, failingPolicies []*storage.Policy) error {
+	// TODO: Remove this once the old output format is fully deprecated
+	// Legacy printing based on whether --json is set to true or not.
 	if i.json {
-		err := report.JSON(i.env.InputOutput().Out, alerts)
-		if err != nil {
-			return err
-		}
-		if i.failViolationsWithJSON {
-			return checkPolicyFailures(alerts)
-		}
-		return nil
+		return legacyPrint(alerts, i.failViolationsWithJSON, failingPolicies, i.env.InputOutput().Out)
 	}
 
-	// Print results in human readable mode.
-	if err := report.PrettyWithResourceName(i.env.InputOutput().Out, alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT, "Image", i.image, i.printAllViolations); err != nil {
+	// create the alert summary object
+	policySummary := newPolicySummaryForPrinting(alerts, failingPolicies)
+
+	// conditionally print a summary when the output format is a "non-RFC/standardized" one
+	// could be -> text, wide, tree etc.
+	if !i.standardizedOutputFormat {
+		printPolicySummary(i.image, policySummary.Result.Summary, i.env.InputOutput().Out)
+	}
+
+	// print the JSON object in the dedicated format via a printer.ObjectPrinter
+	if err := i.objectPrinter.Print(policySummary, i.env.InputOutput().Out); err != nil {
 		return err
 	}
 
-	return checkPolicyFailures(alerts)
+	// conditionally print errors when the output format is a "non-RFC/standardized" one
+	// could be -> text, wide, tree etc.
+	if !i.standardizedOutputFormat {
+		printAdditionalWarnsAndErrs(policySummary.Result.Summary[totalPolicyAmountKey], failingPolicies, i.env.InputOutput().Out)
+	}
+
+	if len(failingPolicies) != 0 {
+		return newErrFailedPoliciesFound(len(failingPolicies))
+	}
+	return nil
 }
 
 func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage.Alert, error) {
@@ -171,12 +225,10 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 	defer pkgUtils.IgnoreError(conn.Close)
 	svc := v1.NewDetectionServiceClient(conn)
 
-	i.centralDetectionSvc = svc
-
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
 	defer cancel()
 
-	response, err := i.centralDetectionSvc.DetectBuildTime(ctx, req)
+	response, err := svc.DetectBuildTime(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -184,15 +236,64 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 	return response.GetAlerts(), err
 }
 
-func checkPolicyFailures(alerts []*storage.Alert) error {
-	// Check if any of the violated policies have an enforcement action that
-	// fails the CI build.
+// getBuildFailingPolicies retrieves a list of policies which have been violated and have the enforcement action
+// storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT assigned
+func getBuildFailingPolicies(alerts []*storage.Alert) []*storage.Policy {
+	policySet := NewStoragePolicySet()
 	for _, alert := range alerts {
-		if report.EnforcementFailedBuild(storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT)(alert.GetPolicy()) {
-			return errors.New("Violated a policy with CI enforcement set")
+		policy := alert.GetPolicy()
+		for _, action := range policy.GetEnforcementActions() {
+			if action == storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT && !policySet.Contains(policy) {
+				policySet.Add(policy)
+			}
 		}
 	}
+	return policySet.AsSlice()
+}
+
+// legacyPrint supports the old printing behavior of the --json format to ensure backwards compatability
+func legacyPrint(alerts []*storage.Alert, failViolations bool, failedPolicies []*storage.Policy, out io.Writer) error {
+	err := report.JSON(out, alerts)
+	if err != nil {
+		return err
+	}
+	if failViolations && len(failedPolicies) != 0 {
+		return errors.New("Violated a policy with CI enforcement set")
+	}
 	return nil
+}
+
+// printPolicySummary prints a header with an overview of all found policy violations by policySeverity for
+// non-standardized output format, i.e. table format
+func printPolicySummary(image string, numOfPolicyViolations map[string]int, out io.Writer) {
+	fmt.Fprintf(out, "Policy check results for image: %s\n", image)
+	fmt.Fprintf(out, "(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n\n",
+		totalPolicyAmountKey, numOfPolicyViolations[totalPolicyAmountKey],
+		lowSeverity, numOfPolicyViolations[lowSeverity.String()],
+		mediumSeverity, numOfPolicyViolations[mediumSeverity.String()],
+		highSeverity, numOfPolicyViolations[highSeverity.String()],
+		criticalSeverity, numOfPolicyViolations[criticalSeverity.String()])
+}
+
+// printAdditionalWarnsAndErrs prints a warning indicating how many policies have been failed as well as errors for each
+// policy that failed the check. This will be printed only for non-standardized output formats, i.e. table format
+// and if there are any failed policies
+func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, failedPolicies []*storage.Policy, out io.Writer) {
+	if numTotalViolatedPolicies == 0 {
+		return
+	}
+	fmt.Fprintf(out, "WARN: A total of %d policies have been violated\n", numTotalViolatedPolicies)
+
+	if len(failedPolicies) == 0 {
+		return
+	}
+
+	fmt.Fprintf(out, "ERROR: %s\n", newErrFailedPoliciesFound(len(failedPolicies)))
+
+	for _, failedPolicy := range failedPolicies {
+		fmt.Fprintf(out, "ERROR: Policy %q - Possible remediation: %q\n",
+			failedPolicy.GetName(), failedPolicy.GetRemediation())
+	}
 }
 
 // Use inputs to generate an image name for request.
