@@ -134,7 +134,7 @@ class BaseService {
         }
     }
 
-    static getChannel() {
+    static Channel getChannel() {
         if (effectiveChannel == null) {
             initializeChannel()
         }

@@ -1,3 +1,7 @@
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceControl
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -9,9 +13,6 @@ import com.google.protobuf.util.Timestamps
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
-import v1.ComplianceServiceOuterClass.ComplianceControl
-import v1.ComplianceServiceOuterClass.ComplianceStandard
-import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass

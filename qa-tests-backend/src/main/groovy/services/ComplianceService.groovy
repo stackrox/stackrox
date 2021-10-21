@@ -1,9 +1,16 @@
 package services
 
-import io.stackrox.proto.api.v1.Common
-import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
-import io.stackrox.proto.storage.Compliance
-import io.stackrox.proto.storage.Compliance.ComplianceControlResult
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceAggregationRequest
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.GetComplianceRunResultsRequest
+import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.GetComplianceRunResultsResponse
+
+import java.nio.charset.StandardCharsets
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLContext
+
+import groovy.transform.CompileStatic
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.conn.ssl.NoopHostnameVerifier
@@ -12,26 +19,25 @@ import org.apache.http.conn.ssl.TrustAllStrategy
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContextBuilder
-import util.Env
-import v1.ComplianceServiceGrpc
-import v1.ComplianceServiceOuterClass
-import v1.ComplianceServiceOuterClass.GetComplianceRunResultsResponse
+
+import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.api.v1.ComplianceServiceGrpc
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import io.stackrox.proto.storage.Compliance
 import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Scope
-import v1.ComplianceServiceOuterClass.ComplianceStandard
-import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+import io.stackrox.proto.storage.Compliance.ComplianceControlResult
 
-import javax.net.ssl.HostnameVerifier
-import javax.net.ssl.SSLContext
-import java.nio.charset.StandardCharsets
+import util.Env
 
+@CompileStatic
 class ComplianceService extends BaseService {
 
-    static getComplianceClient() {
+    static ComplianceServiceGrpc.ComplianceServiceBlockingStub getComplianceClient() {
         return ComplianceServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<ComplianceStandardMetadata> getComplianceStandards() {
-        return getComplianceClient().getStandards().standardsList
+        return getComplianceClient().getStandards(null).standardsList
     }
 
     static ComplianceStandard getComplianceStandardDetails(String complianceId) {
@@ -42,6 +48,7 @@ class ComplianceService extends BaseService {
         } catch (Exception e) {
             println "Could not find Compliance Standard with ID ${complianceId}: ${e}"
         }
+        return null
     }
 
     static List<ComplianceControlResult> getComplianceResults(RawQuery query = RawQuery.newBuilder().build()) {
@@ -82,7 +89,7 @@ class ComplianceService extends BaseService {
     static GetComplianceRunResultsResponse getComplianceRunResult(String standardId, String clusterId,
                                                                   String runId = null) {
         return getComplianceClient().getRunResults(
-                ComplianceServiceOuterClass.GetComplianceRunResultsRequest.newBuilder()
+                GetComplianceRunResultsRequest.newBuilder()
                         .setStandardId(standardId)
                         .setClusterId(clusterId)
                         .setRunId(runId ?: "")
@@ -92,7 +99,7 @@ class ComplianceService extends BaseService {
 
     static getAggregatedResults(Scope unit, List<Scope> groupBy, RawQuery where = RawQuery.newBuilder().build()) {
         return getComplianceClient().getAggregatedResults(
-                ComplianceServiceOuterClass.ComplianceAggregationRequest.newBuilder()
+                ComplianceAggregationRequest.newBuilder()
                         .addAllGroupBy(groupBy)
                         .setUnit(unit)
                         .setWhere(where)
