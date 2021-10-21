@@ -15,9 +15,10 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import ViewAllButton from 'Components/ViewAllButton';
+import ViewAllButton from 'Components/PatternFly/ViewAllButton';
 import { clustersBasePath } from 'routePaths';
 import GenerateDiagnosticBundleButton from '../Components/GenerateDiagnosticBundleButton';
+import VulnerabilityDefinitionsWidget from './Components/VulnerabilityDefinitionsWidget';
 
 function SystemHealthDashboard(): ReactElement {
     return (
@@ -28,23 +29,73 @@ function SystemHealthDashboard(): ReactElement {
                         <Title headingLevel="h1">System Health</Title>
                     </FlexItem>
                     <FlexItem align={{ default: 'alignRight' }}>
+                        {/* TODO: this section migrated as part of https://stack-rox.atlassian.net/browse/ROX-8319 */}
                         <GenerateDiagnosticBundleButton />
                     </FlexItem>
                 </Flex>
             </PageSection>
             <PageSection>
                 <Grid hasGutter className="pf-u-mb-sm">
+                    {/* TODO: this section migrated as part of
+                    https://stack-rox.atlassian.net/browse/ROX-8315 and
+                    https://stack-rox.atlassian.net/browse/ROX-8315 */}
                     <GridItem span={12} md={6} lg={8} rowSpan={2}>
                         <Card isCompact>
                             <CardHeader>
                                 <CardHeaderMain>
                                     <CardTitle component="h2">Cluster Health</CardTitle>
                                 </CardHeaderMain>
-                                <CardActions>
+                                <CardActions hasNoOffset>
                                     <ViewAllButton url={clustersBasePath} />
                                 </CardActions>
                             </CardHeader>
                             <CardBody>grid of smaller cards goes here</CardBody>
+                        </Card>
+                    </GridItem>
+                    <GridItem span={12} md={6} lg={4} rowSpan={1}>
+                        {/* TODO: this section migrated as part of https://stack-rox.atlassian.net/browse/ROX-8313 */}
+                        <VulnerabilityDefinitionsWidget />
+                    </GridItem>
+                </Grid>
+                <Grid hasGutter>
+                    {/* TODO: these section migrated as part of https://stack-rox.atlassian.net/browse/ROX-8314 */}
+                    <GridItem span={12} md={4}>
+                        <Card isCompact>
+                            <CardHeader>
+                                <CardHeaderMain>
+                                    <CardTitle component="h2">Image Integrations</CardTitle>
+                                </CardHeaderMain>
+                                <CardActions hasNoOffset>
+                                    <ViewAllButton url={clustersBasePath} />
+                                </CardActions>
+                            </CardHeader>
+                            <CardBody>health details go here</CardBody>
+                        </Card>
+                    </GridItem>
+                    <GridItem span={12} md={4}>
+                        <Card isCompact>
+                            <CardHeader>
+                                <CardHeaderMain>
+                                    <CardTitle component="h2">Notifier Integrations</CardTitle>
+                                </CardHeaderMain>
+                                <CardActions hasNoOffset>
+                                    <ViewAllButton url={clustersBasePath} />
+                                </CardActions>
+                            </CardHeader>
+                            <CardBody>health details go here</CardBody>
+                        </Card>
+                    </GridItem>
+                    <GridItem span={12} md={4}>
+                        <Card isCompact>
+                            <CardHeader>
+                                <CardHeaderMain>
+                                    <CardTitle component="h2">Backup Integrations</CardTitle>
+                                </CardHeaderMain>
+                                <CardActions hasNoOffset>
+                                    <ViewAllButton url={clustersBasePath} />
+                                </CardActions>
+                            </CardHeader>
+                            <CardBody>health details go here</CardBody>
                         </Card>
                     </GridItem>
                 </Grid>

@@ -113,7 +113,7 @@ export const dashboardSelectors = {
         return `[data-testid="tile-link-value"]:contains('${title}')`;
     },
     widgetBody: '[data-testid="widget-body"]',
-    viewAllButton: 'button:contains("View All")',
+    viewAllButton: 'a:contains("View All")',
     dataRowLink: '[data-testid="numbered-list-item-name"]',
     topMostRowMCV:
         '#capture-dashboard > div > div > div > .h-full > div > div > svg > g > text:nth-child(20)',
