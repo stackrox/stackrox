@@ -133,6 +133,22 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                         </div>
                     </div>
                 </CollapsibleSection>
+                <CollapsibleSection title="Dockerfile" defaultOpen={false}>
+                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4">
+                        <TableWidget
+                            header={`${layers.length} ${pluralize(
+                                'layer',
+                                layers.length
+                            )} across this image`}
+                            rows={layers}
+                            noDataText="No layers available in this image"
+                            className="bg-base-100"
+                            columns={entityToColumns[entityTypes.IMAGE]}
+                            SubComponent={renderCVEsTable}
+                            idAttribute="id"
+                        />
+                    </div>
+                </CollapsibleSection>
                 <CollapsibleSection title="Image Findings">
                     <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4">
                         <BinderTabs>
@@ -143,20 +159,6 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     entityType={entityTypes.IMAGE}
                                     name={safeData?.name?.fullName}
                                     id={safeData?.id}
-                                />
-                            </Tab>
-                            <Tab title="Dockerfile">
-                                <TableWidget
-                                    header={`${layers.length} ${pluralize(
-                                        'layer',
-                                        layers.length
-                                    )} across this image`}
-                                    rows={layers}
-                                    noDataText="No layers available in this image"
-                                    className="bg-base-100"
-                                    columns={entityToColumns[entityTypes.IMAGE]}
-                                    SubComponent={renderCVEsTable}
-                                    idAttribute="id"
                                 />
                             </Tab>
                         </BinderTabs>
