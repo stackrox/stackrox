@@ -39,8 +39,9 @@ const (
 
 // Client is a client which provides functions to call rest routes in central
 type Client struct {
-	endpoint   *url.URL
-	httpClient *http.Client
+	endpoint       *url.URL
+	httpClient     *http.Client
+	nonceGenerator cryptoutils.NonceGenerator
 }
 
 // NewClient creates a new client
@@ -88,8 +89,9 @@ func NewClient(endpoint string) (*Client, error) {
 	}
 
 	return &Client{
-		httpClient: httpClient,
-		endpoint:   endpointURL,
+		httpClient:     httpClient,
+		endpoint:       endpointURL,
+		nonceGenerator: cryptoutils.NewNonceGenerator(centralsensor.ChallengeTokenLength, nil),
 	}, nil
 }
 
@@ -126,6 +128,10 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, e
 	trustInfo, err := c.parseTLSChallengeResponse(resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying tls challenge")
+	}
+
+	if trustInfo.SensorChallenge != token {
+		return nil, errors.Errorf("validating central response failed: sensor token %q did not match received token %q", token, trustInfo.SensorChallenge)
 	}
 
 	var certs []*x509.Certificate
@@ -240,8 +246,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 }
 
 func (c *Client) generateChallengeToken() (string, error) {
-	nonceGenerator := cryptoutils.NewNonceGenerator(centralsensor.ChallengeTokenLength, nil)
-	challenge, err := nonceGenerator.Nonce()
+	challenge, err := c.nonceGenerator.Nonce()
 	if err != nil {
 		return "", err
 	}
