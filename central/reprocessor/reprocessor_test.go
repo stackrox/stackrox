@@ -8,6 +8,10 @@ import (
 	"github.com/golang/mock/gomock"
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	activeComponentsUpdaterMocks "github.com/stackrox/rox/central/activecomponent/updater/mocks"
+	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
+	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
+	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
+	cveIndex "github.com/stackrox/rox/central/cve/index"
 	deploymentDackbox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -17,6 +21,10 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIndex "github.com/stackrox/rox/central/image/index"
+	imageComponentDackbox "github.com/stackrox/rox/central/imagecomponent/dackbox"
+	imageComponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
+	imageComponentEdgeDackbox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
+	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -51,7 +59,8 @@ const (
 )
 
 func TestLoop(t *testing.T) {
-	t.Parallel()
+	// This test is timing-sensitive and thus prone to flakiness. It should not run in parallel with other
+	// tests.
 	suite.Run(t, new(loopTestSuite))
 }
 
@@ -189,6 +198,10 @@ func TestGetActiveImageIDs(t *testing.T) {
 
 	reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
 	reg.RegisterWrapper(indexDackbox.Bucket, imageIndex.Wrapper{})
+	reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
+	reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
+	reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
+	reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
 
 	imageDS := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
 
