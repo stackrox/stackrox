@@ -49,7 +49,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gnostic v0.5.1
-	github.com/gookit/color v1.4.2
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0

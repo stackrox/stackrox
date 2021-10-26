@@ -84,6 +84,10 @@ func getColumnValues(value gjson.Result) []string {
 // NOTE: This function relies on the given columns array to not be jagged.
 func getRowsFromColumns(columns [][]string) [][]string {
 	var rows [][]string
+	if len(columns) == 0 {
+		return rows
+	}
+
 	for colIndex := range columns[0] {
 		row := make([]string, 0, len(columns[0]))
 		for cellIndex := range columns {

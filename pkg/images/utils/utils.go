@@ -159,6 +159,12 @@ func IsPullable(imageStr string) bool {
 	return err == nil
 }
 
+// IsValidImageString returns whether the given string can be parsed as a docker image reference
+func IsValidImageString(imageStr string) error {
+	_, err := reference.ParseAnyReference(imageStr)
+	return err
+}
+
 // ExtractImageDigest returns the image sha if it exists within the string.
 func ExtractImageDigest(imageStr string) string {
 	if idx := strings.Index(imageStr, "sha256:"); idx != -1 {

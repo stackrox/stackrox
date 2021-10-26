@@ -2,31 +2,54 @@ package scan
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/util"
-	"google.golang.org/grpc"
+)
+
+var (
+	// default headers to use when printing tabular output
+	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK"}
+	// default JSON path expression representing a row within tabular output
+	defaultImageScanJSONPathExpression = "{" +
+		"result.vulnerabilities.#.componentName," +
+		"result.vulnerabilities.#.componentVersion," +
+		"result.vulnerabilities.#.cveId," +
+		"result.vulnerabilities.#.cveSeverity," +
+		"result.vulnerabilities.#.cveInfo}"
+	// supported output formats with default values
+	supportedObjectPrinters = []printer.CustomPrinterFactory{
+		printer.NewTabularPrinterFactory(true, defaultImageScanHeaders, defaultImageScanJSONPathExpression, false, false),
+		printer.NewJSONPrinterFactory(false, false),
+	}
 )
 
 // Command checks the image against image build lifecycle policies
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	// should not happen when using default values, must be a programming error
+	utils.Must(err)
+
 	c := &cobra.Command{
 		Use: "scan",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			if err := imageScanCmd.Construct(nil, c); err != nil {
+			if err := imageScanCmd.Construct(nil, c, objectPrinterFactory); err != nil {
 				return err
 			}
 
@@ -38,17 +61,29 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 
+	objectPrinterFactory.AddFlags(c)
+
 	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "the --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
 	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", true, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set to false")
-	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "format of the output. Choose output format from json, csv, and pretty.")
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 0, "Number of retries before exiting as error")
+
+	// Deprecated flag
+	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
+	// The error message will be prefixed by "command <command-name> has been deprecated,"
+	// Fully deprecated "pretty" format, since we can assume no customer has built scripting around its loose format
+	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "", "format of the output. Choose output format from json and csv.")
+	utils.Must(c.Flags().MarkDeprecated("format", "please use --output/-o to specify the output format. NOTE: The new JSON format contains breaking changes, make sure "+
+		"you adapt to the new structure before migrating."))
+
+	utils.Must(c.MarkFlagRequired("image"))
 	return c
 }
 
 // imageScanCommand holds all configurations and metadata to execute an image scan
 type imageScanCommand struct {
+	// properties bound to cobra flags
 	image          string
 	force          bool
 	includeSnoozed bool
@@ -56,19 +91,31 @@ type imageScanCommand struct {
 	retryDelay     int
 	retryCount     int
 	timeout        time.Duration
-	env            environment.Environment
-	centralImgSvc  centralImageService
-}
 
-// centralImageService abstracts away the gRPC call to the image service within central
-// this is especially useful for testing
-type centralImageService interface {
-	ScanImage(ctx context.Context, in *v1.ScanImageRequest, opts ...grpc.CallOption) (*storage.Image, error)
+	// injected or constructed values
+	env                environment.Environment
+	printer            printer.ObjectPrinter
+	standardizedFormat bool
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command) error {
+func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
+
+	if err := imageUtils.IsValidImageString(i.image); err != nil {
+		return errorhelpers.NewErrInvalidArgs(err.Error())
+	}
+
+	// Only create the printer when the old, deprecated output format is not used
+	// TODO(ROX-8303): This can be removed once the old output format is fully deprecated
+	if i.format == "" {
+		p, err := f.CreatePrinter()
+		if err != nil {
+			return err
+		}
+		i.printer = p
+		i.standardizedFormat = f.IsStandardizedFormat()
+	}
 
 	return nil
 }
@@ -77,13 +124,16 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command) error {
 // provided values
 func (i *imageScanCommand) Validate() error {
 	if i.image == "" {
-		return errors.New("missing image name. please specify an image name via either --image or -i")
+		return errorhelpers.NewErrInvalidArgs("no image name specified via the -i or --image flag")
 	}
-	// TODO(dhaus): When creating the abstraction for the printer, this needs to be replaced.
-	// 				The printer abstraction should be responsible to validate the format and
-	//				select the correct printer accordingly
-	if i.format != "json" && i.format != "csv" && i.format != "pretty" {
-		return fmt.Errorf("invalid output format given: %q. You can only specify json, csv or pretty", i.format)
+
+	// Only verify the legacy output format if no printer is constructed, thus the new output format is not used
+	if i.printer == nil {
+		// TODO(ROX-8303): this can be removed once the old output format is fully deprecated
+		if i.format != "" && i.format != "json" && i.format != "csv" {
+			return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format %q used. You can "+
+				"only specify json or csv", i.format))
+		}
 	}
 	return nil
 }
@@ -105,6 +155,7 @@ func (i *imageScanCommand) Scan() error {
 	return nil
 }
 
+// scanImage will retrieve scan results from central and print them afterwards
 func (i *imageScanCommand) scanImage() error {
 	imageResult, err := i.getImageResultFromService()
 
@@ -115,12 +166,78 @@ func (i *imageScanCommand) scanImage() error {
 	return i.printImageResult(imageResult)
 }
 
+// getImageResultFromService will retrieve the scan results for the specified image from
+// central's ImageService
+func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
+	conn, err := i.env.GRPCConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer utils.IgnoreError(conn.Close)
+
+	svc := v1.NewImageServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
+	defer cancel()
+
+	return svc.ScanImage(ctx, &v1.ScanImageRequest{
+		ImageName:      i.image,
+		Force:          i.force,
+		IncludeSnoozed: i.includeSnoozed,
+	})
+}
+
+// printImageResult print the storage.ImageScan results, either in legacy output format or
+// via a printer.ObjectPrinter
 func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
-	switch i.format {
+	if i.format != "" {
+		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out)
+	}
+
+	cveSummary := newCVESummaryForPrinting(imageResult.GetScan())
+
+	if !i.standardizedFormat {
+		printCVESummary(i.image, cveSummary.Result.Summary, i.env.InputOutput().Out)
+	}
+
+	if err := i.printer.Print(cveSummary, i.env.InputOutput().Out); err != nil {
+		return err
+	}
+
+	if !i.standardizedFormat {
+		printCVEWarning(cveSummary.Result.Summary[totalVulnerabilitiesMapKey],
+			cveSummary.Result.Summary[totalComponentsMapKey],
+			i.env.InputOutput().Out)
+	}
+	return nil
+}
+
+// print summary of amount of CVEs found
+func printCVESummary(image string, cveSummary map[string]int, out io.Writer) {
+	fmt.Fprintf(out, "Scan results for image: %s\n", image)
+	fmt.Fprintf(out, "(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n\n",
+		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
+		totalVulnerabilitiesMapKey, cveSummary[totalVulnerabilitiesMapKey],
+		lowCVESeverity, cveSummary["LOW"],
+		moderateCVESeverity, cveSummary["MEDIUM"],
+		importantCVESeverity, cveSummary["IMPORTANT"],
+		criticalCVESeverity, cveSummary["CRITICAL"])
+}
+
+// print warning with amount of CVEs found in components
+func printCVEWarning(numOfVulns int, numOfComponents int, out io.Writer) {
+	if numOfVulns != 0 {
+		fmt.Fprintf(out, "WARN: A total of %d vulnerabilities were found in %d components\n",
+			numOfVulns, numOfComponents)
+	}
+}
+
+// TODO(ROX-8303): remove this once we have fully deprecated the legacy output format
+// print CVE scan result in legacy output format
+func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer) error {
+	switch format {
 	case "csv":
-		return PrintCSV(imageResult)
-	case "pretty":
-		PrintPretty(imageResult)
+		return PrintCSV(imageResult, out)
 	default:
 		marshaller := &jsonpb.Marshaler{
 			Indent: "  ",
@@ -130,27 +247,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 			return err
 		}
 
-		fmt.Fprintln(i.env.InputOutput().Out, jsonResult)
+		fmt.Fprintln(out, jsonResult)
 	}
 	return nil
-}
-
-func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
-	conn, err := i.env.GRPCConnection()
-	if err != nil {
-		return nil, err
-	}
-	defer utils.IgnoreError(conn.Close)
-
-	svc := v1.NewImageServiceClient(conn)
-	i.centralImgSvc = svc
-
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
-	defer cancel()
-
-	return i.centralImgSvc.ScanImage(ctx, &v1.ScanImageRequest{
-		ImageName:      i.image,
-		Force:          i.force,
-		IncludeSnoozed: i.includeSnoozed,
-	})
 }
