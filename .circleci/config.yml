@@ -4691,14 +4691,15 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-kops-api-e2e-tests
-      - provision-aks-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - aks-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-aks-api-e2e-tests
+      # ROX-8306 - Disabled due to Azure account issue
+      # - provision-aks-api-e2e-tests:
+      #     <<: *runOnAllTagsWithQuayIOPullCtx
+      # - aks-api-e2e-tests:
+      #     <<: *runOnAllTagsWithQuayIOPullCtx
+      #     requires:
+      #       - build
+      #       - build-scale-monitoring-and-mock-server
+      #       - provision-aks-api-e2e-tests
       - provision-openshift-4-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - openshift-4-api-e2e-tests:
@@ -4756,26 +4757,27 @@ workflows:
             - quay-cgorman1-readonly
             - aws-setup
 
-      - provision-openshift-aro-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          context:
-            - com-redhat-cloud
-            - quay-cgorman1-readonly
-            - azure-ci
-            - aro-cluster-manager
+      # ROX-8306 - Disabled due to Azure account issue
+      # - provision-openshift-aro-api-e2e-tests:
+      #     <<: *runOnAllTagsWithQuayIOPullCtx
+      #     context:
+      #       - com-redhat-cloud
+      #       - quay-cgorman1-readonly
+      #       - azure-ci
+      #       - aro-cluster-manager
 
-      - openshift-aro-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-aro-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
-          context:
-            - com-redhat-cloud
-            - quay-cgorman1-readonly
-            - azure-ci
-            - aro-cluster-manager
+      # - openshift-aro-api-e2e-tests:
+      #     <<: *runOnAllTagsWithQuayIOPullCtx
+      #     requires:
+      #       - build-scale-monitoring-and-mock-server
+      #       - provision-openshift-aro-api-e2e-tests
+      #       - pre-build-cli
+      #       - pre-build-go-binaries
+      #     context:
+      #       - com-redhat-cloud
+      #       - quay-cgorman1-readonly
+      #       - azure-ci
+      #       - aro-cluster-manager
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
