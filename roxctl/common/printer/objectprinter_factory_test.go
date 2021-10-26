@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,37 +14,33 @@ func TestNewObjectPrinterFactory(t *testing.T) {
 	cases := map[string]struct {
 		defaultFormat  string
 		shouldFail     bool
-		errMsg         string
+		error          error
 		printerFactory []CustomPrinterFactory
 	}{
 		"should fail when no CustomPrinterFactory is added": {
 			defaultFormat:  "table",
 			shouldFail:     true,
-			errMsg:         `no custom printer factory added. You must specify at least one custom printer factory that supports the "table" output format`,
+			error:          errorhelpers.ErrInvariantViolation,
 			printerFactory: []CustomPrinterFactory{nil},
 		},
 		"should not fail if format is supported by registered CustomPrinterFactory": {
 			defaultFormat:  "table",
-			shouldFail:     false,
-			errMsg:         "",
 			printerFactory: []CustomPrinterFactory{NewTabularPrinterFactory(false, nil, "", false, false)},
 		},
 		"should not fail if format is supported and valid values for CustomPrinterFactory": {
 			defaultFormat:  "table",
-			shouldFail:     false,
-			errMsg:         "",
 			printerFactory: []CustomPrinterFactory{NewTabularPrinterFactory(false, []string{"a", "b"}, "a,b", false, false)},
 		},
 		"should fail if default output format is not supported by registered CustomPrinterFactory": {
 			defaultFormat:  "table",
 			shouldFail:     true,
-			errMsg:         `unsupported output format used: "table". Please choose one of the supported formats: json`,
+			error:          errorhelpers.ErrInvalidArgs,
 			printerFactory: []CustomPrinterFactory{NewJSONPrinterFactory(false, false)},
 		},
 		"should fail if duplicate CustomPrinterFactory is being registered": {
 			defaultFormat:  "json",
 			shouldFail:     true,
-			errMsg:         `tried to register two printer factories which support the same output formats "json": *printer.JSONPrinterFactory and *printer.JSONPrinterFactory`,
+			error:          errorhelpers.ErrInvariantViolation,
 			printerFactory: []CustomPrinterFactory{NewJSONPrinterFactory(false, false), NewJSONPrinterFactory(false, false)},
 		},
 	}
@@ -53,7 +50,7 @@ func TestNewObjectPrinterFactory(t *testing.T) {
 			_, err := NewObjectPrinterFactory(c.defaultFormat, c.printerFactory...)
 			if c.shouldFail {
 				require.Error(t, err)
-				assert.Equal(t, c.errMsg, err.Error())
+				assert.ErrorIs(t, err, c.error)
 			} else {
 				require.NoError(t, err)
 			}
@@ -73,8 +70,9 @@ func TestObjectPrinterFactory_AddFlags(t *testing.T) {
 		Use: "test",
 	}
 	o.AddFlags(cmd)
-	formatFlag := cmd.Flag("format")
-	assert.NotNil(t, formatFlag)
+	formatFlag := cmd.Flag("output")
+	require.NotNil(t, formatFlag)
+	assert.Equal(t, "o", formatFlag.Shorthand)
 	assert.Equal(t, "table", formatFlag.DefValue)
 	assert.True(t, strings.Contains(formatFlag.Usage, "json"))
 	assert.True(t, strings.Contains(formatFlag.Usage, "table"))
@@ -85,6 +83,7 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 	cases := map[string]struct {
 		o          ObjectPrinterFactory
 		shouldFail bool
+		error      error
 	}{
 		"should not return an error when output format is supported": {
 			o: ObjectPrinterFactory{
@@ -105,6 +104,7 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 				},
 			},
 			shouldFail: true,
+			error:      errorhelpers.ErrInvalidArgs,
 		},
 	}
 
@@ -113,6 +113,7 @@ func TestObjectPrinterFactory_validateOutputFormat(t *testing.T) {
 			err := c.o.validateOutputFormat()
 			if c.shouldFail {
 				require.Error(t, err)
+				assert.ErrorIs(t, err, c.error)
 			} else {
 				require.NoError(t, err)
 			}
@@ -149,26 +150,25 @@ func TestObjectPrinterFactory_IsStandardizedFormat(t *testing.T) {
 
 func TestObjectPrinterFactory_CreatePrinter(t *testing.T) {
 	cases := map[string]struct {
-		shouldFail  bool
-		shouldPanic bool
-		o           ObjectPrinterFactory
+		o     ObjectPrinterFactory
+		error error
 	}{
 		"should return an error when the output format is not supported": {
-			shouldFail:  true,
-			shouldPanic: false,
 			o: ObjectPrinterFactory{
 				OutputFormat: "table",
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
 					"json": NewJSONPrinterFactory(false, false),
 				},
 			},
+			error: errorhelpers.ErrInvalidArgs,
 		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			printer, err := c.o.CreatePrinter()
-			assert.Error(t, err)
+			require.Error(t, err)
+			assert.ErrorIs(t, err, c.error)
 			assert.Nil(t, printer)
 		})
 	}
@@ -178,7 +178,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 	cases := map[string]struct {
 		o          ObjectPrinterFactory
 		shouldFail bool
-		errMsg     string
+		error      error
 	}{
 		"should not fail with valid CustomPrinterFactory and valid output format": {
 			o: ObjectPrinterFactory{
@@ -187,8 +187,6 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 				},
 				OutputFormat: "json",
 			},
-			shouldFail: false,
-			errMsg:     "",
 		},
 		"should fail with invalid CustomPrinterFactory": {
 			o: ObjectPrinterFactory{
@@ -198,7 +196,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 				OutputFormat: "table",
 			},
 			shouldFail: true,
-			errMsg:     "Different number of headers and JSON Path expressions specified. Make sure you specify the same number of arguments for both",
+			error:      errorhelpers.ErrInvalidArgs,
 		},
 		"should fail with unsupported OutputFormat": {
 			o: ObjectPrinterFactory{
@@ -208,7 +206,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 				OutputFormat: "table",
 			},
 			shouldFail: true,
-			errMsg:     `unsupported output format used: "table". Please choose one of the supported formats: json`,
+			error:      errorhelpers.ErrInvalidArgs,
 		},
 	}
 
@@ -217,7 +215,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 			err := c.o.validate()
 			if c.shouldFail {
 				require.Error(t, err)
-				assert.Equal(t, c.errMsg, err.Error())
+				assert.ErrorIs(t, err, c.error)
 			} else {
 				assert.NoError(t, err)
 			}

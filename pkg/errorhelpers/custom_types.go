@@ -50,3 +50,8 @@ func NewErrNotAuthorized(explanation string) error {
 func NewErrInvariantViolation(explanation string) error {
 	return fmt.Errorf("%w: %s", ErrInvariantViolation, explanation)
 }
+
+// NewErrInvalidArgs wraps ErrInvalidArgs into an explanation.
+func NewErrInvalidArgs(explanation string) error {
+	return fmt.Errorf("%w: %s", ErrInvalidArgs, explanation)
+}

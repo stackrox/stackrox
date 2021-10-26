@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // TabularPrinterFactory holds all configuration options of tabular printers, specifically CSVPrinter and TablePrinter
@@ -97,7 +97,8 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	case "csv":
 		return newCSVPrinter(t.Headers, t.RowJSONPathExpression, t.NoHeader, t.HeaderAsComment), nil
 	default:
-		return nil, fmt.Errorf("invalid output format used for Tabular Printer: %q", format)
+		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
+			"Tabular Printer: %q", format))
 	}
 }
 
@@ -112,13 +113,13 @@ func (t *TabularPrinterFactory) validate() error {
 	}
 
 	if len(t.Headers) != amountJSONPathExpressions {
-		return errors.New("Different number of headers and JSON Path expressions specified. Make sure you " +
-			"specify the same number of arguments for both")
+		return errorhelpers.NewErrInvalidArgs("different number of headers and JSON Path expressions " +
+			"specified. Make sure you specify the same amount of arguments for both")
 	}
 
 	if t.NoHeader && t.HeaderAsComment {
-		return errors.New("cannot specify both --no-header as well as --headers-as-comment flags. You must " +
-			"choose either one")
+		return errorhelpers.NewErrInvalidArgs("cannot specify both --no-header as well as " +
+			"--headers-as-comment flags. Choose only one of them")
 	}
 	return nil
 }

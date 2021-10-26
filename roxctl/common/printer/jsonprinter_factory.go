@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // JSONPrinterFactory holds all configuration options for the JSONPrinter.
@@ -41,7 +42,8 @@ func (j *JSONPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error)
 	case "json":
 		return newJSONPrinter(j.Compact, j.EscapeHTMLCharacters), nil
 	default:
-		return nil, fmt.Errorf("invalid output format used for JSON Printer: %q", format)
+		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
+			"JSON printer: %q", format))
 	}
 }
 

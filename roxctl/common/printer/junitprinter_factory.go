@@ -1,11 +1,11 @@
 package printer
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // JUnitPrinterFactory holds all configuration options for a JUnit printer.
@@ -102,7 +102,8 @@ func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 	case "junit":
 		return newJUnitPrinter(j.suiteName, j.jsonPathExpressions), nil
 	default:
-		return nil, fmt.Errorf("invaild output format used for JUnit Printer: %q", format)
+		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
+			"JUnit Printer: %q", format))
 	}
 }
 
@@ -111,12 +112,16 @@ func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 func (j *JUnitPrinterFactory) validate() error {
 	// ensure that the suite name is not empty
 	if j.suiteName == "" {
-		return errors.New("empty JUnit test suite name given, please provide a meaningful name")
+		return errorhelpers.NewErrInvalidArgs("empty JUnit test suite name given, " +
+			"please provide a meaningful name")
 	}
 
 	for _, key := range []string{JUnitTestCasesExpressionKey, JUnitFailedTestCasesExpressionKey, JUnitFailedTestCaseErrMsgExpressionKey} {
 		if _, exists := j.jsonPathExpressions[key]; !exists {
-			return fmt.Errorf("missing required JSON Path expression for key %q", key)
+			// since the jsonPathExpression map is NOT expected to be set by the user, return an ErrInvariantViolation
+			// instead
+			return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("missing required JSON Path expression "+
+				"for key %q", key))
 		}
 	}
 

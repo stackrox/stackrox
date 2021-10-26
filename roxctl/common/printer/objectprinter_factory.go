@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -13,15 +14,9 @@ var (
 	standardizedFormats = set.NewFrozenStringSet("json", "csv", "junit")
 )
 
-// UnsupportedOutputFormatError creates a standardized error for unsupported format inputs in combination with ObjectPrinter
-type UnsupportedOutputFormatError struct {
-	OutputFormat     string
-	SupportedFormats []string
-}
-
-func (u UnsupportedOutputFormatError) Error() string {
-	return fmt.Sprintf("unsupported output format used: %q. Please choose one of the supported formats: %s",
-		u.OutputFormat, strings.Join(u.SupportedFormats, " | "))
+func unsupportedOutputFormatError(format string, supportedFormats []string) error {
+	return errorhelpers.NewErrInvalidArgs(fmt.Sprintf("unsupported output format used: %q. Choose one of %s",
+		format, strings.Join(supportedFormats, " | ")))
 }
 
 // ObjectPrinterFactory holds all flags for specific printers implementing ObjectPrinter as well as the output format flag
@@ -66,14 +61,15 @@ func NewObjectPrinterFactory(defaultOutputFormat string, customPrinterFactories 
 		if _, ok := factoryMap[supportedFormatString]; !ok {
 			factoryMap[supportedFormatString] = factory
 		} else {
-			return nil, fmt.Errorf("tried to register two printer factories which support the same output formats %q: %T and %T",
-				supportedFormatString, factory, factoryMap[supportedFormatString])
+			return nil, errorhelpers.NewErrInvariantViolation(fmt.Sprintf("tried to register two printer "+
+				"factories which support the same output formats %q: %T and %T",
+				supportedFormatString, factory, factoryMap[supportedFormatString]))
 		}
 	}
 
 	if len(factoryMap) == 0 {
-		return nil, fmt.Errorf("no custom printer factory added. You must specify at least one "+
-			"custom printer factory that supports the %q output format", defaultOutputFormat)
+		return nil, errorhelpers.NewErrInvariantViolation(fmt.Sprintf("no custom printer factory added. You must specify at least one "+
+			"custom printer factory that supports the %q output format", defaultOutputFormat))
 	}
 
 	o.RegisteredPrinterFactories = factoryMap
@@ -97,7 +93,7 @@ func (o *ObjectPrinterFactory) AddFlags(cmd *cobra.Command) {
 		printerFactory.AddFlags(cmd)
 	}
 
-	cmd.PersistentFlags().StringVar(&o.OutputFormat, "format", o.OutputFormat,
+	cmd.PersistentFlags().StringVarP(&o.OutputFormat, "output", "o", o.OutputFormat,
 		fmt.Sprintf("Output format. Choose one of: %s", strings.Join(o.supportedFormats(), " | ")))
 }
 
@@ -119,7 +115,7 @@ func (o *ObjectPrinterFactory) CreatePrinter() (ObjectPrinter, error) {
 	}
 
 	// should never happen as output format is declared as supported within the validation
-	return nil, UnsupportedOutputFormatError{OutputFormat: o.OutputFormat, SupportedFormats: o.supportedFormats()}
+	return nil, unsupportedOutputFormatError(o.OutputFormat, o.supportedFormats())
 }
 
 // validate will validate whether the given output format can be satisfied by the registered CustomPrinterFactory. It also
@@ -143,7 +139,7 @@ func (o *ObjectPrinterFactory) validateOutputFormat() error {
 		}
 	}
 
-	return UnsupportedOutputFormatError{OutputFormat: o.OutputFormat, SupportedFormats: o.supportedFormats()}
+	return unsupportedOutputFormatError(o.OutputFormat, o.supportedFormats())
 }
 
 // supportedFormats creates a list of all supported formats based on the CustomPrinterFactory register within the ObjectPrinterFactory
