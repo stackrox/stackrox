@@ -50,7 +50,7 @@ func Command() *cobra.Command {
 		central.Command(),
 		cluster.Command(),
 		collector.Command(),
-		deployment.Command(),
+		deployment.Command(cliEnvironment),
 		logconvert.Command(),
 		image.Command(cliEnvironment),
 		scanner.Command(),

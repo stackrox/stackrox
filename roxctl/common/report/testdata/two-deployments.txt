@@ -1,6 +1,6 @@
 
 
-✗ Deployment deployment1 failed policy 'CI Test Policy One' 
+✗ Deployment deployment1 failed policy 'CI Test Policy One'
 - Description:
     ↳ CI policy one that is used for tests
 - Rationale:
@@ -14,7 +14,7 @@
     - This is awesome
     - This is more awesome
 
-✗ Deployment deployment2 failed policy 'CI Test Policy Two' 
+✗ Deployment deployment2 failed policy 'CI Test Policy Two'
 - Description:
     ↳ CI policy two that is used for tests
 - Rationale:

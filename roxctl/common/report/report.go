@@ -15,9 +15,9 @@ const (
 	// policies.
 	failedTemplate = `{{- range .AlertTemplateObjects}}
 {{if .Alert.GetDeployment}}
-✗ Deployment {{.Alert.GetDeployment.Name}} failed policy '{{.Alert.Policy.Name}}' {{if failedFunc .Alert.Policy}}(policy enforcement caused failure){{end}}
+✗ Deployment {{.Alert.GetDeployment.Name}} failed policy '{{.Alert.Policy.Name}}'{{if failedFunc .Alert.Policy}} (policy enforcement caused failure){{end}}
 {{else}}
-✗ Image {{$.ResourceName}} failed policy '{{.Alert.Policy.Name}}' {{if failedFunc .Alert.Policy}}(policy enforcement caused failure){{end}}
+✗ Image {{$.ResourceName}} failed policy '{{.Alert.Policy.Name}}'{{if failedFunc .Alert.Policy}} (policy enforcement caused failure){{end}}
 {{end -}}
 - Description:
     ↳ {{wrap .Alert.Policy.Description}}

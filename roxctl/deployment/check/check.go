@@ -13,10 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
-	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 var (
@@ -24,40 +23,67 @@ var (
 )
 
 // Command checks the deployment against deploy time system policies
-func Command() *cobra.Command {
-	var (
-		file               string
-		json               bool
-		retryDelay         int
-		retryCount         int
-		policyCategories   []string
-		printAllViolations bool
-	)
+func Command(cliEnvironment environment.Environment) *cobra.Command {
+	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
+
 	c := &cobra.Command{
-		Use: "check",
-		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return checkDeploymentWithRetry(file, json, flags.Timeout(c), retryDelay, retryCount, policyCategories, printAllViolations)
-		}),
+		Use:  "check",
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := deploymentCheckCmd.Construct(args, cmd); err != nil {
+				return err
+			}
+			if err := deploymentCheckCmd.Validate(); err != nil {
+				return err
+			}
+
+			return deploymentCheckCmd.Check()
+		},
 	}
 
-	c.Flags().StringVarP(&file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
-	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
-	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
-	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "Number of retries before exiting as error")
-	c.Flags().StringSliceVarP(&policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
-	c.Flags().BoolVar(&printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
+	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
+	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "output policy results as json.")
+	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
+	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 0, "Number of retries before exiting as error")
+	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	utils.Should(c.MarkFlagRequired("file"))
 	return c
 }
 
-func checkDeploymentWithRetry(file string, json bool, timeout time.Duration, retryDelay int, retryCount int, policyCategories []string, printAllViolations bool) error {
+type deploymentCheckCommand struct {
+	// properties bound to cobra flags
+	file               string
+	json               bool
+	retryDelay         int
+	retryCount         int
+	policyCategories   []string
+	printAllViolations bool
+	timeout            time.Duration
+
+	// injected or constructed values by Construct
+	env environment.Environment
+}
+
+func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command) error {
+	d.timeout = flags.Timeout(cmd)
+
+	return nil
+}
+
+func (d *deploymentCheckCommand) Validate() error {
+	return nil
+}
+
+func (d *deploymentCheckCommand) Check() error {
 	err := retry.WithRetry(func() error {
-		return checkDeployment(file, json, timeout, policyCategories, printAllViolations)
+		return d.checkDeployment()
 	},
-		retry.Tries(retryCount+1),
+		retry.Tries(d.retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
-			fmt.Fprintf(os.Stderr, "Scanning image failed: %v. Retrying after %v seconds\n", err, retryDelay)
-			time.Sleep(time.Duration(retryDelay) * time.Second)
+			fmt.Fprintf(d.env.InputOutput().ErrOut, "Scanning image failed: %v. Retrying after %d seconds\n",
+				err, d.retryDelay)
+			time.Sleep(time.Duration(d.retryDelay) * time.Second)
 		}))
 	if err != nil {
 		return err
@@ -65,63 +91,64 @@ func checkDeploymentWithRetry(file string, json bool, timeout time.Duration, ret
 	return nil
 }
 
-func checkDeployment(file string, json bool, timeout time.Duration, policyCategories []string, printAllViolations bool) error {
-	data, err := os.ReadFile(file)
+func (d *deploymentCheckCommand) checkDeployment() error {
+	deploymentFileContents, err := os.ReadFile(d.file)
 	if err != nil {
 		return err
 	}
 
-	// Get the violated policies for the input data.
-	alerts, err := getAlerts(string(data), timeout, policyCategories)
+	alerts, err := d.getAlerts(string(deploymentFileContents))
 	if err != nil {
 		return err
 	}
 
-	// If json mode was given, print results (as json) and immediately return.
-	if json {
-		return report.JSON(os.Stdout, alerts)
+	return d.printResults(alerts)
+}
+
+func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Alert, error) {
+	conn, err := d.env.GRPCConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer utils.IgnoreError(conn.Close)
+
+	svc := v1.NewDetectionServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), d.timeout)
+	defer cancel()
+
+	response, err := svc.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{
+		Yaml:             deploymentYaml,
+		PolicyCategories: d.policyCategories,
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	// Print results in human readable mode.
-	if err = report.Pretty(os.Stdout, alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, "Deployment", printAllViolations); err != nil {
+	var alerts []*storage.Alert
+	for _, r := range response.GetRuns() {
+		alerts = append(alerts, r.GetAlerts()...)
+	}
+	return alerts, nil
+}
+
+func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
+	if d.json {
+		return report.JSON(d.env.InputOutput().Out, alerts)
+	}
+
+	if err := report.Pretty(d.env.InputOutput().Out, alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+		"Deployment", d.printAllViolations); err != nil {
 		return err
 	}
 
-	// Check if any of the violated policies have an enforcement action that
-	// fails the CI build.
+	return getFailingPolicies(alerts)
+}
+
+func getFailingPolicies(alerts []*storage.Alert) error {
 	for _, alert := range alerts {
 		if report.EnforcementFailedBuild(storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)(alert.GetPolicy()) {
 			return errors.New("Violated a policy with Deploy Time enforcement set")
 		}
 	}
 	return nil
-}
-
-// Get the alerts for the command line inputs.
-func getAlerts(yaml string, timeout time.Duration, policyCategories []string) ([]*storage.Alert, error) {
-	// Create the connection to the central detection service.
-	conn, err := common.GetGRPCConnection()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	service := v1.NewDetectionServiceClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	// Call detection and return the returned alerts.
-	response, err := service.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{
-		Yaml:             yaml,
-		PolicyCategories: policyCategories,
-	})
-	if err != nil {
-		return nil, err
-	}
-	var alerts []*storage.Alert
-	for _, r := range response.GetRuns() {
-		alerts = append(alerts, r.GetAlerts()...)
-	}
-	return alerts, nil
 }
