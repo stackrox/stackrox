@@ -17,7 +17,7 @@ test_upgrade() {
 
     REPO_FOR_TIME_TRAVEL="/tmp/rox-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="cgorman1"
+    QUAY_REPO="rhacs-eng"
     if is_CI; then
         REGISTRY="quay.io/$QUAY_REPO"
     else

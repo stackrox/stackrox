@@ -193,7 +193,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_D =
             createAndRegisterDeployment()
                     .setName("deployment-d")
-                    .setImage("quay.io/cgorman1/qa:apache-dns")
+                    .setImage("quay.io/rhacs-eng/qa:apache-dns")
                     .setNamespace(NAMESPACE_D)
 
     static final private WITHOUT_ANNOTATIONS = DEP_D

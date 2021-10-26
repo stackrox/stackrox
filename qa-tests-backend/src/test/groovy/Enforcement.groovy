@@ -154,7 +154,7 @@ class Enforcement extends BaseSpecification {
     private final static Map<String, Deployment> DEPLOYMENTS = [
             (KILL_ENFORCEMENT):
                     new Deployment()
-                            .setImage("quay.io/cgorman1/qa:nginx")
+                            .setImage("quay.io/rhacs-eng/qa:nginx")
                             .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT):
@@ -165,7 +165,7 @@ class Enforcement extends BaseSpecification {
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE):
                     new Deployment()
-                            .setImage("quay.io/cgorman1/qa:enforcement")
+                            .setImage("quay.io/rhacs-eng/qa:enforcement")
                             .addPort(22)
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY):

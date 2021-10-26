@@ -16,7 +16,7 @@ test_e2e() {
     info "Starting test"
 
     DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="cgorman1"
+    QUAY_REPO="rhacs-eng"
     if is_CI; then
         REGISTRY="quay.io/$QUAY_REPO"
     else

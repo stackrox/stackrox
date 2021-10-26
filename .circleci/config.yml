@@ -23,14 +23,14 @@ runOnlyOnReleaseBuilds: &runOnlyOnReleaseBuilds
 
 runOnAllTagsWithQuayIOPullCtx: &runOnAllTagsWithQuayIOPullCtx
   <<: *runOnAllTags
-  context: quay-cgorman1-readonly
+  context: quay-rhacs-eng-readonly
 
 runOnAllTagsWithPushCtx: &runOnAllTagsWithPushCtx
   <<: *runOnAllTags
   context:
   - docker-io-push
-  - quay-cgorman1-readwrite
-  - quay-cgorman1-readonly
+  - quay-rhacs-eng-readwrite
+  - quay-rhacs-eng-readonly
 
 setupGoogleAppCreds: &setupGoogleAppCreds
   run:
@@ -46,7 +46,7 @@ setupGoogleAppCreds: &setupGoogleAppCreds
 loginToGCR: &loginToGCR
   run:
     name: Docker login to gcr.io
-    command: docker login -u _json_key -p "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" https://gcr.io
+    command: docker login -u _json_key --password-stdin \<<<"$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" https://gcr.io
     when: always
 
 restoreGoBuildCache: &restoreGoBuildCache
@@ -493,10 +493,10 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/cgorman1/apollo-ci:0.3.18
+      - image: quay.io/rhacs-eng/apollo-ci:0.3.18
         auth:
-          username: $QUAY_CGORMAN1_RO_USER
-          password: $QUAY_CGORMAN1_RO_PASSWORD
+          username: $QUAY_RHACS_ENG_RO_USERNAME
+          password: $QUAY_RHACS_ENG_RO_PASSWORD
     working_directory: /go/src/github.com/stackrox/rox
 
 commands:
@@ -813,17 +813,17 @@ commands:
           name: Setup deployment env
           command: |
             <<# parameters.docker-login >>
-            docker login -u  "${QUAY_CGORMAN1_RO_USER}" --password-stdin \<<<"${QUAY_CGORMAN1_RO_PASSWORD}" quay.io
+            docker login -u  "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin \<<<"${QUAY_RHACS_ENG_RO_PASSWORD}" quay.io
             <</ parameters.docker-login >>
             <<# parameters.use-websocket >>
             cci-export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
             <</ parameters.use-websocket >>
-            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
-            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
+            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
             cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
 
-            REPO=cgorman1
+            REPO=rhacs-eng
             cci-export MONITORING_IMAGE "quay.io/$REPO/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
             cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
             cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
@@ -1678,10 +1678,10 @@ commands:
             cci-export CLAIRIFY_IMAGE_TAG 0.5.2
             cci-export OPENSHIFT_HOST "$(cat openshift/artifacts/master)"
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
+            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
 
-            REPO=cgorman1
+            REPO=rhacs-eng
             cci-export MAIN_IMAGE_REPO "quay.io/$REPO/main"
             cci-export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
             cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
@@ -1812,7 +1812,7 @@ commands:
               fi
             fi
 
-            cci-export MONITORING_IMAGE quay.io/cgorman1/monitoring:$(cat MONITORING_VERSION)
+            cci-export MONITORING_IMAGE quay.io/rhacs-eng/monitoring:$(cat MONITORING_VERSION)
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
             "${deploy_dir}/central.sh"
 
@@ -2431,8 +2431,8 @@ jobs:
       - run:
           name: QA Automation Platform
           command: |
-            export REGISTRY_USERNAME="${QUAY_CGORMAN1_RO_USER}"
-            export REGISTRY_PASSWORD="${QUAY_CGORMAN1_RO_PASSWORD}"
+            export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
+            export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
             export CLUSTER=K8S
             export API_HOSTNAME=localhost
             export API_PORT=${LOCAL_PORT}
@@ -2691,8 +2691,8 @@ jobs:
               ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/roxctl:latest
             fi
 
-            QUAY_REPO="cgorman1"
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            QUAY_REPO="rhacs-eng"
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:$(make --quiet tag)" | cat
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" | cat
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
@@ -2778,8 +2778,8 @@ jobs:
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:${TAG}" | cat
 
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
-            QUAY_REPO="cgorman1"
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            QUAY_REPO="rhacs-eng"
             ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
 
       - persist_to_workspace:
@@ -2801,7 +2801,7 @@ jobs:
           name: Login to Docker Hub and Quay.io
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -2840,7 +2840,7 @@ jobs:
       - run:
           name: Build and push images for quay.io
           command: |
-            IMAGE_REPO=quay.io/cgorman1 make -C operator/ everything
+            IMAGE_REPO=quay.io/rhacs-eng make -C operator/ everything
 
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
@@ -2942,11 +2942,11 @@ jobs:
           name: Push new Docker image
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$QUAY_CGORMAN1_RW_USER" --password-stdin \<<<"$QUAY_CGORMAN1_RW_PASSWORD" quay.io
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
             TAG=$(make --quiet tag)
 
-            QUAY_REPO="cgorman1"
+            QUAY_REPO="rhacs-eng"
             for img in scale grpc-server; do
               docker push "docker.io/stackrox/${img}:${TAG}" | cat
               docker push "quay.io/${QUAY_REPO}/${img}:${TAG}" | cat
@@ -3775,8 +3775,8 @@ jobs:
           command: |
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
+            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -3873,8 +3873,8 @@ jobs:
             cci-export CLAIRIFY_IMAGE_TAG 0.5.4
             cci-export KOPS_HOST "$(cat kops/master)"
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$QUAY_CGORMAN1_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "$QUAY_CGORMAN1_RO_USER"
+            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
+            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -4016,9 +4016,10 @@ jobs:
   openshift-4-operator-e2e-tests:
     executor: custom
     environment:
-    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/cgorman1"
-    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/cgorman1"
-    - IMAGE_TAG_BASE: "quay.io/cgorman1/stackrox-operator"
+    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
+    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
+    - IMAGE_REPO: "quay.io/rhacs-eng"
+    - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
 
     steps:
     - checkout
@@ -4324,11 +4325,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-
-      - run:
-          name: Pull images from quay.io user account and push to an org account
-          command: |
-            ./release/scripts/push_to_org.sh
 
       - run:
           name: Check for fixable vulns
@@ -4742,7 +4738,7 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
           context:
             - com-redhat-cloud
-            - quay-cgorman1-readonly
+            - quay-rhacs-eng-readonly
             - aws-setup
 
       - openshift-rosa-api-e2e-tests:
@@ -4754,7 +4750,7 @@ workflows:
             - pre-build-go-binaries
           context:
             - com-redhat-cloud
-            - quay-cgorman1-readonly
+            - quay-rhacs-eng-readonly
             - aws-setup
 
       # ROX-8306 - Disabled due to Azure account issue
@@ -4762,7 +4758,7 @@ workflows:
       #     <<: *runOnAllTagsWithQuayIOPullCtx
       #     context:
       #       - com-redhat-cloud
-      #       - quay-cgorman1-readonly
+      #       - quay-rhacs-eng-readonly
       #       - azure-ci
       #       - aro-cluster-manager
 
@@ -4775,7 +4771,7 @@ workflows:
       #       - pre-build-go-binaries
       #     context:
       #       - com-redhat-cloud
-      #       - quay-cgorman1-readonly
+      #       - quay-rhacs-eng-readonly
       #       - azure-ci
       #       - aro-cluster-manager
 
@@ -4791,8 +4787,13 @@ workflows:
             - ui-unit-tests
 
       - scan-images-in-quay:
-          <<: *runOnlyOnReleaseCandidateBuilds
-          context: custom-executor-pull
+          context:
+          - quay-rhacs-eng-readonly
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
           requires:
             - build
 
@@ -4817,7 +4818,7 @@ workflows:
           filters:
             branches:
               only: master
-          context: quay-cgorman1-readonly
+          context: quay-rhacs-eng-readonly
 
   ###
   # These workflows can be triggered on demand.
@@ -4864,4 +4865,4 @@ workflows:
       equal: [ "designated_image_test", << pipeline.parameters.workflow_name >> ]
     jobs:
       - designated-image-tests:
-          context: quay-cgorman1-readonly
+          context: quay-rhacs-eng-readonly

@@ -103,7 +103,7 @@ class ReconciliationTest extends BaseSpecification {
         Deployment dep = new Deployment()
                 .setNamespace(ns)
                 .setName ("testing123")
-                .setImage ("quay.io/cgorman1/qa:busybox")
+                .setImage ("quay.io/rhacs-eng/qa:busybox")
                 .addPort (22)
                 .addLabel ("app", "testing123")
                 .setCommand(["sleep", "600"])

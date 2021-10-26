@@ -85,7 +85,7 @@ for i in 50.0 51.0 52.0 54.0 53.0; do
   # We need to modify the values.yaml file in order for the deployment script to work
   echo "Patching values.yaml"
   mv values.yaml values.yaml.orig
-  yq e -j values.yaml.orig | jq '.cluster.name="test" | .image.registry.main="quay.io" | .image.repository.main="cgorman1/main" | .image.registry.collector="quay.io" | .image.repository.collector="cgorman1/collector" | .config.slimCollector=true' | yq e -P - >values.yaml
+  yq e -j values.yaml.orig | jq '.cluster.name="test" | .image.registry.main="quay.io" | .image.repository.main="rhacs-eng/main" | .image.registry.collector="quay.io" | .image.repository.collector="rhacs-eng/collector" | .config.slimCollector=true' | yq e -P - >values.yaml
 
   echo "Installing version ${i} of the old Helm chart"
   ROX_API_TOKEN="$api_token" ./scripts/setup.sh -e "$API_ENDPOINT" -f values.yaml

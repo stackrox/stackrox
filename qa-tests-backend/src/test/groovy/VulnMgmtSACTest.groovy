@@ -22,7 +22,7 @@ class VulnMgmtSACTest extends BaseSpecification {
     static final private String NONE = "None"
     static final private String ALLACCESSTOKEN = "allAccessToken"
     static final private String NOACCESSTOKEN = "noAccess"
-    static final private String CENTOS_IMAGE = "quay.io/cgorman1/qa:centos7-base"
+    static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
 
     static final private String NODE_ROLE = "node-role"
     static final private String IMAGE_ROLE = "image-role"

@@ -20,7 +20,7 @@ MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE := stackrox/docs:embed-$(shell cat DOCS_VERSION)
 
 ifdef CI
-    QUAY_REPO := cgorman1
+    QUAY_REPO := rhacs-eng
     BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
     MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
     DOCS_IMAGE := quay.io/$(QUAY_REPO)/docs:embed-$(shell cat DOCS_VERSION)

@@ -47,14 +47,14 @@ class ImageManagementTest extends BaseSpecification {
         "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | ""
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | "(repeat)"
-        "90-Day Image Age"                | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
+        "90-Day Image Age"                | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
         // verify Azure registry
         // "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
-        "Ubuntu Package Manager in Image" | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
-        "Curl in Image"                   | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
+        "Ubuntu Package Manager in Image" | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
+        "Curl in Image"                   | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
         "Fixable CVSS >= 7"               | "us.gcr.io"   | "stackrox-ci/nginx"      | "1.11"       | ""
-        "Wget in Image"                   | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
-        "Apache Struts: CVE-2017-5638"    | "quay.io"   | "cgorman1/qa"            | "struts-app" | ""
+        "Wget in Image"                   | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
+        "Apache Struts: CVE-2017-5638"    | "quay.io"   | "rhacs-eng/qa"            | "struts-app" | ""
     }
 
     @Category(BAT)
