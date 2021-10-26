@@ -27,13 +27,21 @@ const ClusterVersion = ({ clusterId }) => {
                         );
                     } else {
                         headerText = clusterVersionLabels[type];
+                        let version;
+                        if (type === 'KUBERNETES_CLUSTER') {
+                            version = orchestratorMetadata.version;
+                        } else if (orchestratorMetadata.openshiftVersion) {
+                            version = orchestratorMetadata.openshiftVersion;
+                        } else {
+                            version = 'OpenShift version cannot be determined';
+                        }
                         contents = (
                             <div className="py-8 w-full flex flex-col items-center justify-between">
                                 <div
-                                    className="text-4xl text-primary-700 font-500"
+                                    className="text-4xl text-primary-700 font-500 text-center"
                                     data-testid="cluster-version"
                                 >
-                                    {orchestratorMetadata.version}
+                                    {version}
                                 </div>
                                 <div className="text-base-500">
                                     Build date:&nbsp;

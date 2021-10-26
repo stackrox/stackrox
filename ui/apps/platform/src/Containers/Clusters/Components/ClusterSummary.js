@@ -140,6 +140,7 @@ ClusterSummary.propTypes = {
         }),
         orchestratorMetadata: PropTypes.shape({
             version: PropTypes.string,
+            openshiftVersion: PropTypes.string,
             buildDate: PropTypes.string,
         }),
         upgradeStatus: PropTypes.shape({

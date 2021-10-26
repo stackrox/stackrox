@@ -11,6 +11,7 @@ export const CLUSTERS_QUERY = gql`
             status {
                 orchestratorMetadata {
                     version
+                    openshiftVersion
                 }
             }
             complianceResults {
@@ -66,6 +67,7 @@ export const CLUSTER_QUERY = gql`
             status {
                 orchestratorMetadata {
                     version
+                    openshiftVersion
                     buildDate
                 }
             }
@@ -115,6 +117,7 @@ export const CLUSTER_VERSION_QUERY = gql`
             status {
                 orchestratorMetadata {
                     version
+                    openshiftVersion
                     buildDate
                 }
             }

@@ -80,6 +80,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("Cluster", `istioEnabled: Boolean!`),
 		schema.AddExtraResolver("Cluster", "plottedVulns(query: String): PlottedVulnerabilities!"),
+		schema.AddExtraResolver("OrchestratorMetadata", `openshiftVersion: String!`),
 	)
 }
 
@@ -256,7 +257,7 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 	return resolver.root.wrapNode(node, node != nil, err)
 }
 
-// Namespace returns a given namespace on a cluster.
+// Namespaces returns the namespaces in a cluster.
 func (resolver *clusterResolver) Namespaces(ctx context.Context, args PaginatedQuery) ([]*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespaces")
 
@@ -269,7 +270,7 @@ func (resolver *clusterResolver) Namespaces(ctx context.Context, args PaginatedQ
 	return resolver.root.Namespaces(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-// Namespace returns a given namespace on a cluster.
+// Namespace returns a given namespace in a cluster.
 func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Name string }) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespace")
 
@@ -948,4 +949,8 @@ func (resolver *clusterResolver) PlottedVulns(ctx context.Context, args RawQuery
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
+}
+
+func (resolver *orchestratorMetadataResolver) OpenShiftVersion() (string, error) {
+	return resolver.data.GetOpenshiftVersion(), nil
 }
