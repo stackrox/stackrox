@@ -130,9 +130,6 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
-        - name: central-license-volume
-          mountPath: /run/secrets/stackrox.io/central-license/
-          readOnly: true
         - name: stackrox-db
           mountPath: /var/lib/stackrox
         - name: central-config-volume
@@ -176,10 +173,6 @@ spec:
       - name: additional-ca-volume
         secret:
           secretName: additional-ca
-          optional: true
-      - name: central-license-volume
-        secret:
-          secretName: central-license
           optional: true
       - name: central-config-volume
         configMap:
