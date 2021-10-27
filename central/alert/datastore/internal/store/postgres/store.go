@@ -74,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists alerts (id varchar primary key, value jsonb, LifecycleStage numeric, State numeric, Policy_Id varchar, Policy_Name varchar, Policy_Description varchar, Policy_Severity numeric, Policy_SORTName varchar, Policy_SORTLifecycleStage varchar)"
+	createTableQuery = "create table if not exists alerts (id varchar primary key, value jsonb, LifecycleStage numeric, Time timestamp, State numeric, Policy_Id varchar, Policy_Name varchar, Policy_Description varchar, Policy_Severity numeric)"
 	createIDIndexQuery = "create index if not exists alerts_id on alerts using hash ((id))"
 )
 
@@ -103,7 +103,7 @@ func New(db *sql.DB) Store {
 		getManyStmt: compileStmtOrPanic(db, "select value from alerts where id = ANY($1::text[])"),
 
 		// insert into alerts(id, value) values($1, $2) on conflict(id) do update set value=$2")
-		upsertStmt: compileStmtOrPanic(db, "insert into alerts (id, value, LifecycleStage, State, Policy_Id, Policy_Name, Policy_Description, Policy_Severity, Policy_SORTName, Policy_SORTLifecycleStage) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict(id) do update set value = EXCLUDED.value, LifecycleStage = EXCLUDED.LifecycleStage, State = EXCLUDED.State, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Severity = EXCLUDED.Policy_Severity, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage"),
+		upsertStmt: compileStmtOrPanic(db, "insert into alerts (id, value, LifecycleStage, Time, State, Policy_Id, Policy_Name, Policy_Description, Policy_Severity) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict(id) do update set value = EXCLUDED.value, LifecycleStage = EXCLUDED.LifecycleStage, Time = EXCLUDED.Time, State = EXCLUDED.State, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Severity = EXCLUDED.Policy_Severity"),
 		deleteStmt: compileStmtOrPanic(db, "delete from alerts where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from alerts where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from alerts"),
@@ -237,7 +237,7 @@ func (s *storeImpl) upsert(id string, obj *storage.Alert) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value, obj.GetLifecycleStage(), obj.GetState(), obj.GetPolicy().GetId(), obj.GetPolicy().GetName(), obj.GetPolicy().GetDescription(), obj.GetPolicy().GetSeverity(), obj.GetPolicy().GetSORTName(), obj.GetPolicy().GetSORTLifecycleStage())
+	_, err = s.upsertStmt.Exec(id, value, obj.GetLifecycleStage(), obj.GetTime().String(), obj.GetState(), obj.GetPolicy().GetId(), obj.GetPolicy().GetName(), obj.GetPolicy().GetDescription(), obj.GetPolicy().GetSeverity())
 	return err
 }
 

@@ -14,7 +14,7 @@ func flattenTable(table *Path) []Element {
 		if strings.EqualFold(elem.SQLPath(), "id") {
 			continue
 		}
-		if elem.DataType == STRING || elem.DataType == NUMERIC {
+		if elem.DataType == STRING || elem.DataType == NUMERIC || elem.DataType == DATETIME {
 			elems = append(elems, elem)
 		}
 	}

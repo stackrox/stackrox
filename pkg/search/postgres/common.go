@@ -287,7 +287,11 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 	// Initial select, need to support highlights as well
 	selectClause := fmt.Sprintf("select %s id", distinct)
 	if count {
-		selectClause = fmt.Sprintf("select count(%s id)", distinct)
+		if distinct == "" {
+			selectClause = "select count(*)"
+		} else {
+			selectClause = fmt.Sprintf("select count(%s id)", distinct)
+		}
 	}
 
 	// Building the where clause is the hardest part
