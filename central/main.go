@@ -366,17 +366,27 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
+	/*
+	select  id from processindicators where PodUid = $$ 202 ms avg (10297862467673/50951)
+	select  id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and (LifecycleStage = $$) and ((State = $$) or (State = $$))) order by (alerts.value ->>'time' )::timestamp desc 23 ms avg (613149849535/25593)
+	select  id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and ((State = $$) or (State = $$))) order by (alerts.value ->>'time' )::timestamp desc 36 ms avg (103785027872/2844)
+	select  id from processindicators where (ContainerName = $$ and DeploymentId = $$) 641 ms avg (57739728575/90)
+
+	*/
 	// Complete hack
 	indexes := []string{
-		`create index if not exists deployments_clusterid on deployments using hash ((deployments.value ->>'clusterId'));`,
+		`create index if not exists deployments_clusterid on deployments using hash ((ClusterId));`,
 
-		`create index if not exists processindicators_poduid on processindicators using hash ((processindicators.value ->>'podUid'));`,
-		`create index if not exists processindicators_signal_containerid on processindicators using hash ((processindicators.value->'signal' ->>'containerId'));`,
+		`create index if not exists processindicators_poduid on processindicators using hash ((PodUid));`,
 
-		`create index if not exists namespaces_name on namespaces using hash ((namespaces.value ->>'name'));`,
+		`create index if not exists namespaces_name on namespaces((Name));`,
 
-		`create index if not exists alerts_policy_id on alerts using hash ((alerts.value->'policy' ->>'id'));`,
+		`create index if not exists alerts_policy_id on alerts using hash ((Policy_Id));`,
+		// The one below is still jsonb due to one of
 		`create index if not exists alerts_deployment_id on alerts using hash ((alerts.value->'deployment' ->>'id'));`,
+		`create index if not exists alerts_state on alerts(state);`,
+		`create index if not exists alerts_lifecyclestage on alerts(LifecycleStage);`,
+		`create index if not exists alerts_time on alerts(Time);`,
 
 		`create index if not exists processindicators_id on processindicators using hash ((id));`,
 	}

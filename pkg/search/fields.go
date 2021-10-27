@@ -23,7 +23,7 @@ func (f *Field) LastElem() PathElem {
 
 func (f *Field) TopLevelValue() string {
 	switch f.Type {
-	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_STRING, v1.SearchDataType_SEARCH_ENUM:
+	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_STRING, v1.SearchDataType_SEARCH_ENUM, v1.SearchDataType_SEARCH_DATETIME:
 	default:
 		return ""
 	}

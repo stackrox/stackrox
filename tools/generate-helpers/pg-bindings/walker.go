@@ -62,6 +62,10 @@ type Element struct {
 
 func (e Element) GetterPath() string {
 	getter := fmt.Sprintf("Get%s()", e.Field)
+	if e.DataType == DATETIME {
+		// Currently breaks on nil
+		getter += ".String()"
+	}
 	if getterPath := e.Parent.GetterPath(); getterPath != "" {
 		return e.Parent.GetterPath() + "." + getter
 	}
@@ -138,6 +142,11 @@ func (s *searchWalker) handleStruct(parent *Path, original reflect.Type) {
 		}
 		switch field.Type.Kind() {
 		case reflect.Ptr:
+			if field.Type.String() == "*types.Timestamp" {
+				elem.DataType = DATETIME
+				parent.Elems = append(parent.Elems, elem)
+				continue
+			}
 			child := &Path{
 				Parent:       parent,
 				Field:        field.Name,

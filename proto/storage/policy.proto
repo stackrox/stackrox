@@ -35,7 +35,7 @@ message Policy {
     // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
     repeated EnforcementAction  enforcement_actions     = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
     repeated string             notifiers               = 14;
-    google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = "search:\"Policy Last Updated\""];
+    google.protobuf.Timestamp   last_updated            = 15;
 
     // For internal use only.
     string                      SORT_name               = 16 [(gogoproto.moretags) = "search:\"SORT_Policy,hidden,analyzer=keyword\" postgres:\"-\""];
