@@ -6,35 +6,36 @@ package mocks
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	io "io"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockStreamGenerator is a mock of StreamGenerator interface
+// MockStreamGenerator is a mock of StreamGenerator interface.
 type MockStreamGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockStreamGeneratorMockRecorder
 }
 
-// MockStreamGeneratorMockRecorder is the mock recorder for MockStreamGenerator
+// MockStreamGeneratorMockRecorder is the mock recorder for MockStreamGenerator.
 type MockStreamGeneratorMockRecorder struct {
 	mock *MockStreamGenerator
 }
 
-// NewMockStreamGenerator creates a new mock instance
+// NewMockStreamGenerator creates a new mock instance.
 func NewMockStreamGenerator(ctrl *gomock.Controller) *MockStreamGenerator {
 	mock := &MockStreamGenerator{ctrl: ctrl}
 	mock.recorder = &MockStreamGeneratorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStreamGenerator) EXPECT() *MockStreamGeneratorMockRecorder {
 	return m.recorder
 }
 
-// WriteTo mocks base method
+// WriteTo mocks base method.
 func (m *MockStreamGenerator) WriteTo(ctx context.Context, writer io.Writer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WriteTo", ctx, writer)
@@ -42,7 +43,7 @@ func (m *MockStreamGenerator) WriteTo(ctx context.Context, writer io.Writer) err
 	return ret0
 }
 
-// WriteTo indicates an expected call of WriteTo
+// WriteTo indicates an expected call of WriteTo.
 func (mr *MockStreamGeneratorMockRecorder) WriteTo(ctx, writer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteTo", reflect.TypeOf((*MockStreamGenerator)(nil).WriteTo), ctx, writer)

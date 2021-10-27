@@ -6,49 +6,50 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// UpsertBaselineResults mocks base method
-func (m *MockDataStore) UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error {
+// DeleteBaselineResults mocks base method.
+func (m *MockDataStore) DeleteBaselineResults(ctx context.Context, deploymentID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertBaselineResults", ctx, results)
+	ret := m.ctrl.Call(m, "DeleteBaselineResults", ctx, deploymentID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertBaselineResults indicates an expected call of UpsertBaselineResults
-func (mr *MockDataStoreMockRecorder) UpsertBaselineResults(ctx, results interface{}) *gomock.Call {
+// DeleteBaselineResults indicates an expected call of DeleteBaselineResults.
+func (mr *MockDataStoreMockRecorder) DeleteBaselineResults(ctx, deploymentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBaselineResults", reflect.TypeOf((*MockDataStore)(nil).UpsertBaselineResults), ctx, results)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBaselineResults", reflect.TypeOf((*MockDataStore)(nil).DeleteBaselineResults), ctx, deploymentID)
 }
 
-// GetBaselineResults mocks base method
+// GetBaselineResults mocks base method.
 func (m *MockDataStore) GetBaselineResults(ctx context.Context, deploymentID string) (*storage.ProcessBaselineResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBaselineResults", ctx, deploymentID)
@@ -57,22 +58,22 @@ func (m *MockDataStore) GetBaselineResults(ctx context.Context, deploymentID str
 	return ret0, ret1
 }
 
-// GetBaselineResults indicates an expected call of GetBaselineResults
+// GetBaselineResults indicates an expected call of GetBaselineResults.
 func (mr *MockDataStoreMockRecorder) GetBaselineResults(ctx, deploymentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBaselineResults", reflect.TypeOf((*MockDataStore)(nil).GetBaselineResults), ctx, deploymentID)
 }
 
-// DeleteBaselineResults mocks base method
-func (m *MockDataStore) DeleteBaselineResults(ctx context.Context, deploymentID string) error {
+// UpsertBaselineResults mocks base method.
+func (m *MockDataStore) UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteBaselineResults", ctx, deploymentID)
+	ret := m.ctrl.Call(m, "UpsertBaselineResults", ctx, results)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteBaselineResults indicates an expected call of DeleteBaselineResults
-func (mr *MockDataStoreMockRecorder) DeleteBaselineResults(ctx, deploymentID interface{}) *gomock.Call {
+// UpsertBaselineResults indicates an expected call of UpsertBaselineResults.
+func (mr *MockDataStoreMockRecorder) UpsertBaselineResults(ctx, results interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBaselineResults", reflect.TypeOf((*MockDataStore)(nil).DeleteBaselineResults), ctx, deploymentID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBaselineResults", reflect.TypeOf((*MockDataStore)(nil).UpsertBaselineResults), ctx, results)
 }

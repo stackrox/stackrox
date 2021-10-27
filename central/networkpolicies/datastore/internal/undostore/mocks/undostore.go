@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockUndoStore is a mock of UndoStore interface
+// MockUndoStore is a mock of UndoStore interface.
 type MockUndoStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockUndoStoreMockRecorder
 }
 
-// MockUndoStoreMockRecorder is the mock recorder for MockUndoStore
+// MockUndoStoreMockRecorder is the mock recorder for MockUndoStore.
 type MockUndoStoreMockRecorder struct {
 	mock *MockUndoStore
 }
 
-// NewMockUndoStore creates a new mock instance
+// NewMockUndoStore creates a new mock instance.
 func NewMockUndoStore(ctrl *gomock.Controller) *MockUndoStore {
 	mock := &MockUndoStore{ctrl: ctrl}
 	mock.recorder = &MockUndoStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUndoStore) EXPECT() *MockUndoStoreMockRecorder {
 	return m.recorder
 }
 
-// GetUndoRecord mocks base method
+// GetUndoRecord mocks base method.
 func (m *MockUndoStore) GetUndoRecord(clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUndoRecord", clusterID)
@@ -43,13 +44,13 @@ func (m *MockUndoStore) GetUndoRecord(clusterID string) (*storage.NetworkPolicyA
 	return ret0, ret1, ret2
 }
 
-// GetUndoRecord indicates an expected call of GetUndoRecord
+// GetUndoRecord indicates an expected call of GetUndoRecord.
 func (mr *MockUndoStoreMockRecorder) GetUndoRecord(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUndoRecord", reflect.TypeOf((*MockUndoStore)(nil).GetUndoRecord), clusterID)
 }
 
-// UpsertUndoRecord mocks base method
+// UpsertUndoRecord mocks base method.
 func (m *MockUndoStore) UpsertUndoRecord(clusterID string, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertUndoRecord", clusterID, undoRecord)
@@ -57,7 +58,7 @@ func (m *MockUndoStore) UpsertUndoRecord(clusterID string, undoRecord *storage.N
 	return ret0
 }
 
-// UpsertUndoRecord indicates an expected call of UpsertUndoRecord
+// UpsertUndoRecord indicates an expected call of UpsertUndoRecord.
 func (mr *MockUndoStoreMockRecorder) UpsertUndoRecord(clusterID, undoRecord interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoRecord", reflect.TypeOf((*MockUndoStore)(nil).UpsertUndoRecord), clusterID, undoRecord)

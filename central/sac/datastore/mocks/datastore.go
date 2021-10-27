@@ -6,50 +6,50 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// ListAuthzPluginConfigs mocks base method
-func (m *MockDataStore) ListAuthzPluginConfigs(ctx context.Context) ([]*storage.AuthzPluginConfig, error) {
+// DeleteAuthzPluginConfig mocks base method.
+func (m *MockDataStore) DeleteAuthzPluginConfig(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListAuthzPluginConfigs", ctx)
-	ret0, _ := ret[0].([]*storage.AuthzPluginConfig)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "DeleteAuthzPluginConfig", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// ListAuthzPluginConfigs indicates an expected call of ListAuthzPluginConfigs
-func (mr *MockDataStoreMockRecorder) ListAuthzPluginConfigs(ctx interface{}) *gomock.Call {
+// DeleteAuthzPluginConfig indicates an expected call of DeleteAuthzPluginConfig.
+func (mr *MockDataStoreMockRecorder) DeleteAuthzPluginConfig(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAuthzPluginConfigs", reflect.TypeOf((*MockDataStore)(nil).ListAuthzPluginConfigs), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAuthzPluginConfig", reflect.TypeOf((*MockDataStore)(nil).DeleteAuthzPluginConfig), ctx, id)
 }
 
-// GetAuthzPluginConfig mocks base method
+// GetAuthzPluginConfig mocks base method.
 func (m *MockDataStore) GetAuthzPluginConfig(ctx context.Context, id string) (*storage.AuthzPluginConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAuthzPluginConfig", ctx, id)
@@ -58,13 +58,28 @@ func (m *MockDataStore) GetAuthzPluginConfig(ctx context.Context, id string) (*s
 	return ret0, ret1
 }
 
-// GetAuthzPluginConfig indicates an expected call of GetAuthzPluginConfig
+// GetAuthzPluginConfig indicates an expected call of GetAuthzPluginConfig.
 func (mr *MockDataStoreMockRecorder) GetAuthzPluginConfig(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthzPluginConfig", reflect.TypeOf((*MockDataStore)(nil).GetAuthzPluginConfig), ctx, id)
 }
 
-// UpsertAuthzPluginConfig mocks base method
+// ListAuthzPluginConfigs mocks base method.
+func (m *MockDataStore) ListAuthzPluginConfigs(ctx context.Context) ([]*storage.AuthzPluginConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAuthzPluginConfigs", ctx)
+	ret0, _ := ret[0].([]*storage.AuthzPluginConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAuthzPluginConfigs indicates an expected call of ListAuthzPluginConfigs.
+func (mr *MockDataStoreMockRecorder) ListAuthzPluginConfigs(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAuthzPluginConfigs", reflect.TypeOf((*MockDataStore)(nil).ListAuthzPluginConfigs), ctx)
+}
+
+// UpsertAuthzPluginConfig mocks base method.
 func (m *MockDataStore) UpsertAuthzPluginConfig(ctx context.Context, config *storage.AuthzPluginConfig) (*storage.AuthzPluginConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertAuthzPluginConfig", ctx, config)
@@ -73,22 +88,8 @@ func (m *MockDataStore) UpsertAuthzPluginConfig(ctx context.Context, config *sto
 	return ret0, ret1
 }
 
-// UpsertAuthzPluginConfig indicates an expected call of UpsertAuthzPluginConfig
+// UpsertAuthzPluginConfig indicates an expected call of UpsertAuthzPluginConfig.
 func (mr *MockDataStoreMockRecorder) UpsertAuthzPluginConfig(ctx, config interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAuthzPluginConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertAuthzPluginConfig), ctx, config)
-}
-
-// DeleteAuthzPluginConfig mocks base method
-func (m *MockDataStore) DeleteAuthzPluginConfig(ctx context.Context, id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteAuthzPluginConfig", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteAuthzPluginConfig indicates an expected call of DeleteAuthzPluginConfig
-func (mr *MockDataStoreMockRecorder) DeleteAuthzPluginConfig(ctx, id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAuthzPluginConfig", reflect.TypeOf((*MockDataStore)(nil).DeleteAuthzPluginConfig), ctx, id)
 }

@@ -5,37 +5,38 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	types "github.com/gogo/protobuf/types"
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	timestamp "github.com/stackrox/rox/pkg/timestamp"
-	reflect "reflect"
 )
 
-// MockFlowStore is a mock of FlowStore interface
+// MockFlowStore is a mock of FlowStore interface.
 type MockFlowStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockFlowStoreMockRecorder
 }
 
-// MockFlowStoreMockRecorder is the mock recorder for MockFlowStore
+// MockFlowStoreMockRecorder is the mock recorder for MockFlowStore.
 type MockFlowStoreMockRecorder struct {
 	mock *MockFlowStore
 }
 
-// NewMockFlowStore creates a new mock instance
+// NewMockFlowStore creates a new mock instance.
 func NewMockFlowStore(ctrl *gomock.Controller) *MockFlowStore {
 	mock := &MockFlowStore{ctrl: ctrl}
 	mock.recorder = &MockFlowStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFlowStore) EXPECT() *MockFlowStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAllFlows mocks base method
+// GetAllFlows mocks base method.
 func (m *MockFlowStore) GetAllFlows(since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllFlows", since)
@@ -45,13 +46,13 @@ func (m *MockFlowStore) GetAllFlows(since *types.Timestamp) ([]*storage.NetworkF
 	return ret0, ret1, ret2
 }
 
-// GetAllFlows indicates an expected call of GetAllFlows
+// GetAllFlows indicates an expected call of GetAllFlows.
 func (mr *MockFlowStoreMockRecorder) GetAllFlows(since interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFlows", reflect.TypeOf((*MockFlowStore)(nil).GetAllFlows), since)
 }
 
-// GetMatchingFlows mocks base method
+// GetMatchingFlows mocks base method.
 func (m *MockFlowStore) GetMatchingFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMatchingFlows", pred, since)
@@ -61,27 +62,13 @@ func (m *MockFlowStore) GetMatchingFlows(pred func(*storage.NetworkFlowPropertie
 	return ret0, ret1, ret2
 }
 
-// GetMatchingFlows indicates an expected call of GetMatchingFlows
+// GetMatchingFlows indicates an expected call of GetMatchingFlows.
 func (mr *MockFlowStoreMockRecorder) GetMatchingFlows(pred, since interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchingFlows", reflect.TypeOf((*MockFlowStore)(nil).GetMatchingFlows), pred, since)
 }
 
-// UpsertFlows mocks base method
-func (m *MockFlowStore) UpsertFlows(flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertFlows", flows, lastUpdateTS)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertFlows indicates an expected call of UpsertFlows
-func (mr *MockFlowStoreMockRecorder) UpsertFlows(flows, lastUpdateTS interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertFlows", reflect.TypeOf((*MockFlowStore)(nil).UpsertFlows), flows, lastUpdateTS)
-}
-
-// RemoveFlow mocks base method
+// RemoveFlow mocks base method.
 func (m *MockFlowStore) RemoveFlow(props *storage.NetworkFlowProperties) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveFlow", props)
@@ -89,13 +76,13 @@ func (m *MockFlowStore) RemoveFlow(props *storage.NetworkFlowProperties) error {
 	return ret0
 }
 
-// RemoveFlow indicates an expected call of RemoveFlow
+// RemoveFlow indicates an expected call of RemoveFlow.
 func (mr *MockFlowStoreMockRecorder) RemoveFlow(props interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFlow", reflect.TypeOf((*MockFlowStore)(nil).RemoveFlow), props)
 }
 
-// RemoveFlowsForDeployment mocks base method
+// RemoveFlowsForDeployment mocks base method.
 func (m *MockFlowStore) RemoveFlowsForDeployment(id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveFlowsForDeployment", id)
@@ -103,13 +90,13 @@ func (m *MockFlowStore) RemoveFlowsForDeployment(id string) error {
 	return ret0
 }
 
-// RemoveFlowsForDeployment indicates an expected call of RemoveFlowsForDeployment
+// RemoveFlowsForDeployment indicates an expected call of RemoveFlowsForDeployment.
 func (mr *MockFlowStoreMockRecorder) RemoveFlowsForDeployment(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFlowsForDeployment", reflect.TypeOf((*MockFlowStore)(nil).RemoveFlowsForDeployment), id)
 }
 
-// RemoveMatchingFlows mocks base method
+// RemoveMatchingFlows mocks base method.
 func (m *MockFlowStore) RemoveMatchingFlows(keyMatchFn func(*storage.NetworkFlowProperties) bool, valueMatchFn func(*storage.NetworkFlow) bool) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveMatchingFlows", keyMatchFn, valueMatchFn)
@@ -117,8 +104,22 @@ func (m *MockFlowStore) RemoveMatchingFlows(keyMatchFn func(*storage.NetworkFlow
 	return ret0
 }
 
-// RemoveMatchingFlows indicates an expected call of RemoveMatchingFlows
+// RemoveMatchingFlows indicates an expected call of RemoveMatchingFlows.
 func (mr *MockFlowStoreMockRecorder) RemoveMatchingFlows(keyMatchFn, valueMatchFn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMatchingFlows", reflect.TypeOf((*MockFlowStore)(nil).RemoveMatchingFlows), keyMatchFn, valueMatchFn)
+}
+
+// UpsertFlows mocks base method.
+func (m *MockFlowStore) UpsertFlows(flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertFlows", flows, lastUpdateTS)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertFlows indicates an expected call of UpsertFlows.
+func (mr *MockFlowStoreMockRecorder) UpsertFlows(flows, lastUpdateTS interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertFlows", reflect.TypeOf((*MockFlowStore)(nil).UpsertFlows), flows, lastUpdateTS)
 }

@@ -6,35 +6,36 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockUpdater is a mock of Updater interface
+// MockUpdater is a mock of Updater interface.
 type MockUpdater struct {
 	ctrl     *gomock.Controller
 	recorder *MockUpdaterMockRecorder
 }
 
-// MockUpdaterMockRecorder is the mock recorder for MockUpdater
+// MockUpdaterMockRecorder is the mock recorder for MockUpdater.
 type MockUpdaterMockRecorder struct {
 	mock *MockUpdater
 }
 
-// NewMockUpdater creates a new mock instance
+// NewMockUpdater creates a new mock instance.
 func NewMockUpdater(ctrl *gomock.Controller) *MockUpdater {
 	mock := &MockUpdater{ctrl: ctrl}
 	mock.recorder = &MockUpdaterMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUpdater) EXPECT() *MockUpdaterMockRecorder {
 	return m.recorder
 }
 
-// PopulateExecutableCache mocks base method
+// PopulateExecutableCache mocks base method.
 func (m *MockUpdater) PopulateExecutableCache(ctx context.Context, image *storage.Image) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PopulateExecutableCache", ctx, image)
@@ -42,19 +43,19 @@ func (m *MockUpdater) PopulateExecutableCache(ctx context.Context, image *storag
 	return ret0
 }
 
-// PopulateExecutableCache indicates an expected call of PopulateExecutableCache
+// PopulateExecutableCache indicates an expected call of PopulateExecutableCache.
 func (mr *MockUpdaterMockRecorder) PopulateExecutableCache(ctx, image interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopulateExecutableCache", reflect.TypeOf((*MockUpdater)(nil).PopulateExecutableCache), ctx, image)
 }
 
-// Update mocks base method
+// Update mocks base method.
 func (m *MockUpdater) Update() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Update")
 }
 
-// Update indicates an expected call of Update
+// Update indicates an expected call of Update.
 func (mr *MockUpdaterMockRecorder) Update() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUpdater)(nil).Update))

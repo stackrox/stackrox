@@ -5,36 +5,52 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetNotifier mocks base method
+// AddNotifier mocks base method.
+func (m *MockStore) AddNotifier(notifier *storage.Notifier) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddNotifier", notifier)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddNotifier indicates an expected call of AddNotifier.
+func (mr *MockStoreMockRecorder) AddNotifier(notifier interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNotifier", reflect.TypeOf((*MockStore)(nil).AddNotifier), notifier)
+}
+
+// GetNotifier mocks base method.
 func (m *MockStore) GetNotifier(id string) (*storage.Notifier, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNotifier", id)
@@ -44,13 +60,13 @@ func (m *MockStore) GetNotifier(id string) (*storage.Notifier, bool, error) {
 	return ret0, ret1, ret2
 }
 
-// GetNotifier indicates an expected call of GetNotifier
+// GetNotifier indicates an expected call of GetNotifier.
 func (mr *MockStoreMockRecorder) GetNotifier(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifier", reflect.TypeOf((*MockStore)(nil).GetNotifier), id)
 }
 
-// GetNotifiers mocks base method
+// GetNotifiers mocks base method.
 func (m *MockStore) GetNotifiers(request *v1.GetNotifiersRequest) ([]*storage.Notifier, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNotifiers", request)
@@ -59,42 +75,13 @@ func (m *MockStore) GetNotifiers(request *v1.GetNotifiersRequest) ([]*storage.No
 	return ret0, ret1
 }
 
-// GetNotifiers indicates an expected call of GetNotifiers
+// GetNotifiers indicates an expected call of GetNotifiers.
 func (mr *MockStoreMockRecorder) GetNotifiers(request interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifiers", reflect.TypeOf((*MockStore)(nil).GetNotifiers), request)
 }
 
-// AddNotifier mocks base method
-func (m *MockStore) AddNotifier(notifier *storage.Notifier) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNotifier", notifier)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AddNotifier indicates an expected call of AddNotifier
-func (mr *MockStoreMockRecorder) AddNotifier(notifier interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNotifier", reflect.TypeOf((*MockStore)(nil).AddNotifier), notifier)
-}
-
-// UpdateNotifier mocks base method
-func (m *MockStore) UpdateNotifier(notifier *storage.Notifier) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateNotifier", notifier)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateNotifier indicates an expected call of UpdateNotifier
-func (mr *MockStoreMockRecorder) UpdateNotifier(notifier interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifier", reflect.TypeOf((*MockStore)(nil).UpdateNotifier), notifier)
-}
-
-// RemoveNotifier mocks base method
+// RemoveNotifier mocks base method.
 func (m *MockStore) RemoveNotifier(id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveNotifier", id)
@@ -102,8 +89,22 @@ func (m *MockStore) RemoveNotifier(id string) error {
 	return ret0
 }
 
-// RemoveNotifier indicates an expected call of RemoveNotifier
+// RemoveNotifier indicates an expected call of RemoveNotifier.
 func (mr *MockStoreMockRecorder) RemoveNotifier(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNotifier", reflect.TypeOf((*MockStore)(nil).RemoveNotifier), id)
+}
+
+// UpdateNotifier mocks base method.
+func (m *MockStore) UpdateNotifier(notifier *storage.Notifier) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateNotifier", notifier)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateNotifier indicates an expected call of UpdateNotifier.
+func (mr *MockStoreMockRecorder) UpdateNotifier(notifier interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifier", reflect.TypeOf((*MockStore)(nil).UpdateNotifier), notifier)
 }

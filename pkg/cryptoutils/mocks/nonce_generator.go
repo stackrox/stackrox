@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockNonceGenerator is a mock of NonceGenerator interface
+// MockNonceGenerator is a mock of NonceGenerator interface.
 type MockNonceGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockNonceGeneratorMockRecorder
 }
 
-// MockNonceGeneratorMockRecorder is the mock recorder for MockNonceGenerator
+// MockNonceGeneratorMockRecorder is the mock recorder for MockNonceGenerator.
 type MockNonceGeneratorMockRecorder struct {
 	mock *MockNonceGenerator
 }
 
-// NewMockNonceGenerator creates a new mock instance
+// NewMockNonceGenerator creates a new mock instance.
 func NewMockNonceGenerator(ctrl *gomock.Controller) *MockNonceGenerator {
 	mock := &MockNonceGenerator{ctrl: ctrl}
 	mock.recorder = &MockNonceGeneratorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockNonceGenerator) EXPECT() *MockNonceGeneratorMockRecorder {
 	return m.recorder
 }
 
-// Nonce mocks base method
+// Nonce mocks base method.
 func (m *MockNonceGenerator) Nonce() (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Nonce")
@@ -41,7 +42,7 @@ func (m *MockNonceGenerator) Nonce() (string, error) {
 	return ret0, ret1
 }
 
-// Nonce indicates an expected call of Nonce
+// Nonce indicates an expected call of Nonce.
 func (mr *MockNonceGeneratorMockRecorder) Nonce() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nonce", reflect.TypeOf((*MockNonceGenerator)(nil).Nonce))

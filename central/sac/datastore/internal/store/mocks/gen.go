@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// DeleteAuthzPluginConfig mocks base method
+// DeleteAuthzPluginConfig mocks base method.
 func (m *MockStore) DeleteAuthzPluginConfig(arg0 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteAuthzPluginConfig", arg0)
@@ -41,13 +42,13 @@ func (m *MockStore) DeleteAuthzPluginConfig(arg0 string) error {
 	return ret0
 }
 
-// DeleteAuthzPluginConfig indicates an expected call of DeleteAuthzPluginConfig
+// DeleteAuthzPluginConfig indicates an expected call of DeleteAuthzPluginConfig.
 func (mr *MockStoreMockRecorder) DeleteAuthzPluginConfig(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAuthzPluginConfig", reflect.TypeOf((*MockStore)(nil).DeleteAuthzPluginConfig), arg0)
 }
 
-// GetAuthzPluginConfig mocks base method
+// GetAuthzPluginConfig mocks base method.
 func (m *MockStore) GetAuthzPluginConfig(arg0 string) (*storage.AuthzPluginConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAuthzPluginConfig", arg0)
@@ -56,13 +57,13 @@ func (m *MockStore) GetAuthzPluginConfig(arg0 string) (*storage.AuthzPluginConfi
 	return ret0, ret1
 }
 
-// GetAuthzPluginConfig indicates an expected call of GetAuthzPluginConfig
+// GetAuthzPluginConfig indicates an expected call of GetAuthzPluginConfig.
 func (mr *MockStoreMockRecorder) GetAuthzPluginConfig(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthzPluginConfig", reflect.TypeOf((*MockStore)(nil).GetAuthzPluginConfig), arg0)
 }
 
-// ListAuthzPluginConfigs mocks base method
+// ListAuthzPluginConfigs mocks base method.
 func (m *MockStore) ListAuthzPluginConfigs() ([]*storage.AuthzPluginConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAuthzPluginConfigs")
@@ -71,13 +72,13 @@ func (m *MockStore) ListAuthzPluginConfigs() ([]*storage.AuthzPluginConfig, erro
 	return ret0, ret1
 }
 
-// ListAuthzPluginConfigs indicates an expected call of ListAuthzPluginConfigs
+// ListAuthzPluginConfigs indicates an expected call of ListAuthzPluginConfigs.
 func (mr *MockStoreMockRecorder) ListAuthzPluginConfigs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAuthzPluginConfigs", reflect.TypeOf((*MockStore)(nil).ListAuthzPluginConfigs))
 }
 
-// UpsertAuthzPluginConfig mocks base method
+// UpsertAuthzPluginConfig mocks base method.
 func (m *MockStore) UpsertAuthzPluginConfig(arg0 *storage.AuthzPluginConfig) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertAuthzPluginConfig", arg0)
@@ -85,13 +86,13 @@ func (m *MockStore) UpsertAuthzPluginConfig(arg0 *storage.AuthzPluginConfig) err
 	return ret0
 }
 
-// UpsertAuthzPluginConfig indicates an expected call of UpsertAuthzPluginConfig
+// UpsertAuthzPluginConfig indicates an expected call of UpsertAuthzPluginConfig.
 func (mr *MockStoreMockRecorder) UpsertAuthzPluginConfig(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAuthzPluginConfig", reflect.TypeOf((*MockStore)(nil).UpsertAuthzPluginConfig), arg0)
 }
 
-// UpsertAuthzPluginConfigs mocks base method
+// UpsertAuthzPluginConfigs mocks base method.
 func (m *MockStore) UpsertAuthzPluginConfigs(arg0 []*storage.AuthzPluginConfig) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertAuthzPluginConfigs", arg0)
@@ -99,7 +100,7 @@ func (m *MockStore) UpsertAuthzPluginConfigs(arg0 []*storage.AuthzPluginConfig) 
 	return ret0
 }
 
-// UpsertAuthzPluginConfigs indicates an expected call of UpsertAuthzPluginConfigs
+// UpsertAuthzPluginConfigs indicates an expected call of UpsertAuthzPluginConfigs.
 func (mr *MockStoreMockRecorder) UpsertAuthzPluginConfigs(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAuthzPluginConfigs", reflect.TypeOf((*MockStore)(nil).UpsertAuthzPluginConfigs), arg0)

@@ -6,85 +6,86 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/central/sensor/service/common"
 	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
 	reconciliation "github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	central "github.com/stackrox/rox/generated/internalapi/central"
-	reflect "reflect"
 )
 
-// MockBasePipeline is a mock of BasePipeline interface
+// MockBasePipeline is a mock of BasePipeline interface.
 type MockBasePipeline struct {
 	ctrl     *gomock.Controller
 	recorder *MockBasePipelineMockRecorder
 }
 
-// MockBasePipelineMockRecorder is the mock recorder for MockBasePipeline
+// MockBasePipelineMockRecorder is the mock recorder for MockBasePipeline.
 type MockBasePipelineMockRecorder struct {
 	mock *MockBasePipeline
 }
 
-// NewMockBasePipeline creates a new mock instance
+// NewMockBasePipeline creates a new mock instance.
 func NewMockBasePipeline(ctrl *gomock.Controller) *MockBasePipeline {
 	mock := &MockBasePipeline{ctrl: ctrl}
 	mock.recorder = &MockBasePipelineMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBasePipeline) EXPECT() *MockBasePipelineMockRecorder {
 	return m.recorder
 }
 
-// OnFinish mocks base method
+// OnFinish mocks base method.
 func (m *MockBasePipeline) OnFinish(clusterID string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "OnFinish", clusterID)
 }
 
-// OnFinish indicates an expected call of OnFinish
+// OnFinish indicates an expected call of OnFinish.
 func (mr *MockBasePipelineMockRecorder) OnFinish(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnFinish", reflect.TypeOf((*MockBasePipeline)(nil).OnFinish), clusterID)
 }
 
-// MockClusterPipeline is a mock of ClusterPipeline interface
+// MockClusterPipeline is a mock of ClusterPipeline interface.
 type MockClusterPipeline struct {
 	ctrl     *gomock.Controller
 	recorder *MockClusterPipelineMockRecorder
 }
 
-// MockClusterPipelineMockRecorder is the mock recorder for MockClusterPipeline
+// MockClusterPipelineMockRecorder is the mock recorder for MockClusterPipeline.
 type MockClusterPipelineMockRecorder struct {
 	mock *MockClusterPipeline
 }
 
-// NewMockClusterPipeline creates a new mock instance
+// NewMockClusterPipeline creates a new mock instance.
 func NewMockClusterPipeline(ctrl *gomock.Controller) *MockClusterPipeline {
 	mock := &MockClusterPipeline{ctrl: ctrl}
 	mock.recorder = &MockClusterPipelineMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClusterPipeline) EXPECT() *MockClusterPipelineMockRecorder {
 	return m.recorder
 }
 
-// OnFinish mocks base method
+// OnFinish mocks base method.
 func (m *MockClusterPipeline) OnFinish(clusterID string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "OnFinish", clusterID)
 }
 
-// OnFinish indicates an expected call of OnFinish
+// OnFinish indicates an expected call of OnFinish.
 func (mr *MockClusterPipelineMockRecorder) OnFinish(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnFinish", reflect.TypeOf((*MockClusterPipeline)(nil).OnFinish), clusterID)
 }
 
-// Reconcile mocks base method
+// Reconcile mocks base method.
 func (m *MockClusterPipeline) Reconcile(ctx context.Context, reconciliationStore *reconciliation.StoreMap) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Reconcile", ctx, reconciliationStore)
@@ -92,13 +93,13 @@ func (m *MockClusterPipeline) Reconcile(ctx context.Context, reconciliationStore
 	return ret0
 }
 
-// Reconcile indicates an expected call of Reconcile
+// Reconcile indicates an expected call of Reconcile.
 func (mr *MockClusterPipelineMockRecorder) Reconcile(ctx, reconciliationStore interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockClusterPipeline)(nil).Reconcile), ctx, reconciliationStore)
 }
 
-// Run mocks base method
+// Run mocks base method.
 func (m *MockClusterPipeline) Run(ctx context.Context, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Run", ctx, msg, injector)
@@ -106,36 +107,36 @@ func (m *MockClusterPipeline) Run(ctx context.Context, msg *central.MsgFromSenso
 	return ret0
 }
 
-// Run indicates an expected call of Run
+// Run indicates an expected call of Run.
 func (mr *MockClusterPipelineMockRecorder) Run(ctx, msg, injector interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockClusterPipeline)(nil).Run), ctx, msg, injector)
 }
 
-// MockFactory is a mock of Factory interface
+// MockFactory is a mock of Factory interface.
 type MockFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockFactoryMockRecorder
 }
 
-// MockFactoryMockRecorder is the mock recorder for MockFactory
+// MockFactoryMockRecorder is the mock recorder for MockFactory.
 type MockFactoryMockRecorder struct {
 	mock *MockFactory
 }
 
-// NewMockFactory creates a new mock instance
+// NewMockFactory creates a new mock instance.
 func NewMockFactory(ctrl *gomock.Controller) *MockFactory {
 	mock := &MockFactory{ctrl: ctrl}
 	mock.recorder = &MockFactoryMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 	return m.recorder
 }
 
-// PipelineForCluster mocks base method
+// PipelineForCluster mocks base method.
 func (m *MockFactory) PipelineForCluster(ctx context.Context, clusterID string) (pipeline.ClusterPipeline, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PipelineForCluster", ctx, clusterID)
@@ -144,48 +145,36 @@ func (m *MockFactory) PipelineForCluster(ctx context.Context, clusterID string) 
 	return ret0, ret1
 }
 
-// PipelineForCluster indicates an expected call of PipelineForCluster
+// PipelineForCluster indicates an expected call of PipelineForCluster.
 func (mr *MockFactoryMockRecorder) PipelineForCluster(ctx, clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PipelineForCluster", reflect.TypeOf((*MockFactory)(nil).PipelineForCluster), ctx, clusterID)
 }
 
-// MockFragment is a mock of Fragment interface
+// MockFragment is a mock of Fragment interface.
 type MockFragment struct {
 	ctrl     *gomock.Controller
 	recorder *MockFragmentMockRecorder
 }
 
-// MockFragmentMockRecorder is the mock recorder for MockFragment
+// MockFragmentMockRecorder is the mock recorder for MockFragment.
 type MockFragmentMockRecorder struct {
 	mock *MockFragment
 }
 
-// NewMockFragment creates a new mock instance
+// NewMockFragment creates a new mock instance.
 func NewMockFragment(ctrl *gomock.Controller) *MockFragment {
 	mock := &MockFragment{ctrl: ctrl}
 	mock.recorder = &MockFragmentMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFragment) EXPECT() *MockFragmentMockRecorder {
 	return m.recorder
 }
 
-// OnFinish mocks base method
-func (m *MockFragment) OnFinish(clusterID string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnFinish", clusterID)
-}
-
-// OnFinish indicates an expected call of OnFinish
-func (mr *MockFragmentMockRecorder) OnFinish(clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnFinish", reflect.TypeOf((*MockFragment)(nil).OnFinish), clusterID)
-}
-
-// Match mocks base method
+// Match mocks base method.
 func (m *MockFragment) Match(msg *central.MsgFromSensor) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Match", msg)
@@ -193,27 +182,25 @@ func (m *MockFragment) Match(msg *central.MsgFromSensor) bool {
 	return ret0
 }
 
-// Match indicates an expected call of Match
+// Match indicates an expected call of Match.
 func (mr *MockFragmentMockRecorder) Match(msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Match", reflect.TypeOf((*MockFragment)(nil).Match), msg)
 }
 
-// Run mocks base method
-func (m *MockFragment) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+// OnFinish mocks base method.
+func (m *MockFragment) OnFinish(clusterID string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Run", ctx, clusterID, msg, injector)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "OnFinish", clusterID)
 }
 
-// Run indicates an expected call of Run
-func (mr *MockFragmentMockRecorder) Run(ctx, clusterID, msg, injector interface{}) *gomock.Call {
+// OnFinish indicates an expected call of OnFinish.
+func (mr *MockFragmentMockRecorder) OnFinish(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockFragment)(nil).Run), ctx, clusterID, msg, injector)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnFinish", reflect.TypeOf((*MockFragment)(nil).OnFinish), clusterID)
 }
 
-// Reconcile mocks base method
+// Reconcile mocks base method.
 func (m *MockFragment) Reconcile(ctx context.Context, clusterID string, reconciliationStore *reconciliation.StoreMap) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Reconcile", ctx, clusterID, reconciliationStore)
@@ -221,36 +208,50 @@ func (m *MockFragment) Reconcile(ctx context.Context, clusterID string, reconcil
 	return ret0
 }
 
-// Reconcile indicates an expected call of Reconcile
+// Reconcile indicates an expected call of Reconcile.
 func (mr *MockFragmentMockRecorder) Reconcile(ctx, clusterID, reconciliationStore interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockFragment)(nil).Reconcile), ctx, clusterID, reconciliationStore)
 }
 
-// MockFragmentFactory is a mock of FragmentFactory interface
+// Run mocks base method.
+func (m *MockFragment) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Run", ctx, clusterID, msg, injector)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Run indicates an expected call of Run.
+func (mr *MockFragmentMockRecorder) Run(ctx, clusterID, msg, injector interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockFragment)(nil).Run), ctx, clusterID, msg, injector)
+}
+
+// MockFragmentFactory is a mock of FragmentFactory interface.
 type MockFragmentFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockFragmentFactoryMockRecorder
 }
 
-// MockFragmentFactoryMockRecorder is the mock recorder for MockFragmentFactory
+// MockFragmentFactoryMockRecorder is the mock recorder for MockFragmentFactory.
 type MockFragmentFactoryMockRecorder struct {
 	mock *MockFragmentFactory
 }
 
-// NewMockFragmentFactory creates a new mock instance
+// NewMockFragmentFactory creates a new mock instance.
 func NewMockFragmentFactory(ctrl *gomock.Controller) *MockFragmentFactory {
 	mock := &MockFragmentFactory{ctrl: ctrl}
 	mock.recorder = &MockFragmentFactoryMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFragmentFactory) EXPECT() *MockFragmentFactoryMockRecorder {
 	return m.recorder
 }
 
-// GetFragment mocks base method
+// GetFragment mocks base method.
 func (m *MockFragmentFactory) GetFragment(ctx context.Context, clusterID string) (pipeline.Fragment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFragment", ctx, clusterID)
@@ -259,7 +260,7 @@ func (m *MockFragmentFactory) GetFragment(ctx context.Context, clusterID string)
 	return ret0, ret1
 }
 
-// GetFragment indicates an expected call of GetFragment
+// GetFragment indicates an expected call of GetFragment.
 func (mr *MockFragmentFactoryMockRecorder) GetFragment(ctx, clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFragment", reflect.TypeOf((*MockFragmentFactory)(nil).GetFragment), ctx, clusterID)

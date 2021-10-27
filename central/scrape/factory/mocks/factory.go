@@ -5,37 +5,38 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	framework "github.com/stackrox/rox/central/compliance/framework"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
-	reflect "reflect"
 )
 
-// MockScrapeFactory is a mock of ScrapeFactory interface
+// MockScrapeFactory is a mock of ScrapeFactory interface.
 type MockScrapeFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockScrapeFactoryMockRecorder
 }
 
-// MockScrapeFactoryMockRecorder is the mock recorder for MockScrapeFactory
+// MockScrapeFactoryMockRecorder is the mock recorder for MockScrapeFactory.
 type MockScrapeFactoryMockRecorder struct {
 	mock *MockScrapeFactory
 }
 
-// NewMockScrapeFactory creates a new mock instance
+// NewMockScrapeFactory creates a new mock instance.
 func NewMockScrapeFactory(ctrl *gomock.Controller) *MockScrapeFactory {
 	mock := &MockScrapeFactory{ctrl: ctrl}
 	mock.recorder = &MockScrapeFactoryMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockScrapeFactory) EXPECT() *MockScrapeFactoryMockRecorder {
 	return m.recorder
 }
 
-// RunScrape mocks base method
+// RunScrape mocks base method.
 func (m *MockScrapeFactory) RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable, standardIDs []string) (map[string]*compliance.ComplianceReturn, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RunScrape", domain, kill, standardIDs)
@@ -44,7 +45,7 @@ func (m *MockScrapeFactory) RunScrape(domain framework.ComplianceDomain, kill co
 	return ret0, ret1
 }
 
-// RunScrape indicates an expected call of RunScrape
+// RunScrape indicates an expected call of RunScrape.
 func (mr *MockScrapeFactoryMockRecorder) RunScrape(domain, kill, standardIDs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunScrape", reflect.TypeOf((*MockScrapeFactory)(nil).RunScrape), domain, kill, standardIDs)

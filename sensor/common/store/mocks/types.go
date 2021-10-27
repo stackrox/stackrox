@@ -5,49 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockDeploymentStore is a mock of DeploymentStore interface
+// MockDeploymentStore is a mock of DeploymentStore interface.
 type MockDeploymentStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDeploymentStoreMockRecorder
 }
 
-// MockDeploymentStoreMockRecorder is the mock recorder for MockDeploymentStore
+// MockDeploymentStoreMockRecorder is the mock recorder for MockDeploymentStore.
 type MockDeploymentStoreMockRecorder struct {
 	mock *MockDeploymentStore
 }
 
-// NewMockDeploymentStore creates a new mock instance
+// NewMockDeploymentStore creates a new mock instance.
 func NewMockDeploymentStore(ctrl *gomock.Controller) *MockDeploymentStore {
 	mock := &MockDeploymentStore{ctrl: ctrl}
 	mock.recorder = &MockDeploymentStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDeploymentStore) EXPECT() *MockDeploymentStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method
-func (m *MockDeploymentStore) GetAll() []*storage.Deployment {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]*storage.Deployment)
-	return ret0
-}
-
-// GetAll indicates an expected call of GetAll
-func (mr *MockDeploymentStoreMockRecorder) GetAll() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDeploymentStore)(nil).GetAll))
-}
-
-// Get mocks base method
+// Get mocks base method.
 func (m *MockDeploymentStore) Get(id string) *storage.Deployment {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id)
@@ -55,36 +42,50 @@ func (m *MockDeploymentStore) Get(id string) *storage.Deployment {
 	return ret0
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockDeploymentStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDeploymentStore)(nil).Get), id)
 }
 
-// MockPodStore is a mock of PodStore interface
+// GetAll mocks base method.
+func (m *MockDeploymentStore) GetAll() []*storage.Deployment {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll")
+	ret0, _ := ret[0].([]*storage.Deployment)
+	return ret0
+}
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockDeploymentStoreMockRecorder) GetAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDeploymentStore)(nil).GetAll))
+}
+
+// MockPodStore is a mock of PodStore interface.
 type MockPodStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockPodStoreMockRecorder
 }
 
-// MockPodStoreMockRecorder is the mock recorder for MockPodStore
+// MockPodStoreMockRecorder is the mock recorder for MockPodStore.
 type MockPodStoreMockRecorder struct {
 	mock *MockPodStore
 }
 
-// NewMockPodStore creates a new mock instance
+// NewMockPodStore creates a new mock instance.
 func NewMockPodStore(ctrl *gomock.Controller) *MockPodStore {
 	mock := &MockPodStore{ctrl: ctrl}
 	mock.recorder = &MockPodStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPodStore) EXPECT() *MockPodStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method
+// GetAll mocks base method.
 func (m *MockPodStore) GetAll() []*storage.Pod {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
@@ -92,13 +93,13 @@ func (m *MockPodStore) GetAll() []*storage.Pod {
 	return ret0
 }
 
-// GetAll indicates an expected call of GetAll
+// GetAll indicates an expected call of GetAll.
 func (mr *MockPodStoreMockRecorder) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPodStore)(nil).GetAll))
 }
 
-// GetByName mocks base method
+// GetByName mocks base method.
 func (m *MockPodStore) GetByName(podName, namespace string) *storage.Pod {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByName", podName, namespace)
@@ -106,7 +107,7 @@ func (m *MockPodStore) GetByName(podName, namespace string) *storage.Pod {
 	return ret0
 }
 
-// GetByName indicates an expected call of GetByName
+// GetByName indicates an expected call of GetByName.
 func (mr *MockPodStoreMockRecorder) GetByName(podName, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockPodStore)(nil).GetByName), podName, namespace)

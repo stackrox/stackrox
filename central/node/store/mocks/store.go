@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// CountNodes mocks base method
+// CountNodes mocks base method.
 func (m *MockStore) CountNodes() (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountNodes")
@@ -42,13 +43,13 @@ func (m *MockStore) CountNodes() (int, error) {
 	return ret0, ret1
 }
 
-// CountNodes indicates an expected call of CountNodes
+// CountNodes indicates an expected call of CountNodes.
 func (mr *MockStoreMockRecorder) CountNodes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountNodes", reflect.TypeOf((*MockStore)(nil).CountNodes))
 }
 
-// GetNode mocks base method
+// GetNode mocks base method.
 func (m *MockStore) GetNode(arg0 string) (*storage.Node, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNode", arg0)
@@ -57,13 +58,13 @@ func (m *MockStore) GetNode(arg0 string) (*storage.Node, error) {
 	return ret0, ret1
 }
 
-// GetNode indicates an expected call of GetNode
+// GetNode indicates an expected call of GetNode.
 func (mr *MockStoreMockRecorder) GetNode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNode", reflect.TypeOf((*MockStore)(nil).GetNode), arg0)
 }
 
-// ListNodes mocks base method
+// ListNodes mocks base method.
 func (m *MockStore) ListNodes() ([]*storage.Node, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListNodes")
@@ -72,13 +73,13 @@ func (m *MockStore) ListNodes() ([]*storage.Node, error) {
 	return ret0, ret1
 }
 
-// ListNodes indicates an expected call of ListNodes
+// ListNodes indicates an expected call of ListNodes.
 func (mr *MockStoreMockRecorder) ListNodes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNodes", reflect.TypeOf((*MockStore)(nil).ListNodes))
 }
 
-// RemoveNode mocks base method
+// RemoveNode mocks base method.
 func (m *MockStore) RemoveNode(arg0 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveNode", arg0)
@@ -86,13 +87,13 @@ func (m *MockStore) RemoveNode(arg0 string) error {
 	return ret0
 }
 
-// RemoveNode indicates an expected call of RemoveNode
+// RemoveNode indicates an expected call of RemoveNode.
 func (mr *MockStoreMockRecorder) RemoveNode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNode", reflect.TypeOf((*MockStore)(nil).RemoveNode), arg0)
 }
 
-// UpsertNode mocks base method
+// UpsertNode mocks base method.
 func (m *MockStore) UpsertNode(arg0 *storage.Node) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertNode", arg0)
@@ -100,7 +101,7 @@ func (m *MockStore) UpsertNode(arg0 *storage.Node) error {
 	return ret0
 }
 
-// UpsertNode indicates an expected call of UpsertNode
+// UpsertNode indicates an expected call of UpsertNode.
 func (mr *MockStoreMockRecorder) UpsertNode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertNode", reflect.TypeOf((*MockStore)(nil).UpsertNode), arg0)

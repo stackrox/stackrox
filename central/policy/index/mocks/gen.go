@@ -5,38 +5,39 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
-	reflect "reflect"
 )
 
-// MockIndexer is a mock of Indexer interface
+// MockIndexer is a mock of Indexer interface.
 type MockIndexer struct {
 	ctrl     *gomock.Controller
 	recorder *MockIndexerMockRecorder
 }
 
-// MockIndexerMockRecorder is the mock recorder for MockIndexer
+// MockIndexerMockRecorder is the mock recorder for MockIndexer.
 type MockIndexerMockRecorder struct {
 	mock *MockIndexer
 }
 
-// NewMockIndexer creates a new mock instance
+// NewMockIndexer creates a new mock instance.
 func NewMockIndexer(ctrl *gomock.Controller) *MockIndexer {
 	mock := &MockIndexer{ctrl: ctrl}
 	mock.recorder = &MockIndexerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddPolicies mocks base method
+// AddPolicies mocks base method.
 func (m *MockIndexer) AddPolicies(arg0 []*storage.Policy) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddPolicies", arg0)
@@ -44,13 +45,13 @@ func (m *MockIndexer) AddPolicies(arg0 []*storage.Policy) error {
 	return ret0
 }
 
-// AddPolicies indicates an expected call of AddPolicies
+// AddPolicies indicates an expected call of AddPolicies.
 func (mr *MockIndexerMockRecorder) AddPolicies(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicies", reflect.TypeOf((*MockIndexer)(nil).AddPolicies), arg0)
 }
 
-// AddPolicy mocks base method
+// AddPolicy mocks base method.
 func (m *MockIndexer) AddPolicy(arg0 *storage.Policy) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddPolicy", arg0)
@@ -58,13 +59,13 @@ func (m *MockIndexer) AddPolicy(arg0 *storage.Policy) error {
 	return ret0
 }
 
-// AddPolicy indicates an expected call of AddPolicy
+// AddPolicy indicates an expected call of AddPolicy.
 func (mr *MockIndexerMockRecorder) AddPolicy(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicy", reflect.TypeOf((*MockIndexer)(nil).AddPolicy), arg0)
 }
 
-// Count mocks base method
+// Count mocks base method.
 func (m *MockIndexer) Count(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -77,14 +78,14 @@ func (m *MockIndexer) Count(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (i
 	return ret0, ret1
 }
 
-// Count indicates an expected call of Count
+// Count indicates an expected call of Count.
 func (mr *MockIndexerMockRecorder) Count(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
 }
 
-// DeletePolicies mocks base method
+// DeletePolicies mocks base method.
 func (m *MockIndexer) DeletePolicies(arg0 []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeletePolicies", arg0)
@@ -92,13 +93,13 @@ func (m *MockIndexer) DeletePolicies(arg0 []string) error {
 	return ret0
 }
 
-// DeletePolicies indicates an expected call of DeletePolicies
+// DeletePolicies indicates an expected call of DeletePolicies.
 func (mr *MockIndexerMockRecorder) DeletePolicies(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicies", reflect.TypeOf((*MockIndexer)(nil).DeletePolicies), arg0)
 }
 
-// DeletePolicy mocks base method
+// DeletePolicy mocks base method.
 func (m *MockIndexer) DeletePolicy(arg0 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeletePolicy", arg0)
@@ -106,13 +107,13 @@ func (m *MockIndexer) DeletePolicy(arg0 string) error {
 	return ret0
 }
 
-// DeletePolicy indicates an expected call of DeletePolicy
+// DeletePolicy indicates an expected call of DeletePolicy.
 func (mr *MockIndexerMockRecorder) DeletePolicy(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicy", reflect.TypeOf((*MockIndexer)(nil).DeletePolicy), arg0)
 }
 
-// MarkInitialIndexingComplete mocks base method
+// MarkInitialIndexingComplete mocks base method.
 func (m *MockIndexer) MarkInitialIndexingComplete() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarkInitialIndexingComplete")
@@ -120,13 +121,13 @@ func (m *MockIndexer) MarkInitialIndexingComplete() error {
 	return ret0
 }
 
-// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete
+// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete.
 func (mr *MockIndexerMockRecorder) MarkInitialIndexingComplete() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInitialIndexingComplete", reflect.TypeOf((*MockIndexer)(nil).MarkInitialIndexingComplete))
 }
 
-// NeedsInitialIndexing mocks base method
+// NeedsInitialIndexing mocks base method.
 func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NeedsInitialIndexing")
@@ -135,13 +136,13 @@ func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
 	return ret0, ret1
 }
 
-// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing
+// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing.
 func (mr *MockIndexerMockRecorder) NeedsInitialIndexing() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NeedsInitialIndexing", reflect.TypeOf((*MockIndexer)(nil).NeedsInitialIndexing))
 }
 
-// Search mocks base method
+// Search mocks base method.
 func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) ([]search.Result, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -154,7 +155,7 @@ func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (
 	return ret0, ret1
 }
 
-// Search indicates an expected call of Search
+// Search indicates an expected call of Search.
 func (mr *MockIndexerMockRecorder) Search(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)

@@ -6,34 +6,35 @@ package mocks
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockPathMapGenerator is a mock of PathMapGenerator interface
+// MockPathMapGenerator is a mock of PathMapGenerator interface.
 type MockPathMapGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockPathMapGeneratorMockRecorder
 }
 
-// MockPathMapGeneratorMockRecorder is the mock recorder for MockPathMapGenerator
+// MockPathMapGeneratorMockRecorder is the mock recorder for MockPathMapGenerator.
 type MockPathMapGeneratorMockRecorder struct {
 	mock *MockPathMapGenerator
 }
 
-// NewMockPathMapGenerator creates a new mock instance
+// NewMockPathMapGenerator creates a new mock instance.
 func NewMockPathMapGenerator(ctrl *gomock.Controller) *MockPathMapGenerator {
 	mock := &MockPathMapGenerator{ctrl: ctrl}
 	mock.recorder = &MockPathMapGeneratorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPathMapGenerator) EXPECT() *MockPathMapGeneratorMockRecorder {
 	return m.recorder
 }
 
-// GeneratePathMap mocks base method
+// GeneratePathMap mocks base method.
 func (m *MockPathMapGenerator) GeneratePathMap(ctx context.Context) (map[string]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GeneratePathMap", ctx)
@@ -42,7 +43,7 @@ func (m *MockPathMapGenerator) GeneratePathMap(ctx context.Context) (map[string]
 	return ret0, ret1
 }
 
-// GeneratePathMap indicates an expected call of GeneratePathMap
+// GeneratePathMap indicates an expected call of GeneratePathMap.
 func (mr *MockPathMapGeneratorMockRecorder) GeneratePathMap(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GeneratePathMap", reflect.TypeOf((*MockPathMapGenerator)(nil).GeneratePathMap), ctx)

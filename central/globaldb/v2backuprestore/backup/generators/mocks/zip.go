@@ -7,34 +7,35 @@ package mocks
 import (
 	zip "archive/zip"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockZipGenerator is a mock of ZipGenerator interface
+// MockZipGenerator is a mock of ZipGenerator interface.
 type MockZipGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockZipGeneratorMockRecorder
 }
 
-// MockZipGeneratorMockRecorder is the mock recorder for MockZipGenerator
+// MockZipGeneratorMockRecorder is the mock recorder for MockZipGenerator.
 type MockZipGeneratorMockRecorder struct {
 	mock *MockZipGenerator
 }
 
-// NewMockZipGenerator creates a new mock instance
+// NewMockZipGenerator creates a new mock instance.
 func NewMockZipGenerator(ctrl *gomock.Controller) *MockZipGenerator {
 	mock := &MockZipGenerator{ctrl: ctrl}
 	mock.recorder = &MockZipGeneratorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockZipGenerator) EXPECT() *MockZipGeneratorMockRecorder {
 	return m.recorder
 }
 
-// WriteTo mocks base method
+// WriteTo mocks base method.
 func (m *MockZipGenerator) WriteTo(ctx context.Context, writer *zip.Writer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WriteTo", ctx, writer)
@@ -42,7 +43,7 @@ func (m *MockZipGenerator) WriteTo(ctx context.Context, writer *zip.Writer) erro
 	return ret0
 }
 
-// WriteTo indicates an expected call of WriteTo
+// WriteTo indicates an expected call of WriteTo.
 func (mr *MockZipGeneratorMockRecorder) WriteTo(ctx, writer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteTo", reflect.TypeOf((*MockZipGenerator)(nil).WriteTo), ctx, writer)

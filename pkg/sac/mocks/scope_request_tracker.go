@@ -6,35 +6,36 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	sac "github.com/stackrox/rox/pkg/sac"
-	reflect "reflect"
 )
 
-// MockScopeRequestTracker is a mock of ScopeRequestTracker interface
+// MockScopeRequestTracker is a mock of ScopeRequestTracker interface.
 type MockScopeRequestTracker struct {
 	ctrl     *gomock.Controller
 	recorder *MockScopeRequestTrackerMockRecorder
 }
 
-// MockScopeRequestTrackerMockRecorder is the mock recorder for MockScopeRequestTracker
+// MockScopeRequestTrackerMockRecorder is the mock recorder for MockScopeRequestTracker.
 type MockScopeRequestTrackerMockRecorder struct {
 	mock *MockScopeRequestTracker
 }
 
-// NewMockScopeRequestTracker creates a new mock instance
+// NewMockScopeRequestTracker creates a new mock instance.
 func NewMockScopeRequestTracker(ctrl *gomock.Controller) *MockScopeRequestTracker {
 	mock := &MockScopeRequestTracker{ctrl: ctrl}
 	mock.recorder = &MockScopeRequestTrackerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockScopeRequestTracker) EXPECT() *MockScopeRequestTrackerMockRecorder {
 	return m.recorder
 }
 
-// AddRequested mocks base method
+// AddRequested mocks base method.
 func (m *MockScopeRequestTracker) AddRequested(arg0 ...sac.ScopeRequest) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -44,13 +45,13 @@ func (m *MockScopeRequestTracker) AddRequested(arg0 ...sac.ScopeRequest) {
 	m.ctrl.Call(m, "AddRequested", varargs...)
 }
 
-// AddRequested indicates an expected call of AddRequested
+// AddRequested indicates an expected call of AddRequested.
 func (mr *MockScopeRequestTrackerMockRecorder) AddRequested(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRequested", reflect.TypeOf((*MockScopeRequestTracker)(nil).AddRequested), arg0...)
 }
 
-// PerformChecks mocks base method
+// PerformChecks mocks base method.
 func (m *MockScopeRequestTracker) PerformChecks(arg0 context.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PerformChecks", arg0)
@@ -58,7 +59,7 @@ func (m *MockScopeRequestTracker) PerformChecks(arg0 context.Context) error {
 	return ret0
 }
 
-// PerformChecks indicates an expected call of PerformChecks
+// PerformChecks indicates an expected call of PerformChecks.
 func (mr *MockScopeRequestTrackerMockRecorder) PerformChecks(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformChecks", reflect.TypeOf((*MockScopeRequestTracker)(nil).PerformChecks), arg0)

@@ -5,65 +5,37 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 	time "time"
+
+	gomock "github.com/golang/mock/gomock"
+	storage "github.com/stackrox/rox/generated/storage"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetTelemetryConfig mocks base method
-func (m *MockStore) GetTelemetryConfig() (*storage.TelemetryConfiguration, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTelemetryConfig")
-	ret0, _ := ret[0].(*storage.TelemetryConfiguration)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTelemetryConfig indicates an expected call of GetTelemetryConfig
-func (mr *MockStoreMockRecorder) GetTelemetryConfig() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTelemetryConfig", reflect.TypeOf((*MockStore)(nil).GetTelemetryConfig))
-}
-
-// SetTelemetryConfig mocks base method
-func (m *MockStore) SetTelemetryConfig(configuration *storage.TelemetryConfiguration) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTelemetryConfig", configuration)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTelemetryConfig indicates an expected call of SetTelemetryConfig
-func (mr *MockStoreMockRecorder) SetTelemetryConfig(configuration interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTelemetryConfig", reflect.TypeOf((*MockStore)(nil).SetTelemetryConfig), configuration)
-}
-
-// GetNextSendTime mocks base method
+// GetNextSendTime mocks base method.
 func (m *MockStore) GetNextSendTime() (time.Time, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNextSendTime")
@@ -72,13 +44,28 @@ func (m *MockStore) GetNextSendTime() (time.Time, error) {
 	return ret0, ret1
 }
 
-// GetNextSendTime indicates an expected call of GetNextSendTime
+// GetNextSendTime indicates an expected call of GetNextSendTime.
 func (mr *MockStoreMockRecorder) GetNextSendTime() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextSendTime", reflect.TypeOf((*MockStore)(nil).GetNextSendTime))
 }
 
-// SetNextSendTime mocks base method
+// GetTelemetryConfig mocks base method.
+func (m *MockStore) GetTelemetryConfig() (*storage.TelemetryConfiguration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTelemetryConfig")
+	ret0, _ := ret[0].(*storage.TelemetryConfiguration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTelemetryConfig indicates an expected call of GetTelemetryConfig.
+func (mr *MockStoreMockRecorder) GetTelemetryConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTelemetryConfig", reflect.TypeOf((*MockStore)(nil).GetTelemetryConfig))
+}
+
+// SetNextSendTime mocks base method.
 func (m *MockStore) SetNextSendTime(t time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetNextSendTime", t)
@@ -86,8 +73,22 @@ func (m *MockStore) SetNextSendTime(t time.Time) error {
 	return ret0
 }
 
-// SetNextSendTime indicates an expected call of SetNextSendTime
+// SetNextSendTime indicates an expected call of SetNextSendTime.
 func (mr *MockStoreMockRecorder) SetNextSendTime(t interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNextSendTime", reflect.TypeOf((*MockStore)(nil).SetNextSendTime), t)
+}
+
+// SetTelemetryConfig mocks base method.
+func (m *MockStore) SetTelemetryConfig(configuration *storage.TelemetryConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTelemetryConfig", configuration)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTelemetryConfig indicates an expected call of SetTelemetryConfig.
+func (mr *MockStoreMockRecorder) SetTelemetryConfig(configuration interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTelemetryConfig", reflect.TypeOf((*MockStore)(nil).SetTelemetryConfig), configuration)
 }

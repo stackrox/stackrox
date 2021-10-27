@@ -6,50 +6,36 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// ListBackups mocks base method
-func (m *MockDataStore) ListBackups(ctx context.Context) ([]*storage.ExternalBackup, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListBackups", ctx)
-	ret0, _ := ret[0].([]*storage.ExternalBackup)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListBackups indicates an expected call of ListBackups
-func (mr *MockDataStoreMockRecorder) ListBackups(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBackups", reflect.TypeOf((*MockDataStore)(nil).ListBackups), ctx)
-}
-
-// GetBackup mocks base method
+// GetBackup mocks base method.
 func (m *MockDataStore) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBackup", ctx, id)
@@ -58,27 +44,28 @@ func (m *MockDataStore) GetBackup(ctx context.Context, id string) (*storage.Exte
 	return ret0, ret1
 }
 
-// GetBackup indicates an expected call of GetBackup
+// GetBackup indicates an expected call of GetBackup.
 func (mr *MockDataStoreMockRecorder) GetBackup(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockDataStore)(nil).GetBackup), ctx, id)
 }
 
-// UpsertBackup mocks base method
-func (m *MockDataStore) UpsertBackup(ctx context.Context, backup *storage.ExternalBackup) error {
+// ListBackups mocks base method.
+func (m *MockDataStore) ListBackups(ctx context.Context) ([]*storage.ExternalBackup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertBackup", ctx, backup)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "ListBackups", ctx)
+	ret0, _ := ret[0].([]*storage.ExternalBackup)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// UpsertBackup indicates an expected call of UpsertBackup
-func (mr *MockDataStoreMockRecorder) UpsertBackup(ctx, backup interface{}) *gomock.Call {
+// ListBackups indicates an expected call of ListBackups.
+func (mr *MockDataStoreMockRecorder) ListBackups(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBackup", reflect.TypeOf((*MockDataStore)(nil).UpsertBackup), ctx, backup)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBackups", reflect.TypeOf((*MockDataStore)(nil).ListBackups), ctx)
 }
 
-// RemoveBackup mocks base method
+// RemoveBackup mocks base method.
 func (m *MockDataStore) RemoveBackup(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveBackup", ctx, id)
@@ -86,8 +73,22 @@ func (m *MockDataStore) RemoveBackup(ctx context.Context, id string) error {
 	return ret0
 }
 
-// RemoveBackup indicates an expected call of RemoveBackup
+// RemoveBackup indicates an expected call of RemoveBackup.
 func (mr *MockDataStoreMockRecorder) RemoveBackup(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveBackup", reflect.TypeOf((*MockDataStore)(nil).RemoveBackup), ctx, id)
+}
+
+// UpsertBackup mocks base method.
+func (m *MockDataStore) UpsertBackup(ctx context.Context, backup *storage.ExternalBackup) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertBackup", ctx, backup)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertBackup indicates an expected call of UpsertBackup.
+func (mr *MockDataStoreMockRecorder) UpsertBackup(ctx, backup interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBackup", reflect.TypeOf((*MockDataStore)(nil).UpsertBackup), ctx, backup)
 }

@@ -6,35 +6,36 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	sac "github.com/stackrox/rox/pkg/sac"
-	reflect "reflect"
 )
 
-// MockScopeCheckerCore is a mock of ScopeCheckerCore interface
+// MockScopeCheckerCore is a mock of ScopeCheckerCore interface.
 type MockScopeCheckerCore struct {
 	ctrl     *gomock.Controller
 	recorder *MockScopeCheckerCoreMockRecorder
 }
 
-// MockScopeCheckerCoreMockRecorder is the mock recorder for MockScopeCheckerCore
+// MockScopeCheckerCoreMockRecorder is the mock recorder for MockScopeCheckerCore.
 type MockScopeCheckerCoreMockRecorder struct {
 	mock *MockScopeCheckerCore
 }
 
-// NewMockScopeCheckerCore creates a new mock instance
+// NewMockScopeCheckerCore creates a new mock instance.
 func NewMockScopeCheckerCore(ctrl *gomock.Controller) *MockScopeCheckerCore {
 	mock := &MockScopeCheckerCore{ctrl: ctrl}
 	mock.recorder = &MockScopeCheckerCoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockScopeCheckerCore) EXPECT() *MockScopeCheckerCoreMockRecorder {
 	return m.recorder
 }
 
-// PerformChecks mocks base method
+// PerformChecks mocks base method.
 func (m *MockScopeCheckerCore) PerformChecks(arg0 context.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PerformChecks", arg0)
@@ -42,13 +43,13 @@ func (m *MockScopeCheckerCore) PerformChecks(arg0 context.Context) error {
 	return ret0
 }
 
-// PerformChecks indicates an expected call of PerformChecks
+// PerformChecks indicates an expected call of PerformChecks.
 func (mr *MockScopeCheckerCoreMockRecorder) PerformChecks(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformChecks", reflect.TypeOf((*MockScopeCheckerCore)(nil).PerformChecks), arg0)
 }
 
-// SubScopeChecker mocks base method
+// SubScopeChecker mocks base method.
 func (m *MockScopeCheckerCore) SubScopeChecker(arg0 sac.ScopeKey) sac.ScopeCheckerCore {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubScopeChecker", arg0)
@@ -56,13 +57,13 @@ func (m *MockScopeCheckerCore) SubScopeChecker(arg0 sac.ScopeKey) sac.ScopeCheck
 	return ret0
 }
 
-// SubScopeChecker indicates an expected call of SubScopeChecker
+// SubScopeChecker indicates an expected call of SubScopeChecker.
 func (mr *MockScopeCheckerCoreMockRecorder) SubScopeChecker(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubScopeChecker", reflect.TypeOf((*MockScopeCheckerCore)(nil).SubScopeChecker), arg0)
 }
 
-// TryAllowed mocks base method
+// TryAllowed mocks base method.
 func (m *MockScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TryAllowed")
@@ -70,7 +71,7 @@ func (m *MockScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 	return ret0
 }
 
-// TryAllowed indicates an expected call of TryAllowed
+// TryAllowed indicates an expected call of TryAllowed.
 func (mr *MockScopeCheckerCoreMockRecorder) TryAllowed() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryAllowed", reflect.TypeOf((*MockScopeCheckerCore)(nil).TryAllowed))

@@ -216,7 +216,6 @@ func TestReconcileCVEsInDB(t *testing.T) {
 	mockNamespaces.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 	mockClusterCveEdge.EXPECT().Upsert(gomock.Any(), cvesToUpsert).Return(nil)
-	mockCVEs.EXPECT().Delete(gomock.Any(), []*storage.CVE{}).Return(nil)
 
 	mockClusterCveEdge.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
 	err = cveManager.orchestratorCVEMgr.updateCVEs(embeddedCVEs, embeddedCVEToClusters, converter.K8s)

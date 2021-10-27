@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
-	reflect "reflect"
 )
 
-// MockDispatcher is a mock of Dispatcher interface
+// MockDispatcher is a mock of Dispatcher interface.
 type MockDispatcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockDispatcherMockRecorder
 }
 
-// MockDispatcherMockRecorder is the mock recorder for MockDispatcher
+// MockDispatcherMockRecorder is the mock recorder for MockDispatcher.
 type MockDispatcherMockRecorder struct {
 	mock *MockDispatcher
 }
 
-// NewMockDispatcher creates a new mock instance
+// NewMockDispatcher creates a new mock instance.
 func NewMockDispatcher(ctrl *gomock.Controller) *MockDispatcher {
 	mock := &MockDispatcher{ctrl: ctrl}
 	mock.recorder = &MockDispatcherMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDispatcher) EXPECT() *MockDispatcherMockRecorder {
 	return m.recorder
 }
 
-// ProcessEvent mocks base method
+// ProcessEvent mocks base method.
 func (m *MockDispatcher) ProcessEvent(arg0, arg1 interface{}, arg2 central.ResourceAction) []*central.SensorEvent {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessEvent", arg0, arg1, arg2)
@@ -41,7 +42,7 @@ func (m *MockDispatcher) ProcessEvent(arg0, arg1 interface{}, arg2 central.Resou
 	return ret0
 }
 
-// ProcessEvent indicates an expected call of ProcessEvent
+// ProcessEvent indicates an expected call of ProcessEvent.
 func (mr *MockDispatcherMockRecorder) ProcessEvent(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEvent", reflect.TypeOf((*MockDispatcher)(nil).ProcessEvent), arg0, arg1, arg2)

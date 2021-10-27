@@ -157,7 +157,7 @@ func TestRevokeInitBundles(t *testing.T) {
 				{Id: "cluster-5", Name: "five", InitBundleId: "2"},
 			}, nil)
 
-			backend.EXPECT().Revoke(gomock.Any(), "unknown").Return(errors.New("some error"))
+			backend.EXPECT().Revoke(gomock.Any(), "unknown").AnyTimes().Return(errors.New("some error"))
 			for _, id := range tc.response.GetInitBundleRevokedIds() {
 				backend.EXPECT().Revoke(gomock.Any(), id).Return(nil)
 			}

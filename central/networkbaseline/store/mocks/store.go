@@ -5,35 +5,64 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// Exists mocks base method
+// Delete mocks base method.
+func (m *MockStore) Delete(id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), id)
+}
+
+// DeleteMany mocks base method.
+func (m *MockStore) DeleteMany(ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMany", ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMany indicates an expected call of DeleteMany.
+func (mr *MockStoreMockRecorder) DeleteMany(ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), ids)
+}
+
+// Exists mocks base method.
 func (m *MockStore) Exists(id string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Exists", id)
@@ -42,28 +71,13 @@ func (m *MockStore) Exists(id string) (bool, error) {
 	return ret0, ret1
 }
 
-// Exists indicates an expected call of Exists
+// Exists indicates an expected call of Exists.
 func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), id)
 }
 
-// GetIDs mocks base method
-func (m *MockStore) GetIDs() ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIDs")
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetIDs indicates an expected call of GetIDs
-func (mr *MockStoreMockRecorder) GetIDs() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockStore)(nil).GetIDs))
-}
-
-// Get mocks base method
+// Get mocks base method.
 func (m *MockStore) Get(id string) (*storage.NetworkBaseline, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id)
@@ -73,13 +87,28 @@ func (m *MockStore) Get(id string) (*storage.NetworkBaseline, bool, error) {
 	return ret0, ret1, ret2
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
 }
 
-// GetMany mocks base method
+// GetIDs mocks base method.
+func (m *MockStore) GetIDs() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIDs")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIDs indicates an expected call of GetIDs.
+func (mr *MockStoreMockRecorder) GetIDs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockStore)(nil).GetIDs))
+}
+
+// GetMany mocks base method.
 func (m *MockStore) GetMany(ids []string) ([]*storage.NetworkBaseline, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ids)
@@ -89,13 +118,13 @@ func (m *MockStore) GetMany(ids []string) ([]*storage.NetworkBaseline, []int, er
 	return ret0, ret1, ret2
 }
 
-// GetMany indicates an expected call of GetMany
+// GetMany indicates an expected call of GetMany.
 func (mr *MockStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ids)
 }
 
-// Upsert mocks base method
+// Upsert mocks base method.
 func (m *MockStore) Upsert(baseline *storage.NetworkBaseline) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", baseline)
@@ -103,13 +132,13 @@ func (m *MockStore) Upsert(baseline *storage.NetworkBaseline) error {
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert
+// Upsert indicates an expected call of Upsert.
 func (mr *MockStoreMockRecorder) Upsert(baseline interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), baseline)
 }
 
-// UpsertMany mocks base method
+// UpsertMany mocks base method.
 func (m *MockStore) UpsertMany(baselines []*storage.NetworkBaseline) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertMany", baselines)
@@ -117,41 +146,13 @@ func (m *MockStore) UpsertMany(baselines []*storage.NetworkBaseline) error {
 	return ret0
 }
 
-// UpsertMany indicates an expected call of UpsertMany
+// UpsertMany indicates an expected call of UpsertMany.
 func (mr *MockStoreMockRecorder) UpsertMany(baselines interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), baselines)
 }
 
-// Delete mocks base method
-func (m *MockStore) Delete(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete
-func (mr *MockStoreMockRecorder) Delete(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), id)
-}
-
-// DeleteMany mocks base method
-func (m *MockStore) DeleteMany(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteMany", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteMany indicates an expected call of DeleteMany
-func (mr *MockStoreMockRecorder) DeleteMany(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), ids)
-}
-
-// Walk mocks base method
+// Walk mocks base method.
 func (m *MockStore) Walk(fn func(*storage.NetworkBaseline) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", fn)
@@ -159,7 +160,7 @@ func (m *MockStore) Walk(fn func(*storage.NetworkBaseline) error) error {
 	return ret0
 }
 
-// Walk indicates an expected call of Walk
+// Walk indicates an expected call of Walk.
 func (mr *MockStoreMockRecorder) Walk(fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), fn)

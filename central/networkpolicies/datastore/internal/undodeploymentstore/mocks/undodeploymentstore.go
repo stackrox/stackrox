@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockUndoDeploymentStore is a mock of UndoDeploymentStore interface
+// MockUndoDeploymentStore is a mock of UndoDeploymentStore interface.
 type MockUndoDeploymentStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockUndoDeploymentStoreMockRecorder
 }
 
-// MockUndoDeploymentStoreMockRecorder is the mock recorder for MockUndoDeploymentStore
+// MockUndoDeploymentStoreMockRecorder is the mock recorder for MockUndoDeploymentStore.
 type MockUndoDeploymentStoreMockRecorder struct {
 	mock *MockUndoDeploymentStore
 }
 
-// NewMockUndoDeploymentStore creates a new mock instance
+// NewMockUndoDeploymentStore creates a new mock instance.
 func NewMockUndoDeploymentStore(ctrl *gomock.Controller) *MockUndoDeploymentStore {
 	mock := &MockUndoDeploymentStore{ctrl: ctrl}
 	mock.recorder = &MockUndoDeploymentStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUndoDeploymentStore) EXPECT() *MockUndoDeploymentStoreMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockUndoDeploymentStore) Get(deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", deploymentID)
@@ -43,13 +44,13 @@ func (m *MockUndoDeploymentStore) Get(deploymentID string) (*storage.NetworkPoli
 	return ret0, ret1, ret2
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockUndoDeploymentStoreMockRecorder) Get(deploymentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUndoDeploymentStore)(nil).Get), deploymentID)
 }
 
-// Upsert mocks base method
+// Upsert mocks base method.
 func (m *MockUndoDeploymentStore) Upsert(undoRecord *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", undoRecord)
@@ -57,7 +58,7 @@ func (m *MockUndoDeploymentStore) Upsert(undoRecord *storage.NetworkPolicyApplic
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert
+// Upsert indicates an expected call of Upsert.
 func (mr *MockUndoDeploymentStoreMockRecorder) Upsert(undoRecord interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockUndoDeploymentStore)(nil).Upsert), undoRecord)

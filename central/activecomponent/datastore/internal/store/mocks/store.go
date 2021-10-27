@@ -5,97 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	converter "github.com/stackrox/rox/central/activecomponent/converter"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// Exists mocks base method
-func (m *MockStore) Exists(id string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", id)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Exists indicates an expected call of Exists
-func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), id)
-}
-
-// Get mocks base method
-func (m *MockStore) Get(id string) (*storage.ActiveComponent, bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
-	ret0, _ := ret[0].(*storage.ActiveComponent)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// Get indicates an expected call of Get
-func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
-}
-
-// GetBatch mocks base method
-func (m *MockStore) GetBatch(ids []string) ([]*storage.ActiveComponent, []int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatch", ids)
-	ret0, _ := ret[0].([]*storage.ActiveComponent)
-	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetBatch indicates an expected call of GetBatch
-func (mr *MockStoreMockRecorder) GetBatch(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockStore)(nil).GetBatch), ids)
-}
-
-// UpsertBatch mocks base method
-func (m *MockStore) UpsertBatch(activeComponents []*converter.CompleteActiveComponent) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertBatch", activeComponents)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertBatch indicates an expected call of UpsertBatch
-func (mr *MockStoreMockRecorder) UpsertBatch(activeComponents interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBatch", reflect.TypeOf((*MockStore)(nil).UpsertBatch), activeComponents)
-}
-
-// DeleteBatch mocks base method
+// DeleteBatch mocks base method.
 func (m *MockStore) DeleteBatch(ids ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
@@ -107,8 +47,69 @@ func (m *MockStore) DeleteBatch(ids ...string) error {
 	return ret0
 }
 
-// DeleteBatch indicates an expected call of DeleteBatch
+// DeleteBatch indicates an expected call of DeleteBatch.
 func (mr *MockStoreMockRecorder) DeleteBatch(ids ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBatch", reflect.TypeOf((*MockStore)(nil).DeleteBatch), ids...)
+}
+
+// Exists mocks base method.
+func (m *MockStore) Exists(id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), id)
+}
+
+// Get mocks base method.
+func (m *MockStore) Get(id string) (*storage.ActiveComponent, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id)
+	ret0, _ := ret[0].(*storage.ActiveComponent)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
+}
+
+// GetBatch mocks base method.
+func (m *MockStore) GetBatch(ids []string) ([]*storage.ActiveComponent, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBatch", ids)
+	ret0, _ := ret[0].([]*storage.ActiveComponent)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetBatch indicates an expected call of GetBatch.
+func (mr *MockStoreMockRecorder) GetBatch(ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockStore)(nil).GetBatch), ids)
+}
+
+// UpsertBatch mocks base method.
+func (m *MockStore) UpsertBatch(activeComponents []*converter.CompleteActiveComponent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertBatch", activeComponents)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertBatch indicates an expected call of UpsertBatch.
+func (mr *MockStoreMockRecorder) UpsertBatch(activeComponents interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBatch", reflect.TypeOf((*MockStore)(nil).UpsertBatch), activeComponents)
 }

@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	set "github.com/stackrox/rox/pkg/set"
-	reflect "reflect"
 )
 
-// MockFilter is a mock of Filter interface
+// MockFilter is a mock of Filter interface.
 type MockFilter struct {
 	ctrl     *gomock.Controller
 	recorder *MockFilterMockRecorder
 }
 
-// MockFilterMockRecorder is the mock recorder for MockFilter
+// MockFilterMockRecorder is the mock recorder for MockFilter.
 type MockFilterMockRecorder struct {
 	mock *MockFilter
 }
 
-// NewMockFilter creates a new mock instance
+// NewMockFilter creates a new mock instance.
 func NewMockFilter(ctrl *gomock.Controller) *MockFilter {
 	mock := &MockFilter{ctrl: ctrl}
 	mock.recorder = &MockFilterMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFilter) EXPECT() *MockFilterMockRecorder {
 	return m.recorder
 }
 
-// Add mocks base method
+// Add mocks base method.
 func (m *MockFilter) Add(indicator *storage.ProcessIndicator) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", indicator)
@@ -42,56 +43,56 @@ func (m *MockFilter) Add(indicator *storage.ProcessIndicator) bool {
 	return ret0
 }
 
-// Add indicates an expected call of Add
+// Add indicates an expected call of Add.
 func (mr *MockFilterMockRecorder) Add(indicator interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockFilter)(nil).Add), indicator)
 }
 
-// UpdateByPod mocks base method
-func (m *MockFilter) UpdateByPod(pod *storage.Pod) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateByPod", pod)
-}
-
-// UpdateByPod indicates an expected call of UpdateByPod
-func (mr *MockFilterMockRecorder) UpdateByPod(pod interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateByPod", reflect.TypeOf((*MockFilter)(nil).UpdateByPod), pod)
-}
-
-// UpdateByGivenContainers mocks base method
-func (m *MockFilter) UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateByGivenContainers", deploymentID, liveContainerSet)
-}
-
-// UpdateByGivenContainers indicates an expected call of UpdateByGivenContainers
-func (mr *MockFilterMockRecorder) UpdateByGivenContainers(deploymentID, liveContainerSet interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateByGivenContainers", reflect.TypeOf((*MockFilter)(nil).UpdateByGivenContainers), deploymentID, liveContainerSet)
-}
-
-// Delete mocks base method
+// Delete mocks base method.
 func (m *MockFilter) Delete(deploymentID string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Delete", deploymentID)
 }
 
-// Delete indicates an expected call of Delete
+// Delete indicates an expected call of Delete.
 func (mr *MockFilterMockRecorder) Delete(deploymentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockFilter)(nil).Delete), deploymentID)
 }
 
-// DeleteByPod mocks base method
+// DeleteByPod mocks base method.
 func (m *MockFilter) DeleteByPod(pod *storage.Pod) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "DeleteByPod", pod)
 }
 
-// DeleteByPod indicates an expected call of DeleteByPod
+// DeleteByPod indicates an expected call of DeleteByPod.
 func (mr *MockFilterMockRecorder) DeleteByPod(pod interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByPod", reflect.TypeOf((*MockFilter)(nil).DeleteByPod), pod)
+}
+
+// UpdateByGivenContainers mocks base method.
+func (m *MockFilter) UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateByGivenContainers", deploymentID, liveContainerSet)
+}
+
+// UpdateByGivenContainers indicates an expected call of UpdateByGivenContainers.
+func (mr *MockFilterMockRecorder) UpdateByGivenContainers(deploymentID, liveContainerSet interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateByGivenContainers", reflect.TypeOf((*MockFilter)(nil).UpdateByGivenContainers), deploymentID, liveContainerSet)
+}
+
+// UpdateByPod mocks base method.
+func (m *MockFilter) UpdateByPod(pod *storage.Pod) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateByPod", pod)
+}
+
+// UpdateByPod indicates an expected call of UpdateByPod.
+func (mr *MockFilterMockRecorder) UpdateByPod(pod interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateByPod", reflect.TypeOf((*MockFilter)(nil).UpdateByPod), pod)
 }

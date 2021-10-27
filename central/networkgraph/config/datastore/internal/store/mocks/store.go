@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockStore) Get(id string) (*storage.NetworkGraphConfig, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id)
@@ -43,13 +44,13 @@ func (m *MockStore) Get(id string) (*storage.NetworkGraphConfig, bool, error) {
 	return ret0, ret1, ret2
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
 }
 
-// UpsertWithID mocks base method
+// UpsertWithID mocks base method.
 func (m *MockStore) UpsertWithID(id string, cluster *storage.NetworkGraphConfig) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertWithID", id, cluster)
@@ -57,7 +58,7 @@ func (m *MockStore) UpsertWithID(id string, cluster *storage.NetworkGraphConfig)
 	return ret0
 }
 
-// UpsertWithID indicates an expected call of UpsertWithID
+// UpsertWithID indicates an expected call of UpsertWithID.
 func (mr *MockStoreMockRecorder) UpsertWithID(id, cluster interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertWithID", reflect.TypeOf((*MockStore)(nil).UpsertWithID), id, cluster)

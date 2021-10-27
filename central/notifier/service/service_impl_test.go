@@ -84,8 +84,9 @@ func (s *notifierServiceTestSuite) TestPutNotifier() {
 }
 
 func (s *notifierServiceTestSuite) TestUpdateNotifier() {
-	s.datastore.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return(nil).Times(4)
-	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return().Times(4)
+	// We attempt 6 updates below, out of which 3 are successful.
+	s.datastore.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Times(3).Return(nil)
+	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Times(3).Return()
 
 	s.datastore.EXPECT().GetNotifier(gomock.Any(),
 		createUpdateNotifierRequest().GetNotifier().GetId()).Return(

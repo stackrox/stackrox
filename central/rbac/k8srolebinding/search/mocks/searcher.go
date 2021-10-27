@@ -6,37 +6,38 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
-	reflect "reflect"
 )
 
-// MockSearcher is a mock of Searcher interface
+// MockSearcher is a mock of Searcher interface.
 type MockSearcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockSearcherMockRecorder
 }
 
-// MockSearcherMockRecorder is the mock recorder for MockSearcher
+// MockSearcherMockRecorder is the mock recorder for MockSearcher.
 type MockSearcherMockRecorder struct {
 	mock *MockSearcher
 }
 
-// NewMockSearcher creates a new mock instance
+// NewMockSearcher creates a new mock instance.
 func NewMockSearcher(ctrl *gomock.Controller) *MockSearcher {
 	mock := &MockSearcher{ctrl: ctrl}
 	mock.recorder = &MockSearcherMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 	return m.recorder
 }
 
-// Count mocks base method
+// Count mocks base method.
 func (m *MockSearcher) Count(arg0 context.Context, arg1 *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Count", arg0, arg1)
@@ -45,13 +46,13 @@ func (m *MockSearcher) Count(arg0 context.Context, arg1 *v1.Query) (int, error) 
 	return ret0, ret1
 }
 
-// Count indicates an expected call of Count
+// Count indicates an expected call of Count.
 func (mr *MockSearcherMockRecorder) Count(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSearcher)(nil).Count), arg0, arg1)
 }
 
-// Search mocks base method
+// Search mocks base method.
 func (m *MockSearcher) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Search", arg0, arg1)
@@ -60,13 +61,13 @@ func (m *MockSearcher) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Re
 	return ret0, ret1
 }
 
-// Search indicates an expected call of Search
+// Search indicates an expected call of Search.
 func (mr *MockSearcherMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), arg0, arg1)
 }
 
-// SearchRawRoleBindings mocks base method
+// SearchRawRoleBindings mocks base method.
 func (m *MockSearcher) SearchRawRoleBindings(arg0 context.Context, arg1 *v1.Query) ([]*storage.K8SRoleBinding, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRawRoleBindings", arg0, arg1)
@@ -75,13 +76,13 @@ func (m *MockSearcher) SearchRawRoleBindings(arg0 context.Context, arg1 *v1.Quer
 	return ret0, ret1
 }
 
-// SearchRawRoleBindings indicates an expected call of SearchRawRoleBindings
+// SearchRawRoleBindings indicates an expected call of SearchRawRoleBindings.
 func (mr *MockSearcherMockRecorder) SearchRawRoleBindings(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawRoleBindings", reflect.TypeOf((*MockSearcher)(nil).SearchRawRoleBindings), arg0, arg1)
 }
 
-// SearchRoleBindings mocks base method
+// SearchRoleBindings mocks base method.
 func (m *MockSearcher) SearchRoleBindings(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRoleBindings", arg0, arg1)
@@ -90,7 +91,7 @@ func (m *MockSearcher) SearchRoleBindings(arg0 context.Context, arg1 *v1.Query) 
 	return ret0, ret1
 }
 
-// SearchRoleBindings indicates an expected call of SearchRoleBindings
+// SearchRoleBindings indicates an expected call of SearchRoleBindings.
 func (mr *MockSearcherMockRecorder) SearchRoleBindings(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRoleBindings", reflect.TypeOf((*MockSearcher)(nil).SearchRoleBindings), arg0, arg1)

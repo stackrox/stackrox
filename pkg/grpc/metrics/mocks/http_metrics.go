@@ -5,49 +5,36 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	http "net/http"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockHTTPMetrics is a mock of HTTPMetrics interface
+// MockHTTPMetrics is a mock of HTTPMetrics interface.
 type MockHTTPMetrics struct {
 	ctrl     *gomock.Controller
 	recorder *MockHTTPMetricsMockRecorder
 }
 
-// MockHTTPMetricsMockRecorder is the mock recorder for MockHTTPMetrics
+// MockHTTPMetricsMockRecorder is the mock recorder for MockHTTPMetrics.
 type MockHTTPMetricsMockRecorder struct {
 	mock *MockHTTPMetrics
 }
 
-// NewMockHTTPMetrics creates a new mock instance
+// NewMockHTTPMetrics creates a new mock instance.
 func NewMockHTTPMetrics(ctrl *gomock.Controller) *MockHTTPMetrics {
 	mock := &MockHTTPMetrics{ctrl: ctrl}
 	mock.recorder = &MockHTTPMetricsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockHTTPMetrics) EXPECT() *MockHTTPMetricsMockRecorder {
 	return m.recorder
 }
 
-// WrapHandler mocks base method
-func (m *MockHTTPMetrics) WrapHandler(handler http.Handler, path string) http.Handler {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WrapHandler", handler, path)
-	ret0, _ := ret[0].(http.Handler)
-	return ret0
-}
-
-// WrapHandler indicates an expected call of WrapHandler
-func (mr *MockHTTPMetricsMockRecorder) WrapHandler(handler, path interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WrapHandler", reflect.TypeOf((*MockHTTPMetrics)(nil).WrapHandler), handler, path)
-}
-
-// GetMetrics mocks base method
+// GetMetrics mocks base method.
 func (m *MockHTTPMetrics) GetMetrics() (map[string]map[int]int64, map[string]map[string]int64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMetrics")
@@ -56,8 +43,22 @@ func (m *MockHTTPMetrics) GetMetrics() (map[string]map[int]int64, map[string]map
 	return ret0, ret1
 }
 
-// GetMetrics indicates an expected call of GetMetrics
+// GetMetrics indicates an expected call of GetMetrics.
 func (mr *MockHTTPMetricsMockRecorder) GetMetrics() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetrics", reflect.TypeOf((*MockHTTPMetrics)(nil).GetMetrics))
+}
+
+// WrapHandler mocks base method.
+func (m *MockHTTPMetrics) WrapHandler(handler http.Handler, path string) http.Handler {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WrapHandler", handler, path)
+	ret0, _ := ret[0].(http.Handler)
+	return ret0
+}
+
+// WrapHandler indicates an expected call of WrapHandler.
+func (mr *MockHTTPMetricsMockRecorder) WrapHandler(handler, path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WrapHandler", reflect.TypeOf((*MockHTTPMetrics)(nil).WrapHandler), handler, path)
 }

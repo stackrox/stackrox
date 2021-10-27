@@ -5,35 +5,80 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetNetworkPolicy mocks base method
+// AddNetworkPolicy mocks base method.
+func (m *MockStore) AddNetworkPolicy(np *storage.NetworkPolicy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddNetworkPolicy", np)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddNetworkPolicy indicates an expected call of AddNetworkPolicy.
+func (mr *MockStoreMockRecorder) AddNetworkPolicy(np interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNetworkPolicy", reflect.TypeOf((*MockStore)(nil).AddNetworkPolicy), np)
+}
+
+// CountMatchingNetworkPolicies mocks base method.
+func (m *MockStore) CountMatchingNetworkPolicies(clusterID, namespace string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountMatchingNetworkPolicies", clusterID, namespace)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountMatchingNetworkPolicies indicates an expected call of CountMatchingNetworkPolicies.
+func (mr *MockStoreMockRecorder) CountMatchingNetworkPolicies(clusterID, namespace interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountMatchingNetworkPolicies", reflect.TypeOf((*MockStore)(nil).CountMatchingNetworkPolicies), clusterID, namespace)
+}
+
+// GetNetworkPolicies mocks base method.
+func (m *MockStore) GetNetworkPolicies(clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetworkPolicies", clusterID, namespace)
+	ret0, _ := ret[0].([]*storage.NetworkPolicy)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetworkPolicies indicates an expected call of GetNetworkPolicies.
+func (mr *MockStoreMockRecorder) GetNetworkPolicies(clusterID, namespace interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkPolicies", reflect.TypeOf((*MockStore)(nil).GetNetworkPolicies), clusterID, namespace)
+}
+
+// GetNetworkPolicy mocks base method.
 func (m *MockStore) GetNetworkPolicy(id string) (*storage.NetworkPolicy, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNetworkPolicy", id)
@@ -43,71 +88,13 @@ func (m *MockStore) GetNetworkPolicy(id string) (*storage.NetworkPolicy, bool, e
 	return ret0, ret1, ret2
 }
 
-// GetNetworkPolicy indicates an expected call of GetNetworkPolicy
+// GetNetworkPolicy indicates an expected call of GetNetworkPolicy.
 func (mr *MockStoreMockRecorder) GetNetworkPolicy(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkPolicy", reflect.TypeOf((*MockStore)(nil).GetNetworkPolicy), id)
 }
 
-// GetNetworkPolicies mocks base method
-func (m *MockStore) GetNetworkPolicies(clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetworkPolicies", clusterID, namespace)
-	ret0, _ := ret[0].([]*storage.NetworkPolicy)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNetworkPolicies indicates an expected call of GetNetworkPolicies
-func (mr *MockStoreMockRecorder) GetNetworkPolicies(clusterID, namespace interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkPolicies", reflect.TypeOf((*MockStore)(nil).GetNetworkPolicies), clusterID, namespace)
-}
-
-// CountMatchingNetworkPolicies mocks base method
-func (m *MockStore) CountMatchingNetworkPolicies(clusterID, namespace string) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountMatchingNetworkPolicies", clusterID, namespace)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountMatchingNetworkPolicies indicates an expected call of CountMatchingNetworkPolicies
-func (mr *MockStoreMockRecorder) CountMatchingNetworkPolicies(clusterID, namespace interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountMatchingNetworkPolicies", reflect.TypeOf((*MockStore)(nil).CountMatchingNetworkPolicies), clusterID, namespace)
-}
-
-// AddNetworkPolicy mocks base method
-func (m *MockStore) AddNetworkPolicy(np *storage.NetworkPolicy) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNetworkPolicy", np)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddNetworkPolicy indicates an expected call of AddNetworkPolicy
-func (mr *MockStoreMockRecorder) AddNetworkPolicy(np interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNetworkPolicy", reflect.TypeOf((*MockStore)(nil).AddNetworkPolicy), np)
-}
-
-// UpdateNetworkPolicy mocks base method
-func (m *MockStore) UpdateNetworkPolicy(np *storage.NetworkPolicy) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateNetworkPolicy", np)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateNetworkPolicy indicates an expected call of UpdateNetworkPolicy
-func (mr *MockStoreMockRecorder) UpdateNetworkPolicy(np interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNetworkPolicy", reflect.TypeOf((*MockStore)(nil).UpdateNetworkPolicy), np)
-}
-
-// RemoveNetworkPolicy mocks base method
+// RemoveNetworkPolicy mocks base method.
 func (m *MockStore) RemoveNetworkPolicy(id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveNetworkPolicy", id)
@@ -115,8 +102,22 @@ func (m *MockStore) RemoveNetworkPolicy(id string) error {
 	return ret0
 }
 
-// RemoveNetworkPolicy indicates an expected call of RemoveNetworkPolicy
+// RemoveNetworkPolicy indicates an expected call of RemoveNetworkPolicy.
 func (mr *MockStoreMockRecorder) RemoveNetworkPolicy(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNetworkPolicy", reflect.TypeOf((*MockStore)(nil).RemoveNetworkPolicy), id)
+}
+
+// UpdateNetworkPolicy mocks base method.
+func (m *MockStore) UpdateNetworkPolicy(np *storage.NetworkPolicy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateNetworkPolicy", np)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateNetworkPolicy indicates an expected call of UpdateNetworkPolicy.
+func (mr *MockStoreMockRecorder) UpdateNetworkPolicy(np interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNetworkPolicy", reflect.TypeOf((*MockStore)(nil).UpdateNetworkPolicy), np)
 }

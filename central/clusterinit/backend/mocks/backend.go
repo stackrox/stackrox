@@ -6,37 +6,52 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	backend "github.com/stackrox/rox/central/clusterinit/backend"
 	storage "github.com/stackrox/rox/generated/storage"
 	requestinfo "github.com/stackrox/rox/pkg/grpc/requestinfo"
-	reflect "reflect"
 )
 
-// MockBackend is a mock of Backend interface
+// MockBackend is a mock of Backend interface.
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
 }
 
-// MockBackendMockRecorder is the mock recorder for MockBackend
+// MockBackendMockRecorder is the mock recorder for MockBackend.
 type MockBackendMockRecorder struct {
 	mock *MockBackend
 }
 
-// NewMockBackend creates a new mock instance
+// NewMockBackend creates a new mock instance.
 func NewMockBackend(ctrl *gomock.Controller) *MockBackend {
 	mock := &MockBackend{ctrl: ctrl}
 	mock.recorder = &MockBackendMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBackend) EXPECT() *MockBackendMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method
+// CheckRevoked mocks base method.
+func (m *MockBackend) CheckRevoked(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckRevoked", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckRevoked indicates an expected call of CheckRevoked.
+func (mr *MockBackendMockRecorder) CheckRevoked(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRevoked", reflect.TypeOf((*MockBackend)(nil).CheckRevoked), ctx, id)
+}
+
+// GetAll mocks base method.
 func (m *MockBackend) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", ctx)
@@ -45,13 +60,13 @@ func (m *MockBackend) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, er
 	return ret0, ret1
 }
 
-// GetAll indicates an expected call of GetAll
+// GetAll indicates an expected call of GetAll.
 func (mr *MockBackendMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockBackend)(nil).GetAll), ctx)
 }
 
-// GetCAConfig mocks base method
+// GetCAConfig mocks base method.
 func (m *MockBackend) GetCAConfig(ctx context.Context) (*backend.CAConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCAConfig", ctx)
@@ -60,13 +75,13 @@ func (m *MockBackend) GetCAConfig(ctx context.Context) (*backend.CAConfig, error
 	return ret0, ret1
 }
 
-// GetCAConfig indicates an expected call of GetCAConfig
+// GetCAConfig indicates an expected call of GetCAConfig.
 func (mr *MockBackendMockRecorder) GetCAConfig(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCAConfig", reflect.TypeOf((*MockBackend)(nil).GetCAConfig), ctx)
 }
 
-// Issue mocks base method
+// Issue mocks base method.
 func (m *MockBackend) Issue(ctx context.Context, name string) (*backend.InitBundleWithMeta, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Issue", ctx, name)
@@ -75,13 +90,13 @@ func (m *MockBackend) Issue(ctx context.Context, name string) (*backend.InitBund
 	return ret0, ret1
 }
 
-// Issue indicates an expected call of Issue
+// Issue indicates an expected call of Issue.
 func (mr *MockBackendMockRecorder) Issue(ctx, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Issue", reflect.TypeOf((*MockBackend)(nil).Issue), ctx, name)
 }
 
-// Revoke mocks base method
+// Revoke mocks base method.
 func (m *MockBackend) Revoke(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Revoke", ctx, id)
@@ -89,27 +104,13 @@ func (m *MockBackend) Revoke(ctx context.Context, id string) error {
 	return ret0
 }
 
-// Revoke indicates an expected call of Revoke
+// Revoke indicates an expected call of Revoke.
 func (mr *MockBackendMockRecorder) Revoke(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockBackend)(nil).Revoke), ctx, id)
 }
 
-// CheckRevoked mocks base method
-func (m *MockBackend) CheckRevoked(ctx context.Context, id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckRevoked", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckRevoked indicates an expected call of CheckRevoked
-func (mr *MockBackendMockRecorder) CheckRevoked(ctx, id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRevoked", reflect.TypeOf((*MockBackend)(nil).CheckRevoked), ctx, id)
-}
-
-// ValidateClientCertificate mocks base method
+// ValidateClientCertificate mocks base method.
 func (m *MockBackend) ValidateClientCertificate(arg0 context.Context, arg1 []requestinfo.CertInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateClientCertificate", arg0, arg1)
@@ -117,7 +118,7 @@ func (m *MockBackend) ValidateClientCertificate(arg0 context.Context, arg1 []req
 	return ret0
 }
 
-// ValidateClientCertificate indicates an expected call of ValidateClientCertificate
+// ValidateClientCertificate indicates an expected call of ValidateClientCertificate.
 func (mr *MockBackendMockRecorder) ValidateClientCertificate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateClientCertificate", reflect.TypeOf((*MockBackend)(nil).ValidateClientCertificate), arg0, arg1)

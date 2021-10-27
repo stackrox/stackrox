@@ -5,38 +5,39 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
-	reflect "reflect"
 )
 
-// MockIndexer is a mock of Indexer interface
+// MockIndexer is a mock of Indexer interface.
 type MockIndexer struct {
 	ctrl     *gomock.Controller
 	recorder *MockIndexerMockRecorder
 }
 
-// MockIndexerMockRecorder is the mock recorder for MockIndexer
+// MockIndexerMockRecorder is the mock recorder for MockIndexer.
 type MockIndexerMockRecorder struct {
 	mock *MockIndexer
 }
 
-// NewMockIndexer creates a new mock instance
+// NewMockIndexer creates a new mock instance.
 func NewMockIndexer(ctrl *gomock.Controller) *MockIndexer {
 	mock := &MockIndexer{ctrl: ctrl}
 	mock.recorder = &MockIndexerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddNodeComponentEdge mocks base method
+// AddNodeComponentEdge mocks base method.
 func (m *MockIndexer) AddNodeComponentEdge(arg0 *storage.NodeComponentEdge) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddNodeComponentEdge", arg0)
@@ -44,13 +45,13 @@ func (m *MockIndexer) AddNodeComponentEdge(arg0 *storage.NodeComponentEdge) erro
 	return ret0
 }
 
-// AddNodeComponentEdge indicates an expected call of AddNodeComponentEdge
+// AddNodeComponentEdge indicates an expected call of AddNodeComponentEdge.
 func (mr *MockIndexerMockRecorder) AddNodeComponentEdge(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeComponentEdge", reflect.TypeOf((*MockIndexer)(nil).AddNodeComponentEdge), arg0)
 }
 
-// AddNodeComponentEdges mocks base method
+// AddNodeComponentEdges mocks base method.
 func (m *MockIndexer) AddNodeComponentEdges(arg0 []*storage.NodeComponentEdge) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddNodeComponentEdges", arg0)
@@ -58,13 +59,13 @@ func (m *MockIndexer) AddNodeComponentEdges(arg0 []*storage.NodeComponentEdge) e
 	return ret0
 }
 
-// AddNodeComponentEdges indicates an expected call of AddNodeComponentEdges
+// AddNodeComponentEdges indicates an expected call of AddNodeComponentEdges.
 func (mr *MockIndexerMockRecorder) AddNodeComponentEdges(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeComponentEdges", reflect.TypeOf((*MockIndexer)(nil).AddNodeComponentEdges), arg0)
 }
 
-// Count mocks base method
+// Count mocks base method.
 func (m *MockIndexer) Count(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -77,14 +78,14 @@ func (m *MockIndexer) Count(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (i
 	return ret0, ret1
 }
 
-// Count indicates an expected call of Count
+// Count indicates an expected call of Count.
 func (mr *MockIndexerMockRecorder) Count(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
 }
 
-// DeleteNodeComponentEdge mocks base method
+// DeleteNodeComponentEdge mocks base method.
 func (m *MockIndexer) DeleteNodeComponentEdge(arg0 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteNodeComponentEdge", arg0)
@@ -92,13 +93,13 @@ func (m *MockIndexer) DeleteNodeComponentEdge(arg0 string) error {
 	return ret0
 }
 
-// DeleteNodeComponentEdge indicates an expected call of DeleteNodeComponentEdge
+// DeleteNodeComponentEdge indicates an expected call of DeleteNodeComponentEdge.
 func (mr *MockIndexerMockRecorder) DeleteNodeComponentEdge(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNodeComponentEdge", reflect.TypeOf((*MockIndexer)(nil).DeleteNodeComponentEdge), arg0)
 }
 
-// DeleteNodeComponentEdges mocks base method
+// DeleteNodeComponentEdges mocks base method.
 func (m *MockIndexer) DeleteNodeComponentEdges(arg0 []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteNodeComponentEdges", arg0)
@@ -106,13 +107,13 @@ func (m *MockIndexer) DeleteNodeComponentEdges(arg0 []string) error {
 	return ret0
 }
 
-// DeleteNodeComponentEdges indicates an expected call of DeleteNodeComponentEdges
+// DeleteNodeComponentEdges indicates an expected call of DeleteNodeComponentEdges.
 func (mr *MockIndexerMockRecorder) DeleteNodeComponentEdges(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNodeComponentEdges", reflect.TypeOf((*MockIndexer)(nil).DeleteNodeComponentEdges), arg0)
 }
 
-// MarkInitialIndexingComplete mocks base method
+// MarkInitialIndexingComplete mocks base method.
 func (m *MockIndexer) MarkInitialIndexingComplete() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarkInitialIndexingComplete")
@@ -120,13 +121,13 @@ func (m *MockIndexer) MarkInitialIndexingComplete() error {
 	return ret0
 }
 
-// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete
+// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete.
 func (mr *MockIndexerMockRecorder) MarkInitialIndexingComplete() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInitialIndexingComplete", reflect.TypeOf((*MockIndexer)(nil).MarkInitialIndexingComplete))
 }
 
-// NeedsInitialIndexing mocks base method
+// NeedsInitialIndexing mocks base method.
 func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NeedsInitialIndexing")
@@ -135,13 +136,13 @@ func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
 	return ret0, ret1
 }
 
-// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing
+// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing.
 func (mr *MockIndexerMockRecorder) NeedsInitialIndexing() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NeedsInitialIndexing", reflect.TypeOf((*MockIndexer)(nil).NeedsInitialIndexing))
 }
 
-// Search mocks base method
+// Search mocks base method.
 func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) ([]search.Result, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -154,7 +155,7 @@ func (m *MockIndexer) Search(arg0 *v1.Query, arg1 ...blevesearch.SearchOption) (
 	return ret0, ret1
 }
 
-// Search indicates an expected call of Search
+// Search indicates an expected call of Search.
 func (mr *MockIndexerMockRecorder) Search(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)

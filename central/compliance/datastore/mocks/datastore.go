@@ -6,39 +6,40 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	compliance "github.com/stackrox/rox/central/compliance"
 	datastore "github.com/stackrox/rox/central/compliance/datastore"
 	types "github.com/stackrox/rox/central/compliance/datastore/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// ClearAggregationResults mocks base method
+// ClearAggregationResults mocks base method.
 func (m *MockDataStore) ClearAggregationResults(arg0 context.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearAggregationResults", arg0)
@@ -46,13 +47,13 @@ func (m *MockDataStore) ClearAggregationResults(arg0 context.Context) error {
 	return ret0
 }
 
-// ClearAggregationResults indicates an expected call of ClearAggregationResults
+// ClearAggregationResults indicates an expected call of ClearAggregationResults.
 func (mr *MockDataStoreMockRecorder) ClearAggregationResults(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAggregationResults", reflect.TypeOf((*MockDataStore)(nil).ClearAggregationResults), arg0)
 }
 
-// GetLatestRunResults mocks base method
+// GetLatestRunResults mocks base method.
 func (m *MockDataStore) GetLatestRunResults(arg0 context.Context, arg1, arg2 string, arg3 types.GetFlags) (types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestRunResults", arg0, arg1, arg2, arg3)
@@ -61,13 +62,13 @@ func (m *MockDataStore) GetLatestRunResults(arg0 context.Context, arg1, arg2 str
 	return ret0, ret1
 }
 
-// GetLatestRunResults indicates an expected call of GetLatestRunResults
+// GetLatestRunResults indicates an expected call of GetLatestRunResults.
 func (mr *MockDataStoreMockRecorder) GetLatestRunResults(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResults", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResults), arg0, arg1, arg2, arg3)
 }
 
-// GetLatestRunResultsBatch mocks base method
+// GetLatestRunResultsBatch mocks base method.
 func (m *MockDataStore) GetLatestRunResultsBatch(arg0 context.Context, arg1, arg2 []string, arg3 types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestRunResultsBatch", arg0, arg1, arg2, arg3)
@@ -76,13 +77,13 @@ func (m *MockDataStore) GetLatestRunResultsBatch(arg0 context.Context, arg1, arg
 	return ret0, ret1
 }
 
-// GetLatestRunResultsBatch indicates an expected call of GetLatestRunResultsBatch
+// GetLatestRunResultsBatch indicates an expected call of GetLatestRunResultsBatch.
 func (mr *MockDataStoreMockRecorder) GetLatestRunResultsBatch(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsBatch", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResultsBatch), arg0, arg1, arg2, arg3)
 }
 
-// GetLatestRunResultsForClustersAndStandards mocks base method
+// GetLatestRunResultsForClustersAndStandards mocks base method.
 func (m *MockDataStore) GetLatestRunResultsForClustersAndStandards(arg0 context.Context, arg1, arg2 []string, arg3 types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestRunResultsForClustersAndStandards", arg0, arg1, arg2, arg3)
@@ -91,13 +92,13 @@ func (m *MockDataStore) GetLatestRunResultsForClustersAndStandards(arg0 context.
 	return ret0, ret1
 }
 
-// GetLatestRunResultsForClustersAndStandards indicates an expected call of GetLatestRunResultsForClustersAndStandards
+// GetLatestRunResultsForClustersAndStandards indicates an expected call of GetLatestRunResultsForClustersAndStandards.
 func (mr *MockDataStoreMockRecorder) GetLatestRunResultsForClustersAndStandards(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsForClustersAndStandards", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResultsForClustersAndStandards), arg0, arg1, arg2, arg3)
 }
 
-// GetSpecificRunResults mocks base method
+// GetSpecificRunResults mocks base method.
 func (m *MockDataStore) GetSpecificRunResults(arg0 context.Context, arg1, arg2, arg3 string, arg4 types.GetFlags) (types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSpecificRunResults", arg0, arg1, arg2, arg3, arg4)
@@ -106,13 +107,13 @@ func (m *MockDataStore) GetSpecificRunResults(arg0 context.Context, arg1, arg2, 
 	return ret0, ret1
 }
 
-// GetSpecificRunResults indicates an expected call of GetSpecificRunResults
+// GetSpecificRunResults indicates an expected call of GetSpecificRunResults.
 func (mr *MockDataStoreMockRecorder) GetSpecificRunResults(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpecificRunResults", reflect.TypeOf((*MockDataStore)(nil).GetSpecificRunResults), arg0, arg1, arg2, arg3, arg4)
 }
 
-// IsComplianceRunSuccessfulOnCluster mocks base method
+// IsComplianceRunSuccessfulOnCluster mocks base method.
 func (m *MockDataStore) IsComplianceRunSuccessfulOnCluster(arg0 context.Context, arg1 string, arg2 []string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsComplianceRunSuccessfulOnCluster", arg0, arg1, arg2)
@@ -121,13 +122,13 @@ func (m *MockDataStore) IsComplianceRunSuccessfulOnCluster(arg0 context.Context,
 	return ret0, ret1
 }
 
-// IsComplianceRunSuccessfulOnCluster indicates an expected call of IsComplianceRunSuccessfulOnCluster
+// IsComplianceRunSuccessfulOnCluster indicates an expected call of IsComplianceRunSuccessfulOnCluster.
 func (mr *MockDataStoreMockRecorder) IsComplianceRunSuccessfulOnCluster(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsComplianceRunSuccessfulOnCluster", reflect.TypeOf((*MockDataStore)(nil).IsComplianceRunSuccessfulOnCluster), arg0, arg1, arg2)
 }
 
-// PerformStoredAggregation mocks base method
+// PerformStoredAggregation mocks base method.
 func (m *MockDataStore) PerformStoredAggregation(arg0 context.Context, arg1 *datastore.StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PerformStoredAggregation", arg0, arg1)
@@ -138,13 +139,13 @@ func (m *MockDataStore) PerformStoredAggregation(arg0 context.Context, arg1 *dat
 	return ret0, ret1, ret2, ret3
 }
 
-// PerformStoredAggregation indicates an expected call of PerformStoredAggregation
+// PerformStoredAggregation indicates an expected call of PerformStoredAggregation.
 func (mr *MockDataStoreMockRecorder) PerformStoredAggregation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformStoredAggregation", reflect.TypeOf((*MockDataStore)(nil).PerformStoredAggregation), arg0, arg1)
 }
 
-// QueryControlResults mocks base method
+// QueryControlResults mocks base method.
 func (m *MockDataStore) QueryControlResults(arg0 context.Context, arg1 *v1.Query) ([]*storage.ComplianceControlResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryControlResults", arg0, arg1)
@@ -153,13 +154,13 @@ func (m *MockDataStore) QueryControlResults(arg0 context.Context, arg1 *v1.Query
 	return ret0, ret1
 }
 
-// QueryControlResults indicates an expected call of QueryControlResults
+// QueryControlResults indicates an expected call of QueryControlResults.
 func (mr *MockDataStoreMockRecorder) QueryControlResults(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryControlResults", reflect.TypeOf((*MockDataStore)(nil).QueryControlResults), arg0, arg1)
 }
 
-// StoreComplianceDomain mocks base method
+// StoreComplianceDomain mocks base method.
 func (m *MockDataStore) StoreComplianceDomain(arg0 context.Context, arg1 *storage.ComplianceDomain) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreComplianceDomain", arg0, arg1)
@@ -167,13 +168,13 @@ func (m *MockDataStore) StoreComplianceDomain(arg0 context.Context, arg1 *storag
 	return ret0
 }
 
-// StoreComplianceDomain indicates an expected call of StoreComplianceDomain
+// StoreComplianceDomain indicates an expected call of StoreComplianceDomain.
 func (mr *MockDataStoreMockRecorder) StoreComplianceDomain(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreComplianceDomain", reflect.TypeOf((*MockDataStore)(nil).StoreComplianceDomain), arg0, arg1)
 }
 
-// StoreFailure mocks base method
+// StoreFailure mocks base method.
 func (m *MockDataStore) StoreFailure(arg0 context.Context, arg1 *storage.ComplianceRunMetadata) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreFailure", arg0, arg1)
@@ -181,13 +182,13 @@ func (m *MockDataStore) StoreFailure(arg0 context.Context, arg1 *storage.Complia
 	return ret0
 }
 
-// StoreFailure indicates an expected call of StoreFailure
+// StoreFailure indicates an expected call of StoreFailure.
 func (mr *MockDataStoreMockRecorder) StoreFailure(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreFailure", reflect.TypeOf((*MockDataStore)(nil).StoreFailure), arg0, arg1)
 }
 
-// StoreRunResults mocks base method
+// StoreRunResults mocks base method.
 func (m *MockDataStore) StoreRunResults(arg0 context.Context, arg1 *storage.ComplianceRunResults) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreRunResults", arg0, arg1)
@@ -195,7 +196,7 @@ func (m *MockDataStore) StoreRunResults(arg0 context.Context, arg1 *storage.Comp
 	return ret0
 }
 
-// StoreRunResults indicates an expected call of StoreRunResults
+// StoreRunResults indicates an expected call of StoreRunResults.
 func (mr *MockDataStoreMockRecorder) StoreRunResults(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreRunResults", reflect.TypeOf((*MockDataStore)(nil).StoreRunResults), arg0, arg1)

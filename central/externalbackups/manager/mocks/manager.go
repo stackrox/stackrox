@@ -6,35 +6,36 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	reflect "reflect"
 )
 
-// MockManager is a mock of Manager interface
+// MockManager is a mock of Manager interface.
 type MockManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockManagerMockRecorder
 }
 
-// MockManagerMockRecorder is the mock recorder for MockManager
+// MockManagerMockRecorder is the mock recorder for MockManager.
 type MockManagerMockRecorder struct {
 	mock *MockManager
 }
 
-// NewMockManager creates a new mock instance
+// NewMockManager creates a new mock instance.
 func NewMockManager(ctrl *gomock.Controller) *MockManager {
 	mock := &MockManager{ctrl: ctrl}
 	mock.recorder = &MockManagerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 	return m.recorder
 }
 
-// Backup mocks base method
+// Backup mocks base method.
 func (m *MockManager) Backup(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Backup", arg0, arg1)
@@ -42,25 +43,25 @@ func (m *MockManager) Backup(arg0 context.Context, arg1 string) error {
 	return ret0
 }
 
-// Backup indicates an expected call of Backup
+// Backup indicates an expected call of Backup.
 func (mr *MockManagerMockRecorder) Backup(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Backup", reflect.TypeOf((*MockManager)(nil).Backup), arg0, arg1)
 }
 
-// Remove mocks base method
+// Remove mocks base method.
 func (m *MockManager) Remove(arg0 context.Context, arg1 string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Remove", arg0, arg1)
 }
 
-// Remove indicates an expected call of Remove
+// Remove indicates an expected call of Remove.
 func (mr *MockManagerMockRecorder) Remove(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockManager)(nil).Remove), arg0, arg1)
 }
 
-// Test mocks base method
+// Test mocks base method.
 func (m *MockManager) Test(arg0 context.Context, arg1 *storage.ExternalBackup) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Test", arg0, arg1)
@@ -68,13 +69,13 @@ func (m *MockManager) Test(arg0 context.Context, arg1 *storage.ExternalBackup) e
 	return ret0
 }
 
-// Test indicates an expected call of Test
+// Test indicates an expected call of Test.
 func (mr *MockManagerMockRecorder) Test(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockManager)(nil).Test), arg0, arg1)
 }
 
-// Upsert mocks base method
+// Upsert mocks base method.
 func (m *MockManager) Upsert(arg0 context.Context, arg1 *storage.ExternalBackup) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", arg0, arg1)
@@ -82,7 +83,7 @@ func (m *MockManager) Upsert(arg0 context.Context, arg1 *storage.ExternalBackup)
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert
+// Upsert indicates an expected call of Upsert.
 func (mr *MockManagerMockRecorder) Upsert(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockManager)(nil).Upsert), arg0, arg1)

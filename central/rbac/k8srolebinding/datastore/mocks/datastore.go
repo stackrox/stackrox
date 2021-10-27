@@ -6,52 +6,38 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// Search mocks base method
-func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", ctx, q)
-	ret0, _ := ret[0].([]search.Result)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Search indicates an expected call of Search
-func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
-}
-
-// Count mocks base method
+// Count mocks base method.
 func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Count", ctx, q)
@@ -60,43 +46,13 @@ func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ret0, ret1
 }
 
-// Count indicates an expected call of Count
+// Count indicates an expected call of Count.
 func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// SearchRoleBindings mocks base method
-func (m *MockDataStore) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRoleBindings", ctx, q)
-	ret0, _ := ret[0].([]*v1.SearchResult)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SearchRoleBindings indicates an expected call of SearchRoleBindings
-func (mr *MockDataStoreMockRecorder) SearchRoleBindings(ctx, q interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRoleBindings", reflect.TypeOf((*MockDataStore)(nil).SearchRoleBindings), ctx, q)
-}
-
-// SearchRawRoleBindings mocks base method
-func (m *MockDataStore) SearchRawRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawRoleBindings", ctx, q)
-	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SearchRawRoleBindings indicates an expected call of SearchRawRoleBindings
-func (mr *MockDataStoreMockRecorder) SearchRawRoleBindings(ctx, q interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawRoleBindings", reflect.TypeOf((*MockDataStore)(nil).SearchRawRoleBindings), ctx, q)
-}
-
-// GetRoleBinding mocks base method
+// GetRoleBinding mocks base method.
 func (m *MockDataStore) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRoleBinding", ctx, id)
@@ -106,27 +62,13 @@ func (m *MockDataStore) GetRoleBinding(ctx context.Context, id string) (*storage
 	return ret0, ret1, ret2
 }
 
-// GetRoleBinding indicates an expected call of GetRoleBinding
+// GetRoleBinding indicates an expected call of GetRoleBinding.
 func (mr *MockDataStoreMockRecorder) GetRoleBinding(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoleBinding", reflect.TypeOf((*MockDataStore)(nil).GetRoleBinding), ctx, id)
 }
 
-// UpsertRoleBinding mocks base method
-func (m *MockDataStore) UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertRoleBinding", ctx, request)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertRoleBinding indicates an expected call of UpsertRoleBinding
-func (mr *MockDataStoreMockRecorder) UpsertRoleBinding(ctx, request interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRoleBinding", reflect.TypeOf((*MockDataStore)(nil).UpsertRoleBinding), ctx, request)
-}
-
-// RemoveRoleBinding mocks base method
+// RemoveRoleBinding mocks base method.
 func (m *MockDataStore) RemoveRoleBinding(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveRoleBinding", ctx, id)
@@ -134,8 +76,67 @@ func (m *MockDataStore) RemoveRoleBinding(ctx context.Context, id string) error 
 	return ret0
 }
 
-// RemoveRoleBinding indicates an expected call of RemoveRoleBinding
+// RemoveRoleBinding indicates an expected call of RemoveRoleBinding.
 func (mr *MockDataStoreMockRecorder) RemoveRoleBinding(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRoleBinding", reflect.TypeOf((*MockDataStore)(nil).RemoveRoleBinding), ctx, id)
+}
+
+// Search mocks base method.
+func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
+}
+
+// SearchRawRoleBindings mocks base method.
+func (m *MockDataStore) SearchRawRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawRoleBindings", ctx, q)
+	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawRoleBindings indicates an expected call of SearchRawRoleBindings.
+func (mr *MockDataStoreMockRecorder) SearchRawRoleBindings(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawRoleBindings", reflect.TypeOf((*MockDataStore)(nil).SearchRawRoleBindings), ctx, q)
+}
+
+// SearchRoleBindings mocks base method.
+func (m *MockDataStore) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRoleBindings", ctx, q)
+	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRoleBindings indicates an expected call of SearchRoleBindings.
+func (mr *MockDataStoreMockRecorder) SearchRoleBindings(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRoleBindings", reflect.TypeOf((*MockDataStore)(nil).SearchRoleBindings), ctx, q)
+}
+
+// UpsertRoleBinding mocks base method.
+func (m *MockDataStore) UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertRoleBinding", ctx, request)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertRoleBinding indicates an expected call of UpsertRoleBinding.
+func (mr *MockDataStoreMockRecorder) UpsertRoleBinding(ctx, request interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRoleBinding", reflect.TypeOf((*MockDataStore)(nil).UpsertRoleBinding), ctx, request)
 }

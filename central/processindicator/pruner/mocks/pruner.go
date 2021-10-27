@@ -5,37 +5,50 @@
 package mocks
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	processindicator "github.com/stackrox/rox/central/processindicator"
 	pruner "github.com/stackrox/rox/central/processindicator/pruner"
-	reflect "reflect"
-	time "time"
 )
 
-// MockPruner is a mock of Pruner interface
+// MockPruner is a mock of Pruner interface.
 type MockPruner struct {
 	ctrl     *gomock.Controller
 	recorder *MockPrunerMockRecorder
 }
 
-// MockPrunerMockRecorder is the mock recorder for MockPruner
+// MockPrunerMockRecorder is the mock recorder for MockPruner.
 type MockPrunerMockRecorder struct {
 	mock *MockPruner
 }
 
-// NewMockPruner creates a new mock instance
+// NewMockPruner creates a new mock instance.
 func NewMockPruner(ctrl *gomock.Controller) *MockPruner {
 	mock := &MockPruner{ctrl: ctrl}
 	mock.recorder = &MockPrunerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPruner) EXPECT() *MockPrunerMockRecorder {
 	return m.recorder
 }
 
-// Prune mocks base method
+// Finish mocks base method.
+func (m *MockPruner) Finish() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Finish")
+}
+
+// Finish indicates an expected call of Finish.
+func (mr *MockPrunerMockRecorder) Finish() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Finish", reflect.TypeOf((*MockPruner)(nil).Finish))
+}
+
+// Prune mocks base method.
 func (m *MockPruner) Prune(arg0 []processindicator.IDAndArgs) []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Prune", arg0)
@@ -43,62 +56,36 @@ func (m *MockPruner) Prune(arg0 []processindicator.IDAndArgs) []string {
 	return ret0
 }
 
-// Prune indicates an expected call of Prune
+// Prune indicates an expected call of Prune.
 func (mr *MockPrunerMockRecorder) Prune(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockPruner)(nil).Prune), arg0)
 }
 
-// Finish mocks base method
-func (m *MockPruner) Finish() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Finish")
-}
-
-// Finish indicates an expected call of Finish
-func (mr *MockPrunerMockRecorder) Finish() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Finish", reflect.TypeOf((*MockPruner)(nil).Finish))
-}
-
-// MockFactory is a mock of Factory interface
+// MockFactory is a mock of Factory interface.
 type MockFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockFactoryMockRecorder
 }
 
-// MockFactoryMockRecorder is the mock recorder for MockFactory
+// MockFactoryMockRecorder is the mock recorder for MockFactory.
 type MockFactoryMockRecorder struct {
 	mock *MockFactory
 }
 
-// NewMockFactory creates a new mock instance
+// NewMockFactory creates a new mock instance.
 func NewMockFactory(ctrl *gomock.Controller) *MockFactory {
 	mock := &MockFactory{ctrl: ctrl}
 	mock.recorder = &MockFactoryMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 	return m.recorder
 }
 
-// StartPruning mocks base method
-func (m *MockFactory) StartPruning() pruner.Pruner {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartPruning")
-	ret0, _ := ret[0].(pruner.Pruner)
-	return ret0
-}
-
-// StartPruning indicates an expected call of StartPruning
-func (mr *MockFactoryMockRecorder) StartPruning() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartPruning", reflect.TypeOf((*MockFactory)(nil).StartPruning))
-}
-
-// Period mocks base method
+// Period mocks base method.
 func (m *MockFactory) Period() time.Duration {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Period")
@@ -106,8 +93,22 @@ func (m *MockFactory) Period() time.Duration {
 	return ret0
 }
 
-// Period indicates an expected call of Period
+// Period indicates an expected call of Period.
 func (mr *MockFactoryMockRecorder) Period() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Period", reflect.TypeOf((*MockFactory)(nil).Period))
+}
+
+// StartPruning mocks base method.
+func (m *MockFactory) StartPruning() pruner.Pruner {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartPruning")
+	ret0, _ := ret[0].(pruner.Pruner)
+	return ret0
+}
+
+// StartPruning indicates an expected call of StartPruning.
+func (mr *MockFactoryMockRecorder) StartPruning() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartPruning", reflect.TypeOf((*MockFactory)(nil).StartPruning))
 }

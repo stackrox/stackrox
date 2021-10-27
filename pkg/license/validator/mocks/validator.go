@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	validator "github.com/stackrox/rox/pkg/license/validator"
-	reflect "reflect"
 )
 
-// MockValidator is a mock of Validator interface
+// MockValidator is a mock of Validator interface.
 type MockValidator struct {
 	ctrl     *gomock.Controller
 	recorder *MockValidatorMockRecorder
 }
 
-// MockValidatorMockRecorder is the mock recorder for MockValidator
+// MockValidatorMockRecorder is the mock recorder for MockValidator.
 type MockValidatorMockRecorder struct {
 	mock *MockValidator
 }
 
-// NewMockValidator creates a new mock instance
+// NewMockValidator creates a new mock instance.
 func NewMockValidator(ctrl *gomock.Controller) *MockValidator {
 	mock := &MockValidator{ctrl: ctrl}
 	mock.recorder = &MockValidatorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockValidator) EXPECT() *MockValidatorMockRecorder {
 	return m.recorder
 }
 
-// RegisterSigningKey mocks base method
+// RegisterSigningKey mocks base method.
 func (m *MockValidator) RegisterSigningKey(arg0 string, arg1 []byte, arg2 *validator.SigningKeyRestrictions) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterSigningKey", arg0, arg1, arg2)
@@ -42,13 +43,13 @@ func (m *MockValidator) RegisterSigningKey(arg0 string, arg1 []byte, arg2 *valid
 	return ret0
 }
 
-// RegisterSigningKey indicates an expected call of RegisterSigningKey
+// RegisterSigningKey indicates an expected call of RegisterSigningKey.
 func (mr *MockValidatorMockRecorder) RegisterSigningKey(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterSigningKey", reflect.TypeOf((*MockValidator)(nil).RegisterSigningKey), arg0, arg1, arg2)
 }
 
-// ValidateLicenseKey mocks base method
+// ValidateLicenseKey mocks base method.
 func (m *MockValidator) ValidateLicenseKey(arg0 string) (*licenseproto.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateLicenseKey", arg0)
@@ -57,7 +58,7 @@ func (m *MockValidator) ValidateLicenseKey(arg0 string) (*licenseproto.License, 
 	return ret0, ret1
 }
 
-// ValidateLicenseKey indicates an expected call of ValidateLicenseKey
+// ValidateLicenseKey indicates an expected call of ValidateLicenseKey.
 func (mr *MockValidatorMockRecorder) ValidateLicenseKey(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateLicenseKey", reflect.TypeOf((*MockValidator)(nil).ValidateLicenseKey), arg0)

@@ -6,37 +6,38 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
-	reflect "reflect"
 )
 
-// MockDataStore is a mock of DataStore interface
+// MockDataStore is a mock of DataStore interface.
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
 }
 
-// MockDataStoreMockRecorder is the mock recorder for MockDataStore
+// MockDataStoreMockRecorder is the mock recorder for MockDataStore.
 type MockDataStoreMockRecorder struct {
 	mock *MockDataStore
 }
 
-// NewMockDataStore creates a new mock instance
+// NewMockDataStore creates a new mock instance.
 func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 	mock := &MockDataStore{ctrl: ctrl}
 	mock.recorder = &MockDataStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// Count mocks base method
+// Count mocks base method.
 func (m *MockDataStore) Count(arg0 context.Context, arg1 *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Count", arg0, arg1)
@@ -45,13 +46,13 @@ func (m *MockDataStore) Count(arg0 context.Context, arg1 *v1.Query) (int, error)
 	return ret0, ret1
 }
 
-// Count indicates an expected call of Count
+// Count indicates an expected call of Count.
 func (mr *MockDataStoreMockRecorder) Count(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), arg0, arg1)
 }
 
-// CountImages mocks base method
+// CountImages mocks base method.
 func (m *MockDataStore) CountImages(arg0 context.Context) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountImages", arg0)
@@ -60,13 +61,13 @@ func (m *MockDataStore) CountImages(arg0 context.Context) (int, error) {
 	return ret0, ret1
 }
 
-// CountImages indicates an expected call of CountImages
+// CountImages indicates an expected call of CountImages.
 func (mr *MockDataStoreMockRecorder) CountImages(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountImages", reflect.TypeOf((*MockDataStore)(nil).CountImages), arg0)
 }
 
-// DeleteImages mocks base method
+// DeleteImages mocks base method.
 func (m *MockDataStore) DeleteImages(arg0 context.Context, arg1 ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -78,14 +79,14 @@ func (m *MockDataStore) DeleteImages(arg0 context.Context, arg1 ...string) error
 	return ret0
 }
 
-// DeleteImages indicates an expected call of DeleteImages
+// DeleteImages indicates an expected call of DeleteImages.
 func (mr *MockDataStoreMockRecorder) DeleteImages(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImages", reflect.TypeOf((*MockDataStore)(nil).DeleteImages), varargs...)
 }
 
-// Exists mocks base method
+// Exists mocks base method.
 func (m *MockDataStore) Exists(arg0 context.Context, arg1 string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Exists", arg0, arg1)
@@ -94,13 +95,13 @@ func (m *MockDataStore) Exists(arg0 context.Context, arg1 string) (bool, error) 
 	return ret0, ret1
 }
 
-// Exists indicates an expected call of Exists
+// Exists indicates an expected call of Exists.
 func (mr *MockDataStoreMockRecorder) Exists(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), arg0, arg1)
 }
 
-// GetImage mocks base method
+// GetImage mocks base method.
 func (m *MockDataStore) GetImage(arg0 context.Context, arg1 string) (*storage.Image, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetImage", arg0, arg1)
@@ -110,13 +111,13 @@ func (m *MockDataStore) GetImage(arg0 context.Context, arg1 string) (*storage.Im
 	return ret0, ret1, ret2
 }
 
-// GetImage indicates an expected call of GetImage
+// GetImage indicates an expected call of GetImage.
 func (mr *MockDataStoreMockRecorder) GetImage(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockDataStore)(nil).GetImage), arg0, arg1)
 }
 
-// GetImageMetadata mocks base method
+// GetImageMetadata mocks base method.
 func (m *MockDataStore) GetImageMetadata(arg0 context.Context, arg1 string) (*storage.Image, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetImageMetadata", arg0, arg1)
@@ -126,13 +127,13 @@ func (m *MockDataStore) GetImageMetadata(arg0 context.Context, arg1 string) (*st
 	return ret0, ret1, ret2
 }
 
-// GetImageMetadata indicates an expected call of GetImageMetadata
+// GetImageMetadata indicates an expected call of GetImageMetadata.
 func (mr *MockDataStoreMockRecorder) GetImageMetadata(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageMetadata", reflect.TypeOf((*MockDataStore)(nil).GetImageMetadata), arg0, arg1)
 }
 
-// GetImagesBatch mocks base method
+// GetImagesBatch mocks base method.
 func (m *MockDataStore) GetImagesBatch(arg0 context.Context, arg1 []string) ([]*storage.Image, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetImagesBatch", arg0, arg1)
@@ -141,13 +142,13 @@ func (m *MockDataStore) GetImagesBatch(arg0 context.Context, arg1 []string) ([]*
 	return ret0, ret1
 }
 
-// GetImagesBatch indicates an expected call of GetImagesBatch
+// GetImagesBatch indicates an expected call of GetImagesBatch.
 func (mr *MockDataStoreMockRecorder) GetImagesBatch(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBatch", reflect.TypeOf((*MockDataStore)(nil).GetImagesBatch), arg0, arg1)
 }
 
-// ListImage mocks base method
+// ListImage mocks base method.
 func (m *MockDataStore) ListImage(arg0 context.Context, arg1 string) (*storage.ListImage, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListImage", arg0, arg1)
@@ -157,13 +158,13 @@ func (m *MockDataStore) ListImage(arg0 context.Context, arg1 string) (*storage.L
 	return ret0, ret1, ret2
 }
 
-// ListImage indicates an expected call of ListImage
+// ListImage indicates an expected call of ListImage.
 func (mr *MockDataStoreMockRecorder) ListImage(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListImage", reflect.TypeOf((*MockDataStore)(nil).ListImage), arg0, arg1)
 }
 
-// Search mocks base method
+// Search mocks base method.
 func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Search", arg0, arg1)
@@ -172,13 +173,13 @@ func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.R
 	return ret0, ret1
 }
 
-// Search indicates an expected call of Search
+// Search indicates an expected call of Search.
 func (mr *MockDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0, arg1)
 }
 
-// SearchImages mocks base method
+// SearchImages mocks base method.
 func (m *MockDataStore) SearchImages(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchImages", arg0, arg1)
@@ -187,13 +188,13 @@ func (m *MockDataStore) SearchImages(arg0 context.Context, arg1 *v1.Query) ([]*v
 	return ret0, ret1
 }
 
-// SearchImages indicates an expected call of SearchImages
+// SearchImages indicates an expected call of SearchImages.
 func (mr *MockDataStoreMockRecorder) SearchImages(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchImages", reflect.TypeOf((*MockDataStore)(nil).SearchImages), arg0, arg1)
 }
 
-// SearchListImages mocks base method
+// SearchListImages mocks base method.
 func (m *MockDataStore) SearchListImages(arg0 context.Context, arg1 *v1.Query) ([]*storage.ListImage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchListImages", arg0, arg1)
@@ -202,13 +203,13 @@ func (m *MockDataStore) SearchListImages(arg0 context.Context, arg1 *v1.Query) (
 	return ret0, ret1
 }
 
-// SearchListImages indicates an expected call of SearchListImages
+// SearchListImages indicates an expected call of SearchListImages.
 func (mr *MockDataStoreMockRecorder) SearchListImages(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListImages", reflect.TypeOf((*MockDataStore)(nil).SearchListImages), arg0, arg1)
 }
 
-// SearchRawImages mocks base method
+// SearchRawImages mocks base method.
 func (m *MockDataStore) SearchRawImages(arg0 context.Context, arg1 *v1.Query) ([]*storage.Image, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchRawImages", arg0, arg1)
@@ -217,13 +218,13 @@ func (m *MockDataStore) SearchRawImages(arg0 context.Context, arg1 *v1.Query) ([
 	return ret0, ret1
 }
 
-// SearchRawImages indicates an expected call of SearchRawImages
+// SearchRawImages indicates an expected call of SearchRawImages.
 func (mr *MockDataStoreMockRecorder) SearchRawImages(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImages", reflect.TypeOf((*MockDataStore)(nil).SearchRawImages), arg0, arg1)
 }
 
-// UpsertImage mocks base method
+// UpsertImage mocks base method.
 func (m *MockDataStore) UpsertImage(arg0 context.Context, arg1 *storage.Image) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertImage", arg0, arg1)
@@ -231,7 +232,7 @@ func (m *MockDataStore) UpsertImage(arg0 context.Context, arg1 *storage.Image) e
 	return ret0
 }
 
-// UpsertImage indicates an expected call of UpsertImage
+// UpsertImage indicates an expected call of UpsertImage.
 func (mr *MockDataStoreMockRecorder) UpsertImage(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertImage", reflect.TypeOf((*MockDataStore)(nil).UpsertImage), arg0, arg1)
