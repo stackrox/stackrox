@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/report"
+	"github.com/stackrox/rox/roxctl/summaries/policy"
 )
 
 const (
@@ -31,11 +32,11 @@ var (
 		"POLICY", "SEVERITY", "DESCRIPTION", "VIOLATION", "REMEDIATION",
 	}
 	// Default JSON path expression which retrieves the data from the policyJSONResult
-	defaultImageCheckJSONPathExpression = "{result.violatedPolicies.#.name," +
-		"result.violatedPolicies.#.severity," +
-		"result.violatedPolicies.#.description," +
-		"result.violatedPolicies.#.violation," +
-		"result.violatedPolicies.#.remediation}"
+	defaultImageCheckJSONPathExpression = "{results.#.violatedPolicies.#.name," +
+		"results.#.violatedPolicies.#.severity," +
+		"results.#.violatedPolicies.#.description," +
+		"results.#.violatedPolicies.#.violation," +
+		"results.#.violatedPolicies.#.remediation}"
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(false, defaultImageCheckHeaders, defaultImageCheckJSONPathExpression, false, false),
@@ -178,25 +179,24 @@ func (i *imageCheckCommand) checkImage() error {
 	if err != nil {
 		return err
 	}
-	// retrieve failing policies
-	failingPolicies := getBuildFailingPolicies(alerts)
-	return i.printResults(alerts, failingPolicies)
+	return i.printResults(alerts)
 }
 
-func (i *imageCheckCommand) printResults(alerts []*storage.Alert, failingPolicies []*storage.Policy) error {
+func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
+	// create the alert summary object
+	policySummary := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT)
+	amountBuildBreakingPolicies := policySummary.GetTotalAmountOfBreakingPolicies()
+
 	// TODO: Remove this once the old output format is fully deprecated
 	// Legacy printing based on whether --json is set to true or not.
 	if i.json {
-		return legacyPrint(alerts, i.failViolationsWithJSON, failingPolicies, i.env.InputOutput().Out)
+		return legacyPrint(alerts, i.failViolationsWithJSON, amountBuildBreakingPolicies, i.env.InputOutput().Out)
 	}
-
-	// create the alert summary object
-	policySummary := newPolicySummaryForPrinting(alerts, failingPolicies)
 
 	// conditionally print a summary when the output format is a "non-RFC/standardized" one
 	// could be -> text, wide, tree etc.
 	if !i.standardizedOutputFormat {
-		printPolicySummary(i.image, policySummary.Result.Summary, i.env.InputOutput().Out)
+		printPolicySummary(i.image, policySummary.Summary, i.env.InputOutput().Out)
 	}
 
 	// print the JSON object in the dedicated format via a printer.ObjectPrinter
@@ -207,11 +207,12 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert, failingPolicie
 	// conditionally print errors when the output format is a "non-RFC/standardized" one
 	// could be -> text, wide, tree etc.
 	if !i.standardizedOutputFormat {
-		printAdditionalWarnsAndErrs(policySummary.Result.Summary[totalPolicyAmountKey], failingPolicies, i.env.InputOutput().Out)
+		printAdditionalWarnsAndErrs(policySummary.Summary[policy.TotalPolicyAmountKey], policySummary.Results,
+			amountBuildBreakingPolicies, i.env.InputOutput().Out)
 	}
 
-	if len(failingPolicies) != 0 {
-		return newErrFailedPoliciesFound(len(failingPolicies))
+	if amountBuildBreakingPolicies != 0 {
+		return policy.NewErrFailedPolicies(amountBuildBreakingPolicies)
 	}
 	return nil
 }
@@ -236,28 +237,13 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 	return response.GetAlerts(), err
 }
 
-// getBuildFailingPolicies retrieves a list of policies which have been violated and have the enforcement action
-// storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT assigned
-func getBuildFailingPolicies(alerts []*storage.Alert) []*storage.Policy {
-	policySet := NewStoragePolicySet()
-	for _, alert := range alerts {
-		policy := alert.GetPolicy()
-		for _, action := range policy.GetEnforcementActions() {
-			if action == storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT && !policySet.Contains(policy) {
-				policySet.Add(policy)
-			}
-		}
-	}
-	return policySet.AsSlice()
-}
-
 // legacyPrint supports the old printing behavior of the --json format to ensure backwards compatability
-func legacyPrint(alerts []*storage.Alert, failViolations bool, failedPolicies []*storage.Policy, out io.Writer) error {
+func legacyPrint(alerts []*storage.Alert, failViolations bool, numBuildBreakingPolicies int, out io.Writer) error {
 	err := report.JSON(out, alerts)
 	if err != nil {
 		return err
 	}
-	if failViolations && len(failedPolicies) != 0 {
+	if failViolations && numBuildBreakingPolicies != 0 {
 		return errors.New("Violated a policy with CI enforcement set")
 	}
 	return nil
@@ -268,31 +254,32 @@ func legacyPrint(alerts []*storage.Alert, failViolations bool, failedPolicies []
 func printPolicySummary(image string, numOfPolicyViolations map[string]int, out io.Writer) {
 	fmt.Fprintf(out, "Policy check results for image: %s\n", image)
 	fmt.Fprintf(out, "(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n\n",
-		totalPolicyAmountKey, numOfPolicyViolations[totalPolicyAmountKey],
-		lowSeverity, numOfPolicyViolations[lowSeverity.String()],
-		mediumSeverity, numOfPolicyViolations[mediumSeverity.String()],
-		highSeverity, numOfPolicyViolations[highSeverity.String()],
-		criticalSeverity, numOfPolicyViolations[criticalSeverity.String()])
+		policy.TotalPolicyAmountKey, numOfPolicyViolations[policy.TotalPolicyAmountKey],
+		policy.LowSeverity, numOfPolicyViolations[policy.LowSeverity.String()],
+		policy.MediumSeverity, numOfPolicyViolations[policy.MediumSeverity.String()],
+		policy.HighSeverity, numOfPolicyViolations[policy.HighSeverity.String()],
+		policy.CriticalSeverity, numOfPolicyViolations[policy.CriticalSeverity.String()])
 }
 
 // printAdditionalWarnsAndErrs prints a warning indicating how many policies have been failed as well as errors for each
 // policy that failed the check. This will be printed only for non-standardized output formats, i.e. table format
 // and if there are any failed policies
-func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, failedPolicies []*storage.Policy, out io.Writer) {
+func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.EntityResult, numBreakingPolicies int, out io.Writer) {
 	if numTotalViolatedPolicies == 0 {
 		return
 	}
 	fmt.Fprintf(out, "WARN: A total of %d policies have been violated\n", numTotalViolatedPolicies)
 
-	if len(failedPolicies) == 0 {
+	if numBreakingPolicies == 0 {
 		return
 	}
+	fmt.Fprintf(out, "ERROR: %s\n", policy.NewErrFailedPolicies(numBreakingPolicies))
 
-	fmt.Fprintf(out, "ERROR: %s\n", newErrFailedPoliciesFound(len(failedPolicies)))
-
-	for _, failedPolicy := range failedPolicies {
-		fmt.Fprintf(out, "ERROR: Policy %q - Possible remediation: %q\n",
-			failedPolicy.GetName(), failedPolicy.GetRemediation())
+	for _, res := range results {
+		for _, breakingPolicy := range res.BreakingPolicies {
+			fmt.Fprintf(out, "ERROR: Policy %q - Possible remediation: %q\n",
+				breakingPolicy.Name, breakingPolicy.Remediation)
+		}
 	}
 }
 

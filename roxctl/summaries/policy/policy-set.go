@@ -3,7 +3,7 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/mauricelam/genny
 
-package check
+package policy
 
 import (
 	"fmt"

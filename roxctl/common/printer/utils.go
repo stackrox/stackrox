@@ -59,7 +59,7 @@ func gjsonResultsToColumns(gjsonResults []gjson.Result) [][]string {
 	var results [][]string
 	for _, gjsonResult := range gjsonResults {
 		gjsonResult.ForEach(func(key, value gjson.Result) bool {
-			row := getColumnValues(value)
+			row := getStringValuesFromNestedArrays(value, []string{})
 			results = append(results, row)
 			return true
 		})
@@ -67,17 +67,24 @@ func gjsonResultsToColumns(gjsonResults []gjson.Result) [][]string {
 	return results
 }
 
-// getColumnValues will retrieve the column values of a gjson.Result and return a string array containing them.
-func getColumnValues(value gjson.Result) []string {
-	if !value.IsArray() {
-		return nil
+// getStringValuesFromNestedArrays returns string values from a gjson.Result, doing this recursively.
+// Within multipath expressions, it may happen that two-dimensional arrays are found. This function
+// returns the string values of all nested arrays
+func getStringValuesFromNestedArrays(value gjson.Result, values []string) []string {
+	if value.String() == "" {
+		return values
 	}
-	row := make([]string, 0, len(value.Array()))
-	value.ForEach(func(key, value gjson.Result) bool {
-		row = append(row, value.String())
-		return true
-	})
-	return row
+	if !value.IsArray() {
+		return append(values, value.String())
+	}
+
+	if value.IsArray() {
+		value.ForEach(func(key, value gjson.Result) bool {
+			values = getStringValuesFromNestedArrays(value, values)
+			return true
+		})
+	}
+	return values
 }
 
 // getRowsFromColumns retrieves all rows from the given columns.
