@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+
 	jsonpb "github.com/gogo/protobuf/jsonpb"
 	storage "github.com/stackrox/rox/generated/storage"
 )

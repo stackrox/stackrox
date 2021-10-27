@@ -8,7 +8,7 @@ import (
 )
 
 type insertionPair struct {
-	Elem Element
+	Elem   Element
 	SubVar string
 }
 
@@ -33,10 +33,6 @@ func generateTableInsertion(f *File, tableName string, table *Path) {
 
 	f.Var().Id("marshaler").Op("=").Op("&").Qual("github.com/gogo/protobuf/jsonpb", "Marshaler{EnumsAsInts: true, EmitDefaults: true}")
 
-
-
-
-
 	var fmtStmts []Code
 
 	var preprocessingStmts []Code
@@ -50,7 +46,7 @@ func generateTableInsertion(f *File, tableName string, table *Path) {
 
 	fmtStmts = append(fmtStmts, Return(Nil()))
 	f.Func().Id("Upsert").Params(Id(objName).Op("*").Qual("github.com/stackrox/rox/generated/storage", table.RawFieldType)).Error().Block(
-		preprocessingStmts...
+		preprocessingStmts...,
 	)
 
 	//

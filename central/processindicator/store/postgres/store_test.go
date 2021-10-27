@@ -20,11 +20,11 @@ func TestT(t *testing.T) {
 
 	err = store.UpsertMany([]*storage.ProcessIndicator{
 		{
-			Id: "1",
+			Id:        "1",
 			Namespace: "stackrox",
 		},
 		{
-			Id: "2",
+			Id:        "2",
 			Namespace: "stackrox2",
 		},
 	})

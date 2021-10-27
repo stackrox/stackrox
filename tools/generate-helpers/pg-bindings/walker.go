@@ -9,11 +9,11 @@ import (
 )
 
 type Path struct {
-	Parent *Path
-	Field string
+	Parent       *Path
+	Field        string
 	RawFieldType string
-	Elems []Element
-	Children []*Path
+	Elems        []Element
+	Children     []*Path
 }
 
 func (p *Path) GetterPath() string {
@@ -52,11 +52,11 @@ func (s Path) Print(indent string) {
 }
 
 type Element struct {
-	Parent *Path
-	DataType DataType
-	Field string
+	Parent       *Path
+	DataType     DataType
+	Field        string
 	RawFieldType string
-	Slice bool
+	Slice        bool
 	IsSearchable bool
 }
 
@@ -131,7 +131,7 @@ func (s *searchWalker) handleStruct(parent *Path, original reflect.Type) {
 		isSearchable := hasSearchField(field.Tag.Get("search"))
 
 		elem := Element{
-			Parent: 	  parent,
+			Parent:       parent,
 			Field:        field.Name,
 			RawFieldType: field.Type.String(),
 			IsSearchable: isSearchable,
@@ -148,16 +148,16 @@ func (s *searchWalker) handleStruct(parent *Path, original reflect.Type) {
 			s.handleStruct(child, field.Type.Elem())
 		case reflect.Slice:
 			parent.Elems = append(parent.Elems, Element{
-				Parent: parent,
-				DataType: JSONB,
-				Field:    field.Name,
-				Slice: true,
+				Parent:       parent,
+				DataType:     JSONB,
+				Field:        field.Name,
+				Slice:        true,
 				IsSearchable: isSearchable,
 			})
 			continue
 		case reflect.Struct:
 			child := &Path{
-				Parent: parent,
+				Parent:       parent,
 				Field:        field.Name,
 				RawFieldType: field.Type.String(),
 			}

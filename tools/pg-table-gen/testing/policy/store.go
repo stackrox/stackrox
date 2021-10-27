@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+
 	jsonpb "github.com/gogo/protobuf/jsonpb"
 	storage "github.com/stackrox/rox/generated/storage"
 )
@@ -36,7 +37,6 @@ func Upsert(policy *storage.Policy) error {
 	var50, err := marshaler.MarshalToString(GetFields().GetVolumePolicy().GetSetReadOnly())
 	var75, err := marshaler.MarshalToString(GetFields().GetPortExposurePolicy().GetExposureLevels())
 	var77, err := marshaler.MarshalToString(GetFields().GetHostMountPolicy().GetSetReadOnly())
-
 
 	var32, err := marshaler.MarshalToString(policy.GetFields().GetSetReadOnlyRootFs())
 

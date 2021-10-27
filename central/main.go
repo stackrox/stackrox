@@ -261,7 +261,6 @@ func main() {
 
 	go startGRPCServer()
 
-
 	waitForTerminationSignal()
 }
 
@@ -368,7 +367,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	}
 
 	// Complete hack
-	indexes := []string {
+	indexes := []string{
 		`create index if not exists deployments_clusterid on deployments using hash ((deployments.value ->>'clusterId'));`,
 
 		`create index if not exists processindicators_poduid on processindicators using hash ((processindicators.value ->>'podUid'));`,

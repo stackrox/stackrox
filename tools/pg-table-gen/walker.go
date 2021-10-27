@@ -9,11 +9,11 @@ import (
 )
 
 type Path struct {
-	Parent *Path
-	Field string
+	Parent       *Path
+	Field        string
 	RawFieldType string
-	Elems []Element
-	Children []*Path
+	Elems        []Element
+	Children     []*Path
 }
 
 func (p *Path) GetterPath() string {
@@ -52,11 +52,11 @@ func (s Path) Print(indent string) {
 }
 
 type Element struct {
-	Parent *Path
-	DataType DataType
-	Field string
+	Parent       *Path
+	DataType     DataType
+	Field        string
 	RawFieldType string
-	Slice bool
+	Slice        bool
 }
 
 func (e Element) GetterPath() string {
@@ -76,9 +76,6 @@ func (e Element) SQLPath() string {
 
 type searchWalker struct {
 	table string
-
-
-
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
@@ -127,7 +124,7 @@ func (s *searchWalker) handleStruct(parent *Path, original reflect.Type) {
 		}
 
 		elem := Element{
-			Parent: 	  parent,
+			Parent:       parent,
 			Field:        field.Name,
 			RawFieldType: field.Type.String(),
 		}
@@ -144,15 +141,15 @@ func (s *searchWalker) handleStruct(parent *Path, original reflect.Type) {
 			s.handleStruct(child, field.Type.Elem())
 		case reflect.Slice:
 			parent.Elems = append(parent.Elems, Element{
-				Parent: parent,
+				Parent:   parent,
 				DataType: JSONB,
 				Field:    field.Name,
-				Slice: true,
+				Slice:    true,
 			})
 			continue
 		case reflect.Struct:
 			child := &Path{
-				Parent: parent,
+				Parent:       parent,
 				Field:        field.Name,
 				RawFieldType: field.Type.String(),
 			}

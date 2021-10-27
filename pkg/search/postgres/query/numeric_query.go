@@ -165,8 +165,6 @@ func createNumericQuery(table string, field *search.Field, prefix string, value 
 		}
 	}
 
-
-
 	elemPath := GenerateShortestElemPath(table, field.Elems)
 
 	root := field.TopLevelValue()

@@ -30,7 +30,7 @@ var (
 )
 
 type queryStats struct {
-	query string
+	query  string
 	counts int
 	nanos  int64
 }
@@ -42,7 +42,7 @@ func incQueryCount(query string, t time.Time) {
 	val, ok := queryCounts[query]
 	if !ok {
 		queryCounts[query] = &queryStats{
-			query: query,
+			query:  query,
 			counts: 1,
 			nanos:  int64(took),
 		}
@@ -213,10 +213,11 @@ func replaceVars(s string) string {
 }
 
 type Query struct {
-	Select string
-	From   string
-	Where  string
-	Data   []interface{}
+	Select     string
+	From       string
+	Where      string
+	Pagination string
+	Data       []interface{}
 }
 
 func (q *Query) String() string {
@@ -224,7 +225,43 @@ func (q *Query) String() string {
 	if q.Where != "" {
 		query += " where " + q.Where
 	}
+	if q.Pagination != "" {
+		query += " " + q.Pagination
+	}
 	return query
+}
+
+func getPaginationQuery(pagination *v1.QueryPagination, table string, optionsMap searchPkg.OptionsMap) (string, error) {
+	if pagination == nil {
+		return "", nil
+	}
+
+	var orderByClauses []string
+	for _, so := range pagination.GetSortOptions() {
+		field, ok := optionsMap.Get(so.GetField())
+		if !ok {
+			return "", fmt.Errorf("cannot sort by field %s on table %s", so.GetField(), table)
+		}
+		root := field.TopLevelValue()
+		if root == "" {
+			elemPath := pgsearch.GenerateShortestElemPath(table, field.Elems)
+			root = fmt.Sprintf("(%s)::numeric", pgsearch.RenderFinalPath(elemPath, field.LastElem().ProtoJSONName))
+		}
+		direction := "asc"
+		if so.GetReversed() {
+			direction = "desc"
+		}
+		orderByClauses = append(orderByClauses, root+" "+direction)
+	}
+	var orderBy string
+	if len(orderByClauses) != 0 {
+		orderBy = fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", "))
+	}
+	if pagination.GetLimit() == 0 {
+		return orderBy, nil
+	}
+	orderBy += fmt.Sprintf("LIMIT %d OFFSET %d", pagination.GetLimit(), pagination.GetOffset())
+	return orderBy, nil
 }
 
 func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count bool) (*Query, error) {
@@ -257,11 +294,18 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 			From:   fromClause,
 		}, nil
 	}
+
+	pagination, err := getPaginationQuery(q.Pagination, table, optionsMap)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Query{
-		Select: selectClause,
-		From:   fromClause,
-		Where:  queryEntry.Query,
-		Data:   queryEntry.Values,
+		Select:     selectClause,
+		From:       fromClause,
+		Where:      queryEntry.Query,
+		Pagination: pagination,
+		Data:       queryEntry.Values,
 	}, nil
 }
 

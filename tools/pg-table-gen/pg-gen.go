@@ -25,7 +25,7 @@ const (
 )
 
 func main() {
-	var objects = []interface{} {
+	var objects = []interface{}{
 		(*storage.Policy)(nil),
 		(*storage.Deployment)(nil),
 		(*storage.Alert)(nil),
@@ -34,14 +34,14 @@ func main() {
 
 	for _, object := range objects {
 		tableName := strings.TrimPrefix(reflect.TypeOf(object).String(), "*storage.")
-		filename :=  strings.ToLower(tableName)
+		filename := strings.ToLower(tableName)
 		f := NewFile("postgres")
 
 		table := Walk(object)
 		generateTableCreation(f, tableName, table)
 		generateTableInsertion(f, tableName, table)
 
-		os.MkdirAll("/Users/connorgorman/repos/src/github.com/stackrox/rox/tools/pg-table-gen/testing/" + filename, 0777)
+		os.MkdirAll("/Users/connorgorman/repos/src/github.com/stackrox/rox/tools/pg-table-gen/testing/"+filename, 0777)
 
 		if err := f.Save("/Users/connorgorman/repos/src/github.com/stackrox/rox/tools/pg-table-gen/testing/" + filename + "/store.go"); err != nil {
 			panic(err)
