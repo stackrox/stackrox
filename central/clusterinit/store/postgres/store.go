@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "clusterinitbundles"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from clusterinitbundles"),
 		getStmt: compileStmtOrPanic(db, "select value from clusterinitbundles where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from clusterinitbundles where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into clusterinitbundles(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into clusterinitbundles(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into clusterinitbundles (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"),
 		deleteStmt: compileStmtOrPanic(db, "delete from clusterinitbundles where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from clusterinitbundles where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from clusterinitbundles"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.InitBundleMeta, []int, err
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.InitBundleMeta) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
 	_, err = s.upsertStmt.Exec(id, value)
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.InitBundleMeta) error {

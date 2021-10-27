@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "deployments"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -72,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists deployments (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists deployments (id varchar primary key, value jsonb, Name varchar, Type varchar, Namespace varchar, NamespaceId varchar, ClusterId varchar, ClusterName varchar, Priority numeric, ServiceAccount varchar, ServiceAccountPermissionLevel numeric, RiskScore numeric)"
 	createIDIndexQuery = "create index if not exists deployments_id on deployments using hash ((id))"
 )
 
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from deployments"),
 		getStmt: compileStmtOrPanic(db, "select value from deployments where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from deployments where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into deployments(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into deployments(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into deployments (id, value, Name, Type, Namespace, NamespaceId, ClusterId, ClusterName, Priority, ServiceAccount, ServiceAccountPermissionLevel, RiskScore) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Priority = EXCLUDED.Priority, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore"),
 		deleteStmt: compileStmtOrPanic(db, "delete from deployments where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from deployments where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from deployments"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Deployment, []int, error) 
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.Deployment) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.upsertStmt.Exec(id, value, obj.GetName(), obj.GetType(), obj.GetNamespace(), obj.GetNamespaceId(), obj.GetClusterId(), obj.GetClusterName(), obj.GetPriority(), obj.GetServiceAccount(), obj.GetServiceAccountPermissionLevel(), obj.GetRiskScore())
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.Deployment) error {

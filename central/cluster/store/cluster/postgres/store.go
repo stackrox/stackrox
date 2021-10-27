@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "clusters"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -72,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists clusters (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists clusters (id varchar primary key, value jsonb, Name varchar, HealthStatus_SensorHealthStatus numeric, HealthStatus_CollectorHealthStatus numeric, HealthStatus_OverallHealthStatus numeric, HealthStatus_AdmissionControlHealthStatus numeric)"
 	createIDIndexQuery = "create index if not exists clusters_id on clusters using hash ((id))"
 )
 
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from clusters"),
 		getStmt: compileStmtOrPanic(db, "select value from clusters where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from clusters where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into clusters(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into clusters(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into clusters (id, value, Name, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus) values($1, $2, $3, $4, $5, $6, $7) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus"),
 		deleteStmt: compileStmtOrPanic(db, "delete from clusters where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from clusters where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from clusters"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Cluster, []int, error) {
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.Cluster) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.upsertStmt.Exec(id, value, obj.GetName(), obj.GetHealthStatus().GetSensorHealthStatus(), obj.GetHealthStatus().GetCollectorHealthStatus(), obj.GetHealthStatus().GetOverallHealthStatus(), obj.GetHealthStatus().GetAdmissionControlHealthStatus())
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.Cluster) error {

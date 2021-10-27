@@ -3,8 +3,21 @@ package main
 import (
 	"fmt"
 	"strings"
+)
 
-	. "github.com/dave/jennifer/jen"
+//go:generate stringer -type=DataType
+type DataType int
+
+const (
+	BOOL         DataType = 0
+	NUMERIC      DataType = 1
+	STRING       DataType = 2
+	DATETIME     DataType = 3
+	MAP          DataType = 4
+	ENUM         DataType = 5
+	ARRAY        DataType = 6
+	STRING_ARRAY DataType = 7
+	JSONB        DataType = 8
 )
 
 func dataTypeToSQLType(dataType DataType) string {
@@ -32,6 +45,9 @@ func dataTypeToSQLType(dataType DataType) string {
 
 func fieldsFromPath(b *strings.Builder, table *Path) {
 	for i, elem := range table.Elems {
+		if !elem.IsSearchable {
+			continue
+		}
 		if !(table.Parent == nil && i == 0) {
 			fmt.Fprint(b, ", ")
 		}
@@ -40,17 +56,4 @@ func fieldsFromPath(b *strings.Builder, table *Path) {
 	for _, child := range table.Children {
 		fieldsFromPath(b, child)
 	}
-}
-
-func generateTableCreation(f *File, tableName string, table *Path) {
-	var b strings.Builder
-	fmt.Fprintf(&b, "create table if not exists %s (", tableName)
-	fieldsFromPath(&b, table)
-	fmt.Fprintf(&b, ")")
-
-	f.Const().Id("createTableQuery").Op("=").Lit(b.String())
-	f.Func().Id("CreateTable").Params(Id("db").Op("*").Qual("database/sql", "DB")).Error().Block(
-		List(Id("_"), Err()).Op(":=").Id("db").Dot("Exec").Call(Id("createTableQuery")),
-		Return(Err()),
-	)
 }

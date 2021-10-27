@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "service_accounts"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -72,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists service_accounts (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists service_accounts (id varchar primary key, value jsonb, Name varchar, Namespace varchar, ClusterName varchar, ClusterId varchar)"
 	createIDIndexQuery = "create index if not exists service_accounts_id on service_accounts using hash ((id))"
 )
 
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from service_accounts"),
 		getStmt: compileStmtOrPanic(db, "select value from service_accounts where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from service_accounts where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into service_accounts(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into service_accounts(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into service_accounts (id, value, Name, Namespace, ClusterName, ClusterId) values($1, $2, $3, $4, $5, $6) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId"),
 		deleteStmt: compileStmtOrPanic(db, "delete from service_accounts where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from service_accounts where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from service_accounts"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ServiceAccount, []int, err
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.ServiceAccount) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.upsertStmt.Exec(id, value, obj.GetName(), obj.GetNamespace(), obj.GetClusterName(), obj.GetClusterId())
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.ServiceAccount) error {

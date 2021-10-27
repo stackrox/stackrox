@@ -69,9 +69,15 @@ func newStringQuery(table string, field *pkgSearch.Field, value string, queryMod
 
 	lastElem := field.LastElem()
 	elemPath := GenerateShortestElemPath(table, field.Elems)
+
+	root := field.TopLevelValue()
+	if root == "" {
+		root = RenderFinalPath(elemPath, lastElem.ProtoJSONName)
+	}
+
 	if len(queryModifiers) == 0 {
 		return &QueryEntry{
-			Query:  RenderFinalPath(elemPath, lastElem.Name) + "ilike $$",
+			Query:  root + " ilike $$",
 			Values: []interface{}{value + "%"},
 		}, nil
 	}
@@ -87,12 +93,12 @@ func newStringQuery(table string, field *pkgSearch.Field, value string, queryMod
 	switch queryModifiers[0] {
 	case pkgSearch.Regex:
 		return &QueryEntry{
-			Query:  RenderFinalPath(elemPath, lastElem.Name) + fmt.Sprintf("%s~* $$", negationString),
+			Query:  root + fmt.Sprintf(" %s~* $$", negationString),
 			Values: []interface{}{value},
 		}, nil
 	case pkgSearch.Equality:
 		return &QueryEntry{
-			Query:  RenderFinalPath(elemPath, lastElem.Name) + fmt.Sprintf("%s= $$", negationString),
+			Query:  root + fmt.Sprintf(" %s= $$", negationString),
 			Values: []interface{}{value},
 		}, nil
 	}
