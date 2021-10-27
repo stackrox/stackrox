@@ -45,6 +45,10 @@ func TestT(t *testing.T) {
 	pq.Pagination = &v1.QueryPagination{
 		SortOptions: []*v1.QuerySortOption{
 			{
+				Field:    search.ViolationTime.String(),
+				Reversed: true,
+			},
+			{
 				Field:    search.LifecycleStage.String(),
 				Reversed: true,
 			},

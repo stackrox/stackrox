@@ -242,10 +242,18 @@ func getPaginationQuery(pagination *v1.QueryPagination, table string, optionsMap
 		if !ok {
 			return "", fmt.Errorf("cannot sort by field %s on table %s", so.GetField(), table)
 		}
+
 		root := field.TopLevelValue()
 		if root == "" {
 			elemPath := pgsearch.GenerateShortestElemPath(table, field.Elems)
-			root = fmt.Sprintf("(%s)::numeric", pgsearch.RenderFinalPath(elemPath, field.LastElem().ProtoJSONName))
+			switch field.Type {
+			case v1.SearchDataType_SEARCH_STRING:
+				root = pgsearch.RenderFinalPath(elemPath, field.LastElem().ProtoJSONName)
+			case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_ENUM:
+				root = fmt.Sprintf("(%s)::numeric", pgsearch.RenderFinalPath(elemPath, field.LastElem().ProtoJSONName))
+			case v1.SearchDataType_SEARCH_DATETIME:
+				root = fmt.Sprintf("(%s)::timestamp", pgsearch.RenderFinalPath(elemPath, field.LastElem().ProtoJSONName))
+			}
 		}
 		direction := "asc"
 		if so.GetReversed() {
@@ -260,7 +268,7 @@ func getPaginationQuery(pagination *v1.QueryPagination, table string, optionsMap
 	if pagination.GetLimit() == 0 {
 		return orderBy, nil
 	}
-	orderBy += fmt.Sprintf("LIMIT %d OFFSET %d", pagination.GetLimit(), pagination.GetOffset())
+	orderBy += fmt.Sprintf(" LIMIT %d OFFSET %d", pagination.GetLimit(), pagination.GetOffset())
 	return orderBy, nil
 }
 
