@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "processWhitelists2"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -72,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists processWhitelists2 (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists processWhitelists2 (id varchar primary key, value jsonb, Key_DeploymentId varchar, Key_ClusterId varchar, Key_Namespace varchar)"
 	createIDIndexQuery = "create index if not exists processWhitelists2_id on processWhitelists2 using hash ((id))"
 )
 
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from processWhitelists2"),
 		getStmt: compileStmtOrPanic(db, "select value from processWhitelists2 where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from processWhitelists2 where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into processWhitelists2(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into processWhitelists2(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into processWhitelists2 (id, value, Key_DeploymentId, Key_ClusterId, Key_Namespace) values($1, $2, $3, $4, $5) on conflict(id) do update set value = EXCLUDED.value, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace"),
 		deleteStmt: compileStmtOrPanic(db, "delete from processWhitelists2 where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from processWhitelists2 where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from processWhitelists2"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessBaseline, []int, er
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.ProcessBaseline) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.upsertStmt.Exec(id, value, obj.GetKey().GetDeploymentId(), obj.GetKey().GetClusterId(), obj.GetKey().GetNamespace())
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.ProcessBaseline) error {

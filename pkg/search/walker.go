@@ -34,9 +34,11 @@ func GetTableToTablePath(fromTable, toTable string) []PathElem {
 }
 
 type PathElem struct {
-	Name      string
-	JSONField string
+	Field 	      string
+	ProtoJSONName string
+	JSONField     string
 	Slice     bool
+	OneOf bool
 }
 
 func deepCopyPathElems(o []PathElem) []PathElem {
@@ -168,9 +170,10 @@ func (s *searchWalker) handleStruct(prefix string, parentElems []PathElem, origi
 		pathElems := deepCopyPathElems(parentElems)
 
 		pathElems = append(pathElems, PathElem{
-			Name:      jsonProtoTag,
-			Slice:     field.Type.Kind() == reflect.Slice,
-			JSONField: jsonTag,
+			Field:  	   field.Name,
+			ProtoJSONName: jsonProtoTag,
+			Slice:         field.Type.Kind() == reflect.Slice,
+			JSONField:     jsonTag,
 		})
 		if s.print {
 			if field.Type.Kind() == reflect.Slice {
@@ -206,7 +209,7 @@ func (s *searchWalker) handleStruct(prefix string, parentElems []PathElem, origi
 		// The return values is a slice of interfaces that are nil type pointers
 		if field.Tag.Get("protobuf_oneof") != "" {
 			// cut off the elem we just added because jsonpb removes it
-			pathElems := pathElems[:len(pathElems)-1]
+			pathElems[len(pathElems)-1].OneOf = true
 			ptrToOriginal := reflect.PtrTo(original)
 
 			methodName := fmt.Sprintf("Get%s", field.Name)

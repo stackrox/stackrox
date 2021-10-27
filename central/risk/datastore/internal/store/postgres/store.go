@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "risks"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -72,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists risks (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists risks (id varchar primary key, value jsonb, Score numeric, Subject_Namespace varchar, Subject_ClusterId varchar, Subject_Type numeric)"
 	createIDIndexQuery = "create index if not exists risks_id on risks using hash ((id))"
 )
 
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from risks"),
 		getStmt: compileStmtOrPanic(db, "select value from risks where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from risks where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into risks(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into risks(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into risks (id, value, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values($1, $2, $3, $4, $5, $6) on conflict(id) do update set value = EXCLUDED.value, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"),
 		deleteStmt: compileStmtOrPanic(db, "delete from risks where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from risks where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from risks"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.Risk) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.upsertStmt.Exec(id, value, obj.GetScore(), obj.GetSubject().GetNamespace(), obj.GetSubject().GetClusterId(), obj.GetSubject().GetType())
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.Risk) error {

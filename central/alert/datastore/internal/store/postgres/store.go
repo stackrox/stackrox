@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "alerts"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -72,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists alerts (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists alerts (id varchar primary key, value jsonb, LifecycleStage numeric, State numeric, Policy_Id varchar, Policy_Name varchar, Policy_Description varchar, Policy_Severity numeric, Policy_SORTName varchar, Policy_SORTLifecycleStage varchar)"
 	createIDIndexQuery = "create index if not exists alerts_id on alerts using hash ((id))"
 )
 
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from alerts"),
 		getStmt: compileStmtOrPanic(db, "select value from alerts where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from alerts where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into alerts(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into alerts(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into alerts (id, value, LifecycleStage, State, Policy_Id, Policy_Name, Policy_Description, Policy_Severity, Policy_SORTName, Policy_SORTLifecycleStage) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict(id) do update set value = EXCLUDED.value, LifecycleStage = EXCLUDED.LifecycleStage, State = EXCLUDED.State, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Severity = EXCLUDED.Policy_Severity, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage"),
 		deleteStmt: compileStmtOrPanic(db, "delete from alerts where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from alerts where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from alerts"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.Alert) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.upsertStmt.Exec(id, value, obj.GetLifecycleStage(), obj.GetState(), obj.GetPolicy().GetId(), obj.GetPolicy().GetName(), obj.GetPolicy().GetDescription(), obj.GetPolicy().GetSeverity(), obj.GetPolicy().GetSORTName(), obj.GetPolicy().GetSORTLifecycleStage())
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.Alert) error {

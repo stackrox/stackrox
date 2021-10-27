@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "rolebindings"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -72,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists rolebindings (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists rolebindings (id varchar primary key, value jsonb, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, RoleId varchar)"
 	createIDIndexQuery = "create index if not exists rolebindings_id on rolebindings using hash ((id))"
 )
 
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from rolebindings"),
 		getStmt: compileStmtOrPanic(db, "select value from rolebindings where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from rolebindings where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into rolebindings(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into rolebindings(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into rolebindings (id, value, Name, Namespace, ClusterId, ClusterName, RoleId) values($1, $2, $3, $4, $5, $6, $7) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, RoleId = EXCLUDED.RoleId"),
 		deleteStmt: compileStmtOrPanic(db, "delete from rolebindings where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from rolebindings where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from rolebindings"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.K8SRoleBinding, []int, err
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.K8SRoleBinding) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.upsertStmt.Exec(id, value, obj.GetName(), obj.GetNamespace(), obj.GetClusterId(), obj.GetClusterName(), obj.GetRoleId())
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.K8SRoleBinding) error {

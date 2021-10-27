@@ -95,10 +95,10 @@ func (q *queryTree) addElems(elems []searchPkg.PathElem) {
 	currTree := q
 	for _, e := range elems {
 		var ok bool
-		childTree, ok := currTree.children[e.Name]
+		childTree, ok := currTree.children[e.ProtoJSONName]
 		if !ok {
 			childTree = newQueryTree(e)
-			currTree.children[e.Name] = childTree
+			currTree.children[e.ProtoJSONName] = childTree
 		}
 		currTree = childTree
 	}
@@ -150,7 +150,7 @@ func populatePathRecursive(tree *queryTree, q *v1.Query, optionsMap searchPkg.Op
 }
 
 func printTree(t *queryTree, indent string) {
-	fmt.Println(indent, t.elem.Name, t.elem.Slice)
+	fmt.Println(indent, t.elem.ProtoJSONName, t.elem.Slice)
 	for _, children := range t.children {
 		printTree(children, indent+"  ")
 	}
@@ -171,23 +171,23 @@ func needsDistinct(t *queryTree) bool {
 func createFromClauseRecursive(t *queryTree, parent string) []string {
 	var results []string
 	if parent == "" {
-		results = append(results, t.elem.Name)
-		parent = fmt.Sprintf("%s.value", t.elem.Name)
+		results = append(results, t.elem.ProtoJSONName)
+		parent = fmt.Sprintf("%s.value", t.elem.ProtoJSONName)
 	}
 
 	for _, childTree := range t.children {
 		if len(childTree.children) == 0 {
 			if childTree.elem.Slice {
-				results = append(results, fmt.Sprintf("jsonb_array_elements_text(%s->'%s') %s", parent, childTree.elem.Name, childTree.elem.Name))
+				results = append(results, fmt.Sprintf("jsonb_array_elements_text(%s->'%s') %s", parent, childTree.elem.ProtoJSONName, childTree.elem.ProtoJSONName))
 			}
 			continue
 		}
 		localParent := parent
 		if childTree.elem.Slice {
-			results = append(results, fmt.Sprintf("jsonb_array_elements(%s->'%s') %s", parent, childTree.elem.Name, childTree.elem.Name))
-			localParent = childTree.elem.Name
+			results = append(results, fmt.Sprintf("jsonb_array_elements(%s->'%s') %s", parent, childTree.elem.ProtoJSONName, childTree.elem.ProtoJSONName))
+			localParent = childTree.elem.ProtoJSONName
 		} else {
-			localParent = fmt.Sprintf("%s->'%s'", parent, childTree.elem.Name)
+			localParent = fmt.Sprintf("%s->'%s'", parent, childTree.elem.ProtoJSONName)
 		}
 		subRes := createFromClauseRecursive(childTree, localParent)
 		results = append(results, subRes...)
@@ -229,7 +229,7 @@ func (q *Query) String() string {
 
 func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count bool) (*Query, error) {
 	tree := newQueryTree(searchPkg.PathElem{
-		Name: table,
+		ProtoJSONName: table,
 	})
 	populatePathRecursive(tree, q, optionsMap)
 	fromClause := createFROMClause(tree)
@@ -309,11 +309,11 @@ func joinWrap(baseTable, joinTable string, query *Query) string {
 			log.Fatalf("No existing path between table %s to %s", baseTable, joinTable)
 		}
 		path := pgsearch.GenerateShortestElemPath(joinTable, pathElems)
-		query.Select = fmt.Sprintf("select distinct(%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].Name))
+		query.Select = fmt.Sprintf("select distinct(%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].ProtoJSONName))
 		return fmt.Sprintf("%s.id in (%s)", baseTable, query.String())
 	}
 	path := pgsearch.GenerateShortestElemPath(baseTable, pathElems)
-	return fmt.Sprintf("%s in (%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].Name), query.String())
+	return fmt.Sprintf("%s in (%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].ProtoJSONName), query.String())
 }
 
 func tableFromBaseQuery(bq *v1.BaseQuery, optionsMap searchPkg.OptionsMap) (string, bool) {

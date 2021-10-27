@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "watchedimages"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from watchedimages"),
 		getStmt: compileStmtOrPanic(db, "select value from watchedimages where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from watchedimages where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into watchedimages(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into watchedimages(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into watchedimages (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"),
 		deleteStmt: compileStmtOrPanic(db, "delete from watchedimages where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from watchedimages where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from watchedimages"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.WatchedImage, []int, error
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.WatchedImage) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
 	_, err = s.upsertStmt.Exec(id, value)
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.WatchedImage) error {

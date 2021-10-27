@@ -38,18 +38,22 @@ func GenerateShortestElemPath(table string, elems []searchPkg.PathElem) string {
 	if lastElem := elems[len(elems)-1]; lastElem.Slice {
 		return ""
 	}
+
 	var path string
 	for i := len(elems) - 2; i > -1; i-- {
 		elem := elems[i]
 		if elem.Slice {
-			path = elems[i].Name + path
+			path = elems[i].ProtoJSONName + path
 			return path
 		}
-		if i == 0 {
-			path = fmt.Sprintf("%s.value->'%s'", table, elems[i].Name) + path
+		if i == 0 || (i == 1 && elems[i-1].OneOf) {
+			path = fmt.Sprintf("%s.value->'%s'", table, elems[i].ProtoJSONName) + path
 			return path
 		}
-		path = fmt.Sprintf("->'%s'", elems[i].Name) + path
+		if elem.OneOf {
+			continue
+		}
+		path = fmt.Sprintf("->'%s'", elems[i].ProtoJSONName) + path
 	}
 	return path
 }

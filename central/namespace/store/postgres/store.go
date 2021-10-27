@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 
 	table = "namespaces"
+
+	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
 
 type Store interface {
@@ -72,7 +74,7 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 }
 
 const (
-	createTableQuery = "create table if not exists namespaces (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists namespaces (id varchar primary key, value jsonb, Name varchar, ClusterId varchar, ClusterName varchar)"
 	createIDIndexQuery = "create index if not exists namespaces_id on namespaces using hash ((id))"
 )
 
@@ -99,7 +101,9 @@ func New(db *sql.DB) Store {
 		getIDsStmt: compileStmtOrPanic(db, "select id from namespaces"),
 		getStmt: compileStmtOrPanic(db, "select value from namespaces where id = $1"),
 		getManyStmt: compileStmtOrPanic(db, "select value from namespaces where id = ANY($1::text[])"),
-		upsertStmt: compileStmtOrPanic(db, "insert into namespaces(id, value) values($1, $2) on conflict(id) do update set value=$2"),
+
+		// insert into namespaces(id, value) values($1, $2) on conflict(id) do update set value=$2")
+		upsertStmt: compileStmtOrPanic(db, "insert into namespaces (id, value, Name, ClusterId, ClusterName) values($1, $2, $3, $4, $5) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName"),
 		deleteStmt: compileStmtOrPanic(db, "delete from namespaces where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from namespaces where id = ANY($1::text[])"),
 		walkStmt: compileStmtOrPanic(db, "select value from namespaces"),
@@ -229,17 +233,13 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NamespaceMetadata, []int, 
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.NamespaceMetadata) error {
-	value, err := (&jsonpb.Marshaler{
-		EnumsAsInts:  true,
-		EmitDefaults: true,
-	}).MarshalToString(obj)
+	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.upsertStmt.Exec(id, value, obj.GetName(), obj.GetClusterId(), obj.GetClusterName())
 	return err
 }
-
 
 // Upsert inserts the object into the DB
 func (s *storeImpl) Upsert(obj *storage.NamespaceMetadata) error {

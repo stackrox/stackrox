@@ -1,71 +1,74 @@
 package main
 
 import (
-	"bytes"
-	"database/sql"
 	"fmt"
-	"os"
 	"strings"
-	"text/template"
 
-	"github.com/stackrox/rox/generated/storage"
+	. "github.com/dave/jennifer/jen"
 )
 
-func FieldsToQueries(fields []Field) string {
-	fieldNames := make([]string, 0, len(fields))
-	variablePlaceholders := make([]string, 0, len(fieldNames))
-	for i, f := range fields {
-		fieldNames = append(fieldNames, f.NormalizedName())
-		variablePlaceholders = append(variablePlaceholders, fmt.Sprintf("$%d", i+1))
-	}
-	return fmt.Sprintf("(%s) VALUES(%s)", strings.Join(fieldNames, ", "), strings.Join(variablePlaceholders, ", "))
+type insertionPair struct {
+	Elem Element
+	SubVar string
 }
 
-func ToGetter(s string) string {
-	spl := strings.Split(s, ".")
-	for i := range spl {
-		spl[i] = fmt.Sprintf("Get%s()", spl[i])
+func generateInsertionPairs(table *Path) []insertionPair {
+	var pairs []insertionPair
+	for _, elem := range table.Elems {
+		pairs = append(pairs, insertionPair{
+			Elem: elem,
+		})
 	}
-	return strings.Join(spl, ".")
+	for _, child := range table.Children {
+		childPairs := generateInsertionPairs(child)
+		pairs = append(pairs, childPairs...)
+	}
+	return pairs
 }
 
-func PathToFn(path string) string {
-	return strings.ReplaceAll(path, ".", "_")
-}
+func generateTableInsertion(f *File, tableName string, table *Path) {
+	objName := strings.ToLower(tableName)
 
-func genInsertion(table *Table) {
-	funcMap := template.FuncMap{
-		"ToLower":         strings.ToLower,
-		"ToGetter":        ToGetter,
-		"FieldsToQueries": FieldsToQueries,
-		"PathToFn":        PathToFn,
+	insertionPairs := generateInsertionPairs(table)
+
+	f.Var().Id("marshaler").Op("=").Op("&").Qual("github.com/gogo/protobuf/jsonpb", "Marshaler{EnumsAsInts: true, EmitDefaults: true}")
+
+
+
+
+
+	var fmtStmts []Code
+
+	var preprocessingStmts []Code
+	for i, p := range insertionPairs {
+		if p.Elem.DataType == JSONB {
+			subVar := fmt.Sprintf("var%d", i)
+			preprocessingStmts = append(preprocessingStmts, generateJSONBField(p, subVar))
+			insertionPairs[i].SubVar = subVar
+		}
 	}
 
-	tmplStr, _ := os.ReadFile("/Users/connorgorman/repos/src/github.com/stackrox/rox/tools/pg-table-gen/templates/insert.tmpl")
+	fmtStmts = append(fmtStmts, Return(Nil()))
+	f.Func().Id("Upsert").Params(Id(objName).Op("*").Qual("github.com/stackrox/rox/generated/storage", table.RawFieldType)).Error().Block(
+		preprocessingStmts...
+	)
 
-	tmpl, err := template.New("insertionTemplate").Funcs(funcMap).Parse(string(tmplStr))
-	if err != nil {
-		panic(err)
-	}
-	var result bytes.Buffer
-
-	if err := tmpl.Execute(&result, table); err != nil {
-		panic(err)
-	}
-	fmt.Println(result.String())
-
-	for _, t := range table.ChildTables {
-		genInsertion(t)
-	}
-
-	//for _, t := range table {
-	//}
-}
-
-func insert(tx *sql.Tx, deployment *storage.Deployment) error {
-	// Insert deployment
-	// iterate over containers
-	// add container fields
-
-	return nil
+	//
+	//
+	//Upsert(alert *storage.Alert) error
+	//
+	//
+	//
+	//var b strings.Builder
+	//fmt.Fprintf(&b, "create table if not exists %s (", tableName)
+	//fieldsFromPath(&b, "", table)
+	//fmt.Fprintf(&b, ")")
+	//
+	//queryName := fmt.Sprintf("create%sTableQuery", tableName)
+	//f.Const().Id(queryName).Op("=").Lit(b.String())
+	//
+	//f.Func().Id(fmt.Sprintf("Create%sTable", tableName)).Params(Id("db").Op("*").Qual("database/sql", "DB")).Error().Block(
+	//	List(Id("_"), Err()).Op(":=").Id("db").Dot("Exec").Call(Id(queryName)),
+	//	Return(Err()),
+	//)
 }

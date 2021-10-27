@@ -1,6 +1,10 @@
 package search
 
-import v1 "github.com/stackrox/rox/generated/api/v1"
+import (
+	"strings"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
+)
 
 // Field describes a search field
 type Field struct {
@@ -15,6 +19,23 @@ type Field struct {
 
 func (f *Field) LastElem() PathElem {
 	return f.Elems[len(f.Elems)-1]
+}
+
+func (f *Field) TopLevelValue() string {
+	switch f.Type {
+	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_STRING, v1.SearchDataType_SEARCH_ENUM:
+	default:
+		return ""
+	}
+	var fields []string
+	for _, e := range f.Elems {
+		// Unsupported flattening for these today
+		if e.Slice || e.OneOf {
+			return ""
+		}
+		fields = append(fields, e.Field)
+	}
+	return strings.Join(fields, "_")
 }
 
 // GetFieldPath returns the field path
