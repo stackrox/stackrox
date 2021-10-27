@@ -9,6 +9,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - When the environment variable `ROX_NETWORK_ACCESS_LOG` for Central is enabled, the logs will now contain the request URI and `X-Forwarded-For` header values.
   Note: The network access logging feature was introduced in 51.0 and when enabled will cause noisy logging, and hence should be turned on
   only for the purpose of debugging network connectivity issues.
+- Scanner container image `uid:gid` changed to `65534:65534` (user nobody).
 
 ## [66.0]
 
