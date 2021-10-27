@@ -10,7 +10,7 @@ import (
 
 type MarshalStringWrapper struct {
 	marshaler *jsonpb.Marshaler
-	data []string
+	data      []string
 }
 
 func NewMarshalStringWrapper(marshaler *jsonpb.Marshaler) *MarshalStringWrapper {

@@ -34,11 +34,11 @@ func GetTableToTablePath(fromTable, toTable string) []PathElem {
 }
 
 type PathElem struct {
-	Field 	      string
+	Field         string
 	ProtoJSONName string
 	JSONField     string
-	Slice     bool
-	OneOf bool
+	Slice         bool
+	OneOf         bool
 }
 
 func deepCopyPathElems(o []PathElem) []PathElem {
@@ -50,7 +50,7 @@ func deepCopyPathElems(o []PathElem) []PathElem {
 }
 
 type searchWalker struct {
-	print bool
+	print    bool
 	prefix   string
 	category v1.SearchCategory
 	fields   map[FieldLabel]*Field
@@ -68,7 +68,7 @@ func (s *searchWalker) elemsToPath(elems []PathElem) string {
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	walker := searchWalker{
-		print: printed.Add(prefix),
+		print:    printed.Add(prefix),
 		prefix:   prefix,
 		category: category,
 		fields:   make(map[FieldLabel]*Field),
@@ -127,7 +127,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 	}
 }
 
-func spaces (pathElems []PathElem) string {
+func spaces(pathElems []PathElem) string {
 	var spaces string
 	for _, e := range pathElems {
 		if e.Slice {
@@ -170,7 +170,7 @@ func (s *searchWalker) handleStruct(prefix string, parentElems []PathElem, origi
 		pathElems := deepCopyPathElems(parentElems)
 
 		pathElems = append(pathElems, PathElem{
-			Field:  	   field.Name,
+			Field:         field.Name,
 			ProtoJSONName: jsonProtoTag,
 			Slice:         field.Type.Kind() == reflect.Slice,
 			JSONField:     jsonTag,

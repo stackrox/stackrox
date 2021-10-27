@@ -26,7 +26,7 @@ func flattenTable(table *Path) []Element {
 }
 
 func generateTableCreationQuery(tableName string, elements []Element) string {
-	fields := []string {
+	fields := []string{
 		"id varchar primary key",
 		"value jsonb",
 	}
@@ -37,7 +37,7 @@ func generateTableCreationQuery(tableName string, elements []Element) string {
 }
 
 func generateTableInsertionQuery(tableName string, elements []Element) (string, string) {
-	fields := []string {
+	fields := []string{
 		"id",
 		"value",
 	}
@@ -55,12 +55,12 @@ func generateTableInsertionQuery(tableName string, elements []Element) (string, 
 		valuePlaceholders = append(valuePlaceholders, fmt.Sprintf("$%d", i+1))
 	}
 
-	valueGetters := []string {
+	valueGetters := []string{
 		"id",
 		"value",
 	}
 	for _, elem := range elements {
-		valueGetters = append(valueGetters, "obj." + elem.GetterPath())
+		valueGetters = append(valueGetters, "obj."+elem.GetterPath())
 	}
 
 	return fmt.Sprintf("insert into %s (%s) values(%s) on conflict(id) do update set %s",

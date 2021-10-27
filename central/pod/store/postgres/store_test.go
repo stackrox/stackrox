@@ -22,20 +22,20 @@ func TestStore(t *testing.T) {
 	}
 
 	type Object struct {
-		Name string
-		Key string
+		Name  string
+		Key   string
 		Value string
 	}
 
-	objs := []Object {
+	objs := []Object{
 		{
-			Name: "name1",
-			Key: "key1",
+			Name:  "name1",
+			Key:   "key1",
 			Value: "value1",
 		},
 		{
-			Name: "name2",
-			Key: "key2",
+			Name:  "name2",
+			Key:   "key2",
 			Value: "value2",
 		},
 	}
@@ -56,7 +56,6 @@ func TestStore(t *testing.T) {
 	}
 
 	return
-
 
 	store := New(db)
 
