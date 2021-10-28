@@ -33,7 +33,7 @@ const defaultOptions = {
     },
 };
 
-export default function () {
+export default function configureApolloClient() {
     return new ApolloClient({
         link: httpLink,
         defaultOptions,

@@ -8,7 +8,7 @@ export default {
 };
 
 function onClick() {
-    alert('You have triggered me!');
+    alert('You have triggered me!'); // eslint-disable-line no-alert
 }
 
 export const withNoCounts = () => {
