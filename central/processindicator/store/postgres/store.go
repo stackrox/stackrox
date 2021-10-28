@@ -270,10 +270,10 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
 		var placeholderStr string
 		data := make([]interface{}, 0, numElems * len(objs))
 		for i, obj := range objs[start:end] {
-			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
-			if i != len(objs) - 1 {
-				placeholderStr += ","
+			if i != 0 {
+				placeholderStr += ", "
 			}
+			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err
@@ -281,6 +281,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
 			id := keyFunc(obj)
 			data = append(data, id, value, obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
 		}
+
 		if _, err := s.db.Exec(fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
 		}
