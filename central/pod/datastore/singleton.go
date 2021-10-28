@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/pod/index"
 	pgIndex "github.com/stackrox/rox/central/pod/index/postgres"
 	"github.com/stackrox/rox/central/pod/store"
+	"github.com/stackrox/rox/central/pod/store/cache"
 	pgStore "github.com/stackrox/rox/central/pod/store/postgres"
 	"github.com/stackrox/rox/central/pod/store/rocksdb"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
@@ -39,6 +40,7 @@ func Singleton() DataStore {
 			storage = rocksdb.New(globaldb.GetRocksDB())
 			indexer = index.New(globalindex.GetPodIndex())
 		}
+		storage = cache.NewCachedStore(storage)
 		searcher := search.New(storage, indexer)
 		ps, err = New(
 			storage,
