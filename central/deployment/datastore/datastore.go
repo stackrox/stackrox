@@ -2,9 +2,9 @@ package datastore
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/blevesearch/bleve"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/analystnotes"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
@@ -95,7 +95,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore
 }
 
 // New creates a deployment datastore based on dackbox
-func NewPostgres(db *sql.DB, processTagsStore processtagsstore.Store, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
+func NewPostgres(db *pgxpool.Pool, processTagsStore processtagsstore.Store, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
 

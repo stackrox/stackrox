@@ -1,16 +1,16 @@
 package globaldb
 
 import (
-	"database/sql"
+	"context"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	pgInit sync.Once
-	pgDB   *sql.DB
+	pgDB   *pgxpool.Pool
 
 	registeredTables []registeredTable
 
@@ -29,33 +29,35 @@ func RegisterTable(table string, objType string) {
 }
 
 // GetPostgresDB returns the global postgres instance
-func GetPostgresDB() *sql.DB {
+func GetPostgresDB() *pgxpool.Pool {
 	pgInit.Do(func() {
-		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=60000"
-		db, err := sql.Open("postgres", source)
+		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=60000 pool_min_conns=5 pool_max_conns=25"
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		config, err := pgxpool.ParseConfig(source)
+		if err != nil {
+			panic(err)
+		}
+		pool, err := pgxpool.ConnectConfig(ctx, config)
 		if err != nil {
 			panic(err)
 		}
 
-		if err := db.Ping(); err != nil {
-			panic(err)
-		}
-		pgDB = db
-		go startMonitoringPostgresDB(pgDB)
+		pgDB = pool
+
+		go startMonitoringPostgresDB(pool)
 	})
 	return pgDB
 }
 
-func startMonitoringPostgresDB(db *sql.DB) {
+func startMonitoringPostgresDB(db *pgxpool.Pool) {
 	ticker := time.NewTicker(pgGatherFreq)
 	for range ticker.C {
 		for _, registeredTable := range registeredTables {
-			row := db.QueryRow("select count(*) from " + registeredTable.table)
-			if err := row.Err(); err != nil {
-				log.Errorf("error getting size of table %s: %v", registeredTable.table, err)
-				continue
-			}
 			var count int
+			row := db.QueryRow(context.Background(), "select count(*) from "+registeredTable.table)
 			if err := row.Scan(&count); err != nil {
 				log.Errorf("error scanning count row for table %s: %v", registeredTable.table, err)
 				continue

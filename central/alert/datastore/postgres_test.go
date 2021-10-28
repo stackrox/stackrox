@@ -1,10 +1,12 @@
 package datastore
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
+	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v4"
 	_ "github.com/lib/pq"
 	alertPGIndex "github.com/stackrox/rox/central/alert/datastore/internal/index/postgres"
 	alertPGStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
@@ -14,13 +16,42 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func TestT(t *testing.T) {
-	source := "host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000"
-	db, err := sql.Open("postgres", source)
+/*
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+
+*/
+
+func TestPGX(t *testing.T) {
+	conn, err := pgx.Connect(context.Background(), "host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Close(context.Background())
+
+	if err := conn.Ping(context.Background()); err != nil {
 		panic(err)
 	}
-	defer db.Close()
+
+}
+
+func TestT(t *testing.T) {
+	db, err := pgx.Connect(context.Background(), "host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close(context.Background())
+
+	if err := db.Ping(context.Background()); err != nil {
+		panic(err)
+	}
+
+	db.PgConn()
 
 	alertStore := alertPGStore.New(db)
 	fmt.Println(alertStore)
@@ -33,6 +64,12 @@ func TestT(t *testing.T) {
 	if err := alertStore.Upsert(alert); err != nil {
 		panic(err)
 	}
+
+	alerts, missing, err := alertStore.GetMany([]string{"0e5970b5-0fa3-4e46-9e17-1fc28b855cd8", "d71afb50-51a5-40ae-932e-68b80cd96687"})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(alerts, missing)
 
 	qb := search.NewQueryBuilder().
 		AddStrings(

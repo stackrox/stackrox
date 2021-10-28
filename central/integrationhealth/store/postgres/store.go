@@ -4,18 +4,35 @@ package postgres
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"database/sql"
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/lib/pq"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+const (
+		countStmt = "select count(*) from integrationhealth"
+		existsStmt = "select exists(select 1 from integrationhealth where id = $1)"
+		getIDsStmt = "select id from integrationhealth"
+		getStmt = "select value from integrationhealth where id = $1"
+		getManyStmt = "select value from integrationhealth where id = ANY($1::text[])"
+		upsertStmt = "insert into integrationhealth (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		deleteStmt = "delete from integrationhealth where id = $1"
+		deleteManyStmt = "delete from integrationhealth where id = ANY($1::text[])"
+		walkStmt = "select value from integrationhealth"
+		walkWithIDStmt = "select id, value from integrationhealth"
 )
 
 var (
@@ -42,19 +59,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *sql.DB
-
-	countStmt *sql.Stmt
-	existsStmt *sql.Stmt
-	getIDsStmt *sql.Stmt
-	getStmt *sql.Stmt
-	getManyStmt *sql.Stmt
-	upsertWithIDStmt *sql.Stmt
-	upsertStmt *sql.Stmt
-	deleteStmt *sql.Stmt
-	deleteManyStmt *sql.Stmt
-	walkStmt *sql.Stmt
-	walkWithIDStmt *sql.Stmt
+	db *pgxpool.Pool
 }
 
 func alloc() proto.Message {
@@ -65,29 +70,23 @@ func keyFunc(msg proto.Message) string {
 	return msg.(*storage.IntegrationHealth).GetId()
 }
 
-func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
-	vulnStmt, err := db.Prepare(query)
-	if err != nil {
-		panic(err)
-	}
-	return vulnStmt
-}
-
 const (
 	createTableQuery = "create table if not exists integrationhealth (id varchar primary key, value jsonb)"
 	createIDIndexQuery = "create index if not exists integrationhealth_id on integrationhealth using hash ((id))"
+
+	batchInsertTemplate = "insert into integrationhealth (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
 )
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *sql.DB) Store {
+func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "IntegrationHealth")
 
-	_, err := db.Exec(createTableQuery)
+	_, err := db.Exec(context.Background(), createTableQuery)
 	if err != nil {
 		panic("error creating table")
 	}
 
-	_, err = db.Exec(createIDIndexQuery)
+	_, err = db.Exec(context.Background(), createIDIndexQuery)
 	if err != nil {
 		panic("error creating index")
 	}
@@ -95,19 +94,6 @@ func New(db *sql.DB) Store {
 //
 	return &storeImpl{
 		db: db,
-
-		countStmt: compileStmtOrPanic(db, "select count(*) from integrationhealth"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from integrationhealth where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from integrationhealth"),
-		getStmt: compileStmtOrPanic(db, "select value from integrationhealth where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from integrationhealth where id = ANY($1::text[])"),
-
-		// insert into integrationhealth(id, value) values($1, $2) on conflict(id) do update set value=$2")
-		upsertStmt: compileStmtOrPanic(db, "insert into integrationhealth (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"),
-		deleteStmt: compileStmtOrPanic(db, "delete from integrationhealth where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from integrationhealth where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from integrationhealth"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from integrationhealth"),
 	}
 //
 }
@@ -116,10 +102,7 @@ func New(db *sql.DB) Store {
 func (s *storeImpl) Count() (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "IntegrationHealth")
 
-	row := s.countStmt.QueryRow()
-	if err := row.Err(); err != nil {
-		return 0, err
-	}
+	row := s.db.QueryRow(context.Background(), countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -131,10 +114,7 @@ func (s *storeImpl) Count() (int, error) {
 func (s *storeImpl) Exists(id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "IntegrationHealth")
 
-	row := s.existsStmt.QueryRow(id)
-	if err := row.Err(); err != nil {
-		return false, nilNoRows(err)
-	}
+	row := s.db.QueryRow(context.Background(), existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, nilNoRows(err)
@@ -146,7 +126,7 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 func (s *storeImpl) GetIDs() ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "IntegrationHealthIDs")
 
-	rows, err := s.getIDsStmt.Query()
+	rows, err := s.db.Query(context.Background(), getIDsStmt)
 	if err != nil {
 		return nil, nilNoRows(err)
 	}
@@ -163,7 +143,7 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 }
 
 func nilNoRows(err error) error {
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil
 	}
 	return err
@@ -173,11 +153,7 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.IntegrationHealth, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "IntegrationHealth")
 
-	row := s.getStmt.QueryRow(id)
-	if err := row.Err(); err != nil {
-		return nil, false, nilNoRows(err)
-	}
-
+	row := s.db.QueryRow(context.Background(), getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
@@ -196,9 +172,9 @@ func (s *storeImpl) Get(id string) (*storage.IntegrationHealth, bool, error) {
 func (s *storeImpl) GetMany(ids []string) ([]*storage.IntegrationHealth, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "IntegrationHealth")
 
-	rows, err := s.getManyStmt.Query(pq.Array(ids))
+	rows, err := s.db.Query(context.Background(), getManyStmt, ids)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -242,7 +218,7 @@ func (s *storeImpl) upsert(id string, obj *storage.IntegrationHealth) error {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "IntegrationHealth")
-	_, err = s.upsertStmt.Exec(id, value)
+	_, err = s.db.Exec(context.Background(), upsertStmt, id, value)
 	return err
 }
 
@@ -254,11 +230,29 @@ func (s *storeImpl) Upsert(obj *storage.IntegrationHealth) error {
 
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.IntegrationHealth) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "IntegrationHealth")
+	if len(objs) == 0 {
+		return nil
+	}
 
-	// Txn? or all errors to be passed through?
-	for _, obj := range objs {
-		if err := s.upsert(keyFunc(obj), obj); err != nil {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "IntegrationHealth")
+	numElems := 2
+	batch := batcher.New(len(objs), 60000/numElems)
+	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
+		var placeholderStr string
+		data := make([]interface{}, 0, numElems * len(objs))
+		for i, obj := range objs[start:end] {
+			if i != 0 {
+				placeholderStr += ", "
+			}
+			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+			value, err := marshaler.MarshalToString(obj)
+			if err != nil {
+				return err
+			}
+			id := keyFunc(obj)
+			data = append(data, id, value)
+		}
+		if _, err := s.db.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
 		}
 	}
@@ -269,7 +263,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.IntegrationHealth) error {
 func (s *storeImpl) Delete(id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "IntegrationHealth")
 
-	if _, err := s.deleteStmt.Exec(id); err != nil {
+	if _, err := s.db.Exec(context.Background(), deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
@@ -279,7 +273,7 @@ func (s *storeImpl) Delete(id string) error {
 func (s *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "IntegrationHealth")
 
-	if _, err := s.deleteManyStmt.Exec(pq.Array(ids)); err != nil {
+	if _, err := s.db.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
@@ -287,7 +281,7 @@ func (s *storeImpl) DeleteMany(ids []string) error {
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(fn func(obj *storage.IntegrationHealth) error) error {
-	rows, err := s.walkStmt.Query()
+	rows, err := s.db.Query(context.Background(), walkStmt)
 	if err != nil {
 		return nilNoRows(err)
 	}

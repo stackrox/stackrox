@@ -2,8 +2,8 @@ package search
 
 import (
 	"context"
-	"database/sql"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/deployment/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,7 +27,7 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
-func New(db *sql.DB, storage store.Store) Searcher {
+func New(db *pgxpool.Pool, storage store.Store) Searcher {
 	return &searcherImpl{
 		db:      db,
 		storage: storage,
