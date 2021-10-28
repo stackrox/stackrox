@@ -35,6 +35,13 @@ spec:
           requests:
             cpu: 200m
             memory: 200Mi
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: disk
+      volumes:
+      - name: disk
+        persistentVolumeClaim:
+          claimName: central-db
 ---
 apiVersion: v1
 kind: Service
@@ -50,3 +57,15 @@ spec:
   selector:
     app: central-db
   type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: central-db
+  namespace: stackrox
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi

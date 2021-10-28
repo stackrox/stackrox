@@ -328,10 +328,10 @@ func (s *storeImpl) UpsertMany(objs []*storage.{{.Type}}) error {
 		var placeholderStr string
 		data := make([]interface{}, 0, numElems * len(objs))
 		for i, obj := range objs[start:end] {
-			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
-			if i != len(objs) - 1 {
-				placeholderStr += ","
+			if i != 0 {
+				placeholderStr += ", "
 			}
+			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err

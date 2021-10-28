@@ -27,11 +27,13 @@ func TestT(t *testing.T) {
 	processIndex := index.NewIndexer(db)
 	fmt.Println(processIndex)
 
-	process1 := fixtures.GetProcessIndicator()
-	process2 := fixtures.GetProcessIndicator()
-	process2.Id = uuid.NewV4().String()
-
-	if err := processStore.UpsertMany([]*storage.ProcessIndicator{process1, process2}); err != nil {
+	var processes []*storage.ProcessIndicator
+	for i := 0; i < 100000; i++ {
+		process := fixtures.GetProcessIndicator()
+		process.Id = uuid.NewV4().String()
+		processes = append(processes, process)
+	}
+	if err := processStore.UpsertMany(processes); err != nil {
 		panic(err)
 	}
 }
