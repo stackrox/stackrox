@@ -1,8 +1,7 @@
 package postgres
 
 import (
-	"database/sql"
-
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/objects"
@@ -12,7 +11,7 @@ type fullStore struct {
 	Store
 }
 
-func NewFullStore(db *sql.DB) store.Store {
+func NewFullStore(db *pgxpool.Pool) store.Store {
 	return &fullStore{
 		Store: New(db),
 	}

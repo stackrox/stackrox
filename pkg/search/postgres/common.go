@@ -1,13 +1,14 @@
 package postgres
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"runtime/debug"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
@@ -24,9 +25,6 @@ var (
 
 	queryLock   sync.Mutex
 	queryCounts = make(map[string]*queryStats)
-
-	queryCache     = make(map[string]*sql.Stmt)
-	queryCacheLock sync.Mutex
 )
 
 type queryStats struct {
@@ -477,16 +475,13 @@ func compileBaseQuery(table string, q *v1.Query, optionsMap searchPkg.OptionsMap
 	return nil, nil
 }
 
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
 	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), false)
 	if err != nil {
 		return nil, err
 	}
 
 	queryStr := query.String()
-	queryCacheLock.Lock()
-	stmt := queryCache[queryStr]
-	queryCacheLock.Unlock()
 
 	runQueryPrinter()
 	t := time.Now()
@@ -494,29 +489,13 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optio
 		incQueryCount(queryStr, t)
 	}()
 
-	var rows *sql.Rows
-	if stmt != nil {
-		rows, err = stmt.Query(query.Data...)
-	} else {
-		rows, err = db.Query(replaceVars(queryStr), query.Data...)
-	}
+	rows, err := db.Query(context.Background(), replaceVars(queryStr), query.Data...)
 	if err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
 		return nil, err
 	}
 	defer rows.Close()
-
-	if stmt == nil {
-		stmt, err = db.Prepare(replaceVars(queryStr))
-		if err != nil {
-			log.Errorf("error preparing query")
-		} else {
-			queryCacheLock.Lock()
-			queryCache[queryStr] = stmt
-			queryCacheLock.Unlock()
-		}
-	}
 
 	var searchResults []searchPkg.Result
 	for rows.Next() {
@@ -531,7 +510,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optio
 	return searchResults, nil
 }
 
-func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, optionsMap searchPkg.OptionsMap) (int, error) {
+func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (int, error) {
 	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), true)
 	if err != nil {
 		return 0, err
@@ -544,14 +523,11 @@ func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *sql.DB, option
 		incQueryCount(queryStr, t)
 	}()
 
-	row := db.QueryRow(replaceVars(queryStr), query.Data...)
-	if err := row.Err(); err != nil {
+	var count int
+	row := db.QueryRow(context.Background(), replaceVars(queryStr), query.Data...)
+	if err := row.Scan(&count); err != nil {
 		debug.PrintStack()
 		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
-		return 0, err
-	}
-	var count int
-	if err := row.Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil

@@ -28,7 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"time"
-	"database/sql"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -41,14 +41,14 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.{{.SearchCategory}}, table)
 }
 
-func NewIndexer(db *sql.DB) *indexerImpl {
+func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl {
 		db: db,
 	}
 }
 
 type indexerImpl struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 func (b *indexerImpl) Add{{.Type}}(deployment *storage.{{.Type}}) error {

@@ -64,6 +64,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/itchyny/gojq v0.12.5
+	github.com/jackc/pgx/v4 v4.7.1
 	github.com/joelanford/helm-operator v0.0.7
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1

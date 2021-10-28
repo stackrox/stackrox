@@ -71,7 +71,6 @@ func generateTableInsertionQuery(tableName string, elements []Element) (string, 
 	), strings.Join(valueGetters, ", ")
 }
 
-
 func generateTableMultiInsertionQuery(tableName string, elements []Element) (string, int) {
 	fields := []string{
 		"id",

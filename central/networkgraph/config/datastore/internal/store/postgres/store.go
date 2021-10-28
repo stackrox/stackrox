@@ -4,18 +4,35 @@ package postgres
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"database/sql"
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/lib/pq"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+const (
+		countStmt = "select count(*) from networkgraphconfig"
+		existsStmt = "select exists(select 1 from networkgraphconfig where id = $1)"
+		getIDsStmt = "select id from networkgraphconfig"
+		getStmt = "select value from networkgraphconfig where id = $1"
+		getManyStmt = "select value from networkgraphconfig where id = ANY($1::text[])"
+		upsertStmt = "insert into networkgraphconfig (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		deleteStmt = "delete from networkgraphconfig where id = $1"
+		deleteManyStmt = "delete from networkgraphconfig where id = ANY($1::text[])"
+		walkStmt = "select value from networkgraphconfig"
+		walkWithIDStmt = "select id, value from networkgraphconfig"
 )
 
 var (
@@ -42,48 +59,30 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *sql.DB
-
-	countStmt *sql.Stmt
-	existsStmt *sql.Stmt
-	getIDsStmt *sql.Stmt
-	getStmt *sql.Stmt
-	getManyStmt *sql.Stmt
-	upsertWithIDStmt *sql.Stmt
-	upsertStmt *sql.Stmt
-	deleteStmt *sql.Stmt
-	deleteManyStmt *sql.Stmt
-	walkStmt *sql.Stmt
-	walkWithIDStmt *sql.Stmt
+	db *pgxpool.Pool
 }
 
 func alloc() proto.Message {
 	return &storage.NetworkGraphConfig{}
 }
 
-func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
-	vulnStmt, err := db.Prepare(query)
-	if err != nil {
-		panic(err)
-	}
-	return vulnStmt
-}
-
 const (
 	createTableQuery = "create table if not exists networkgraphconfig (id varchar primary key, value jsonb)"
 	createIDIndexQuery = "create index if not exists networkgraphconfig_id on networkgraphconfig using hash ((id))"
+
+	batchInsertTemplate = "insert into networkgraphconfig (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
 )
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *sql.DB) Store {
+func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "NetworkGraphConfig")
 
-	_, err := db.Exec(createTableQuery)
+	_, err := db.Exec(context.Background(), createTableQuery)
 	if err != nil {
 		panic("error creating table")
 	}
 
-	_, err = db.Exec(createIDIndexQuery)
+	_, err = db.Exec(context.Background(), createIDIndexQuery)
 	if err != nil {
 		panic("error creating index")
 	}
@@ -91,19 +90,6 @@ func New(db *sql.DB) Store {
 //
 	return &storeImpl{
 		db: db,
-
-		countStmt: compileStmtOrPanic(db, "select count(*) from networkgraphconfig"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from networkgraphconfig where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from networkgraphconfig"),
-		getStmt: compileStmtOrPanic(db, "select value from networkgraphconfig where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from networkgraphconfig where id = ANY($1::text[])"),
-
-		// insert into networkgraphconfig(id, value) values($1, $2) on conflict(id) do update set value=$2")
-		upsertStmt: compileStmtOrPanic(db, "insert into networkgraphconfig (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"),
-		deleteStmt: compileStmtOrPanic(db, "delete from networkgraphconfig where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from networkgraphconfig where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from networkgraphconfig"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from networkgraphconfig"),
 	}
 //
 }
@@ -112,10 +98,7 @@ func New(db *sql.DB) Store {
 func (s *storeImpl) Count() (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NetworkGraphConfig")
 
-	row := s.countStmt.QueryRow()
-	if err := row.Err(); err != nil {
-		return 0, err
-	}
+	row := s.db.QueryRow(context.Background(), countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -127,10 +110,7 @@ func (s *storeImpl) Count() (int, error) {
 func (s *storeImpl) Exists(id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkGraphConfig")
 
-	row := s.existsStmt.QueryRow(id)
-	if err := row.Err(); err != nil {
-		return false, nilNoRows(err)
-	}
+	row := s.db.QueryRow(context.Background(), existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, nilNoRows(err)
@@ -142,7 +122,7 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 func (s *storeImpl) GetIDs() ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkGraphConfigIDs")
 
-	rows, err := s.getIDsStmt.Query()
+	rows, err := s.db.Query(context.Background(), getIDsStmt)
 	if err != nil {
 		return nil, nilNoRows(err)
 	}
@@ -159,7 +139,7 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 }
 
 func nilNoRows(err error) error {
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil
 	}
 	return err
@@ -169,11 +149,7 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.NetworkGraphConfig, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkGraphConfig")
 
-	row := s.getStmt.QueryRow(id)
-	if err := row.Err(); err != nil {
-		return nil, false, nilNoRows(err)
-	}
-
+	row := s.db.QueryRow(context.Background(), getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
@@ -192,9 +168,9 @@ func (s *storeImpl) Get(id string) (*storage.NetworkGraphConfig, bool, error) {
 func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkGraphConfig, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkGraphConfig")
 
-	rows, err := s.getManyStmt.Query(pq.Array(ids))
+	rows, err := s.db.Query(context.Background(), getManyStmt, ids)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -252,7 +228,7 @@ func (s *storeImpl) UpsertManyWithIDs(ids []string, objs []*storage.NetworkGraph
 func (s *storeImpl) Delete(id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkGraphConfig")
 
-	if _, err := s.deleteStmt.Exec(id); err != nil {
+	if _, err := s.db.Exec(context.Background(), deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
@@ -262,7 +238,7 @@ func (s *storeImpl) Delete(id string) error {
 func (s *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkGraphConfig")
 
-	if _, err := s.deleteManyStmt.Exec(pq.Array(ids)); err != nil {
+	if _, err := s.db.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
@@ -272,7 +248,7 @@ func (s *storeImpl) WalkAllWithID(fn func(id string, obj *storage.NetworkGraphCo
 
 	panic("unimplemented")	
 //return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
-	rows, err := s.walkStmt.Query()
+	rows, err := s.db.Query(context.Background(), walkStmt)
 	if err != nil {
 		return nilNoRows(err)
 	}

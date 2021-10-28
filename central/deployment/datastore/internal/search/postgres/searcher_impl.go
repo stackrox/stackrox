@@ -2,10 +2,10 @@ package search
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	_ "github.com/stackrox/rox/central/deployment/index/postgres"
@@ -60,7 +60,7 @@ var (
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage store.Store
-	db      *sql.DB
+	db      *pgxpool.Pool
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage

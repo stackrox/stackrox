@@ -4,21 +4,35 @@ package postgres
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"database/sql"
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/lib/pq"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+const (
+		countStmt = "select count(*) from processindicators"
+		existsStmt = "select exists(select 1 from processindicators where id = $1)"
+		getIDsStmt = "select id from processindicators"
+		getStmt = "select value from processindicators where id = $1"
+		getManyStmt = "select value from processindicators where id = ANY($1::text[])"
+		upsertStmt = "insert into processindicators (id, value, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) on conflict(id) do update set value = EXCLUDED.value, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"
+		deleteStmt = "delete from processindicators where id = $1"
+		deleteManyStmt = "delete from processindicators where id = ANY($1::text[])"
+		walkStmt = "select value from processindicators"
+		walkWithIDStmt = "select id, value from processindicators"
 )
 
 var (
@@ -45,19 +59,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *sql.DB
-
-	countStmt *sql.Stmt
-	existsStmt *sql.Stmt
-	getIDsStmt *sql.Stmt
-	getStmt *sql.Stmt
-	getManyStmt *sql.Stmt
-	upsertWithIDStmt *sql.Stmt
-	upsertStmt *sql.Stmt
-	deleteStmt *sql.Stmt
-	deleteManyStmt *sql.Stmt
-	walkStmt *sql.Stmt
-	walkWithIDStmt *sql.Stmt
+	db *pgxpool.Pool
 }
 
 func alloc() proto.Message {
@@ -68,14 +70,6 @@ func keyFunc(msg proto.Message) string {
 	return msg.(*storage.ProcessIndicator).GetId()
 }
 
-func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
-	vulnStmt, err := db.Prepare(query)
-	if err != nil {
-		panic(err)
-	}
-	return vulnStmt
-}
-
 const (
 	createTableQuery = "create table if not exists processindicators (id varchar primary key, value jsonb, DeploymentId varchar, ContainerName varchar, PodId varchar, PodUid varchar, ClusterId varchar, Namespace varchar, Signal_ContainerId varchar, Signal_Name varchar, Signal_Args varchar, Signal_ExecFilePath varchar, Signal_Uid numeric)"
 	createIDIndexQuery = "create index if not exists processindicators_id on processindicators using hash ((id))"
@@ -84,15 +78,15 @@ const (
 )
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *sql.DB) Store {
+func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "ProcessIndicator")
 
-	_, err := db.Exec(createTableQuery)
+	_, err := db.Exec(context.Background(), createTableQuery)
 	if err != nil {
 		panic("error creating table")
 	}
 
-	_, err = db.Exec(createIDIndexQuery)
+	_, err = db.Exec(context.Background(), createIDIndexQuery)
 	if err != nil {
 		panic("error creating index")
 	}
@@ -100,19 +94,6 @@ func New(db *sql.DB) Store {
 //
 	return &storeImpl{
 		db: db,
-
-		countStmt: compileStmtOrPanic(db, "select count(*) from processindicators"),
-		existsStmt: compileStmtOrPanic(db, "select exists(select 1 from processindicators where id = $1)"),
-		getIDsStmt: compileStmtOrPanic(db, "select id from processindicators"),
-		getStmt: compileStmtOrPanic(db, "select value from processindicators where id = $1"),
-		getManyStmt: compileStmtOrPanic(db, "select value from processindicators where id = ANY($1::text[])"),
-
-		// insert into processindicators(id, value) values($1, $2) on conflict(id) do update set value=$2")
-		upsertStmt: compileStmtOrPanic(db, "insert into processindicators (id, value, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) on conflict(id) do update set value = EXCLUDED.value, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"),
-		deleteStmt: compileStmtOrPanic(db, "delete from processindicators where id = $1"),
-		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicators where id = ANY($1::text[])"),
-		walkStmt: compileStmtOrPanic(db, "select value from processindicators"),
-		walkWithIDStmt: compileStmtOrPanic(db, "select id, value from processindicators"),
 	}
 //
 }
@@ -121,10 +102,7 @@ func New(db *sql.DB) Store {
 func (s *storeImpl) Count() (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ProcessIndicator")
 
-	row := s.countStmt.QueryRow()
-	if err := row.Err(); err != nil {
-		return 0, err
-	}
+	row := s.db.QueryRow(context.Background(), countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -136,10 +114,7 @@ func (s *storeImpl) Count() (int, error) {
 func (s *storeImpl) Exists(id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessIndicator")
 
-	row := s.existsStmt.QueryRow(id)
-	if err := row.Err(); err != nil {
-		return false, nilNoRows(err)
-	}
+	row := s.db.QueryRow(context.Background(), existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, nilNoRows(err)
@@ -151,7 +126,7 @@ func (s *storeImpl) Exists(id string) (bool, error) {
 func (s *storeImpl) GetIDs() ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ProcessIndicatorIDs")
 
-	rows, err := s.getIDsStmt.Query()
+	rows, err := s.db.Query(context.Background(), getIDsStmt)
 	if err != nil {
 		return nil, nilNoRows(err)
 	}
@@ -168,7 +143,7 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 }
 
 func nilNoRows(err error) error {
-	if err == sql.ErrNoRows {
+	if err == pgx.ErrNoRows {
 		return nil
 	}
 	return err
@@ -178,11 +153,7 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.ProcessIndicator, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessIndicator")
 
-	row := s.getStmt.QueryRow(id)
-	if err := row.Err(); err != nil {
-		return nil, false, nilNoRows(err)
-	}
-
+	row := s.db.QueryRow(context.Background(), getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
@@ -201,9 +172,9 @@ func (s *storeImpl) Get(id string) (*storage.ProcessIndicator, bool, error) {
 func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ProcessIndicator")
 
-	rows, err := s.getManyStmt.Query(pq.Array(ids))
+	rows, err := s.db.Query(context.Background(), getManyStmt, ids)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -247,7 +218,7 @@ func (s *storeImpl) upsert(id string, obj *storage.ProcessIndicator) error {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ProcessIndicator")
-	_, err = s.upsertStmt.Exec(id, value, obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
+	_, err = s.db.Exec(context.Background(), upsertStmt, id, value, obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
 	return err
 }
 
@@ -281,8 +252,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
 			id := keyFunc(obj)
 			data = append(data, id, value, obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
 		}
-
-		if _, err := s.db.Exec(fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
+		if _, err := s.db.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
 		}
 	}
@@ -293,7 +263,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
 func (s *storeImpl) Delete(id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ProcessIndicator")
 
-	if _, err := s.deleteStmt.Exec(id); err != nil {
+	if _, err := s.db.Exec(context.Background(), deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
@@ -303,7 +273,7 @@ func (s *storeImpl) Delete(id string) error {
 func (s *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessIndicator")
 
-	if _, err := s.deleteManyStmt.Exec(pq.Array(ids)); err != nil {
+	if _, err := s.db.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
@@ -311,7 +281,7 @@ func (s *storeImpl) DeleteMany(ids []string) error {
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(fn func(obj *storage.ProcessIndicator) error) error {
-	rows, err := s.walkStmt.Query()
+	rows, err := s.db.Query(context.Background(), walkStmt)
 	if err != nil {
 		return nilNoRows(err)
 	}

@@ -367,10 +367,10 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	}
 
 	/*
-	select  id from processindicators where PodUid = $$ 202 ms avg (10297862467673/50951)
-	select  id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and (LifecycleStage = $$) and ((State = $$) or (State = $$))) order by (alerts.value ->>'time' )::timestamp desc 23 ms avg (613149849535/25593)
-	select  id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and ((State = $$) or (State = $$))) order by (alerts.value ->>'time' )::timestamp desc 36 ms avg (103785027872/2844)
-	select  id from processindicators where (ContainerName = $$ and DeploymentId = $$) 641 ms avg (57739728575/90)
+		select  id from processindicators where PodUid = $$ 202 ms avg (10297862467673/50951)
+		select  id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and (LifecycleStage = $$) and ((State = $$) or (State = $$))) order by (alerts.value ->>'time' )::timestamp desc 23 ms avg (613149849535/25593)
+		select  id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and ((State = $$) or (State = $$))) order by (alerts.value ->>'time' )::timestamp desc 36 ms avg (103785027872/2844)
+		select  id from processindicators where (ContainerName = $$ and DeploymentId = $$) 641 ms avg (57739728575/90)
 
 	*/
 	// Complete hack
@@ -392,7 +392,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	}
 
 	for _, index := range indexes {
-		_, err := globaldb.GetPostgresDB().Exec(index)
+		_, err := globaldb.GetPostgresDB().Exec(context.Background(), index)
 		if err != nil {
 			panic(err)
 		}
