@@ -40,6 +40,12 @@ func Singleton() DataStore {
 			}
 		}
 
+		if features.VulnReporting.Enabled() {
+			for r, a := range vulnReportingDefaultRoles {
+				defaultRoles[r] = a
+			}
+		}
+
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(roles))
 		utils.Must(permissionSetStorage.UpsertMany(permissionSets))
@@ -77,6 +83,14 @@ var defaultRoles = map[string]roleAttributes{
 		idSuffix:    "none",
 		description: "For users: use it to provide no read and write access to any resource",
 	},
+	rolePkg.ScopeManager: {
+		idSuffix:    "scopemanager",
+		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.Role),
+			permissions.Modify(resources.Role),
+		},
+	},
 	rolePkg.SensorCreator: {
 		idSuffix:    "sensorcreator",
 		description: "For automation: it consists of the permissions to create Sensors in secured clusters",
@@ -103,6 +117,19 @@ var vulnRiskManagementDefaultRoles = map[string]roleAttributes{
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.VulnerabilityManagementRequests),
 			permissions.Modify(resources.VulnerabilityManagementRequests),
+		},
+	},
+}
+
+var vulnReportingDefaultRoles = map[string]roleAttributes{
+	rolePkg.VulnReporter: {
+		idSuffix:    "vulnreporter",
+		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.VulnerabilityReports),   //required for vuln report configurations
+			permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
+			permissions.View(resources.Role),                   //required for scopes
+			permissions.View(resources.Image),                  //required to gather CVE data for the report
 		},
 	},
 }

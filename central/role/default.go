@@ -30,10 +30,16 @@ const (
 
 	// VulnMgmtRequester is a role that has the minimal privileges required to request vulnerability deferrals or false positives.
 	VulnMgmtRequester = "Vulnerability Management Requester"
+
+	// VulnReporter is a role that has the minimal privileges required to create and manage vulnerability reporting configurations.
+	VulnReporter = "Vulnerability Report Creator"
+
+	// ScopeManager is a role that has the minimal privileges to view and modify scopes for use in access control, vulnerability reporting etc.
+	ScopeManager = "Scope Manager"
 )
 
 // DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
-var DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, SensorCreator, VulnMgmtApprover, VulnMgmtRequester)
+var DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, ScopeManager, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
 
 // AccessScopeExcludeAll has empty rules and hence excludes all
 // scoped resources. Global resources must be unaffected.

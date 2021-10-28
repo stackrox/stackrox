@@ -70,6 +70,8 @@ const resourceDescriptions: Record<string, string> = {
         'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Request a deferral on a vulnerability, mark it as a false positive or move a pending or previously approved request (made by the same user) back to observed.',
     VulnerabilityManagementApprovals:
         'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Approve or deny any pending deferral or false positive requests and move any previously approved requests back to observed.',
+    VulnerabilityReports:
+        'Read: View all vulnerability report configurations. Write: Add, modify or delete vulnerability report configurations.',
     WatchedImage:
         'Read: View undeployed watched images monitored. Write: Configure watched images.',
 };

@@ -10,9 +10,11 @@ const defaultRoles = {
     Analyst: true,
     'Continuous Integration': true,
     None: true,
+    'Scope Manager': true,
     'Sensor Creator': true,
     'Vulnerability Management Approver': true,
     'Vulnerability Management Requester': true,
+    'Vulnerability Reporter': true,
 };
 
 export function getIsDefaultRoleName(name: string): boolean {

@@ -58,6 +58,7 @@ var (
 	User                             = newResourceMetadata("User", permissions.GlobalScope)
 	VulnerabilityManagementRequests  = newResourceMetadataWithFeatureFlag("VulnerabilityManagementRequests", permissions.GlobalScope, features.VulnRiskManagement)
 	VulnerabilityManagementApprovals = newResourceMetadataWithFeatureFlag("VulnerabilityManagementApprovals", permissions.GlobalScope, features.VulnRiskManagement)
+	VulnerabilityReports             = newResourceMetadataWithFeatureFlag("VulnerabilityReports", permissions.GlobalScope, features.VulnReporting)
 	WatchedImage                     = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
 	// Internal Resources

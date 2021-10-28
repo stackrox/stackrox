@@ -10,6 +10,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   Note: The network access logging feature was introduced in 51.0 and when enabled will cause noisy logging, and hence should be turned on
   only for the purpose of debugging network connectivity issues.
 - Scanner container image `uid:gid` changed to `65534:65534` (user nobody).
+- A new default Role called Scope Creator has been introduced, to be used to provide users the minimal set of
+privileges required to create and modify access scopes for the purpose of configuring access control or use in vulnerability reporting.
 
 ## [66.0]
 

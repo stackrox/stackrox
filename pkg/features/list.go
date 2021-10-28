@@ -38,4 +38,7 @@ var (
 
 	// PoliciesPatternFly enables the PatternFly version of Policies. (used in the front-end app only)
 	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", false)
+
+	// VulnReporting enables scheduled vulnerability reporting workflow, that allows the creation and management of vulnerability reporting configurations.
+	VulnReporting = registerFeature("Enable creation of scheduled vulnerability reports to be sent via email notifier", "ROX_VULN_REPORTING", false)
 )
