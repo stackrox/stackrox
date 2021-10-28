@@ -4,17 +4,20 @@ package postgres
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"database/sql"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/lib/pq"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -76,6 +79,8 @@ func compileStmtOrPanic(db *sql.DB, query string) *sql.Stmt {
 const (
 	createTableQuery = "create table if not exists processindicators (id varchar primary key, value jsonb, DeploymentId varchar, ContainerName varchar, PodId varchar, PodUid varchar, ClusterId varchar, Namespace varchar, Signal_ContainerId varchar, Signal_Name varchar, Signal_Args varchar, Signal_ExecFilePath varchar, Signal_Uid numeric)"
 	createIDIndexQuery = "create index if not exists processindicators_id on processindicators using hash ((id))"
+
+	batchInsertTemplate = "insert into processindicators (id, value, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values %s on conflict(id) do update set value = EXCLUDED.value, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -103,11 +108,6 @@ func New(db *sql.DB) Store {
 		getManyStmt: compileStmtOrPanic(db, "select value from processindicators where id = ANY($1::text[])"),
 
 		// insert into processindicators(id, value) values($1, $2) on conflict(id) do update set value=$2")
-
-		//const (
-		//	batchInsertTemplate = `insert into processindicators (id, value) values %s on conflict(id) do update set value=EXCLUDED.value;`
-		//)
-
 		upsertStmt: compileStmtOrPanic(db, "insert into processindicators (id, value, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) on conflict(id) do update set value = EXCLUDED.value, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"),
 		deleteStmt: compileStmtOrPanic(db, "delete from processindicators where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicators where id = ANY($1::text[])"),
@@ -259,11 +259,29 @@ func (s *storeImpl) Upsert(obj *storage.ProcessIndicator) error {
 
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
+	if len(objs) == 0 {
+		return nil
+	}
 
-	// Txn? or all errors to be passed through?
-	for _, obj := range objs {
-		if err := s.upsert(keyFunc(obj), obj); err != nil {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
+	numElems := 13
+	batch := batcher.New(len(objs), 60000/numElems)
+	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
+		var placeholderStr string
+		data := make([]interface{}, 0, numElems * len(objs))
+		for i, obj := range objs[start:end] {
+			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+			if i != len(objs) - 1 {
+				placeholderStr += ","
+			}
+			value, err := marshaler.MarshalToString(obj)
+			if err != nil {
+				return err
+			}
+			id := keyFunc(obj)
+			data = append(data, id, value, obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
+		}
+		if _, err := s.db.Exec(fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
 		}
 	}
