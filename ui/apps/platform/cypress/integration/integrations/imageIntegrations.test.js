@@ -137,12 +137,10 @@ describe('Image Integrations Test', () => {
         // Step 1, check empty fields
         getInputByLabel('Integration name').type(' ');
         getInputByLabel('Registry ID').type(' ');
-        getInputByLabel('Endpoint').type(' ');
         getInputByLabel('Region').type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Registry ID').contains('A registry ID is required');
-        getHelperElementByLabel('Endpoint').contains('An endpoint is required');
         getHelperElementByLabel('Region').contains('An AWS region is required');
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
@@ -150,7 +148,6 @@ describe('Image Integrations Test', () => {
         // Step 2, check valid from and save
         getInputByLabel('Integration name').clear().type(generateNameWithDate('ECR Test'));
         getInputByLabel('Registry ID').clear().type('12345');
-        getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Region').clear().type('us-west-1');
 
         cy.get(selectors.buttons.test).should('be.enabled');

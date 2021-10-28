@@ -43,7 +43,7 @@ export const validationSchema = yup.object().shape({
             .required('A category is required'),
         ecr: yup.object().shape({
             registryId: yup.string().trim().required('A registry ID is required'),
-            endpoint: yup.string().trim().required('An endpoint is required'),
+            endpoint: yup.string().trim(),
             region: yup.string().trim().required('An AWS region is required'),
             useIam: yup.bool(),
             accessKeyId: yup.string().when('useIam', {
@@ -200,7 +200,6 @@ function EcrIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Endpoint"
-                        isRequired
                         fieldId="config.ecr.endpoint"
                         touched={touched}
                         errors={errors}
