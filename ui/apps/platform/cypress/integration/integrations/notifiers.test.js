@@ -1,4 +1,3 @@
-/* eslint-disable no-multi-str */
 import { selectors } from '../../constants/IntegrationsPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';

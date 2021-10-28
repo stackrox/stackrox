@@ -19,7 +19,6 @@ function* getClusterInitBundles() {
 
 function* generateClusterInitBundle() {
     try {
-        // eslint-disable-next-line no-unused-vars
         const formData = yield select(getFormValues(clusterInitBundleFormId));
         const result = yield call(service.generateClusterInitBundle, formData);
         yield put(actions.generateClusterInitBundle.success(result.response));

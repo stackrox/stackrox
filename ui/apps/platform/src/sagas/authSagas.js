@@ -133,7 +133,6 @@ function isTestMode(state) {
 
 function* handleOidcResponse(location) {
     const hash = parseFragment(location);
-    // eslint-disable-next-line camelcase
     if (hash.error) {
         return { ...hash, test: isTestMode(hash.state) };
     }

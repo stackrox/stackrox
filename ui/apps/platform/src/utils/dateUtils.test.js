@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 // system under test (SUT)
 import { getLatestDatedItemByKey, addBrandedTimestampToString } from './dateUtils';
 
