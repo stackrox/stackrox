@@ -185,6 +185,7 @@ func (s *storeImpl) Get(id string) (*storage.K8SRole, bool, error) {
 
 	msg := alloc()
 	buf := bytes.NewBuffer(data)
+	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "K8SRole")
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
@@ -216,9 +217,11 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.K8SRole, []int, error) {
 		}
 		msg := alloc()
 		buf := bytes.NewBuffer(data)
+		t := time.Now()
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return nil, nil, err
 		}
+		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "K8SRole")
 		elem := msg.(*storage.K8SRole)
 		foundSet.Add(elem.GetId())
 		elems = append(elems, elem)
@@ -233,10 +236,12 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.K8SRole, []int, error) {
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.K8SRole) error {
+	t := time.Now()
 	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "K8SRole")
 	_, err = s.upsertStmt.Exec(id, value, obj.GetName(), obj.GetNamespace(), obj.GetClusterId(), obj.GetClusterName())
 	return err
 }

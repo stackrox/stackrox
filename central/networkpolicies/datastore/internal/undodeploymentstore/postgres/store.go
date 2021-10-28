@@ -185,6 +185,7 @@ func (s *storeImpl) Get(id string) (*storage.NetworkPolicyApplicationUndoDeploym
 
 	msg := alloc()
 	buf := bytes.NewBuffer(data)
+	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "NetworkPolicyApplicationUndoDeploymentRecord")
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
@@ -216,9 +217,11 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkPolicyApplicationUn
 		}
 		msg := alloc()
 		buf := bytes.NewBuffer(data)
+		t := time.Now()
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return nil, nil, err
 		}
+		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "NetworkPolicyApplicationUndoDeploymentRecord")
 		elem := msg.(*storage.NetworkPolicyApplicationUndoDeploymentRecord)
 		foundSet.Add(elem.GetId())
 		elems = append(elems, elem)
@@ -233,10 +236,12 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkPolicyApplicationUn
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+	t := time.Now()
 	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "NetworkPolicyApplicationUndoDeploymentRecord")
 	_, err = s.upsertStmt.Exec(id, value)
 	return err
 }

@@ -185,6 +185,7 @@ func (s *storeImpl) Get(id string) (*storage.TokenMetadata, bool, error) {
 
 	msg := alloc()
 	buf := bytes.NewBuffer(data)
+	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "TokenMetadata")
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
@@ -216,9 +217,11 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.TokenMetadata, []int, erro
 		}
 		msg := alloc()
 		buf := bytes.NewBuffer(data)
+		t := time.Now()
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return nil, nil, err
 		}
+		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "TokenMetadata")
 		elem := msg.(*storage.TokenMetadata)
 		foundSet.Add(elem.GetId())
 		elems = append(elems, elem)
@@ -233,10 +236,12 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.TokenMetadata, []int, erro
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.TokenMetadata) error {
+	t := time.Now()
 	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "TokenMetadata")
 	_, err = s.upsertStmt.Exec(id, value)
 	return err
 }

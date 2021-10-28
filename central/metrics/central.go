@@ -36,6 +36,15 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	jsonpbOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "jsonpb_op_duration",
+		Help:      "Time taken to perform a jsonpb operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Operation", "Type"})
+
 	postgresOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -174,6 +183,11 @@ func SetRocksDBOperationDurationTime(start time.Time, op metrics.Op, t string) {
 // SetPostgresOperationDurationTime times how long a particular postgres operation took on a particular resource
 func SetPostgresOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	postgresOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+}
+
+// SetJSONPBOperationDurationTime times how long a particular postgres operation took on a particular resource
+func SetJSONPBOperationDurationTime(start time.Time, op string, t string) {
+	jsonpbOperationHistogramVec.With(prometheus.Labels{"Operation": op, "Type": t}).Observe(startTimeToMS(start))
 }
 
 // SetDackboxOperationDurationTime times how long a particular dackbox operation took on a particular resource
