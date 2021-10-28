@@ -181,6 +181,7 @@ func (s *storeImpl) Get(id string) (*storage.NetworkGraphConfig, bool, error) {
 
 	msg := alloc()
 	buf := bytes.NewBuffer(data)
+	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "NetworkGraphConfig")
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
@@ -212,9 +213,11 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkGraphConfig, []int,
 		}
 		msg := alloc()
 		buf := bytes.NewBuffer(data)
+		t := time.Now()
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return nil, nil, err
 		}
+		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "NetworkGraphConfig")
 		elem := msg.(*storage.NetworkGraphConfig)
 		foundSet.Add(elem.GetId())
 		elems = append(elems, elem)

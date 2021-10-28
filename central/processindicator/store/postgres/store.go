@@ -103,6 +103,11 @@ func New(db *sql.DB) Store {
 		getManyStmt: compileStmtOrPanic(db, "select value from processindicators where id = ANY($1::text[])"),
 
 		// insert into processindicators(id, value) values($1, $2) on conflict(id) do update set value=$2")
+
+		//const (
+		//	batchInsertTemplate = `insert into processindicators (id, value) values %s on conflict(id) do update set value=EXCLUDED.value;`
+		//)
+
 		upsertStmt: compileStmtOrPanic(db, "insert into processindicators (id, value, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) on conflict(id) do update set value = EXCLUDED.value, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"),
 		deleteStmt: compileStmtOrPanic(db, "delete from processindicators where id = $1"),
 		deleteManyStmt: compileStmtOrPanic(db, "delete from processindicators where id = ANY($1::text[])"),
@@ -185,6 +190,7 @@ func (s *storeImpl) Get(id string) (*storage.ProcessIndicator, bool, error) {
 
 	msg := alloc()
 	buf := bytes.NewBuffer(data)
+	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "ProcessIndicator")
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
@@ -216,9 +222,11 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, e
 		}
 		msg := alloc()
 		buf := bytes.NewBuffer(data)
+		t := time.Now()
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return nil, nil, err
 		}
+		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "ProcessIndicator")
 		elem := msg.(*storage.ProcessIndicator)
 		foundSet.Add(elem.GetId())
 		elems = append(elems, elem)
@@ -233,10 +241,12 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, e
 }
 
 func (s *storeImpl) upsert(id string, obj *storage.ProcessIndicator) error {
+	t := time.Now()
 	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ProcessIndicator")
 	_, err = s.upsertStmt.Exec(id, value, obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
 	return err
 }

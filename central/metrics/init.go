@@ -30,5 +30,6 @@ func init() {
 		functionSegmentDurationHistogramVec,
 		k8sObjectProcessingDuration,
 		postgresOperationHistogramVec,
+		jsonpbOperationHistogramVec,
 	)
 }

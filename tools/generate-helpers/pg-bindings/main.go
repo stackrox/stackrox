@@ -9,8 +9,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/utils"
 	_ "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const storeFile = `
@@ -223,6 +223,7 @@ func (s *storeImpl) Get(id string) (*storage.{{.Type}}, bool, error) {
 
 	msg := alloc()
 	buf := bytes.NewBuffer(data)
+	defer metrics.SetJSONPBOperationDurationTime(time.Now(), "Unmarshal", "{{.Type}}")
 	if err := jsonpb.Unmarshal(buf, msg); err != nil {
 		return nil, false, err
 	}
@@ -254,9 +255,11 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.{{.Type}}, []int, error) {
 		}
 		msg := alloc()
 		buf := bytes.NewBuffer(data)
+		t := time.Now()
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return nil, nil, err
 		}
+		metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "{{.Type}}")
 		elem := msg.(*storage.{{.Type}})
 		foundSet.Add(elem.GetId())
 		elems = append(elems, elem)
@@ -291,10 +294,12 @@ func (s *storeImpl) UpsertManyWithIDs(ids []string, objs []*storage.{{.Type}}) e
 {{- else}}
 
 func (s *storeImpl) upsert(id string, obj *storage.{{.Type}}) error {
+	t := time.Now()
 	value, err := marshaler.MarshalToString(obj)
 	if err != nil {
 		return err
 	}
+	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "{{.Type}}")
 	_, err = s.upsertStmt.Exec({{.InsertionGetters}})
 	return err
 }
