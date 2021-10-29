@@ -9,7 +9,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -49,4 +51,49 @@ func (m *MockDataStore) Get(arg0 context.Context, arg1 string) (*storage.ImageCV
 func (mr *MockDataStoreMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), arg0, arg1)
+}
+
+// Search mocks base method.
+func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0, arg1)
+}
+
+// SearchEdges mocks base method.
+func (m *MockDataStore) SearchEdges(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchEdges", arg0, arg1)
+	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchEdges indicates an expected call of SearchEdges.
+func (mr *MockDataStoreMockRecorder) SearchEdges(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchEdges", reflect.TypeOf((*MockDataStore)(nil).SearchEdges), arg0, arg1)
+}
+
+// SearchRawEdges mocks base method.
+func (m *MockDataStore) SearchRawEdges(arg0 context.Context, arg1 *v1.Query) ([]*storage.ImageCVEEdge, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawEdges", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.ImageCVEEdge)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawEdges indicates an expected call of SearchRawEdges.
+func (mr *MockDataStoreMockRecorder) SearchRawEdges(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawEdges", reflect.TypeOf((*MockDataStore)(nil).SearchRawEdges), arg0, arg1)
 }

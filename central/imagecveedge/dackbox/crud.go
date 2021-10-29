@@ -23,11 +23,13 @@ var (
 	// Upserter writes storage.ImageCVEEdges directly to the store.
 	Upserter = crud.NewUpserter(
 		crud.WithKeyFunction(crud.PrefixKey(Bucket, keyFunc)),
+		crud.AddToIndex(),
 	)
 
 	// Deleter deletes the edges from the store.
 	Deleter = crud.NewDeleter(
 		crud.Shared(),
+		crud.RemoveFromIndex(),
 	)
 )
 

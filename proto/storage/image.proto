@@ -5,7 +5,9 @@ option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
 import "storage/risk.proto";
+import "storage/cve.proto";
 import "storage/vulnerability.proto";
+import "storage/vuln_requests.proto";
 import "gogoproto/gogo.proto";
 
 package storage;
@@ -191,6 +193,10 @@ message ImageCVEEdge {
     // base 64 encoded Image:CVE ids.
     string                    id                     = 1;
     google.protobuf.Timestamp first_image_occurrence = 2;
+
+    // TODO: [ROX-8348] Unhide search fields.
+
+    VulnerabilityState        state                  = 3 [(gogoproto.moretags) = "search:\"Vulnerability State\",hidden"];
 }
 
 message WatchedImage {

@@ -499,7 +499,7 @@
         "FALSE_POSITIVE"
       ],
       "default": "OBSERVED",
-      "description": "VulnerabilityState indicates if vulnerability is being observed or not. By default, it vulnerabilities are observed."
+      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed."
     },
     "v1ApproveVulnRequest": {
       "type": "object",

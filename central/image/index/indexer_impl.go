@@ -80,9 +80,11 @@ func mapComponents(im *mapping.IndexMappingImpl, components []*storage.EmbeddedI
 	cveSuppressedPathStr, cveSuppressedPath := getVulnPath("suppressed")
 
 	fixedMapping := vulnMapping.Properties["SetFixedBy"].Properties["fixed_by"].Fields[0]
-
 	fixedPathStr := "image.scan.components.vulns.SetFixedBy.fixed_by"
 	fixedPath := strings.Split("image.scan.components.vulns.SetFixedBy.fixed_by", ".")
+
+	cveStateMapping := getFieldOrPanic(getSubMappingOrPanic(vulnMapping, "state"))
+	cveStatePathStr, cveStatePath := getVulnPath("state")
 
 	walkContext := im.NewWalkContext(doc, imageMapping)
 
@@ -94,11 +96,11 @@ func mapComponents(im *mapping.IndexMappingImpl, components []*storage.EmbeddedI
 
 		for j, vuln := range c.GetVulns() {
 			vulnIndex := []uint64{uint64(i), uint64(j)}
-
 			cveMapping.ProcessString(vuln.GetCve(), cvePathStr, cvePath, vulnIndex, walkContext)
 			cvssMapping.ProcessFloat64(float64(vuln.GetCvss()), cvssPathStr, cvssPath, vulnIndex, walkContext)
 			cveSuppressedMapping.ProcessBoolean(vuln.GetSuppressed(), cveSuppressedPathStr, cveSuppressedPath, vulnIndex, walkContext)
 			fixedMapping.ProcessString(vuln.GetFixedBy(), fixedPathStr, fixedPath, vulnIndex, walkContext)
+			cveStateMapping.ProcessFloat64(float64(storage.VulnerabilityState(vuln.GetState())), cveStatePathStr, cveStatePath, vulnIndex, walkContext)
 		}
 	}
 }

@@ -8,6 +8,13 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
+// VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.
+enum VulnerabilityState {
+    OBSERVED       = 0; // [Default state]
+    DEFERRED       = 1;
+    FALSE_POSITIVE = 2;
+}
+
 enum VulnerabilitySeverity {
     UNKNOWN_VULNERABILITY_SEVERITY   = 0;
     LOW_VULNERABILITY_SEVERITY       = 1;

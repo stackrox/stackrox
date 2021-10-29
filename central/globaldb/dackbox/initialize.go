@@ -20,6 +20,8 @@ import (
 	imagecomponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
 	imagecomponentEdgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
 	imagecomponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
+	imageCVEEdgeDackbox "github.com/stackrox/rox/central/imagecveedge/dackbox"
+	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	nodeIndex "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
@@ -32,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 type bucketRef struct {
@@ -103,6 +106,16 @@ var (
 // Init runs all registered initialization functions.
 func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.WrapperRegistry, reindexBucket, dirtyBucket, reindexValue []byte) error {
 	synchronized := concurrency.NewSignal()
+
+	if features.VulnRiskManagement.Enabled() {
+		initializedBuckets = append(initializedBuckets, bucketRef{
+			bucket:   imageCVEEdgeDackbox.Bucket,
+			reader:   imageCVEEdgeDackbox.Reader,
+			category: v1.SearchCategory_IMAGE_VULN_EDGE,
+			wrapper:  imageCVEEdgeIndex.Wrapper{},
+		})
+	}
+
 	for _, initialized := range initializedBuckets {
 		// Register the wrapper to index the objects.
 		registry.RegisterWrapper(initialized.bucket, initialized.wrapper)

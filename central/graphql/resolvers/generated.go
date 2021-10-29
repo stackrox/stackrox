@@ -1348,6 +1348,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Volume_MountPropagation(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilitySeverity(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilityState(0)))
 }
 
 type aWSProviderMetadataResolver struct {
@@ -11482,6 +11483,24 @@ func toVulnerabilitySeverities(values *[]string) []storage.VulnerabilitySeverity
 	output := make([]storage.VulnerabilitySeverity, len(*values))
 	for i, v := range *values {
 		output[i] = toVulnerabilitySeverity(&v)
+	}
+	return output
+}
+
+func toVulnerabilityState(value *string) storage.VulnerabilityState {
+	if value != nil {
+		return storage.VulnerabilityState(storage.VulnerabilityState_value[*value])
+	}
+	return storage.VulnerabilityState(0)
+}
+
+func toVulnerabilityStates(values *[]string) []storage.VulnerabilityState {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.VulnerabilityState, len(*values))
+	for i, v := range *values {
+		output[i] = toVulnerabilityState(&v)
 	}
 	return output
 }

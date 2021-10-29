@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
 import "gogoproto/gogo.proto";
+import "storage/cve.proto";
 import "storage/user.proto";
 
 package storage;
@@ -14,13 +15,6 @@ message RequestComment {
     string                    message    = 2;
     SlimUser                  user       = 3;
     google.protobuf.Timestamp created_at = 4;
-}
-
-// VulnerabilityState indicates if vulnerability is being observed or not. By default, it vulnerabilities are observed.
-enum VulnerabilityState {
-    OBSERVED       = 0; // [Default state]
-    DEFERRED       = 1;
-    FALSE_POSITIVE = 2;
 }
 
 // Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver
