@@ -186,6 +186,8 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 	return nil
 }
 
+// TODO good opportunity here to mark alerts stale but just updating the state and resolved at, independent of the
+// whole object that we never need to fetch
 func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStale")
 
