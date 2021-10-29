@@ -375,6 +375,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	*/
 	// Complete hack
 	indexes := []string{
+		`create extension if not exists pg_stat_statements;`,
 		`create index if not exists deployments_clusterid on deployments using hash ((ClusterId));`,
 
 		`create index if not exists processindicators_poduid on processindicators using hash ((PodUid));`,

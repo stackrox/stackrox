@@ -2,6 +2,7 @@ package globaldb
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -45,6 +46,14 @@ func GetPostgresDB() *pgxpool.Pool {
 			panic(err)
 		}
 
+		conn, err := pool.Acquire(context.Background())
+		if err != nil {
+			panic(err)
+		}
+		defer conn.Release()
+		t := time.Now()
+		conn.Conn().Ping(context.Background())
+		fmt.Println("Ping Nanos: ", time.Since(t).Nanoseconds())
 		pgDB = pool
 
 		go startMonitoringPostgresDB(pool)

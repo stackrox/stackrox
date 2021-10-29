@@ -188,6 +188,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	ds.processFilter.UpdateByPod(pod)
 
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
+		// TODO on create actions this is a waste and will most certainly be a pass through miss
 		oldPod, found, err := ds.podStore.Get(pod.GetId())
 		if err != nil {
 			return errors.Wrapf(err, "retrieving pod %q from store", pod.GetName())
