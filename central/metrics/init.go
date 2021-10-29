@@ -31,5 +31,6 @@ func init() {
 		k8sObjectProcessingDuration,
 		postgresOperationHistogramVec,
 		jsonpbOperationHistogramVec,
+		acquireHistogramVec,
 	)
 }

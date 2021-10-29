@@ -28,7 +28,6 @@ func registerCategoryToTablePath(category v1.SearchCategory, table string, path 
 }
 
 func GetTableToTablePath(fromTable, toTable string) []PathElem {
-	fmt.Println(registeredPaths)
 	category := mapping.GetCategoryFromTable(fromTable)
 	return registeredPaths[category][toTable]
 }
@@ -68,7 +67,7 @@ func (s *searchWalker) elemsToPath(elems []PathElem) string {
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	walker := searchWalker{
-		print:    printed.Add(prefix),
+		print:   false,
 		prefix:   prefix,
 		category: category,
 		fields:   make(map[FieldLabel]*Field),

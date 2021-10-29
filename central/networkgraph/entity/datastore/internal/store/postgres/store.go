@@ -153,7 +153,10 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.NetworkEntity, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")
 
-	row := s.db.QueryRow(context.Background(), getStmt, id)
+	conn, release := s.acquireConn(ops.Get, "NetworkEntity")
+	defer release()
+
+	row := conn.QueryRow(context.Background(), getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
@@ -172,7 +175,10 @@ func (s *storeImpl) Get(id string) (*storage.NetworkEntity, bool, error) {
 func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkEntity, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkEntity")
 
-	rows, err := s.db.Query(context.Background(), getManyStmt, ids)
+	conn, release := s.acquireConn(ops.GetMany, "NetworkEntity")
+	defer release()
+
+	rows, err := conn.Query(context.Background(), getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -218,7 +224,10 @@ func (s *storeImpl) upsert(id string, obj *storage.NetworkEntity) error {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "NetworkEntity")
-	_, err = s.db.Exec(context.Background(), upsertStmt, id, value)
+	conn, release := s.acquireConn(ops.RemoveMany, "NetworkEntity")
+	defer release()
+
+	_, err = conn.Exec(context.Background(), upsertStmt, id, value)
 	return err
 }
 
@@ -228,11 +237,23 @@ func (s *storeImpl) Upsert(obj *storage.NetworkEntity) error {
 	return s.upsert(keyFunc(obj), obj)
 }
 
+func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+	defer metrics.SetAcquireDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	return conn, conn.Release
+}
+
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.NetworkEntity) error {
 	if len(objs) == 0 {
 		return nil
 	}
+
+	conn, release := s.acquireConn(ops.AddMany, "NetworkEntity")
+	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "NetworkEntity")
 	numElems := 2
@@ -252,7 +273,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.NetworkEntity) error {
 			id := keyFunc(obj)
 			data = append(data, id, value)
 		}
-		if _, err := s.db.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
+		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
 		}
 	}
@@ -263,7 +284,10 @@ func (s *storeImpl) UpsertMany(objs []*storage.NetworkEntity) error {
 func (s *storeImpl) Delete(id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkEntity")
 
-	if _, err := s.db.Exec(context.Background(), deleteStmt, id); err != nil {
+	conn, release := s.acquireConn(ops.Remove, "NetworkEntity")
+	defer release()
+
+	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
@@ -273,7 +297,9 @@ func (s *storeImpl) Delete(id string) error {
 func (s *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkEntity")
 
-	if _, err := s.db.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	conn, release := s.acquireConn(ops.RemoveMany, "NetworkEntity")
+	defer release()
+	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
