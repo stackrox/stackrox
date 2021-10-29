@@ -71,7 +71,7 @@ function NavigationSideBar(): ReactElement {
                     path={complianceBasePath}
                 />
                 <NavExpandable
-                    id="Vulnerability Management"
+                    id="VulnerabilityManagement"
                     title="Vulnerability Management"
                     isActive={vulnerabilityManagementPaths.some((paths) =>
                         location.pathname.includes(paths)
@@ -92,7 +92,7 @@ function NavigationSideBar(): ReactElement {
                     path={riskBasePath}
                 />
                 <NavExpandable
-                    id="Platform Configuration"
+                    id="PlatformConfiguration"
                     title="Platform Configuration"
                     isActive={platformConfigurationPaths.some((path) =>
                         location.pathname.includes(path)
