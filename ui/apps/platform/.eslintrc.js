@@ -119,15 +119,6 @@ const commonReactRules = {
     // DEPRECATED in favor of label-has-associated-control
     // https://github.com/evcohen/eslint-plugin-jsx-a11y/blob/master/docs/rules/label-has-for.md#rule-details
     'jsx-a11y/label-has-for': 'off',
-    'jsx-a11y/control-has-associated-label': [
-        'warn',
-        {
-            ignoreElements: ['input', 'textarea'], // rule does not consider label htmlFor attribute
-            labelAttributes: ['label'],
-            controlComponents: ['Dot', 'Labeled'],
-            depth: 3,
-        },
-    ],
 
     // Reconfigure for using react-router Link
     'jsx-a11y/anchor-is-valid': [
