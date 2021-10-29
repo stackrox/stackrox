@@ -32,8 +32,13 @@ function RolesForResourceAccess({ roleNames }: RolesForResourceAccessProps): Rea
         <Flex spaceItems={{ default: 'spaceItemsSm' }}>
             {permittedIcon}
             {roleNames.map((roleName) => (
-                <Button key={roleName} variant="link" isInline>
-                    <Link to={getUserRolePath(roleName)}>{roleName}</Link>
+                <Button
+                    key={roleName}
+                    variant="link"
+                    isInline
+                    component={(props) => <Link {...props} to={getUserRolePath(roleName)} />}
+                >
+                    {roleName}
                 </Button>
             ))}
         </Flex>

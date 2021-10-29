@@ -70,7 +70,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                 <Flex>
                     <FlexItem>
                         <div className="pf-u-background-color-200">
-                            <Nav theme="light">
+                            <Nav aria-label="Roles" theme="light">
                                 <NavList>
                                     <NavItem>
                                         <NavLink
