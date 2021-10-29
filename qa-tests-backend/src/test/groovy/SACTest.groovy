@@ -1,4 +1,5 @@
 import static Services.waitForViolation
+import static services.ClusterService.DEFAULT_CLUSTER_NAME
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
@@ -468,7 +469,7 @@ class SACTest extends BaseSpecification {
         "Searching for categories ${categories} in namespace ${namespace} with basic auth"
         def restrictedQuery = SSOC.RawSearchRequest.newBuilder()
                 .addAllCategories(categories)
-                .setQuery("Cluster:remote+Namespace:${namespace}")
+                .setQuery("Cluster:${DEFAULT_CLUSTER_NAME}+Namespace:${namespace}")
                 .build()
         BaseService.useBasicAuth()
         def restrictedWithBasicAuthCount = SearchService.search(restrictedQuery).resultsCount
@@ -483,7 +484,7 @@ class SACTest extends BaseSpecification {
         useToken(tokenName)
         def unrestrictedQuery = SSOC.RawSearchRequest.newBuilder()
                 .addAllCategories(categories)
-                .setQuery("Cluster:remote")
+                .setQuery("Cluster:${DEFAULT_CLUSTER_NAME}")
                 .build()
         def unrestrictedWithSACCount = SearchService.search(unrestrictedQuery).resultsCount
 

@@ -93,6 +93,7 @@ class BaseSpecification extends Specification {
         BaseService.setUseClientCert(false)
 
         withRetry(10, 1) {
+            assert ClusterService.getClusterId(), "There is no default cluster. Check if all pods are running"
             try {
                 def metadata = MetadataService.getMetadataServiceClient().getMetadata()
                 println "Testing against:"

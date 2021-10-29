@@ -1,6 +1,7 @@
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceControl
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+import static services.ClusterService.DEFAULT_CLUSTER_NAME
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -143,22 +144,26 @@ class ComplianceTest extends BaseSpecification {
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:308_a_3_ii_a",
-                        ["Runtime support is enabled (or collector service is running) for cluster remote. Network " +
-                                 "visualization for active network connections is possible."],
+                        ["Runtime support is enabled (or collector service is running) for cluster "
+                                 + DEFAULT_CLUSTER_NAME
+                                 + ". Network visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:310_d",
-                        ["Runtime support is enabled (or collector service is running) for cluster remote. Network " +
-                                 "visualization for active network connections is possible."],
+                        ["Runtime support is enabled (or collector service is running) for cluster "
+                                + DEFAULT_CLUSTER_NAME
+                                + ". Network visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:310_d",
-                        ["Runtime support is enabled (or collector service is running) for cluster remote. Network " +
-                                 "visualization for active network connections is possible."],
+                        ["Runtime support is enabled (or collector service is running) for cluster "
+                                 + DEFAULT_CLUSTER_NAME
+                                 + ". Network visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "NIST_SP_800_53_Rev_4:RA_3",
-                        ["StackRox is installed in cluster \"remote\", and provides continuous risk assessment."],
+                        ['StackRox is installed in cluster "' + DEFAULT_CLUSTER_NAME +
+                                '", and provides continuous risk assessment.'],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
         if (!ClusterService.isAKS()) { // ROX-6993

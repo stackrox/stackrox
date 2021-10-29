@@ -4,17 +4,18 @@ import static io.stackrox.proto.storage.RoleOuterClass.Access.READ_WRITE_ACCESS
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.Rules
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ApiTokenService.generateToken
+import static services.ClusterService.DEFAULT_CLUSTER_NAME
 
+import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.storage.RoleOuterClass
+
+import groups.BAT
 import services.BaseService
 import services.DeploymentService
 import services.RoleService
 
-import groups.BAT
 import org.junit.experimental.categories.Category
 import spock.lang.Shared
-
-import io.stackrox.proto.api.v1.ApiTokenService
-import io.stackrox.proto.storage.RoleOuterClass
 
 @Category(BAT)
 class SACv2Test extends SACTest {
@@ -33,8 +34,8 @@ class SACv2Test extends SACTest {
         // TODO: Replace with the defaultAccessScope id: "denyall"
         def noaccessScope = RoleService.createAccessScope(newBuilder()
                 .setName("no-access-scope").build())
-        def remoteQaTest1 = createAccessScope("remote", "qa-test1")
-        def remoteQaTest2 = createAccessScope("remote", "qa-test2")
+        def remoteQaTest1 = createAccessScope(DEFAULT_CLUSTER_NAME, "qa-test1")
+        def remoteQaTest2 = createAccessScope(DEFAULT_CLUSTER_NAME, "qa-test2")
 
         def noaccess = createRole(noaccessScope.id, allResourcesAccess)
 
@@ -53,11 +54,12 @@ class SACv2Test extends SACTest {
                         ["Namespace": READ_ACCESS]), noaccess],
                 "searchDeploymentsImagesToken"    : [createRole(remoteQaTest1.id,
                         ["Deployment": READ_ACCESS, "Image": READ_ACCESS]), noaccess],
-                "stackroxNetFlowsToken"           : [createRole(createAccessScope("remote", "stackrox").id,
+                "stackroxNetFlowsToken"           : [createRole(createAccessScope(DEFAULT_CLUSTER_NAME, "stackrox").id,
                         ["Deployment": READ_ACCESS, "NetworkGraph": READ_ACCESS]),
                                                      createRole("", ["Cluster": READ_ACCESS]), noaccess],
                 "kubeSystemDeploymentsImagesToken": [createRole(createAccessScope(
-                        "remote", "kube-system").id, ["Deployment": READ_ACCESS, "Image": READ_ACCESS]), noaccess],
+                        DEFAULT_CLUSTER_NAME, "kube-system").id, ["Deployment": READ_ACCESS, "Image": READ_ACCESS]),
+                                                     noaccess],
                 "aggregatedToken"                 : [createRole(remoteQaTest2.id, ["Deployment": READ_ACCESS]),
                                                      createRole(remoteQaTest1.id, ["Deployment": NO_ACCESS]),
                                                      noaccess],
