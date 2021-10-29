@@ -126,11 +126,10 @@ class BaseSpecification extends Specification {
 
             testRole = RoleOuterClass.Role.newBuilder()
                     .setName("Test Automation Role - ${RUN_ID}")
-                    .putAllResourceToAccess(resourceAccess)
                     .build()
 
             RoleService.deleteRole(testRole.name)
-            RoleService.createRole(testRole)
+            RoleService.createRoleWithPermissionSet(testRole, resourceAccess)
 
             tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRole.name)
         }

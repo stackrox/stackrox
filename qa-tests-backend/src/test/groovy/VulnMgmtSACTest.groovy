@@ -62,10 +62,10 @@ class VulnMgmtSACTest extends BaseSpecification {
     def createReadRole(String name, List<String> resources) {
         def testRole = RoleOuterClass.Role.newBuilder()
                 .setName(name)
-        for (String resource: resources) {
-            testRole.putResourceToAccess(resource, RoleOuterClass.Access.READ_ACCESS)
+        Map<String, RoleOuterClass.Access> resourceToAccess = resources.collectEntries {
+            [it, RoleOuterClass.Access.READ_ACCESS]
         }
-        RoleService.createRole(testRole.build())
+        RoleService.createRoleWithPermissionSet(testRole.build(), resourceToAccess)
         assert RoleService.getRole(testRole.name)
         println "Created Role:\n${testRole}"
     }

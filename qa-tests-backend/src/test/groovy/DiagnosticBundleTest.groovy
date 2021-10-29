@@ -33,11 +33,12 @@ class DiagnosticBundleTest extends BaseSpecification {
 
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
         debugLogsReaderRoleName = UUID.randomUUID()
-        RoleService.createRole(
-                Role.newBuilder().setName(debugLogsReaderRoleName).putAllResourceToAccess([
+        RoleService.createRoleWithPermissionSet(
+                Role.newBuilder().setName(debugLogsReaderRoleName).build(),
+                [
                         "DebugLogs": RoleOuterClass.Access.READ_ACCESS,
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
-                ]).build()
+                ]
         )
         debugLogsReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
                 debugLogsReaderRoleName)
