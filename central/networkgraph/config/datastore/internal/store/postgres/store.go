@@ -149,7 +149,10 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.NetworkGraphConfig, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkGraphConfig")
 
-	row := s.db.QueryRow(context.Background(), getStmt, id)
+	conn, release := s.acquireConn(ops.Get, "NetworkGraphConfig")
+	defer release()
+
+	row := conn.QueryRow(context.Background(), getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
@@ -168,7 +171,10 @@ func (s *storeImpl) Get(id string) (*storage.NetworkGraphConfig, bool, error) {
 func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkGraphConfig, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkGraphConfig")
 
-	rows, err := s.db.Query(context.Background(), getManyStmt, ids)
+	conn, release := s.acquireConn(ops.GetMany, "NetworkGraphConfig")
+	defer release()
+
+	rows, err := conn.Query(context.Background(), getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -228,7 +234,10 @@ func (s *storeImpl) UpsertManyWithIDs(ids []string, objs []*storage.NetworkGraph
 func (s *storeImpl) Delete(id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkGraphConfig")
 
-	if _, err := s.db.Exec(context.Background(), deleteStmt, id); err != nil {
+	conn, release := s.acquireConn(ops.Remove, "NetworkGraphConfig")
+	defer release()
+
+	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
@@ -238,7 +247,9 @@ func (s *storeImpl) Delete(id string) error {
 func (s *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkGraphConfig")
 
-	if _, err := s.db.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	conn, release := s.acquireConn(ops.RemoveMany, "NetworkGraphConfig")
+	defer release()
+	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil

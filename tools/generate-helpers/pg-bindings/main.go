@@ -191,7 +191,10 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.Type}}")
 
-	row := s.db.QueryRow(context.Background(), getStmt, id)
+	conn, release := s.acquireConn(ops.Get, "{{.Type}}")
+	defer release()
+
+	row := conn.QueryRow(context.Background(), getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
@@ -210,7 +213,10 @@ func (s *storeImpl) Get(id string) (*storage.{{.Type}}, bool, error) {
 func (s *storeImpl) GetMany(ids []string) ([]*storage.{{.Type}}, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.Type}}")
 
-	rows, err := s.db.Query(context.Background(), getManyStmt, ids)
+	conn, release := s.acquireConn(ops.GetMany, "{{.Type}}")
+	defer release()
+
+	rows, err := conn.Query(context.Background(), getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -276,7 +282,10 @@ func (s *storeImpl) upsert(id string, obj *storage.{{.Type}}) error {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "{{.Type}}")
-	_, err = s.db.Exec(context.Background(), upsertStmt, {{.InsertionGetters}})
+	conn, release := s.acquireConn(ops.Add, "{{.Type}}")
+	defer release()
+
+	_, err = conn.Exec(context.Background(), upsertStmt, {{.InsertionGetters}})
 	return err
 }
 
@@ -286,11 +295,23 @@ func (s *storeImpl) Upsert(obj *storage.{{.Type}}) error {
 	return s.upsert(keyFunc(obj), obj)
 }
 
+func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+	defer metrics.SetAcquireDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	return conn, conn.Release
+}
+
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.{{.Type}}) error {
 	if len(objs) == 0 {
 		return nil
 	}
+
+	conn, release := s.acquireConn(ops.AddMany, "{{.Type}}")
+	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "{{.Type}}")
 	numElems := {{ .BatchInsertionNumFields }}
@@ -310,7 +331,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.{{.Type}}) error {
 			id := keyFunc(obj)
 			data = append(data, {{.InsertionGetters}})
 		}
-		if _, err := s.db.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
+		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
 		}
 	}
@@ -322,7 +343,10 @@ func (s *storeImpl) UpsertMany(objs []*storage.{{.Type}}) error {
 func (s *storeImpl) Delete(id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.Type}}")
 
-	if _, err := s.db.Exec(context.Background(), deleteStmt, id); err != nil {
+	conn, release := s.acquireConn(ops.Remove, "{{.Type}}")
+	defer release()
+
+	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
@@ -332,7 +356,9 @@ func (s *storeImpl) Delete(id string) error {
 func (s *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.Type}}")
 
-	if _, err := s.db.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	conn, release := s.acquireConn(ops.RemoveMany, "{{.Type}}")
+	defer release()
+	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil

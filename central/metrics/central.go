@@ -63,6 +63,15 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	acquireHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "acquire_op_duration",
+		Help:      "Time taken to perform a dackbox operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Operation", "Type"})
+
 	graphQLOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -188,6 +197,11 @@ func SetPostgresOperationDurationTime(start time.Time, op metrics.Op, t string) 
 // SetJSONPBOperationDurationTime times how long a particular postgres operation took on a particular resource
 func SetJSONPBOperationDurationTime(start time.Time, op string, t string) {
 	jsonpbOperationHistogramVec.With(prometheus.Labels{"Operation": op, "Type": t}).Observe(startTimeToMS(start))
+}
+
+// SetAcquireDuration times how long a particular dackbox operation took on a particular resource
+func SetAcquireDuration(start time.Time, op metrics.Op, t string) {
+	acquireHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
 // SetDackboxOperationDurationTime times how long a particular dackbox operation took on a particular resource
