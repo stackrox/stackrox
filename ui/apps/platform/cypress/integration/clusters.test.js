@@ -1,50 +1,43 @@
 import cloneDeep from 'lodash/cloneDeep';
 
 import { selectors, clustersUrl } from '../constants/ClustersPage';
-import navigationSelectors from '../selectors/navigation';
 import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { visitClusters, visitClustersFromLeftNav } from '../helpers/clusters';
 
 describe('Clusters page', () => {
     withAuth();
 
     describe('smoke tests', () => {
-        beforeEach(() => {
-            cy.visit('/');
-            cy.get(
-                `${navigationSelectors.navExpandable}:contains("Platform Configuration")`
-            ).click();
-            cy.get(
-                `.pf-c-nav__subnav[aria-labelledby="Platform Configuration"] li a:contains("Clusters")`
-            ).click();
-        });
-
         it('should be linked in the Platform Configuration menu', () => {
+            visitClustersFromLeftNav();
             cy.get(selectors.header).contains('Clusters');
         });
 
         it('should have a toggle control for the auto-upgrade setting', () => {
+            visitClusters();
+
             cy.get(selectors.autoUpgradeInput);
         });
 
         it('should display all the columns expected in clusters list page', () => {
-            cy.visit(clustersUrl);
+            visitClusters();
 
-            const expectedHeadings = [
+            [
                 'Name',
                 'Cloud Provider',
                 'Cluster Status',
                 'Sensor Upgrade',
                 'Credential Expiration',
-            ];
-
-            cy.get(selectors.clusters.tableHeadingCell).should(($ths) => {
-                let n = 0;
-                expectedHeadings.forEach((expectedHeading) => {
-                    expect($ths.eq(n).text()).to.equal(expectedHeading);
-                    n += 1;
-                });
-                expect($ths.length).to.equal(n);
+            ].forEach((heading, index) => {
+                /*
+                 * Important: nth is pseudo selector for zero-based index of matching cells.
+                 * Do not use the one-based nth-child selector,
+                 * because tableHeadingCell does not match cells which have first-child and hidden class.
+                 */
+                cy.get(
+                    `${selectors.clusters.tableHeadingCell}:nth(${index}):contains("${heading}")`
+                );
             });
         });
     });
