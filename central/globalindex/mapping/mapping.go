@@ -28,6 +28,7 @@ import (
 	riskMappings "github.com/stackrox/rox/central/risk/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/mappings"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
+	vulnReqMapping "github.com/stackrox/rox/central/vulnerabilityrequest/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -141,6 +142,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: imageComponentEdgeMapping.OptionsMap,
 		v1.SearchCategory_IMAGE_COMPONENTS:     componentSearchOptions,
 		v1.SearchCategory_NODE_COMPONENT_EDGE:  nodeComponentEdgeMappings.OptionsMap,
+		v1.SearchCategory_VULN_REQUEST:         vulnReqMapping.OptionsMap,
 	}
 
 	return entityOptionsMap
