@@ -100,8 +100,8 @@ export const selectors = scopeSelectors('#access-control', {
             },
             userpki: {
                 textareaCertificates: `${getFormGroupControlForLabel(
-                    'IdP Certificate(s) (PEM)'
-                )} textarea`, // TODO sentence case?
+                    'CA certificate(s) (PEM)'
+                )} textarea`,
             },
             iap: {
                 inputAudience: `${getFormGroupControlForLabel('Audience')} input`,

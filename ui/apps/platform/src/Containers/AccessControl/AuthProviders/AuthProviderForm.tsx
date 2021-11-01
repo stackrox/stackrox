@@ -161,9 +161,7 @@ function AuthProviderForm({
             .when('type', {
                 is: 'userpki',
                 then: yup.object({
-                    idp_cert_pem: yup
-                        .string()
-                        .required('One or more IdP certificate (PEM) is required.'),
+                    keys: yup.string().required('One or more CA certificates (PEM) is required.'),
                 }),
             })
             .when('type', {
