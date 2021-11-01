@@ -1,11 +1,10 @@
-import React, { useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
+import { Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
-import BinderTabs from 'Components/BinderTabs';
-import Tab from 'Components/Tab';
 import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import CVETable from 'Containers/Images/CVETable';
@@ -16,11 +15,16 @@ import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntity
 import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 
 import ScanDataMessage from './ScanDataMessage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
+
+// TODO: replace this import with real observed/deferred/false positive implementation
+import ObservedCVEsPOCMockTable from '../../Components/ObservedCVEsPOCMockTable';
 
 const emptyImage = {
     deploymentCount: 0,
@@ -38,7 +42,16 @@ const emptyImage = {
 };
 
 const VulnMgmtImageOverview = ({ data, entityContext }) => {
+    const [activeKeyTab, setActiveKeyTab] = useState('OBSERVED_CVES');
     const workflowState = useContext(workflowStateContext);
+    const isVulnRiskManagementEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
+    );
+
+    function onSelectTab(event, eventKey) {
+        event.preventDefault(); // without this, the page refreshes with empty query string :(
+        setActiveKeyTab(eventKey);
+    }
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
@@ -151,17 +164,58 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 </CollapsibleSection>
                 <CollapsibleSection title="Image Findings">
                     <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4">
-                        <BinderTabs>
-                            <Tab title="Fixable CVEs">
-                                <TableWidgetFixableCves
-                                    workflowState={workflowState}
-                                    entityContext={entityContext}
-                                    entityType={entityTypes.IMAGE}
-                                    name={safeData?.name?.fullName}
-                                    id={safeData?.id}
-                                />
-                            </Tab>
-                        </BinderTabs>
+                        {/* TODO: replace these 3 repeated Fixable CVEs tabs with tabs for
+                            Observed, Deferred, and False Postive CVEs tables */}
+                        {isVulnRiskManagementEnabled ? (
+                            <div className="w-full">
+                                <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
+                                    <Tab
+                                        eventKey="OBSERVED_CVES"
+                                        tabContentId="OBSERVED_CVES"
+                                        title={<TabTitleText>Observed CVEs</TabTitleText>}
+                                    />
+                                    <Tab
+                                        eventKey="DEFERRED_CVES"
+                                        tabContentId="DEFERRED_CVES"
+                                        title={<TabTitleText>Deferred CVEs</TabTitleText>}
+                                    />
+                                    <Tab
+                                        eventKey="FALSE_POSITIVE_CVES"
+                                        tabContentId="FALSE_POSITIVE_CVES"
+                                        title={<TabTitleText>False positive CVEs</TabTitleText>}
+                                    />
+                                </Tabs>
+                                <TabContent
+                                    eventKey="OBSERVED_CVES"
+                                    id="OBSERVED_CVES"
+                                    hidden={activeKeyTab !== 'OBSERVED_CVES'}
+                                >
+                                    <ObservedCVEsPOCMockTable />
+                                </TabContent>
+                                <TabContent
+                                    eventKey="DEFERRED_CVES"
+                                    id="DEFERRED_CVES"
+                                    hidden={activeKeyTab !== 'DEFERRED_CVES'}
+                                >
+                                    <ObservedCVEsPOCMockTable />
+                                </TabContent>
+                                <TabContent
+                                    eventKey="FALSE_POSITIVE_CVES"
+                                    id="FALSE_POSITIVE_CVES"
+                                    hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
+                                >
+                                    <ObservedCVEsPOCMockTable />
+                                </TabContent>
+                            </div>
+                        ) : (
+                            <TableWidgetFixableCves
+                                workflowState={workflowState}
+                                entityContext={entityContext}
+                                entityType={entityTypes.IMAGE}
+                                name={safeData?.name?.fullName}
+                                id={safeData?.id}
+                            />
+                        )}
                     </div>
                 </CollapsibleSection>
             </div>
