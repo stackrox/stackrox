@@ -2213,14 +2213,6 @@ jobs:
             # Matches comments of the form TODO(x), where x can be "DO NOT MERGE/don't-merge"/"dont-merge"/similar
             ./scripts/check-todos.sh 'do\s?n.*merge'
 
-
-      # Only run checks after here if operator has changes
-      - check-to-run:
-          label: ci-openshift-4-operator-tests
-          run-on-master: true
-          run-on-tags: true
-          changed-path: '^operator/'
-
       - run:
           name: Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)
           no_output_timeout: 30m
