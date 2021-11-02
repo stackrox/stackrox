@@ -97,7 +97,7 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
-          runAsUser: 4000
+          runAsUser: 65534
         readinessProbe:
           httpGet:
             scheme: HTTPS
