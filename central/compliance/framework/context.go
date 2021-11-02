@@ -19,6 +19,9 @@ import (
 // errors may be recorded. This is accomplished by calling `Abort` within a check function.
 //go:generate mockgen-wrapper
 type ComplianceContext interface {
+	// StandardName returns the current standard name
+	StandardName() string
+
 	// Domain returns the compliance domain.
 	Domain() ComplianceDomain
 	// Data returns an interface to the data repository.
@@ -38,27 +41,35 @@ type ComplianceContext interface {
 }
 
 func newToplevelContext(
+	standardName string,
 	domain ComplianceDomain,
 	data ComplianceDataRepository,
 	rootResults *results,
 	stopSig *concurrency.ErrorSignal) *baseContext {
 	ctx := &baseContext{
-		data:    data,
-		domain:  domain,
-		stopSig: stopSig,
-		target:  domain.Cluster(),
-		results: rootResults,
+		standardName: standardName,
+		data:         data,
+		domain:       domain,
+		stopSig:      stopSig,
+		target:       domain.Cluster(),
+		results:      rootResults,
 	}
 	return ctx
 }
 
 type baseContext struct {
-	data    ComplianceDataRepository
-	domain  ComplianceDomain
-	stopSig *concurrency.ErrorSignal
+	standardName string
+	data         ComplianceDataRepository
+	domain       ComplianceDomain
+	stopSig      *concurrency.ErrorSignal
 
 	target  ComplianceTarget
 	results *results
+}
+
+func (c *baseContext) StandardName() string {
+	c.checkErr()
+	return c.standardName
 }
 
 func (c *baseContext) Domain() ComplianceDomain {

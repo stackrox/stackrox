@@ -57,6 +57,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"complianceoperatorprofiles":           (*storage.ComplianceOperatorProfile)(nil),
 	"complianceoperatorrules":              (*storage.ComplianceOperatorRule)(nil),
 	"complianceoperatorscansettingbinding": (*storage.ComplianceOperatorScanSettingBinding)(nil),
+	"complianceoperatorscans":              (*storage.ComplianceOperatorScan)(nil),
 	"deployments":                          (*storage.Deployment)(nil),
 	"deployments_list":                     (*storage.ListDeployment)(nil),
 	"imageBucket":                          (*storage.Image)(nil),

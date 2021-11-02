@@ -126,7 +126,7 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, m
 	log.Infof("Starting evaluating checks (%d checks total) for run %s for cluster %q and standard %q", len(r.standard.AllChecks()), r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
 	r.updateStatus(v1.ComplianceRun_EVALUTING_CHECKS)
 
-	if err := run.Run(r.ctx, r.domain, data); err != nil {
+	if err := run.Run(r.ctx, r.standard.Name, r.domain, data); err != nil {
 		log.Errorf("Error evaluating checks for run %s for cluster %q and standard %q: %v", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name, err)
 		return nil, nil, err
 	}

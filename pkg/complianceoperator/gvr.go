@@ -30,6 +30,12 @@ var (
 		Resource: "scansettingbindings",
 	}
 
+	ScanGVR = schema.GroupVersionResource{
+		Group:    complianceGroup,
+		Version:  complianceVersion,
+		Resource: "compliancescans",
+	}
+
 	RuleGVR = schema.GroupVersionResource{
 		Group:    complianceGroup,
 		Version:  complianceVersion,

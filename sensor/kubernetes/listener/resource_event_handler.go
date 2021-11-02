@@ -86,7 +86,7 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	var dynamicFactory dynamicinformer.DynamicSharedInformerFactory
-	var complianceResultInformer, complianceProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer cache.SharedIndexInformer
+	var complianceResultInformer, complianceProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer cache.SharedIndexInformer
 	if features.ComplianceOperatorCheckResults.Enabled() {
 		if ok, err := complianceCRDExists(k.client.Kubernetes()); err != nil {
 			log.Errorf("error finding compliance CRD: %v", err)
@@ -99,6 +99,7 @@ func (k *listenerImpl) handleAllEvents() {
 			complianceProfileInformer = dynamicFactory.ForResource(complianceoperator.ProfileGVR).Informer()
 			complianceScanSettingBindingsInformer = dynamicFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
 			complianceRuleInformer = dynamicFactory.ForResource(complianceoperator.RuleGVR).Informer()
+			complianceScanInformer = dynamicFactory.ForResource(complianceoperator.ScanGVR).Informer()
 		}
 	}
 	if complianceResultInformer != nil {
@@ -107,6 +108,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
 		handle(complianceRuleInformer, dispatchers.ForComplianceOperatorRules(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
 		handle(complianceScanSettingBindingsInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
+		handle(complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
 	}
 
 	sif.Start(stopSignal.Done())

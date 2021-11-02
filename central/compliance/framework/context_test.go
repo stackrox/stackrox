@@ -22,7 +22,7 @@ func TestContextAccessChecksForError(t *testing.T) {
 	}
 
 	stopSig := concurrency.NewErrorSignal()
-	ctx := newToplevelContext(testDomain, nil, newResults(), &stopSig)
+	ctx := newToplevelContext("", testDomain, nil, newResults(), &stopSig)
 	go func() {
 		stopSig.SignalWithError(errors.New("error"))
 		syncSig.Signal()
@@ -44,7 +44,7 @@ func TestContextStopAbortsCurrentCheckOnly(t *testing.T) {
 	}
 
 	stopSig := concurrency.NewErrorSignal()
-	ctx := newToplevelContext(testDomain, nil, newResults(), &stopSig)
+	ctx := newToplevelContext("", testDomain, nil, newResults(), &stopSig)
 
 	ForEachNode(ctx, checkFn)
 	assert.Equal(t, expectedNodeIDs, seenNodeIDs)

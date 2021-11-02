@@ -43,6 +43,7 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorProfiles() Dispatcher
 	ForComplianceOperatorRules() Dispatcher
 	ForComplianceOperatorScanSettingBindings() Dispatcher
+	ForComplianceOperatorScans() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
@@ -74,6 +75,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister,
 		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),
 		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
 		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(),
+		complianceOperatorScanDispatcher:                complianceOperatorDispatchers.NewScanDispatcher(),
 	}
 }
 
@@ -93,6 +95,7 @@ type registryImpl struct {
 	complianceOperatorProfileDispatcher             *complianceOperatorDispatchers.ProfileDispatcher
 	complianceOperatorScanSettingBindingsDispatcher *complianceOperatorDispatchers.ScanSettingBindings
 	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
+	complianceOperatorScanDispatcher                *complianceOperatorDispatchers.ScanDispatcher
 }
 
 func wrapWithMetricDispatcher(d Dispatcher) Dispatcher {
@@ -176,4 +179,8 @@ func (d *registryImpl) ForComplianceOperatorRules() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
 	return wrapWithMetricDispatcher(d.complianceOperatorScanSettingBindingsDispatcher)
+}
+
+func (d *registryImpl) ForComplianceOperatorScans() Dispatcher {
+	return wrapWithMetricDispatcher(d.complianceOperatorScanDispatcher)
 }

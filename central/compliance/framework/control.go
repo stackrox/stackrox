@@ -47,7 +47,7 @@ func ForEachDeployment(ctx ComplianceContext, checkFn func(ComplianceContext, *s
 }
 
 func forEachMachineConfig(ctx ComplianceContext, check CheckFunc) {
-	for _, mc := range ctx.Domain().MachineConfigs() {
+	for _, mc := range ctx.Domain().MachineConfigs()[ctx.StandardName()] {
 		RunForTarget(ctx, mc, check)
 	}
 }

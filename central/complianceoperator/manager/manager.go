@@ -11,6 +11,7 @@ import (
 	checkResultsDatastore "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/profiles/datastore"
 	rulesDatastore "github.com/stackrox/rox/central/complianceoperator/rules/datastore"
+	scansDatastore "github.com/stackrox/rox/central/complianceoperator/scans/datastore"
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
@@ -38,10 +39,13 @@ type Manager interface {
 	AddRule(rule *storage.ComplianceOperatorRule) error
 	DeleteRule(rule *storage.ComplianceOperatorRule) error
 
+	AddScan(scan *storage.ComplianceOperatorScan) error
+	DeleteScan(scan *storage.ComplianceOperatorScan) error
+
 	IsStandardActive(standardID string) bool
 	IsStandardActiveForCluster(standardID, clusterID string) bool
 
-	GetMachineConfigs(clusterID string) ([]string, error)
+	GetMachineConfigs(clusterID string) (map[string][]string, error)
 }
 
 type managerImpl struct {
@@ -51,17 +55,19 @@ type managerImpl struct {
 	compliance          complianceDatastore.DataStore
 	profiles            profileDatastore.DataStore
 	scanSettingBindings scanSettingBindingDatastore.DataStore
+	scans               scansDatastore.DataStore
 	rules               rulesDatastore.DataStore
 	results             checkResultsDatastore.DataStore
 }
 
 // NewManager returns a new manager of compliance operator resources
-func NewManager(registry *standards.Registry, profiles profileDatastore.DataStore, scanSettingBindings scanSettingBindingDatastore.DataStore, rules rulesDatastore.DataStore, results checkResultsDatastore.DataStore, compliance complianceDatastore.DataStore) (Manager, error) {
+func NewManager(registry *standards.Registry, profiles profileDatastore.DataStore, scans scansDatastore.DataStore, scanSettingBindings scanSettingBindingDatastore.DataStore, rules rulesDatastore.DataStore, results checkResultsDatastore.DataStore, compliance complianceDatastore.DataStore) (Manager, error) {
 	mgr := &managerImpl{
 		registry: registry,
 
 		compliance:          compliance,
 		profiles:            profiles,
+		scans:               scans,
 		scanSettingBindings: scanSettingBindings,
 		rules:               rules,
 		results:             results,
@@ -287,6 +293,14 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 	return nil
 }
 
+func (m *managerImpl) AddScan(scan *storage.ComplianceOperatorScan) error {
+	return m.scans.Upsert(allAccessCtx, scan)
+}
+
+func (m *managerImpl) DeleteScan(scan *storage.ComplianceOperatorScan) error {
+	return m.scans.Delete(allAccessCtx, scan.GetId())
+}
+
 func (m *managerImpl) IsStandardActive(standardID string) bool {
 	standard, ok, err := m.registry.Standard(standardID)
 	if err != nil {
@@ -358,39 +372,32 @@ func (m *managerImpl) getRule(name string) (*storage.ComplianceOperatorRule, err
 	return rules[0], nil
 }
 
-func (m *managerImpl) GetMachineConfigs(clusterID string) ([]string, error) {
-	machineConfigRuleSet := set.NewStringSet()
+func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, error) {
+	profileIDsToNames := make(map[string]string)
 	err := m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
 		if profile.GetClusterId() == clusterID && profile.Annotations[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
-			for _, profileRule := range profile.GetRules() {
-				if rule, err := m.getRule(profileRule.GetName()); err != nil {
-					return err
-				} else if rule != nil {
-					machineConfigRuleSet.Add(getRuleName(rule))
-				}
-			}
+			profileIDsToNames[profile.GetProfileId()] = profile.GetName()
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	machineConfigs := set.NewStringSet()
-	err = m.results.Walk(allAccessCtx, func(result *storage.ComplianceOperatorCheckResult) error {
-		if result.GetClusterId() != clusterID {
+
+	profilesToScan := make(map[string][]string)
+	err = m.scans.Walk(allAccessCtx, func(scan *storage.ComplianceOperatorScan) error {
+		if scan.GetClusterId() != clusterID {
 			return nil
 		}
-		if machineConfigRuleSet.Contains(result.Annotations[v1alpha1.RuleIDAnnotationKey]) {
-			if label, ok := result.Labels[v1alpha1.ComplianceScanLabel]; ok {
-				machineConfigs.Add(label)
-			}
+		if profileName, ok := profileIDsToNames[scan.GetProfileId()]; ok {
+			profilesToScan[profileName] = append(profilesToScan[profileName], scan.GetName())
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return machineConfigs.AsSlice(), nil
+	return profilesToScan, nil
 }
 
 func (m *managerImpl) findProfilesWithRuleNoLock(ruleName string) ([]*storage.ComplianceOperatorProfile, error) {

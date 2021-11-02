@@ -191,7 +191,7 @@ func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults 
 	}
 
 	machineConfigResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
-	for _, mc := range r.domain.MachineConfigs() {
+	for _, mc := range r.domain.MachineConfigs()[r.standard.Name] {
 		if results := collectEntityResults(mc, checks, allResults, nil); len(results.GetControlResults()) != 0 {
 			machineConfigResults[mc.ID()] = results
 		}

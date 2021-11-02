@@ -100,6 +100,20 @@ func (mr *MockComplianceContextMockRecorder) RecordEvidence(status, message inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordEvidence", reflect.TypeOf((*MockComplianceContext)(nil).RecordEvidence), status, message)
 }
 
+// StandardName mocks base method.
+func (m *MockComplianceContext) StandardName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StandardName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// StandardName indicates an expected call of StandardName.
+func (mr *MockComplianceContextMockRecorder) StandardName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StandardName", reflect.TypeOf((*MockComplianceContext)(nil).StandardName))
+}
+
 // Target mocks base method.
 func (m *MockComplianceContext) Target() framework.ComplianceTarget {
 	m.ctrl.T.Helper()

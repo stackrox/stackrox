@@ -208,7 +208,7 @@ func runtimeTest(t *testing.T, c *testStruct, validationFunc func(*testing.T, fr
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
-	err = run.Run(context.Background(), domain, data)
+	err = run.Run(context.Background(), "standard", domain, data)
 	require.NoError(t, err)
 
 	results := run.GetAllResults()
