@@ -18,7 +18,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	gracePeriod int64 = 0
+	gracePeriod int64
 )
 
 func applyJitter(t time.Duration) time.Duration {

@@ -63,7 +63,7 @@ type deploymentWrap struct {
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
 func doesFieldExist(value reflect.Value) bool {
-	return !reflect.DeepEqual(value, reflect.Value{})
+	return value.IsValid()
 }
 
 func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
