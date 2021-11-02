@@ -34,14 +34,14 @@ type flowStoreImpl struct {
 
 // GetAllFlows returns all the flows in the store.
 func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
 	flows, ts, err = s.readFlows(nil, since)
 	return flows, ts, err
 }
 
 func (s *flowStoreImpl) GetMatchingFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 	flows, ts, err = s.readFlows(pred, since)
 	return flows, ts, err
 }
@@ -78,7 +78,7 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 }
 
 func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
-	_, err := s.db.Exec(context.Background(), "delete from networkflows where ")
+	_, err := s.db.Exec(context.Background(), "delete from networkflows where value->'dstEntity'->>'id' = $1 or value->'srcEntity'->>'id' = $1", id)
 	return err
 }
 
@@ -90,6 +90,8 @@ func (s *flowStoreImpl) RemoveMatchingFlows(keyMatchFn func(props *storage.Netwo
 func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
 	// The entry for this should be present, but make sure we have a sane default if it is not
 	lastUpdateTS = *types.TimestampNow()
+
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlowProperties")
 
 	query := "select value from networkflows where clusterid = $1"
 	rows, err := s.db.Query(context.Background(), query, s.clusterID)
