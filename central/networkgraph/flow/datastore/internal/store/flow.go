@@ -13,7 +13,6 @@ type FlowStore interface {
 	GetMatchingFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
 
 	UpsertFlows(flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
-	RemoveFlow(props *storage.NetworkFlowProperties) error
 
 	RemoveFlowsForDeployment(id string) error
 	RemoveMatchingFlows(keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error

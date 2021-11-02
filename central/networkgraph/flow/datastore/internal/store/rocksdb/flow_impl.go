@@ -79,19 +79,6 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 	return s.db.Write(writeOptions, batch)
 }
 
-// RemoveFlow removes an flow from the store if it is present.
-func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
-	if err := s.db.IncRocksDBInProgressOps(); err != nil {
-		return err
-	}
-	defer s.db.DecRocksDBInProgressOps()
-
-	id := s.getID(props)
-
-	return s.db.Delete(writeOptions, id)
-}
-
 func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err

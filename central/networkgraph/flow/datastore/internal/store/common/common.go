@@ -35,6 +35,10 @@ func GetID(props *storage.NetworkFlowProperties) []byte {
 	return []byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", int32(props.GetSrcEntity().GetType()), props.GetSrcEntity().GetId(), int32(props.GetDstEntity().GetType()), props.GetDstEntity().GetId(), props.GetDstPort(), int32(props.GetL4Protocol())))
 }
 
+func GetIDString(props *storage.NetworkFlowProperties) string {
+	return fmt.Sprintf("%x:%s:%x:%s:%x:%x", int32(props.GetSrcEntity().GetType()), props.GetSrcEntity().GetId(), int32(props.GetDstEntity().GetType()), props.GetDstEntity().GetId(), props.GetDstPort(), int32(props.GetL4Protocol()))
+}
+
 // ParseID parses the bytes into a storage.NetworkFlowProperties struct
 func ParseID(id []byte) (*storage.NetworkFlowProperties, error) {
 	parts := strings.Split(string(id), ":")
