@@ -7,6 +7,7 @@ import {
     violationsPath,
     riskPath,
     policiesPath,
+    policiesPathPatternFly,
     imagesPath,
     secretsPath,
     networkPath,
@@ -113,8 +114,17 @@ export default function* searches() {
             deploymentsActions.setDeploymentsSearchOptions,
             'categories=DEPLOYMENTS'
         ),
+        // TODO: remove once policies is fully migrated over to PF
         takeEveryNewlyMatchedLocation(
             policiesPath,
+            getSearchOptions,
+            policiesActions.setPoliciesSearchModifiers,
+            policiesActions.setPoliciesSearchSuggestions,
+            policiesActions.setPoliciesSearchOptions,
+            'categories=POLICIES'
+        ),
+        takeEveryNewlyMatchedLocation(
+            policiesPathPatternFly,
             getSearchOptions,
             policiesActions.setPoliciesSearchModifiers,
             policiesActions.setPoliciesSearchSuggestions,
