@@ -68,7 +68,6 @@ metadata:
   name: central-db
   namespace: stackrox
 spec:
-  storageClassName: premium-rwo
   accessModes:
   - ReadWriteOnce
   resources:

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -34,29 +35,31 @@ func GetPostgresDB() *pgxpool.Pool {
 	pgInit.Do(func() {
 		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=60000 pool_min_conns=90 pool_max_conns=90"
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+		retry.WithRetry(func() error {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 
-		config, err := pgxpool.ParseConfig(source)
-		if err != nil {
-			panic(err)
-		}
-		pool, err := pgxpool.ConnectConfig(ctx, config)
-		if err != nil {
-			panic(err)
-		}
+			config, err := pgxpool.ParseConfig(source)
+			if err != nil {
+				panic(err)
+			}
+			pool, err := pgxpool.ConnectConfig(ctx, config)
+			if err != nil {
+				panic(err)
+			}
 
-		conn, err := pool.Acquire(context.Background())
-		if err != nil {
-			panic(err)
-		}
-		defer conn.Release()
-		t := time.Now()
-		conn.Conn().Ping(context.Background())
-		fmt.Println("Ping Nanos: ", time.Since(t).Nanoseconds())
-		pgDB = pool
-
-		go startMonitoringPostgresDB(pool)
+			conn, err := pool.Acquire(context.Background())
+			if err != nil {
+				panic(err)
+			}
+			defer conn.Release()
+			t := time.Now()
+			conn.Conn().Ping(context.Background())
+			fmt.Println("Ping Nanos: ", time.Since(t).Nanoseconds())
+			pgDB = pool
+			return nil
+		}, retry.Tries(20))
+		go startMonitoringPostgresDB(pgDB)
 	})
 	return pgDB
 }
