@@ -7,7 +7,13 @@ export const severityLabels = Object.freeze({
     LOW_SEVERITY: 'Low',
 });
 
-export const cvssSeverityLabels = Object.freeze({
+export type VulnerabilitySeverity =
+    | 'LOW_VULNERABILITY_SEVERITY'
+    | 'MODERATE_VULNERABILITY_SEVERITY'
+    | 'IMPORTANT_VULNERABILITY_SEVERITY'
+    | 'CRITICAL_VULNERABILITY_SEVERITY';
+
+export const vulnerabilitySeverityLabels: Record<VulnerabilitySeverity, string> = Object.freeze({
     CRITICAL_VULNERABILITY_SEVERITY: 'Critical',
     IMPORTANT_VULNERABILITY_SEVERITY: 'Important',
     MODERATE_VULNERABILITY_SEVERITY: 'Moderate',

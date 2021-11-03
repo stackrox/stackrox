@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { cvssSeverityLabels } from 'messages/common';
+import { vulnerabilitySeverityLabels } from 'messages/common';
 
 const labelClassName = 'px-2 rounded-sm p-1 border text-base';
 
@@ -20,7 +20,7 @@ const getSeverityClassName = (severity) => {
 };
 
 const CVSSSeverityLabel = ({ severity }) => (
-    <span className={getSeverityClassName(severity)}>{cvssSeverityLabels[severity]}</span>
+    <span className={getSeverityClassName(severity)}>{vulnerabilitySeverityLabels[severity]}</span>
 );
 
 CVSSSeverityLabel.propTypes = {

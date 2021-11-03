@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
-import { Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
+import { Card, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
@@ -23,8 +23,9 @@ import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
 
-// TODO: replace this import with real observed/deferred/false positive implementation
-import ObservedCVEsPOCMockTable from '../../Components/ObservedCVEsPOCMockTable';
+import ObservedCVEs from './ObservedCVEs';
+import DeferredCVEs from './DeferredCVEs';
+import FalsePositiveCVEs from './FalsePositiveCVEs';
 
 const emptyImage = {
     deploymentCount: 0,
@@ -168,44 +169,46 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                             Observed, Deferred, and False Postive CVEs tables */}
                         {isVulnRiskManagementEnabled ? (
                             <div className="w-full">
-                                <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
-                                    <Tab
+                                <Card isFlat>
+                                    <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
+                                        <Tab
+                                            eventKey="OBSERVED_CVES"
+                                            tabContentId="OBSERVED_CVES"
+                                            title={<TabTitleText>Observed CVEs</TabTitleText>}
+                                        />
+                                        <Tab
+                                            eventKey="DEFERRED_CVES"
+                                            tabContentId="DEFERRED_CVES"
+                                            title={<TabTitleText>Deferred CVEs</TabTitleText>}
+                                        />
+                                        <Tab
+                                            eventKey="FALSE_POSITIVE_CVES"
+                                            tabContentId="FALSE_POSITIVE_CVES"
+                                            title={<TabTitleText>False positive CVEs</TabTitleText>}
+                                        />
+                                    </Tabs>
+                                    <TabContent
                                         eventKey="OBSERVED_CVES"
-                                        tabContentId="OBSERVED_CVES"
-                                        title={<TabTitleText>Observed CVEs</TabTitleText>}
-                                    />
-                                    <Tab
+                                        id="OBSERVED_CVES"
+                                        hidden={activeKeyTab !== 'OBSERVED_CVES'}
+                                    >
+                                        <ObservedCVEs />
+                                    </TabContent>
+                                    <TabContent
                                         eventKey="DEFERRED_CVES"
-                                        tabContentId="DEFERRED_CVES"
-                                        title={<TabTitleText>Deferred CVEs</TabTitleText>}
-                                    />
-                                    <Tab
+                                        id="DEFERRED_CVES"
+                                        hidden={activeKeyTab !== 'DEFERRED_CVES'}
+                                    >
+                                        <DeferredCVEs />
+                                    </TabContent>
+                                    <TabContent
                                         eventKey="FALSE_POSITIVE_CVES"
-                                        tabContentId="FALSE_POSITIVE_CVES"
-                                        title={<TabTitleText>False positive CVEs</TabTitleText>}
-                                    />
-                                </Tabs>
-                                <TabContent
-                                    eventKey="OBSERVED_CVES"
-                                    id="OBSERVED_CVES"
-                                    hidden={activeKeyTab !== 'OBSERVED_CVES'}
-                                >
-                                    <ObservedCVEsPOCMockTable />
-                                </TabContent>
-                                <TabContent
-                                    eventKey="DEFERRED_CVES"
-                                    id="DEFERRED_CVES"
-                                    hidden={activeKeyTab !== 'DEFERRED_CVES'}
-                                >
-                                    <ObservedCVEsPOCMockTable />
-                                </TabContent>
-                                <TabContent
-                                    eventKey="FALSE_POSITIVE_CVES"
-                                    id="FALSE_POSITIVE_CVES"
-                                    hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
-                                >
-                                    <ObservedCVEsPOCMockTable />
-                                </TabContent>
+                                        id="FALSE_POSITIVE_CVES"
+                                        hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
+                                    >
+                                        <FalsePositiveCVEs />
+                                    </TabContent>
+                                </Card>
                             </div>
                         ) : (
                             <TableWidgetFixableCves

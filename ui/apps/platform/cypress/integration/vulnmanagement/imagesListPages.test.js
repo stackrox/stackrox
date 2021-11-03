@@ -7,6 +7,7 @@ import {
     allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
 import { hasFeatureFlag } from '../../helpers/features';
+import * as api from '../../constants/apiEndpoints';
 
 describe('Images list page and its entity detail page, related entities sub list validations ', () => {
     withAuth();
@@ -14,7 +15,10 @@ describe('Images list page and its entity detail page, related entities sub list
     const vulnRiskCveTabsEnabled = hasFeatureFlag('ROX_VULN_RISK_MANAGEMENT');
 
     it('should display all the columns and links expected in images list page', () => {
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities('IMAGE')).as('getImages');
         cy.visit(url.list.images);
+        cy.wait('@getImages');
+
         hasExpectedHeaderColumns([
             'Image',
             'CVEs',
@@ -36,28 +40,19 @@ describe('Images list page and its entity detail page, related entities sub list
             }
             if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
                 if (vulnRiskCveTabsEnabled) {
-                    cy.get(selectors.tableBodyColumn).eq(0).click({ force: true });
+                    cy.get(`${selectors.tableBodyColumn}:eq(0)`).click({ force: true });
 
-                    cy.get('.pf-c-tabs .pf-c-tabs__item')
-                        .select(0)
-                        .contains('Observed CVEs', {
-                            timeout: 6000,
-                        })
-                        .click();
+                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(0):contains("Observed CVEs")').click();
 
-                    cy.get('.pf-c-tabs .pf-c-tabs__item')
-                        .select(1)
-                        .contains('Deferred CVEs', {
-                            timeout: 6000,
-                        })
-                        .click();
+                    /* 
 
-                    cy.get('.pf-c-tabs .pf-c-tabs__item')
-                        .select(2)
-                        .contains('False Positive CVEs', {
-                            timeout: 6000,
-                        })
-                        .click();
+                    @TODO: Uncomment when the tables are made
+                    
+                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(1):contains("Deferred CVEs")').click();
+
+                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False Positive CVEs")').click(); 
+                        
+                    */
                 } else {
                     allFixableCheck(url.list.images);
                 }
@@ -71,7 +66,9 @@ describe('Images list page and its entity detail page, related entities sub list
     });
 
     it('should show entity icon, not back button, if there is only one item on the side panel stack', () => {
+        cy.intercept('POST', api.vulnMgmt.graphqlEntities('IMAGE')).as('getImages');
         cy.visit(url.list.images);
+        cy.wait('@getImages');
 
         cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
         cy.wait(1000);
