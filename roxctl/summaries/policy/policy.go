@@ -145,21 +145,21 @@ func createResultsForEntities(entityMetadataMap map[string]EntityMetadata,
 func createEntityMetadataMap(alerts []*storage.Alert) map[string]EntityMetadata {
 	var result = map[string]EntityMetadata{}
 	for _, alert := range alerts {
-		var metadata = map[string]string{}
+		var additionalInfo = map[string]string{}
 		entityID := getEntityIDFromAlert(alert)
 		switch entity := alert.Entity.(type) {
 		case *storage.Alert_Deployment_:
 			if _, exists := result[entityID]; !exists {
-				metadata["name"] = entity.Deployment.Name
-				metadata["type"] = entity.Deployment.Type
-				metadata["namespace"] = entity.Deployment.Namespace
-				result[entityID] = EntityMetadata{Metadata: metadata, ID: entityID}
+				additionalInfo["name"] = entity.Deployment.Name
+				additionalInfo["type"] = entity.Deployment.Type
+				additionalInfo["namespace"] = entity.Deployment.Namespace
+				result[entityID] = EntityMetadata{AdditionalInfo: additionalInfo, ID: entityID}
 			}
 		case *storage.Alert_Image:
 			if _, exists := result[entityID]; !exists {
-				metadata["name"] = entity.Image.Name.GetFullName()
-				metadata["type"] = "image"
-				result[entityID] = EntityMetadata{Metadata: metadata, ID: entityID}
+				additionalInfo["name"] = entity.Image.Name.GetFullName()
+				additionalInfo["type"] = "image"
+				result[entityID] = EntityMetadata{AdditionalInfo: additionalInfo, ID: entityID}
 			}
 		default:
 			// this should theoretically not happen, this means that an unknown entity is specified.
@@ -207,7 +207,7 @@ func getEntityIDFromAlert(alert *storage.Alert) string {
 	case *storage.Alert_Deployment_:
 		return entity.Deployment.GetId()
 	case *storage.Alert_Image:
-		return entity.Image.GetId()
+		return entity.Image.Name.GetFullName()
 	}
 	// return an "unkown" id opposed to an empty string; we still create the report, but the metadata
 	// will be empty
@@ -284,13 +284,13 @@ func sortPoliciesBySeverity(policies []Policy) []Policy {
 // sortMetadataByEntity sorts EntityMetadata by their type's name and by name
 func sortMetadataByEntity(metadata []EntityMetadata) []EntityMetadata {
 	sort.SliceStable(metadata, func(i, j int) bool {
-		if metadata[i].Metadata["type"] < metadata[j].Metadata["type"] {
+		if metadata[i].AdditionalInfo["type"] < metadata[j].AdditionalInfo["type"] {
 			return true
 		}
-		if metadata[i].Metadata["type"] > metadata[j].Metadata["type"] {
+		if metadata[i].AdditionalInfo["type"] > metadata[j].AdditionalInfo["type"] {
 			return false
 		}
-		return metadata[i].Metadata["name"] < metadata[j].Metadata["name"]
+		return metadata[i].AdditionalInfo["name"] < metadata[j].AdditionalInfo["name"]
 	})
 	return metadata
 }
@@ -335,6 +335,6 @@ type BreakingPolicy struct {
 
 // EntityMetadata provides information about the entity associated with the policy results
 type EntityMetadata struct {
-	ID       string `json:"id"`
-	Metadata map[string]string
+	ID             string            `json:"id"`
+	AdditionalInfo map[string]string `json:"additionalInfo"`
 }

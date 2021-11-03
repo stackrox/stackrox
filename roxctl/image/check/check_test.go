@@ -316,7 +316,7 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
     {
       "metadata": {
         "id": "unknown",
-        "Metadata": null
+        "additionalInfo": null
       },
       "summary": {
         "CRITICAL": 0,
@@ -383,7 +383,7 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
     {
       "metadata": {
         "id": "unknown",
-        "Metadata": null
+        "additionalInfo": null
       },
       "summary": {
         "CRITICAL": 1,

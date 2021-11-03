@@ -264,7 +264,7 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 					{
 						Metadata: EntityMetadata{
 							ID: "deployment",
-							Metadata: map[string]string{
+							AdditionalInfo: map[string]string{
 								"name":      "test-deployment",
 								"type":      "deployment",
 								"namespace": "default",
@@ -303,7 +303,7 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 					{
 						Metadata: EntityMetadata{
 							ID: "nginx",
-							Metadata: map[string]string{
+							AdditionalInfo: map[string]string{
 								"name": "nginx",
 								"type": "image",
 							},
