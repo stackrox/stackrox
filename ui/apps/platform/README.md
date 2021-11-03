@@ -31,7 +31,3 @@ To bring up [Cypress](https://www.cypress.io/) UI use `yarn cypress-demo-open`.
 To run all end-to-end tests in a headless mode use `yarn test-e2e-demo-local`.
 Make sure that `CYPRESS_DEMO_PASSWORD` is set with the Central Password for the
 Demo Setup.
-
-### Documentation
-
-To start a local server with live-reloading documentation use `yarn storybook`.

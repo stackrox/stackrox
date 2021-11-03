@@ -89,12 +89,7 @@ file:
       {
         "fileName": "<FFSName>.test.tsx",
         "template": "React Component Jest Tests"
-      },
-      {
-        "fileName": "<FFSName>.stories.tsx",
-        "template": "React Component Storybook File"
-      }
-    ]
+      }    ]
   }
 ],
 "fastFolderStructure.fileTemplates": {
@@ -131,20 +126,6 @@ file:
     "    });",
     "});",
     ""
-  ],
-  "React Component Storybook File": [
-    "import React from 'react';",
-    "import { Meta, Story } from '@storybook/react/types-6-0';",
-    "",
-    "import <FFSName> from './<FFSName>';",
-    "",
-    "export default {",
-    "    title: '<FFSName>',",
-    "    component: <FFSName>,",
-    "} as Meta;",
-    "",
-    "export const FirstStory: Story = () => <<FFSName> />;",
-    ""
   ]
 }
 ```
@@ -161,13 +142,6 @@ Then in the project explorer's context menu for `src` directory select
 are used for component unit testing. It's highly recommended to add tests for
 every component. Those tests at minimum should validate that component can be
 successfully rendered.
-
-### Storybook
-
-It's highly recommended to add [Storybook](https://storybook.js.org/) stories
-for every component. Use `yarn storybook` to launch a Storybook dev server that
-supports hot reloading on component changes. Storybook is loaded with light and
-dark themes from the `@stackrox/tailwind-config` package.
 
 ### Linting
 

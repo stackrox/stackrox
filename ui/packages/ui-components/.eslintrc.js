@@ -19,7 +19,6 @@ const commonJavaScriptRules = {
                 path.join(__dirname, '**/*.test.ts'),
                 path.join(__dirname, '**/*.test.tsx'),
                 path.join(__dirname, '**/*.stories.tsx'),
-                path.join(__dirname, '.storybook/**/*'),
                 path.join(__dirname, '.prettierrc.js'),
                 path.join(__dirname, '.postcssrc.js'),
                 path.join(__dirname, 'tailwind.config.js'),

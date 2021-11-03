@@ -207,16 +207,6 @@ module.exports = {
             },
         },
         {
-            files: ['.storybook/*.js'],
-            env: {
-                node: true,
-            },
-            rules: {
-                ...commonRules,
-                ...commonReactRules,
-            },
-        },
-        {
             files: ['src/**/*.js'],
             env: {
                 browser: true,

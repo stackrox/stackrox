@@ -14,8 +14,7 @@
         "lib/**/*",
         "src/**/*",
         "!src/**/*.test.ts",
-        "!src/**/*.test.tsx",
-        "!src/**/*.stories.tsx"
+        "!src/**/*.test.tsx"
     ],
     "scripts": {
         "clean": "rm -rf lib test-results coverage",
@@ -33,9 +32,7 @@
         "lint-fix:non-src": "prettier --write '**/*.{md,css,json}'",
         "lint-fix:src": "eslint --fix --ext .js,.ts,.tsx ./",
         "lint-fix": "npm-run-all lint-fix:*",
-        "prepublishOnly": "yarn clean && yarn build",
-        "prestorybook": "[ -d ../../node_modules/@storybook/addon-docs ] || ln -sf ../../packages/ui-components/node_modules/@storybook/addon-docs ../../node_modules/@storybook/addon-docs; [ -d ../../node_modules/@storybook/addon-essentials ] || ln -sf ../../packages/ui-components/node_modules/@storybook/addon-essentials ../../node_modules/@storybook/addon-essentials",
-        "storybook": "yarn start:tailwind & start-storybook -p 6006"
+        "prepublishOnly": "yarn clean && yarn build"
     },
     "peerDependencies": {
         "react": "^16.12.0 || ^17",
@@ -53,9 +50,6 @@
     "devDependencies": {
         "@babel/core": "7.12.3",
         "@stackrox/tailwind-config": "^0.2.0",
-        "@storybook/addon-essentials": "^6.3.0",
-        "@storybook/addon-links": "^6.3.0",
-        "@storybook/react": "^6.3.0",
         "@testing-library/jest-dom": "^5.14.1",
         "@testing-library/react": "^12.1.2",
         "@testing-library/user-event": "^13.5.0",

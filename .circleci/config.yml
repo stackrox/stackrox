@@ -1972,7 +1972,7 @@ commands:
 
       - save_cache:
           name: Save NPM dependencies cache
-          key: v7-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
+          key: v8-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
           paths:
             - ui/monorepo.lock.sha256
             - ui/deps
@@ -1991,8 +1991,8 @@ commands:
       - restore_cache:
           name: Restore NPM dependencies cache
           keys:
-            - v7-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
-            - v7-rox-npm-deps-
+            - v8-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
+            - v8-rox-npm-deps-
 
   fetch-ui-deps:
     description: "Fetch UI dependencies"
