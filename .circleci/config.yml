@@ -1259,6 +1259,7 @@ commands:
               --volumes-from artifacts \
               -e SCRATCH="/data" \
               -e CIRCLECI="$CIRCLECI" \
+              -e OPENSHIFT_CLUSTER_MANAGER_API_TOKEN="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN" \
               -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.15-24-gf92f66f309-snapshot \
@@ -4650,6 +4651,7 @@ jobs:
               --volumes-from artifacts \
               -e SCRATCH="/data" \
               -e CIRCLECI="$CIRCLECI" \
+              -e OPENSHIFT_CLUSTER_MANAGER_API_TOKEN="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN" \
               -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.15-24-gf92f66f309-snapshot \
@@ -5126,9 +5128,8 @@ workflows:
       - provision-osd-aws-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           context:
-            - com-redhat-cloud
             - quay-rhacs-eng-readonly
-            - aws-setup
+            - osd-cluster-manager
 
       - osd-aws-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5138,16 +5139,14 @@ workflows:
             - pre-build-cli
             - pre-build-go-binaries
           context:
-            - com-redhat-cloud
             - quay-rhacs-eng-readonly
-            - aws-setup
+            - osd-cluster-manager
 
       - provision-osd-gcp-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           context:
-            - com-redhat-cloud
             - quay-rhacs-eng-readonly
-            - aws-setup
+            - osd-cluster-manager
 
       - osd-gcp-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5157,9 +5156,8 @@ workflows:
             - pre-build-cli
             - pre-build-go-binaries
           context:
-            - com-redhat-cloud
             - quay-rhacs-eng-readonly
-            - aws-setup
+            - osd-cluster-manager
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
