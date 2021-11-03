@@ -375,6 +375,17 @@ func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) 
 		options = append(options, oidc.Nonce(nonce))
 	}
 
+	redirectURL := p.baseRedirectURL
+	if p.allowedUIEndpoints.Contains(ri.Hostname) {
+		redirectURL.Host = ri.Hostname
+		// Allow HTTP only if the client did not use TLS and the host is localhost.
+		if !ri.ClientUsedTLS && netutil.IsLocalEndpoint(redirectURL.Host) {
+			redirectURL.Scheme = "http"
+		}
+	} else {
+		redirectURL.Host = p.defaultUIEndpoint
+	}
+
 	return p.oauthCfgForRequest(ri).AuthCodeURL(state, options...)
 }
 

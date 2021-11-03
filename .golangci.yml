@@ -8,33 +8,25 @@ issues:
 
   exclude-rules:
     - linters:
-        - revive
+        - golint
       text: "should have a package comment, unless it's in another file for this package"
     - linters:
-        - revive
+        - golint
       text: "should not use dot imports"
     - linters:
-        - revive
+        - golint
       text: "returns unexported type .* which can be annoying to use"
     - linters:
-        - revive
+        - golint
       text: "error strings should not be capitalized or end with punctuation or a newline"
-    - linters:
-        - revive
-      text: "should omit type int from declaration"
-    - linters:
-        - revive
-      text: "don't use leading k in Go names"
-
 
 linters-settings:
-  revive:
+  golint:
     min-confidence: 0
   govet:
     enable-all: true
     disable:
       - shadow
-      - fieldalignment
     settings:
       printf: # analyzer name, run `go tool vet help` to see all analyzers
         funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
@@ -97,7 +89,7 @@ linters:
     # - goerr113
     - gofmt
     - goimports
-    - revive # replaces golint
+    - golint
     # - gomnd
     # - goprintffuncname
     # - gosec

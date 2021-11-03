@@ -48,7 +48,7 @@ func NewDeploymentWrap(d *storage.Deployment, registryOverride string) *Deployme
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
 func doesFieldExist(value reflect.Value) bool {
-	return value.IsValid()
+	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
 // IsTrackedOwnerReference validates the object is one that we are tracking as a Deployment

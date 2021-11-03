@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/coreos/etcd/pkg/fileutil"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -90,7 +91,7 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 
 func (m *mockCentral) upgradeDB(path string) {
 	// Verify no downgrade
-	if exists, _ := fileutils.Exists(filepath.Join(path, "db")); exists {
+	if fileutil.Exist(filepath.Join(path, "db")) {
 		data, err := os.ReadFile(filepath.Join(path, "db"))
 		require.NoError(m.t, err)
 		currDBSeq, err := strconv.Atoi(string(data))
@@ -126,7 +127,7 @@ func (m *mockCentral) runCentral() {
 	if version.CompareVersions(version.GetMainVersion(), "3.0.57.0") >= 0 {
 		migrations.SetCurrent(migrations.CurrentPath())
 	}
-	if exists, _ := fileutils.Exists(filepath.Join(migrations.CurrentPath(), "db")); !exists {
+	if !fileutil.Exist(filepath.Join(migrations.CurrentPath(), "db")) {
 		require.NoError(m.t, os.WriteFile(filepath.Join(migrations.CurrentPath(), "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
 	}
 
