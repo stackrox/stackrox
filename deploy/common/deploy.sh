@@ -56,7 +56,7 @@ function generate_ca {
     if [ ! -f "$OUTPUT_DIR/ca-key.pem" ]; then
         echo "Generating CA key..."
         echo " + Getting cfssl..."
-        go get -u github.com/cloudflare/cfssl/cmd/...
+        go install github.com/cloudflare/cfssl/cmd/...@latest
         echo " + Generating keypair..."
         PWD=$(pwd)
         cd "$OUTPUT_DIR"

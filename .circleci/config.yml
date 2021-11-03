@@ -423,7 +423,7 @@ getPrometheusMetricParser: &getPrometheusMetricParser
     name: Get prometheus-metric-parser
     command: |
       export GOPRIVATE=github.com/stackrox
-      go get github.com/stackrox/prometheus-metric-parser
+      go install github.com/stackrox/prometheus-metric-parser@latest
       prometheus-metric-parser help
 
 fetchBundleForRemoteClusterInTheDB: &fetchBundleForRemoteClusterInTheDB

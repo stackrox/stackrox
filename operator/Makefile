@@ -170,7 +170,8 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+go get -d $(2) ;\
+GOBIN=$(PROJECT_DIR)/bin go install $(firstword $(subst @, ,$(2))) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
