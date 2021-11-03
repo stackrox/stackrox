@@ -4596,13 +4596,13 @@ jobs:
           paths:
             - artifacts
 
-  provision-openshift-osd-aws-api-e2e-tests:
+  provision-osd-aws-api-e2e-tests:
     executor: custom
     resource_class: large
     steps:
       - checkout
       - check-to-run:
-          label: ci-openshift-osd-aws-tests
+          label: ci-osd-aws-tests
           run-on-master: false
           run-on-tags: true
       - setup_remote_docker
@@ -4628,13 +4628,13 @@ jobs:
           paths:
             - artifacts
 
-  provision-openshift-osd-gcp-api-e2e-tests:
+  provision-osd-gcp-api-e2e-tests:
     executor: custom
     resource_class: large
     steps:
       - checkout
       - check-to-run:
-          label: ci-openshift-osd-gcp-tests
+          label: ci-osd-gcp-tests
           run-on-master: false
           run-on-tags: true
       - *loginToGCR
@@ -4740,7 +4740,7 @@ jobs:
             - nop-steps-stanza
       - destroy-aro-cluster
 
-  openshift-osd-aws-api-e2e-tests:
+  osd-aws-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 443
@@ -4759,12 +4759,12 @@ jobs:
 
     steps:
       - run-qa-tests:
-          cluster-id: openshift-osd-aws-api-e2e-tests
+          cluster-id: osd-aws-api-e2e-tests
           sensor-deploy-flavor: helm
           orchestrator-flavor: openshift
           determine-whether-to-run:
             - check-to-run:
-                label: ci-openshift-osd-aws-tests
+                label: ci-osd-aws-tests
                 run-on-master: false
                 run-on-tags: true
           use-websocket: true
@@ -4783,7 +4783,7 @@ jobs:
             - nop-steps-stanza
       - destroy-osd-aws-cluster
 
-  openshift-osd-gcp-api-e2e-tests:
+  osd-gcp-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 443
@@ -4802,12 +4802,12 @@ jobs:
 
     steps:
       - run-qa-tests:
-          cluster-id: openshift-osd-gcp-api-e2e-tests
+          cluster-id: osd-gcp-api-e2e-tests
           sensor-deploy-flavor: helm
           orchestrator-flavor: openshift
           determine-whether-to-run:
             - check-to-run:
-                label: ci-openshift-osd-gcp-tests
+                label: ci-osd-gcp-tests
                 run-on-master: false
                 run-on-tags: true
           use-websocket: true
@@ -5121,18 +5121,18 @@ workflows:
             - azure-ci
             - aro-cluster-manager
 
-      - provision-openshift-osd-aws-api-e2e-tests:
+      - provision-osd-aws-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
             - aws-setup
 
-      - openshift-osd-aws-api-e2e-tests:
+      - osd-aws-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - build-scale-monitoring-and-mock-server
-            - provision-openshift-osd-aws-api-e2e-tests
+            - provision-osd-aws-api-e2e-tests
             - pre-build-cli
             - pre-build-go-binaries
           context:
@@ -5140,18 +5140,18 @@ workflows:
             - quay-rhacs-eng-readonly
             - aws-setup
 
-      - provision-openshift-osd-gcp-api-e2e-tests:
+      - provision-osd-gcp-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
             - aws-setup
 
-      - openshift-osd-gcp-api-e2e-tests:
+      - osd-gcp-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - build-scale-monitoring-and-mock-server
-            - provision-openshift-osd-gcp-api-e2e-tests
+            - provision-osd-gcp-api-e2e-tests
             - pre-build-cli
             - pre-build-go-binaries
           context:
