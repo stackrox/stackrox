@@ -57,7 +57,7 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 	batch := batcher.New(len(flows), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
-		data := make([]interface{}, 0, numElems * len(flows))
+		data := make([]interface{}, 0, numElems*len(flows))
 		for i, obj := range flows[start:end] {
 			if i != 0 {
 				placeholderStr += ", "
