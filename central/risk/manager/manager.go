@@ -134,7 +134,6 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 
 	// No need to insert if it hasn't changed
 	if exists && proto.Equal(oldRisk, risk) {
-		log.Infof("risk is equal to old: %+v", deployment.GetName())
 		return
 	}
 
