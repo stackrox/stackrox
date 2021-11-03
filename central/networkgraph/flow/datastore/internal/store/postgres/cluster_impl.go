@@ -17,10 +17,10 @@ func NewClusterStore(db *pgxpool.Pool) store.ClusterStore {
 		panic(err)
 	}
 
-	if _, err := db.Exec(context.Background(), `create index networkflows_dst_entity on networkflows using hash ((value->'dstEntity'->>'id'))`); err != nil {
+	if _, err := db.Exec(context.Background(), `create index if not exists networkflows_dst_entity on networkflows using hash ((value->'dstEntity'->>'id'))`); err != nil {
 		panic(err)
 	}
-	if _, err := db.Exec(context.Background(), `create index networkflows_src_entity on networkflows using hash ((value->'srcEntity'->>'id'))`); err != nil {
+	if _, err := db.Exec(context.Background(), `create index if not exists networkflows_src_entity on networkflows using hash ((value->'srcEntity'->>'id'))`); err != nil {
 		panic(err)
 	}
 
