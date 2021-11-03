@@ -2,11 +2,14 @@
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
-import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
-import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
+import useTableSelection from 'hooks/useTableSelection';
 import { VulnerabilitySeverity } from 'messages/common';
 
+import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
+import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
+
 export type ObservedCVERow = {
+    id: string;
     cve: string;
     isFixable: boolean;
     severity: VulnerabilitySeverity;
@@ -21,10 +24,19 @@ export type ObservedCVEsTableProps = {
 };
 
 function ObservedCVEsTable({ rows, actions }: ObservedCVEsTableProps): ReactElement {
+    const { selected, allRowsSelected, onSelect, onSelectAll } =
+        useTableSelection<ObservedCVERow>(rows);
+
     return (
         <TableComposable aria-label="Observed CVEs Table" variant="compact" borders>
             <Thead>
                 <Tr>
+                    <Th
+                        select={{
+                            onSelect: onSelectAll,
+                            isSelected: allRowsSelected,
+                        }}
+                    />
                     <Th>CVE</Th>
                     <Th>Fixable</Th>
                     <Th>Severity</Th>
@@ -36,6 +48,13 @@ function ObservedCVEsTable({ rows, actions }: ObservedCVEsTableProps): ReactElem
             <Tbody>
                 {rows.map((row, rowIndex) => (
                     <Tr key={rowIndex}>
+                        <Td
+                            select={{
+                                rowIndex,
+                                onSelect,
+                                isSelected: selected[rowIndex],
+                            }}
+                        />
                         <Td dataLabel="Cell">{row.cve}</Td>
                         <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
                         <Td dataLabel="Severity">

@@ -5,6 +5,7 @@ import ObservedCVEsTable, { ObservedCVERow } from './ObservedCVEsTable';
 
 const rows = [
     {
+        id: 'CVE-2014-232',
         cve: 'CVE-2014-232',
         isFixable: false,
         severity: 'MODERATE_VULNERABILITY_SEVERITY',
@@ -13,6 +14,7 @@ const rows = [
         discoveredAt: '3 days ago',
     },
     {
+        id: 'CVE-2019-5953',
         cve: 'CVE-2019-5953',
         isFixable: true,
         severity: 'CRITICAL_VULNERABILITY_SEVERITY',
@@ -21,6 +23,7 @@ const rows = [
         discoveredAt: '2 days ago',
     },
     {
+        id: 'CVE-2017-13090',
         cve: 'CVE-2017-13090',
         isFixable: true,
         severity: 'IMPORTANT_VULNERABILITY_SEVERITY',
@@ -29,6 +32,7 @@ const rows = [
         discoveredAt: '3 days ago',
     },
     {
+        id: 'CVE-2016-7098',
         cve: 'CVE-2016-7098',
         isFixable: true,
         severity: 'IMPORTANT_VULNERABILITY_SEVERITY',
@@ -37,6 +41,7 @@ const rows = [
         discoveredAt: '3 days ago',
     },
     {
+        id: 'CVE-2018-0494',
         cve: 'CVE-2018-0494',
         isFixable: true,
         severity: 'MODERATE_VULNERABILITY_SEVERITY',
