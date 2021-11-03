@@ -1218,6 +1218,52 @@ commands:
               gcr.io/stackrox-infra/automation-flavors/openshift-aro:0.2.17 \
               destroy
 
+  destroy-osd-aws-cluster:
+    description: "Destroy osd-on-aws cluster"
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - setup_remote_docker
+      - run:
+          name: Destroy osd-on-aws cluster
+          when: always
+          command: |
+            docker create -v /data --name artifacts alpine:3.9 /bin/true
+            docker cp "$PWD/artifacts/." artifacts:/data
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e OPENSHIFT_CLUSTER_MANAGER_API_TOKEN="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+              -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.15-24-gf92f66f309-snapshot \
+              destroy
+
+  destroy-osd-gcp-cluster:
+    description: "Destroy osd-on-gcp cluster"
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - setup_remote_docker
+      - *loginToGCR
+      - run:
+          name: Destroy osd-on-gcp cluster
+          when: always
+          command: |
+            docker create -v /data --name artifacts alpine:3.9 /bin/true
+            docker cp "$PWD/artifacts/." artifacts:/data
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.15-24-gf92f66f309-snapshot \
+              destroy
+
+
   # ROSA and ARO teardown steps are not being run at the end of 'run-qa-tests'
   # as expected, and troubleshooting is time prohibitive. So rather than passing
   # teardown steps to 'run-qa-tests' I am passing a 'no-operation' and adding
@@ -4550,6 +4596,69 @@ jobs:
           paths:
             - artifacts
 
+  provision-openshift-osd-aws-api-e2e-tests:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+      - check-to-run:
+          label: ci-openshift-osd-aws-tests
+          run-on-master: false
+          run-on-tags: true
+      - setup_remote_docker
+      - run:
+          name: Launch osd-on-aws cluster
+          timeout: 7200
+          command: |
+            docker create -v /data --name artifacts alpine:3.14 /bin/true
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e OPENSHIFT_CLUSTER_MANAGER_API_TOKEN="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+              -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.15-24-gf92f66f309-snapshot \
+              aws create
+            mkdir -p /home/circleci/artifacts
+            docker cp artifacts:/data/. /home/circleci/artifacts
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - artifacts
+
+  provision-openshift-osd-gcp-api-e2e-tests:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+      - check-to-run:
+          label: ci-openshift-osd-gcp-tests
+          run-on-master: false
+          run-on-tags: true
+      - *loginToGCR
+      - setup_remote_docker
+      - run:
+          name: Launch osd-on-gcp cluster
+          timeout: 7200
+          command: |
+            docker create -v /data --name artifacts alpine:3.14 /bin/true
+            docker run --rm -t \
+              --volumes-from artifacts \
+              -e SCRATCH="/data" \
+              -e CIRCLECI="$CIRCLECI" \
+              -e AZURE_SP_SECRET_VAL="$AZURE_SP_SECRET_VAL" \
+              -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.15-24-gf92f66f309-snapshot \
+              gcp create
+            mkdir -p /home/circleci/artifacts
+            docker cp artifacts:/data/. /home/circleci/artifacts
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - artifacts
+
   openshift-rosa-api-e2e-tests:
     executor: custom
     environment:
@@ -4630,6 +4739,92 @@ jobs:
           destroy-cluster:
             - nop-steps-stanza
       - destroy-aro-cluster
+
+  openshift-osd-aws-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_SYSLOG_INTEGRATION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_VULN_RISK_MANAGEMENT: true
+
+    steps:
+      - run-qa-tests:
+          cluster-id: openshift-osd-aws-api-e2e-tests
+          sensor-deploy-flavor: helm
+          orchestrator-flavor: openshift
+          determine-whether-to-run:
+            - check-to-run:
+                label: ci-openshift-osd-aws-tests
+                run-on-master: false
+                run-on-tags: true
+          use-websocket: true
+          is-gke-cluster: false
+          connect-to-cluster:
+            - run:
+                name: Restore KUBECONFIG and login to osd-aws
+                command: |
+                  cci-export STORAGE pvc
+                  cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
+                  source "$PWD/artifacts/dotenv"
+                  oc_login_command=$(grep "oc login https.*username.*password" "$PWD/artifacts/log/osd-aws-create-admin.log")
+                  eval "$oc_login_command --insecure-skip-tls-verify=true"
+                  oc get nodes
+          destroy-cluster:
+            - nop-steps-stanza
+      - destroy-osd-aws-cluster
+
+  openshift-osd-gcp-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_SYSLOG_INTEGRATION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_VULN_RISK_MANAGEMENT: true
+
+    steps:
+      - run-qa-tests:
+          cluster-id: openshift-osd-gcp-api-e2e-tests
+          sensor-deploy-flavor: helm
+          orchestrator-flavor: openshift
+          determine-whether-to-run:
+            - check-to-run:
+                label: ci-openshift-osd-gcp-tests
+                run-on-master: false
+                run-on-tags: true
+          use-websocket: true
+          is-gke-cluster: false
+          connect-to-cluster:
+            - run:
+                name: Restore KUBECONFIG and login to osd-gcp
+                command: |
+                  cci-export STORAGE pvc
+                  cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
+                  source "$PWD/artifacts/dotenv"
+                  source "/go/src/github.com/stackrox/rox/artifacts/dotenv"
+                  oc login "$API_ENDPOINT" --username "$CONSOLE_USER" --password "$CONSOLE_PASSWORD" --insecure-skip-tls-verify=true
+                  oc get nodes
+          destroy-cluster:
+            - nop-steps-stanza
+      - destroy-osd-gcp-cluster
 
   openshift-ci-upgrade-test:
     executor: custom
@@ -4925,6 +5120,44 @@ workflows:
             - quay-rhacs-eng-readonly
             - azure-ci
             - aro-cluster-manager
+
+      - provision-openshift-osd-aws-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - aws-setup
+
+      - openshift-osd-aws-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-osd-aws-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - aws-setup
+
+      - provision-openshift-osd-gcp-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - aws-setup
+
+      - openshift-osd-gcp-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-osd-gcp-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
+          context:
+            - com-redhat-cloud
+            - quay-rhacs-eng-readonly
+            - aws-setup
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
