@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/parse"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/stringutils"
 	//"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -26,27 +27,48 @@ var datatypeToQueryFunc = map[v1.SearchDataType]queryFunction{
 	// Map type is handled specially.
 }
 
-//func nullQuery(category v1.SearchCategory, path string) query.Query {
-//	bq := bleve.NewBooleanQuery()
-//	bq.AddMustNot(getWildcardQuery(path))
-//	bq.AddMust(typeQuery(category))
-//	return bq
-//}
-
 func matchFieldQuery(table string, field *pkgSearch.Field, value string) (*QueryEntry, error) {
 	// Special case: wildcard
-	if value == pkgSearch.WildcardString {
-		log.Infof("Wildcard for %s", field.FieldPath)
-		return nil, nil
-		//panic("wildcard")
-	}
-	// Special case: null
-	if value == pkgSearch.NullString {
-		panic("null string")
+	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
+		return handleExistenceQueries(table, field, value), nil
 	}
 
 	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
 	return datatypeToQueryFunc[field.GetType()](table, field, trimmedValue, modifiers...)
+}
+
+func handleExistenceQueries(table string, field *pkgSearch.Field, value string) *QueryEntry {
+	lastElem := field.LastElem()
+	elemPath := GenerateShortestElemPath(table, field.Elems)
+
+	root := field.TopLevelValue()
+	switch value {
+	case pkgSearch.WildcardString:
+		if root != "" {
+			return &QueryEntry{
+				Query: fmt.Sprintf("%s is not null", root),
+			}
+		} else {
+			return &QueryEntry{
+				Query: fmt.Sprintf("%s ? $$", elemPath),
+				Values: []interface{}{lastElem.ProtoJSONName},
+			}
+		}
+	case pkgSearch.NullString:
+		if root != "" {
+			return &QueryEntry{
+				Query: fmt.Sprintf("%s is null", root),
+			}
+		} else {
+			return &QueryEntry{
+				Query: fmt.Sprintf("not %s ? $$", elemPath),
+				Values: []interface{}{lastElem.ProtoJSONName},
+			}
+		}
+	default:
+		log.Fatalf("existence query for value %s is not currently handled", value)
+	}
+	return nil
 }
 
 //func getWildcardQuery(field string) *query.WildcardQuery {
