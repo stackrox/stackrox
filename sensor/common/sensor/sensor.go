@@ -253,7 +253,6 @@ func (s *Sensor) getCentralTLSCerts() []*x509.Certificate {
 	certs, err := s.centralRestClient.GetTLSTrustedCerts(context.Background())
 	if err != nil {
 		log.Warnf("Error fetching centrals TLS certs: %s", err)
-		return []*x509.Certificate{}
 	}
 	return certs
 }
