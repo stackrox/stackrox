@@ -12,9 +12,11 @@ import (
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/pointers"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -210,8 +212,13 @@ func replaceVars(s string) string {
 	return s
 }
 
+type Select struct {
+	Query  string
+	Fields []*searchPkg.Field
+}
+
 type Query struct {
-	Select     string
+	Select     Select
 	From       string
 	Where      string
 	Pagination string
@@ -219,7 +226,7 @@ type Query struct {
 }
 
 func (q *Query) String() string {
-	query := q.Select + " " + q.From
+	query := q.Select.Query + " " + q.From
 	if q.Where != "" {
 		query += " where " + q.Where
 	}
@@ -270,6 +277,119 @@ func getPaginationQuery(pagination *v1.QueryPagination, table string, optionsMap
 	return orderBy, nil
 }
 
+func generateSelectFieldsRecursive(table string, added set.StringSet, q *v1.Query, optionsMap searchPkg.OptionsMap) ([]string, []*searchPkg.Field) {
+	switch sub := q.GetQuery().(type) {
+	case *v1.Query_BaseQuery:
+		switch subBQ := q.GetBaseQuery().Query.(type) {
+		case *v1.BaseQuery_DocIdQuery:
+			// nothing to do here
+		case *v1.BaseQuery_MatchFieldQuery:
+			// Need to find base value
+			field, ok := optionsMap.Get(subBQ.MatchFieldQuery.GetField())
+			if !ok {
+				return nil, nil
+			}
+			if subBQ.MatchFieldQuery.Highlight && added.Add(field.FieldPath) {
+				root := field.TopLevelValue()
+				if root == "" {
+					root = pgsearch.RenderFinalPath(pgsearch.GenerateShortestElemPath(table, field.Elems), field.LastElem().ProtoJSONName)
+				}
+				return []string{root}, []*searchPkg.Field{field}
+			}
+		case *v1.BaseQuery_MatchNoneQuery:
+			// nothing to here either
+		case *v1.BaseQuery_MatchLinkedFieldsQuery:
+			// Need to split this
+			var (
+				paths  []string
+				fields []*searchPkg.Field
+			)
+			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
+				field, ok := optionsMap.Get(q.GetField())
+				if !ok {
+					return nil, nil
+				}
+				if q.Highlight && added.Add(field.FieldPath) {
+					root := field.TopLevelValue()
+					if root == "" {
+						path := pgsearch.RenderFinalPath(pgsearch.GenerateShortestElemPath(table, field.Elems), field.LastElem().ProtoJSONName)
+						paths = append(paths, path)
+						fields = append(fields, field)
+					}
+				}
+			}
+		default:
+			panic("unsupported")
+		}
+	case *v1.Query_Conjunction:
+		var (
+			paths  []string
+			fields []*searchPkg.Field
+		)
+		for _, cq := range sub.Conjunction.Queries {
+			localPaths, localFields := generateSelectFieldsRecursive(table, added, cq, optionsMap)
+			paths = append(paths, localPaths...)
+			fields = append(fields, localFields...)
+		}
+		return paths, fields
+	case *v1.Query_Disjunction:
+		var (
+			paths  []string
+			fields []*searchPkg.Field
+		)
+		for _, dq := range sub.Disjunction.Queries {
+			localPaths, localFields := generateSelectFieldsRecursive(table, added, dq, optionsMap)
+			paths = append(paths, localPaths...)
+			fields = append(fields, localFields...)
+		}
+		return paths, fields
+	case *v1.Query_BooleanQuery:
+		var (
+			paths  []string
+			fields []*searchPkg.Field
+		)
+		for _, cq := range sub.BooleanQuery.Must.Queries {
+			localPaths, localFields := generateSelectFieldsRecursive(table, added, cq, optionsMap)
+			paths = append(paths, localPaths...)
+			fields = append(fields, localFields...)
+		}
+		for _, dq := range sub.BooleanQuery.MustNot.Queries {
+			localPaths, localFields := generateSelectFieldsRecursive(table, added, dq, optionsMap)
+			paths = append(paths, localPaths...)
+			fields = append(fields, localFields...)
+		}
+		return paths, fields
+	}
+	return nil, nil
+}
+
+func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap searchPkg.OptionsMap, count bool) Select {
+	distinct := needsDistinct(tree)
+
+	var sel Select
+	if count {
+		if distinct {
+			sel.Query = "select count(distinct id)"
+		} else {
+			sel.Query = "select count(*)"
+		}
+		return sel
+	}
+	added := set.NewStringSet()
+	paths, fields := generateSelectFieldsRecursive(table, added, q, optionsMap)
+
+	if distinct {
+		if len(paths) > 0 {
+			log.Errorf("UNEXPECTED: Highlights on nested JSONB field: %+v", paths)
+		}
+		sel.Query = "select distinct id"
+		return sel
+	}
+	sel.Query = fmt.Sprintf("select id, %s", strings.Join(paths, ","))
+	sel.Fields = fields
+	return sel
+}
+
 func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count bool) (*Query, error) {
 	tree := newQueryTree(searchPkg.PathElem{
 		ProtoJSONName: table,
@@ -277,20 +397,7 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 	populatePathRecursive(tree, q, optionsMap)
 	fromClause := createFROMClause(tree)
 
-	var distinct string
-	if needsDistinct(tree) {
-		distinct = "distinct"
-	}
-
-	// Initial select, need to support highlights as well
-	selectClause := fmt.Sprintf("select %s id", distinct)
-	if count {
-		if distinct == "" {
-			selectClause = "select count(*)"
-		} else {
-			selectClause = fmt.Sprintf("select count(%s id)", distinct)
-		}
-	}
+	selQuery := generateSelectFields(table, tree, q, optionsMap, count)
 
 	// Building the where clause is the hardest part
 	//printTree(tree, "")
@@ -300,7 +407,7 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 	}
 	if queryEntry == nil {
 		return &Query{
-			Select: selectClause,
+			Select: selQuery,
 			From:   fromClause,
 		}, nil
 	}
@@ -311,7 +418,7 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, co
 	}
 
 	return &Query{
-		Select:     selectClause,
+		Select:     selQuery,
 		From:       fromClause,
 		Where:      queryEntry.Query,
 		Pagination: pagination,
@@ -363,7 +470,7 @@ func joinWrap(baseTable, joinTable string, query *Query) string {
 			log.Fatalf("No existing path between table %s to %s", baseTable, joinTable)
 		}
 		path := pgsearch.GenerateShortestElemPath(joinTable, pathElems)
-		query.Select = fmt.Sprintf("select distinct(%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].ProtoJSONName))
+		query.Select.Query = fmt.Sprintf("select distinct(%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].ProtoJSONName))
 		return fmt.Sprintf("%s.id in (%s)", baseTable, query.String())
 	}
 	path := pgsearch.GenerateShortestElemPath(baseTable, pathElems)
@@ -475,6 +582,10 @@ func compileBaseQuery(table string, q *v1.Query, optionsMap searchPkg.OptionsMap
 	return nil, nil
 }
 
+func valueFromStringPtrInterface(value interface{}) string {
+	return *(value.(*string))
+}
+
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
 	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), false)
 	if err != nil {
@@ -498,14 +609,25 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 	defer rows.Close()
 
 	var searchResults []searchPkg.Result
+
+	highlightedResults := make([]interface{}, len(query.Select.Fields)+1)
+	for i := range highlightedResults {
+		highlightedResults[i] = pointers.String("")
+	}
 	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
+		if err := rows.Scan(highlightedResults...); err != nil {
 			return nil, err
 		}
-		searchResults = append(searchResults, searchPkg.Result{
-			ID: id,
-		})
+		result := searchPkg.Result{
+			ID: valueFromStringPtrInterface(highlightedResults[0]),
+		}
+		if len(query.Select.Fields) > 0 {
+			result.Matches = make(map[string][]string)
+			for i, field := range query.Select.Fields {
+				result.Matches[field.FieldPath] = []string{valueFromStringPtrInterface(highlightedResults[i+1])}
+			}
+		}
+		searchResults = append(searchResults, result)
 	}
 	return searchResults, nil
 }

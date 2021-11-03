@@ -67,7 +67,7 @@ func (s *searchWalker) elemsToPath(elems []PathElem) string {
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	walker := searchWalker{
-		print:   false,
+		print:    false,
 		prefix:   prefix,
 		category: category,
 		fields:   make(map[FieldLabel]*Field),
