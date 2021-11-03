@@ -385,7 +385,8 @@ func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap
 		sel.Query = "select distinct id"
 		return sel
 	}
-	sel.Query = fmt.Sprintf("select id, %s", strings.Join(paths, ","))
+	paths = append([]string{"id"}, paths...)
+	sel.Query = fmt.Sprintf("select %s", strings.Join(paths, ","))
 	sel.Fields = fields
 	return sel
 }
