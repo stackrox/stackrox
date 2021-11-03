@@ -1240,7 +1240,7 @@ commands:
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
               gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.15-24-gf92f66f309-snapshot \
-              destroy
+              aws destroy
 
   destroy-osd-gcp-cluster:
     description: "Destroy osd-on-gcp cluster"
@@ -1264,7 +1264,7 @@ commands:
               -e GCP_SA_CREDS_JSON_BASE64="$GCP_SA_CREDS_JSON_BASE64" \
               -e GCP_PROJECT="srox-temp-dev-test" \
               gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.15-24-gf92f66f309-snapshot \
-              destroy
+              gcp destroy
 
 
   # ROSA and ARO teardown steps are not being run at the end of 'run-qa-tests'
@@ -4739,7 +4739,6 @@ jobs:
                   cci-export STORAGE pvc
                   cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
                   source "$PWD/artifacts/dotenv"
-                  source "/go/src/github.com/stackrox/rox/artifacts/dotenv"
                   oc login "$API_ENDPOINT" --username "$CONSOLE_USER" --password "$CONSOLE_PASSWORD" --insecure-skip-tls-verify=true
                   oc get nodes
           destroy-cluster:
@@ -4782,8 +4781,10 @@ jobs:
                   cci-export STORAGE pvc
                   cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
                   source "$PWD/artifacts/dotenv"
-                  oc_login_command=$(grep "oc login https.*username.*password" "$PWD/artifacts/log/osd-aws-create-admin.log")
-                  eval "$oc_login_command --insecure-skip-tls-verify=true"
+                  oc login "$CLUSTER_API_ENDPOINT" \
+                    --username "$CLUSTER_USERNAME" \
+                    --password "$CLUSTER_PASSWORD" \
+                    --insecure-skip-tls-verify=true
                   oc get nodes
           destroy-cluster:
             - nop-steps-stanza
@@ -4825,8 +4826,10 @@ jobs:
                   cci-export STORAGE pvc
                   cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
                   source "$PWD/artifacts/dotenv"
-                  source "/go/src/github.com/stackrox/rox/artifacts/dotenv"
-                  oc login "$API_ENDPOINT" --username "$CONSOLE_USER" --password "$CONSOLE_PASSWORD" --insecure-skip-tls-verify=true
+                  oc login "$CLUSTER_API_ENDPOINT" \
+                    --username "$CLUSTER_USERNAME" \
+                    --password "$CLUSTER_PASSWORD" \
+                    --insecure-skip-tls-verify=true
                   oc get nodes
           destroy-cluster:
             - nop-steps-stanza
