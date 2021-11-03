@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"path"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -23,6 +24,10 @@ import (
 	"k8s.io/kubectl/pkg/util/openapi"
 	"k8s.io/kubectl/pkg/util/openapi/validation"
 	yaml2 "sigs.k8s.io/yaml"
+)
+
+var (
+	whitespaceRegex = regexp.MustCompile(`\s+`)
 )
 
 type runner struct {
@@ -116,7 +121,7 @@ func (r *runner) instantiateWorld(renderVals chartutil.Values, resources openapi
 
 	if *r.test.ExpectError {
 		r.Require().Error(err, "expected rendering to fail")
-		world["error"] = err.Error()
+		world["error"] = whitespaceRegex.ReplaceAllString(err.Error(), " ") // normalize whitespaces
 		return world
 	}
 
@@ -131,7 +136,7 @@ func (r *runner) instantiateWorld(renderVals chartutil.Values, resources openapi
 		}
 
 		if fileName == "templates/NOTES.txt" {
-			world["notes"] = renderedContents
+			world["notes"] = whitespaceRegex.ReplaceAllString(renderedContents, " ") // normalize whitespace
 			continue
 		}
 
