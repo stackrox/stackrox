@@ -45,12 +45,12 @@ func GetPostgresDB() *pgxpool.Pool {
 			}
 			pool, err := pgxpool.ConnectConfig(ctx, config)
 			if err != nil {
-				panic(err)
+				return retry.MakeRetryable(err)
 			}
 
 			conn, err := pool.Acquire(context.Background())
 			if err != nil {
-				panic(err)
+				return retry.MakeRetryable(err)
 			}
 			defer conn.Release()
 			t := time.Now()
