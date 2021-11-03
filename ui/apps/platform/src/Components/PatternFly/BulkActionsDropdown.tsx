@@ -4,11 +4,15 @@ import { CaretDownIcon } from '@patternfly/react-icons';
 
 type BulkActionsDropdownProps = {
     children: ReactNode;
+    isDisabled?: boolean;
 };
 
 // TODO: Connect this to the APIs
 // TODO: Reuse this for the Violations Page Bulk Actions
-function BulkActionsDropdown({ children }: BulkActionsDropdownProps): ReactElement {
+function BulkActionsDropdown({
+    children,
+    isDisabled = false,
+}: BulkActionsDropdownProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
     function onToggle(value) {
@@ -36,8 +40,9 @@ function BulkActionsDropdown({ children }: BulkActionsDropdownProps): ReactEleme
                     id="bulk-actions-dropdown"
                     onToggle={onToggle}
                     toggleIndicator={CaretDownIcon}
+                    isDisabled={isDisabled}
                 >
-                    Bulk Actions
+                    Bulk actions
                 </DropdownToggle>
             }
             isOpen={isOpen}
