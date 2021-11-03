@@ -1153,6 +1153,7 @@ commands:
       - attach_workspace:
           at: /home/circleci
       - setup_remote_docker
+      - *loginToGCR
       - run:
           name: Destroy osd-on-aws cluster
           when: always
@@ -4782,6 +4783,7 @@ jobs:
           run-on-master: false
           run-on-tags: true
       - setup_remote_docker
+      - *loginToGCR
       - run:
           name: Launch osd-on-aws cluster
           timeout: 7200
@@ -4813,8 +4815,8 @@ jobs:
           label: ci-osd-gcp-tests
           run-on-master: false
           run-on-tags: true
-      - *loginToGCR
       - setup_remote_docker
+      - *loginToGCR
       - run:
           name: Launch osd-on-gcp cluster
           timeout: 7200
