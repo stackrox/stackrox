@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/stackrox/rox/roxctl/common/printer/mapper"
 )
 
 type tablePrinter struct {
@@ -41,7 +42,12 @@ func (p *tablePrinter) Print(jsonObject interface{}, out io.Writer) error {
 	tw := p.createTableWriter(out)
 
 	// retrieve rows from JSON object via JSON path expression.
-	rows, err := getRowsFromObject(jsonObject, p.rowJSONPathExpression)
+	rowMapper, err := mapper.NewRowMapper(jsonObject, p.rowJSONPathExpression)
+	if err != nil {
+		return err
+	}
+
+	rows, err := rowMapper.CreateRows()
 	if err != nil {
 		return err
 	}

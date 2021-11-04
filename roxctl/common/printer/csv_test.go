@@ -3,8 +3,6 @@ package printer
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -115,7 +113,6 @@ func TestCsvPrinter_Print_Failures(t *testing.T) {
 		headers        []string
 		rowExpression  string
 		object         interface{}
-		err            error
 		expectedOutput string
 	}{
 		"invalid JSON should cause a failure": {
@@ -123,7 +120,6 @@ func TestCsvPrinter_Print_Failures(t *testing.T) {
 			object:         make(chan int),
 			headers:        testColumnHeaders,
 			rowExpression:  testRowExpression,
-			err:            &json.UnsupportedTypeError{Type: reflect.TypeOf(make(chan int))},
 			expectedOutput: "",
 		},
 		"jagged input": {
@@ -146,7 +142,6 @@ func TestCsvPrinter_Print_Failures(t *testing.T) {
 				Teachers: []int{1, 2, 3},
 			}},
 			expectedOutput: "",
-			err:            JaggedArrayError{maxAmount: 3, violatedAmount: 2, rowIndex: 0},
 		},
 	}
 
@@ -155,7 +150,6 @@ func TestCsvPrinter_Print_Failures(t *testing.T) {
 			p := newCSVPrinter(c.headers, c.rowExpression, false, false)
 			err := p.Print(c.object, c.out)
 			require.Error(t, err)
-			assert.Equal(t, err, c.err)
 			assert.Equal(t, c.expectedOutput, c.out.String())
 		})
 	}

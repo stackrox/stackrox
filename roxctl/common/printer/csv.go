@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/roxctl/common/printer/mapper"
 )
 
 type headerPrintOption int
@@ -47,7 +48,12 @@ func newCSVPrinter(columnHeaders []string, rowJSONPathExpression string, noHeade
 func (c *csvPrinter) Print(jsonObject interface{}, out io.Writer) error {
 	csvWriter := csv.NewWriter(out)
 
-	rows, err := getRowsFromObject(jsonObject, c.rowJSONPathExpression)
+	rowMapper, err := mapper.NewRowMapper(jsonObject, c.rowJSONPathExpression)
+	if err != nil {
+		return err
+	}
+
+	rows, err := rowMapper.CreateRows()
 	if err != nil {
 		return err
 	}

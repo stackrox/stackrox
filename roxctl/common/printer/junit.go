@@ -1,13 +1,12 @@
 package printer
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/tidwall/gjson"
+	"github.com/stackrox/rox/roxctl/common/printer/mapper"
 )
 
 const (
@@ -29,12 +28,10 @@ func newJUnitPrinter(suiteName string, jsonPathExpressions map[string]string) *j
 }
 
 func (j *junitPrinter) Print(object interface{}, out io.Writer) error {
-	jsonObjectBytes, err := json.Marshal(object)
+	testCaseNames, failedTestCaseNames, failedTestCaseErrorMessages, err := retrieveJUnitSuiteData(object, j.jsonPathExpressions)
 	if err != nil {
-		return errorhelpers.NewErrInvariantViolation(err.Error())
+		return err
 	}
-
-	testCaseNames, failedTestCaseNames, failedTestCaseErrorMessages := retrieveJUnitSuiteData(jsonObjectBytes, j.jsonPathExpressions)
 
 	if err := validateJUnitSuiteData(testCaseNames, failedTestCaseNames, failedTestCaseErrorMessages); err != nil {
 		return err
@@ -54,17 +51,16 @@ func (j *junitPrinter) Print(object interface{}, out io.Writer) error {
 
 // retrieveJUnitSuiteData retrieves all required data from the JSON object to create a JUnit test suite.
 // It returns the test case names, failed test case names and the failed test case error messages.
-func retrieveJUnitSuiteData(jsonObjectBytes []byte, junitJSONPathExpressions map[string]string) ([]string, []string, []string) {
-	testCaseNamesResult := gjson.GetManyBytes(jsonObjectBytes, junitJSONPathExpressions[JUnitTestCasesExpressionKey])
-	testCaseNames := getStringsFromGJSONResult(testCaseNamesResult)
+func retrieveJUnitSuiteData(jsonObj interface{}, junitJSONPathExpressions map[string]string) ([]string, []string, []string, error) {
+	sliceMapper, err := mapper.NewSliceMapper(jsonObj, junitJSONPathExpressions)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
-	failedTestCaseNamesResult := gjson.GetManyBytes(jsonObjectBytes, junitJSONPathExpressions[JUnitFailedTestCasesExpressionKey])
-	failedTestCaseNames := getStringsFromGJSONResult(failedTestCaseNamesResult)
+	slices := sliceMapper.CreateSlices()
 
-	failedTestCasesErrorMessagesResult := gjson.GetManyBytes(jsonObjectBytes, junitJSONPathExpressions[JUnitFailedTestCaseErrMsgExpressionKey])
-	failedTestCasesErrorMessages := getStringsFromGJSONResult(failedTestCasesErrorMessagesResult)
-
-	return testCaseNames, failedTestCaseNames, failedTestCasesErrorMessages
+	return slices[JUnitTestCasesExpressionKey], slices[JUnitFailedTestCasesExpressionKey],
+		slices[JUnitFailedTestCaseErrMsgExpressionKey], nil
 }
 
 // validateJUnitSuiteData validates the data to create a JUnit test suite for conformity. It checks whether the
