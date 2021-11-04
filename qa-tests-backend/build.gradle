@@ -102,7 +102,7 @@ dependencies {
     implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.9.0'
 
     // JAX-B dependencies for JDK 9+
-    implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
+    implementation "jakarta.xml.bind:jakarta.xml.bind-api:3.0.1"
     implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
 
     // Required to make codenarc work with JDK 14.
