@@ -5,7 +5,7 @@ import Raven from 'raven-js';
 import { PageSection, Bullseye, Alert } from '@patternfly/react-core';
 
 import { actions as alertActions } from 'reducers/alerts';
-import { SearchEntry } from 'reducers/pageSearch';
+import { SearchEntry, SearchState } from 'reducers/pageSearch';
 import { selectors } from 'reducers';
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 
@@ -27,7 +27,7 @@ function runAfter5Seconds(fn: () => void) {
 }
 
 const violationsPageState = createStructuredSelector<
-    any,
+    SearchState,
     { searchOptions: SearchEntry[]; searchModifiers: SearchEntry[] }
 >({
     searchOptions: selectors.getAlertsSearchOptions,
