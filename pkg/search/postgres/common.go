@@ -46,7 +46,7 @@ type queryStats struct {
 }
 
 func incQueryCount(query string, t time.Time) {
-	if query == "select id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and (State = $$)) order by Time" {
+	if query == "select id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and (State = $$)) order by Time desc" {
 		debug.PrintStack()
 	}
 	took := time.Since(t)
