@@ -32,6 +32,7 @@ const (
 	RemoveMany
 
 	Search
+	SearchAndGet
 
 	Update
 	UpdateMany

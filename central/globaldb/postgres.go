@@ -75,5 +75,21 @@ func startMonitoringPostgresDB(db *pgxpool.Pool) {
 			}
 			log.Infof("table %s has %d objects", registeredTable.table, count)
 		}
+
+		rows, err := db.Query(context.Background(), "select total_exec_time, mean_exec_time, calls, substr(query, 1, 100) from pg_stat_statements where calls > 5 order by total_exec_time desc limit 50 ;")
+		if err != nil {
+			log.Errorf("Error getting pg stat statements: %v", err)
+			continue
+		}
+		for rows.Next() {
+			var totalExecTime, meanExecTime float64
+			var calls int
+			var query string
+			if err := rows.Scan(&totalExecTime, &meanExecTime, &calls, &query); err != nil {
+				log.Errorf("error scanning pg_stat_statement: %v", err)
+			}
+			log.Infof("Stat: total=%0.2f mean=%0.2f calls=%d query=%s", totalExecTime, meanExecTime, calls, query)
+		}
+
 	}
 }

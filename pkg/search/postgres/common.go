@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -363,7 +364,7 @@ func generateSelectFieldsRecursive(table string, added set.StringSet, q *v1.Quer
 	return nil, nil
 }
 
-func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap searchPkg.OptionsMap, count bool) Select {
+func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap searchPkg.OptionsMap, count, getValue bool) Select {
 	distinct := needsDistinct(tree)
 
 	var sel Select
@@ -385,20 +386,24 @@ func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap
 		sel.Query = "select distinct id"
 		return sel
 	}
-	paths = append([]string{"id"}, paths...)
+	values := []string{"id"}
+	if getValue {
+		values = append(values, "value")
+	}
+	paths = append(values, paths...)
 	sel.Query = fmt.Sprintf("select %s", strings.Join(paths, ","))
 	sel.Fields = fields
 	return sel
 }
 
-func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count bool) (*Query, error) {
+func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count, getValue bool) (*Query, error) {
 	tree := newQueryTree(searchPkg.PathElem{
 		ProtoJSONName: table,
 	})
 	populatePathRecursive(tree, q, optionsMap)
 	fromClause := createFROMClause(tree)
 
-	selQuery := generateSelectFields(table, tree, q, optionsMap, count)
+	selQuery := generateSelectFields(table, tree, q, optionsMap, count, getValue)
 
 	// Building the where clause is the hardest part
 	//printTree(tree, "")
@@ -468,7 +473,8 @@ func joinWrap(baseTable, joinTable string, query *Query) string {
 		// This means that there is only pointers from joinTable to baseTable (which for now is just ID)
 		pathElems = searchPkg.GetTableToTablePath(joinTable, baseTable)
 		if len(pathElems) == 0 {
-			log.Fatalf("No existing path between table %s to %s", baseTable, joinTable)
+			log.Errorf("No existing path between table %s to %s", baseTable, joinTable)
+			return ""
 		}
 		path := pgsearch.GenerateShortestElemPath(joinTable, pathElems)
 		query.Select.Query = fmt.Sprintf("select distinct(%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].ProtoJSONName))
@@ -510,7 +516,7 @@ func compileBaseQuery(table string, q *v1.Query, optionsMap searchPkg.OptionsMap
 		queryTable, ok := tableFromBaseQuery(sub.BaseQuery, optionsMap)
 		if ok && queryTable != table {
 			// Need to regen the whole query and join it
-			query, err := populatePath(q, optionsMap, queryTable, false)
+			query, err := populatePath(q, optionsMap, queryTable, false, false)
 			if err != nil {
 				return nil, err
 			}
@@ -587,8 +593,31 @@ func valueFromStringPtrInterface(value interface{}) string {
 	return *(value.(*string))
 }
 
+func RunSearchRequestValue(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (pgx.Rows, error) {
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), false, true)
+	if err != nil {
+		return nil, err
+	}
+
+	queryStr := query.String()
+
+	runQueryPrinter()
+	t := time.Now()
+	defer func() {
+		incQueryCount(queryStr, t)
+	}()
+
+	rows, err := db.Query(context.Background(), replaceVars(queryStr), query.Data...)
+	if err != nil {
+		debug.PrintStack()
+		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
+		return nil, err
+	}
+	return rows, err
+}
+
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
-	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), false)
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -634,7 +663,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 }
 
 func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (int, error) {
-	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), true)
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), true, false)
 	if err != nil {
 		return 0, err
 	}
