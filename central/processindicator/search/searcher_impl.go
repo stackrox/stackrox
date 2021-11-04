@@ -75,6 +75,11 @@ func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result
 	return indicatorSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
 }
 
+func (s *searcherImpl) Delete(ctx context.Context, q *v1.Query) error {
+	err := postgres.RunSearchRequestDelete(v1.SearchCategory_PROCESS_INDICATORS, q, globaldb.GetPostgresDB(), mappings.OptionsMap)
+	return err
+}
+
 // Count returns the number of search results from the query
 func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return indicatorSACSearchHelper.ApplyCount(s.indexer.Count)(ctx, q)

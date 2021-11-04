@@ -33,8 +33,8 @@ func RegisterTable(table string, objType string) {
 // GetPostgresDB returns the global postgres instance
 func GetPostgresDB() *pgxpool.Pool {
 	pgInit.Do(func() {
-		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
-		//source := "pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=600000"
+		//source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
+		source := "pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=600000"
 		config, err := pgxpool.ParseConfig(source)
 		if err != nil {
 			panic(err)
