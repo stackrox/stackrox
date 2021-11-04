@@ -30,6 +30,15 @@ var (
 	queryCounts = make(map[string]*queryStats)
 )
 
+type SelectType int
+
+const (
+	GET   SelectType  = 0
+	COUNT SelectType  = 1
+	VALUE SelectType  = 2
+	DELETE SelectType = 3
+)
+
 type queryStats struct {
 	query  string
 	counts int
@@ -37,6 +46,9 @@ type queryStats struct {
 }
 
 func incQueryCount(query string, t time.Time) {
+	if query == "select id from alerts where (alerts.value->'deployment' ->>'id'  = $$ and (State = $$)) order by Time" {
+		debug.PrintStack()
+	}
 	took := time.Since(t)
 	queryLock.Lock()
 	defer queryLock.Unlock()
@@ -364,11 +376,16 @@ func generateSelectFieldsRecursive(table string, added set.StringSet, q *v1.Quer
 	return nil, nil
 }
 
-func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap searchPkg.OptionsMap, count, getValue bool) Select {
+func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap searchPkg.OptionsMap, selectType SelectType) Select {
+	var sel Select
+	if selectType == DELETE {
+		sel.Query = "delete"
+		return sel
+	}
+
 	distinct := needsDistinct(tree)
 
-	var sel Select
-	if count {
+	if selectType == COUNT {
 		if distinct {
 			sel.Query = "select count(distinct id)"
 		} else {
@@ -387,7 +404,7 @@ func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap
 		return sel
 	}
 	values := []string{"id"}
-	if getValue {
+	if selectType == VALUE {
 		paths = append(values, "value")
 	} else {
 		paths = append(values, paths...)
@@ -397,14 +414,14 @@ func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap
 	return sel
 }
 
-func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, count, getValue bool) (*Query, error) {
+func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, selectType SelectType) (*Query, error) {
 	tree := newQueryTree(searchPkg.PathElem{
 		ProtoJSONName: table,
 	})
 	populatePathRecursive(tree, q, optionsMap)
 	fromClause := createFROMClause(tree)
 
-	selQuery := generateSelectFields(table, tree, q, optionsMap, count, getValue)
+	selQuery := generateSelectFields(table, tree, q, optionsMap, selectType)
 
 	// Building the where clause is the hardest part
 	//printTree(tree, "")
@@ -517,7 +534,7 @@ func compileBaseQuery(table string, q *v1.Query, optionsMap searchPkg.OptionsMap
 		queryTable, ok := tableFromBaseQuery(sub.BaseQuery, optionsMap)
 		if ok && queryTable != table {
 			// Need to regen the whole query and join it
-			query, err := populatePath(q, optionsMap, queryTable, false, false)
+			query, err := populatePath(q, optionsMap, queryTable, GET)
 			if err != nil {
 				return nil, err
 			}
@@ -595,7 +612,7 @@ func valueFromStringPtrInterface(value interface{}) string {
 }
 
 func RunSearchRequestValue(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (pgx.Rows, error) {
-	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), false, true)
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), VALUE)
 	if err != nil {
 		return nil, err
 	}
@@ -617,8 +634,34 @@ func RunSearchRequestValue(category v1.SearchCategory, q *v1.Query, db *pgxpool.
 	return rows, err
 }
 
+
+func RunSearchRequestDelete(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) error {
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), DELETE)
+	if err != nil {
+		return err
+	}
+	// No pagination for deletes
+	query.Pagination = ""
+
+	queryStr := query.String()
+
+	runQueryPrinter()
+	t := time.Now()
+	defer func() {
+		incQueryCount(queryStr, t)
+	}()
+
+	_, err = db.Exec(context.Background(), replaceVars(queryStr), query.Data...)
+	if err != nil {
+		debug.PrintStack()
+		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
+		return err
+	}
+	return nil
+}
+
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
-	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), false, false)
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), GET)
 	if err != nil {
 		return nil, err
 	}
@@ -664,7 +707,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 }
 
 func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (int, error) {
-	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), true, false)
+	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), COUNT)
 	if err != nil {
 		return 0, err
 	}

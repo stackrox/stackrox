@@ -12,10 +12,13 @@ import (
 	alertPGIndex "github.com/stackrox/rox/central/alert/datastore/internal/index/postgres"
 	searcher "github.com/stackrox/rox/central/alert/datastore/internal/search"
 	alertPGStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/alert/mappings"
+	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 /*
@@ -81,9 +84,64 @@ func TestT(t *testing.T) {
 		panic(err)
 	}
 	for _, r := range results {
-		fmt.Printf("result: %+v\n", r.GetId())
+		fmt.Printf("result: %+v %+v\n", r.GetDeployment().GetId(), r.GetPolicy().GetId())
 	}
 }
+
+
+func TestDelete(t *testing.T) {
+	config, err := pgxpool.ParseConfig("pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%+v\n", config)
+
+	db, err := pgxpool.ConnectConfig(context.Background(), config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	alertStore := alertPGStore.NewFullStore(db)
+	fmt.Println(alertStore)
+
+	alertIndex := alertPGIndex.NewIndexer(db)
+	fmt.Println(alertIndex)
+
+	searcher := searcher.New(alertStore, alertIndex)
+
+	qb := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, "8861671b-90b9-4edc-a42e-574b2dc65c18").
+		AddExactMatches(search.PolicyID, "dce17697-1b72-49d2-b18a-05d893cd9368")
+
+	pq := qb.ProtoQuery()
+
+	pq.Pagination = &v1.QueryPagination{
+		Limit: 10,
+	}
+
+	results, err := searcher.SearchRawAlerts(context.Background(), pq)
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range results {
+		fmt.Printf("result: %+v %+v\n", r.GetDeployment().GetId(), r.GetPolicy().GetId())
+	}
+	err = postgres.RunSearchRequestDelete(v1.SearchCategory_ALERTS, pq, globaldb.GetPostgresDB(), mappings.OptionsMap)
+	if err != nil {
+		panic(err)
+	}
+
+	results, err = searcher.SearchRawAlerts(context.Background(), pq)
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range results {
+		fmt.Printf("after delete result: %+v %+v\n", r.GetDeployment().GetId(), r.GetPolicy().GetId())
+	}
+}
+
 
 func BenchmarkGets(b *testing.B) {
 	config, err := pgxpool.ParseConfig("pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000")
