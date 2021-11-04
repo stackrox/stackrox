@@ -388,9 +388,10 @@ func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap
 	}
 	values := []string{"id"}
 	if getValue {
-		values = append(values, "value")
+		paths = append(values, "value")
+	} else {
+		paths = append(values, paths...)
 	}
-	paths = append(values, paths...)
 	sel.Query = fmt.Sprintf("select %s", strings.Join(paths, ","))
 	sel.Fields = fields
 	return sel

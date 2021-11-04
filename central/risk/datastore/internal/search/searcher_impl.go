@@ -54,8 +54,9 @@ func (s *searcherImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*stor
 		defer rows.Close()
 		var elems []*storage.Risk
 		for rows.Next() {
+			var id string
 			var data []byte
-			if err := rows.Scan(&data); err != nil {
+			if err := rows.Scan(&id, &data); err != nil {
 				return nil, err
 			}
 			msg := new(storage.Risk)
