@@ -215,7 +215,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 	}
 
 	if amountBuildBreakingPolicies != 0 {
-		return policy.NewErrFailedPolicies(amountBuildBreakingPolicies)
+		return policy.NewErrBreakingPolicies(amountBuildBreakingPolicies)
 	}
 	return nil
 }
@@ -276,7 +276,7 @@ func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.
 	if numBreakingPolicies == 0 {
 		return
 	}
-	fmt.Fprintf(out, "ERROR: %s\n", policy.NewErrFailedPolicies(numBreakingPolicies))
+	fmt.Fprintf(out, "ERROR: %s\n", policy.NewErrBreakingPolicies(numBreakingPolicies))
 
 	for _, res := range results {
 		for _, breakingPolicy := range res.BreakingPolicies {

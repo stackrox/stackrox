@@ -310,6 +310,17 @@ func (r *Result) GetTotalAmountOfBreakingPolicies() int {
 	return amount
 }
 
+// GetResultNames retrieves a list of the names for all results
+func (r *Result) GetResultNames() []string {
+	var names []string
+
+	for _, entityResult := range r.Results {
+		names = append(names, entityResult.Metadata.GetName())
+	}
+
+	return names
+}
+
 // EntityResult represents a result consisting of policies for a specific entity
 type EntityResult struct {
 	Metadata         EntityMetadata   `json:"metadata"`
@@ -337,4 +348,9 @@ type BreakingPolicy struct {
 type EntityMetadata struct {
 	ID             string            `json:"id"`
 	AdditionalInfo map[string]string `json:"additionalInfo"`
+}
+
+// GetName retrieves the name of the EntityMetadata
+func (e *EntityMetadata) GetName() string {
+	return e.AdditionalInfo["name"]
 }

@@ -7,13 +7,13 @@ import (
 )
 
 var (
-	// ErrFailedPolicies occurs if policies are found whose storage.EnforcementAction leads
+	// ErrBreakingPolicies occurs if policies are found whose storage.EnforcementAction leads
 	// to a failure (i.e. storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT when checking images)
-	ErrFailedPolicies = errors.New("failed policies found")
+	ErrBreakingPolicies = errors.New("failed policies found")
 )
 
-// NewErrFailedPolicies creates a ErrFailedPolicies with the number of failed policies within the explanation.
-func NewErrFailedPolicies(numOfFailedPolicies int) error {
+// NewErrBreakingPolicies creates a ErrBreakingPolicies with the number of policies within the explanation.
+func NewErrBreakingPolicies(numOfBreakingPolicies int) error {
 	return fmt.Errorf("%w: %d policies violated that are failing the check",
-		ErrFailedPolicies, numOfFailedPolicies)
+		ErrBreakingPolicies, numOfBreakingPolicies)
 }

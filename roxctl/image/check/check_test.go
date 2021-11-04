@@ -297,7 +297,7 @@ ERROR: failed policies found: 1 policies violated that are failing the check
 ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
 `,
 			shouldFail: true,
-			error:      policy.ErrFailedPolicies,
+			error:      policy.ErrBreakingPolicies,
 		},
 	}
 	// setup table printer with default options
@@ -377,7 +377,7 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
 		"should fail with build failing enforcement actions": {
 			shouldFail: true,
 			alerts:     testAlertsWithFailure,
-			error:      policy.ErrFailedPolicies,
+			error:      policy.ErrBreakingPolicies,
 			expectedOutput: `{
   "results": [
     {
@@ -487,7 +487,7 @@ policy 7,LOW,policy 7 for testing,"- test violation 1
 		"should fail with build failing enforcement actions": {
 			alerts:     testAlertsWithFailure,
 			shouldFail: true,
-			error:      policy.ErrFailedPolicies,
+			error:      policy.ErrBreakingPolicies,
 			expectedOutput: `POLICY,SEVERITY,DESCRIPTION,VIOLATION,REMEDIATION
 policy 1,CRITICAL,policy 1 for testing,"- test violation 1
 - test violation 2

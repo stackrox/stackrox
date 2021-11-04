@@ -11,9 +11,12 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/rox/roxctl/summaries/policy"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -232,8 +235,8 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
 	mockEnv := mocks.NewMockEnvironment(gomock.NewController(d.T()))
 
-	_, _, testStdOut, _ := environment.TestIO()
-	mockEnv.EXPECT().InputOutput().AnyTimes().Return(environment.DefaultIO())
+	testIO, _, testStdOut, _ := environment.TestIO()
+	mockEnv.EXPECT().InputOutput().AnyTimes().Return(testIO)
 	mockEnv.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
 
 	return mockEnv, testStdOut
@@ -250,187 +253,400 @@ func (d *deployCheckTestSuite) SetupTest() {
 }
 
 func (d *deployCheckTestSuite) TestConstruct() {
-	deployCheckCmd := d.defaultDeploymentCheckCommand
+	jsonPrinter, err := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
+	d.Require().NoError(err)
+	validObjectPrinterFactory, err := printer.NewObjectPrinterFactory("json",
+		printer.NewJSONPrinterFactory(false, false))
+	d.Require().NoError(err)
+	invalidObjectPrinterFactory, err := printer.NewObjectPrinterFactory("json",
+		printer.NewJSONPrinterFactory(false, false))
+	d.Require().NoError(err)
+	invalidObjectPrinterFactory.OutputFormat = "table"
 
 	expectedTimeout := 10 * time.Minute
 
 	testCmd := &cobra.Command{Use: "test"}
 	testCmd.Flags().Duration("timeout", expectedTimeout, "")
 
-	d.Require().NoError(deployCheckCmd.Construct(nil, testCmd))
+	cases := map[string]struct {
+		timeout    time.Duration
+		f          *printer.ObjectPrinterFactory
+		p          printer.ObjectPrinter
+		json       bool
+		shouldFail bool
+		error      error
+	}{
+		"should not fail and create printer": {
+			timeout: expectedTimeout,
+			f:       validObjectPrinterFactory,
+			p:       jsonPrinter,
+		},
+		"should not create a printer when using legacy json output": {
+			timeout: expectedTimeout,
+			f:       validObjectPrinterFactory,
+			json:    true,
+		},
+		"should fail when invalid values are provided for object printer factory": {
+			timeout:    expectedTimeout,
+			f:          invalidObjectPrinterFactory,
+			shouldFail: true,
+			error:      errorhelpers.ErrInvalidArgs,
+		},
+	}
 
-	d.Assert().Equal(expectedTimeout, deployCheckCmd.timeout)
+	for name, c := range cases {
+		d.Run(name, func() {
+			deployCheckCmd := d.defaultDeploymentCheckCommand
+			deployCheckCmd.json = c.json
+
+			err := deployCheckCmd.Construct(nil, testCmd, c.f)
+			if c.shouldFail {
+				d.Require().Error(err)
+				d.Assert().ErrorIs(err, c.error)
+			} else {
+				d.Assert().NoError(err)
+			}
+			d.Assert().Equal(c.p, deployCheckCmd.printer)
+		})
+	}
 }
 
 func (d *deployCheckTestSuite) TestValidate() {
-	deployCheckCmd := d.defaultDeploymentCheckCommand
+	cases := map[string]struct {
+		file       string
+		shouldFail bool
+		error      error
+	}{
+		"should not fail with default file name": {
+			file: d.defaultDeploymentCheckCommand.file,
+		},
+		"should fail with non existing file name": {
+			file:       "invalidfile",
+			shouldFail: true,
+			error:      errorhelpers.ErrInvalidArgs,
+		},
+	}
 
-	d.Assert().NoError(deployCheckCmd.Validate())
+	for name, c := range cases {
+		d.Run(name, func() {
+			deployCheckCmd := d.defaultDeploymentCheckCommand
+			deployCheckCmd.file = c.file
+
+			err := deployCheckCmd.Validate()
+			if c.shouldFail {
+				d.Require().Error(err)
+				d.Assert().ErrorIs(err, c.error)
+			} else {
+				d.Assert().NoError(err)
+			}
+		})
+	}
 }
 
 type outputFormatTest struct {
 	alerts         []*storage.Alert
 	expectedOutput string
 	shouldFail     bool
+	error          error
 }
 
-func (d *deployCheckTestSuite) TestCheck_LegacyPrettyOutput() {
+func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 	cases := map[string]outputFormatTest{
-		// There is an issue currently within the output: The policy "policy5" is given two times within an alert
-		// but wrongly duplicated within the output.
-		"should render legacy pretty output and return no error with non failing alerts": {
+		"should not fail with non failing enforcement actions": {
 			alerts: testDeploymentAlertsWithoutFailure,
-			expectedOutput: `
+			expectedOutput: `Policy check results for deployments: [wordpress]
+(TOTAL: 5, LOW: 1, MEDIUM: 3, HIGH: 0, CRITICAL: 1)
 
-✗ Deployment wordpress failed policy 'policy 7'
-- Description:
-    ↳ policy 7 for testing
-- Rationale:
-    ↳ policy 7 for testing
-- Remediation:
-    ↳ policy 7 for testing
-- Violations:
-    - testing alert violation message
-
-✗ Deployment wordpress failed policy 'policy 2'
-- Description:
-    ↳ policy 2 for testing
-- Rationale:
-    ↳ policy 2 for testing
-- Remediation:
-    ↳ policy 2 for testing
-- Violations:
-    - testing multiple alert violation messages 1
-    - testing multiple alert violation messages 2
-    - testing multiple alert violation messages 3
-
-✗ Deployment wordpress failed policy 'policy 5'
-- Description:
-    ↳ policy 5 for testing
-- Rationale:
-    ↳ policy 5 for testing
-- Remediation:
-    ↳ policy 5 for testing
-- Violations:
-    - testing alert violation message
-
-✗ Deployment wordpress failed policy 'policy 5'
-- Description:
-    ↳ policy 5 for testing
-- Rationale:
-    ↳ policy 5 for testing
-- Remediation:
-    ↳ policy 5 for testing
-- Violations:
-    - testing multiple alert violation messages 1
-    - testing multiple alert violation messages 2
-    - testing multiple alert violation messages 3
-
-✗ Deployment wordpress failed policy 'policy 6'
-- Description:
-    ↳ policy 6 for testing
-- Rationale:
-    ↳ policy 6 for testing
-- Remediation:
-    ↳ policy 6 for testing
-- Violations:
-    - testing alert violation message
-
-✗ Deployment wordpress failed policy 'policy 1'
-- Description:
-    ↳ policy 1 for testing
-- Rationale:
-    ↳ policy 1 for testing
-- Remediation:
-    ↳ policy 1 for testing
-- Violations:
-    - testing multiple alert violation messages 1
-    - testing multiple alert violation messages 2
-    - testing multiple alert violation messages 3
-
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+|  POLICY  | SEVERITY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 1 | CRITICAL | wordpress  | policy 1 for testing | - testing multiple alert       | policy 1 for testing |
+|          |          |            |                      | violation messages 1 - testing |                      |
+|          |          |            |                      | multiple alert violation       |                      |
+|          |          |            |                      | messages 2 - testing multiple  |                      |
+|          |          |            |                      | alert violation messages 3     |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 2 | MEDIUM   | wordpress  | policy 2 for testing | - testing multiple alert       | policy 2 for testing |
+|          |          |            |                      | violation messages 1 - testing |                      |
+|          |          |            |                      | multiple alert violation       |                      |
+|          |          |            |                      | messages 2 - testing multiple  |                      |
+|          |          |            |                      | alert violation messages 3     |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 5 | MEDIUM   | wordpress  | policy 5 for testing | - testing alert violation      | policy 5 for testing |
+|          |          |            |                      | message - testing multiple     |                      |
+|          |          |            |                      | alert violation messages       |                      |
+|          |          |            |                      | 1 - testing multiple alert     |                      |
+|          |          |            |                      | violation messages 2 - testing |                      |
+|          |          |            |                      | multiple alert violation       |                      |
+|          |          |            |                      | messages 3                     |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 6 | MEDIUM   | wordpress  | policy 6 for testing | - testing alert violation      | policy 6 for testing |
+|          |          |            |                      | message                        |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 7 | LOW      | wordpress  | policy 7 for testing | - testing alert violation      | policy 7 for testing |
+|          |          |            |                      | message                        |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+WARN: A total of 5 policies have been violated
 `,
 		},
-		"should render legacy pretty output and return an error with failing alerts": {
+		"should fail with failing enforcement actions": {
 			alerts: testDeploymentAlertsWithFailure,
-			expectedOutput: `
+			expectedOutput: `Policy check results for deployments: [wordpress]
+(TOTAL: 5, LOW: 1, MEDIUM: 3, HIGH: 1, CRITICAL: 0)
 
-✗ Deployment wordpress failed policy 'policy 7'
-- Description:
-    ↳ policy 7 for testing
-- Rationale:
-    ↳ policy 7 for testing
-- Remediation:
-    ↳ policy 7 for testing
-- Violations:
-    - testing alert violation message
-
-✗ Deployment wordpress failed policy 'policy 2'
-- Description:
-    ↳ policy 2 for testing
-- Rationale:
-    ↳ policy 2 for testing
-- Remediation:
-    ↳ policy 2 for testing
-- Violations:
-    - testing multiple alert violation messages 1
-    - testing multiple alert violation messages 2
-    - testing multiple alert violation messages 3
-
-✗ Deployment wordpress failed policy 'policy 5'
-- Description:
-    ↳ policy 5 for testing
-- Rationale:
-    ↳ policy 5 for testing
-- Remediation:
-    ↳ policy 5 for testing
-- Violations:
-    - testing alert violation message
-
-✗ Deployment wordpress failed policy 'policy 5'
-- Description:
-    ↳ policy 5 for testing
-- Rationale:
-    ↳ policy 5 for testing
-- Remediation:
-    ↳ policy 5 for testing
-- Violations:
-    - testing multiple alert violation messages 1
-    - testing multiple alert violation messages 2
-    - testing multiple alert violation messages 3
-
-✗ Deployment wordpress failed policy 'policy 6'
-- Description:
-    ↳ policy 6 for testing
-- Rationale:
-    ↳ policy 6 for testing
-- Remediation:
-    ↳ policy 6 for testing
-- Violations:
-    - testing alert violation message
-
-✗ Deployment wordpress failed policy 'policy 4' (policy enforcement caused failure)
-- Description:
-    ↳ policy 4 for testing
-- Rationale:
-    ↳ policy 4 for testing
-- Remediation:
-    ↳ policy 4 for testing
-- Violations:
-    - testing multiple alert violation messages 1
-    - testing multiple alert violation messages 2
-    - testing multiple alert violation messages 3
-
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+|  POLICY  | SEVERITY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 4 | HIGH     | wordpress  | policy 4 for testing | - testing multiple alert       | policy 4 for testing |
+|          |          |            |                      | violation messages 1 - testing |                      |
+|          |          |            |                      | multiple alert violation       |                      |
+|          |          |            |                      | messages 2 - testing multiple  |                      |
+|          |          |            |                      | alert violation messages 3     |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 2 | MEDIUM   | wordpress  | policy 2 for testing | - testing multiple alert       | policy 2 for testing |
+|          |          |            |                      | violation messages 1 - testing |                      |
+|          |          |            |                      | multiple alert violation       |                      |
+|          |          |            |                      | messages 2 - testing multiple  |                      |
+|          |          |            |                      | alert violation messages 3     |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 5 | MEDIUM   | wordpress  | policy 5 for testing | - testing alert violation      | policy 5 for testing |
+|          |          |            |                      | message - testing multiple     |                      |
+|          |          |            |                      | alert violation messages       |                      |
+|          |          |            |                      | 1 - testing multiple alert     |                      |
+|          |          |            |                      | violation messages 2 - testing |                      |
+|          |          |            |                      | multiple alert violation       |                      |
+|          |          |            |                      | messages 3                     |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 6 | MEDIUM   | wordpress  | policy 6 for testing | - testing alert violation      | policy 6 for testing |
+|          |          |            |                      | message                        |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+| policy 7 | LOW      | wordpress  | policy 7 for testing | - testing alert violation      | policy 7 for testing |
+|          |          |            |                      | message                        |                      |
++----------+----------+------------+----------------------+--------------------------------+----------------------+
+WARN: A total of 5 policies have been violated
+ERROR: failed policies found: 1 policies violated that are failing the check
+ERROR: Policy "policy 4" within Deployment "wordpress" - Possible remediation: "policy 4"
 `,
+			error:      policy.ErrBreakingPolicies,
 			shouldFail: true,
-		},
-		"should render empty output with empty alerts": {
-			alerts: nil,
-			expectedOutput: `✔ The scanned resources passed all policies
-`,
 		},
 	}
 
-	d.runLegacyOutputTests(cases, false)
+	tablePrinter, err := printer.NewTabularPrinterFactory(false, defaultDeploymentCheckHeaders,
+		defaultDeploymentCheckJSONPathExpression, false, false).CreatePrinter("table")
+	d.Require().NoError(err)
+	d.runOutputTests(cases, tablePrinter, false)
+}
+
+func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
+	cases := map[string]outputFormatTest{
+		"should not fail with non failing enforcement actions": {
+			alerts: testDeploymentAlertsWithoutFailure,
+			expectedOutput: `{
+  "results": [
+    {
+      "metadata": {
+        "id": "",
+        "additionalInfo": {
+          "name": "wordpress",
+          "namespace": "",
+          "type": "Deployment"
+        }
+      },
+      "summary": {
+        "CRITICAL": 1,
+        "HIGH": 0,
+        "LOW": 1,
+        "MEDIUM": 3,
+        "TOTAL": 5
+      },
+      "violatedPolicies": [
+        {
+          "name": "policy 1",
+          "severity": "CRITICAL",
+          "description": "policy 1 for testing",
+          "violation": "- testing multiple alert violation messages 1\n- testing multiple alert violation messages 2\n- testing multiple alert violation messages 3\n",
+          "remediation": "policy 1 for testing"
+        },
+        {
+          "name": "policy 2",
+          "severity": "MEDIUM",
+          "description": "policy 2 for testing",
+          "violation": "- testing multiple alert violation messages 1\n- testing multiple alert violation messages 2\n- testing multiple alert violation messages 3\n",
+          "remediation": "policy 2 for testing"
+        },
+        {
+          "name": "policy 5",
+          "severity": "MEDIUM",
+          "description": "policy 5 for testing",
+          "violation": "- testing alert violation message\n- testing multiple alert violation messages 1\n- testing multiple alert violation messages 2\n- testing multiple alert violation messages 3\n",
+          "remediation": "policy 5 for testing"
+        },
+        {
+          "name": "policy 6",
+          "severity": "MEDIUM",
+          "description": "policy 6 for testing",
+          "violation": "- testing alert violation message\n",
+          "remediation": "policy 6 for testing"
+        },
+        {
+          "name": "policy 7",
+          "severity": "LOW",
+          "description": "policy 7 for testing",
+          "violation": "- testing alert violation message\n",
+          "remediation": "policy 7 for testing"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "CRITICAL": 1,
+    "HIGH": 0,
+    "LOW": 1,
+    "MEDIUM": 3,
+    "TOTAL": 5
+  }
+}
+`,
+		},
+		"should fail with failing enforcement actions": {
+			alerts: testDeploymentAlertsWithFailure,
+			expectedOutput: `{
+  "results": [
+    {
+      "metadata": {
+        "id": "",
+        "additionalInfo": {
+          "name": "wordpress",
+          "namespace": "",
+          "type": "Deployment"
+        }
+      },
+      "summary": {
+        "CRITICAL": 0,
+        "HIGH": 1,
+        "LOW": 1,
+        "MEDIUM": 3,
+        "TOTAL": 5
+      },
+      "violatedPolicies": [
+        {
+          "name": "policy 4",
+          "severity": "HIGH",
+          "description": "policy 4 for testing",
+          "violation": "- testing multiple alert violation messages 1\n- testing multiple alert violation messages 2\n- testing multiple alert violation messages 3\n",
+          "remediation": "policy 4 for testing"
+        },
+        {
+          "name": "policy 2",
+          "severity": "MEDIUM",
+          "description": "policy 2 for testing",
+          "violation": "- testing multiple alert violation messages 1\n- testing multiple alert violation messages 2\n- testing multiple alert violation messages 3\n",
+          "remediation": "policy 2 for testing"
+        },
+        {
+          "name": "policy 5",
+          "severity": "MEDIUM",
+          "description": "policy 5 for testing",
+          "violation": "- testing alert violation message\n- testing multiple alert violation messages 1\n- testing multiple alert violation messages 2\n- testing multiple alert violation messages 3\n",
+          "remediation": "policy 5 for testing"
+        },
+        {
+          "name": "policy 6",
+          "severity": "MEDIUM",
+          "description": "policy 6 for testing",
+          "violation": "- testing alert violation message\n",
+          "remediation": "policy 6 for testing"
+        },
+        {
+          "name": "policy 7",
+          "severity": "LOW",
+          "description": "policy 7 for testing",
+          "violation": "- testing alert violation message\n",
+          "remediation": "policy 7 for testing"
+        }
+      ],
+      "breakingPolicies": [
+        {
+          "name": "policy 4",
+          "remediation": "policy 4 for testing"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "CRITICAL": 0,
+    "HIGH": 1,
+    "LOW": 1,
+    "MEDIUM": 3,
+    "TOTAL": 5
+  }
+}
+`,
+			shouldFail: true,
+			error:      policy.ErrBreakingPolicies,
+		},
+	}
+
+	jsonPrinter, err := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
+	d.Require().NoError(err)
+	d.runOutputTests(cases, jsonPrinter, true)
+}
+
+func (d *deployCheckTestSuite) TestCheck_CSVOutput() {
+	cases := map[string]outputFormatTest{
+		"should not fail with non failing enforcement actions": {
+			alerts: testDeploymentAlertsWithoutFailure,
+			expectedOutput: `POLICY,SEVERITY,DEPLOYMENT,DESCRIPTION,VIOLATION,REMEDIATION
+policy 1,CRITICAL,wordpress,policy 1 for testing,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3
+",policy 1 for testing
+policy 2,MEDIUM,wordpress,policy 2 for testing,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3
+",policy 2 for testing
+policy 5,MEDIUM,wordpress,policy 5 for testing,"- testing alert violation message
+- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3
+",policy 5 for testing
+policy 6,MEDIUM,wordpress,policy 6 for testing,"- testing alert violation message
+",policy 6 for testing
+policy 7,LOW,wordpress,policy 7 for testing,"- testing alert violation message
+",policy 7 for testing
+`,
+		},
+		"should fail with failing enforcement actions": {
+			alerts: testDeploymentAlertsWithFailure,
+			expectedOutput: `POLICY,SEVERITY,DEPLOYMENT,DESCRIPTION,VIOLATION,REMEDIATION
+policy 4,HIGH,wordpress,policy 4 for testing,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3
+",policy 4 for testing
+policy 2,MEDIUM,wordpress,policy 2 for testing,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3
+",policy 2 for testing
+policy 5,MEDIUM,wordpress,policy 5 for testing,"- testing alert violation message
+- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3
+",policy 5 for testing
+policy 6,MEDIUM,wordpress,policy 6 for testing,"- testing alert violation message
+",policy 6 for testing
+policy 7,LOW,wordpress,policy 7 for testing,"- testing alert violation message
+",policy 7 for testing
+`,
+			shouldFail: true,
+			error:      policy.ErrBreakingPolicies,
+		},
+	}
+
+	csvPrinter, err := printer.NewTabularPrinterFactory(false, defaultDeploymentCheckHeaders,
+		defaultDeploymentCheckJSONPathExpression, false, false).CreatePrinter("csv")
+	d.Require().NoError(err)
+	d.runOutputTests(cases, csvPrinter, true)
 }
 
 func (d *deployCheckTestSuite) TestCheck_LegacyJSONOutput() {
@@ -737,12 +953,12 @@ func (d *deployCheckTestSuite) TestCheck_LegacyJSONOutput() {
 func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputFormatTest, json bool) {
 	for name, c := range cases {
 		d.Run(name, func() {
-			//var out *bytes.Buffer
+			var out *bytes.Buffer
 			conn, closeFunction := d.createGRPCMockDetectionService(c.alerts)
 			defer closeFunction()
 
 			deployCheckCmd := d.defaultDeploymentCheckCommand
-			deployCheckCmd.env, _ = d.createMockEnvironmentWithConn(conn)
+			deployCheckCmd.env, out = d.createMockEnvironmentWithConn(conn)
 			deployCheckCmd.json = json
 
 			err := deployCheckCmd.Check()
@@ -751,7 +967,33 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 			} else {
 				d.Require().NoError(err)
 			}
-			//d.Assert().Equal(c.expectedOutput, out.String())
+			d.Assert().Equal(c.expectedOutput, out.String())
+		})
+	}
+}
+
+func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
+	standardizedFormat bool) {
+	for name, c := range cases {
+		d.Run(name, func() {
+			var out *bytes.Buffer
+			conn, closeF := d.createGRPCMockDetectionService(c.alerts)
+			defer closeF()
+
+			deployCheckCmd := d.defaultDeploymentCheckCommand
+			deployCheckCmd.printer = printer
+			deployCheckCmd.standardizedFormat = standardizedFormat
+
+			deployCheckCmd.env, out = d.createMockEnvironmentWithConn(conn)
+			err := deployCheckCmd.Check()
+			if c.shouldFail {
+				d.Require().Error(err)
+				d.Assert().ErrorIs(err, c.error)
+			} else {
+				d.Require().NoError(err)
+
+			}
+			d.Assert().Equal(c.expectedOutput, out.String())
 		})
 	}
 }
