@@ -160,7 +160,7 @@ const sortDate = (a, b) => {
 
 /**
  * Sort by array length
- * @returns {string}
+ * @returns {number}
  */
 const sortValueByLength = (a, b) => {
     if (a === undefined) {

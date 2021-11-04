@@ -26,6 +26,7 @@ import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { ListPolicy } from 'types/policy.proto';
 // TODO: the policy import dialogue component will be migrated to PF in ROX-8354
 import PolicyImportDialogue from '../Table/PolicyImportDialogue';
+import PoliciesTable from './PoliciesTable';
 
 const policiesPageState = createStructuredSelector<
     SearchState,
@@ -69,18 +70,22 @@ function PoliciesTablePage(): React.ReactElement {
         return reassessPolicies();
     }
 
-    // on first load
+    function handlePoliciesError(error) {
+        setPolicies([]);
+        const parsedMessage = checkForPermissionErrorMessage(error);
+        setErrorMessage(parsedMessage);
+    }
+
+    // on first load/empty search options
     useEffect(() => {
-        setIsLoading(true);
-        getPolicies()
-            .then((data) => setPolicies(data))
-            .catch((error) => {
-                setPolicies([]);
-                const parsedMessage = checkForPermissionErrorMessage(error);
-                setErrorMessage(parsedMessage);
-            })
-            .finally(() => setIsLoading(false));
-    }, [setIsLoading, setPolicies, setErrorMessage]);
+        if (searchOptions.length === 0) {
+            setIsLoading(true);
+            getPolicies()
+                .then((data) => setPolicies(data))
+                .catch(handlePoliciesError)
+                .finally(() => setIsLoading(false));
+        }
+    }, [setIsLoading, setPolicies, setErrorMessage, searchOptions]);
 
     // to watch on search options
     useEffect(() => {
@@ -88,11 +93,7 @@ function PoliciesTablePage(): React.ReactElement {
             const query = searchOptionsToQuery(searchOptions);
             getPolicies(query)
                 .then((data) => setPolicies(data))
-                .catch((error) => {
-                    setPolicies([]);
-                    const parsedMessage = checkForPermissionErrorMessage(error);
-                    setErrorMessage(parsedMessage);
-                });
+                .catch(handlePoliciesError);
         }
     }, [setErrorMessage, setPolicies, searchOptions]);
 
@@ -125,31 +126,34 @@ function PoliciesTablePage(): React.ReactElement {
                     <Alert variant="danger" title={errorMessage} />
                 </Bullseye>
             ) : (
-                <Flex className="pf-u-mt-sm">
-                    <FlexItem>
-                        <Dropdown
-                            toggle={
-                                <DropdownToggle
-                                    onToggle={onToggleDropdown}
-                                    toggleIndicator={CaretDownIcon}
-                                    isPrimary
-                                    id="add-policy-dropdown-toggle"
-                                >
-                                    Add Policy
-                                </DropdownToggle>
-                            }
-                            isOpen={isDropdownOpen}
-                            dropdownItems={dropdownItems}
-                        />
-                    </FlexItem>
-                    <FlexItem>
-                        <Tooltip content="Manually enrich external data">
-                            <Button variant="secondary" onClick={onClickReassessPolicies}>
-                                Reassess all
-                            </Button>
-                        </Tooltip>
-                    </FlexItem>
-                </Flex>
+                <>
+                    <Flex className="pf-u-mt-sm">
+                        <FlexItem>
+                            <Dropdown
+                                toggle={
+                                    <DropdownToggle
+                                        onToggle={onToggleDropdown}
+                                        toggleIndicator={CaretDownIcon}
+                                        isPrimary
+                                        id="add-policy-dropdown-toggle"
+                                    >
+                                        Add Policy
+                                    </DropdownToggle>
+                                }
+                                isOpen={isDropdownOpen}
+                                dropdownItems={dropdownItems}
+                            />
+                        </FlexItem>
+                        <FlexItem>
+                            <Tooltip content="Manually enrich external data">
+                                <Button variant="secondary" onClick={onClickReassessPolicies}>
+                                    Reassess all
+                                </Button>
+                            </Tooltip>
+                        </FlexItem>
+                    </Flex>
+                    <PoliciesTable policies={policies} />
+                </>
             )}
             {isImportModalOpen && (
                 <PolicyImportDialogue

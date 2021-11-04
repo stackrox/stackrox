@@ -1,0 +1,269 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Flex,
+    FlexItem,
+    Divider,
+    PageSection,
+    Title,
+    Badge,
+    Select,
+    SelectOption,
+    Label,
+} from '@patternfly/react-core';
+import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { CheckCircleIcon } from '@patternfly/react-icons';
+import orderBy from 'lodash/orderBy';
+
+import { ListPolicy } from 'types/policy.proto';
+import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
+import { severityColorMapPF } from 'constants/severityColors';
+import { severityLabels, lifecycleStageLabels } from 'messages/common';
+import TableCell from 'Components/PatternFly/TableCell';
+import { ActionItem } from 'Containers/Violations/PatternFly/ViolationsTablePanel';
+import useTableSelection from 'hooks/useTableSelection';
+import { SortDirection } from 'hooks/useTableSort';
+
+const columns = [
+    {
+        Header: 'Policy',
+        accessor: 'name',
+        Cell: ({ value }) => <div data-testid="policy-name">{value}</div>,
+        sortMethod: (a: ListPolicy, b: ListPolicy) => sortAsciiCaseInsensitive(a.name, b.name),
+        width: 20 as const,
+    },
+    {
+        Header: 'Description',
+        accessor: 'description',
+        width: 40 as const,
+    },
+    {
+        Header: 'Status',
+        accessor: 'disabled',
+        Cell: ({ value }) => {
+            if (value) {
+                return 'Disabled';
+            }
+            return (
+                <Flex className="pf-u-info-color-200">
+                    <CheckCircleIcon className="pf-u-mr-sm pf-m-align-self-center" />
+                    Enabled
+                </Flex>
+            );
+        },
+        width: 15 as const,
+    },
+    {
+        Header: 'Notifiers',
+        accessor: 'notifiers',
+        Cell: ({ value }) => {
+            return value.join(', ') as string;
+        },
+        sortMethod: (a: ListPolicy, b: ListPolicy) => sortValueByLength(a.notifiers, b.notifiers),
+    },
+    {
+        Header: 'Severity',
+        accessor: 'severity',
+        Cell: ({ value }) => {
+            const severity = severityLabels[value];
+            return <Label color={severityColorMapPF[severity]}>{severity}</Label>;
+        },
+        sortMethod: (a: ListPolicy, b: ListPolicy) => -sortSeverity(a.severity, b.severity),
+    },
+    {
+        Header: 'Lifecycle',
+        accessor: 'lifecycleStages',
+        Cell: ({ value }) => {
+            return value.map((stage) => lifecycleStageLabels[stage] as string).join(', ') as string;
+        },
+    },
+];
+
+type PoliciesTableProps = {
+    policies?: ListPolicy[];
+};
+
+function PoliciesTable({ policies = [] }: PoliciesTableProps): React.ReactElement {
+    // index of the currently active column
+    const [activeSortIndex, setActiveSortIndex] = useState(0);
+    // sort direction of the currently active column
+    const [activeSortDirection, setActiveSortDirection] = useState<SortDirection>('asc');
+    // Handle Bulk Actions dropdown state.
+    const [isSelectOpen, setIsSelectOpen] = useState(false);
+    // For sorting data client side
+    const [rows, setRows] = useState<ListPolicy[]>([]);
+
+    // Handle selected rows in table
+    const {
+        selected,
+        allRowsSelected,
+        hasSelections,
+        onSelect,
+        onSelectAll,
+        // onClearAll,
+        // getSelectedIds,
+    } = useTableSelection(policies);
+
+    function onToggleSelect(toggleOpen) {
+        setIsSelectOpen(toggleOpen);
+    }
+
+    function closeSelect() {
+        setIsSelectOpen(false);
+    }
+
+    function onSort(e, index, direction) {
+        setActiveSortIndex(index);
+        setActiveSortDirection(direction);
+    }
+
+    // If we use server side page management, this becomes unnecessary
+    useEffect(() => {
+        const { sortMethod, accessor } = columns[activeSortIndex];
+        let sortedPolicies = [...policies];
+        if (sortMethod) {
+            sortedPolicies.sort(sortMethod);
+            if (activeSortDirection === 'desc') {
+                sortedPolicies.reverse();
+            }
+        } else {
+            sortedPolicies = orderBy(sortedPolicies, [accessor], [activeSortDirection]);
+        }
+        setRows(sortedPolicies);
+    }, [policies, activeSortIndex, activeSortDirection]);
+
+    return (
+        <>
+            <Flex
+                className="pf-u-p-md"
+                alignSelf={{ default: 'alignSelfCenter' }}
+                fullWidth={{ default: 'fullWidth' }}
+            >
+                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                    <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
+                        Policies
+                    </Title>
+                </FlexItem>
+                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                    <Badge isRead>{policies.length}</Badge>
+                </FlexItem>
+                <FlexItem data-testid="policies-bulk-actions-dropdown">
+                    {/* TODO: will address this in ROX-8355 */}
+                    <Select
+                        onToggle={onToggleSelect}
+                        isOpen={isSelectOpen}
+                        placeholderText="Bulk Actions"
+                        onSelect={closeSelect}
+                        isDisabled={!hasSelections}
+                    >
+                        <SelectOption
+                            key="0"
+                            value={`Enable (${0})`}
+                            // onClick={() => {
+                            //     console.log(selected);
+                            // }}
+                            data-testid="bulk-add-tags-btn"
+                        />
+                        <SelectOption
+                            key="1"
+                            value={`Mark as resolved (${0})`}
+                            // onClick={showResolveConfirmationDialog}
+                        />
+                        <SelectOption
+                            key="2"
+                            value={`Exclude deployments from policy (${0})`}
+                            // onClick={showExcludeConfirmationDialog}
+                        />
+                    </Select>
+                </FlexItem>
+            </Flex>
+            <Divider component="div" />
+            <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
+                <TableComposable>
+                    <Thead>
+                        <Tr>
+                            <Th
+                                select={{
+                                    onSelect: onSelectAll,
+                                    isSelected: allRowsSelected,
+                                }}
+                            />
+                            {columns.map(({ Header, width }, columnIndex) => {
+                                const sortParams = {
+                                    sort: {
+                                        sortBy: {
+                                            index: activeSortIndex,
+                                            direction: activeSortDirection,
+                                        },
+                                        onSort,
+                                        columnIndex,
+                                    },
+                                };
+                                return (
+                                    <Th key={Header} modifier="wrap" width={width} {...sortParams}>
+                                        {Header}
+                                    </Th>
+                                );
+                            })}
+                            <Th />
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        {rows.map((policy, rowIndex) => {
+                            const actionItems: ActionItem[] = [];
+                            // if (!isResolved) {
+                            //     if (isRuntimeAlert) {
+                            //         actionItems.push({
+                            //             title: 'Resolve and add to process baseline',
+                            //             onClick: () => resolveAlertAction(true, violation.id),
+                            //         });
+                            //     }
+                            //     if (isRuntimeAlert || isAttemptedViolation) {
+                            //         actionItems.push({
+                            //             title: 'Mark as resolved',
+                            //             onClick: () => resolveAlertAction(false, violation.id),
+                            //         });
+                            //     }
+                            // }
+                            // if (!isDeployCreateAttemptedAlert && 'deployment' in violation) {
+                            //     actionItems.push({
+                            //         title: 'Exclude deployment from policy',
+                            //         onClick: () =>
+                            //             excludeDeployments(policy.id, [violation.deployment.name]),
+                            //     });
+                            // }
+                            return (
+                                // eslint-disable-next-line react/no-array-index-key
+                                <Tr key={rowIndex}>
+                                    <Td
+                                        key={policy.id}
+                                        select={{
+                                            rowIndex,
+                                            onSelect,
+                                            isSelected: selected[rowIndex],
+                                        }}
+                                    />
+                                    {columns.map((column) => {
+                                        return (
+                                            <TableCell
+                                                key={column.Header}
+                                                row={policy}
+                                                column={column}
+                                            />
+                                        );
+                                    })}
+                                    <Td
+                                        actions={{
+                                            items: actionItems,
+                                        }}
+                                    />
+                                </Tr>
+                            );
+                        })}
+                    </Tbody>
+                </TableComposable>
+            </PageSection>
+        </>
+    );
+}
+
+export default PoliciesTable;
