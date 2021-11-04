@@ -224,7 +224,7 @@ func (s *storeImpl) upsert(id string, obj *storage.NetworkPolicyApplicationUndoD
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "NetworkPolicyApplicationUndoDeploymentRecord")
-	conn, release := s.acquireConn(ops.RemoveMany, "NetworkPolicyApplicationUndoDeploymentRecord")
+	conn, release := s.acquireConn(ops.Add, "NetworkPolicyApplicationUndoDeploymentRecord")
 	defer release()
 
 	_, err = conn.Exec(context.Background(), upsertStmt, id, value)
@@ -266,10 +266,13 @@ func (s *storeImpl) UpsertMany(objs []*storage.NetworkPolicyApplicationUndoDeplo
 				placeholderStr += ", "
 			}
 			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+
+			t := time.Now()
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err
 			}
+			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "NetworkPolicyApplicationUndoDeploymentRecord")
 			id := keyFunc(obj)
 			data = append(data, id, value)
 		}

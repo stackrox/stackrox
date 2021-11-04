@@ -390,6 +390,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		`create index if not exists alerts_time on alerts(Time);`,
 
 		`create index if not exists processindicators_id on processindicators using hash ((id));`,
+		`create index if not exists processindicators_deploymentid on processindicators using hash (DeploymentId);`,
 	}
 
 	for _, index := range indexes {

@@ -224,7 +224,7 @@ func (s *storeImpl) upsert(id string, obj *storage.InitBundleMeta) error {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "InitBundleMeta")
-	conn, release := s.acquireConn(ops.RemoveMany, "InitBundleMeta")
+	conn, release := s.acquireConn(ops.Add, "InitBundleMeta")
 	defer release()
 
 	_, err = conn.Exec(context.Background(), upsertStmt, id, value)
@@ -266,10 +266,13 @@ func (s *storeImpl) UpsertMany(objs []*storage.InitBundleMeta) error {
 				placeholderStr += ", "
 			}
 			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+
+			t := time.Now()
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err
 			}
+			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "InitBundleMeta")
 			id := keyFunc(obj)
 			data = append(data, id, value)
 		}

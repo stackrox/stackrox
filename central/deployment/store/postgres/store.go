@@ -224,7 +224,7 @@ func (s *storeImpl) upsert(id string, obj *storage.Deployment) error {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Deployment")
-	conn, release := s.acquireConn(ops.RemoveMany, "Deployment")
+	conn, release := s.acquireConn(ops.Add, "Deployment")
 	defer release()
 
 	_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetName(), obj.GetType(), obj.GetNamespace(), obj.GetNamespaceId(), obj.GetCreated().String(), obj.GetClusterId(), obj.GetClusterName(), obj.GetPriority(), obj.GetServiceAccount(), obj.GetServiceAccountPermissionLevel(), obj.GetRiskScore())
@@ -266,10 +266,13 @@ func (s *storeImpl) UpsertMany(objs []*storage.Deployment) error {
 				placeholderStr += ", "
 			}
 			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+
+			t := time.Now()
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err
 			}
+			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Deployment")
 			id := keyFunc(obj)
 			data = append(data, id, value, obj.GetName(), obj.GetType(), obj.GetNamespace(), obj.GetNamespaceId(), obj.GetCreated().String(), obj.GetClusterId(), obj.GetClusterName(), obj.GetPriority(), obj.GetServiceAccount(), obj.GetServiceAccountPermissionLevel(), obj.GetRiskScore())
 		}
