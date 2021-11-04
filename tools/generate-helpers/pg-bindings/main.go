@@ -385,7 +385,7 @@ func (s *storeImpl) WalkAllWithID(fn func(id string, obj *storage.{{.Type}}) err
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}
@@ -408,7 +408,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.{{.Type}}) error) error {
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}
