@@ -34,15 +34,14 @@ func RegisterTable(table string, objType string) {
 func GetPostgresDB() *pgxpool.Pool {
 	pgInit.Do(func() {
 		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=60000 pool_min_conns=90 pool_max_conns=90"
-
+		config, err := pgxpool.ParseConfig(source)
+		if err != nil {
+			panic(err)
+		}
 		retry.WithRetry(func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			config, err := pgxpool.ParseConfig(source)
-			if err != nil {
-				panic(err)
-			}
 			pool, err := pgxpool.ConnectConfig(ctx, config)
 			if err != nil {
 				return retry.MakeRetryable(err)
@@ -69,7 +68,7 @@ func startMonitoringPostgresDB(db *pgxpool.Pool) {
 	for range ticker.C {
 		for _, registeredTable := range registeredTables {
 			var count int
-			row := db.QueryRow(context.Background(), "select count(*) from "+registeredTable.table)
+			row := db.QueryRow(context.Background(), "SELECT reltuples::bigint AS estimate FROM pg_class WHERE relname=$1", registeredTable.table)
 			if err := row.Scan(&count); err != nil {
 				log.Errorf("error scanning count row for table %s: %v", registeredTable.table, err)
 				continue

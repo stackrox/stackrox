@@ -224,7 +224,7 @@ func (s *storeImpl) upsert(id string, obj *storage.ProcessIndicator) error {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ProcessIndicator")
-	conn, release := s.acquireConn(ops.RemoveMany, "ProcessIndicator")
+	conn, release := s.acquireConn(ops.Add, "ProcessIndicator")
 	defer release()
 
 	_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
@@ -266,10 +266,13 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
 				placeholderStr += ", "
 			}
 			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+
+			t := time.Now()
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err
 			}
+			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ProcessIndicator")
 			id := keyFunc(obj)
 			data = append(data, id, value, obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
 		}

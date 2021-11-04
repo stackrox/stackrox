@@ -224,7 +224,7 @@ func (s *storeImpl) upsert(id string, obj *storage.K8SRoleBinding) error {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "K8SRoleBinding")
-	conn, release := s.acquireConn(ops.RemoveMany, "K8SRoleBinding")
+	conn, release := s.acquireConn(ops.Add, "K8SRoleBinding")
 	defer release()
 
 	_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetName(), obj.GetNamespace(), obj.GetClusterId(), obj.GetClusterName(), obj.GetRoleId())
@@ -266,10 +266,13 @@ func (s *storeImpl) UpsertMany(objs []*storage.K8SRoleBinding) error {
 				placeholderStr += ", "
 			}
 			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+
+			t := time.Now()
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err
 			}
+			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "K8SRoleBinding")
 			id := keyFunc(obj)
 			data = append(data, id, value, obj.GetName(), obj.GetNamespace(), obj.GetClusterId(), obj.GetClusterName(), obj.GetRoleId())
 		}

@@ -1,12 +1,12 @@
 deploymentWorkload:
 - deploymentType: Deployment
-  lifecycleDuration: 10m0s
-  numDeployments: 2500
-  numLifecycles: 1
+  lifecycleDuration: 20m0s
+  numDeployments: 5000
+  numLifecycles: 10
   podWorkload:
     containerWorkload:
       numImages: 50
-    lifecycleDuration: 2m0s
+    lifecycleDuration: 4m0s
     numContainers: 3
     numPods: 5
     processWorkload:

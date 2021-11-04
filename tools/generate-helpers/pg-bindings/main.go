@@ -324,10 +324,13 @@ func (s *storeImpl) UpsertMany(objs []*storage.{{.Type}}) error {
 				placeholderStr += ", "
 			}
 			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+
+			t := time.Now()
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err
 			}
+			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "{{.Type}}")
 			id := keyFunc(obj)
 			data = append(data, {{.InsertionGetters}})
 		}
