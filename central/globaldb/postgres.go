@@ -33,12 +33,13 @@ func RegisterTable(table string, objType string) {
 // GetPostgresDB returns the global postgres instance
 func GetPostgresDB() *pgxpool.Pool {
 	pgInit.Do(func() {
-		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=60000 pool_min_conns=90 pool_max_conns=90"
+		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
+		//source := "pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=600000"
 		config, err := pgxpool.ParseConfig(source)
 		if err != nil {
 			panic(err)
 		}
-		retry.WithRetry(func() error {
+		err = retry.WithRetry(func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
@@ -53,11 +54,18 @@ func GetPostgresDB() *pgxpool.Pool {
 			}
 			defer conn.Release()
 			t := time.Now()
-			conn.Conn().Ping(context.Background())
+			if err := conn.Conn().Ping(context.Background()); err != nil {
+				return retry.MakeRetryable(err)
+			}
 			fmt.Println("Ping Nanos: ", time.Since(t).Nanoseconds())
 			pgDB = pool
 			return nil
-		}, retry.Tries(20))
+		}, retry.Tries(20), retry.BetweenAttempts(func(_ int) {
+			time.Sleep(3 * time.Second)
+		}))
+		if err != nil {
+			panic(err)
+		}
 		go startMonitoringPostgresDB(pgDB)
 	})
 	return pgDB
@@ -76,7 +84,7 @@ func startMonitoringPostgresDB(db *pgxpool.Pool) {
 			log.Infof("table %s has %d objects", registeredTable.table, count)
 		}
 
-		rows, err := db.Query(context.Background(), "select total_exec_time, mean_exec_time, calls, substr(query, 1, 100) from pg_stat_statements where calls > 5 order by total_exec_time desc limit 50 ;")
+		rows, err := db.Query(context.Background(), "select total_exec_time, mean_exec_time, calls, substr(query, 1, 300) from pg_stat_statements where calls > 5 order by total_exec_time desc limit 50 ;")
 		if err != nil {
 			log.Errorf("Error getting pg stat statements: %v", err)
 			continue

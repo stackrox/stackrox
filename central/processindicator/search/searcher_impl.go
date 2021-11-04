@@ -19,8 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/processindicators"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	mappings "github.com/stackrox/rox/pkg/search/options/processindicators"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
@@ -47,8 +47,9 @@ func (s *searcherImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Que
 		defer rows.Close()
 		var elems []*storage.ProcessIndicator
 		for rows.Next() {
+			var id string
 			var data []byte
-			if err := rows.Scan(&data); err != nil {
+			if err := rows.Scan(&id, &data); err != nil {
 				return nil, err
 			}
 			msg := new(storage.ProcessIndicator)

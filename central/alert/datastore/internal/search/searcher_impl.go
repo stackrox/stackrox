@@ -97,8 +97,9 @@ func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*stora
 		defer rows.Close()
 		var elems []*storage.Alert
 		for rows.Next() {
+			var id string
 			var data []byte
-			if err := rows.Scan(&data); err != nil {
+			if err := rows.Scan(&id, &data); err != nil {
 				return nil, err
 			}
 			msg := new(storage.Alert)
