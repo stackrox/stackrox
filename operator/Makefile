@@ -162,7 +162,7 @@ GET_GITHUB_RELEASE_FN = get_github_release() { \
 	} \
 }
 
-# go-get-tool will 'go get' any package $2 and install it to $1.
+# go-get-tool will 'go get -d' any package $2 and install it to $(PROJECT_DIR)/bin unless $1 already exists.
 define go-get-tool
 @[ -f $(1) ] || { \
 set -e ;\
