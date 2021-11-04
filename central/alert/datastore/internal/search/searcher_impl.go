@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -61,6 +62,34 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 
 // SearchRawAlerts retrieves Alerts from the indexer and storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
+	if features.PostgresPOC.Enabled() {
+		defer metrics.SetIndexOperationDurationTime(time.Now(), ops.SearchAndGet, "ListAlert")
+		rows, err := postgres.RunSearchRequestValue(v1.SearchCategory_ALERTS, q, globaldb.GetPostgresDB(), mappings.OptionsMap)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return nil, nil
+			}
+			return nil, err
+		}
+		defer rows.Close()
+		var elems []*storage.ListAlert
+		for rows.Next() {
+			var id string
+			var data []byte
+			if err := rows.Scan(&id, &data); err != nil {
+				return nil, err
+			}
+			msg := new(storage.Alert)
+			buf := bytes.NewReader(data)
+			t := time.Now()
+			if err := jsonpb.Unmarshal(buf, msg); err != nil {
+				return nil, err
+			}
+			metrics.SetJSONPBOperationDurationTime(t, "Unmarshal", "Alert")
+			elems = append(elems, convert.AlertToListAlert(msg))
+		}
+		return elems, nil
+	}
 	alerts, _, err := ds.searchListAlerts(ctx, q)
 	return alerts, err
 }
