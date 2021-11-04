@@ -82,7 +82,8 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 	authProviders := s.registry.GetProviders(nil, nil)
 	result := make([]*v1.GetLoginAuthProvidersResponse_LoginAuthProvider, 0, len(authProviders))
 	for _, provider := range authProviders {
-		if view := provider.StorageView(); view.GetEnabled() {
+		// Providers without a backend factory are useless for login purposes.
+		if view := provider.StorageView(); view.GetEnabled() && provider.BackendFactory() != nil {
 			result = append(result, &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{
 				Id:       view.GetId(),
 				Name:     view.GetName(),
@@ -145,7 +146,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq), authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not create auth provider: %v", err)
+		return nil, errors.Wrap(errorhelpers.NewErrInvalidArgs(err.Error()), "could not create auth provider")
 	}
 	return provider.StorageView(), nil
 }
@@ -174,7 +175,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request), authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not create auth provider: %v", err)
+		return nil, errors.Wrap(errorhelpers.NewErrInvalidArgs(err.Error()), "could not create auth provider")
 	}
 	return provider.StorageView(), nil
 }

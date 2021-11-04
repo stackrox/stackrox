@@ -129,6 +129,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
+	"github.com/stackrox/rox/pkg/auth/authproviders/openshift"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -383,6 +384,13 @@ func startGRPCServer() {
 		mapper.FactorySingleton())
 	if err != nil {
 		log.Panicf("Could not create auth provider registry: %v", err)
+	}
+
+	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
+	// is configured correctly to talk to the OpenShift's OAuth server. If this
+	// is the case, we can be setting up an auth providers which won't work.
+	if env.EnableOpenShiftAuth.BooleanSetting() {
+		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
