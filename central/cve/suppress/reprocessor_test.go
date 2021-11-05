@@ -23,6 +23,7 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/generated/storage"
@@ -140,6 +141,7 @@ func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, bleveIndex bleve.I
 		componentCVEEdgeIndexer.New(bleveIndex),
 		componentIndexer.New(bleveIndex),
 		imageComponentEdgeIndexer.New(bleveIndex),
+		imageCVEEdgeIndexer.New(bleveIndex),
 		imageIndexer.New(bleveIndex),
 		nodeComponentEdgeIndexer.New(bleveIndex),
 		nodeIndexer.New(bleveIndex),

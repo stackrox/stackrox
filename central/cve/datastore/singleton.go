@@ -13,6 +13,7 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/pkg/sync"
@@ -34,6 +35,7 @@ func initialize() {
 		componentCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		componentIndexer.New(globalindex.GetGlobalIndex()),
 		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
+		imageCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		imageIndexer.New(globalindex.GetGlobalIndex()),
 		nodeComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		nodeIndexer.New(globalindex.GetGlobalIndex()),

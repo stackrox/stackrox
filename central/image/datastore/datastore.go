@@ -13,6 +13,7 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -55,6 +56,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		imageComponentEdgeIndexer.New(bleveIndex),
 		imageIndexer.New(bleveIndex),
 		deploymentIndexer.New(bleveIndex, nil),
+		imageCVEEdgeIndexer.New(bleveIndex),
 	)
 	ds := newDatastoreImpl(storage, indexer, searcher, risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()

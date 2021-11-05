@@ -22,6 +22,9 @@ import (
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
 	imageComponentEdgeSAC "github.com/stackrox/rox/central/imagecomponentedge/sac"
+	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
+	imageCVEEdgeMappings "github.com/stackrox/rox/central/imagecveedge/mappings"
+	imageCVEEdgeSAC "github.com/stackrox/rox/central/imagecveedge/sac"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	nodeSAC "github.com/stackrox/rox/central/node/sac"
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
@@ -113,6 +116,7 @@ func formatSearcher(indexer index.Indexer,
 	cveIndexer cveIndexer.Indexer,
 	componentIndexer componentIndexer.Indexer,
 	imageComponentEdgeIndexer imageComponentEdgeIndexer.Indexer,
+	imageCVEEdgeIndexer imageCVEEdgeIndexer.Indexer,
 	imageIndexer imageIndexer.Indexer,
 	nodeComponentEdgeIndexer nodeComponentEdgeIndexer.Indexer,
 	nodeIndexer nodeIndexer.Indexer,
@@ -123,6 +127,7 @@ func formatSearcher(indexer index.Indexer,
 	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(indexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
 	imageComponentEdgeSearcher := filtered.UnsafeSearcher(imageComponentEdgeIndexer, imageComponentEdgeSAC.GetSACFilter())
+	imageCVEEdgeSearcher := filtered.UnsafeSearcher(imageCVEEdgeIndexer, imageCVEEdgeSAC.GetSACFilter())
 	imageSearcher := filtered.UnsafeSearcher(imageIndexer, imageSAC.GetSACFilter())
 	nodeComponentEdgeSearcher := filtered.UnsafeSearcher(nodeComponentEdgeIndexer, nodeComponentEdgeSAC.GetSACFilter())
 	nodeSearcher := filtered.UnsafeSearcher(nodeIndexer, nodeSAC.GetSACFilter())
@@ -134,6 +139,7 @@ func formatSearcher(indexer index.Indexer,
 		cveSearcher:                cveSearcher,
 		componentSearcher:          componentSearcher,
 		imageComponentEdgeSearcher: imageComponentEdgeSearcher,
+		imageCVEEdgeSearcher:       imageCVEEdgeSearcher,
 		imageSearcher:              imageSearcher,
 		nodeComponentEdgeSearcher:  nodeComponentEdgeSearcher,
 		nodeSearcher:               nodeSearcher,
@@ -163,6 +169,7 @@ type compoundCVESearcherArg struct {
 	cveSearcher                search.Searcher
 	componentSearcher          search.Searcher
 	imageComponentEdgeSearcher search.Searcher
+	imageCVEEdgeSearcher       search.Searcher
 	imageSearcher              search.Searcher
 	nodeComponentEdgeSearcher  search.Searcher
 	nodeSearcher               search.Searcher
@@ -193,6 +200,11 @@ func getCompoundCVESearcher(arg compoundCVESearcherArg) search.Searcher {
 			Searcher:       scoped.WithScoping(arg.imageComponentEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_COMPONENT_EDGE)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_COMPONENT_EDGE][v1.SearchCategory_COMPONENT_VULN_EDGE],
 			Options:        imageComponentEdgeMappings.OptionsMap,
+		},
+		{
+			Searcher:       scoped.WithScoping(arg.imageCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_VULN_EDGE)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_VULN_EDGE][v1.SearchCategory_COMPONENT_VULN_EDGE],
+			Options:        imageCVEEdgeMappings.OptionsMap,
 		},
 		{
 			Searcher:       scoped.WithScoping(arg.imageSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGES)),

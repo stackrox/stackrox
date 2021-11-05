@@ -11,6 +11,7 @@ import (
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -34,6 +35,7 @@ func New(storage store.Store, graphProvider graph.Provider,
 	componentCVEEdgeIndexer componentCVEEdgeIndexer.Indexer,
 	componentIndexer componentIndexer.Indexer,
 	imageComponentEdgeIndexer imageComponentEdgeIndexer.Indexer,
+	imageCVEEdgeIndexer imageCVEEdgeIndexer.Indexer,
 	imageIndexer imageIndexer.Indexer,
 	nodeComponentEdgeIndexer nodeComponentEdgeIndexer.Indexer,
 	nodeIndexer nodeIndexer.Indexer,
@@ -47,6 +49,7 @@ func New(storage store.Store, graphProvider graph.Provider,
 			componentCVEEdgeIndexer,
 			componentIndexer,
 			imageComponentEdgeIndexer,
+			imageCVEEdgeIndexer,
 			imageIndexer,
 			nodeComponentEdgeIndexer,
 			nodeIndexer,
