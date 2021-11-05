@@ -34,6 +34,7 @@ func (p *tablePrinter) createTableWriter(out io.Writer) *tablewriter.Table {
 	}
 	tw.SetAutoMergeCells(p.autoMergeCells)
 	tw.SetRowLine(true)
+	tw.SetReflowDuringAutoWrap(false)
 	return tw
 }
 

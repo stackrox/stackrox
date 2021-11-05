@@ -361,30 +361,50 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 |  POLICY  | SEVERITY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 1 | CRITICAL | wordpress  | policy 1 for testing | - testing multiple alert       | policy 1 for testing |
-|          |          |            |                      | violation messages 1 - testing |                      |
-|          |          |            |                      | multiple alert violation       |                      |
-|          |          |            |                      | messages 2 - testing multiple  |                      |
-|          |          |            |                      | alert violation messages 3     |                      |
+|          |          |            |                      | violation messages 1           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 2           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 3           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 2 | MEDIUM   | wordpress  | policy 2 for testing | - testing multiple alert       | policy 2 for testing |
-|          |          |            |                      | violation messages 1 - testing |                      |
-|          |          |            |                      | multiple alert violation       |                      |
-|          |          |            |                      | messages 2 - testing multiple  |                      |
-|          |          |            |                      | alert violation messages 3     |                      |
+|          |          |            |                      | violation messages 1           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 2           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 3           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 5 | MEDIUM   | wordpress  | policy 5 for testing | - testing alert violation      | policy 5 for testing |
-|          |          |            |                      | message - testing multiple     |                      |
-|          |          |            |                      | alert violation messages       |                      |
-|          |          |            |                      | 1 - testing multiple alert     |                      |
-|          |          |            |                      | violation messages 2 - testing |                      |
-|          |          |            |                      | multiple alert violation       |                      |
-|          |          |            |                      | messages 3                     |                      |
+|          |          |            |                      | message                        |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 1           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 2           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 3           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 6 | MEDIUM   | wordpress  | policy 6 for testing | - testing alert violation      | policy 6 for testing |
 |          |          |            |                      | message                        |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 7 | LOW      | wordpress  | policy 7 for testing | - testing alert violation      | policy 7 for testing |
 |          |          |            |                      | message                        |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 WARN: A total of 5 policies have been violated
 `,
@@ -398,30 +418,50 @@ WARN: A total of 5 policies have been violated
 |  POLICY  | SEVERITY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 4 | HIGH     | wordpress  | policy 4 for testing | - testing multiple alert       | policy 4 for testing |
-|          |          |            |                      | violation messages 1 - testing |                      |
-|          |          |            |                      | multiple alert violation       |                      |
-|          |          |            |                      | messages 2 - testing multiple  |                      |
-|          |          |            |                      | alert violation messages 3     |                      |
+|          |          |            |                      | violation messages 1           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 2           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 3           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 2 | MEDIUM   | wordpress  | policy 2 for testing | - testing multiple alert       | policy 2 for testing |
-|          |          |            |                      | violation messages 1 - testing |                      |
-|          |          |            |                      | multiple alert violation       |                      |
-|          |          |            |                      | messages 2 - testing multiple  |                      |
-|          |          |            |                      | alert violation messages 3     |                      |
+|          |          |            |                      | violation messages 1           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 2           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 3           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 5 | MEDIUM   | wordpress  | policy 5 for testing | - testing alert violation      | policy 5 for testing |
-|          |          |            |                      | message - testing multiple     |                      |
-|          |          |            |                      | alert violation messages       |                      |
-|          |          |            |                      | 1 - testing multiple alert     |                      |
-|          |          |            |                      | violation messages 2 - testing |                      |
-|          |          |            |                      | multiple alert violation       |                      |
-|          |          |            |                      | messages 3                     |                      |
+|          |          |            |                      | message                        |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 1           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 2           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      | - testing multiple alert       |                      |
+|          |          |            |                      | violation messages 3           |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 6 | MEDIUM   | wordpress  | policy 6 for testing | - testing alert violation      | policy 6 for testing |
 |          |          |            |                      | message                        |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 | policy 7 | LOW      | wordpress  | policy 7 for testing | - testing alert violation      | policy 7 for testing |
 |          |          |            |                      | message                        |                      |
+|          |          |            |                      |                                |                      |
+|          |          |            |                      |                                |                      |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+
 WARN: A total of 5 policies have been violated
 ERROR: failed policies found: 1 policies violated that are failing the check
