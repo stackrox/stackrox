@@ -7,6 +7,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
+	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
@@ -28,10 +29,12 @@ import (
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/set"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
@@ -43,18 +46,9 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	bolt "go.etcd.io/bbolt"
 )
-
-func TestSearchCategoryToResourceMap(t *testing.T) {
-	allCategories := set.NewV1SearchCategorySet(GetAllSearchableCategories()...).Union(autocompleteCategories)
-	categoryToResource := GetSearchCategoryToResourceMetadata()
-	for searchCategory := range allCategories {
-		_, ok := categoryToResource[searchCategory]
-		// This is a programming error. If you see this, add the new category you've added to the
-		// SearchCategoryToResource map!
-		assert.True(t, ok, "Please add category %s to the SearchCategoryToResource map used by the authorizer", searchCategory.String())
-	}
-}
 
 func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
 	t.Parallel()
@@ -94,6 +88,31 @@ func TestSearchFuncs(t *testing.T) {
 		// SearchCategoryToResource map!
 		assert.True(t, ok, "Please add category %s to the map in getSearchFuncs()", searchCategory.String())
 	}
+}
+
+func TestSearchService(t *testing.T) {
+	suite.Run(t, new(SearchOperationsTestSuite))
+}
+
+type SearchOperationsTestSuite struct {
+	suite.Suite
+
+	mockCtrl *gomock.Controller
+	rocksDB  *rocksdb.RocksDB
+	boltDB   *bolt.DB
+}
+
+func (s *SearchOperationsTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
+	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
+	var err error
+	s.boltDB, err = bolthelper.NewTemp(s.T().Name() + "-bolt.db")
+	s.NoError(err)
+}
+
+func (s *SearchOperationsTestSuite) TearDownTest() {
+	s.mockCtrl.Finish()
+	s.rocksDB.Close()
 }
 
 func TestAutocomplete(t *testing.T) {
@@ -244,6 +263,168 @@ func TestAutocompleteForEnums(t *testing.T) {
 	results, err := service.autocomplete(ctx, fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
 	require.NoError(t, err)
 	assert.Equal(t, []string{fixtures.GetPolicy().GetSeverity().String()}, results)
+}
+
+func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
+	deploymentAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment)))
+	alertAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Alert)))
+	noAccessCtx := sac.WithNoAccess(context.Background())
+
+	idx, err := globalindex.MemOnlyIndex()
+	s.NoError(err)
+
+	dacky, registry, indexingQ := testDackBoxInstance(s.T(), s.rocksDB, idx)
+	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
+
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
+
+	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	alertsDS := alertDatastore.NewWithDb(s.rocksDB, s.boltDB, idx)
+
+	deployment := fixtures.GetDeployment()
+	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))
+
+	alert := fixtures.GetAlert()
+	s.NoError(alertsDS.UpsertAlert(alertAccessCtx, alert))
+
+	finishedIndexing := concurrency.NewSignal()
+	indexingQ.PushSignal(&finishedIndexing)
+	finishedIndexing.Wait()
+
+	service := NewBuilder().
+		WithAlertStore(alertsDS).
+		WithDeploymentStore(deploymentDS).
+		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
+		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
+		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
+		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalDataStore(s.mockCtrl)).
+		WithNamespaceStore(namespaceMocks.NewMockDataStore(s.mockCtrl)).
+		WithRiskStore(riskDatastoreMocks.NewMockDataStore(s.mockCtrl)).
+		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
+		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
+		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
+		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
+		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
+		WithAggregator(nil).
+		Build().(*serviceImpl)
+
+	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
+	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()
+
+	// If caller has "Deployment" permission, return results in "Deployment" category
+	results, err := service.autocomplete(deploymentAccessCtx, deploymentQuery, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+	s.NoError(err)
+	s.Equal([]string{deployment.GetName()}, results)
+
+	// If caller has no "Deployment" permission, return no results in "Deployment" category
+	results, err = service.autocomplete(noAccessCtx, deploymentQuery, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+	s.NoError(err)
+	s.Equal([]string(nil), results)
+
+	// If caller has "Alert" permission, return results in "Alert" category
+	results, err = service.autocomplete(alertAccessCtx, alertQuery, []v1.SearchCategory{v1.SearchCategory_ALERTS})
+	s.NoError(err)
+	s.Equal([]string{alert.GetDeployment().GetName()}, results)
+
+	// If caller has no "Alert" permission but "Deployment" permission, return no results in "Alert" category
+	results, err = service.autocomplete(deploymentAccessCtx, alertQuery, []v1.SearchCategory{v1.SearchCategory_ALERTS})
+	s.NoError(err)
+	s.Equal([]string(nil), results)
+}
+
+func (s *SearchOperationsTestSuite) TestSearchAuthz() {
+	deploymentAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment)))
+	alertAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Alert)))
+	noAccessCtx := sac.WithNoAccess(context.Background())
+
+	idx, err := globalindex.MemOnlyIndex()
+	s.NoError(err)
+
+	dacky, registry, indexingQ := testDackBoxInstance(s.T(), s.rocksDB, idx)
+	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
+
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
+
+	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	alertsDS := alertDatastore.NewWithDb(s.rocksDB, s.boltDB, idx)
+
+	deployment := fixtures.GetDeployment()
+	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))
+
+	alert := fixtures.GetAlert()
+	s.NoError(alertsDS.UpsertAlert(alertAccessCtx, alert))
+
+	finishedIndexing := concurrency.NewSignal()
+	indexingQ.PushSignal(&finishedIndexing)
+	finishedIndexing.Wait()
+
+	service := NewBuilder().
+		WithAlertStore(alertsDS).
+		WithDeploymentStore(deploymentDS).
+		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
+		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
+		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
+		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalDataStore(s.mockCtrl)).
+		WithNamespaceStore(namespaceMocks.NewMockDataStore(s.mockCtrl)).
+		WithRiskStore(riskDatastoreMocks.NewMockDataStore(s.mockCtrl)).
+		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
+		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
+		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
+		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
+		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
+		WithAggregator(nil).
+		Build().(*serviceImpl)
+
+	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
+	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()
+
+	// If caller has "Deployment" permission, return results in "Deployment" category
+	results, err := service.Search(deploymentAccessCtx, &v1.RawSearchRequest{
+		Query:      deploymentQuery,
+		Categories: []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS},
+	})
+	s.NoError(err)
+	s.Len(results.GetResults(), 1)
+	s.Equal(deployment.GetName(), results.GetResults()[0].GetName())
+
+	// If caller has no "Deployment" permission, return no results in "Deployment" category
+	results, err = service.Search(noAccessCtx, &v1.RawSearchRequest{
+		Query:      deploymentQuery,
+		Categories: []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS},
+	})
+	s.NoError(err)
+	s.Len(results.GetResults(), 0)
+
+	// If caller has "Alert" permission, return results in "Alert" category
+	results, err = service.Search(alertAccessCtx, &v1.RawSearchRequest{
+		Query:      alertQuery,
+		Categories: []v1.SearchCategory{v1.SearchCategory_ALERTS},
+	})
+	s.NoError(err)
+	s.Len(results.GetResults(), 1)
+	s.Equal(results.GetResults()[0].GetId(), alert.GetId())
+
+	// If caller has no "Alert" permission but "Deployment" permission, return no results in "Alert" category
+	results, err = service.Search(deploymentAccessCtx, &v1.RawSearchRequest{
+		Query:      alertQuery,
+		Categories: []v1.SearchCategory{v1.SearchCategory_ALERTS},
+	})
+	s.NoError(err)
+	s.Len(results.GetResults(), 0)
 }
 
 func testDackBoxInstance(t *testing.T, db *rocksdb.RocksDB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {

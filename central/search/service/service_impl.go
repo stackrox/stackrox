@@ -26,14 +26,12 @@ import (
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/rbac/service"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	centralsearch "github.com/stackrox/rox/central/search"
 	"github.com/stackrox/rox/central/search/options"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	protoSet "github.com/stackrox/rox/generated/set"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -118,40 +116,6 @@ var (
 		return s
 	}()
 )
-
-// GetSearchCategoryToResourceMetadata gets a map of search category to corresponding resource metadata.s
-func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.ResourceMetadata {
-
-	// SearchCategoryToResource maps search categories to resources.
-	// To access search, we require users to have view access to every searchable resource.
-	// We could consider allowing people to search across just the things they have access to,
-	// but that requires non-trivial refactoring, so we'll do it if we feel the need later.
-	// This variable is package-level to facilitate the unit test that asserts
-	// that it covers all the searchable categories.
-	searchCategoryToResource := map[v1.SearchCategory]permissions.ResourceMetadata{
-		v1.SearchCategory_ALERTS:      resources.Alert,
-		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
-		v1.SearchCategory_IMAGES:      resources.Image,
-		// Policies are the only search resource with a global scope. With SAC enabled, we check SAC permissions for
-		// legacy auth restrictions for globally-scoped resources. This would break search, so exempt policies from this
-		// in search contexts.
-		v1.SearchCategory_POLICIES:         permissions.WithLegacyAuthForSAC(resources.Policy, false),
-		v1.SearchCategory_SECRETS:          resources.Secret,
-		v1.SearchCategory_COMPLIANCE:       resources.Compliance,
-		v1.SearchCategory_NODES:            resources.Node,
-		v1.SearchCategory_NAMESPACES:       resources.Namespace,
-		v1.SearchCategory_RISKS:            resources.Risk,
-		v1.SearchCategory_CLUSTERS:         resources.Cluster,
-		v1.SearchCategory_SERVICE_ACCOUNTS: resources.ServiceAccount,
-		v1.SearchCategory_ROLES:            resources.K8sRole,
-		v1.SearchCategory_ROLEBINDINGS:     resources.K8sRoleBinding,
-		v1.SearchCategory_IMAGE_COMPONENTS: resources.Image,
-		v1.SearchCategory_VULNERABILITIES:  resources.Image,
-		v1.SearchCategory_SUBJECTS:         resources.K8sSubject,
-	}
-
-	return searchCategoryToResource
-}
 
 // SearchService provides APIs for search.
 type serviceImpl struct {
@@ -335,14 +299,8 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (s *serviceImpl) initializeAuthorizer() {
-	searchCategoryToResource := GetSearchCategoryToResourceMetadata()
-	requiredPermissions := make([]permissions.ResourceWithAccess, 0, len(searchCategoryToResource))
-	for _, resourceMetadata := range searchCategoryToResource {
-		requiredPermissions = append(requiredPermissions, permissions.View(resourceMetadata))
-	}
-
 	s.authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(requiredPermissions...): {
+		user.With(): {
 			"/v1.SearchService/Search",
 			"/v1.SearchService/Options",
 			"/v1.SearchService/Autocomplete",
