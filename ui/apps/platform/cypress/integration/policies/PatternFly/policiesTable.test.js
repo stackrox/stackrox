@@ -2,7 +2,7 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { visitPolicies } from '../../../helpers/policiesPatternFly';
 
-describe('Policy table', () => {
+describe('Policies table', () => {
     withAuth();
 
     before(function beforeHook() {
@@ -11,9 +11,9 @@ describe('Policy table', () => {
         }
     });
 
-    it('should have the temporary placeholder', () => {
+    it('should have id', () => {
         visitPolicies();
 
-        cy.get('div[data-testid="policies-placeholder"]:Contains("Policies")');
+        cy.get('[id="policies-table"]');
     });
 });
