@@ -64,7 +64,6 @@ require (
 	github.com/hashicorp/go-version v1.3.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
-	github.com/itchyny/gojq v0.12.5
 	github.com/joelanford/helm-operator v0.0.7
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
 	github.com/jstemmer/go-junit-report v0.9.1
@@ -99,6 +98,7 @@ require (
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
+	github.com/stackrox/helmtest v0.0.0-20211028134539-7d6cefe139d7
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/testify v1.7.0
@@ -132,7 +132,6 @@ require (
 	k8s.io/apimachinery v0.22.2
 	k8s.io/apiserver v0.22.2
 	k8s.io/client-go v0.22.2
-	k8s.io/kube-openapi v0.0.0-20211025214626-d9a0cc0561b2
 	k8s.io/kubectl v0.22.2
 	k8s.io/kubelet v0.22.2
 	k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e

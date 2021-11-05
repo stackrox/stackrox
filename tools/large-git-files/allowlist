@@ -14,7 +14,6 @@ proto/storage/proto.lock
 pkg/booleanpolicy/default_policies_test.go
 pkg/docker/types/types_easyjson.go
 pkg/fixtures/image.go
-pkg/helm/test/openapi-schemas/*.json.gz
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
 pkg/sliceutils/gen-builtins-generic.go
 qa-tests-backend/artifacts/**/*

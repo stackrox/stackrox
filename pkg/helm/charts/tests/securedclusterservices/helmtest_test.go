@@ -3,8 +3,8 @@ package securedclusterservices
 import (
 	"testing"
 
+	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
-	helmTest "github.com/stackrox/rox/pkg/helm/test"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
