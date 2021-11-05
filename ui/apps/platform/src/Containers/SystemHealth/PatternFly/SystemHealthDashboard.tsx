@@ -17,8 +17,8 @@ import {
 
 import ViewAllButton from 'Components/PatternFly/ViewAllButton';
 import { clustersBasePath } from 'routePaths';
-import GenerateDiagnosticBundleButton from '../Components/GenerateDiagnosticBundleButton';
 import VulnerabilityDefinitionsWidget from './Components/VulnerabilityDefinitionsWidget';
+import GenerateDiagnosticBundle from './Components/GenerateDiagnosticBundle';
 
 function SystemHealthDashboard(): ReactElement {
     return (
@@ -29,8 +29,7 @@ function SystemHealthDashboard(): ReactElement {
                         <Title headingLevel="h1">System Health</Title>
                     </FlexItem>
                     <FlexItem align={{ default: 'alignRight' }}>
-                        {/* TODO: this section migrated as part of https://stack-rox.atlassian.net/browse/ROX-8319 */}
-                        <GenerateDiagnosticBundleButton />
+                        <GenerateDiagnosticBundle />
                     </FlexItem>
                 </Flex>
             </PageSection>
