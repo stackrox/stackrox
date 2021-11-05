@@ -21,7 +21,7 @@ spec:
       - name: stackrox
       containers:
       - name: central-db
-        image: stackrox/sandbox:postgres-14-stat-wal
+        image: stackrox/sandbox:postgres-14-stat-wal2
         env:
         # Very not production
         - name: POSTGRES_HOST_AUTH_METHOD
