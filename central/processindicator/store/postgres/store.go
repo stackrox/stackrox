@@ -257,7 +257,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
 	numElems := 13
-	batch := batcher.New(len(objs), 60000/numElems)
+	batch := batcher.New(len(objs), 1300/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
 		data := make([]interface{}, 0, numElems * len(objs))
