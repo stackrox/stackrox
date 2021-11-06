@@ -12,6 +12,8 @@ import {
 
 import * as yup from 'yup';
 
+import { ApiToken } from 'types/apiToken.proto';
+
 import SelectSingle from 'Components/SelectSingle';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import { getDateTime } from 'utils/dateUtils';
@@ -24,22 +26,13 @@ import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiToke
 import FormLabelGroup from '../../FormLabelGroup';
 import useFetchRoles from './useFetchRoles';
 
-export type ApiTokenIntegration = {
-    expiration: string;
-    id: string;
-    issuedAt: string;
-    name: string;
-    revoked: boolean;
-    roles: string[];
-};
-
 export type ApiTokenIntegrationFormValues = {
     name: string;
     roles: string[];
 };
 
 export type ApiTokenIntegrationFormProps = {
-    initialValues: ApiTokenIntegration | null;
+    initialValues: ApiToken | null;
     isEditable?: boolean;
 };
 
