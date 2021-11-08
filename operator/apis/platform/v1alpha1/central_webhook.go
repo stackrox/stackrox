@@ -34,7 +34,7 @@ func (c *Central) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/validate-platform-stackrox-io-v1alpha1-central,mutating=false,failurePolicy=fail,sideEffects=None,groups=platform.stackrox.io,resources=centrals,verbs=create;update,versions=v1alpha1,name=vcentral.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/validate-platform-stackrox-io-v1alpha1-central,mutating=false,failurePolicy=fail,sideEffects=None,groups=platform.stackrox.io,resources=centrals,verbs=create;update,versions=v1alpha1,name=vcentral.kb.io,admissionReviewVersions={v1}
 
 var _ webhook.Validator = &Central{}
 

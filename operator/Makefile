@@ -53,9 +53,6 @@ TEST_NAMESPACE ?= stackrox-operator
 # to your manager process.
 ENABLE_WEBHOOKS ?= false
 
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
-
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -124,7 +121,7 @@ KUSTOMIZE = $(PROJECT_DIR)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
-OPERATOR_SDK_VERSION = 1.9.0
+OPERATOR_SDK_VERSION = 1.14.0
 OPERATOR_SDK = $(PROJECT_DIR)/bin/operator-sdk-$(OPERATOR_SDK_VERSION)
 .PHONY: operator-sdk
 operator-sdk: ## Download operator-sdk necessary for scaffolding and bundling.
@@ -151,6 +148,10 @@ opm: ## Download opm.
 	@OPM_URL=https://github.com/operator-framework/operator-registry/releases/download/v$(OPM_VERSION)/$(OS)-$$(go env GOARCH)-opm ;\
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(OPM) $${OPM_URL}
+
+ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
+envtest: ## Download envtest-setup locally if necessary.
+        $(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 GET_GITHUB_RELEASE_FN = get_github_release() { \
 	[ -f $${1} ] || { \
@@ -182,7 +183,7 @@ parent-proto-generate: ## Make sure ../generated directory has up-to-date conten
 	$(MAKE) -C .. proto-generated-srcs
 
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 generate: parent-proto-generate controller-gen client-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations, as well as the client code.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
@@ -196,11 +197,11 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate fmt vet ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
+ENVTEST_K8S_VERSION = 1.22
+
+test: manifests generate fmt vet envtest ## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 test-e2e: build install kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
@@ -261,16 +262,20 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy operator image to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	rm -rf config/local-deploy-versioned && \
+		mkdir config/local-deploy-versioned && \
+		cd config/local-deploy-versioned && \
+		$(KUSTOMIZE) create --resources ../default && \
+		$(KUSTOMIZE) edit set image controller=$(IMG)
+	$(KUSTOMIZE) build config/local-deploy-versioned | kubectl create -f -
 
 .PHONY: undeploy
 undeploy: kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
 
 .PHONY: deploy-via-olm
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
@@ -306,6 +311,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=docker.io/stackrox/stackrox-operator:0.0.1
+	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:v$(OPERATOR_SDK_VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
 # Post-processed files will be copied instead, as configured in bundle.Dockerfile.extra.
