@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
+import React, { ReactElement, useState } from 'react';
+import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Button,
     ButtonVariant,
@@ -21,6 +21,8 @@ import { VulnerabilitySeverity } from 'messages/common';
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import DeferralRequestModal from './DeferralRequestModal';
 
 export type ObservedCVERow = {
     id: string;
@@ -34,14 +36,34 @@ export type ObservedCVERow = {
 
 export type ObservedCVEsTableProps = {
     rows: ObservedCVERow[];
-    actions: IActions;
 };
 
-function ObservedCVEsTable({ rows, actions }: ObservedCVEsTableProps): ReactElement {
-    const { selected, allRowsSelected, numSelected, onSelect, onSelectAll } =
+function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
+    const { selected, allRowsSelected, numSelected, onSelect, onSelectAll, getSelectedIds } =
         useTableSelection<ObservedCVERow>(rows);
+    const [cvesToBeDeferred, setCVEsToBeDeferred] = useState<string[]>([]);
 
-    function deferSelectedCVEs() {}
+    function setSelectedCVEsToBeDeferred() {
+        const selectedIds = getSelectedIds();
+        setCVEsToBeDeferred(selectedIds);
+    }
+
+    function cancelDeferringCVEs() {
+        setCVEsToBeDeferred([]);
+    }
+
+    // @TODO: Convert the form values to the proper values used in the API for deferring a CVE
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    function completeDeferral(values) {
+        // @TODO: call parent function that will send out an API call to mark as deferral
+        const promise = new Promise<FormResponseMessage>((response, reject) => {
+            setTimeout(() => {
+                const formMessage = { message: 'API is not hooked up yet', isError: true };
+                reject(formMessage);
+            }, 2000);
+        });
+        return promise;
+    }
 
     function markFalsePositiveSelectedCVEs() {}
 
@@ -72,7 +94,7 @@ function ObservedCVEsTable({ rows, actions }: ObservedCVEsTableProps): ReactElem
                             <DropdownItem
                                 key="upgrade"
                                 component="button"
-                                onClick={deferSelectedCVEs}
+                                onClick={setSelectedCVEsToBeDeferred}
                             >
                                 Defer CVE ({numSelected})
                             </DropdownItem>
@@ -106,35 +128,66 @@ function ObservedCVEsTable({ rows, actions }: ObservedCVEsTableProps): ReactElem
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {rows.map((row, rowIndex) => (
-                        <Tr key={rowIndex}>
-                            <Td
-                                select={{
-                                    rowIndex,
-                                    onSelect,
-                                    isSelected: selected[rowIndex],
-                                }}
-                            />
-                            <Td dataLabel="Cell">{row.cve}</Td>
-                            <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
-                            <Td dataLabel="Severity">
-                                <VulnerabilitySeverityLabel severity={row.severity} />
-                            </Td>
-                            <Td dataLabel="CVSS score">
-                                <CVSSScoreLabel cvss={row.cvssScore} />
-                            </Td>
-                            <Td dataLabel="Affected components">{row.components.length}</Td>
-                            <Td dataLabel="Discovered">{row.discoveredAt}</Td>
-                            <Td
-                                className="pf-u-text-align-right"
-                                actions={{
-                                    items: actions,
-                                }}
-                            />
-                        </Tr>
-                    ))}
+                    {rows.map((row, rowIndex) => {
+                        const actions = [
+                            {
+                                title: 'Defer CVE',
+                                onClick: (event) => {
+                                    event.preventDefault();
+                                    setCVEsToBeDeferred([row.id]);
+                                },
+                            },
+                            {
+                                title: 'Mark as False Positive',
+                                onClick: (event) => {
+                                    event.preventDefault();
+                                },
+                            },
+                            {
+                                isSeparator: true,
+                            },
+                            {
+                                title: 'Reject deferral',
+                                onClick: (event) => {
+                                    event.preventDefault();
+                                },
+                            },
+                        ];
+                        return (
+                            <Tr key={rowIndex}>
+                                <Td
+                                    select={{
+                                        rowIndex,
+                                        onSelect,
+                                        isSelected: selected[rowIndex],
+                                    }}
+                                />
+                                <Td dataLabel="Cell">{row.cve}</Td>
+                                <Td dataLabel="Fixable">{row.isFixable ? 'Yes' : 'No'}</Td>
+                                <Td dataLabel="Severity">
+                                    <VulnerabilitySeverityLabel severity={row.severity} />
+                                </Td>
+                                <Td dataLabel="CVSS score">
+                                    <CVSSScoreLabel cvss={row.cvssScore} />
+                                </Td>
+                                <Td dataLabel="Affected components">{row.components.length}</Td>
+                                <Td dataLabel="Discovered">{row.discoveredAt}</Td>
+                                <Td
+                                    className="pf-u-text-align-right"
+                                    actions={{
+                                        items: actions,
+                                    }}
+                                />
+                            </Tr>
+                        );
+                    })}
                 </Tbody>
             </TableComposable>
+            <DeferralRequestModal
+                isOpen={cvesToBeDeferred.length !== 0}
+                onCompleteDeferral={completeDeferral}
+                onCancelDeferral={cancelDeferringCVEs}
+            />
         </>
     );
 }

@@ -67,7 +67,7 @@ function ClusterInitBundleIntegrationForm({
         validationSchema,
     });
     const { isEditing, isViewingDetails } = usePageState();
-    const isGenerated = Boolean(message?.responseData);
+    const isGenerated = Boolean((message as ClusterInitBundleFormResponseMessage)?.responseData);
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
@@ -86,12 +86,8 @@ function ClusterInitBundleIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                <div id="integration-form-alert" className="pf-u-pb-md">
-                    {message && (
-                        <ClusterInitBundleFormMessageAlert
-                            message={message as ClusterInitBundleFormResponseMessage}
-                        />
-                    )}
+                <div id="form-message-alert" className="pf-u-pb-md">
+                    {message && <ClusterInitBundleFormMessageAlert message={message} />}
                 </div>
                 {isViewingDetails && initialValues ? (
                     <ClusterInitBundleDetails meta={initialValues} />

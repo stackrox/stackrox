@@ -51,34 +51,10 @@ const rows = [
     },
 ] as ObservedCVERow[];
 
-const actions = [
-    {
-        title: 'Defer CVE',
-        onClick: (event) => {
-            event.preventDefault();
-        },
-    },
-    {
-        title: 'Mark as False Positive',
-        onClick: (event) => {
-            event.preventDefault();
-        },
-    },
-    {
-        isSeparator: true,
-    },
-    {
-        title: 'Reject deferral',
-        onClick: (event) => {
-            event.preventDefault();
-        },
-    },
-];
-
 function ObservedCVEs() {
     // @TODO: hook to GET Observed CVEs data goes here
 
-    return <ObservedCVEsTable rows={rows} actions={actions} />;
+    return <ObservedCVEsTable rows={rows} />;
 }
 
 export default ObservedCVEs;

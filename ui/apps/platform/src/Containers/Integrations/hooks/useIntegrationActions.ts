@@ -14,14 +14,9 @@ import { generateAPIToken } from 'services/APITokensService';
 import { generateClusterInitBundle } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
-
-export type FormResponseMessage = {
-    message: string;
-    isError: boolean;
-    responseData?: unknown;
-} | null;
 
 export type UseIntegrationActions = {
     source: IntegrationSource;

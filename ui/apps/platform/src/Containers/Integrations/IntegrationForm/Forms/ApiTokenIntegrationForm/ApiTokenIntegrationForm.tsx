@@ -74,7 +74,7 @@ function ApiTokenIntegrationForm({
     });
     const { isEditing, isViewingDetails } = usePageState();
     const { roles, isLoading: isRolesLoading } = useFetchRoles();
-    const isGenerated = Boolean(message?.responseData);
+    const isGenerated = Boolean((message as ApiTokenFormResponseMessage)?.responseData);
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
@@ -97,12 +97,8 @@ function ApiTokenIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                <div id="integration-form-alert" className="pf-u-pb-md">
-                    {message && (
-                        <ApiTokenFormMessageAlert
-                            message={message as ApiTokenFormResponseMessage}
-                        />
-                    )}
+                <div id="form-message-alert" className="pf-u-pb-md">
+                    {message && <ApiTokenFormMessageAlert message={message} />}
                 </div>
 
                 {isViewingDetails && initialValues ? (

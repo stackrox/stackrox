@@ -5,6 +5,7 @@ import * as yup from 'yup';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
+import FormMessage from 'Components/PatternFly/FormMessage';
 import usePageState from '../../hooks/usePageState';
 import { clearStoredCredentials } from '../../utils/integrationUtils';
 
@@ -15,7 +16,6 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormCancelButton from '../FormCancelButton';
 import FormTestButton from '../FormTestButton';
 import FormSaveButton from '../FormSaveButton';
-import FormMessage from '../FormMessage';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type PagerDutyIntegration = {

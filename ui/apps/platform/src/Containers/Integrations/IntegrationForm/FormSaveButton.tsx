@@ -1,11 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Button } from '@patternfly/react-core';
 
-export type FormResponseMessage = {
-    message: string;
-    isError: boolean;
-} | null;
-
 export type FormSaveButtonProps = {
     children: ReactElement | ReactElement[] | string;
     onSave: () => void;

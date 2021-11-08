@@ -4,13 +4,8 @@ import { BaseSchema } from 'yup';
 
 import { IntegrationOptions } from 'services/IntegrationsService';
 
+import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useIntegrationActions from '../hooks/useIntegrationActions';
-
-export type FormResponseMessage = {
-    message: string;
-    isError: boolean;
-    responseData?: unknown;
-} | null;
 
 export type UseIntegrationForm<T> = {
     initialValues: T;
@@ -54,7 +49,7 @@ function useIntegrationForm<T>({
     const { submitForm } = formik;
 
     function scrollToFormAlert() {
-        const alertEl = document.getElementById('integration-form-alert');
+        const alertEl = document.getElementById('form-message-alert');
 
         if (alertEl) {
             alertEl.scrollIntoView({ behavior: 'smooth' });
