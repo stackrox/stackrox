@@ -1,0 +1,29 @@
+apiVersion: compliance.openshift.io/v1alpha1
+kind: ComplianceScan
+metadata:
+  generation: 1
+  labels:
+    compliance.openshift.io/suite: rhcos4-moderate-diff
+  name: rhcos4-moderate-master
+  namespace: openshift-compliance
+spec:
+  content: ssg-rhcos4-ds.xml
+  contentImage: quay.io/complianceascode/ocp4:latest
+  nodeSelector:
+    node-role.kubernetes.io/master: ""
+  profile: xccdf_org.ssgproject.content_profile_moderate
+  rawResultStorage:
+    nodeSelector:
+      node-role.kubernetes.io/master: ""
+    pvAccessModes:
+    - ReadWriteOnce
+    rotation: 3
+    size: 1Gi
+    tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+  scanTolerations:
+  - operator: Exists
+  scanType: Node
+  strictNodeScan: true

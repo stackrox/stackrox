@@ -1,0 +1,28 @@
+apiVersion: compliance.openshift.io/v1alpha1
+kind: ComplianceScan
+metadata:
+  creationTimestamp: "2021-11-08T17:36:41Z"
+  generation: 1
+  labels:
+    compliance.openshift.io/suite: ocp4-moderate
+  name: ocp4-moderate
+  namespace: openshift-compliance
+spec:
+  content: ssg-ocp4-ds.xml
+  contentImage: quay.io/complianceascode/ocp4:latest
+  profile: xccdf_org.ssgproject.content_profile_moderate
+  rawResultStorage:
+    nodeSelector:
+      node-role.kubernetes.io/master: ""
+    pvAccessModes:
+    - ReadWriteOnce
+    rotation: 3
+    size: 1Gi
+    tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+  scanTolerations:
+  - operator: Exists
+  scanType: Platform
+  strictNodeScan: true
