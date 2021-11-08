@@ -237,6 +237,16 @@ export function updatePolicyDisabledState(
 }
 
 /*
+ * Enable or disable policies
+ */
+export function updatePoliciesDisabledState(
+    policyIds: string[],
+    disabled: boolean
+): Promise<Record<string, never>[]> {
+    return Promise.all(policyIds.map((policyId) => updatePolicyDisabledState(policyId, disabled)));
+}
+
+/*
  * Export policies as JSON.
  */
 export function exportPolicies(policyIds: string[]): Promise<void> {

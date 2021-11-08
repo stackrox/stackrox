@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import {
@@ -13,15 +13,26 @@ import {
     Tooltip,
     Flex,
     FlexItem,
+    AlertGroup,
+    AlertActionCloseButton,
+    AlertVariant,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
+import pluralize from 'pluralize';
 
 import { selectors } from 'reducers';
 import { actions as searchActions } from 'reducers/policies/search';
 import { SearchEntry, SearchState } from 'reducers/pageSearch';
 import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
-import { getPolicies, reassessPolicies } from 'services/PoliciesService';
+import {
+    getPolicies,
+    reassessPolicies,
+    deletePolicies,
+    exportPolicies,
+    updatePoliciesDisabledState,
+} from 'services/PoliciesService';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import useToasts from 'hooks/useToasts';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { ListPolicy } from 'types/policy.proto';
 // TODO: the policy import dialogue component will be migrated to PF in ROX-8354
@@ -41,9 +52,9 @@ function PoliciesTablePage(): React.ReactElement {
 
     const { searchOptions, searchModifiers } = useSelector(policiesPageState);
     const [isLoading, setIsLoading] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [policies, setPolicies] = useState<ListPolicy[]>([]);
     const [errorMessage, setErrorMessage] = useState('');
+    const { toasts, addToast, removeToast } = useToasts();
 
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -66,8 +77,13 @@ function PoliciesTablePage(): React.ReactElement {
     }
 
     function onClickReassessPolicies() {
-        // TODO: add toasts using PF in ROX-8454
-        return reassessPolicies();
+        return reassessPolicies()
+            .then(() => {
+                addToast('Successfully reassessed policies', 'success');
+            })
+            .catch(({ response }) => {
+                addToast('Could not reassess policies', 'danger', response.data.message);
+            });
     }
 
     function handlePoliciesError(error) {
@@ -76,26 +92,70 @@ function PoliciesTablePage(): React.ReactElement {
         setErrorMessage(parsedMessage);
     }
 
-    // on first load/empty search options
-    useEffect(() => {
-        if (searchOptions.length === 0) {
-            setIsLoading(true);
-            getPolicies()
-                .then((data) => setPolicies(data))
-                .catch(handlePoliciesError)
-                .finally(() => setIsLoading(false));
-        }
-    }, [setIsLoading, setPolicies, setErrorMessage, searchOptions]);
+    const fetchPolicies = useCallback(() => {
+        const query = searchOptionsToQuery(searchOptions);
+        setIsLoading(true);
+        getPolicies(query)
+            .then((data) => setPolicies(data))
+            .catch(handlePoliciesError)
+            .finally(() => setIsLoading(false));
+    }, [setPolicies, searchOptions]);
 
-    // to watch on search options
+    function deletePoliciesHandler(ids: string[]) {
+        const policyText = pluralize('policy', ids.length);
+        deletePolicies(ids)
+            .then(() => {
+                fetchPolicies();
+                addToast(`Successfully deleted ${policyText}`, 'success');
+            })
+            .catch(({ response }) => {
+                addToast(`Could not delete ${policyText}`, 'danger', response.data.message);
+            });
+    }
+
+    function exportPoliciesHandler(ids: string[]) {
+        const policyText = pluralize('policy', ids.length);
+        exportPolicies(ids)
+            .then(() => {
+                addToast(`Successfully exported ${policyText}`, 'success');
+            })
+            .catch(({ response }) => {
+                addToast(`Could not export the ${policyText}`, 'danger', response.data.message);
+            });
+    }
+
+    function enablePoliciesHandler(ids: string[]) {
+        const policyText = pluralize('policy', ids.length);
+        updatePoliciesDisabledState(ids, false)
+            .then(() => {
+                fetchPolicies();
+                addToast(`Successfully enabled ${policyText}`, 'success');
+            })
+            .catch(({ response }) => {
+                addToast(`Could not enable the ${policyText}`, 'danger', response.data.message);
+            });
+    }
+
+    function disablePoliciesHandler(ids: string[]) {
+        const policyText = pluralize('policy', ids.length);
+        updatePoliciesDisabledState(ids, true)
+            .then(() => {
+                fetchPolicies();
+                addToast(`Successfully disabled ${policyText}`, 'success');
+            })
+            .catch(({ response }) => {
+                addToast(`Could not disable the ${policyText}`, 'danger', response.data.message);
+            });
+    }
+
     useEffect(() => {
-        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
-            const query = searchOptionsToQuery(searchOptions);
-            getPolicies(query)
-                .then((data) => setPolicies(data))
-                .catch(handlePoliciesError);
+        if (
+            searchOptions.length === 0 ||
+            (searchOptions.length && !searchOptions[searchOptions.length - 1].type)
+        ) {
+            fetchPolicies();
         }
-    }, [setErrorMessage, setPolicies, searchOptions]);
+    }, [fetchPolicies, searchOptions]);
 
     const dropdownItems = [
         // TODO: add link to create form
@@ -152,7 +212,13 @@ function PoliciesTablePage(): React.ReactElement {
                             </Tooltip>
                         </FlexItem>
                     </Flex>
-                    <PoliciesTable policies={policies} />
+                    <PoliciesTable
+                        policies={policies}
+                        deletePoliciesHandler={deletePoliciesHandler}
+                        exportPoliciesHandler={exportPoliciesHandler}
+                        enablePoliciesHandler={enablePoliciesHandler}
+                        disablePoliciesHandler={disablePoliciesHandler}
+                    />
                 </>
             )}
             {isImportModalOpen && (
@@ -165,6 +231,25 @@ function PoliciesTablePage(): React.ReactElement {
                     }}
                 />
             )}
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }) => (
+                    <Alert
+                        variant={AlertVariant[variant]}
+                        title={title}
+                        timeout={4000}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={`${variant as string} alert`}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                        key={key}
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
         </PageSection>
     );
 }

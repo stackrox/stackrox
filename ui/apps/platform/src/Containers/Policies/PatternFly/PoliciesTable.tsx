@@ -80,9 +80,19 @@ const columns = [
 
 type PoliciesTableProps = {
     policies?: ListPolicy[];
+    deletePoliciesHandler: (id) => void;
+    exportPoliciesHandler: (id) => void;
+    enablePoliciesHandler: (ids) => void;
+    disablePoliciesHandler: (id) => void;
 };
 
-function PoliciesTable({ policies = [] }: PoliciesTableProps): React.ReactElement {
+function PoliciesTable({
+    policies = [],
+    deletePoliciesHandler,
+    exportPoliciesHandler,
+    enablePoliciesHandler,
+    disablePoliciesHandler,
+}: PoliciesTableProps): React.ReactElement {
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(0);
     // sort direction of the currently active column
@@ -100,7 +110,7 @@ function PoliciesTable({ policies = [] }: PoliciesTableProps): React.ReactElemen
         onSelect,
         onSelectAll,
         // onClearAll,
-        // getSelectedIds,
+        getSelectedIds,
     } = useTableSelection(policies);
 
     function onToggleSelect(toggleOpen) {
@@ -115,6 +125,19 @@ function PoliciesTable({ policies = [] }: PoliciesTableProps): React.ReactElemen
         setActiveSortIndex(index);
         setActiveSortDirection(direction);
     }
+
+    const selectedIds = getSelectedIds();
+    const numSelected = selectedIds.length;
+    const selectedPolicies = policies.filter(({ id }) => selectedIds.includes(id));
+    let numEnabled = 0;
+    let numDisabled = 0;
+    selectedPolicies.forEach(({ disabled }) => {
+        if (disabled) {
+            numDisabled += 1;
+        } else {
+            numEnabled += 1;
+        }
+    });
 
     // If we use server side page management, this becomes unnecessary
     useEffect(() => {
@@ -157,21 +180,25 @@ function PoliciesTable({ policies = [] }: PoliciesTableProps): React.ReactElemen
                     >
                         <SelectOption
                             key="0"
-                            value={`Enable (${0})`}
-                            // onClick={() => {
-                            //     console.log(selected);
-                            // }}
+                            value={`Enable policies (${numDisabled})`}
+                            onClick={() => enablePoliciesHandler(selectedIds)}
+                            data-testid="bulk-add-tags-btn"
+                        />
+                        <SelectOption
+                            key="0"
+                            value={`Disable policies (${numEnabled})`}
+                            onClick={() => disablePoliciesHandler(selectedIds)}
                             data-testid="bulk-add-tags-btn"
                         />
                         <SelectOption
                             key="1"
-                            value={`Mark as resolved (${0})`}
-                            // onClick={showResolveConfirmationDialog}
+                            value={`Export to JSON (${numSelected})`}
+                            onClick={() => exportPoliciesHandler(selectedIds)}
                         />
                         <SelectOption
                             key="2"
-                            value={`Exclude deployments from policy (${0})`}
-                            // onClick={showExcludeConfirmationDialog}
+                            value={`Delete (${numSelected})`}
+                            onClick={() => deletePoliciesHandler(selectedIds)}
                         />
                     </Select>
                 </FlexItem>
@@ -209,33 +236,35 @@ function PoliciesTable({ policies = [] }: PoliciesTableProps): React.ReactElemen
                     </Thead>
                     <Tbody>
                         {rows.map((policy, rowIndex) => {
-                            const actionItems: ActionItem[] = [];
-                            // if (!isResolved) {
-                            //     if (isRuntimeAlert) {
-                            //         actionItems.push({
-                            //             title: 'Resolve and add to process baseline',
-                            //             onClick: () => resolveAlertAction(true, violation.id),
-                            //         });
-                            //     }
-                            //     if (isRuntimeAlert || isAttemptedViolation) {
-                            //         actionItems.push({
-                            //             title: 'Mark as resolved',
-                            //             onClick: () => resolveAlertAction(false, violation.id),
-                            //         });
-                            //     }
-                            // }
-                            // if (!isDeployCreateAttemptedAlert && 'deployment' in violation) {
-                            //     actionItems.push({
-                            //         title: 'Exclude deployment from policy',
-                            //         onClick: () =>
-                            //             excludeDeployments(policy.id, [violation.deployment.name]),
-                            //     });
-                            // }
+                            const { disabled, id } = policy;
+                            let togglePolicyAction = {} as ActionItem;
+                            if (disabled) {
+                                togglePolicyAction = {
+                                    title: 'Enable policy',
+                                    onClick: () => enablePoliciesHandler([id]),
+                                };
+                            } else {
+                                togglePolicyAction = {
+                                    title: 'Disable policy',
+                                    onClick: () => disablePoliciesHandler([id]),
+                                };
+                            }
+                            const exportPolicyAction = {
+                                title: 'Export to JSON',
+                                onClick: () => exportPoliciesHandler([id]),
+                            };
+                            const deletePolicyAction = {
+                                title: 'Delete',
+                                onClick: () => deletePoliciesHandler([id]),
+                            };
+                            const actionItems: ActionItem[] = [
+                                togglePolicyAction,
+                                exportPolicyAction,
+                                deletePolicyAction,
+                            ];
                             return (
-                                // eslint-disable-next-line react/no-array-index-key
-                                <Tr key={rowIndex}>
+                                <Tr key={policy.id}>
                                     <Td
-                                        key={policy.id}
                                         select={{
                                             rowIndex,
                                             onSelect,
