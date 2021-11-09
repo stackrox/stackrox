@@ -12,6 +12,6 @@ describe('HelpIcon', () => {
 
         userEvent.hover(screen.getByTestId('help-icon'));
 
-        expect(screen.queryByText('Remember to wash your hands')).toBeInTheDocument();
+        expect(screen.getByText('Remember to wash your hands')).toBeInTheDocument();
     });
 });

@@ -20,7 +20,7 @@ test('should show a policy violation event marker', async () => {
             />
         </svg>
     );
-    expect(screen.queryByTestId('policy-violation-event')).not.toBeNull();
+    expect(screen.getByTestId('policy-violation-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -45,7 +45,7 @@ test('should show a process activity event marker', async () => {
             />
         </svg>
     );
-    expect(screen.queryByTestId('process-activity-event')).not.toBeNull();
+    expect(screen.getByTestId('process-activity-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -71,7 +71,7 @@ test('should show a process in baseline activity event marker', async () => {
             />
         </svg>
     );
-    expect(screen.queryByTestId('process-in-baseline-activity-event')).not.toBeNull();
+    expect(screen.getByTestId('process-in-baseline-activity-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -92,7 +92,7 @@ test('should show a container restart event marker', async () => {
             />
         </svg>
     );
-    expect(screen.queryByTestId('restart-event')).not.toBeNull();
+    expect(screen.getByTestId('restart-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -114,6 +114,6 @@ test('should show a container termination event marker', async () => {
             />
         </svg>
     );
-    expect(screen.queryByTestId('termination-event')).not.toBeNull();
+    expect(screen.getByTestId('termination-event')).not.toBeNull();
     expect(asFragment()).toMatchSnapshot();
 });
