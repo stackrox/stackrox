@@ -1,6 +1,8 @@
 package sensor
 
 import (
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/sensor/generate"
@@ -18,6 +20,6 @@ func Command() *cobra.Command {
 		getbundle.Command(),
 		generatecerts.Command(),
 	)
-	flags.AddTimeout(c)
+	flags.AddTimeoutWithDefault(c, 30*time.Second)
 	return c
 }
