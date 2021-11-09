@@ -113,7 +113,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		err = s.runRemovePipeline(ctx, deployment.GetId(), clusterID, false)
 	default:
-		err = s.runGeneralPipeline(ctx, deployment)
+		err = s.runGeneralPipeline(ctx, deployment, event.GetAction())
 	}
 	return err
 }
@@ -160,7 +160,7 @@ func compareMap(m1, m2 map[string]string) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *storage.Deployment) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) error {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return err
@@ -178,21 +178,23 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 		return err
 	}
 
-	oldDeployment, exists, err := s.deployments.GetDeployment(ctx, deployment.GetId())
-	if err != nil {
-		return err
-	}
 	incrementNetworkGraphEpoch := true
-
-	// If it exists, check to see if we can dedupe it
-	if exists {
-		if oldDeployment.GetHash() == deployment.GetHash() {
-			// There is a separate handler for ContainerInstances,
-			// so there is no longer a need to continue from this point.
-			// This will only be reached upon a re-sync event from k8s.
-			return nil
+	// Only need to get if it's an update call
+	if action == central.ResourceAction_UPDATE_RESOURCE {
+		oldDeployment, exists, err := s.deployments.GetDeployment(ctx, deployment.GetId())
+		if err != nil {
+			return err
 		}
-		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
+		// If it exists, check to see if we can dedupe it
+		if exists {
+			if oldDeployment.GetHash() == deployment.GetHash() {
+				// There is a separate handler for ContainerInstances,
+				// so there is no longer a need to continue from this point.
+				// This will only be reached upon a re-sync event from k8s.
+				return nil
+			}
+			incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
+		}
 	}
 
 	if features.ActiveVulnManagement.Enabled() {
