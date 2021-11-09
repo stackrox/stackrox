@@ -50,7 +50,7 @@ func handleExistenceQueries(table string, field *pkgSearch.Field, value string) 
 			}
 		} else {
 			return &QueryEntry{
-				Query: fmt.Sprintf("%s ? $$", elemPath),
+				Query:  fmt.Sprintf("%s ? $$", elemPath),
 				Values: []interface{}{lastElem.ProtoJSONName},
 			}
 		}
@@ -61,7 +61,7 @@ func handleExistenceQueries(table string, field *pkgSearch.Field, value string) 
 			}
 		} else {
 			return &QueryEntry{
-				Query: fmt.Sprintf("not %s ? $$", elemPath),
+				Query:  fmt.Sprintf("not %s ? $$", elemPath),
 				Values: []interface{}{lastElem.ProtoJSONName},
 			}
 		}

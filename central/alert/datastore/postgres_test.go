@@ -88,7 +88,6 @@ func TestT(t *testing.T) {
 	}
 }
 
-
 func TestDelete(t *testing.T) {
 	config, err := pgxpool.ParseConfig("pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000")
 	if err != nil {
@@ -141,7 +140,6 @@ func TestDelete(t *testing.T) {
 		fmt.Printf("after delete result: %+v %+v\n", r.GetDeployment().GetId(), r.GetPolicy().GetId())
 	}
 }
-
 
 func BenchmarkGets(b *testing.B) {
 	config, err := pgxpool.ParseConfig("pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000")

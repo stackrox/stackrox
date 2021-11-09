@@ -43,8 +43,6 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (ds *searcherImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
 	if features.PostgresPOC.Enabled() {
 
-
-
 		panic("shit")
 	}
 	results, err := ds.Search(ctx, q)
