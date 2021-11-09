@@ -78,6 +78,7 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 }
 
 func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlowProperties")
 	_, err := s.db.Exec(context.Background(), "delete from networkflows where value->'dstEntity'->>'id' = $1 or value->'srcEntity'->>'id' = $1", id)
 	return err
 }
