@@ -44,7 +44,7 @@ func TestPGX(t *testing.T) {
 }
 
 func TestT(t *testing.T) {
-	config, err := pgxpool.ParseConfig("pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000")
+	config, err := pgxpool.ParseConfig("pool_min_conns=100 pool_max_conns=100 host=localhost port=5444 user=postgres sslmode=disable statement_timeout=60000")
 	if err != nil {
 		panic(err)
 	}
@@ -76,7 +76,8 @@ func TestT(t *testing.T) {
 	pq := qb.ProtoQuery()
 
 	pq.Pagination = &v1.QueryPagination{
-		Limit: 10,
+		Offset: 0,
+		Limit: 50,
 	}
 
 	results, err := searcher.SearchRawAlerts(context.Background(), pq)
