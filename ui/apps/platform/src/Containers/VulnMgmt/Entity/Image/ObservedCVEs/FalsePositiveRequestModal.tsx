@@ -7,25 +7,16 @@ import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGro
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-export type DeferralFormValues = {
-    expiresOn: string;
+export type FalsePositiveFormValues = {
     imageAppliesTo: string;
     comment: string;
 };
 
 export type DeferralRequestModalProps = {
     isOpen: boolean;
-    onRequestDeferral: (values: DeferralFormValues) => Promise<FormResponseMessage>;
-    onCompleteDeferral: () => void;
-    onCancelDeferral: () => void;
-};
-
-const EXPIRES_ON = {
-    UNTIL_FIXABLE: 'Until Fixable',
-    TWO_WEEKS: '2 weeks',
-    THIRTY_DAYS: '30 days',
-    NINETY_DAYS: '90 days',
-    INDEFINITELY: 'Indefinitely',
+    onRequestFalsePositive: (values: FalsePositiveFormValues) => Promise<FormResponseMessage>;
+    onCompleteFalsePositive: () => void;
+    onCancelFalsePositive: () => void;
 };
 
 const IMAGE_APPLIES_TO = {
@@ -34,11 +25,6 @@ const IMAGE_APPLIES_TO = {
 };
 
 const validationSchema = yup.object().shape({
-    expiresOn: yup
-        .string()
-        .trim()
-        .oneOf(Object.values(EXPIRES_ON))
-        .required('An expiry time is required'),
     imageAppliesTo: yup
         .string()
         .trim()
@@ -47,22 +33,21 @@ const validationSchema = yup.object().shape({
     comment: yup.string().trim().required('A deferral rationale is required'),
 });
 
-function DeferralRequestModal({
+function FalsePositiveRequestModal({
     isOpen,
-    onRequestDeferral,
-    onCompleteDeferral,
-    onCancelDeferral,
+    onRequestFalsePositive,
+    onCompleteFalsePositive,
+    onCancelFalsePositive,
 }: DeferralRequestModalProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
-    const formik = useFormik<DeferralFormValues>({
+    const formik = useFormik<FalsePositiveFormValues>({
         initialValues: {
-            expiresOn: '',
             imageAppliesTo: '',
             comment: '',
         },
         validationSchema,
-        onSubmit: (values: DeferralFormValues) => {
-            const response = onRequestDeferral(values);
+        onSubmit: (values: FalsePositiveFormValues) => {
+            const response = onRequestFalsePositive(values);
             return response;
         },
     });
@@ -79,21 +64,17 @@ function DeferralRequestModal({
         return formik.setFieldValue(event.target.id, value);
     }
 
-    function onExpiresOnChange(_, event) {
-        return formik.setFieldValue('expiresOn', event.target.value);
-    }
-
     function onImageAppliesToOnChange(_, event) {
         return formik.setFieldValue('imageAppliesTo', event.target.value);
     }
 
-    function onHandleSubmit() {
+    async function onHandleSubmit() {
         setMessage(null);
         formik
             .submitForm()
             .then((response) => {
                 setMessage(response);
-                onCompleteDeferral();
+                onCompleteFalsePositive();
             })
             .catch((response) => {
                 const error = new Error(response.message);
@@ -107,9 +88,9 @@ function DeferralRequestModal({
     return (
         <Modal
             variant={ModalVariant.small}
-            title="Mark CVEs for deferral"
+            title="Mark CVEs as false positive"
             isOpen={isOpen}
-            onClose={onCancelDeferral}
+            onClose={onCancelFalsePositive}
             actions={[
                 <Button
                     key="confirm"
@@ -123,7 +104,7 @@ function DeferralRequestModal({
                 <Button
                     key="cancel"
                     variant="link"
-                    onClick={onCancelDeferral}
+                    onClick={onCancelFalsePositive}
                     isDisabled={formik.isSubmitting}
                 >
                     Cancel
@@ -132,59 +113,12 @@ function DeferralRequestModal({
         >
             <FormMessage message={message} />
             <div className="pf-u-pb-md">
-                CVEs will be marked as deferred after approval by your security lead.
+                CVEs will be marked as false positive and removed from the vulnerability management
+                workflow
             </div>
             <Form>
                 <FormLabelGroup
-                    label="How long should the CVEs be deferred?"
-                    isRequired
-                    fieldId="expiresOn"
-                    touched={formik.touched}
-                    errors={formik.errors}
-                >
-                    <Radio
-                        id="expiresOnUntilFixable"
-                        name="expiresOn"
-                        label={EXPIRES_ON.UNTIL_FIXABLE}
-                        value={EXPIRES_ON.UNTIL_FIXABLE}
-                        isChecked={formik.values.expiresOn === EXPIRES_ON.UNTIL_FIXABLE}
-                        onChange={onExpiresOnChange}
-                    />
-                    <Radio
-                        id="expiresOnTwoWeeks"
-                        name="expiresOn"
-                        label={EXPIRES_ON.TWO_WEEKS}
-                        value={EXPIRES_ON.TWO_WEEKS}
-                        isChecked={formik.values.expiresOn === EXPIRES_ON.TWO_WEEKS}
-                        onChange={onExpiresOnChange}
-                    />
-                    <Radio
-                        id="expiresOnThirtyDays"
-                        name="expiresOn"
-                        label={EXPIRES_ON.THIRTY_DAYS}
-                        value={EXPIRES_ON.THIRTY_DAYS}
-                        isChecked={formik.values.expiresOn === EXPIRES_ON.THIRTY_DAYS}
-                        onChange={onExpiresOnChange}
-                    />
-                    <Radio
-                        id="expiresOnNinetyDays"
-                        name="expiresOn"
-                        label={EXPIRES_ON.NINETY_DAYS}
-                        value={EXPIRES_ON.NINETY_DAYS}
-                        isChecked={formik.values.expiresOn === EXPIRES_ON.NINETY_DAYS}
-                        onChange={onExpiresOnChange}
-                    />
-                    <Radio
-                        id="expiresOnIndefinitely"
-                        name="expiresOn"
-                        label={EXPIRES_ON.INDEFINITELY}
-                        value={EXPIRES_ON.INDEFINITELY}
-                        isChecked={formik.values.expiresOn === EXPIRES_ON.INDEFINITELY}
-                        onChange={onExpiresOnChange}
-                    />
-                </FormLabelGroup>
-                <FormLabelGroup
-                    label="What should the deferral apply to?"
+                    label="Mark as false positive for:"
                     isRequired
                     fieldId="imageAppliesTo"
                     touched={formik.touched}
@@ -212,7 +146,7 @@ function DeferralRequestModal({
                     />
                 </FormLabelGroup>
                 <FormLabelGroup
-                    label="Deferral rationale"
+                    label="False positive rationale"
                     isRequired
                     fieldId="comment"
                     touched={formik.touched}
@@ -232,4 +166,4 @@ function DeferralRequestModal({
     );
 }
 
-export default DeferralRequestModal;
+export default FalsePositiveRequestModal;

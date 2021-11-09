@@ -23,6 +23,12 @@ import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import DeferralRequestModal from './DeferralRequestModal';
+import FalsePositiveRequestModal from './FalsePositiveRequestModal';
+
+export type CVEsToBeAssessed = {
+    type: 'DEFERRAL' | 'FALSE_POSITIVE';
+    ids: string[];
+} | null;
 
 export type ObservedCVERow = {
     id: string;
@@ -39,33 +45,68 @@ export type ObservedCVEsTableProps = {
 };
 
 function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
-    const { selected, allRowsSelected, numSelected, onSelect, onSelectAll, getSelectedIds } =
-        useTableSelection<ObservedCVERow>(rows);
-    const [cvesToBeDeferred, setCVEsToBeDeferred] = useState<string[]>([]);
+    const {
+        selected,
+        allRowsSelected,
+        numSelected,
+        onSelect,
+        onSelectAll,
+        getSelectedIds,
+        onClearAll,
+    } = useTableSelection<ObservedCVERow>(rows);
+    const [cvesToBeAssessed, setCVEsToBeAssessed] = useState<CVEsToBeAssessed>(null);
 
     function setSelectedCVEsToBeDeferred() {
         const selectedIds = getSelectedIds();
-        setCVEsToBeDeferred(selectedIds);
+        setCVEsToBeAssessed({ type: 'DEFERRAL', ids: selectedIds });
     }
 
-    function cancelDeferringCVEs() {
-        setCVEsToBeDeferred([]);
+    function setSelectedCVEsToBeMarkedFalsePositive() {
+        const selectedIds = getSelectedIds();
+        setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: selectedIds });
+    }
+
+    function cancelAssessment() {
+        setCVEsToBeAssessed(null);
+    }
+
+    function completeAssessment() {
+        onClearAll();
+        setCVEsToBeAssessed(null);
     }
 
     // @TODO: Convert the form values to the proper values used in the API for deferring a CVE
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    function completeDeferral(values) {
+    function requestDeferral(values) {
         // @TODO: call parent function that will send out an API call to mark as deferral
-        const promise = new Promise<FormResponseMessage>((response, reject) => {
+        const promise = new Promise<FormResponseMessage>((resolve, reject) => {
             setTimeout(() => {
-                const formMessage = { message: 'API is not hooked up yet', isError: true };
-                reject(formMessage);
+                if (values?.comment === 'blah') {
+                    const formMessage = { message: 'Successfully deferred CVE', isError: false };
+                    resolve(formMessage);
+                } else {
+                    const formMessage = { message: 'API is not hooked up yet', isError: true };
+                    reject(formMessage);
+                }
             }, 2000);
         });
         return promise;
     }
 
-    function markFalsePositiveSelectedCVEs() {}
+    // @TODO: Convert the form values to the proper values used in the API for marking a CVE as
+    // false positive
+    function requestFalsePositive(values) {
+        // @TODO: call parent function that will send out an API call to mark as deferral
+        const promise = new Promise<FormResponseMessage>((resolve, reject) => {
+            if (values?.comment === 'blah') {
+                const formMessage = { message: 'Successfully deferred CVE', isError: false };
+                resolve(formMessage);
+            } else {
+                const formMessage = { message: 'API is not hooked up yet', isError: true };
+                reject(formMessage);
+            }
+        });
+        return promise;
+    }
 
     return (
         <>
@@ -101,7 +142,7 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                             <DropdownItem
                                 key="delete"
                                 component="button"
-                                onClick={markFalsePositiveSelectedCVEs}
+                                onClick={setSelectedCVEsToBeMarkedFalsePositive}
                             >
                                 Mark false positive ({numSelected})
                             </DropdownItem>
@@ -134,13 +175,14 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                                 title: 'Defer CVE',
                                 onClick: (event) => {
                                     event.preventDefault();
-                                    setCVEsToBeDeferred([row.id]);
+                                    setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.id] });
                                 },
                             },
                             {
                                 title: 'Mark as False Positive',
                                 onClick: (event) => {
                                     event.preventDefault();
+                                    setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.id] });
                                 },
                             },
                             {
@@ -184,9 +226,19 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                 </Tbody>
             </TableComposable>
             <DeferralRequestModal
-                isOpen={cvesToBeDeferred.length !== 0}
-                onCompleteDeferral={completeDeferral}
-                onCancelDeferral={cancelDeferringCVEs}
+                isOpen={cvesToBeAssessed?.type === 'DEFERRAL' && cvesToBeAssessed?.ids.length !== 0}
+                onRequestDeferral={requestDeferral}
+                onCompleteDeferral={completeAssessment}
+                onCancelDeferral={cancelAssessment}
+            />
+            <FalsePositiveRequestModal
+                isOpen={
+                    cvesToBeAssessed?.type === 'FALSE_POSITIVE' &&
+                    cvesToBeAssessed?.ids.length !== 0
+                }
+                onRequestFalsePositive={requestFalsePositive}
+                onCompleteFalsePositive={completeAssessment}
+                onCancelFalsePositive={cancelAssessment}
             />
         </>
     );
