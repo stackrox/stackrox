@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { capitalize } from 'lodash';
+import capitalize from 'lodash/capitalize';
 import * as Icon from 'react-feather';
 
 import Table, { rtTrActionsClassName } from 'Components/Table';

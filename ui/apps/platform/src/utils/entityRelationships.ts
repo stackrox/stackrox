@@ -3,7 +3,7 @@
 // note: the relationships are directional!
 // changing direction may change relationship type between entities!!
 
-import { uniq } from 'lodash';
+import uniq from 'lodash/uniq';
 import entityTypes from 'constants/entityTypes';
 import relationshipTypes from 'constants/relationshipTypes';
 import useCaseTypes from 'constants/useCaseTypes';

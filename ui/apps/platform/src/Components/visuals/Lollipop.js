@@ -9,7 +9,7 @@ import {
     LabelSeries,
     GradientDefs,
 } from 'react-vis';
-import { max } from 'lodash';
+import max from 'lodash/max';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';

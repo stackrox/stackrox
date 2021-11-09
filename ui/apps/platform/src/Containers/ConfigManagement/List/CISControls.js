@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { capitalize } from 'lodash';
+import capitalize from 'lodash/capitalize';
 
 import StatusChip from 'Components/StatusChip';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';

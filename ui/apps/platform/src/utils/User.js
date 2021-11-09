@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 
 import { READ_ACCESS, READ_WRITE_ACCESS } from 'constants/accessControl';
 

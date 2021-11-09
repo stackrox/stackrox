@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import { format } from 'date-fns';
-import { capitalize } from 'lodash';
+import capitalize from 'lodash/capitalize';
 import {
     Card,
     CardHeader,
