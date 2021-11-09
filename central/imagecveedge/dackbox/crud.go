@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -23,13 +24,13 @@ var (
 	// Upserter writes storage.ImageCVEEdges directly to the store.
 	Upserter = crud.NewUpserter(
 		crud.WithKeyFunction(crud.PrefixKey(Bucket, keyFunc)),
-		crud.AddToIndex(),
+		crud.AddToIndexIfFeatureEnabled(features.VulnRiskManagement),
 	)
 
 	// Deleter deletes the edges from the store.
 	Deleter = crud.NewDeleter(
 		crud.Shared(),
-		crud.RemoveFromIndex(),
+		crud.RemoveFromIndexIfFeatureEnabled(features.VulnRiskManagement),
 	)
 )
 
