@@ -13,13 +13,9 @@ function setRoutes() {
     cy.route('POST', api.graphql(api.alerts.graphqlOps.getComments)).as('getComments');
 }
 
-function openFirstItemOnViolationsPage() {
+function visitViolationsListPage() {
     cy.visit(url);
     cy.wait('@alerts');
-
-    cy.get(selectors.firstTableRowLink).click();
-    cy.wait('@alertById');
-    cy.wait('@getComments');
 }
 
 function deleteLastComment() {
@@ -33,77 +29,109 @@ describe('Violation Page: Comments', () => {
 
     it('should add new comment with a link and delete', () => {
         setRoutes();
-        openFirstItemOnViolationsPage();
+        visitViolationsListPage();
 
-        const link = 'http://nowhere.org';
-        const mark = randomstring.generate(7);
-        const comment = `${link} ${mark} ${link} not a link ${link}`;
-        cy.get(commentsSelectors.newButton).click();
-        cy.get(commentsSelectors.newComment.textArea).type(comment);
-        cy.get(commentsSelectors.newComment.saveButton).click();
-        cy.wait('@getComments');
+        cy.get(selectors.firstTableRowLink).then(($a) => {
+            const href = $a.prop('href');
 
-        cy.get(commentsSelectors.lastComment.userName).should('have.text', 'ui_tests');
-        cy.get(commentsSelectors.lastComment.dateAndEditedStatus).should((date) => {
-            // Date matches 'MM/DD/YYYY | h:mm:ssA' format.
-            expect(/\d{2}\/\d{2}\/\d{4} | \d{1,2}:\d{2}:\d{2}(AM|PM)/.test(date.text())).to.be.true;
+            cy.visit(href);
+            cy.wait('@alertById');
+            cy.wait('@getComments');
+
+            const link = 'http://nowhere.org';
+            const mark = randomstring.generate(7);
+            const comment = `${link} ${mark} ${link} not a link ${link}`;
+            cy.get(commentsSelectors.newButton).click();
+            cy.get(commentsSelectors.newComment.textArea).type(comment);
+            cy.get(commentsSelectors.newComment.saveButton).click();
+            cy.wait('@getComments');
+
+            cy.get(commentsSelectors.lastComment.userName).should('have.text', 'ui_tests');
+            cy.get(commentsSelectors.lastComment.dateAndEditedStatus).should((date) => {
+                // Date matches 'MM/DD/YYYY | h:mm:ssA' format.
+                expect(/\d{2}\/\d{2}\/\d{4} | \d{1,2}:\d{2}:\d{2}(AM|PM)/.test(date.text())).to.be
+                    .true;
+            });
+            cy.get(commentsSelectors.lastComment.message).should('have.text', comment);
+            cy.get(commentsSelectors.lastComment.links).should('have.length', 3);
+            cy.get(commentsSelectors.lastComment.links).each((a) => {
+                expect(a).to.have.text(link);
+                expect(a).to.have.attr('href', link);
+            });
+
+            deleteLastComment();
+
+            cy.get(`${commentsSelectors.allComments}:contains("${mark}")`).should('not.exist');
         });
-        cy.get(commentsSelectors.lastComment.message).should('have.text', comment);
-        cy.get(commentsSelectors.lastComment.links).should('have.length', 3);
-        cy.get(commentsSelectors.lastComment.links).each((a) => {
-            expect(a).to.have.text(link);
-            expect(a).to.have.attr('href', link);
-        });
-
-        deleteLastComment();
-
-        cy.get(`${commentsSelectors.allComments}:contains("${mark}")`).should('not.exist');
     });
 
     it('should not allow saving empty comment', () => {
         setRoutes();
-        openFirstItemOnViolationsPage();
+        visitViolationsListPage();
 
-        cy.get(commentsSelectors.newButton).click();
-        cy.get(commentsSelectors.newComment.textArea).type('   ');
-        cy.get(commentsSelectors.newComment.saveButton).should('be.disabled');
+        cy.get(selectors.firstTableRowLink).then(($a) => {
+            const href = $a.prop('href');
 
-        cy.get(commentsSelectors.newComment.error).should('have.text', 'This field is required');
+            cy.visit(href);
+            cy.wait('@alertById');
+            cy.wait('@getComments');
+
+            cy.get(commentsSelectors.newButton).click();
+            cy.get(commentsSelectors.newComment.textArea).type('   ');
+            cy.get(commentsSelectors.newComment.saveButton).should('be.disabled');
+
+            cy.get(commentsSelectors.newComment.error).should(
+                'have.text',
+                'This field is required'
+            );
+        });
     });
 
     it('should edit existing comment', () => {
         setRoutes();
-        openFirstItemOnViolationsPage();
+        visitViolationsListPage();
 
-        cy.get(commentsSelectors.newButton).click();
-        cy.get(commentsSelectors.newComment.textArea).type('My comment');
-        cy.get(commentsSelectors.newComment.saveButton).click();
-        cy.wait('@getComments');
+        cy.get(selectors.firstTableRowLink).then(($a) => {
+            const href = $a.prop('href');
 
-        // first try to cancel changes
-        cy.get(commentsSelectors.lastComment.editButton).click();
-        cy.get(commentsSelectors.lastComment.textArea).type('{end} (updated)');
-        cy.get(commentsSelectors.lastComment.cancelButton).click();
+            cy.log(href);
+            cy.visit(href);
+            cy.wait('@alertById');
+            cy.wait('@getComments');
 
-        cy.get(commentsSelectors.lastComment.message).should('have.text', 'My comment');
-        cy.get(commentsSelectors.lastComment.dateAndEditedStatus).should(
-            'not.contain.text',
-            '(edited)'
-        );
+            cy.get(commentsSelectors.newButton).click();
+            cy.get(commentsSelectors.newComment.textArea).type('My comment');
+            cy.get(commentsSelectors.newComment.saveButton).click();
+            cy.wait('@getComments');
 
-        // let do it with saving now
-        cy.get(commentsSelectors.lastComment.editButton).click();
-        cy.get(commentsSelectors.lastComment.textArea).type('{end} (updated)');
-        cy.get(commentsSelectors.lastComment.saveButton).click();
-        cy.wait('@getComments');
+            // first try to cancel changes
+            cy.get(commentsSelectors.lastComment.editButton).click();
+            cy.get(commentsSelectors.lastComment.textArea).type('{end} (updated)');
+            cy.get(commentsSelectors.lastComment.cancelButton).click();
 
-        cy.get(commentsSelectors.lastComment.message).should('have.text', 'My comment (updated)');
-        cy.get(commentsSelectors.lastComment.dateAndEditedStatus).should(
-            'contain.text',
-            '(edited)'
-        );
+            cy.get(commentsSelectors.lastComment.message).should('have.text', 'My comment');
+            cy.get(commentsSelectors.lastComment.dateAndEditedStatus).should(
+                'not.contain.text',
+                '(edited)'
+            );
 
-        deleteLastComment();
+            // let do it with saving now
+            cy.get(commentsSelectors.lastComment.editButton).click();
+            cy.get(commentsSelectors.lastComment.textArea).type('{end} (updated)');
+            cy.get(commentsSelectors.lastComment.saveButton).click();
+            cy.wait('@getComments');
+
+            cy.get(commentsSelectors.lastComment.message).should(
+                'have.text',
+                'My comment (updated)'
+            );
+            cy.get(commentsSelectors.lastComment.dateAndEditedStatus).should(
+                'contain.text',
+                '(edited)'
+            );
+
+            deleteLastComment();
+        });
     });
 
     it('should not show edit and delete buttons if no permissions', () => {
@@ -114,13 +142,21 @@ describe('Violation Page: Comments', () => {
             'fixture:alerts/comments.json'
         ).as('getComments');
 
-        openFirstItemOnViolationsPage();
+        visitViolationsListPage();
 
-        cy.get(commentsSelectors.lastComment.message).should(
-            'have.text',
-            'Not editable / delete-able comment'
-        );
-        cy.get(commentsSelectors.lastComment.editButton).should('not.exist');
-        cy.get(commentsSelectors.lastComment.deleteButton).should('not.exist');
+        cy.get(selectors.firstTableRowLink).then(($a) => {
+            const href = $a.prop('href');
+
+            cy.visit(href);
+            cy.wait('@alertById');
+            cy.wait('@getComments');
+
+            cy.get(commentsSelectors.lastComment.message).should(
+                'have.text',
+                'Not editable / delete-able comment'
+            );
+            cy.get(commentsSelectors.lastComment.editButton).should('not.exist');
+            cy.get(commentsSelectors.lastComment.deleteButton).should('not.exist');
+        });
     });
 });

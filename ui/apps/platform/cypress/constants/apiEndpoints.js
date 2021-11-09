@@ -80,6 +80,7 @@ export const alerts = {
         tagsAutocomplete: 'autocomplete',
         bulkAddAlertTags: 'bulkAddAlertTags',
         getComments: 'getAlertComments',
+        removeTags: 'removeAlertTags',
     },
 };
 
