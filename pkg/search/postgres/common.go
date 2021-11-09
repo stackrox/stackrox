@@ -33,9 +33,9 @@ var (
 type SelectType int
 
 const (
-	GET   SelectType  = 0
-	COUNT SelectType  = 1
-	VALUE SelectType  = 2
+	GET    SelectType = 0
+	COUNT  SelectType = 1
+	VALUE  SelectType = 2
 	DELETE SelectType = 3
 )
 
@@ -633,7 +633,6 @@ func RunSearchRequestValue(category v1.SearchCategory, q *v1.Query, db *pgxpool.
 	}
 	return rows, err
 }
-
 
 func RunSearchRequestDelete(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) error {
 	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), DELETE)
