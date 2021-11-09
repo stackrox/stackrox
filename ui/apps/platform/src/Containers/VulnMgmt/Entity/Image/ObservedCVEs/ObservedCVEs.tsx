@@ -10,7 +10,18 @@ const rows = [
         isFixable: false,
         severity: 'MODERATE_VULNERABILITY_SEVERITY',
         cvssScore: '5.8',
-        components: [{ name: 'glibc 2.24-11+deb9u4' }, { name: 'perl 5.24.1-3+deb9u5' }],
+        components: [
+            {
+                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
+                name: 'glibc 2.24-11+deb9u4',
+                fixedIn: 'struts-232',
+            },
+            {
+                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
+                name: 'perl 5.24.1-3+deb9u5',
+                fixedIn: 'struts-232',
+            },
+        ],
         discoveredAt: '3 days ago',
     },
     {
@@ -19,7 +30,13 @@ const rows = [
         isFixable: true,
         severity: 'CRITICAL_VULNERABILITY_SEVERITY',
         cvssScore: '9.8',
-        components: [{ name: 'glibc 2.24-11+deb9u4' }],
+        components: [
+            {
+                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
+                name: 'glibc 2.24-11+deb9u4',
+                fixedIn: 'struts-232',
+            },
+        ],
         discoveredAt: '2 days ago',
     },
     {
@@ -28,7 +45,13 @@ const rows = [
         isFixable: true,
         severity: 'IMPORTANT_VULNERABILITY_SEVERITY',
         cvssScore: '8.8',
-        components: [{ name: 'glibc 2.24-11+deb9u4' }],
+        components: [
+            {
+                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
+                name: 'glibc 2.24-11+deb9u4',
+                fixedIn: 'struts-232',
+            },
+        ],
         discoveredAt: '3 days ago',
     },
     {
@@ -37,7 +60,13 @@ const rows = [
         isFixable: true,
         severity: 'IMPORTANT_VULNERABILITY_SEVERITY',
         cvssScore: '8.1',
-        components: [{ name: 'glibc 2.24-11+deb9u4' }],
+        components: [
+            {
+                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
+                name: 'glibc 2.24-11+deb9u4',
+                fixedIn: 'struts-232',
+            },
+        ],
         discoveredAt: '3 days ago',
     },
     {
@@ -46,7 +75,18 @@ const rows = [
         isFixable: true,
         severity: 'MODERATE_VULNERABILITY_SEVERITY',
         cvssScore: '6.5',
-        components: [{ name: 'glibc 2.24-11+deb9u4' }, { name: 'perl 5.24.1-3+deb9u5' }],
+        components: [
+            {
+                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
+                name: 'glibc 2.24-11+deb9u4',
+                fixedIn: 'struts-232',
+            },
+            {
+                id: 'b3BlbnNzbA:MS4xLjFkLTArZGViMTB1Mg',
+                name: 'perl 5.24.1-3+deb9u5',
+                fixedIn: 'struts-232',
+            },
+        ],
         discoveredAt: '5 days ago',
     },
 ] as ObservedCVERow[];
