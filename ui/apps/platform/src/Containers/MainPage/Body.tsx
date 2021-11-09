@@ -20,6 +20,7 @@ import {
     systemHealthPath,
     systemHealthPathPF,
     vulnManagementPath,
+    vulnManagementReportingPath,
     configManagementPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -54,6 +55,9 @@ const AsyncAccessControlPageV2 = asyncComponent(
 const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
+const AsyncVulnMgmtReportingPage = asyncComponent(
+    () => import('Containers/VulnMgmt/Reporting/VulnMgmtReportPage')
+);
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
 const AsyncSystemHealthPagePF = asyncComponent(
@@ -95,6 +99,10 @@ function Body(): ReactElement {
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     <ProtectedRoute path={userBasePath} component={AsyncUserPage} />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
+                    <ProtectedRoute
+                        path={vulnManagementReportingPath}
+                        component={AsyncVulnMgmtReportingPage}
+                    />
                     <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <ProtectedRoute
                         path={configManagementPath}

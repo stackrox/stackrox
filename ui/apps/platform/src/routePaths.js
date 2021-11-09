@@ -3,7 +3,6 @@
  */
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
-import useCaseTypes from 'constants/useCaseTypes';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -58,6 +57,11 @@ export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
 export const vulnManagementComponentsPath = `${vulnManagementPath}/components`;
 export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
+// The following paths are not part of the infinite nesting Workflow in Vuln Management
+export const vulnManagementReportingPath = `${vulnManagementPath}/reporting`;
+export const vulnManagementReportingPathWithParam = `${vulnManagementPath}/reporting/:reportId`;
+// TODO: add risk (deferral) path
+
 /**
  * New Framwork-related route paths
  */
@@ -95,20 +99,10 @@ export const urlEntityTypes = {
     [rbacConfigTypes.ROLE]: 'role',
 };
 
-export const useCasePaths = {
-    [useCaseTypes.VULN_MANAGEMENT]: 'vulnerability-management',
-};
-
 const vulnManagementPathToLabelMap = {
     [vulnManagementPath]: 'Dashboard',
-    [vulnManagementPoliciesPath]: 'Policies',
-    [vulnManagementCVEsPath]: 'CVEs',
-    [vulnManagementClustersPath]: 'Clusters',
-    [vulnManagementNamespacesPath]: 'Namespaces',
-    [vulnManagementDeploymentsPath]: 'Deployments',
-    [vulnManagementImagesPath]: 'Images',
-    [vulnManagementComponentsPath]: 'Components',
-    [vulnManagementNodesPath]: 'Nodes',
+    // TODO: add mapping for Deferrals
+    [vulnManagementReportingPath]: 'Reporting',
 };
 
 export const basePathToLabelMap = {
