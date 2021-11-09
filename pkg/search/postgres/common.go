@@ -429,16 +429,16 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, se
 	if err != nil {
 		return nil, err
 	}
+	pagination, err := getPaginationQuery(q.Pagination, table, optionsMap)
+	if err != nil {
+		return nil, err
+	}
 	if queryEntry == nil {
 		return &Query{
 			Select: selQuery,
 			From:   fromClause,
+			Pagination: pagination,
 		}, nil
-	}
-
-	pagination, err := getPaginationQuery(q.Pagination, table, optionsMap)
-	if err != nil {
-		return nil, err
 	}
 
 	return &Query{
