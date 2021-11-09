@@ -12,6 +12,7 @@ import LoadingSection from 'Components/LoadingSection';
 
 class ProtectedRoute extends Component {
     static propTypes = {
+        path: PropTypes.string.isRequired,
         component: PropTypes.elementType.isRequired,
         authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map((key) => AUTH_STATUS[key]))
             .isRequired,
