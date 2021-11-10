@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/stackrox/rox/tools/dontprintferr"
+	"github.com/stackrox/rox/tools/filepathwalk"
 	"github.com/stackrox/rox/tools/invalidoutputroxctl"
 	"github.com/stackrox/rox/tools/needlessformat"
 	"github.com/stackrox/rox/tools/protoclone"
@@ -24,5 +25,6 @@ func main() {
 		protoclone.Analyzer,
 		unusedroxctlargs.Analyzer,
 		invalidoutputroxctl.Analyzer,
+		filepathwalk.Analyzer,
 	)
 }

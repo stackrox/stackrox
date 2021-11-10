@@ -34,10 +34,16 @@ func createOrAddPathWithBase(fromPath string, toPath string, to *tar.Writer) err
 		return errors.Wrapf(err, "cannot resolve path %s", fromPath)
 	}
 
-	return filepath.Walk(resolvedFromPath, func(filePath string, info os.FileInfo, err error) error {
+	return filepath.WalkDir(resolvedFromPath, func(filePath string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return errors.Wrapf(err, "unexpected error traversing backup file path %s", filePath)
 		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return errors.Wrapf(err, "unexpected error getting file info when traversing backup file path %s", filePath)
+		}
+
 		if !info.Mode().IsRegular() || info.IsDir() {
 			return nil
 		}
