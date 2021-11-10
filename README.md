@@ -8,7 +8,7 @@ recommendations to proactively improve security by hardening the environment.
 StackRox integrates with every stage of container lifecycle: build, deploy and
 runtime.
 
-Note: the StackRox Kubernetes Security platform is built on the foundation of 
+Note: the StackRox Kubernetes Security platform is built on the foundation of
 the product formerly known as Prevent, which itself was called Mitigate and
 Apollo. You may find references to these previous names in code or
 documentation.
@@ -176,7 +176,7 @@ $ make main-build-dockerized
 # Displays the docker image tag which would be generated
 $ make tag
 
-# Note: there are integration tests in some components, and we currently 
+# Note: there are integration tests in some components, and we currently
 # run those manually. They will be re-enabled at some point.
 $ make test
 
@@ -213,7 +213,7 @@ $ roxcurl /v1/metadata
 # Run quickstyle checks, faster than roxs' "make style"
 $ quickstyle
 
-# The workflow repository includes some tools for supporting 
+# The workflow repository includes some tools for supporting
 # working with multiple inter-dependent branches.
 # Examples:
 $ smart-branch <branch-name>    # create new branch
@@ -229,7 +229,7 @@ $ smart-diff                    # check diff relative to parent branch
 If you're using GoLand for development, the following can help improve the experience.
 
 Make sure `Protocol Buffer Editor` plugin is installed. If it isn't, use `Help | Find Action...`, type `Plugins` and hit
-enter, then switch to `Marketplace`, type its name and install the plugin.  
+enter, then switch to `Marketplace`, type its name and install the plugin.
 This plugin does not know where to look for `.proto` imports by default in GoLand therefore you need to explicitly
 configure paths for this plugin. See <https://github.com/jvolkman/intellij-protobuf-editor#path-settings>.
 
@@ -243,7 +243,7 @@ configure paths for this plugin. See <https://github.com/jvolkman/intellij-proto
 
 #### Debugging
 
-With GoLand, you can naturally use breakpoints and debugger when running unit tests in IDE.  
+With GoLand, you can naturally use breakpoints and debugger when running unit tests in IDE.
 If you would like to debug local or even remote deployment, follow the procedure below.
 
 <details><summary>Kubernetes debugger setup</summary>
