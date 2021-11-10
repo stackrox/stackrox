@@ -68,9 +68,9 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 +-------+-------+------------+
 | Test  | 12345 | Fictional1 |
 +-------+-------+------------+
-| Test  |  3456 | Fictional1 |
+| Test  | 3456  | Fictional1 |
 +-------+-------+------------+
-| Test1 |  3456 | Fictional2 |
+| Test1 | 3456  | Fictional2 |
 +-------+-------+------------+
 | Test1 | 63438 | Fictional4 |
 +-------+-------+------------+
@@ -84,7 +84,7 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 +-------+-------+------------+
 | Test  | 12345 | Fictional1 |
 +       +-------+            +
-|       |  3456 |            |
+|       | 3456  |            |
 +-------+       +------------+
 | Test1 |       | Fictional2 |
 +       +-------+------------+
@@ -98,9 +98,9 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 			expectedOutput: `+-------+-------+------------+
 | Test  | 12345 | Fictional1 |
 +-------+-------+------------+
-| Test  |  3456 | Fictional1 |
+| Test  | 3456  | Fictional1 |
 +-------+-------+------------+
-| Test1 |  3456 | Fictional2 |
+| Test1 | 3456  | Fictional2 |
 +-------+-------+------------+
 | Test1 | 63438 | Fictional4 |
 +-------+-------+------------+
@@ -112,7 +112,7 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 			expectedOutput: `+-------+-------+------------+
 | Test  | 12345 | Fictional1 |
 +       +-------+            +
-|       |  3456 |            |
+|       | 3456  |            |
 +-------+       +------------+
 | Test1 |       | Fictional2 |
 +       +-------+------------+

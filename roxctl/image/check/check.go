@@ -24,19 +24,20 @@ import (
 const (
 	jsonFlagName     = "json"
 	jsonFailFlagName = "json-fail-on-policy-violations"
+	// Default JSON path expression which retrieves the data from a policy.Result
+	defaultImageCheckJSONPathExpression = "{results.#.violatedPolicies.#.name," +
+		"results.#.violatedPolicies.#.severity," +
+		"results.#.violatedPolicies.#.description," +
+		"results.#.violatedPolicies.#.violation.@list," +
+		"results.#.violatedPolicies.#.remediation," +
+		"results.#.violatedPolicies.#.failingCheck.@boolReplace:{\"true\":\"X\",\"false\":\"-\"}}"
 )
 
 var (
 	// Default headers to use when printing tabular output
 	defaultImageCheckHeaders = []string{
-		"POLICY", "SEVERITY", "DESCRIPTION", "VIOLATION", "REMEDIATION",
+		"POLICY", "SEVERITY", "DESCRIPTION", "VIOLATION", "REMEDIATION", "BREAKS BUILD",
 	}
-	// Default JSON path expression which retrieves the data from the policyJSONResult
-	defaultImageCheckJSONPathExpression = "{results.#.violatedPolicies.#.name," +
-		"results.#.violatedPolicies.#.severity," +
-		"results.#.violatedPolicies.#.description," +
-		"results.#.violatedPolicies.#.violation," +
-		"results.#.violatedPolicies.#.remediation}"
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(false, defaultImageCheckHeaders, defaultImageCheckJSONPathExpression, false, false),
@@ -279,7 +280,7 @@ func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.
 	fmt.Fprintf(out, "ERROR: %s\n", policy.NewErrBreakingPolicies(numBreakingPolicies))
 
 	for _, res := range results {
-		for _, breakingPolicy := range res.BreakingPolicies {
+		for _, breakingPolicy := range res.GetBreakingPolicies() {
 			fmt.Fprintf(out, "ERROR: Policy %q - Possible remediation: %q\n",
 				breakingPolicy.Name, breakingPolicy.Remediation)
 		}

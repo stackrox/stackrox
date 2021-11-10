@@ -20,7 +20,7 @@ func TestTabularPrinterFactory_CreatePrinter(t *testing.T) {
 			format: "csv",
 		},
 		"should fail with invalid factory": {
-			t:          &TabularPrinterFactory{Headers: []string{"a"}},
+			t:          &TabularPrinterFactory{HeaderAsComment: true, NoHeader: true},
 			format:     "csv",
 			shouldFail: true,
 			error:      errorhelpers.ErrInvalidArgs,
@@ -55,14 +55,6 @@ func TestTabularPrinterFactory_Validate(t *testing.T) {
 	}{
 		"should not fail with empty headers and json path expressions": {
 			t: &TabularPrinterFactory{},
-		},
-		"should fail with more headers than json path expressions": {
-			t: &TabularPrinterFactory{
-				Headers:               []string{"a", "b", "c"},
-				RowJSONPathExpression: "a,b",
-			},
-			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
 		},
 		"should fail with no header and header as comment set": {
 			t: &TabularPrinterFactory{

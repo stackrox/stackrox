@@ -55,6 +55,9 @@ func (j *JUnitPrinterFactory) SupportedFormats() []string {
 //
 // The GJSON expression syntax (https://github.com/tidwall/gjson/blob/master/SYNTAX.md) offers more complex
 // and advanced scenarios, if you require them and the below example is not sufficient.
+// Additionally, there are custom GJSON modifiers, which will post-process expression results. Currently,
+// the mapper.ListModifier and mapper.BoolReplaceModifier are available, see their documentation on usage and
+// GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and an example for the map of JSON Path expressions
 // JSON structure:
 // type data struct {

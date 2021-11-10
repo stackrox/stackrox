@@ -1,14 +1,11 @@
 package policy
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 )
-
-//go:generate genny -in=../../../pkg/set/generic.go -out=policy-set.go -pkg policy gen "KeyType=*storage.Policy"
 
 // TotalPolicyAmountKey relates to the key within the Policy summary map which yields the total amount of violated
 // policies
@@ -57,16 +54,9 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 	numOfSeveritiesByEntities := createNumOfSeverityByEntity(entityMetadataMap)
 	numOfSeveritiesAcrossEntities := createNumOfSeverityMap()
 	policiesByEntity := make(map[string]map[string]*Policy, len(entityMetadataMap))
-	breakingPoliciesByEntities := make(map[string]*StoragePolicySet, len(entityMetadataMap))
 
 	for _, alert := range alerts {
 		entityID := getEntityIDFromAlert(alert)
-		// create StoragePolicySet for failed policies if it does not yet exist for the
-		// current entity
-		if _, exists := breakingPoliciesByEntities[entityID]; !exists {
-			set := NewStoragePolicySet()
-			breakingPoliciesByEntities[entityID] = &set
-		}
 		// create map for policies if it does not yet exist for the current entity
 		if _, exists := policiesByEntity[entityID]; !exists {
 			policiesByEntity[entityID] = map[string]*Policy{}
@@ -80,7 +70,7 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 		// of the alerts, since the violation could be different.
 		if exists {
 			policyJSON := policiesByEntity[entityID][policyID]
-			policyJSON.Violation += getAlertViolationsString(alert)
+			policyJSON.Violation = append(policyJSON.Violation, getAlertViolationsStrings(alert)...)
 			// we can skip here, since we do not want to add the Policy either
 			// to the overall set (duplicate) or to the failing set (duplicate)
 			continue
@@ -88,18 +78,12 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 
 		strippedPolicySeverityEnum := trimSeverityEnumSuffix(p.GetSeverity())
 		policiesByEntity[entityID][policyID] = &Policy{
-			Name:        p.GetName(),
-			Severity:    strippedPolicySeverityEnum,
-			Description: p.GetDescription(),
-			Remediation: p.GetRemediation(),
-			Violation:   getAlertViolationsString(alert),
-		}
-		// if the Policy has a forbidden storage.EnforcementAction add it to the set of
-		// failing policies if it is not yet added. Need to check this since
-		// multiple alerts can point to the same Policy
-		if checkIfPolicyHasForbiddenEnforcementAction(p, forbiddenEnforcementAction) &&
-			!breakingPoliciesByEntities[entityID].Contains(p) {
-			breakingPoliciesByEntities[entityID].Add(p)
+			Name:         p.GetName(),
+			Severity:     strippedPolicySeverityEnum,
+			Description:  p.GetDescription(),
+			Remediation:  p.GetRemediation(),
+			Violation:    getAlertViolationsStrings(alert),
+			FailingCheck: checkIfPolicyHasForbiddenEnforcementAction(p, forbiddenEnforcementAction),
 		}
 
 		// increase the severity count & total account for the entity and the total amount
@@ -109,8 +93,7 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 		numOfSeveritiesAcrossEntities[TotalPolicyAmountKey]++
 	}
 
-	resultsForEntities := createResultsForEntities(entityMetadataMap, policiesByEntity, breakingPoliciesByEntities,
-		numOfSeveritiesByEntities)
+	resultsForEntities := createResultsForEntities(entityMetadataMap, policiesByEntity, numOfSeveritiesByEntities)
 
 	return &Result{
 		Results: resultsForEntities,
@@ -122,7 +105,6 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 // policies, breaking policies and number of severities to it
 func createResultsForEntities(entityMetadataMap map[string]EntityMetadata,
 	policiesByEntities map[string]map[string]*Policy,
-	breakingPoliciesSetByEntities map[string]*StoragePolicySet,
 	numOfSeverityByEntities map[string]map[string]int) []EntityResult {
 
 	sortedEntitiesMetadata := sortMetadataByEntity(getEntityMetadataFromMap(entityMetadataMap))
@@ -133,8 +115,6 @@ func createResultsForEntities(entityMetadataMap map[string]EntityMetadata,
 			Metadata:         metadata,
 			Summary:          numOfSeverityByEntities[metadata.ID],
 			ViolatedPolicies: sortPoliciesBySeverity(getPoliciesFromMap(policiesByEntities[metadata.ID])),
-			BreakingPolicies: sortBreakingPoliciesByName(getBreakingPolicies(
-				breakingPoliciesSetByEntities[metadata.ID].AsSlice())),
 		}
 		resultsForEntities = append(resultsForEntities, entityResult)
 	}
@@ -223,25 +203,13 @@ func getPoliciesFromMap(policyMap map[string]*Policy) []Policy {
 	return policies
 }
 
-// getAlertViolationsString merges all violation messages of an alert
-func getAlertViolationsString(alert *storage.Alert) string {
-	var res string
+// getAlertViolationsStrings merges all violation messages of an alert
+func getAlertViolationsStrings(alert *storage.Alert) []string {
+	res := make([]string, 0, len(alert.GetViolations()))
 	for _, violation := range alert.GetViolations() {
-		res += fmt.Sprintf("- %s\n", violation.Message)
+		res = append(res, violation.GetMessage())
 	}
 	return res
-}
-
-// getBreakingPolicies creates BreakingPolicy representation of breaking policies
-func getBreakingPolicies(breakingPolicies []*storage.Policy) []BreakingPolicy {
-	breakingPoliciesJSON := make([]BreakingPolicy, 0, len(breakingPolicies))
-	for _, policy := range breakingPolicies {
-		breakingPoliciesJSON = append(breakingPoliciesJSON, BreakingPolicy{
-			Name:        policy.GetName(),
-			Remediation: policy.GetRemediation(),
-		})
-	}
-	return breakingPoliciesJSON
 }
 
 // checkIfPolicyHasForbiddenEnforcementAction iterates through the Policy's enforcement actions and returns true
@@ -258,14 +226,6 @@ func checkIfPolicyHasForbiddenEnforcementAction(policy *storage.Policy, forbidde
 // trimSeverityEnumSuffix trims the proto generated "_SEVERITY" suffix
 func trimSeverityEnumSuffix(severity storage.Severity) string {
 	return strings.TrimSuffix(severity.String(), "_SEVERITY")
-}
-
-// sortBreakingPoliciesByName sorts an array of BreakingPolicy by name
-func sortBreakingPoliciesByName(breakingPolicies []BreakingPolicy) []BreakingPolicy {
-	sort.SliceStable(breakingPolicies, func(i, j int) bool {
-		return breakingPolicies[i].Name < breakingPolicies[j].Name
-	})
-	return breakingPolicies
 }
 
 // sortPoliciesBySeverity sorts policies by their Severity from highest (CriticalSeverity) to lowest (LowSeverity)
@@ -305,7 +265,11 @@ type Result struct {
 func (r *Result) GetTotalAmountOfBreakingPolicies() int {
 	amount := 0
 	for _, entityResult := range r.Results {
-		amount += len(entityResult.BreakingPolicies)
+		for _, violatedPolicy := range entityResult.ViolatedPolicies {
+			if violatedPolicy.FailingCheck {
+				amount++
+			}
+		}
 	}
 	return amount
 }
@@ -323,25 +287,30 @@ func (r *Result) GetResultNames() []string {
 
 // EntityResult represents a result consisting of policies for a specific entity
 type EntityResult struct {
-	Metadata         EntityMetadata   `json:"metadata"`
-	Summary          map[string]int   `json:"summary"`
-	ViolatedPolicies []Policy         `json:"violatedPolicies,omitempty"`
-	BreakingPolicies []BreakingPolicy `json:"breakingPolicies,omitempty"`
+	Metadata         EntityMetadata `json:"metadata"`
+	Summary          map[string]int `json:"summary"`
+	ViolatedPolicies []Policy       `json:"violatedPolicies,omitempty"`
+}
+
+// GetBreakingPolicies returns all breaking policies for a single EntityResult
+func (e *EntityResult) GetBreakingPolicies() []Policy {
+	var breakingPolicies []Policy
+	for _, policy := range e.ViolatedPolicies {
+		if policy.FailingCheck {
+			breakingPolicies = append(breakingPolicies, policy)
+		}
+	}
+	return breakingPolicies
 }
 
 // Policy represents information about a policy
 type Policy struct {
-	Name        string `json:"name"`
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-	Violation   string `json:"violation"`
-	Remediation string `json:"remediation"`
-}
-
-// BreakingPolicy represents information about a breaking policy
-type BreakingPolicy struct {
-	Name        string `json:"name"`
-	Remediation string `json:"remediation"`
+	Name         string   `json:"name"`
+	Severity     string   `json:"severity"`
+	Description  string   `json:"description"`
+	Violation    []string `json:"violation"`
+	Remediation  string   `json:"remediation"`
+	FailingCheck bool     `json:"failingCheck"`
 }
 
 // EntityMetadata provides information about the entity associated with the policy results

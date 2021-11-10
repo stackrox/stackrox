@@ -233,39 +233,39 @@ func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 			expectedOutput: `Policy check results for image: nginx:test
 (TOTAL: 5, LOW: 1, MEDIUM: 3, HIGH: 1, CRITICAL: 0)
 
-+----------+----------+----------------------+--------------------+----------------------+
-|  POLICY  | SEVERITY |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 4 | HIGH     | policy 4 for testing | - test violation 1 | policy 4 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 2 | MEDIUM   | policy 2 for testing | - test violation 1 | policy 2 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 2 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 3 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 5 | MEDIUM   | policy 5 for testing | - test violation 1 | policy 5 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 2 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 3 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 1 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 6 | MEDIUM   | policy 6 for testing | - test violation 1 | policy 6 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 7 | LOW      | policy 7 for testing | - test violation 1 | policy 7 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
++----------+----------+----------------------+--------------------+----------------------+--------------+
+|  POLICY  | SEVERITY |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      | BREAKS BUILD |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 4 |   HIGH   | policy 4 for testing | - test violation 1 | policy 4 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 2 |  MEDIUM  | policy 2 for testing | - test violation 1 | policy 2 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 2 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 3 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 5 |  MEDIUM  | policy 5 for testing | - test violation 1 | policy 5 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 2 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 3 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 1 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 6 |  MEDIUM  | policy 6 for testing | - test violation 1 | policy 6 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 7 |   LOW    | policy 7 for testing | - test violation 1 | policy 7 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
 WARN: A total of 5 policies have been violated
 `,
 		},
@@ -274,47 +274,47 @@ WARN: A total of 5 policies have been violated
 			expectedOutput: `Policy check results for image: nginx:test
 (TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 1, CRITICAL: 1)
 
-+----------+----------+----------------------+--------------------+----------------------+
-|  POLICY  | SEVERITY |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 1 | CRITICAL | policy 1 for testing | - test violation 1 | policy 1 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 2 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 3 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 4 | HIGH     | policy 4 for testing | - test violation 1 | policy 4 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 2 | MEDIUM   | policy 2 for testing | - test violation 1 | policy 2 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 5 | MEDIUM   | policy 5 for testing | - test violation 1 | policy 5 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 2 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 3 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 1 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 6 | MEDIUM   | policy 6 for testing | - test violation 1 | policy 6 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 2 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      | - test violation 3 |                      |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
-| policy 7 | LOW      | policy 7 for testing | - test violation 1 | policy 7 for testing |
-|          |          |                      |                    |                      |
-|          |          |                      |                    |                      |
-+----------+----------+----------------------+--------------------+----------------------+
++----------+----------+----------------------+--------------------+----------------------+--------------+
+|  POLICY  | SEVERITY |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      | BREAKS BUILD |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 1 | CRITICAL | policy 1 for testing | - test violation 1 | policy 1 for testing |      X       |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 2 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 3 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 4 |   HIGH   | policy 4 for testing | - test violation 1 | policy 4 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 2 |  MEDIUM  | policy 2 for testing | - test violation 1 | policy 2 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 5 |  MEDIUM  | policy 5 for testing | - test violation 1 | policy 5 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 2 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 3 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 1 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 6 |  MEDIUM  | policy 6 for testing | - test violation 1 | policy 6 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 2 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 3 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 7 |   LOW    | policy 7 for testing | - test violation 1 | policy 7 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
 WARN: A total of 6 policies have been violated
 ERROR: failed policies found: 1 policies violated that are failing the check
 ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
@@ -353,36 +353,56 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
           "name": "policy 4",
           "severity": "HIGH",
           "description": "policy 4 for testing",
-          "violation": "- test violation 1\n",
-          "remediation": "policy 4 for testing"
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 4 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 2",
           "severity": "MEDIUM",
           "description": "policy 2 for testing",
-          "violation": "- test violation 1\n- test violation 2\n- test violation 3\n",
-          "remediation": "policy 2 for testing"
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3"
+          ],
+          "remediation": "policy 2 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 5",
           "severity": "MEDIUM",
           "description": "policy 5 for testing",
-          "violation": "- test violation 1\n- test violation 2\n- test violation 3\n- test violation 1\n",
-          "remediation": "policy 5 for testing"
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3",
+            "test violation 1"
+          ],
+          "remediation": "policy 5 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 6",
           "severity": "MEDIUM",
           "description": "policy 6 for testing",
-          "violation": "- test violation 1\n",
-          "remediation": "policy 6 for testing"
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 6 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 7",
           "severity": "LOW",
           "description": "policy 7 for testing",
-          "violation": "- test violation 1\n",
-          "remediation": "policy 7 for testing"
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 7 for testing",
+          "failingCheck": false
         }
       ]
     }
@@ -420,49 +440,68 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
           "name": "policy 1",
           "severity": "CRITICAL",
           "description": "policy 1 for testing",
-          "violation": "- test violation 1\n- test violation 2\n- test violation 3\n",
-          "remediation": "policy 1 for testing"
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3"
+          ],
+          "remediation": "policy 1 for testing",
+          "failingCheck": true
         },
         {
           "name": "policy 4",
           "severity": "HIGH",
           "description": "policy 4 for testing",
-          "violation": "- test violation 1\n",
-          "remediation": "policy 4 for testing"
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 4 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 2",
           "severity": "MEDIUM",
           "description": "policy 2 for testing",
-          "violation": "- test violation 1\n",
-          "remediation": "policy 2 for testing"
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 2 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 5",
           "severity": "MEDIUM",
           "description": "policy 5 for testing",
-          "violation": "- test violation 1\n- test violation 2\n- test violation 3\n- test violation 1\n",
-          "remediation": "policy 5 for testing"
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3",
+            "test violation 1"
+          ],
+          "remediation": "policy 5 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 6",
           "severity": "MEDIUM",
           "description": "policy 6 for testing",
-          "violation": "- test violation 1\n- test violation 2\n- test violation 3\n",
-          "remediation": "policy 6 for testing"
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3"
+          ],
+          "remediation": "policy 6 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 7",
           "severity": "LOW",
           "description": "policy 7 for testing",
-          "violation": "- test violation 1\n",
-          "remediation": "policy 7 for testing"
-        }
-      ],
-      "breakingPolicies": [
-        {
-          "name": "policy 1",
-          "remediation": "policy 1 for testing"
+          "violation": [
+            "test violation 1"
+          ],
+          "remediation": "policy 7 for testing",
+          "failingCheck": false
         }
       ]
     }
@@ -489,48 +528,48 @@ func (suite *imageCheckTestSuite) TestCheckImage_CSVOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non build failing enforcement actions": {
 			alerts: testAlertsWithoutFailure,
-			expectedOutput: `POLICY,SEVERITY,DESCRIPTION,VIOLATION,REMEDIATION
+			expectedOutput: `POLICY,SEVERITY,DESCRIPTION,VIOLATION,REMEDIATION,BREAKS BUILD
 policy 4,HIGH,policy 4 for testing,"- test violation 1
-",policy 4 for testing
+",policy 4 for testing,-
 policy 2,MEDIUM,policy 2 for testing,"- test violation 1
 - test violation 2
 - test violation 3
-",policy 2 for testing
+",policy 2 for testing,-
 policy 5,MEDIUM,policy 5 for testing,"- test violation 1
 - test violation 2
 - test violation 3
 - test violation 1
-",policy 5 for testing
+",policy 5 for testing,-
 policy 6,MEDIUM,policy 6 for testing,"- test violation 1
-",policy 6 for testing
+",policy 6 for testing,-
 policy 7,LOW,policy 7 for testing,"- test violation 1
-",policy 7 for testing
+",policy 7 for testing,-
 `,
 		},
 		"should fail with build failing enforcement actions": {
 			alerts:     testAlertsWithFailure,
 			shouldFail: true,
 			error:      policy.ErrBreakingPolicies,
-			expectedOutput: `POLICY,SEVERITY,DESCRIPTION,VIOLATION,REMEDIATION
+			expectedOutput: `POLICY,SEVERITY,DESCRIPTION,VIOLATION,REMEDIATION,BREAKS BUILD
 policy 1,CRITICAL,policy 1 for testing,"- test violation 1
 - test violation 2
 - test violation 3
-",policy 1 for testing
+",policy 1 for testing,X
 policy 4,HIGH,policy 4 for testing,"- test violation 1
-",policy 4 for testing
+",policy 4 for testing,-
 policy 2,MEDIUM,policy 2 for testing,"- test violation 1
-",policy 2 for testing
+",policy 2 for testing,-
 policy 5,MEDIUM,policy 5 for testing,"- test violation 1
 - test violation 2
 - test violation 3
 - test violation 1
-",policy 5 for testing
+",policy 5 for testing,-
 policy 6,MEDIUM,policy 6 for testing,"- test violation 1
 - test violation 2
 - test violation 3
-",policy 6 for testing
+",policy 6 for testing,-
 policy 7,LOW,policy 7 for testing,"- test violation 1
-",policy 7 for testing
+",policy 7 for testing,-
 `,
 		},
 	}

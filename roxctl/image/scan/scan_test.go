@@ -395,25 +395,25 @@ func (s *imageScanTestSuite) TestScan_TableOutput() {
 +-----------+------------+--------------+-----------+--------------------+
 | COMPONENT |  VERSION   |     CVE      | SEVERITY  |        LINK        |
 +-----------+------------+--------------+-----------+--------------------+
-| apt       |        1.0 | CVE-789-CRIT | CRITICAL  | <some-link-to-nvd> |
+|    apt    |    1.0     | CVE-789-CRIT | CRITICAL  | <some-link-to-nvd> |
 +           +            +--------------+-----------+                    +
-|           |            | CVE-123-LOW  | LOW       |                    |
+|           |            | CVE-123-LOW  |    LOW    |                    |
 +           +            +--------------+           +                    +
 |           |            | CVE-789-LOW  |           |                    |
 +-----------+------------+--------------+-----------+                    +
-| bash      |        4.2 | CVE-123-CRIT | CRITICAL  |                    |
+|   bash    |    4.2     | CVE-123-CRIT | CRITICAL  |                    |
 +           +            +--------------+           +                    +
 |           |            | CVE-456-CRIT |           |                    |
 +           +            +--------------+           +                    +
 |           |            | CVE-789-CRIT |           |                    |
 +-----------+------------+--------------+-----------+                    +
-| curl      | 7.0-rc1    | CVE-123-IMP  | IMPORTANT |                    |
+|   curl    |  7.0-rc1   | CVE-123-IMP  | IMPORTANT |                    |
 +           +            +--------------+           +                    +
 |           |            | CVE-456-IMP  |           |                    |
 +           +            +--------------+           +                    +
 |           |            | CVE-789-IMP  |           |                    |
 +-----------+------------+--------------+-----------+                    +
-| openssl   | 1.1.1k     | CVE-789-CRIT | CRITICAL  |                    |
+|  openssl  |   1.1.1k   | CVE-789-CRIT | CRITICAL  |                    |
 +           +            +--------------+-----------+                    +
 |           |            | CVE-123-IMP  | IMPORTANT |                    |
 +           +            +--------------+-----------+                    +
@@ -421,9 +421,9 @@ func (s *imageScanTestSuite) TestScan_TableOutput() {
 +           +            +--------------+           +                    +
 |           |            | CVE-456-MED  |           |                    |
 +           +            +--------------+-----------+                    +
-|           |            | CVE-123-LOW  | LOW       |                    |
+|           |            | CVE-123-LOW  |    LOW    |                    |
 +-----------+------------+--------------+-----------+                    +
-| systemd   | 1.3-debu49 | CVE-123-MED  | MODERATE  |                    |
+|  systemd  | 1.3-debu49 | CVE-123-MED  | MODERATE  |                    |
 +           +            +--------------+           +                    +
 |           |            | CVE-456-MED  |           |                    |
 +           +            +--------------+           +                    +

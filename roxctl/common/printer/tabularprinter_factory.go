@@ -59,6 +59,9 @@ func (t *TabularPrinterFactory) SupportedFormats() []string {
 // array of elements, since structs will provide default values if the field is missing.
 // The gjson expression syntax (https://github.com/tidwall/gjson/blob/master/SYNTAX.md) offers more complex
 // and advanced scenarios, if you require them and the below example is not sufficient.
+// Additionally, there are custom GJSON modifiers, which will post-process expression results. Currently,
+// the mapper.ListModifier and mapper.BoolReplaceModifier are available, see their documentation on usage and
+// GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and its gjson multi path expression
 // JSON structure:
 // type data struct {
@@ -105,18 +108,6 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 // Validate verifies whether the current configuration can be used to create an ObjectPrinter. It will return an error
 // if it is not possible
 func (t *TabularPrinterFactory) validate() error {
-	// verify that the GJSON multi path expression matches the amount of headers.
-	// Example: multi-path expression: {some.expression,another.expression}
-	amountJSONPathExpressions := 0
-	if t.RowJSONPathExpression != "" {
-		amountJSONPathExpressions = len(strings.Split(t.RowJSONPathExpression, ","))
-	}
-
-	if len(t.Headers) != amountJSONPathExpressions {
-		return errorhelpers.NewErrInvalidArgs("different number of headers and JSON Path expressions " +
-			"specified. Make sure you specify the same amount of arguments for both")
-	}
-
 	if t.NoHeader && t.HeaderAsComment {
 		return errorhelpers.NewErrInvalidArgs("cannot specify both --no-header as well as " +
 			"--headers-as-comment flags. Choose only one of them")

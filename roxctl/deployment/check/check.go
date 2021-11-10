@@ -20,20 +20,24 @@ import (
 	"github.com/stackrox/rox/roxctl/summaries/policy"
 )
 
-var (
-	// Default headers to use when printing tabular output
-	defaultDeploymentCheckHeaders = []string{
-		"POLICY", "SEVERITY", "DEPLOYMENT", "DESCRIPTION", "VIOLATION", "REMEDIATION",
-	}
-
+const (
 	// Default JSON path expression which retrieves the data from the policy.PolicyJSONResult
 	defaultDeploymentCheckJSONPathExpression = "{" +
 		"results.#.violatedPolicies.#.name," +
 		"results.#.violatedPolicies.#.severity," +
 		"results.#.metadata.additionalInfo.name," +
 		"results.#.violatedPolicies.#.description," +
-		"results.#.violatedPolicies.#.violation," +
-		"results.#.violatedPolicies.#.remediation}"
+		"results.#.violatedPolicies.#.violation.@list," +
+		"results.#.violatedPolicies.#.remediation," +
+		"results.#.violatedPolicies.#.failingCheck.@boolReplace:{\"true\":\"X\",\"false\":\"-\"}}"
+)
+
+var (
+	// Default headers to use when printing tabular output
+	defaultDeploymentCheckHeaders = []string{
+		"POLICY", "SEVERITY", "DEPLOYMENT", "DESCRIPTION", "VIOLATION", "REMEDIATION", "BREAKS DEPLOY",
+	}
+
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(false, defaultDeploymentCheckHeaders,
@@ -238,7 +242,7 @@ func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies 
 	fmt.Fprintf(out, "ERROR: %s\n", policy.NewErrBreakingPolicies(amountBreakingPolicies))
 
 	for _, res := range results {
-		for _, breakingPolicy := range res.BreakingPolicies {
+		for _, breakingPolicy := range res.GetBreakingPolicies() {
 			fmt.Fprintf(out, "ERROR: Policy %q within Deployment %q - Possible remediation: %q\n",
 				breakingPolicy.Name, res.Metadata.GetName(), breakingPolicy.Name)
 		}

@@ -191,7 +191,7 @@ func TestObjectPrinterFactory_validate(t *testing.T) {
 		"should fail with invalid CustomPrinterFactory": {
 			o: ObjectPrinterFactory{
 				RegisteredPrinterFactories: map[string]CustomPrinterFactory{
-					"table": NewTabularPrinterFactory(false, []string{"a", "b"}, "a", false, false),
+					"table": NewTabularPrinterFactory(false, []string{"a", "b"}, "a", true, true),
 				},
 				OutputFormat: "table",
 			},
