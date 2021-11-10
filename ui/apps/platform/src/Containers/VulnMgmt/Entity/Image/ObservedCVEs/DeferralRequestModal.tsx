@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { Button, Form, Modal, ModalVariant, Radio, TextArea } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
@@ -67,14 +67,6 @@ function DeferralRequestModal({
         },
     });
 
-    useEffect(() => {
-        // since the modal doesn't disappear, this will clear the modal form data whenever it becomes non-visible
-        if (isOpen === false && message !== null) {
-            setMessage(null);
-            formik.resetForm();
-        }
-    }, [formik, isOpen, message]);
-
     function onChange(value, event) {
         return formik.setFieldValue(event.target.id, value);
     }
@@ -104,18 +96,24 @@ function DeferralRequestModal({
             });
     }
 
+    function onCancelHandler() {
+        setMessage(null);
+        formik.resetForm();
+        onCancelDeferral();
+    }
+
     return (
         <Modal
             variant={ModalVariant.small}
             title="Mark CVEs for deferral"
             isOpen={isOpen}
-            onClose={onCancelDeferral}
+            onClose={onCancelHandler}
             actions={[
                 <Button
                     key="confirm"
                     variant="primary"
                     onClick={onHandleSubmit}
-                    isDisabled={formik.isSubmitting}
+                    isDisabled={formik.isSubmitting || !formik.dirty || !formik.isValid}
                     isLoading={formik.isSubmitting}
                 >
                     Request approval
@@ -123,7 +121,7 @@ function DeferralRequestModal({
                 <Button
                     key="cancel"
                     variant="link"
-                    onClick={onCancelDeferral}
+                    onClick={onCancelHandler}
                     isDisabled={formik.isSubmitting}
                 >
                     Cancel

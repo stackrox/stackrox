@@ -5,12 +5,17 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import workflowStateContext from 'Containers/workflowStateContext';
 import { ComponentWhereCVEOccurs } from '../types';
 
-export type ComponentsModalProps = {
+export type AffectedComponentsModalProps = {
+    isOpen: boolean;
     components: ComponentWhereCVEOccurs[];
     onClose: () => void;
 };
 
-function ComponentsModal({ components, onClose }: ComponentsModalProps): ReactElement {
+function AffectedComponentsModal({
+    isOpen,
+    components,
+    onClose,
+}: AffectedComponentsModalProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
     const [inputValue, setInputValue] = useState('');
 
@@ -26,7 +31,7 @@ function ComponentsModal({ components, onClose }: ComponentsModalProps): ReactEl
         <Modal
             variant={ModalVariant.small}
             title="Affected Components"
-            isOpen={components.length !== 0}
+            isOpen={isOpen}
             onClose={onClose}
         >
             <InputGroup className="pf-u-mt-md">
@@ -73,4 +78,4 @@ function ComponentsModal({ components, onClose }: ComponentsModalProps): ReactEl
     );
 }
 
-export default ComponentsModal;
+export default AffectedComponentsModal;

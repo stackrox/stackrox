@@ -24,8 +24,8 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import DeferralRequestModal from './DeferralRequestModal';
 import FalsePositiveRequestModal from './FalsePositiveRequestModal';
-import ComponentsModal from './ComponentsModal';
 import { ComponentWhereCVEOccurs } from '../types';
+import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
@@ -57,7 +57,6 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
         onClearAll,
     } = useTableSelection<ObservedCVERow>(rows);
     const [cvesToBeAssessed, setCVEsToBeAssessed] = useState<CVEsToBeAssessed>(null);
-    const [selectedComponents, setSelectedComponents] = useState<ComponentWhereCVEOccurs[]>([]);
 
     function setSelectedCVEsToBeDeferred() {
         const selectedIds = getSelectedIds();
@@ -109,10 +108,6 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
             }
         });
         return promise;
-    }
-
-    function onCloseComponentsModal() {
-        setSelectedComponents([]);
     }
 
     return (
@@ -203,10 +198,6 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                             },
                         ];
 
-                        function showComponents() {
-                            setSelectedComponents(row.components);
-                        }
-
                         return (
                             <Tr key={rowIndex}>
                                 <Td
@@ -225,9 +216,7 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                                     <CVSSScoreLabel cvss={row.cvssScore} />
                                 </Td>
                                 <Td dataLabel="Affected components">
-                                    <Button variant="link" isInline onClick={showComponents}>
-                                        {row.components.length} components
-                                    </Button>
+                                    <AffectedComponentsButton components={row.components} />
                                 </Td>
                                 <Td dataLabel="Discovered">{row.discoveredAt}</Td>
                                 <Td
@@ -256,7 +245,6 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                 onCompleteFalsePositive={completeAssessment}
                 onCancelFalsePositive={cancelAssessment}
             />
-            <ComponentsModal components={selectedComponents} onClose={onCloseComponentsModal} />
         </>
     );
 }
