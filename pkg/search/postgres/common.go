@@ -612,7 +612,6 @@ func valueFromStringPtrInterface(value interface{}) string {
 }
 
 func RunSearchRequestValue(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (pgx.Rows, error) {
-	log.Infof("Query: %s", q)
 	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), VALUE)
 	if err != nil {
 		return nil, err
@@ -625,8 +624,6 @@ func RunSearchRequestValue(category v1.SearchCategory, q *v1.Query, db *pgxpool.
 	defer func() {
 		incQueryCount(queryStr, t)
 	}()
-
-	log.Infof("Search Request Query: %+v", query)
 
 	rows, err := db.Query(context.Background(), replaceVars(queryStr), query.Data...)
 	if err != nil {
