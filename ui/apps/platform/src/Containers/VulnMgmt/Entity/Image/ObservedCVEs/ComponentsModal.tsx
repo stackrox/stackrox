@@ -3,7 +3,7 @@ import { Card, InputGroup, Modal, ModalVariant, TextInput } from '@patternfly/re
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { ComponentWhereCVEOccurs } from './types';
+import { ComponentWhereCVEOccurs } from '../types';
 
 export type ComponentsModalProps = {
     components: ComponentWhereCVEOccurs[];

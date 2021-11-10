@@ -25,7 +25,7 @@ import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import DeferralRequestModal from './DeferralRequestModal';
 import FalsePositiveRequestModal from './FalsePositiveRequestModal';
 import ComponentsModal from './ComponentsModal';
-import { ComponentWhereCVEOccurs } from './types';
+import { ComponentWhereCVEOccurs } from '../types';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
