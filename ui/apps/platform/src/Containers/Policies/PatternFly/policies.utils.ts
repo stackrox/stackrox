@@ -1,16 +1,11 @@
 import isPlainObject from 'lodash/isPlainObject';
 import qs, { ParsedQs } from 'qs';
 
-export type PoliciesAction = 'create' | 'edit';
+import { SearchFilter } from 'types/search';
 
-/*
- * Examples of policy filter object properties parsed from search query string:
- * 'Lifecycle Stage': 'BUILD' from 's[Lifecycle Stage]=BUILD
- * 'Lifecycle Stage': ['BUILD', 'DEPLOY'] from 's[Lifecycle Stage]=BUILD&s[Lifecycle State]=DEPLOY'
- */
-export type PoliciesFilter = Record<string, string | string[]>;
+export type PageAction = 'create' | 'edit';
 
-function isValidAction(action: unknown): action is PoliciesAction {
+function isValidAction(action: unknown): action is PageAction {
     return action === 'create' || action === 'edit';
 }
 
@@ -30,13 +25,13 @@ function isValidFilterValue(value: unknown): value is string | string[] {
     return false;
 }
 
-function isValidFilter(s: unknown): s is PoliciesFilter {
+function isValidFilter(s: unknown): s is SearchFilter {
     return isParsedQs(s) && Object.values(s).every((value) => isValidFilterValue(value));
 }
 
 export type PoliciesSearch = {
-    action?: PoliciesAction;
-    filter?: PoliciesFilter;
+    pageAction?: PageAction;
+    searchFilter?: SearchFilter;
 };
 
 /*
@@ -53,7 +48,28 @@ export function parsePoliciesSearchString(search: string): PoliciesSearch {
     const { action, s } = qs.parse(search, { ignoreQueryPrefix: true });
 
     return {
-        action: isValidAction(action) ? action : undefined,
-        filter: isValidFilter(s) ? s : undefined,
+        pageAction: isValidAction(action) ? action : undefined,
+        searchFilter: isValidFilter(s) ? s : undefined,
     };
+}
+
+export function getSearchStringForFilter(s: SearchFilter): string {
+    return qs.stringify(
+        { s },
+        {
+            arrayFormat: 'repeat',
+            encodeValuesOnly: true,
+        }
+    );
+}
+
+/*
+ * Return request query string for search filter. Omit filter criterion:
+ * If option does not have value.
+ */
+export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter): string {
+    return Object.entries(searchFilter)
+        .filter(([, value]) => value.length !== 0)
+        .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
+        .join('+');
 }

@@ -1,6 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import React, { useState, useEffect } from 'react';
 import {
     PageSection,
     Bullseye,
@@ -20,10 +18,7 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
-import { selectors } from 'reducers';
-import { actions as searchActions } from 'reducers/policies/search';
-import { SearchEntry, SearchState } from 'reducers/pageSearch';
-import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
+import SearchFilterInput from 'Components/SearchFilterInput';
 import {
     getPolicies,
     reassessPolicies,
@@ -31,44 +26,40 @@ import {
     exportPolicies,
     updatePoliciesDisabledState,
 } from 'services/PoliciesService';
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import useToasts from 'hooks/useToasts';
-import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
+import { getSearchOptionsForCategory } from 'services/SearchService';
 import { ListPolicy } from 'types/policy.proto';
+import { SearchFilter } from 'types/search';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import { getRequestQueryStringForSearchFilter } from './policies.utils';
 // TODO: the policy import dialogue component will be migrated to PF in ROX-8354
 import PolicyImportDialogue from '../Table/PolicyImportDialogue';
 import PoliciesTable from './PoliciesTable';
 
-const policiesPageState = createStructuredSelector<
-    SearchState,
-    { searchOptions: SearchEntry[]; searchModifiers: SearchEntry[] }
->({
-    searchOptions: selectors.getPoliciesSearchOptions,
-    searchModifiers: selectors.getPoliciesSearchModifiers,
-});
+const searchCategory = 'POLICIES';
 
-function PoliciesTablePage(): React.ReactElement {
-    const dispatch = useDispatch();
+type PoliciesTablePageProps = {
+    handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
+    searchFilter?: SearchFilter;
+};
 
-    const { searchOptions, searchModifiers } = useSelector(policiesPageState);
+function PoliciesTablePage({
+    handleChangeSearchFilter,
+    searchFilter,
+}: PoliciesTablePageProps): React.ReactElement {
     const [isLoading, setIsLoading] = useState(false);
     const [policies, setPolicies] = useState<ListPolicy[]>([]);
     const [errorMessage, setErrorMessage] = useState('');
     const { toasts, addToast, removeToast } = useToasts();
+
+    const [searchOptions, setSearchOptions] = useState<string[]>([]);
 
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     function onToggleDropdown(toggleDropdown) {
         setIsDropdownOpen(toggleDropdown);
-    }
-
-    function setSearchOptions(options) {
-        dispatch(searchActions.setPoliciesSearchOptions(options));
-    }
-
-    function setSearchSuggestions(suggestions) {
-        dispatch(searchActions.setPoliciesSearchSuggestions(suggestions));
     }
 
     function onClickImportPolicy() {
@@ -86,26 +77,27 @@ function PoliciesTablePage(): React.ReactElement {
             });
     }
 
-    function handlePoliciesError(error) {
-        setPolicies([]);
-        const parsedMessage = checkForPermissionErrorMessage(error);
-        setErrorMessage(parsedMessage);
-    }
-
-    const fetchPolicies = useCallback(() => {
-        const query = searchOptionsToQuery(searchOptions);
+    function fetchPolicies(query: string) {
         setIsLoading(true);
         getPolicies(query)
-            .then((data) => setPolicies(data))
-            .catch(handlePoliciesError)
+            .then((data) => {
+                setPolicies(data);
+                setErrorMessage('');
+            })
+            .catch((error) => {
+                setPolicies([]);
+                setErrorMessage(getAxiosErrorMessage(error));
+            })
             .finally(() => setIsLoading(false));
-    }, [setPolicies, searchOptions]);
+    }
+
+    const query = searchFilter ? getRequestQueryStringForSearchFilter(searchFilter) : '';
 
     function deletePoliciesHandler(ids: string[]) {
         const policyText = pluralize('policy', ids.length);
         deletePolicies(ids)
             .then(() => {
-                fetchPolicies();
+                fetchPolicies(query);
                 addToast(`Successfully deleted ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -128,7 +120,7 @@ function PoliciesTablePage(): React.ReactElement {
         const policyText = pluralize('policy', ids.length);
         updatePoliciesDisabledState(ids, false)
             .then(() => {
-                fetchPolicies();
+                fetchPolicies(query);
                 addToast(`Successfully enabled ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -140,7 +132,7 @@ function PoliciesTablePage(): React.ReactElement {
         const policyText = pluralize('policy', ids.length);
         updatePoliciesDisabledState(ids, true)
             .then(() => {
-                fetchPolicies();
+                fetchPolicies(query);
                 addToast(`Successfully disabled ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -149,13 +141,18 @@ function PoliciesTablePage(): React.ReactElement {
     }
 
     useEffect(() => {
-        if (
-            searchOptions.length === 0 ||
-            (searchOptions.length && !searchOptions[searchOptions.length - 1].type)
-        ) {
-            fetchPolicies();
-        }
-    }, [fetchPolicies, searchOptions]);
+        getSearchOptionsForCategory(searchCategory)
+            .then((options) => {
+                setSearchOptions(options);
+            })
+            .catch(() => {
+                // TODO
+            });
+    }, []);
+
+    useEffect(() => {
+        fetchPolicies(query);
+    }, [query]);
 
     const dropdownItems = [
         // TODO: add link to create form
@@ -165,18 +162,17 @@ function PoliciesTablePage(): React.ReactElement {
         </DropdownItem>,
     ];
 
-    const defaultOption = searchModifiers.find((x) => x.value === 'Policy:');
     return (
         <PageSection variant="light" isFilled id="policies-table">
-            <ReduxSearchInput
+            <SearchFilterInput
+                className="w-full"
+                handleChangeSearchFilter={handleChangeSearchFilter}
+                placeholder="Filter policies"
+                searchCategory={searchCategory}
+                searchFilter={searchFilter ?? {}}
                 searchOptions={searchOptions}
-                searchModifiers={searchModifiers}
-                setSearchOptions={setSearchOptions}
-                setSearchSuggestions={setSearchSuggestions}
-                defaultOption={defaultOption}
-                autoCompleteCategories={['POLICIES']}
             />
-            {isLoading ?? (
+            {isLoading && (
                 <Bullseye>
                     <Spinner />
                 </Bullseye>

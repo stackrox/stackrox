@@ -5,7 +5,7 @@ import { getPolicy } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { PoliciesAction } from './policies.utils';
+import { PageAction } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
 
@@ -38,11 +38,11 @@ const initialPolicy: Policy = {
 };
 
 type PolicyPageProps = {
-    action?: PoliciesAction;
+    pageAction?: PageAction;
     policyId?: string;
 };
 
-function PolicyPage({ action, policyId }: PolicyPageProps): ReactElement {
+function PolicyPage({ pageAction, policyId }: PolicyPageProps): ReactElement {
     const [policy, setPolicy] = useState<Policy>(initialPolicy);
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -75,15 +75,17 @@ function PolicyPage({ action, policyId }: PolicyPageProps): ReactElement {
 
     return (
         <PageSection variant="light" isFilled id="policy-page">
-            <Title headingLevel="h1">{action === 'create' ? 'Create policy' : policy.name}</Title>
+            <Title headingLevel="h1">
+                {pageAction === 'create' ? 'Create policy' : policy.name}
+            </Title>
             {isLoading ? (
                 <Bullseye>
                     <Spinner />
                 </Bullseye>
             ) : (
                 policyError || // TODO ROX-8487: Improve PolicyPage when request fails
-                (action ? (
-                    <PolicyWizard action={action} policy={policy} />
+                (pageAction ? (
+                    <PolicyWizard pageAction={pageAction} policy={policy} />
                 ) : (
                     <PolicyDetail policy={policy} />
                 ))

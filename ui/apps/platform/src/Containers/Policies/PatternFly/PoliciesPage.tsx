@@ -1,14 +1,15 @@
 import React from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 
-import { parsePoliciesSearchString } from './policies.utils';
+import { policiesBasePathPatternFly } from 'routePaths';
+import { SearchFilter } from 'types/search';
+
+import { getSearchStringForFilter, parsePoliciesSearchString } from './policies.utils';
 import PoliciesTablePage from './PoliciesTablePage';
 import PolicyPage from './PolicyPage';
 
 function PoliciesPage() {
     /*
-     * TODO ROX-8488: Support filter and action in search query string of policies URL
-     *
      * Examples of urls for PolicyPage:
      * /main/policies/:policyId
      * /main/policies/:policyId?action=edit
@@ -20,14 +21,26 @@ function PoliciesPage() {
      * /main/policies?s[Lifecycle Stage]=BUILD&s[Lifecycle State]=DEPLOY
      * /main/policies?s[Lifecycle State]=RUNTIME&s[Severity]=CRITICAL_SEVERITY
      */
+    const history = useHistory();
     const { search } = useLocation();
-    const { action } = parsePoliciesSearchString(search);
+    const { pageAction, searchFilter } = parsePoliciesSearchString(search);
     const { policyId } = useParams();
 
-    return policyId || action ? (
-        <PolicyPage action={action} policyId={policyId} />
+    function handleChangeSearchFilter(changedSearchFilter: SearchFilter) {
+        // Browser history has only the most recent search filter.
+        history.replace({
+            pathname: policiesBasePathPatternFly,
+            search: getSearchStringForFilter(changedSearchFilter),
+        });
+    }
+
+    return policyId || pageAction ? (
+        <PolicyPage pageAction={pageAction} policyId={policyId} />
     ) : (
-        <PoliciesTablePage />
+        <PoliciesTablePage
+            handleChangeSearchFilter={handleChangeSearchFilter}
+            searchFilter={searchFilter}
+        />
     );
 }
 

@@ -51,7 +51,7 @@ export function fetchPolicies(filters: { query: string }): Promise<{
  * Get policies filtered by an optional query string. ListPolicy is a subset of Policy.
  */
 export function getPolicies(query = ''): Promise<ListPolicy[]> {
-    const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
+    const params = queryString.stringify({ query });
     return axios
         .get<{ policies: Policy[] }>(`${baseUrl}?${params}`)
         .then((response) => response.data.policies);

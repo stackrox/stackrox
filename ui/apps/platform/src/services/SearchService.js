@@ -21,6 +21,15 @@ export function fetchOptions(query = '') {
     });
 }
 
+/*
+ * Get search options for category.
+ */
+export function getSearchOptionsForCategory(searchCategory) {
+    return axios
+        .get(`${baseUrl}/metadata/options?categories=${searchCategory}`)
+        .then((response) => response.data.options);
+}
+
 /**
  * Fetches search results
  *

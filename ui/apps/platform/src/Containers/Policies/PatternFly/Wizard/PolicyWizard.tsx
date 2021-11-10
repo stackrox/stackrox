@@ -2,17 +2,17 @@ import React, { ReactElement } from 'react';
 
 import { Policy } from 'types/policy.proto';
 
-import { PoliciesAction } from '../policies.utils';
+import { PageAction } from '../policies.utils';
 
 type PolicyWizardProps = {
-    action: PoliciesAction;
+    pageAction: PageAction;
     policy: Policy;
 };
 
-function PolicyWizard({ action, policy }: PolicyWizardProps): ReactElement {
+function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     return (
         <>
-            <div>{action}</div>
+            <div>{pageAction}</div>
             <div>{policy.id}</div>
         </>
     );
