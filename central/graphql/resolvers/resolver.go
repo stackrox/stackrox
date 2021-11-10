@@ -46,6 +46,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	vulnReqService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -94,6 +95,7 @@ type Resolver struct {
 	cveMatcher                  *cveMatcher.CVEMatcher
 	manager                     complianceOperatorManager.Manager
 	mitreStore                  mitreDataStore.MitreAttackReadOnlyDataStore
+	vulnReqService              vulnReqService.Service
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -138,6 +140,7 @@ func New() *Resolver {
 		cveMatcher:                  cveMatcher.Singleton(),
 		manager:                     complianceOperatorManager.Singleton(),
 		mitreStore:                  mitreDataStore.Singleton(),
+		vulnReqService:              vulnReqService.Singleton(),
 	}
 	return resolver
 }
@@ -172,6 +175,7 @@ var (
 	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)
 	writeComplianceRunSchedule = writeAuth(resources.ComplianceRunSchedule)
 	writeIndicators            = writeAuth(resources.Indicator)
+	writeVulnerabilityRequests = writeAuth(resources.VulnerabilityManagementRequests)
 )
 
 type authorizerOverride struct{}

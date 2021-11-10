@@ -498,6 +498,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"name: String!",
 	}))
+	utils.Must(builder.AddInput("DeferVulnRequest", []string{
+		"comment: String",
+		"cve: String",
+		"expiresOn: Time",
+		"expiresWhenFixed: Boolean",
+		"scope: VulnReqScope",
+	}))
 	utils.Must(builder.AddType("Deployment", []string{
 		"annotations: [Label!]!",
 		"automountServiceAccountToken: Boolean!",
@@ -571,6 +578,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
+	}))
+	utils.Must(builder.AddType("FalsePositiveRequest", []string{
+	}))
+	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
+		"comment: String",
+		"cve: String",
+		"scope: VulnReqScope",
 	}))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
@@ -1070,6 +1084,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"AWSProviderMetadata",
 		"AzureProviderMetadata",
 	}))
+	utils.Must(builder.AddType("RequestComment", []string{
+		"createdAt: Time",
+		"id: ID!",
+		"message: String!",
+		"user: SlimUser",
+	}))
 	utils.Must(builder.AddType("ResourcePolicy", []string{
 		"cpuResourceLimit: NumericalPolicy",
 		"cpuResourceRequest: NumericalPolicy",
@@ -1233,6 +1253,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"namespaceName: String!",
 	}))
+	utils.Must(builder.AddType("SlimUser", []string{
+		"id: ID!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddInput("SortOption", []string{
 		"field: String",
 		"reversed: Boolean",
@@ -1347,6 +1371,35 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Volume_MountPropagation(0)))
+	utils.Must(builder.AddInput("VulnReqGlobalScope", []string{
+		"images: VulnReqImageScope",
+	}))
+	utils.Must(builder.AddInput("VulnReqImageScope", []string{
+		"name: String",
+		"tagRegex: String",
+	}))
+	utils.Must(builder.AddInput("VulnReqScope", []string{
+		"globalScope: VulnReqGlobalScope",
+		"imageScope: VulnReqImageScope",
+	}))
+	utils.Must(builder.AddType("VulnerabilityRequest_CVEs", []string{
+		"ids: [String!]!",
+	}))
+	utils.Must(builder.AddType("VulnerabilityRequest_Scope", []string{
+		"globalScope: VulnerabilityRequest_Scope_Global",
+		"imageScope: VulnerabilityRequest_Scope_Image",
+		"info: VulnerabilityRequest_ScopeInfo",
+	}))
+	utils.Must(builder.AddUnionType("VulnerabilityRequest_ScopeInfo", []string{
+		"VulnerabilityRequest_Scope_Image",
+		"VulnerabilityRequest_Scope_Global",
+	}))
+	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
+	}))
+	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
+		"name: String!",
+		"tagRegex: String!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilitySeverity(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilityState(0)))
 }
@@ -5725,6 +5778,30 @@ func (resolver *exclusion_ImageResolver) Name(ctx context.Context) string {
 	return value
 }
 
+type falsePositiveRequestResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.FalsePositiveRequest
+}
+
+func (resolver *Resolver) wrapFalsePositiveRequest(value *storage.FalsePositiveRequest, ok bool, err error) (*falsePositiveRequestResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &falsePositiveRequestResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFalsePositiveRequests(values []*storage.FalsePositiveRequest, err error) ([]*falsePositiveRequestResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*falsePositiveRequestResolver, len(values))
+	for i, v := range values {
+		output[i] = &falsePositiveRequestResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
 type generateTokenResponseResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -9309,6 +9386,50 @@ func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*az
 	return res, ok
 }
 
+type requestCommentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.RequestComment
+}
+
+func (resolver *Resolver) wrapRequestComment(value *storage.RequestComment, ok bool, err error) (*requestCommentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &requestCommentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapRequestComments(values []*storage.RequestComment, err error) ([]*requestCommentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*requestCommentResolver, len(values))
+	for i, v := range values {
+		output[i] = &requestCommentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *requestCommentResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCreatedAt()
+	return timestamp(value)
+}
+
+func (resolver *requestCommentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *requestCommentResolver) Message(ctx context.Context) string {
+	value := resolver.data.GetMessage()
+	return value
+}
+
+func (resolver *requestCommentResolver) User(ctx context.Context) (*slimUserResolver, error) {
+	value := resolver.data.GetUser()
+	return resolver.root.wrapSlimUser(value, true, nil)
+}
+
 type resourcePolicyResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10607,6 +10728,40 @@ func (resolver *simpleAccessScope_Rules_NamespaceResolver) NamespaceName(ctx con
 	return value
 }
 
+type slimUserResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SlimUser
+}
+
+func (resolver *Resolver) wrapSlimUser(value *storage.SlimUser, ok bool, err error) (*slimUserResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &slimUserResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSlimUsers(values []*storage.SlimUser, err error) ([]*slimUserResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*slimUserResolver, len(values))
+	for i, v := range values {
+		output[i] = &slimUserResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *slimUserResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *slimUserResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
 func toSourceType(value *string) storage.SourceType {
 	if value != nil {
 		return storage.SourceType(storage.SourceType_value[*value])
@@ -11467,6 +11622,155 @@ func toVolume_MountPropagations(values *[]string) []storage.Volume_MountPropagat
 		output[i] = toVolume_MountPropagation(&v)
 	}
 	return output
+}
+
+type vulnerabilityRequest_CVEsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.VulnerabilityRequest_CVEs
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_CVEs(value *storage.VulnerabilityRequest_CVEs, ok bool, err error) (*vulnerabilityRequest_CVEsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &vulnerabilityRequest_CVEsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_CVEses(values []*storage.VulnerabilityRequest_CVEs, err error) ([]*vulnerabilityRequest_CVEsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*vulnerabilityRequest_CVEsResolver, len(values))
+	for i, v := range values {
+		output[i] = &vulnerabilityRequest_CVEsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_CVEsResolver) Ids(ctx context.Context) []string {
+	value := resolver.data.GetIds()
+	return value
+}
+
+type vulnerabilityRequest_ScopeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.VulnerabilityRequest_Scope
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope(value *storage.VulnerabilityRequest_Scope, ok bool, err error) (*vulnerabilityRequest_ScopeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &vulnerabilityRequest_ScopeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scopes(values []*storage.VulnerabilityRequest_Scope, err error) ([]*vulnerabilityRequest_ScopeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*vulnerabilityRequest_ScopeResolver, len(values))
+	for i, v := range values {
+		output[i] = &vulnerabilityRequest_ScopeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_ScopeResolver) GlobalScope(ctx context.Context) (*vulnerabilityRequest_Scope_GlobalResolver, error) {
+	value := resolver.data.GetGlobalScope()
+	return resolver.root.wrapVulnerabilityRequest_Scope_Global(value, true, nil)
+}
+
+func (resolver *vulnerabilityRequest_ScopeResolver) ImageScope(ctx context.Context) (*vulnerabilityRequest_Scope_ImageResolver, error) {
+	value := resolver.data.GetImageScope()
+	return resolver.root.wrapVulnerabilityRequest_Scope_Image(value, true, nil)
+}
+
+type vulnerabilityRequest_ScopeInfoResolver struct {
+	resolver interface{}
+}
+
+func (resolver *vulnerabilityRequest_ScopeResolver) Info() *vulnerabilityRequest_ScopeInfoResolver {
+	if val := resolver.data.GetImageScope(); val != nil {
+		return &vulnerabilityRequest_ScopeInfoResolver{
+			resolver: &vulnerabilityRequest_Scope_ImageResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetGlobalScope(); val != nil {
+		return &vulnerabilityRequest_ScopeInfoResolver{
+			resolver: &vulnerabilityRequest_Scope_GlobalResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *vulnerabilityRequest_ScopeInfoResolver) ToVulnerabilityRequest_Scope_Image() (*vulnerabilityRequest_Scope_ImageResolver, bool) {
+	res, ok := resolver.resolver.(*vulnerabilityRequest_Scope_ImageResolver)
+	return res, ok
+}
+
+func (resolver *vulnerabilityRequest_ScopeInfoResolver) ToVulnerabilityRequest_Scope_Global() (*vulnerabilityRequest_Scope_GlobalResolver, bool) {
+	res, ok := resolver.resolver.(*vulnerabilityRequest_Scope_GlobalResolver)
+	return res, ok
+}
+
+type vulnerabilityRequest_Scope_GlobalResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.VulnerabilityRequest_Scope_Global
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Global(value *storage.VulnerabilityRequest_Scope_Global, ok bool, err error) (*vulnerabilityRequest_Scope_GlobalResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &vulnerabilityRequest_Scope_GlobalResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Globals(values []*storage.VulnerabilityRequest_Scope_Global, err error) ([]*vulnerabilityRequest_Scope_GlobalResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*vulnerabilityRequest_Scope_GlobalResolver, len(values))
+	for i, v := range values {
+		output[i] = &vulnerabilityRequest_Scope_GlobalResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+type vulnerabilityRequest_Scope_ImageResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.VulnerabilityRequest_Scope_Image
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Image(value *storage.VulnerabilityRequest_Scope_Image, ok bool, err error) (*vulnerabilityRequest_Scope_ImageResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &vulnerabilityRequest_Scope_ImageResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Images(values []*storage.VulnerabilityRequest_Scope_Image, err error) ([]*vulnerabilityRequest_Scope_ImageResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*vulnerabilityRequest_Scope_ImageResolver, len(values))
+	for i, v := range values {
+		output[i] = &vulnerabilityRequest_Scope_ImageResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) TagRegex(ctx context.Context) string {
+	value := resolver.data.GetTagRegex()
+	return value
 }
 
 func toVulnerabilitySeverity(value *string) storage.VulnerabilitySeverity {
