@@ -51,6 +51,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 )
 
@@ -147,35 +148,37 @@ func New() *Resolver {
 
 //lint:file-ignore U1000 It's okay for some of the variables below to be unused.
 var (
-	readAlerts                 = readAuth(resources.Alert)
-	readTokens                 = readAuth(resources.APIToken)
-	readClusters               = readAuth(resources.Cluster)
-	readCompliance             = readAuth(resources.Compliance)
-	readComplianceRuns         = readAuth(resources.ComplianceRuns)
-	readComplianceRunSchedule  = readAuth(resources.ComplianceRunSchedule)
-	readCVEs                   = readAuth(resources.CVE)
-	readDeployments            = readAuth(resources.Deployment)
-	readGroups                 = readAuth(resources.Group)
-	readImages                 = readAuth(resources.Image)
-	readIndicators             = readAuth(resources.Indicator)
-	readNamespaces             = readAuth(resources.Namespace)
-	readNodes                  = readAuth(resources.Node)
-	readNotifiers              = readAuth(resources.Notifier)
-	readPolicies               = readAuth(resources.Policy)
-	readK8sRoles               = readAuth(resources.K8sRole)
-	readK8sRoleBindings        = readAuth(resources.K8sRoleBinding)
-	readK8sSubjects            = readAuth(resources.K8sSubject)
-	readRisks                  = readAuth(resources.Risk)
-	readRoles                  = readAuth(resources.Role)
-	readSecrets                = readAuth(resources.Secret)
-	readServiceAccounts        = readAuth(resources.ServiceAccount)
-	readBaselines              = readAuth(resources.ProcessWhitelist)
-	writeAlerts                = writeAuth(resources.Alert)
-	writeCompliance            = writeAuth(resources.Compliance)
-	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)
-	writeComplianceRunSchedule = writeAuth(resources.ComplianceRunSchedule)
-	writeIndicators            = writeAuth(resources.Indicator)
-	writeVulnerabilityRequests = writeAuth(resources.VulnerabilityManagementRequests)
+	readAlerts                            = readAuth(resources.Alert)
+	readTokens                            = readAuth(resources.APIToken)
+	readClusters                          = readAuth(resources.Cluster)
+	readCompliance                        = readAuth(resources.Compliance)
+	readComplianceRuns                    = readAuth(resources.ComplianceRuns)
+	readComplianceRunSchedule             = readAuth(resources.ComplianceRunSchedule)
+	readCVEs                              = readAuth(resources.CVE)
+	readDeployments                       = readAuth(resources.Deployment)
+	readGroups                            = readAuth(resources.Group)
+	readImages                            = readAuth(resources.Image)
+	readIndicators                        = readAuth(resources.Indicator)
+	readNamespaces                        = readAuth(resources.Namespace)
+	readNodes                             = readAuth(resources.Node)
+	readNotifiers                         = readAuth(resources.Notifier)
+	readPolicies                          = readAuth(resources.Policy)
+	readK8sRoles                          = readAuth(resources.K8sRole)
+	readK8sRoleBindings                   = readAuth(resources.K8sRoleBinding)
+	readK8sSubjects                       = readAuth(resources.K8sSubject)
+	readRisks                             = readAuth(resources.Risk)
+	readRoles                             = readAuth(resources.Role)
+	readSecrets                           = readAuth(resources.Secret)
+	readServiceAccounts                   = readAuth(resources.ServiceAccount)
+	readBaselines                         = readAuth(resources.ProcessWhitelist)
+	writeAlerts                           = writeAuth(resources.Alert)
+	writeCompliance                       = writeAuth(resources.Compliance)
+	writeComplianceRuns                   = writeAuth(resources.ComplianceRuns)
+	writeComplianceRunSchedule            = writeAuth(resources.ComplianceRunSchedule)
+	writeIndicators                       = writeAuth(resources.Indicator)
+	writeVulnerabilityRequests            = writeAuth(resources.VulnerabilityManagementRequests)
+	writeVulnerabilityApprovals           = writeAuth(resources.VulnerabilityManagementApprovals)
+	writeVulnerabilityRequestsOrApprovals = anyWriteAuth(resources.VulnerabilityManagementRequests, resources.VulnerabilityManagementApprovals)
 )
 
 type authorizerOverride struct{}
@@ -202,6 +205,14 @@ func readAuth(resource permissions.ResourceMetadata) func(ctx context.Context) e
 
 func writeAuth(resource permissions.ResourceMetadata) func(ctx context.Context) error {
 	return applyAuthorizer(user.With(permissions.Modify(resource)))
+}
+
+func anyWriteAuth(resources ...permissions.ResourceMetadata) func(ctx context.Context) error {
+	authorizers := make([]authz.Authorizer, 0, len(resources))
+	for _, res := range resources {
+		authorizers = append(authorizers, user.With(permissions.Modify(res)))
+	}
+	return applyAuthorizer(or.Or(authorizers...))
 }
 
 func stringSlice(inputSlice interface{}) []string {
