@@ -5,6 +5,8 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
+	activeComponentDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
+	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/index"
 	clusterCVEEdgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
 	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
@@ -81,6 +83,12 @@ var (
 			reader:   imageDackBox.Reader,
 			category: v1.SearchCategory_IMAGES,
 			wrapper:  imageIndex.Wrapper{},
+		},
+		{
+			bucket:   activeComponentDackBox.Bucket,
+			reader:   activeComponentDackBox.Reader,
+			category: v1.SearchCategory_ACTIVE_COMPONENT,
+			wrapper:  activeComponentIndex.Wrapper{},
 		},
 		{
 			bucket:   deploymentDackBox.Bucket,

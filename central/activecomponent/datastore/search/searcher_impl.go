@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
+	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/index/mappings"
 	activeComponentSAC "github.com/stackrox/rox/central/activecomponent/sac"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/dackbox"
@@ -62,18 +63,19 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (res int, err er
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(cveIndexer blevesearch.UnsafeSearcher, componentIndexer blevesearch.UnsafeSearcher, deploymentIndexer blevesearch.UnsafeSearcher) search.Searcher {
+func formatSearcher(acIndexer blevesearch.UnsafeSearcher, cveIndexer blevesearch.UnsafeSearcher, componentIndexer blevesearch.UnsafeSearcher, deploymentIndexer blevesearch.UnsafeSearcher) search.Searcher {
+	acSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(acIndexer)
 	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
 	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
 
-	compoundSearcher := getCompoundSearcher(cveSearcher, componentSearcher, deploymentSearcher)
+	compoundSearcher := getCompoundSearcher(acSearcher, cveSearcher, componentSearcher, deploymentSearcher)
 	filteredSearcher := filtered.Searcher(compoundSearcher, activeComponentSAC.GetSACFilter())
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	return paginatedSearcher
 }
 
-func getCompoundSearcher(cveSearcher search.Searcher, componentSearcher search.Searcher, deploymentSearcher search.Searcher) search.Searcher {
+func getCompoundSearcher(acSearcher, cveSearcher, componentSearcher, deploymentSearcher search.Searcher) search.Searcher {
 	// The ordering of these is important, so do not change.
 	return compound.NewSearcher([]compound.SearcherSpec{
 		{
@@ -85,6 +87,11 @@ func getCompoundSearcher(cveSearcher search.Searcher, componentSearcher search.S
 			Searcher:       scoped.WithScoping(componentSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_COMPONENTS)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_COMPONENTS][v1.SearchCategory_ACTIVE_COMPONENT],
 			Options:        componentOptionsMap,
+		},
+		{
+			IsDefault: true,
+			Searcher:  scoped.WithScoping(acSearcher, dackbox.ToCategory(v1.SearchCategory_ACTIVE_COMPONENT)),
+			Options:   activeComponentMappings.OptionsMap,
 		},
 		{
 			Searcher:       scoped.WithScoping(deploymentSearcher, dackbox.ToCategory(v1.SearchCategory_DEPLOYMENTS)),

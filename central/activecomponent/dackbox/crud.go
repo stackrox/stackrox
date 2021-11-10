@@ -24,10 +24,13 @@ var (
 	// Upserter writes storage.ActiveComponent(s) directly to the store.
 	Upserter = crud.NewUpserter(
 		crud.WithKeyFunction(KeyFunc),
+		crud.AddToIndex(),
 	)
 
 	// Deleter deletes the storage.ActiveComponent(s) from the store.
-	Deleter = crud.NewDeleter()
+	Deleter = crud.NewDeleter(
+		crud.RemoveFromIndex(),
+	)
 )
 
 func init() {

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	"github.com/stackrox/rox/central/activecomponent/datastore/search"
+	"github.com/stackrox/rox/central/activecomponent/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -27,10 +28,11 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(graphProvider graph.Provider, storage store.Store, searcher search.Searcher) DataStore {
+func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:       storage,
 		graphProvider: graphProvider,
+		indexer:       indexer,
 		searcher:      searcher,
 	}
 	return ds

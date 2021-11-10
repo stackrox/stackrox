@@ -32,6 +32,7 @@ type activeStateResolver struct {
 	root               *Resolver
 	state              ActiveStateEnum
 	activeComponentIDs []string
+	imageScope         string
 }
 
 // State is the activeness state
@@ -51,7 +52,9 @@ func (asr *activeStateResolver) ActiveContexts(ctx context.Context) ([]*activeCo
 	}
 	for _, activeComponent := range activeComponents {
 		for _, ac := range activeComponent.ActiveContexts {
-			acs = append(acs, &activeComponent_ActiveContextResolver{ctx: ctx, data: ac})
+			if asr.imageScope == "" || ac.ImageId == asr.imageScope {
+				acs = append(acs, &activeComponent_ActiveContextResolver{ctx: ctx, data: ac})
+			}
 		}
 	}
 	return acs, nil

@@ -8,6 +8,7 @@ import (
 	"github.com/blevesearch/bleve/analysis/token/lowercase"
 	"github.com/blevesearch/bleve/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/mapping"
+	activeComponentMappings "github.com/stackrox/rox/central/activecomponent/index/mappings"
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterVulnEdgeMapping "github.com/stackrox/rox/central/clustercveedge/mappings"
@@ -118,6 +119,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
+		v1.SearchCategory_ACTIVE_COMPONENT:     activeComponentMappings.OptionsMap,
 		v1.SearchCategory_ALERTS:               alertMapping.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:          deployments.OptionsMap,
 		v1.SearchCategory_PODS:                 podMapping.OptionsMap,

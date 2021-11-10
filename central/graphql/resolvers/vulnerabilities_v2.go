@@ -802,7 +802,13 @@ func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*a
 		return &activeStateResolver{root: resolver.root, state: Undetermined}, nil
 	}
 
-	query = search.ConjunctionQuery(resolver.getCVEQuery(), search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentID).ProtoQuery())
+	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentID)
+	imageID := getImageIDFromQuery(scopeQuery)
+	if imageID != "" {
+		qb.AddExactMatches(search.ImageSHA, imageID)
+	}
+	query = search.ConjunctionQuery(resolver.getCVEQuery(), qb.ProtoQuery())
+
 	results, err := resolver.root.ActiveComponent.Search(ctx, query)
 	if err != nil {
 		return nil, err
@@ -812,7 +818,7 @@ func (resolver *cVEResolver) ActiveState(ctx context.Context, args RawQuery) (*a
 	if len(ids) != 0 {
 		state = Active
 	}
-	return &activeStateResolver{root: resolver.root, state: state, activeComponentIDs: ids}, nil
+	return &activeStateResolver{root: resolver.root, state: state, activeComponentIDs: ids, imageScope: imageID}, nil
 }
 
 func (resolver *cVEResolver) addScopeContext(query *v1.Query) (context.Context, *v1.Query) {

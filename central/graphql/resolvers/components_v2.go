@@ -338,15 +338,28 @@ func (eicr *imageComponentResolver) ActiveState(ctx context.Context, args RawQue
 		return &activeStateResolver{root: eicr.root, state: Undetermined}, nil
 	}
 	acID := acConverter.ComposeID(deploymentID, eicr.data.GetId())
-	found, err := eicr.root.ActiveComponent.Exists(ctx, acID)
-	if err != nil {
-		return nil, err
+
+	var found bool
+	imageID := getImageIDFromQuery(scopeQuery)
+	if imageID == "" {
+		found, err = eicr.root.ActiveComponent.Exists(ctx, acID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
+		results, err := eicr.root.ActiveComponent.Search(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		found = search.ResultsToIDSet(results).Contains(acID)
 	}
+
 	if !found {
 		return &activeStateResolver{root: eicr.root, state: Inactive}, nil
 	}
 
-	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{acID}}, nil
+	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{acID}, imageScope: imageID}, nil
 }
 
 // Nodes are the nodes that contain the Component.

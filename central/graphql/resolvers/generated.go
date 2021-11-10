@@ -30,6 +30,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
 	utils.Must(builder.AddType("ActiveComponent_ActiveContext", []string{
 		"containerName: String!",
+		"imageId: String!",
 	}))
 	utils.Must(builder.AddType("AdmissionControlHealthInfo", []string{
 		"statusErrors: [String!]!",
@@ -1550,6 +1551,11 @@ func (resolver *Resolver) wrapActiveComponent_ActiveContexts(values []*storage.A
 
 func (resolver *activeComponent_ActiveContextResolver) ContainerName(ctx context.Context) string {
 	value := resolver.data.GetContainerName()
+	return value
+}
+
+func (resolver *activeComponent_ActiveContextResolver) ImageId(ctx context.Context) string {
+	value := resolver.data.GetImageId()
 	return value
 }
 

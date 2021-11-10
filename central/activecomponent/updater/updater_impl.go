@@ -139,7 +139,7 @@ func (u *updaterImpl) updateActiveComponents(deploymentToUpdates map[string][]*a
 
 // updateForDeployment detects and updates active components for a deployment
 func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID string, updates []*aggregator.ProcessUpdate) error {
-	idToContainers := make(map[string]set.StringSet)
+	idToContainers := make(map[string]map[string]*storage.ActiveComponent_ActiveContext)
 	containersToRemove := set.NewStringSet()
 	for _, update := range updates {
 		if update.ToBeRemoved() {
@@ -162,6 +162,7 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 			return errors.Wrapf(err, "failed to get active executables for deployment %s container %s", deploymentID, update.ContainerName)
 		}
 
+		activeContext := &storage.ActiveComponent_ActiveContext{ContainerName: update.ContainerName, ImageId: update.ImageID}
 		for _, execPath := range execPaths.AsSlice() {
 			componentIDs, ok := execToComponents[execPath]
 			if !ok {
@@ -169,18 +170,21 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 			}
 			for _, componentID := range componentIDs {
 				id := converter.ComposeID(deploymentID, componentID)
-				if _, ok := idToContainers[id]; !ok {
-					idToContainers[id] = set.NewStringSet()
+				var containerNameSet map[string]*storage.ActiveComponent_ActiveContext
+				if containerNameSet, ok = idToContainers[id]; !ok {
+					containerNameSet = make(map[string]*storage.ActiveComponent_ActiveContext)
+					idToContainers[id] = containerNameSet
 				}
-				containerNameSet := idToContainers[id]
-				containerNameSet.Add(update.ContainerName)
+				if _, ok = containerNameSet[update.ContainerName]; !ok {
+					containerNameSet[update.ContainerName] = activeContext
+				}
 			}
 		}
 	}
 	return u.createActiveComponentsAndUpdateDb(ctx, deploymentID, idToContainers, containersToRemove)
 }
 
-func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, deploymentID string, acToContexts map[string]set.StringSet, contextsToRemove set.StringSet) error {
+func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, deploymentID string, acToContexts map[string]map[string]*storage.ActiveComponent_ActiveContext, contextsToRemove set.StringSet) error {
 	var err error
 	var existingAcs []*storage.ActiveComponent
 	if contextsToRemove.Cardinality() == 0 {
@@ -210,7 +214,7 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 		}
 		delete(acToContexts, ac.GetId())
 	}
-	for id, contexts := range acToContexts {
+	for id, activeContexts := range acToContexts {
 		_, componentID, err := converter.DecomposeID(id)
 		if err != nil {
 			utils.Should(err)
@@ -224,9 +228,7 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 				ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
 			},
 		}
-		for context := range contexts {
-			newAc.ActiveComponent.ActiveContexts[context] = &storage.ActiveComponent_ActiveContext{ContainerName: context}
-		}
+		newAc.ActiveComponent.ActiveContexts = activeContexts
 		activeComponents = append(activeComponents, newAc)
 	}
 	log.Debugf("Upserting %d active components and deleting %d for deployment %s", len(activeComponents), len(acToRemove), deploymentID)
@@ -243,19 +245,24 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 }
 
 // Merge existing active component with new contexts, addend could be nil
-func merge(base *storage.ActiveComponent, subtrahend, addend set.StringSet) (*converter.CompleteActiveComponent, bool) {
+func merge(base *storage.ActiveComponent, subtrahend set.StringSet, addend map[string]*storage.ActiveComponent_ActiveContext) (*converter.CompleteActiveComponent, bool) {
 	// Only remove the containers that won't be added back.
-	toRemove := subtrahend.Difference(addend)
+	toRemove := set.NewStringSet()
+	for sub := range subtrahend {
+		if _, ok := addend[sub]; !ok {
+			toRemove.Add(sub)
+		}
+	}
 	var changed bool
-	for context := range base.ActiveContexts {
-		if toRemove.Contains(context) {
-			delete(base.ActiveContexts, context)
+	for activeContext := range base.ActiveContexts {
+		if toRemove.Contains(activeContext) {
+			delete(base.ActiveContexts, activeContext)
 			changed = true
 		}
 	}
-	for context := range addend {
-		if _, ok := base.ActiveContexts[context]; !ok {
-			base.ActiveContexts[context] = &storage.ActiveComponent_ActiveContext{ContainerName: context}
+	for containerName, activeContext := range addend {
+		if baseContext, ok := base.ActiveContexts[containerName]; !ok || baseContext.ImageId != activeContext.ImageId {
+			base.ActiveContexts[containerName] = activeContext
 			changed = true
 		}
 	}
