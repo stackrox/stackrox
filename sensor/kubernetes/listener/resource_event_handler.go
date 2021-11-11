@@ -37,9 +37,30 @@ func (k *listenerImpl) handleAllEvents() {
 	// This might block if a cluster ID is initially unavailable, which is okay.
 	clusterID := clusterid.Get()
 
+	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
+	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer cache.SharedIndexInformer
+	var profileLister cache.GenericLister
+	if features.ComplianceOperatorCheckResults.Enabled() {
+		if ok, err := complianceCRDExists(k.client.Kubernetes()); err != nil {
+			log.Errorf("error finding compliance CRD: %v", err)
+		} else if !ok {
+			log.Info("compliance CRD could not be found")
+		} else {
+			log.Infof("initializing compliance operator informers")
+			crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
+			complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.CheckResultGVR).Informer()
+			complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Informer()
+			profileLister = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Lister()
+
+			complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
+			complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.RuleGVR).Informer()
+			complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanGVR).Informer()
+			complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfileGVR).Informer()
+		}
+	}
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
-	dispatchers := resources.NewDispatcherRegistry(clusterID, podInformer.Lister(), clusterentities.StoreInstance(),
+	dispatchers := resources.NewDispatcherRegistry(clusterID, podInformer.Lister(), profileLister, clusterentities.StoreInstance(),
 		processfilter.Singleton(), k.configHandler, k.detector, orchestratornamespaces.Singleton())
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
@@ -85,24 +106,7 @@ func (k *listenerImpl) handleAllEvents() {
 			k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
 	}
 
-	var dynamicFactory dynamicinformer.DynamicSharedInformerFactory
-	var complianceResultInformer, complianceProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer cache.SharedIndexInformer
-	if features.ComplianceOperatorCheckResults.Enabled() {
-		if ok, err := complianceCRDExists(k.client.Kubernetes()); err != nil {
-			log.Errorf("error finding compliance CRD: %v", err)
-		} else if !ok {
-			log.Info("compliance CRD could not be found")
-		} else {
-			log.Infof("initializing compliance operator informers")
-			dynamicFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-			complianceResultInformer = dynamicFactory.ForResource(complianceoperator.CheckResultGVR).Informer()
-			complianceProfileInformer = dynamicFactory.ForResource(complianceoperator.ProfileGVR).Informer()
-			complianceScanSettingBindingsInformer = dynamicFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
-			complianceRuleInformer = dynamicFactory.ForResource(complianceoperator.RuleGVR).Informer()
-			complianceScanInformer = dynamicFactory.ForResource(complianceoperator.ScanGVR).Informer()
-		}
-	}
-	if complianceResultInformer != nil {
+	if crdSharedInformerFactory != nil {
 		log.Info("syncing compliance operator resources")
 		// Handle results, rules, and scan setting bindings first
 		handle(complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
@@ -116,8 +120,8 @@ func (k *listenerImpl) handleAllEvents() {
 	if osConfigFactory != nil {
 		osConfigFactory.Start(stopSignal.Done())
 	}
-	if dynamicFactory != nil {
-		dynamicFactory.Start(stopSignal.Done())
+	if crdSharedInformerFactory != nil {
+		crdSharedInformerFactory.Start(stopSignal.Done())
 	}
 
 	if !concurrency.WaitInContext(prePodWaitGroup, stopSignal) {
@@ -147,15 +151,20 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), k.eventsC, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	handle(resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), k.eventsC, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
-	if features.ComplianceOperatorCheckResults.Enabled() && complianceProfileInformer != nil {
+	if features.ComplianceOperatorCheckResults.Enabled() {
 		// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
-		handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.eventsC, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+		if complianceProfileInformer != nil {
+			handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.eventsC, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+		}
+		if complianceTailoredProfileInformer != nil {
+			handle(complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.eventsC, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+		}
 	}
 
 	sif.Start(stopSignal.Done())
 	resyncingSif.Start(stopSignal.Done())
-	if dynamicFactory != nil {
-		dynamicFactory.Start(stopSignal.Done())
+	if crdSharedInformerFactory != nil {
+		crdSharedInformerFactory.Start(stopSignal.Done())
 	}
 
 	if !concurrency.WaitInContext(preTopLevelDeploymentWaitGroup, stopSignal) {

@@ -1,0 +1,15 @@
+apiVersion: compliance.openshift.io/v1alpha1
+kind: TailoredProfile
+metadata:
+  name: rhcos4-moderate-modified
+  namespace: openshift-compliance
+spec:
+  description: testing
+  disableRules:
+  - name: rhcos4-usbguard-allow-hid-and-hub
+    rationale: testing this
+  enableRules:
+  - name: rhcos4-zipl-page-poison-argument
+    rationale: testing this
+  extends: rhcos4-moderate
+  title: My little profile

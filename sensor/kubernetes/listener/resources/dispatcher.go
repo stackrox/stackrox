@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1Listers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
 )
 
 // Dispatcher is responsible for processing resource events, and returning the sensor events that should be emitted
@@ -44,10 +45,11 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorRules() Dispatcher
 	ForComplianceOperatorScanSettingBindings() Dispatcher
 	ForComplianceOperatorScans() Dispatcher
+	ForComplianceOperatorTailoredProfiles() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister,
+func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, profileLister cache.GenericLister,
 	entityStore *clusterentities.Store, processFilter filter.Filter,
 	configHandler config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) DispatcherRegistry {
 	serviceStore := newServiceStore()
@@ -76,6 +78,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister,
 		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
 		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(),
 		complianceOperatorScanDispatcher:                complianceOperatorDispatchers.NewScanDispatcher(),
+		complianceOperatorTailoredProfileDispatcher:     complianceOperatorDispatchers.NewTailoredProfileDispatcher(profileLister),
 	}
 }
 
@@ -96,6 +99,7 @@ type registryImpl struct {
 	complianceOperatorScanSettingBindingsDispatcher *complianceOperatorDispatchers.ScanSettingBindings
 	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
 	complianceOperatorScanDispatcher                *complianceOperatorDispatchers.ScanDispatcher
+	complianceOperatorTailoredProfileDispatcher     *complianceOperatorDispatchers.TailoredProfileDispatcher
 }
 
 func wrapWithMetricDispatcher(d Dispatcher) Dispatcher {
@@ -171,6 +175,10 @@ func (d *registryImpl) ForComplianceOperatorResults() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorProfiles() Dispatcher {
 	return wrapWithMetricDispatcher(d.complianceOperatorProfileDispatcher)
+}
+
+func (d *registryImpl) ForComplianceOperatorTailoredProfiles() Dispatcher {
+	return wrapWithMetricDispatcher(d.complianceOperatorTailoredProfileDispatcher)
 }
 
 func (d *registryImpl) ForComplianceOperatorRules() Dispatcher {

@@ -6,6 +6,9 @@ profiles:
   - name: rhcos4-moderate
     kind: Profile
     apiGroup: compliance.openshift.io/v1alpha1
+  - name: rhcos4-moderate-modified
+    kind: TailoredProfile
+    apiGroup: compliance.openshift.io/v1alpha1
 settingsRef:
   name: default
   kind: ScanSetting

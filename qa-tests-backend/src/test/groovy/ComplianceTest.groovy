@@ -1082,9 +1082,36 @@ class ComplianceTest extends BaseSpecification {
 
         where:
         "Data inputs are: "
-        standard          | _
-        "rhcos4-moderate" | _
-        "ocp4-cis-node"   | _
+        standard                     | _
+        "ocp4-cis-node"              | _
+        "rhcos4-moderate"            | _
+        "rhcos4-moderate-modified"   | _
+    }
+
+    @Category(BAT)
+    def "Verify Tailored Profile does not have evidence for disabled rule"() {
+        given:
+        "get compliance aggregation results"
+        Assume.assumeTrue(ClusterService.isOpenShift4())
+
+        ComplianceRunResults run = BASE_RESULTS.get("rhcos4-moderate-modified")
+
+        expect:
+        "compare"
+
+        // We shouldn't have more than two machine config maps as we only have the roles master/worker
+        def machineConfigsWithResults = 0
+        def numErrors = 0
+        for (def entry in run.machineConfigResultsMap) {
+            println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
+            if (entry.value.controlResultsMap.size()  > 0) {
+                machineConfigsWithResults++
+            }
+            assert !entry.value.controlResultsMap.keySet().contains(
+                    "rhcos4-moderate-modified:usbguard-allow-hid-and-hub")
+        }
+        assert numErrors == 0
+        assert machineConfigsWithResults == 2
     }
 
     @Category(BAT)

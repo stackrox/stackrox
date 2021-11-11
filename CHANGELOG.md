@@ -12,6 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Scanner container image `uid:gid` changed to `65534:65534` (user nobody).
 - A new default Role called Scope Creator has been introduced, to be used to provide users the minimal set of
 privileges required to create and modify access scopes for the purpose of configuring access control or use in vulnerability reporting.
+- The Compliance Operator integration now supports TailoredProfiles.
 
 ## [66.0]
 
