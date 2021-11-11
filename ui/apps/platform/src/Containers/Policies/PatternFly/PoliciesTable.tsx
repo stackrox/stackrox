@@ -93,10 +93,11 @@ const columns = [
 
 type PoliciesTableProps = {
     policies?: ListPolicy[];
-    deletePoliciesHandler: (id) => void;
-    exportPoliciesHandler: (id) => void;
+    deletePoliciesHandler: (ids) => void;
+    exportPoliciesHandler: (ids, onClearAll?) => void;
     enablePoliciesHandler: (ids) => void;
-    disablePoliciesHandler: (id) => void;
+    disablePoliciesHandler: (ids) => void;
+    pageActionButtons: React.ReactElement;
 };
 
 function PoliciesTable({
@@ -105,6 +106,7 @@ function PoliciesTable({
     exportPoliciesHandler,
     enablePoliciesHandler,
     disablePoliciesHandler,
+    pageActionButtons,
 }: PoliciesTableProps): React.ReactElement {
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(0);
@@ -115,6 +117,13 @@ function PoliciesTable({
     // For sorting data client side
     const [rows, setRows] = useState<ListPolicy[]>([]);
 
+    // a map to keep track of row index within the table to the policy id
+    // for checkbox selection after the table has been sorted
+    const rowIdToIndex = {};
+    policies.forEach(({ id }, idx) => {
+        rowIdToIndex[id] = idx;
+    });
+
     // Handle selected rows in table
     const {
         selected,
@@ -122,7 +131,7 @@ function PoliciesTable({
         hasSelections,
         onSelect,
         onSelectAll,
-        // onClearAll,
+        onClearAll,
         getSelectedIds,
     } = useTableSelection(policies);
 
@@ -182,8 +191,10 @@ function PoliciesTable({
                 <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                     <Badge isRead>{policies.length}</Badge>
                 </FlexItem>
+                <Divider component="div" isVertical />
+                <FlexItem>{pageActionButtons}</FlexItem>
+                <Divider component="div" isVertical />
                 <FlexItem data-testid="policies-bulk-actions-dropdown">
-                    {/* TODO: will address this in ROX-8355 */}
                     <Select
                         onToggle={onToggleSelect}
                         isOpen={isSelectOpen}
@@ -206,7 +217,7 @@ function PoliciesTable({
                         <SelectOption
                             key="1"
                             value={`Export to JSON (${numSelected})`}
-                            onClick={() => exportPoliciesHandler(selectedIds)}
+                            onClick={() => exportPoliciesHandler(selectedIds, onClearAll)}
                         />
                         <SelectOption
                             key="2"
@@ -248,7 +259,7 @@ function PoliciesTable({
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {rows.map((policy, rowIndex) => {
+                        {rows.map((policy) => {
                             const { disabled, id } = policy;
                             let togglePolicyAction = {} as ActionItem;
                             if (disabled) {
@@ -275,8 +286,9 @@ function PoliciesTable({
                                 exportPolicyAction,
                                 deletePolicyAction,
                             ];
+                            const rowIndex = rowIdToIndex[id];
                             return (
-                                <Tr key={policy.id}>
+                                <Tr key={id}>
                                     <Td
                                         select={{
                                             rowIndex,

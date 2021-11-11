@@ -4,18 +4,10 @@ import {
     Bullseye,
     Alert,
     Spinner,
-    Dropdown,
-    DropdownToggle,
-    DropdownItem,
-    Button,
-    Tooltip,
-    Flex,
-    FlexItem,
     AlertGroup,
     AlertActionCloseButton,
     AlertVariant,
 } from '@patternfly/react-core';
-import { CaretDownIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
@@ -36,6 +28,7 @@ import { getRequestQueryStringForSearchFilter } from './policies.utils';
 // TODO: the policy import dialogue component will be migrated to PF in ROX-8354
 import PolicyImportDialogue from '../Table/PolicyImportDialogue';
 import PoliciesTable from './PoliciesTable';
+import PoliciesTablePageActionButtons from './PoliciesTablePageActionButtons';
 
 const searchCategory = 'POLICIES';
 
@@ -56,14 +49,8 @@ function PoliciesTablePage({
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
 
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-    function onToggleDropdown(toggleDropdown) {
-        setIsDropdownOpen(toggleDropdown);
-    }
 
     function onClickImportPolicy() {
-        setIsDropdownOpen(false);
         setIsImportModalOpen(true);
     }
 
@@ -105,11 +92,14 @@ function PoliciesTablePage({
             });
     }
 
-    function exportPoliciesHandler(ids: string[]) {
+    function exportPoliciesHandler(ids: string[], onClearAll?: () => void) {
         const policyText = pluralize('policy', ids.length);
         exportPolicies(ids)
             .then(() => {
                 addToast(`Successfully exported ${policyText}`, 'success');
+                if (onClearAll) {
+                    onClearAll();
+                }
             })
             .catch(({ response }) => {
                 addToast(`Could not export the ${policyText}`, 'danger', response.data.message);
@@ -154,14 +144,6 @@ function PoliciesTablePage({
         fetchPolicies(query);
     }, [query]);
 
-    const dropdownItems = [
-        // TODO: add link to create form
-        <DropdownItem key="link">Create policy</DropdownItem>,
-        <DropdownItem key="action" component="button" onClick={onClickImportPolicy}>
-            Import policy
-        </DropdownItem>,
-    ];
-
     return (
         <PageSection variant="light" isFilled id="policies-table">
             <SearchFilterInput
@@ -182,40 +164,19 @@ function PoliciesTablePage({
                     <Alert variant="danger" title={errorMessage} />
                 </Bullseye>
             ) : (
-                <>
-                    <Flex className="pf-u-mt-sm">
-                        <FlexItem>
-                            <Dropdown
-                                toggle={
-                                    <DropdownToggle
-                                        onToggle={onToggleDropdown}
-                                        toggleIndicator={CaretDownIcon}
-                                        isPrimary
-                                        id="add-policy-dropdown-toggle"
-                                    >
-                                        Add Policy
-                                    </DropdownToggle>
-                                }
-                                isOpen={isDropdownOpen}
-                                dropdownItems={dropdownItems}
-                            />
-                        </FlexItem>
-                        <FlexItem>
-                            <Tooltip content="Manually enrich external data">
-                                <Button variant="secondary" onClick={onClickReassessPolicies}>
-                                    Reassess all
-                                </Button>
-                            </Tooltip>
-                        </FlexItem>
-                    </Flex>
-                    <PoliciesTable
-                        policies={policies}
-                        deletePoliciesHandler={deletePoliciesHandler}
-                        exportPoliciesHandler={exportPoliciesHandler}
-                        enablePoliciesHandler={enablePoliciesHandler}
-                        disablePoliciesHandler={disablePoliciesHandler}
-                    />
-                </>
+                <PoliciesTable
+                    policies={policies}
+                    deletePoliciesHandler={deletePoliciesHandler}
+                    exportPoliciesHandler={exportPoliciesHandler}
+                    enablePoliciesHandler={enablePoliciesHandler}
+                    disablePoliciesHandler={disablePoliciesHandler}
+                    pageActionButtons={
+                        <PoliciesTablePageActionButtons
+                            onClickImportPolicy={onClickImportPolicy}
+                            onClickReassessPolicies={onClickReassessPolicies}
+                        />
+                    }
+                />
             )}
             {isImportModalOpen && (
                 <PolicyImportDialogue
