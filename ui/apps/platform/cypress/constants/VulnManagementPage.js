@@ -27,8 +27,12 @@ export const url = {
 };
 
 export const vmHomePageSelectors = {
-    vulnManagementNavLink: `${navigationSelectors.navExpandable}:contains("Vulnerability Management")`,
-    vulnManagementDashboardNavLink: `${navigationSelectors.nestedNavLinks}:contains("Dashboard")`,
+    // TODO: remove this selector, after at least one sub-menu is added to Vuln Mgmt menu
+    vulnManagementNavLink: `${navigationSelectors.navLinks}:contains("Vulnerability Management")`,
+
+    // the selectors below are for when the Vulm Mgmt menu item is expandable
+    vulnManagementExpandableNavLink: `${navigationSelectors.navExpandable}:contains("Vulnerability Management")`,
+    vulnManagementExpandedDashboardNavLink: `${navigationSelectors.nestedNavLinks}:contains("Dashboard")`,
 };
 export const listSelectors = {
     riskScoreCol: '.rt-table > .rt-tbody > div > div > div:nth-child(10)',
