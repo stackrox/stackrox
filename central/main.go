@@ -349,7 +349,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 
-	if env.OfflineModeEnv.Setting() != "true" {
+	if !env.OfflineModeEnv.BooleanSetting() {
 		go fetcher.SingletonManager().Start()
 	}
 

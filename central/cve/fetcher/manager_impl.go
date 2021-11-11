@@ -46,8 +46,7 @@ const (
 
 // Init copies build time CVEs to persistent volume
 func (m *orchestratorIstioCVEManagerImpl) initialize() {
-	offlineModeSetting := env.OfflineModeEnv.Setting()
-	if offlineModeSetting == "true" {
+	if env.OfflineModeEnv.BooleanSetting() {
 		m.mgrMode = offline
 	} else {
 		m.mgrMode = online

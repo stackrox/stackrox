@@ -63,7 +63,7 @@ func (s *ProbeSources) AnyAvailable(ctx context.Context) (bool, error) {
 func (s *ProbeSources) initializeStandardSources(probeUploadManager probeUploadManager.Manager, licenseMgr licenseManager.LicenseManager) {
 	s.probeSources = make([]probeupload.ProbeSource, 0, 2)
 	s.probeSources = append(s.probeSources, probeUploadManager)
-	if env.OfflineModeEnv.Setting() == "true" {
+	if env.OfflineModeEnv.BooleanSetting() {
 		return
 	}
 	baseURL := clusters.CollectorModuleDownloadBaseURL.Setting()
