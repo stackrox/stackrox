@@ -6,16 +6,19 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
-	"os"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/storage/kubernetes/k8sapi"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
 )
@@ -29,6 +32,11 @@ import (
 //   * expose access token to support refreshing of our tokens                //
 //   * remove allowed groups and the corresponding validation                 //
 //   * use errors.* instead of fmt.*                                          //
+//   * remove all insecure related settings                                   //
+//   * remove root CA path and instead inject a *x509.CertPool for TLS        //
+//     verification                                                           //
+//   * add validation for connectivity to OAuth2 endpoints                    //
+//                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
 const (
@@ -38,11 +46,10 @@ const (
 
 // Config holds configuration options for OpenShift OAuth login.
 type Config struct {
-	Issuer       string `json:"issuer"`
-	ClientID     string `json:"clientID"`
-	ClientSecret string `json:"clientSecret"`
-	InsecureCA   bool   `json:"insecureCA"`
-	RootCA       string `json:"rootCA"`
+	Issuer          string         `json:"issuer"`
+	ClientID        string         `json:"clientID"`
+	ClientSecret    string         `json:"clientSecret"`
+	TrustedCertPool *x509.CertPool `json:"trustedCertPool"`
 }
 
 type openshiftConnector struct {
@@ -52,8 +59,6 @@ type openshiftConnector struct {
 	cancel       context.CancelFunc
 	httpClient   *http.Client
 	oauth2Config *oauth2.Config
-	insecureCA   bool
-	rootCA       string
 }
 
 var _ connector.CallbackConnector = (*openshiftConnector)(nil)
@@ -90,7 +95,7 @@ func (e *oauth2Error) Error() string {
 func (c *Config) Open() (*openshiftConnector, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	httpClient, err := newHTTPClient(c.InsecureCA, c.RootCA)
+	httpClient, err := newHTTPClient(c.TrustedCertPool)
 	if err != nil {
 		cancel()
 		return nil, errors.Wrap(err, "failed to create HTTP client")
@@ -102,8 +107,6 @@ func (c *Config) Open() (*openshiftConnector, error) {
 		clientSecret: c.ClientSecret,
 		cancel:       cancel,
 		httpClient:   httpClient,
-		insecureCA:   c.InsecureCA,
-		rootCA:       c.RootCA,
 	}
 
 	// Discover information about the OAuth server.
@@ -141,11 +144,63 @@ func (c *Config) Open() (*openshiftConnector, error) {
 		},
 	}
 
+	// We avoid discovering any configuration issues with relation to connection to OAuth2 endpoints only
+	// upon user login and hence strive to detect them when instantiating an auth provider.
+	if err := openshiftConnector.validateOAuth2Endpoints(c.TrustedCertPool); err != nil {
+		return nil, errors.Wrap(err, "establishing connection to one of the oauth2 endpoints")
+	}
+
 	return &openshiftConnector, nil
 }
 
 func (c *openshiftConnector) Close() error {
 	c.cancel()
+	return nil
+}
+
+func (c *openshiftConnector) validateOAuth2Endpoints(trustedCertPool *x509.CertPool) error {
+	endpoints, err := getUniqueEndpoints(c.oauth2Config.Endpoint.TokenURL, c.oauth2Config.Endpoint.AuthURL)
+	if err != nil {
+		return errors.Wrap(err, "creating unique endpoints")
+	}
+
+	tlsConfig := &tls.Config{RootCAs: trustedCertPool}
+
+	for _, endpoint := range endpoints {
+		if err := validateEndpoint(endpoint, tlsConfig); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getUniqueEndpoints(endpoints ...string) ([]string, error) {
+	uniqueHostnamesAndPorts := set.NewStringSet()
+	for _, endpoint := range endpoints {
+		u, err := url.Parse(endpoint)
+		if err != nil {
+			return nil, err
+		}
+		port := u.Port()
+		if port == "" {
+			port = "443"
+		}
+		hostnameAndPort := fmt.Sprintf("%s:%s", u.Hostname(), port)
+		uniqueHostnamesAndPorts.Add(hostnameAndPort)
+	}
+	return uniqueHostnamesAndPorts.AsSlice(), nil
+}
+
+func validateEndpoint(endpoint string, tlsConfig *tls.Config) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	conn, err := proxy.AwareDialContextTLS(ctx, endpoint, tlsConfig)
+	if err != nil {
+		return err
+	}
+	_ = conn.Close()
 	return nil
 }
 
@@ -230,25 +285,10 @@ func (c *openshiftConnector) user(ctx context.Context, client *http.Client) (u u
 }
 
 // newHTTPClient returns a new HTTP client.
-func newHTTPClient(insecureCA bool, rootCA string) (*http.Client, error) {
-	tlsConfig := tls.Config{}
-
-	if insecureCA {
-		tlsConfig = tls.Config{InsecureSkipVerify: true}
-	} else if rootCA != "" {
-		tlsConfig = tls.Config{RootCAs: x509.NewCertPool()}
-		rootCABytes, err := os.ReadFile(rootCA)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read root-ca")
-		}
-		if !tlsConfig.RootCAs.AppendCertsFromPEM(rootCABytes) {
-			return nil, errors.Errorf("no certs found in root CA file %q", rootCA)
-		}
-	}
-
+func newHTTPClient(certPool *x509.CertPool) (*http.Client, error) {
 	return &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tlsConfig,
+			TLSClientConfig: &tls.Config{RootCAs: certPool},
 			Proxy:           http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
 				Timeout:   30 * time.Second,

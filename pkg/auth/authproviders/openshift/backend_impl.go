@@ -2,8 +2,10 @@ package openshift
 
 import (
 	"context"
+	"crypto/x509"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/dexidp/dex/connector"
@@ -20,9 +22,17 @@ import (
 )
 
 const (
-	openshiftAPIUrl = "https://openshift.default.svc"
-
+	openshiftAPIUrl    = "https://openshift.default.svc"
 	roxTokenExpiration = 5 * time.Minute
+)
+
+// This is the location for CA files which shall be used for certificate validation within
+// openshift auth. In addition to the CA files here, the system's trusted root CAs will be used as well.
+// The path may or may not exist depending on cluster state & configuration.
+const (
+	// serviceAccountCACertPath points to the secret of the service account, which within an OpenShift environment
+	// also has the service-ca.crt which includes CA's for internal services and Ingress Controller certificates.
+	serviceAccountCACertPath = "/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 )
 
 var (
@@ -38,10 +48,16 @@ type backend struct {
 	openshiftConnector connector.CallbackConnector
 }
 
+type openShiftSettings struct {
+	clientID        string
+	clientSecret    string
+	trustedCertPool *x509.CertPool
+}
+
 var _ authproviders.Backend = (*backend)(nil)
 
 func newBackend(id string, callbackURLPath string, _ map[string]string) (authproviders.Backend, error) {
-	clientID, clientSecret, err := openshiftSettings()
+	settings, err := getOpenShiftSettings()
 	if err != nil {
 		return nil, err
 	}
@@ -52,11 +68,10 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (authpro
 	}
 
 	dexCfg := dexconnector.Config{
-		Issuer:       openshiftAPIUrl,
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		// TODO(ROX-8099): Do not skip server cert verification.
-		InsecureCA: true,
+		Issuer:          openshiftAPIUrl,
+		ClientID:        settings.clientID,
+		ClientSecret:    settings.clientSecret,
+		TrustedCertPool: settings.trustedCertPool,
 	}
 
 	openshiftConnector, err := dexCfg.Open()
@@ -132,13 +147,45 @@ func (b *backend) Validate(_ context.Context, _ *tokens.Claims) error {
 	return nil
 }
 
-func openshiftSettings() (string, string, error) {
+func getOpenShiftSettings() (openShiftSettings, error) {
 	clientID := "system:serviceaccount:" + env.Namespace.Setting() + ":central"
 
 	clientSecret, err := satoken.LoadTokenFromFile()
 	if err != nil {
-		return "", "", errors.Wrap(err, "reading service account token")
+		return openShiftSettings{}, errors.Wrap(err, "reading service account token")
 	}
 
-	return clientID, clientSecret, nil
+	certPool, err := getSystemCertPoolWithAdditionalCA(serviceAccountCACertPath)
+	if err != nil {
+		return openShiftSettings{}, err
+	}
+
+	return openShiftSettings{
+		clientID:        clientID,
+		clientSecret:    clientSecret,
+		trustedCertPool: certPool,
+	}, nil
+}
+
+func getSystemCertPoolWithAdditionalCA(additionalCAPath string) (*x509.CertPool, error) {
+	// Use the x509.SystemCertPool to include system's trusted CAs.
+	sysCertPool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating system cert pool")
+	}
+
+	rootCABytes, err := os.ReadFile(additionalCAPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return sysCertPool, nil
+	}
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "reading CA at path %s", additionalCAPath)
+	}
+
+	if !sysCertPool.AppendCertsFromPEM(rootCABytes) {
+		return nil, errors.Errorf("parsing root CA file from %s", additionalCAPath)
+	}
+
+	return sysCertPool, nil
 }
