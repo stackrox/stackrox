@@ -72,6 +72,13 @@ var (
 			storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
 		},
 	}
+	highSevPolicyWithNoDescription = &storage.Policy{
+		Id:          "policy8",
+		Name:        "policy 8",
+		Remediation: "policy 8 for testing",
+		Rationale:   "policy 8 for testing",
+		Severity:    storage.Severity_HIGH_SEVERITY,
+	}
 	// CRITICAL severity
 	criticalSevPolicyWithBuildFail = &storage.Policy{
 		Id:          "policy1",
@@ -142,6 +149,11 @@ var (
 			Entity:     testDeploymentEntity,
 			Violations: multipleViolationMessages,
 		},
+		{
+			Policy:     highSevPolicyWithNoDescription,
+			Entity:     testDeploymentEntity,
+			Violations: multipleViolationMessages,
+		},
 	}
 
 	testDeploymentAlertsWithoutFailure = []*storage.Alert{
@@ -176,6 +188,11 @@ var (
 		// failure
 		{
 			Policy:     criticalSevPolicyWithBuildFail,
+			Entity:     testDeploymentEntity,
+			Violations: multipleViolationMessages,
+		},
+		{
+			Policy:     highSevPolicyWithNoDescription,
 			Entity:     testDeploymentEntity,
 			Violations: multipleViolationMessages,
 		},
@@ -355,7 +372,7 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 		"should not fail with non failing enforcement actions": {
 			alerts: testDeploymentAlertsWithoutFailure,
 			expectedOutput: `Policy check results for deployments: [wordpress]
-(TOTAL: 5, LOW: 1, MEDIUM: 3, HIGH: 0, CRITICAL: 1)
+(TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 1, CRITICAL: 1)
 
 +----------+----------+------------+----------------------+--------------------------------+----------------------+---------------+
 |  POLICY  | SEVERITY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      | BREAKS DEPLOY |
@@ -371,6 +388,17 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 |          |          |            |                      |                                |                      |               |
 |          |          |            |                      |                                |                      |               |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+---------------+
+| policy 8 |   HIGH   | wordpress  |          -           |    - testing multiple alert    | policy 8 for testing |       -       |
+|          |          |            |                      |      violation messages 1      |                      |               |
+|          |          |            |                      |                                |                      |               |
+|          |          |            |                      |    - testing multiple alert    |                      |               |
+|          |          |            |                      |      violation messages 2      |                      |               |
+|          |          |            |                      |                                |                      |               |
+|          |          |            |                      |    - testing multiple alert    |                      |               |
+|          |          |            |                      |      violation messages 3      |                      |               |
+|          |          |            |                      |                                |                      |               |
+|          |          |            |                      |                                |                      |               |
++----------+----------+------------+----------------------+--------------------------------+----------------------+---------------+
 | policy 2 |  MEDIUM  | wordpress  | policy 2 for testing |    - testing multiple alert    | policy 2 for testing |       -       |
 |          |          |            |                      |      violation messages 1      |                      |               |
 |          |          |            |                      |                                |                      |               |
@@ -406,13 +434,13 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 |          |          |            |                      |                                |                      |               |
 |          |          |            |                      |                                |                      |               |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+---------------+
-WARN: A total of 5 policies have been violated
+WARN: A total of 6 policies have been violated
 `,
 		},
 		"should fail with failing enforcement actions": {
 			alerts: testDeploymentAlertsWithFailure,
 			expectedOutput: `Policy check results for deployments: [wordpress]
-(TOTAL: 5, LOW: 1, MEDIUM: 3, HIGH: 1, CRITICAL: 0)
+(TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 0)
 
 +----------+----------+------------+----------------------+--------------------------------+----------------------+---------------+
 |  POLICY  | SEVERITY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      | BREAKS DEPLOY |
@@ -428,6 +456,17 @@ WARN: A total of 5 policies have been violated
 |          |          |            |                      |                                |                      |               |
 |          |          |            |                      |                                |                      |               |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+---------------+
+| policy 8 |   HIGH   | wordpress  |          -           |    - testing multiple alert    | policy 8 for testing |       -       |
+|          |          |            |                      |      violation messages 1      |                      |               |
+|          |          |            |                      |                                |                      |               |
+|          |          |            |                      |    - testing multiple alert    |                      |               |
+|          |          |            |                      |      violation messages 2      |                      |               |
+|          |          |            |                      |                                |                      |               |
+|          |          |            |                      |    - testing multiple alert    |                      |               |
+|          |          |            |                      |      violation messages 3      |                      |               |
+|          |          |            |                      |                                |                      |               |
+|          |          |            |                      |                                |                      |               |
++----------+----------+------------+----------------------+--------------------------------+----------------------+---------------+
 | policy 2 |  MEDIUM  | wordpress  | policy 2 for testing |    - testing multiple alert    | policy 2 for testing |       -       |
 |          |          |            |                      |      violation messages 1      |                      |               |
 |          |          |            |                      |                                |                      |               |
@@ -463,7 +502,7 @@ WARN: A total of 5 policies have been violated
 |          |          |            |                      |                                |                      |               |
 |          |          |            |                      |                                |                      |               |
 +----------+----------+------------+----------------------+--------------------------------+----------------------+---------------+
-WARN: A total of 5 policies have been violated
+WARN: A total of 6 policies have been violated
 ERROR: failed policies found: 1 policies violated that are failing the check
 ERROR: Policy "policy 4" within Deployment "wordpress" - Possible remediation: "policy 4"
 `,
@@ -495,10 +534,10 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
       },
       "summary": {
         "CRITICAL": 1,
-        "HIGH": 0,
+        "HIGH": 1,
         "LOW": 1,
         "MEDIUM": 3,
-        "TOTAL": 5
+        "TOTAL": 6
       },
       "violatedPolicies": [
         {
@@ -511,6 +550,18 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
             "testing multiple alert violation messages 3"
           ],
           "remediation": "policy 1 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 8",
+          "severity": "HIGH",
+          "description": "",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 8 for testing",
           "failingCheck": false
         },
         {
@@ -563,10 +614,10 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
   ],
   "summary": {
     "CRITICAL": 1,
-    "HIGH": 0,
+    "HIGH": 1,
     "LOW": 1,
     "MEDIUM": 3,
-    "TOTAL": 5
+    "TOTAL": 6
   }
 }
 `,
@@ -586,10 +637,10 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
       },
       "summary": {
         "CRITICAL": 0,
-        "HIGH": 1,
+        "HIGH": 2,
         "LOW": 1,
         "MEDIUM": 3,
-        "TOTAL": 5
+        "TOTAL": 6
       },
       "violatedPolicies": [
         {
@@ -603,6 +654,18 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
           ],
           "remediation": "policy 4 for testing",
           "failingCheck": true
+        },
+        {
+          "name": "policy 8",
+          "severity": "HIGH",
+          "description": "",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 8 for testing",
+          "failingCheck": false
         },
         {
           "name": "policy 2",
@@ -654,10 +717,10 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
   ],
   "summary": {
     "CRITICAL": 0,
-    "HIGH": 1,
+    "HIGH": 2,
     "LOW": 1,
     "MEDIUM": 3,
-    "TOTAL": 5
+    "TOTAL": 6
   }
 }
 `,
@@ -680,6 +743,10 @@ policy 1,CRITICAL,wordpress,policy 1 for testing,"- testing multiple alert viola
 - testing multiple alert violation messages 2
 - testing multiple alert violation messages 3
 ",policy 1 for testing,-
+policy 8,HIGH,wordpress,-,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3
+",policy 8 for testing,-
 policy 2,MEDIUM,wordpress,policy 2 for testing,"- testing multiple alert violation messages 1
 - testing multiple alert violation messages 2
 - testing multiple alert violation messages 3
@@ -702,6 +769,10 @@ policy 4,HIGH,wordpress,policy 4 for testing,"- testing multiple alert violation
 - testing multiple alert violation messages 2
 - testing multiple alert violation messages 3
 ",policy 4 for testing,X
+policy 8,HIGH,wordpress,-,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3
+",policy 8 for testing,-
 policy 2,MEDIUM,wordpress,policy 2 for testing,"- testing multiple alert violation messages 1
 - testing multiple alert violation messages 2
 - testing multiple alert violation messages 3
@@ -867,6 +938,30 @@ func (d *deployCheckTestSuite) TestCheck_LegacyJSONOutput() {
           "message": "testing multiple alert violation messages 3"
         }
       ]
+    },
+    {
+      "policy": {
+        "id": "policy8",
+        "name": "policy 8",
+        "rationale": "policy 8 for testing",
+        "remediation": "policy 8 for testing",
+        "severity": "HIGH_SEVERITY"
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing multiple alert violation messages 1"
+        },
+        {
+          "message": "testing multiple alert violation messages 2"
+        },
+        {
+          "message": "testing multiple alert violation messages 3"
+        }
+      ]
     }
   ]
 }
@@ -994,6 +1089,30 @@ func (d *deployCheckTestSuite) TestCheck_LegacyJSONOutput() {
         "enforcementActions": [
           "SCALE_TO_ZERO_ENFORCEMENT"
         ]
+      },
+      "deployment": {
+        "name": "wordpress",
+        "type": "Deployment"
+      },
+      "violations": [
+        {
+          "message": "testing multiple alert violation messages 1"
+        },
+        {
+          "message": "testing multiple alert violation messages 2"
+        },
+        {
+          "message": "testing multiple alert violation messages 3"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy8",
+        "name": "policy 8",
+        "rationale": "policy 8 for testing",
+        "remediation": "policy 8 for testing",
+        "severity": "HIGH_SEVERITY"
       },
       "deployment": {
         "name": "wordpress",

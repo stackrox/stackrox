@@ -64,6 +64,13 @@ var (
 			storage.EnforcementAction_FAIL_DEPLOYMENT_CREATE_ENFORCEMENT,
 		},
 	}
+	highSevPolicyWithNoDescription = &storage.Policy{
+		Id:          "policy8",
+		Name:        "policy 8",
+		Remediation: "policy 8 for testing",
+		Rationale:   "policy 8 for testing",
+		Severity:    storage.Severity_HIGH_SEVERITY,
+	}
 	// CRITICAL severity
 	criticalSevPolicyWithBuildFail = &storage.Policy{
 		Id:          "policy1",
@@ -122,6 +129,10 @@ var (
 			Policy:     highSevPolicyWithDeployCreateFail,
 			Violations: singleViolationMessage,
 		},
+		{
+			Policy:     highSevPolicyWithNoDescription,
+			Violations: multipleViolationMessages,
+		},
 	}
 	testAlertsWithFailure = []*storage.Alert{
 		{
@@ -153,6 +164,10 @@ var (
 		// Policy with build fail Enforcement Action should result in an error
 		{
 			Policy:     criticalSevPolicyWithBuildFail,
+			Violations: multipleViolationMessages,
+		},
+		{
+			Policy:     highSevPolicyWithNoDescription,
 			Violations: multipleViolationMessages,
 		},
 	}
@@ -231,12 +246,20 @@ func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 		"should not fail with non build failing enforcement actions": {
 			alerts: testAlertsWithoutFailure,
 			expectedOutput: `Policy check results for image: nginx:test
-(TOTAL: 5, LOW: 1, MEDIUM: 3, HIGH: 1, CRITICAL: 0)
+(TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 0)
 
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 |  POLICY  | SEVERITY |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      | BREAKS BUILD |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 4 |   HIGH   | policy 4 for testing | - test violation 1 | policy 4 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 8 |   HIGH   |          -           | - test violation 1 | policy 8 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 2 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 3 |                      |              |
 |          |          |                      |                    |                      |              |
 |          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
@@ -266,13 +289,13 @@ func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 |          |          |                      |                    |                      |              |
 |          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
-WARN: A total of 5 policies have been violated
+WARN: A total of 6 policies have been violated
 `,
 		},
 		"should fail with build failing enforcement actions": {
 			alerts: testAlertsWithFailure,
 			expectedOutput: `Policy check results for image: nginx:test
-(TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 1, CRITICAL: 1)
+(TOTAL: 7, LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 1)
 
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 |  POLICY  | SEVERITY |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      | BREAKS BUILD |
@@ -289,6 +312,14 @@ WARN: A total of 5 policies have been violated
 |          |          |                      |                    |                      |              |
 |          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
+| policy 8 |   HIGH   |          -           | - test violation 1 | policy 8 for testing |      -       |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 2 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      | - test violation 3 |                      |              |
+|          |          |                      |                    |                      |              |
+|          |          |                      |                    |                      |              |
++----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 2 |  MEDIUM  | policy 2 for testing | - test violation 1 | policy 2 for testing |      -       |
 |          |          |                      |                    |                      |              |
 |          |          |                      |                    |                      |              |
@@ -315,7 +346,7 @@ WARN: A total of 5 policies have been violated
 |          |          |                      |                    |                      |              |
 |          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
-WARN: A total of 6 policies have been violated
+WARN: A total of 7 policies have been violated
 ERROR: failed policies found: 1 policies violated that are failing the check
 ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
 `,
@@ -343,10 +374,10 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
       },
       "summary": {
         "CRITICAL": 0,
-        "HIGH": 1,
+        "HIGH": 2,
         "LOW": 1,
         "MEDIUM": 3,
-        "TOTAL": 5
+        "TOTAL": 6
       },
       "violatedPolicies": [
         {
@@ -357,6 +388,18 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
             "test violation 1"
           ],
           "remediation": "policy 4 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 8",
+          "severity": "HIGH",
+          "description": "",
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3"
+          ],
+          "remediation": "policy 8 for testing",
           "failingCheck": false
         },
         {
@@ -409,10 +452,10 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
   ],
   "summary": {
     "CRITICAL": 0,
-    "HIGH": 1,
+    "HIGH": 2,
     "LOW": 1,
     "MEDIUM": 3,
-    "TOTAL": 5
+    "TOTAL": 6
   }
 }
 `,
@@ -430,10 +473,10 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
       },
       "summary": {
         "CRITICAL": 1,
-        "HIGH": 1,
+        "HIGH": 2,
         "LOW": 1,
         "MEDIUM": 3,
-        "TOTAL": 6
+        "TOTAL": 7
       },
       "violatedPolicies": [
         {
@@ -456,6 +499,18 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
             "test violation 1"
           ],
           "remediation": "policy 4 for testing",
+          "failingCheck": false
+        },
+        {
+          "name": "policy 8",
+          "severity": "HIGH",
+          "description": "",
+          "violation": [
+            "test violation 1",
+            "test violation 2",
+            "test violation 3"
+          ],
+          "remediation": "policy 8 for testing",
           "failingCheck": false
         },
         {
@@ -508,10 +563,10 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
   ],
   "summary": {
     "CRITICAL": 1,
-    "HIGH": 1,
+    "HIGH": 2,
     "LOW": 1,
     "MEDIUM": 3,
-    "TOTAL": 6
+    "TOTAL": 7
   }
 }
 `,
@@ -531,6 +586,10 @@ func (suite *imageCheckTestSuite) TestCheckImage_CSVOutput() {
 			expectedOutput: `POLICY,SEVERITY,DESCRIPTION,VIOLATION,REMEDIATION,BREAKS BUILD
 policy 4,HIGH,policy 4 for testing,"- test violation 1
 ",policy 4 for testing,-
+policy 8,HIGH,-,"- test violation 1
+- test violation 2
+- test violation 3
+",policy 8 for testing,-
 policy 2,MEDIUM,policy 2 for testing,"- test violation 1
 - test violation 2
 - test violation 3
@@ -557,6 +616,10 @@ policy 1,CRITICAL,policy 1 for testing,"- test violation 1
 ",policy 1 for testing,X
 policy 4,HIGH,policy 4 for testing,"- test violation 1
 ",policy 4 for testing,-
+policy 8,HIGH,-,"- test violation 1
+- test violation 2
+- test violation 3
+",policy 8 for testing,-
 policy 2,MEDIUM,policy 2 for testing,"- test violation 1
 ",policy 2 for testing,-
 policy 5,MEDIUM,policy 5 for testing,"- test violation 1
@@ -838,6 +901,26 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
           "message": "test violation 1"
         }
       ]
+    },
+    {
+      "policy": {
+        "id": "policy8",
+        "name": "policy 8",
+        "rationale": "policy 8 for testing",
+        "remediation": "policy 8 for testing",
+        "severity": "HIGH_SEVERITY"
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        },
+        {
+          "message": "test violation 2"
+        },
+        {
+          "message": "test violation 3"
+        }
+      ]
     }
   ]
 }
@@ -958,6 +1041,26 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
         "enforcementActions": [
           "FAIL_BUILD_ENFORCEMENT"
         ]
+      },
+      "violations": [
+        {
+          "message": "test violation 1"
+        },
+        {
+          "message": "test violation 2"
+        },
+        {
+          "message": "test violation 3"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "id": "policy8",
+        "name": "policy 8",
+        "rationale": "policy 8 for testing",
+        "remediation": "policy 8 for testing",
+        "severity": "HIGH_SEVERITY"
       },
       "violations": [
         {

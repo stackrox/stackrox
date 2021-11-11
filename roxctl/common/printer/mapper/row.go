@@ -62,7 +62,11 @@ func (r *RowMapper) createColumns() [][]string {
 	colID := 0
 
 	r.result.ForEach(func(key, value gjson.Result) bool {
-		row := getStringValuesFromNestedArrays(value, []string{})
+		// Only try to retrieve string values from the result if it is not an empty array.
+		var row []string
+		if value.Type != gjson.Null {
+			row = getStringValuesFromNestedArrays(value, []string{})
+		}
 		postProcessedRow := r.expandColumn(row, colID)
 		result = append(result, postProcessedRow)
 		colID++

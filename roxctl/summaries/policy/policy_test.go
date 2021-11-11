@@ -332,6 +332,50 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 				},
 			},
 		},
+		"policy violations with optional fields being empty": {
+			alerts: []*storage.Alert{
+				{
+					Policy: &storage.Policy{
+						Id:          "policy1",
+						Name:        "test Policy 1",
+						Description: "",
+						Remediation: "",
+						Severity:    storage.Severity_HIGH_SEVERITY,
+					},
+					Violations: nil,
+				},
+			},
+			expectedOutput: &Result{
+				Results: []EntityResult{
+					{
+						Summary: map[string]int{
+							"TOTAL":    1,
+							"LOW":      0,
+							"MEDIUM":   0,
+							"HIGH":     1,
+							"CRITICAL": 0,
+						},
+						ViolatedPolicies: []Policy{
+							{
+								Name:        "test Policy 1",
+								Severity:    "HIGH",
+								Description: "",
+								Violation:   []string{},
+								Remediation: "",
+							},
+						},
+						Metadata: EntityMetadata{ID: "unknown"},
+					},
+				},
+				Summary: map[string]int{
+					"TOTAL":    1,
+					"LOW":      0,
+					"MEDIUM":   0,
+					"HIGH":     1,
+					"CRITICAL": 0,
+				},
+			},
+		},
 	}
 
 	for name, c := range cases {
