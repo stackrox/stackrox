@@ -69,7 +69,6 @@ func TestGetPods(t *testing.T) {
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
 	mockIndicators := processIndicatorMocks.NewMockDataStore(mockCtrl)
-	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

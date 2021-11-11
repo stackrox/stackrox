@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/debug"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
@@ -229,38 +228,6 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 	return ds.removeMatchingIndicators(results)
 }
 
-func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainersByPod(ctx context.Context, pod *storage.Pod) error {
-	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	mustConjunction := &v1.ConjunctionQuery{
-		Queries: []*v1.Query{
-			pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, pod.GetId()).ProtoQuery(),
-		},
-	}
-
-	currentContainerIDs := containerIdsByPod(pod)
-	queries := make([]*v1.Query, 0, len(currentContainerIDs))
-	for _, containerID := range currentContainerIDs {
-		queries = append(queries, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ContainerID, containerID).ProtoQuery())
-	}
-
-	mustNotDisjunction := &v1.DisjunctionQuery{
-		Queries: queries,
-	}
-
-	booleanQuery := pkgSearch.NewBooleanQuery(mustConjunction, mustNotDisjunction)
-
-	results, err := ds.Search(ctx, booleanQuery)
-	if err != nil {
-		return err
-	}
-	return ds.removeMatchingIndicators(results)
-}
-
 func (ds *datastoreImpl) prunePeriodically() {
 	defer ds.stoppedSig.Signal()
 
@@ -437,16 +404,4 @@ func (ds *datastoreImpl) buildIndex() error {
 
 	log.Info("[STARTUP] Successfully indexed all out of sync processes")
 	return nil
-}
-
-// containerIdsByPod only returns live container instances.
-func containerIdsByPod(pod *storage.Pod) []string {
-	var ids []string
-	for _, instance := range pod.GetLiveInstances() {
-		containerID := containerid.ShortContainerIDFromInstance(instance)
-		if containerID != "" {
-			ids = append(ids, containerID)
-		}
-	}
-	return ids
 }

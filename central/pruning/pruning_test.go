@@ -187,7 +187,6 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	images := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, true, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
 
