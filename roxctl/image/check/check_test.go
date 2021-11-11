@@ -252,24 +252,18 @@ func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 |  POLICY  | SEVERITY |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      | BREAKS BUILD |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 4 |   HIGH   | policy 4 for testing | - test violation 1 | policy 4 for testing |      -       |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 8 |   HIGH   |          -           | - test violation 1 | policy 8 for testing |      -       |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 2 |                      |              |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 3 |                      |              |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 2 |  MEDIUM  | policy 2 for testing | - test violation 1 | policy 2 for testing |      -       |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 2 |                      |              |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 3 |                      |              |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 5 |  MEDIUM  | policy 5 for testing | - test violation 1 | policy 5 for testing |      -       |
 |          |          |                      |                    |                      |              |
@@ -278,16 +272,10 @@ func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 |          |          |                      | - test violation 3 |                      |              |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 1 |                      |              |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 6 |  MEDIUM  | policy 6 for testing | - test violation 1 | policy 6 for testing |      -       |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 7 |   LOW    | policy 7 for testing | - test violation 1 | policy 7 for testing |      -       |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 WARN: A total of 6 policies have been violated
 `,
@@ -305,24 +293,16 @@ WARN: A total of 6 policies have been violated
 |          |          |                      | - test violation 2 |                      |              |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 3 |                      |              |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 4 |   HIGH   | policy 4 for testing | - test violation 1 | policy 4 for testing |      -       |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 8 |   HIGH   |          -           | - test violation 1 | policy 8 for testing |      -       |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 2 |                      |              |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 3 |                      |              |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 2 |  MEDIUM  | policy 2 for testing | - test violation 1 | policy 2 for testing |      -       |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 5 |  MEDIUM  | policy 5 for testing | - test violation 1 | policy 5 for testing |      -       |
 |          |          |                      |                    |                      |              |
@@ -331,20 +311,14 @@ WARN: A total of 6 policies have been violated
 |          |          |                      | - test violation 3 |                      |              |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 1 |                      |              |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 6 |  MEDIUM  | policy 6 for testing | - test violation 1 | policy 6 for testing |      -       |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 2 |                      |              |
 |          |          |                      |                    |                      |              |
 |          |          |                      | - test violation 3 |                      |              |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 | policy 7 |   LOW    | policy 7 for testing | - test violation 1 | policy 7 for testing |      -       |
-|          |          |                      |                    |                      |              |
-|          |          |                      |                    |                      |              |
 +----------+----------+----------------------+--------------------+----------------------+--------------+
 WARN: A total of 7 policies have been violated
 ERROR: failed policies found: 1 policies violated that are failing the check
@@ -584,25 +558,19 @@ func (suite *imageCheckTestSuite) TestCheckImage_CSVOutput() {
 		"should not fail with non build failing enforcement actions": {
 			alerts: testAlertsWithoutFailure,
 			expectedOutput: `POLICY,SEVERITY,DESCRIPTION,VIOLATION,REMEDIATION,BREAKS BUILD
-policy 4,HIGH,policy 4 for testing,"- test violation 1
-",policy 4 for testing,-
+policy 4,HIGH,policy 4 for testing,- test violation 1,policy 4 for testing,-
 policy 8,HIGH,-,"- test violation 1
 - test violation 2
-- test violation 3
-",policy 8 for testing,-
+- test violation 3",policy 8 for testing,-
 policy 2,MEDIUM,policy 2 for testing,"- test violation 1
 - test violation 2
-- test violation 3
-",policy 2 for testing,-
+- test violation 3",policy 2 for testing,-
 policy 5,MEDIUM,policy 5 for testing,"- test violation 1
 - test violation 2
 - test violation 3
-- test violation 1
-",policy 5 for testing,-
-policy 6,MEDIUM,policy 6 for testing,"- test violation 1
-",policy 6 for testing,-
-policy 7,LOW,policy 7 for testing,"- test violation 1
-",policy 7 for testing,-
+- test violation 1",policy 5 for testing,-
+policy 6,MEDIUM,policy 6 for testing,- test violation 1,policy 6 for testing,-
+policy 7,LOW,policy 7 for testing,- test violation 1,policy 7 for testing,-
 `,
 		},
 		"should fail with build failing enforcement actions": {
@@ -612,27 +580,20 @@ policy 7,LOW,policy 7 for testing,"- test violation 1
 			expectedOutput: `POLICY,SEVERITY,DESCRIPTION,VIOLATION,REMEDIATION,BREAKS BUILD
 policy 1,CRITICAL,policy 1 for testing,"- test violation 1
 - test violation 2
-- test violation 3
-",policy 1 for testing,X
-policy 4,HIGH,policy 4 for testing,"- test violation 1
-",policy 4 for testing,-
+- test violation 3",policy 1 for testing,X
+policy 4,HIGH,policy 4 for testing,- test violation 1,policy 4 for testing,-
 policy 8,HIGH,-,"- test violation 1
 - test violation 2
-- test violation 3
-",policy 8 for testing,-
-policy 2,MEDIUM,policy 2 for testing,"- test violation 1
-",policy 2 for testing,-
+- test violation 3",policy 8 for testing,-
+policy 2,MEDIUM,policy 2 for testing,- test violation 1,policy 2 for testing,-
 policy 5,MEDIUM,policy 5 for testing,"- test violation 1
 - test violation 2
 - test violation 3
-- test violation 1
-",policy 5 for testing,-
+- test violation 1",policy 5 for testing,-
 policy 6,MEDIUM,policy 6 for testing,"- test violation 1
 - test violation 2
-- test violation 3
-",policy 6 for testing,-
-policy 7,LOW,policy 7 for testing,"- test violation 1
-",policy 7 for testing,-
+- test violation 3",policy 6 for testing,-
+policy 7,LOW,policy 7 for testing,- test violation 1,policy 7 for testing,-
 `,
 		},
 	}

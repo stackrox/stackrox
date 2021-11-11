@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -38,12 +37,22 @@ func ListModifier() CustomModifier {
 	}
 }
 
-func createListString(strings []string) string {
-	listString := ""
-	for _, s := range strings {
-		listString += fmt.Sprintf("- %s\n", s)
+func createListString(stringValues []string) string {
+	if len(stringValues) == 0 {
+		return ""
 	}
-	bytes, _ := json.Marshal(listString)
+
+	// Ensure that no trailing newline is added, as this previously caused table paddings to be all over the place.
+	var sb strings.Builder
+	sb.WriteString("- ")
+	sb.WriteString(stringValues[0])
+	if len(stringValues) >= 2 {
+		for _, s := range stringValues[1:] {
+			sb.WriteString("\n- ")
+			sb.WriteString(s)
+		}
+	}
+	bytes, _ := json.Marshal(sb.String())
 	return string(bytes)
 }
 

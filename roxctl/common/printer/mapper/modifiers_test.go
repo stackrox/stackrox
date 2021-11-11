@@ -30,8 +30,7 @@ func TestListModifier(t *testing.T) {
 	expectedResult := `- a
 - b
 - c
-- d
-`
+- d`
 
 	bytes, err := json.Marshal(testObject)
 	require.NoError(t, err)
