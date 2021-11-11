@@ -7,7 +7,11 @@ function TableCell({ row, column }): React.ReactElement {
     if (column.Cell) {
         value = column.Cell({ original: row, value });
     }
-    return <Td key={column.Header}>{value || '-'}</Td>;
+    return (
+        <Td key={column.Header} dataLabel={column.Header}>
+            {value || '-'}
+        </Td>
+    );
 }
 
 export default TableCell;

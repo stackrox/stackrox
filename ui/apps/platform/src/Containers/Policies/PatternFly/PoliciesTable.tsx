@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Flex,
     FlexItem,
@@ -6,6 +7,7 @@ import {
     PageSection,
     Title,
     Badge,
+    Button,
     Select,
     SelectOption,
     Label,
@@ -22,12 +24,23 @@ import TableCell from 'Components/PatternFly/TableCell';
 import { ActionItem } from 'Containers/Violations/PatternFly/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
 import { SortDirection } from 'hooks/useTableSort';
+import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 
 const columns = [
     {
         Header: 'Policy',
         accessor: 'name',
-        Cell: ({ value }) => <div data-testid="policy-name">{value}</div>,
+        Cell: ({ original, value }) => (
+            <Button
+                variant="link"
+                isInline
+                component={(props) => (
+                    <Link {...props} to={`${policiesBasePath}/${original.id as string}`} />
+                )}
+            >
+                {value}
+            </Button>
+        ),
         sortMethod: (a: ListPolicy, b: ListPolicy) => sortAsciiCaseInsensitive(a.name, b.name),
         width: 20 as const,
     },
