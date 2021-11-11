@@ -27,16 +27,16 @@ const (
 	// Default JSON path expression which retrieves the data from a policy.Result
 	defaultImageCheckJSONPathExpression = "{results.#.violatedPolicies.#.name," +
 		"results.#.violatedPolicies.#.severity," +
+		"results.#.violatedPolicies.#.failingCheck.@boolReplace:{\"true\":\"X\",\"false\":\"-\"}," +
 		"results.#.violatedPolicies.#.description," +
 		"results.#.violatedPolicies.#.violation.@list," +
-		"results.#.violatedPolicies.#.remediation," +
-		"results.#.violatedPolicies.#.failingCheck.@boolReplace:{\"true\":\"X\",\"false\":\"-\"}}"
+		"results.#.violatedPolicies.#.remediation}"
 )
 
 var (
 	// Default headers to use when printing tabular output
 	defaultImageCheckHeaders = []string{
-		"POLICY", "SEVERITY", "DESCRIPTION", "VIOLATION", "REMEDIATION", "BREAKS BUILD",
+		"POLICY", "SEVERITY", "BREAKS BUILD", "DESCRIPTION", "VIOLATION", "REMEDIATION",
 	}
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{

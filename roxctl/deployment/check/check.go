@@ -25,17 +25,17 @@ const (
 	defaultDeploymentCheckJSONPathExpression = "{" +
 		"results.#.violatedPolicies.#.name," +
 		"results.#.violatedPolicies.#.severity," +
+		"results.#.violatedPolicies.#.failingCheck.@boolReplace:{\"true\":\"X\",\"false\":\"-\"}," +
 		"results.#.metadata.additionalInfo.name," +
 		"results.#.violatedPolicies.#.description," +
 		"results.#.violatedPolicies.#.violation.@list," +
-		"results.#.violatedPolicies.#.remediation," +
-		"results.#.violatedPolicies.#.failingCheck.@boolReplace:{\"true\":\"X\",\"false\":\"-\"}}"
+		"results.#.violatedPolicies.#.remediation}"
 )
 
 var (
 	// Default headers to use when printing tabular output
 	defaultDeploymentCheckHeaders = []string{
-		"POLICY", "SEVERITY", "DEPLOYMENT", "DESCRIPTION", "VIOLATION", "REMEDIATION", "BREAKS DEPLOY",
+		"POLICY", "SEVERITY", "BREAKS DEPLOY", "DEPLOYMENT", "DESCRIPTION", "VIOLATION", "REMEDIATION",
 	}
 
 	// supported output formats with default values
