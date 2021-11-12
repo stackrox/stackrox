@@ -1,7 +1,7 @@
 # Changelog
 Entries in this file should be limited to:
 -  Any changes that introduce a deprecation in functionality, OR
--  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes. 
+-  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
@@ -13,14 +13,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new default Role called Scope Creator has been introduced, to be used to provide users the minimal set of
 privileges required to create and modify access scopes for the purpose of configuring access control or use in vulnerability reporting.
 - The Compliance Operator integration now supports TailoredProfiles.
+- Presence of `microdnf` (presence in the image and process execution) is treated as violation of policies `Red Hat Package Manager in Image` and `Red Hat Package Manager Execution` respectively.
 
 ## [66.0]
 
 - Default system policies `DockerHub NGINX 1.10`, `Shellshock: Multiple CVEs`, and `Heartbleed: CVE-2014-0160` have been deprecated.
-- Default system policy deletion is prohibited in fresh installations of 65 or greater. If the initial installation 
+- Default system policy deletion is prohibited in fresh installations of 65 or greater. If the initial installation
   was done in a version lower than 65, then default policies can be deleted even after an upgrade to 65 or greater.
 - `Analyst` permission set and corresponding role will no longer have `DebugLogs` permission. The only default role with this permission will be `Admin` role.
-- The "Mount Docker Socket" policy has been renamed to "Mount Container Runtime Socket" and will now also detect if a deployment 
+- The "Mount Docker Socket" policy has been renamed to "Mount Container Runtime Socket" and will now also detect if a deployment
   mounts the CRI-O socket for both Kubernetes and OpenShift.
 - The policy "Docker CIS 4.4: Ensure images are scanned and rebuilt to include security patches" is now disabled by default
 - Alpine-based images are now deprecated and all images will be based on UBI. main-rhel will continue to be pushed for consistency.
@@ -29,7 +30,7 @@ privileges required to create and modify access scopes for the purpose of config
 - Operator now supports `tolerations`  for `Central` and `SecuredCluster`
 - Operator now supports disabling the admin password generation by setting Central's option `adminPasswordGenerationDisabled` to `true`.
 - Roxctl now supports shell completion for bash, zsh, fish and powershell
-- Added `roxctl central debug authz-trace` command. It streams built-in authorizer traces for all incoming requests. 
+- Added `roxctl central debug authz-trace` command. It streams built-in authorizer traces for all incoming requests.
 - Operator defaults changed for `SecuredCluster` fields `spec.admissionControl.listenOnCreates` and `spec.admissionControl.listenOnUpdates`
   from `false` to `true`. This should not affect these settings in existing `SecuredCluster` resource instances
   where the previous default had already been applied at instance creation (this typically happens when creating the resource from the OpenShift console).
@@ -42,10 +43,10 @@ privileges required to create and modify access scopes for the purpose of config
   - `Active`: the component was run in the specific deployment.
 
 ## [65.0]
-- Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies 
-  included in fresh install of 65.0 and later, and new default system policies added since 65.0. Policy criteria fields 
+- Starting 65.0, default system policies' criteria fields are read-only. This applies to all default system policies
+  included in fresh install of 65.0 and later, and new default system policies added since 65.0. Policy criteria fields
   for user-defined policies, created through 'New' and 'Clone' operation, will continue to be editable.
-- Newly added MITRE ATT&CK policy section is read-only for default system policies. MITRE ATT&CK section for user-defined 
+- Newly added MITRE ATT&CK policy section is read-only for default system policies. MITRE ATT&CK section for user-defined
   policies, created through 'New' and 'Clone' operation, will continue to be editable.
 - Alert titles for the PagerDuty, Slack, Microsoft Teams, JIRA and email notifiers now contain the cluster and policy names
   in addition to the deployment or image name if it exists.
@@ -169,8 +170,8 @@ privileges required to create and modify access scopes for the purpose of config
 
 - The product no longer requires a license to run. Several license-related functionalities and flags
   have been removed from the product and related tooling, as well as from the Helm charts.
-- Components now have `Fixed By` field that indicates the version that will fixes all the fixable vulnerabilities in the component. 
-  - Note: 
+- Components now have `Fixed By` field that indicates the version that will fixes all the fixable vulnerabilities in the component.
+  - Note:
     - It is supported only when StackRox Scanner is used.
     - It is not namespaced to distro.
 - Added upgrade rollback function. By default, users may rollback to their previous version if upgrade fails before Central has started.
@@ -190,7 +191,7 @@ privileges required to create and modify access scopes for the purpose of config
   to deploy on. By default, deployment files are generated in a compatibility mode that works on OpenShift
   3.11 as well as 4.x. When deploying to a cluster running a recent OpenShift version, set this flag to `4`
   in order to take advantage of features only supported on OpenShift 4.x.
-  
+
 
 ## [56.0]
 - Page titles now reflect the URL location of the user within the app in the browser tab and history.
@@ -234,7 +235,7 @@ are outside of its network baseline can now raise violations
   - `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
   - In the GraphQL API, `ProcessActivityEvent { whitelisted: Boolean! }` is deprecated, use
     `ProcessActivityEvent { inBaseline: Boolean! }` instead.
-  - In the GraphQL schema, the type name `Policy { whitelists: [Whitelist]! }` changes to 
+  - In the GraphQL schema, the type name `Policy { whitelists: [Whitelist]! }` changes to
     `Policy { whitelists: [Exclusion]! }` preserving the existing structure and field names.
   - In the GraphQL API, `Policy { whitelists: [Whitelist]! }` is deprecated, use
     `Policy { exclusions: [Whitelist]! }` instead.
@@ -256,7 +257,7 @@ will not be deployed on OpenShift clusters.
   - Introduced two new flags, `--retries` and `--retry-delay`, that change how the commands deal with errors
   - `--retries 3 --retry-delay 2` will retry the command three times on failure with two seconds delay between retries
   - As the default value for `retries` is 0, the behaviour of the commands is unchanged if the flag is not used
-- Added a new flag `--admission-controller-listen-on-events` to `roxctl sensor generate k8s` and 
+- Added a new flag `--admission-controller-listen-on-events` to `roxctl sensor generate k8s` and
 `roxctl sensor generate openshift`, that controls the deployment of the admission controller webhook which
 listens on Kubernetes events like exec and portforward. Default value is `true` for `roxctl sensor generate k8s`
 and false for `roxctl sensor generate openshift`.
@@ -288,7 +289,7 @@ and false for `roxctl sensor generate openshift`.
 - UI: remove "phantom" turndown triangle on Network Flows table rows that have only one bidirectional connection on the same port and protocol
 - UI: fix pagination in Vuln Mmgt so that filtering a list by searching will reset the page number to 1 (ROX-5751)
 - A new environment variable for Central ROX_NETWORK_ACCESS_LOG, defaulted to false, is available.
-When set to true, each network request to Central (via API, UI) is logged in the Central logs. 
+When set to true, each network request to Central (via API, UI) is logged in the Central logs.
 Note: When turned on, this environment variable will cause noisy logging, and hence should be turned on only for the
 purpose of debugging network connectivity issues. Once network connectivity is established, we should advise
 to immediately set this to false to stop logging.
@@ -331,7 +332,7 @@ to immediately set this to false to stop logging.
 - In `GetImage(/v1/images/{id})` response, a new field `firstImageOccurrence` is added to `vulns` which represents the first time a CVE was discovered in respective image.
 - The default for the `--create-upgrader-sa` flag has changed to `true` in both the `roxctl sensor generate` and the
   `roxctl sensor get-bundle` commands. In order to restore the old behavior, you need to explicitly specify
-  `--create-upgrader-sa=false`. 
+  `--create-upgrader-sa=false`.
 - UI: Hovering over a node in the Network Graph will show that node's listening ports (ROX-5469)
 - Fixed an issue on the API docs page where the left menu panel no longer scrolled independently of the main content.
 - UI: Added `Scanner` to the image single page in Vuln Mgmt (ROX-5289)

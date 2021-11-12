@@ -138,6 +138,20 @@ func (suite *DiffTestSuite) testUnmodifiedPolicies(migrationFunc func(db *bolt.D
 	}
 }
 
+// pollutePolicyContents pollutes policy contents with gibberish values
+// fields to pollute - policy section values & remediation - were chosen arbitrary
+// running policy migration on such a polluted policy allows to test a scenario where the "before" state does not match the current state
+func pollutePolicyContents(policy *storage.Policy) {
+	for i := range policy.PolicySections {
+		for j := range policy.PolicySections[i].PolicyGroups {
+			for k := range policy.PolicySections[i].PolicyGroups[j].Values {
+				policy.PolicySections[i].PolicyGroups[j].Values[k].Value = "gibberish"
+			}
+		}
+	}
+	policy.Remediation = "gibberish"
+}
+
 func (suite *DiffTestSuite) testModifiedPolicies(migrationFunc func(db *bolt.DB) error) {
 	bucket := bolthelpers.TopLevelRef(suite.db, policyBucketName)
 
@@ -145,7 +159,7 @@ func (suite *DiffTestSuite) testModifiedPolicies(migrationFunc func(db *bolt.DB)
 
 	for _, policy := range suite.beforePolicies {
 		modifiedPolicy := policy.Clone()
-		modifiedPolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "assfasdf"
+		pollutePolicyContents(modifiedPolicy)
 		modifiedPolicies[modifiedPolicy.GetId()] = modifiedPolicy
 		insertPolicy(suite.T(), bucket, modifiedPolicy)
 	}

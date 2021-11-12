@@ -3,7 +3,7 @@
   "name": "Red Hat Package Manager Execution",
   "description": "Alert when Red Hat/Fedora/CentOS package manager programs are executed at runtime.",
   "rationale": "Use of package managers at runtime indicates that new software may be being introduced into containers while they are running.",
-  "remediation": "Run `rpm -e --nodeps $(rpm -qa '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*')` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable.",
+  "remediation": "Run `rpm -e $(rpm -qa *rpm*) $(rpm -qa *dnf*) $(rpm -qa *libsolv*) $(rpm -qa *hawkey*)` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable.",
   "categories": [
     "Security Best Practices"
   ],
@@ -39,7 +39,7 @@
           "fieldName": "Process Name",
           "values": [
             {
-              "value": "rpm|microdnf|dnf|yum"
+              "value": "rpm|dnf|yum"
             }
           ]
         }

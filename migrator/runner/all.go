@@ -44,4 +44,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_83_to_m_84_mitre_fixes"
 	_ "github.com/stackrox/rox/migrator/migrations/m_84_to_m_85_exclude_compliance_op_policy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_85_to_m_86_apktools_policy"
+	_ "github.com/stackrox/rox/migrator/migrations/m_86_to_m_87_microdnf_policy"
 )
