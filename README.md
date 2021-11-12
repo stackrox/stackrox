@@ -121,6 +121,7 @@ $ make image
 Now, you need to bring up a Kubernetes cluster *yourself* before proceeding.
 Development can either happen in GCP or locally with
 [Docker Desktop](https://docs.docker.com/docker-for-mac/#kubernetes) or [Minikube](https://minikube.sigs.k8s.io/docs/start/).
+Note that Docker Desktop is more suited for macOS development, because the cluster will have access to images built with `make image` locally without additional configuration. Also, the collector has better support for Docker Desktop than Minikube where drivers may not be available.
 
 ```bash
 # To keep the StackRox central's rocksdb state between restarts, set:
