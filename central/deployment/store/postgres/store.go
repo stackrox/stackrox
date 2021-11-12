@@ -227,7 +227,75 @@ func (s *storeImpl) upsert(id string, obj *storage.Deployment) error {
 	conn, release := s.acquireConn(ops.Add, "Deployment")
 	defer release()
 
-	_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetName(), obj.GetType(), obj.GetNamespace(), obj.GetNamespaceId(), obj.GetCreated().String(), obj.GetClusterId(), obj.GetClusterName(), obj.GetPriority(), obj.GetServiceAccount(), obj.GetServiceAccountPermissionLevel(), obj.GetRiskScore())
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		} else {
+			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+				// multi error?
+				err = rollBackErr
+			}
+		}
+	}()
+
+
+
+	// Insert deployment
+
+	//insert into Deployment(serialized, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) on conflict update EXCLUDED.serialized = serialized, EXCLUDED.Id = Id, EXCLUDED.Name = Name, EXCLUDED.Type = Type, EXCLUDED.Namespace = Namespace, EXCLUDED.NamespaceId = NamespaceId, EXCLUDED.OrchestratorComponent = OrchestratorComponent, EXCLUDED.Labels = Labels, EXCLUDED.PodLabels = PodLabels, EXCLUDED.Created = Created, EXCLUDED.ClusterId = ClusterId, EXCLUDED.ClusterName = ClusterName, EXCLUDED.Annotations = Annotations, EXCLUDED.Priority = Priority, EXCLUDED.ImagePullSecrets = ImagePullSecrets, EXCLUDED.ServiceAccount = ServiceAccount, EXCLUDED.ServiceAccountPermissionLevel = ServiceAccountPermissionLevel, EXCLUDED.RiskScore = RiskScore, EXCLUDED.ProcessTags = ProcessTags value, GetId(), GetName(), GetType(), GetNamespace(), GetNamespaceId(), GetOrchestratorComponent(), GetLabels(), GetPodLabels(), GetCreated().String(), GetClusterId(), GetClusterName(), GetAnnotations(), GetPriority(), GetImagePullSecrets(), GetServiceAccount(), GetServiceAccountPermissionLevel(), GetRiskScore(), GetProcessTags()
+	for idx, container := range obj.GetContainers() {
+		// 			insert into Deployment_Containers(parent_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) on conflict update EXCLUDED.parent_Id = parent_Id, EXCLUDED.idx = idx, EXCLUDED.Image_Id = Image_Id, EXCLUDED.Image_Name_Registry = Image_Name_Registry, EXCLUDED.Image_Name_Remote = Image_Name_Remote, EXCLUDED.Image_Name_Tag = Image_Name_Tag, EXCLUDED.Image_Name_FullName = Image_Name_FullName, EXCLUDED.SecurityContext_Privileged = SecurityContext_Privileged, EXCLUDED.SecurityContext_DropCapabilities = SecurityContext_DropCapabilities, EXCLUDED.SecurityContext_AddCapabilities = SecurityContext_AddCapabilities, EXCLUDED.SecurityContext_ReadOnlyRootFilesystem = SecurityContext_ReadOnlyRootFilesystem, EXCLUDED.Resources_CpuCoresRequest = Resources_CpuCoresRequest, EXCLUDED.Resources_CpuCoresLimit = Resources_CpuCoresLimit, EXCLUDED.Resources_MemoryMbRequest = Resources_MemoryMbRequest, EXCLUDED.Resources_MemoryMbLimit = Resources_MemoryMbLimit GetImage().GetId(), GetImage().GetName().GetRegistry(), GetImage().GetName().GetRemote(), GetImage().GetName().GetTag(), GetImage().GetName().GetFullName(), GetSecurityContext().GetPrivileged(), GetSecurityContext().GetDropCapabilities(), GetSecurityContext().GetAddCapabilities(), GetSecurityContext().GetReadOnlyRootFilesystem(), GetResources().GetCpuCoresRequest(), GetResources().GetCpuCoresLimit(), GetResources().GetMemoryMbRequest(), GetResources().GetMemoryMbLimit()
+
+		for idx2, volume := range container.GetVolumes() {
+			// insert into Deployment_Containers_Volumes(parent_parent_Id, parent_idx, idx, Name, Source, Destination, ReadOnly, Type) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict update EXCLUDED.parent_parent_Id = parent_parent_Id, EXCLUDED.parent_idx = parent_idx, EXCLUDED.idx = idx, EXCLUDED.Name = Name, EXCLUDED.Source = Source, EXCLUDED.Destination = Destination, EXCLUDED.ReadOnly = ReadOnly, EXCLUDED.Type = Type GetName(), GetSource(), GetDestination(), GetReadOnly(), GetType()
+			// obj.GetId(), idx, idx2
+		}
+		// delete from Deployment_Containers_Volumes where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3
+
+		for idx2, ports := range container.GetPorts() {
+			// insert into Deployment_Containers_Ports(parent_parent_Id, parent_idx, idx, ContainerPort, Protocol, Exposure) values($1, $2, $3, $4, $5, $6) on conflict update EXCLUDED.parent_parent_Id = parent_parent_Id, EXCLUDED.parent_idx = parent_idx, EXCLUDED.idx = idx, EXCLUDED.ContainerPort = ContainerPort, EXCLUDED.Protocol = Protocol, EXCLUDED.Exposure = Exposure GetContainerPort(), GetProtocol(), GetExposure()
+			for idx3, exposures := range ports.GetExposureInfos() {
+				//insert into Deployment_Containers_Ports_ExposureInfos(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict update EXCLUDED.parent_parent_parent_Id = parent_parent_parent_Id, EXCLUDED.parent_parent_idx = parent_parent_idx, EXCLUDED.parent_idx = parent_idx, EXCLUDED.idx = idx, EXCLUDED.Level = Level, EXCLUDED.ServiceName = ServiceName, EXCLUDED.ServicePort = ServicePort, EXCLUDED.NodePort = NodePort, EXCLUDED.ExternalIps = ExternalIps, EXCLUDED.ExternalHostnames = ExternalHostnames GetLevel(), GetServiceName(), GetServicePort(), GetNodePort(), GetExternalIps(), GetExternalHostnames()
+				// obj.GetId(), idx, idx2, idx3
+			}
+			// delete from Deployment_Containers_Volumes where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3
+
+			// obj.GetId(), idx, idx2
+		}
+		// delete from Deployment_Containers_Ports_ExposureInfos where parent_parent_parent_Id = $1 and parent_parent_idx = $2 and parent_idx = $3 and parent_idx >= $4
+
+
+		/*
+		[parent_Id idx]
+
+			[parent_parent_Id parent_idx idx]
+			insert into Deployment_Containers_Volumes(parent_parent_Id, parent_idx, idx, Name, Source, Destination, ReadOnly, Type) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict update EXCLUDED.parent_parent_Id = parent_parent_Id, EXCLUDED.parent_idx = parent_idx, EXCLUDED.idx = idx, EXCLUDED.Name = Name, EXCLUDED.Source = Source, EXCLUDED.Destination = Destination, EXCLUDED.ReadOnly = ReadOnly, EXCLUDED.Type = Type GetName(), GetSource(), GetDestination(), GetReadOnly(), GetType()
+
+			[parent_parent_Id parent_idx idx]
+			insert into Deployment_Containers_Ports(parent_parent_Id, parent_idx, idx, ContainerPort, Protocol, Exposure) values($1, $2, $3, $4, $5, $6) on conflict update EXCLUDED.parent_parent_Id = parent_parent_Id, EXCLUDED.parent_idx = parent_idx, EXCLUDED.idx = idx, EXCLUDED.ContainerPort = ContainerPort, EXCLUDED.Protocol = Protocol, EXCLUDED.Exposure = Exposure GetContainerPort(), GetProtocol(), GetExposure()
+
+			[parent_parent_parent_Id parent_parent_idx parent_idx idx]
+			insert into Deployment_Containers_Ports_ExposureInfos(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict update EXCLUDED.parent_parent_parent_Id = parent_parent_parent_Id, EXCLUDED.parent_parent_idx = parent_parent_idx, EXCLUDED.parent_idx = parent_idx, EXCLUDED.idx = idx, EXCLUDED.Level = Level, EXCLUDED.ServiceName = ServiceName, EXCLUDED.ServicePort = ServicePort, EXCLUDED.NodePort = NodePort, EXCLUDED.ExternalIps = ExternalIps, EXCLUDED.ExternalHostnames = ExternalHostnames GetLevel(), GetServiceName(), GetServicePort(), GetNodePort(), GetExternalIps(), GetExternalHostnames()
+
+			[parent_parent_Id parent_idx idx]
+			insert into Deployment_Containers_Secrets(parent_parent_Id, parent_idx, idx, Name, Path) values($1, $2, $3, $4, $5) on conflict update EXCLUDED.parent_parent_Id = parent_parent_Id, EXCLUDED.parent_idx = parent_idx, EXCLUDED.idx = idx, EXCLUDED.Name = Name, EXCLUDED.Path = Path GetName(), GetPath()
+		*/
+	}
+
+	for idx, port := range obj.GetPorts() {
+		//[parent_Id idx]
+		//insert into Deployment_Ports(parent_Id, idx, ContainerPort, Protocol, Exposure) values($1, $2, $3, $4, $5) on conflict update EXCLUDED.parent_Id = parent_Id, EXCLUDED.idx = idx, EXCLUDED.ContainerPort = ContainerPort, EXCLUDED.Protocol = Protocol, EXCLUDED.Exposure = Exposure GetContainerPort(), GetProtocol(), GetExposure()
+		//
+		//[parent_parent_Id parent_idx idx]
+		//insert into Deployment_Ports_ExposureInfos(parent_parent_Id, parent_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict update EXCLUDED.parent_parent_Id = parent_parent_Id, EXCLUDED.parent_idx = parent_idx, EXCLUDED.idx = idx, EXCLUDED.Level = Level, EXCLUDED.ServiceName = ServiceName, EXCLUDED.ServicePort = ServicePort, EXCLUDED.NodePort = NodePort, EXCLUDED.ExternalIps = ExternalIps, EXCLUDED.ExternalHostnames = ExternalHostnames GetLevel(), GetServiceName(), GetServicePort(), GetNodePort(), GetExternalIps(), GetExternalHostnames()
+
+	}
+
+	//_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetName(), obj.GetType(), obj.GetNamespace(), obj.GetNamespaceId(), obj.GetCreated().String(), obj.GetClusterId(), obj.GetClusterName(), obj.GetPriority(), obj.GetServiceAccount(), obj.GetServiceAccountPermissionLevel(), obj.GetRiskScore())
 	return err
 }
 
