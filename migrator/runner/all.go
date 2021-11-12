@@ -43,4 +43,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_82_to_m_83_default_pol_flag"
 	_ "github.com/stackrox/rox/migrator/migrations/m_83_to_m_84_mitre_fixes"
 	_ "github.com/stackrox/rox/migrator/migrations/m_84_to_m_85_exclude_compliance_op_policy"
+	_ "github.com/stackrox/rox/migrator/migrations/m_85_to_m_86_apktools_policy"
 )

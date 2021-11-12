@@ -353,7 +353,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.addDepAndImages(oldImageDep, oldCreatedImage)
 
 	apkImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "apk", Version: "1.2"},
+		{Name: "apk-tools", Version: "1.2"},
 		{Name: "asfa", Version: "1.5"},
 	})
 	apkDep := deploymentWithImageAnyID(apkImage)
@@ -801,7 +801,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				apkDep.GetId(): {
 					{
-						Message: "Container 'ASFASF' includes component 'apk' (version 1.2)",
+						Message: "Container 'ASFASF' includes component 'apk-tools' (version 1.2)",
 					},
 				},
 			},
@@ -1452,7 +1452,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(apkDep): {
 					{
-						Message: "Image includes component 'apk' (version 1.2)",
+						Message: "Image includes component 'apk-tools' (version 1.2)",
 					},
 				},
 			},
