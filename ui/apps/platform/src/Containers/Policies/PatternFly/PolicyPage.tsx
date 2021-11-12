@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Bullseye, PageSection, Spinner, Title } from '@patternfly/react-core';
+import { Alert, Bullseye, PageSection, Spinner } from '@patternfly/react-core';
 
 import { getPolicy } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
@@ -75,9 +75,6 @@ function PolicyPage({ pageAction, policyId }: PolicyPageProps): ReactElement {
 
     return (
         <PageSection variant="light" isFilled id="policy-page">
-            <Title headingLevel="h1">
-                {pageAction === 'create' ? 'Create policy' : policy.name}
-            </Title>
             {isLoading ? (
                 <Bullseye>
                     <Spinner />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Dropdown,
     DropdownToggle,
@@ -9,6 +10,8 @@ import {
     FlexItem,
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
+
+import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 
 type PoliciesTablePageActionButtonsProps = {
     onClickImportPolicy: () => void;
@@ -31,8 +34,10 @@ function PoliciesTablePageActionButtons({
     }
 
     const dropdownItems = [
-        // TODO: add link to create form
-        <DropdownItem key="link">Create policy</DropdownItem>,
+        <DropdownItem
+            key="routerlink"
+            component={<Link to={`${policiesBasePath}/?action=create`}>Create policy</Link>}
+        />,
         <DropdownItem key="action" component="button" onClick={handleOnClickImportPolicy}>
             Import policy
         </DropdownItem>,
