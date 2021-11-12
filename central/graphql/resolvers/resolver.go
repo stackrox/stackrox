@@ -148,29 +148,31 @@ func New() *Resolver {
 
 //lint:file-ignore U1000 It's okay for some of the variables below to be unused.
 var (
-	readAlerts                            = readAuth(resources.Alert)
-	readTokens                            = readAuth(resources.APIToken)
-	readClusters                          = readAuth(resources.Cluster)
-	readCompliance                        = readAuth(resources.Compliance)
-	readComplianceRuns                    = readAuth(resources.ComplianceRuns)
-	readComplianceRunSchedule             = readAuth(resources.ComplianceRunSchedule)
-	readCVEs                              = readAuth(resources.CVE)
-	readDeployments                       = readAuth(resources.Deployment)
-	readGroups                            = readAuth(resources.Group)
-	readImages                            = readAuth(resources.Image)
-	readIndicators                        = readAuth(resources.Indicator)
-	readNamespaces                        = readAuth(resources.Namespace)
-	readNodes                             = readAuth(resources.Node)
-	readNotifiers                         = readAuth(resources.Notifier)
-	readPolicies                          = readAuth(resources.Policy)
-	readK8sRoles                          = readAuth(resources.K8sRole)
-	readK8sRoleBindings                   = readAuth(resources.K8sRoleBinding)
-	readK8sSubjects                       = readAuth(resources.K8sSubject)
-	readRisks                             = readAuth(resources.Risk)
-	readRoles                             = readAuth(resources.Role)
-	readSecrets                           = readAuth(resources.Secret)
-	readServiceAccounts                   = readAuth(resources.ServiceAccount)
-	readBaselines                         = readAuth(resources.ProcessWhitelist)
+	readAlerts                           = readAuth(resources.Alert)
+	readTokens                           = readAuth(resources.APIToken)
+	readClusters                         = readAuth(resources.Cluster)
+	readCompliance                       = readAuth(resources.Compliance)
+	readComplianceRuns                   = readAuth(resources.ComplianceRuns)
+	readComplianceRunSchedule            = readAuth(resources.ComplianceRunSchedule)
+	readCVEs                             = readAuth(resources.CVE)
+	readDeployments                      = readAuth(resources.Deployment)
+	readGroups                           = readAuth(resources.Group)
+	readImages                           = readAuth(resources.Image)
+	readIndicators                       = readAuth(resources.Indicator)
+	readNamespaces                       = readAuth(resources.Namespace)
+	readNodes                            = readAuth(resources.Node)
+	readNotifiers                        = readAuth(resources.Notifier)
+	readPolicies                         = readAuth(resources.Policy)
+	readK8sRoles                         = readAuth(resources.K8sRole)
+	readK8sRoleBindings                  = readAuth(resources.K8sRoleBinding)
+	readK8sSubjects                      = readAuth(resources.K8sSubject)
+	readRisks                            = readAuth(resources.Risk)
+	readRoles                            = readAuth(resources.Role)
+	readSecrets                          = readAuth(resources.Secret)
+	readServiceAccounts                  = readAuth(resources.ServiceAccount)
+	readBaselines                        = readAuth(resources.ProcessWhitelist)
+	readVulnerabilityRequestsOrApprovals = anyReadAuth(resources.VulnerabilityManagementRequests, resources.VulnerabilityManagementApprovals)
+
 	writeAlerts                           = writeAuth(resources.Alert)
 	writeCompliance                       = writeAuth(resources.Compliance)
 	writeComplianceRuns                   = writeAuth(resources.ComplianceRuns)
@@ -201,6 +203,14 @@ func applyAuthorizer(authorizer authz.Authorizer) func(ctx context.Context) erro
 
 func readAuth(resource permissions.ResourceMetadata) func(ctx context.Context) error {
 	return applyAuthorizer(user.With(permissions.View(resource)))
+}
+
+func anyReadAuth(resources ...permissions.ResourceMetadata) func(ctx context.Context) error {
+	authorizers := make([]authz.Authorizer, 0, len(resources))
+	for _, res := range resources {
+		authorizers = append(authorizers, user.With(permissions.View(res)))
+	}
+	return applyAuthorizer(or.Or(authorizers...))
 }
 
 func writeAuth(resource permissions.ResourceMetadata) func(ctx context.Context) error {
