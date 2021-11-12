@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,7 +15,7 @@ var (
 // Singleton returns the singleton service handler.
 func Singleton() http.Handler {
 	once.Do(func() {
-		singleton = New()
+		singleton = New(fetcher.SingletonManager(), handlerOpts{})
 	})
 	return singleton
 }

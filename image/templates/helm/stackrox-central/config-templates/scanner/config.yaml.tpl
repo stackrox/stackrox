@@ -28,12 +28,9 @@ scanner:
   updater:
     # Frequency with which the scanner will poll for vulnerability updates.
     interval: 5m
-{{ if ._rox.env.offlineMode }}
-    fetchFromCentral: true
-{{- end }}
 
   logLevel: {{ ._rox.scanner.logLevel }}
 
   # The max size of files in images that are extracted. The scanner intentionally avoids extracting any files
-  # larger than this to prevent DoS attacks. Leave commmented to use a reasonable default.
+  # larger than this to prevent DoS attacks. Leave commented to use a reasonable default.
   # maxExtractableFileSizeMB: 200

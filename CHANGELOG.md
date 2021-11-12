@@ -14,6 +14,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 privileges required to create and modify access scopes for the purpose of configuring access control or use in vulnerability reporting.
 - The Compliance Operator integration now supports TailoredProfiles.
 - Presence of `microdnf` (presence in the image and process execution) is treated as violation of policies `Red Hat Package Manager in Image` and `Red Hat Package Manager Execution` respectively.
+- Central is now the only source for Scanner vulnerability updates.
+  - Central, instead of Scanner, now queries definitions.stackrox.io in online-mode (determined based on `ROX_OFFLINE_MODE`).
+  - `ROX_SCANNER_VULN_UPDATE_INTERVAL` determines the frequency Central should query definitions.stackrox.io, in online-mode. It is defaulted to 5 minutes.
+  - Scanner's ConfigMap still has an `updater.interval` field for its own updating frequency, but it no longer has `updater.fetchFromCentral`.
+- Users may upload Scanner vulnerability dumps even when we are not in "offline-mode".
+  - If we are in online-mode, this vuln dump is used over the Scanner's requested one if it is more recent.
+  - K8s and Istio vulns manually uploaded in online-mode are ignored. This is just for Scanner definitions.
 
 ## [66.0]
 
