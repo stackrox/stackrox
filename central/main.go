@@ -124,6 +124,7 @@ import (
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
+	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -267,6 +268,10 @@ func startServices() {
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
+
+	if features.VulnRiskManagement.Enabled() {
+		vulnRequestManager.Singleton().Start()
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -703,6 +708,10 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
+	}
+
+	if features.VulnRiskManagement.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"})
 	}
 
 	var wg sync.WaitGroup

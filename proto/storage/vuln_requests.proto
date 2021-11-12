@@ -33,7 +33,7 @@ message DeferralRequest {
         // Indicates that this deferral request expires when the associated vulnerability is fixed.
         bool                       expires_when_fixed = 1;
         // Indicates the timestamp when this deferral request expires.
-        google.protobuf.Timestamp  expires_on         = 2;
+        google.protobuf.Timestamp  expires_on         = 2 [(gogoproto.moretags) = "search:\"Deferral Expiry Time\""];
     }
 }
 

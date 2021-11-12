@@ -27,6 +27,8 @@ var (
 type CVEUnsuppressLoop interface {
 	Start()
 	Stop()
+	// TODO: This loop will be deprecated as soon as vuln management workflow is released. Suppress becomes deferral so this loop
+	// will need to be deleted as it will be a no-op
 }
 
 // Singleton returns the singleton reprocessor loop

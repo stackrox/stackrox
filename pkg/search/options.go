@@ -240,6 +240,7 @@ var (
 	RequestStatus               = newFieldLabel("Request Status")
 	ActiveRequest               = newFieldLabel("Active Request")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
+	DeferralExpiryTime          = newFieldLabel("Deferral Expiry Time")
 )
 
 func newFieldLabel(s string) FieldLabel {
