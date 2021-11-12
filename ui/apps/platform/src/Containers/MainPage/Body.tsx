@@ -55,7 +55,7 @@ const AsyncAccessControlPageV2 = asyncComponent(
 const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
-const AsyncVulnMgmtReportingPage = asyncComponent(
+const AsyncVulnMgmtReportPage = asyncComponent(
     () => import('Containers/VulnMgmt/Reporting/VulnMgmtReportPage')
 );
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
@@ -72,6 +72,7 @@ function Body(): ReactElement {
     const isPoliciesPatternFlyEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_POLICIES_PATTERNFLY
     );
+    const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
     return (
         <div
             className={`flex flex-col h-full w-full relative overflow-auto ${
@@ -101,7 +102,8 @@ function Body(): ReactElement {
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
                     <ProtectedRoute
                         path={vulnManagementReportingPath}
-                        component={AsyncVulnMgmtReportingPage}
+                        component={AsyncVulnMgmtReportPage}
+                        featureFlagEnabled={isVulnReportingEnabled}
                     />
                     <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <ProtectedRoute
