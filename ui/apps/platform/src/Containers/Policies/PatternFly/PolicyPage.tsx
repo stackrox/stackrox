@@ -38,11 +38,16 @@ const initialPolicy: Policy = {
 };
 
 type PolicyPageProps = {
+    hasWriteAccessForPolicy: boolean;
     pageAction?: PageAction;
     policyId?: string;
 };
 
-function PolicyPage({ pageAction, policyId }: PolicyPageProps): ReactElement {
+function PolicyPage({
+    hasWriteAccessForPolicy,
+    pageAction,
+    policyId,
+}: PolicyPageProps): ReactElement {
     const [policy, setPolicy] = useState<Policy>(initialPolicy);
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -84,7 +89,10 @@ function PolicyPage({ pageAction, policyId }: PolicyPageProps): ReactElement {
                 (pageAction ? (
                     <PolicyWizard pageAction={pageAction} policy={policy} />
                 ) : (
-                    <PolicyDetail policy={policy} />
+                    <PolicyDetail
+                        hasWriteAccessForPolicy={hasWriteAccessForPolicy}
+                        policy={policy}
+                    />
                 ))
             )}
         </PageSection>

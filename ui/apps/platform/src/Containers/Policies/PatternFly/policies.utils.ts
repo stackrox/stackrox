@@ -3,7 +3,7 @@ import qs, { ParsedQs } from 'qs';
 
 import { SearchFilter } from 'types/search';
 
-export type PageAction = 'create' | 'edit';
+export type PageAction = 'clone' | 'create' | 'edit';
 
 function isValidAction(action: unknown): action is PageAction {
     return action === 'create' || action === 'edit';

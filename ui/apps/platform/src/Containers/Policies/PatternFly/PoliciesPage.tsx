@@ -1,12 +1,20 @@
 import React from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 
+import { selectors } from 'reducers';
+import { getHasReadPermission, getHasReadWritePermission } from 'reducers/roles';
 import { policiesBasePathPatternFly } from 'routePaths';
 import { SearchFilter } from 'types/search';
 
 import { getSearchStringForFilter, parsePoliciesSearchString } from './policies.utils';
 import PoliciesTablePage from './PoliciesTablePage';
 import PolicyPage from './PolicyPage';
+
+const permissionsSelector = createStructuredSelector({
+    userRolePermissions: selectors.getUserRolePermissions,
+});
 
 function PoliciesPage() {
     /*
@@ -26,6 +34,10 @@ function PoliciesPage() {
     const { pageAction, searchFilter } = parsePoliciesSearchString(search);
     const { policyId } = useParams();
 
+    const { userRolePermissions } = useSelector(permissionsSelector);
+    const hasReadAccessForPolicy = getHasReadPermission('Policy', userRolePermissions);
+    const hasWriteAccessForPolicy = getHasReadWritePermission('Policy', userRolePermissions);
+
     function handleChangeSearchFilter(changedSearchFilter: SearchFilter) {
         // Browser history has only the most recent search filter.
         history.replace({
@@ -34,9 +46,21 @@ function PoliciesPage() {
         });
     }
 
-    return policyId || pageAction ? (
-        <PolicyPage pageAction={pageAction} policyId={policyId} />
-    ) : (
+    if (!hasReadAccessForPolicy) {
+        return <div>TODO</div>;
+    }
+
+    if (pageAction || policyId) {
+        return (
+            <PolicyPage
+                hasWriteAccessForPolicy={hasWriteAccessForPolicy}
+                pageAction={pageAction}
+                policyId={policyId}
+            />
+        );
+    }
+
+    return (
         <PoliciesTablePage
             handleChangeSearchFilter={handleChangeSearchFilter}
             searchFilter={searchFilter}
