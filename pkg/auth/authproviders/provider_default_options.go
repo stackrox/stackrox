@@ -2,7 +2,6 @@ package authproviders
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -76,7 +75,7 @@ func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFa
 		// Get the backend factory for the type of provider.
 		backendFactory := backendFactoryPool[pr.storedInfo.Type]
 		if backendFactory == nil {
-			return fmt.Errorf("no backend factories for provider type: %s", pr.storedInfo.Type)
+			return errors.Errorf("provider type %q is either unknown, no longer available, or incompatible with this installation", pr.storedInfo.Type)
 		}
 
 		pr.backendFactory = backendFactory
