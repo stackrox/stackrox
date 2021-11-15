@@ -5267,4 +5267,3 @@ workflows:
     jobs:
       - designated-image-tests:
           context: quay-rhacs-eng-readonly
-
