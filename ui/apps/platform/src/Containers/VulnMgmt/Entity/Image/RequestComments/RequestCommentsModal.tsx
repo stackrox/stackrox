@@ -10,21 +10,21 @@ import {
     ModalVariant,
 } from '@patternfly/react-core';
 
-import { VulnerabilityComment } from '../types';
+import { RequestComment } from 'types/vuln_request.proto';
 
-export type AffectedComponentsModalProps = {
+export type RequestCommentsModalProps = {
     isOpen: boolean;
     cve: string;
-    comments: VulnerabilityComment[];
+    comments: RequestComment[];
     onClose: () => void;
 };
 
-function VulnerabilityCommentsModal({
+function RequestCommentsModal({
     isOpen,
     cve,
     comments,
     onClose,
-}: AffectedComponentsModalProps): ReactElement {
+}: RequestCommentsModalProps): ReactElement {
     return (
         <Modal variant={ModalVariant.small} title={cve} isOpen={isOpen} onClose={onClose}>
             <Flex direction={{ default: 'columnReverse' }}>
@@ -34,7 +34,7 @@ function VulnerabilityCommentsModal({
                             <Hint className="pf-u-p-md">
                                 <HintTitle className="pf-u-font-size-sm pf-u-font-weight-bold">
                                     {/* @TODO: Show a more descriptive text other than just the commenter's name */}
-                                    {comment.user}
+                                    {comment.user.name}
                                 </HintTitle>
                                 <HintBody className="pf-u-font-size-sm">{comment.message}</HintBody>
                                 <HintFooter className="pf-u-font-size-xs">
@@ -49,4 +49,4 @@ function VulnerabilityCommentsModal({
     );
 }
 
-export default VulnerabilityCommentsModal;
+export default RequestCommentsModal;

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@patternfly/react-core';
 
-import VulnerabilityCommentsModal from './VulnerabilityCommentsModal';
+import RequestCommentsModal from './RequestCommentsModal';
 
-function VulnerabilityCommentsButton({ cve, comments }) {
+function RequestCommentsButton({ cve, comments }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     function openModal() {
@@ -19,7 +19,7 @@ function VulnerabilityCommentsButton({ cve, comments }) {
             <Button variant="link" isInline onClick={openModal}>
                 {comments.length} comments
             </Button>
-            <VulnerabilityCommentsModal
+            <RequestCommentsModal
                 isOpen={isModalOpen}
                 cve={cve}
                 comments={comments}
@@ -29,4 +29,4 @@ function VulnerabilityCommentsButton({ cve, comments }) {
     );
 }
 
-export default VulnerabilityCommentsButton;
+export default RequestCommentsButton;

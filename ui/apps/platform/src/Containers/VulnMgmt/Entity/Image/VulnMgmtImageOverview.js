@@ -192,7 +192,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                         id="OBSERVED_CVES"
                                         hidden={activeKeyTab !== 'OBSERVED_CVES'}
                                     >
-                                        <ObservedCVEs />
+                                        <ObservedCVEs imageId={data.id} />
                                     </TabContent>
                                     <TabContent
                                         eventKey="DEFERRED_CVES"

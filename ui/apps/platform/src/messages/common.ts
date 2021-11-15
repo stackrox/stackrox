@@ -1,4 +1,5 @@
 import { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
+import { VulnerabilitySeverity } from 'types/cve.proto';
 
 export const severityLabels = Object.freeze({
     CRITICAL_SEVERITY: 'Critical',
@@ -6,12 +7,6 @@ export const severityLabels = Object.freeze({
     MEDIUM_SEVERITY: 'Medium',
     LOW_SEVERITY: 'Low',
 });
-
-export type VulnerabilitySeverity =
-    | 'LOW_VULNERABILITY_SEVERITY'
-    | 'MODERATE_VULNERABILITY_SEVERITY'
-    | 'IMPORTANT_VULNERABILITY_SEVERITY'
-    | 'CRITICAL_VULNERABILITY_SEVERITY';
 
 export const vulnerabilitySeverityLabels: Record<VulnerabilitySeverity, string> = Object.freeze({
     CRITICAL_VULNERABILITY_SEVERITY: 'Critical',

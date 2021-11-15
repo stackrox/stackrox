@@ -1,4 +1,4 @@
-import type { VulnerabilitySeverity } from 'messages/common';
+import { VulnerabilitySeverity } from './cve.proto';
 
 export type ReportConfiguration = {
     id: string;

@@ -3,11 +3,11 @@ import { Card, InputGroup, Modal, ModalVariant, TextInput } from '@patternfly/re
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { ComponentWhereCVEOccurs } from '../types';
+import { EmbeddedImageScanComponent } from './ObservedCVEs/observedCVEs.graphql';
 
 export type AffectedComponentsModalProps = {
     isOpen: boolean;
-    components: ComponentWhereCVEOccurs[];
+    components: EmbeddedImageScanComponent[];
     onClose: () => void;
 };
 
@@ -23,6 +23,11 @@ function AffectedComponentsModal({
         setInputValue(value);
     }
 
+    function onCloseHandler() {
+        setInputValue('');
+        onClose();
+    }
+
     const filteredComponents = components.filter((component) => {
         return component.name.includes(inputValue);
     });
@@ -32,7 +37,7 @@ function AffectedComponentsModal({
             variant={ModalVariant.small}
             title="Affected Components"
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={onCloseHandler}
         >
             <InputGroup className="pf-u-mt-md">
                 <TextInput
@@ -67,7 +72,7 @@ function AffectedComponentsModal({
                                             {component.name}
                                         </a>
                                     </Td>
-                                    <Td dataLabel="Fixed in">{component.fixedIn}</Td>
+                                    <Td dataLabel="Fixed in">{component.fixedIn || '-'}</Td>
                                 </Tr>
                             );
                         })}

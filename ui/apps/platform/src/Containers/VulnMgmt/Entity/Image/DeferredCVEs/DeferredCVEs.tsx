@@ -23,13 +23,19 @@ const rows = [
         comments: [
             {
                 id: '1',
-                user: 'Trevor',
+                user: {
+                    id: '1',
+                    name: 'Trevor',
+                },
                 message: "Update fix isn't ready",
                 createdAt: '12/21/2020 | 4:24 AM',
             },
             {
                 id: '2',
-                user: 'Jacob',
+                user: {
+                    id: '2',
+                    name: 'Jacob',
+                },
                 message: 'Get it done!',
                 createdAt: '12/21/2020 | 4:50 AM',
             },
@@ -57,13 +63,19 @@ const rows = [
         comments: [
             {
                 id: '1',
-                user: 'Trevor',
+                user: {
+                    id: '1',
+                    name: 'Trevor',
+                },
                 message: "Update fix isn't ready",
                 createdAt: '12/21/2020 | 4:24 AM',
             },
             {
                 id: '2',
-                user: 'Jacob',
+                user: {
+                    id: '2',
+                    name: 'Jacob',
+                },
                 message: 'Get it done!',
                 createdAt: '12/21/2020 | 4:50 AM',
             },
@@ -91,13 +103,19 @@ const rows = [
         comments: [
             {
                 id: '1',
-                user: 'Trevor',
+                user: {
+                    id: '1',
+                    name: 'Trevor',
+                },
                 message: "Update fix isn't ready",
                 createdAt: '12/21/2020 | 4:24 AM',
             },
             {
                 id: '2',
-                user: 'Jacob',
+                user: {
+                    id: '2',
+                    name: 'Jacob',
+                },
                 message: 'Get it done!',
                 createdAt: '12/21/2020 | 4:50 AM',
             },

@@ -16,34 +16,27 @@ import {
 import { SearchIcon } from '@patternfly/react-icons';
 
 import useTableSelection from 'hooks/useTableSelection';
-import { VulnerabilitySeverity } from 'messages/common';
 
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import DeferralRequestModal from './DeferralRequestModal';
 import FalsePositiveRequestModal from './FalsePositiveRequestModal';
-import { ComponentWhereCVEOccurs } from '../types';
-import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
+import { Vulnerability } from './observedCVEs.graphql';
+import AffectedComponentsButton from '../AffectedComponentsButton';
 
 export type CVEsToBeAssessed = {
     type: 'DEFERRAL' | 'FALSE_POSITIVE';
     ids: string[];
 } | null;
 
-export type ObservedCVERow = {
-    id: string;
-    cve: string;
-    isFixable: boolean;
-    severity: VulnerabilitySeverity;
-    cvssScore: string;
-    components: ComponentWhereCVEOccurs[];
-    discoveredAt: string;
-};
+export type ObservedCVERow = Vulnerability;
 
 export type ObservedCVEsTableProps = {
     rows: ObservedCVERow[];
+    isLoading: boolean;
 };
 
 function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
@@ -177,23 +170,14 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                                 title: 'Defer CVE',
                                 onClick: (event) => {
                                     event.preventDefault();
-                                    setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.id] });
+                                    setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.cve] });
                                 },
                             },
                             {
                                 title: 'Mark as False Positive',
                                 onClick: (event) => {
                                     event.preventDefault();
-                                    setCVEsToBeAssessed({ type: 'DEFERRAL', ids: [row.id] });
-                                },
-                            },
-                            {
-                                isSeparator: true,
-                            },
-                            {
-                                title: 'Reject deferral',
-                                onClick: (event) => {
-                                    event.preventDefault();
+                                    setCVEsToBeAssessed({ type: 'FALSE_POSITIVE', ids: [row.cve] });
                                 },
                             },
                         ];
@@ -213,12 +197,17 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
                                 <Td dataLabel="CVSS score">
-                                    <CVSSScoreLabel cvss={row.cvssScore} />
+                                    <CVSSScoreLabel
+                                        cvss={row.cvss}
+                                        scoreVersion={row.scoreVersion}
+                                    />
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
-                                <Td dataLabel="Discovered">{row.discoveredAt}</Td>
+                                <Td dataLabel="Discovered">
+                                    <DateTimeFormat time={row.discoveredAtImage} />
+                                </Td>
                                 <Td
                                     className="pf-u-text-align-right"
                                     actions={{
@@ -231,16 +220,15 @@ function ObservedCVEsTable({ rows }: ObservedCVEsTableProps): ReactElement {
                 </Tbody>
             </TableComposable>
             <DeferralRequestModal
-                isOpen={cvesToBeAssessed?.type === 'DEFERRAL' && cvesToBeAssessed?.ids.length !== 0}
+                isOpen={cvesToBeAssessed?.type === 'DEFERRAL'}
+                numCVEsToBeAssessed={cvesToBeAssessed?.ids.length || 0}
                 onSendRequest={requestDeferral}
                 onCompleteRequest={completeAssessment}
                 onCancelDeferral={cancelAssessment}
             />
             <FalsePositiveRequestModal
-                isOpen={
-                    cvesToBeAssessed?.type === 'FALSE_POSITIVE' &&
-                    cvesToBeAssessed?.ids.length !== 0
-                }
+                isOpen={cvesToBeAssessed?.type === 'FALSE_POSITIVE'}
+                numCVEsToBeAssessed={cvesToBeAssessed?.ids.length || 0}
                 onSendRequest={requestFalsePositive}
                 onCompleteRequest={completeAssessment}
                 onCancelFalsePositive={cancelAssessment}

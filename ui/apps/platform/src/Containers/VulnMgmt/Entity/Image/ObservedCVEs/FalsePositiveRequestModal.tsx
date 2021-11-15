@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import { Button, Form, Modal, ModalVariant, Radio, TextArea } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
+import pluralize from 'pluralize';
 
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
@@ -14,6 +15,7 @@ export type FalsePositiveFormValues = {
 
 export type DeferralRequestModalProps = {
     isOpen: boolean;
+    numCVEsToBeAssessed: number;
     onSendRequest: (values: FalsePositiveFormValues) => Promise<FormResponseMessage>;
     onCompleteRequest: () => void;
     onCancelFalsePositive: () => void;
@@ -35,6 +37,7 @@ const validationSchema = yup.object().shape({
 
 function FalsePositiveRequestModal({
     isOpen,
+    numCVEsToBeAssessed,
     onSendRequest,
     onCompleteRequest,
     onCancelFalsePositive,
@@ -87,7 +90,10 @@ function FalsePositiveRequestModal({
     return (
         <Modal
             variant={ModalVariant.small}
-            title="Mark CVEs as false positive"
+            title={`Mark ${numCVEsToBeAssessed} ${pluralize(
+                'CVE',
+                numCVEsToBeAssessed
+            )} as false positive`}
             isOpen={isOpen}
             onClose={onCancelHandler}
             actions={[

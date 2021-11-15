@@ -13,25 +13,26 @@ import {
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
-import { VulnerabilitySeverity } from 'messages/common';
+import { VulnerabilitySeverity } from 'types/cve.proto';
 
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
 import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
-import { ComponentWhereCVEOccurs, VulnerabilityComment } from '../types';
-import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
-import VulnerabilityCommentsButton from '../VulnerabilityComments/VulnerabilityCommentsButton';
+import { RequestComment } from 'types/vuln_request.proto';
+import AffectedComponentsButton from '../AffectedComponentsButton';
+import VulnerabilityCommentsButton from '../RequestComments/RequestCommentsButton';
 import ReobserveCVEModal from './ReobserveCVEModal';
+import { EmbeddedImageScanComponent } from '../ObservedCVEs/observedCVEs.graphql';
 
 export type FalsePositiveCVERow = {
     id: string;
     cve: string;
     cvssScore: string;
     severity: VulnerabilitySeverity;
-    components: ComponentWhereCVEOccurs[];
-    comments: VulnerabilityComment[];
+    components: EmbeddedImageScanComponent[];
+    comments: RequestComment[];
     applyTo: string;
 };
 

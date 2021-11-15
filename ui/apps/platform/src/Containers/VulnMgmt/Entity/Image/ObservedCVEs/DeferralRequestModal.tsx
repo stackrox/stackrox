@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import { Button, Form, Modal, ModalVariant, Radio, TextArea } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
+import pluralize from 'pluralize';
 
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
@@ -15,6 +16,7 @@ export type DeferralFormValues = {
 
 export type DeferralRequestModalProps = {
     isOpen: boolean;
+    numCVEsToBeAssessed: number;
     onSendRequest: (values: DeferralFormValues) => Promise<FormResponseMessage>;
     onCompleteRequest: () => void;
     onCancelDeferral: () => void;
@@ -49,6 +51,7 @@ const validationSchema = yup.object().shape({
 
 function DeferralRequestModal({
     isOpen,
+    numCVEsToBeAssessed,
     onSendRequest,
     onCompleteRequest,
     onCancelDeferral,
@@ -106,7 +109,10 @@ function DeferralRequestModal({
     return (
         <Modal
             variant={ModalVariant.small}
-            title="Mark CVEs for deferral"
+            title={`Mark ${numCVEsToBeAssessed} ${pluralize(
+                'CVE',
+                numCVEsToBeAssessed
+            )} for deferral`}
             isOpen={isOpen}
             onClose={onCancelHandler}
             actions={[
