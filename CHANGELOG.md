@@ -21,6 +21,10 @@ privileges required to create and modify access scopes for the purpose of config
 - Users may upload Scanner vulnerability dumps even when we are not in "offline-mode".
   - If we are in online-mode, this vuln dump is used over the Scanner's requested one if it is more recent.
   - K8s and Istio vulns manually uploaded in online-mode are ignored. This is just for Scanner definitions.
+- Roxctl's `image scan | image check | deployment check` commands received a usability overhaul.
+  This includes introducing output format's `table, csv, json` for each command.
+  Note: the `csv` and `json` output formats contain **breaking changes**, the old formats are kept as default but marked as deprecated.
+  Ensure that you switch to the new formats in a timely manner.
 
 ## [66.0]
 
