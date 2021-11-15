@@ -54,6 +54,8 @@ function PoliciesTablePage({
         setIsImportModalOpen(true);
     }
 
+    // TODO handleImportPolicySuccess(policyId: string)
+
     function onClickReassessPolicies() {
         return reassessPolicies()
             .then(() => {
@@ -181,9 +183,6 @@ function PoliciesTablePage({
             {isImportModalOpen && (
                 <PolicyImportDialogue
                     closeAction={() => {
-                        setIsImportModalOpen(false);
-                    }}
-                    importPolicySuccess={() => {
                         setIsImportModalOpen(false);
                     }}
                 />
