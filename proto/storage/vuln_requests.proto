@@ -74,13 +74,13 @@ message VulnerabilityRequest {
     VulnerabilityState               target_state       = 2 [(gogoproto.moretags) = "search:\"Requested Vulnerability State\""];
     // Indicates the status of a request.
     RequestStatus                    status             = 3 [(gogoproto.moretags) = "search:\"Request Status\""];
-    // Indicates if this request is active (in effect) or if it is a historical request that is no longer in effect
-    // due to deferral expiry, cancellation, or restarting observation.
-    bool                             active             = 4 [(gogoproto.moretags) = "search:\"Active Request\""];
+    // Indicates if this request is a historical request that is no longer in effect
+    // due to deferral expiry, cancellation, or restarting cve observation.
+    bool                             expired            = 4 [(gogoproto.moretags) = "search:\"Expired Request\""];
     SlimUser                         requestor          = 5;
     repeated SlimUser                approvers          = 6;
     google.protobuf.Timestamp        created_at         = 7 [(gogoproto.moretags) = "search:\"Created Time\""];
-    google.protobuf.Timestamp        last_updated       = 8;
+    google.protobuf.Timestamp        last_updated       = 8 [(gogoproto.moretags) = "search:\"Last Updated\""];
     repeated RequestComment          comments           = 9;
     Scope                            scope              = 10;
 

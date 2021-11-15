@@ -239,9 +239,13 @@
         "imageRetentionDurationDays": {
           "type": "integer",
           "format": "int32"
+        },
+        "expiredVulnReqRetentionDurationDays": {
+          "type": "integer",
+          "format": "int32"
         }
       },
-      "title": "next available tag: 4"
+      "title": "next available tag: 5"
     },
     "storagePublicConfig": {
       "type": "object",

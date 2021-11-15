@@ -437,9 +437,9 @@
           "$ref": "#/definitions/storageRequestStatus",
           "description": "Indicates the status of a request."
         },
-        "active": {
+        "expired": {
           "type": "boolean",
-          "description": "Indicates if this request is active (in effect) or if it is a historical request that is no longer in effect\ndue to deferral expiry, cancellation, or restarting observation."
+          "description": "Indicates if this request is a historical request that is no longer in effect\ndue to deferral expiry, cancellation, or restarting cve observation."
         },
         "requestor": {
           "$ref": "#/definitions/storageSlimUser"
