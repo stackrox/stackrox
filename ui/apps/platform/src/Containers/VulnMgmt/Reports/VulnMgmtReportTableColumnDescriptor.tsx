@@ -4,7 +4,7 @@ import dateFns from 'date-fns';
 import { Button, ButtonVariant } from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
-import { vulnManagementReportingPath } from 'routePaths';
+import { vulnManagementReportsPath } from 'routePaths';
 
 const VulnMgmtReportTableColumnDescriptor = [
     {
@@ -12,7 +12,7 @@ const VulnMgmtReportTableColumnDescriptor = [
         accessor: 'report.name',
         sortField: 'Report',
         Cell: ({ original }) => {
-            const url = `${vulnManagementReportingPath}/${original.id as string}`;
+            const url = `${vulnManagementReportsPath}/${original.id as string}`;
             return (
                 <Button
                     variant={ButtonVariant.link}

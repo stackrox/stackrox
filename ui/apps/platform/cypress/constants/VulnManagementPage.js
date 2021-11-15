@@ -24,6 +24,10 @@ export const url = {
     sidepanel: {
         image: `${baseURL}/images?workflowState[0][t]=IMAGE&workflowState[0][i]=sha256:02382353821b12c21b062c59184e227e001079bb13ebd01f9d3270ba0fcbf1e4`,
     },
+    reporting: {
+        list: `${baseURL}/reports`,
+        create: `${baseURL}/reports?action=create`,
+    },
 };
 
 export const vmHomePageSelectors = {
@@ -33,6 +37,7 @@ export const vmHomePageSelectors = {
     // the selectors below are for when the Vulm Mgmt menu item is expandable
     vulnManagementExpandableNavLink: `${navigationSelectors.navExpandable}:contains("Vulnerability Management")`,
     vulnManagementExpandedDashboardNavLink: `${navigationSelectors.nestedNavLinks}:contains("Dashboard")`,
+    vulnManagementExpandedReportingNavLink: `${navigationSelectors.nestedNavLinks}:contains("Reporting")`,
 };
 export const listSelectors = {
     riskScoreCol: '.rt-table > .rt-tbody > div > div > div:nth-child(10)',
@@ -139,6 +144,7 @@ const linkSelectors = {
     tileLinks: "[data-testid='tile-link']",
     tileLinkValue: "[data-testid='tile-link-value']",
     tileLinkSuperText: '[data-testid="tileLinkSuperText"]',
+    createReportLink: 'a:contains("Create report")',
 };
 
 const sidePanelSelectors = {

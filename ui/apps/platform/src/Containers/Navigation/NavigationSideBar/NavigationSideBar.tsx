@@ -12,7 +12,7 @@ import {
     violationsBasePath,
     complianceBasePath,
     vulnManagementPath,
-    vulnManagementReportingPath,
+    vulnManagementReportsPath,
     configManagementPath,
     riskBasePath,
     clustersBasePath,
@@ -44,7 +44,7 @@ function NavigationSideBar(): ReactElement {
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
     if (isVulnReportingEnabled) {
-        vulnerabilityManagementPaths.push(vulnManagementReportingPath);
+        vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }
 
     const Navigation = (

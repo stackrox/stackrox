@@ -1,8 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { ReactElement } from 'react';
-import { PageSection, PageSectionVariants, Text, TextContent, Title } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import {
+    Button,
+    ButtonVariant,
+    Flex,
+    FlexItem,
+    PageSection,
+    PageSectionVariants,
+    Text,
+    TextContent,
+    Title,
+} from '@patternfly/react-core';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
+import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
@@ -73,13 +85,47 @@ function ReportTablePage(): ReactElement {
     return (
         <>
             <PageSection variant={PageSectionVariants.light}>
-                <TextContent>
-                    <Title headingLevel="h1">Vulnerability reporting</Title>
-                    <Text component="p">
-                        Configure reports, define resource scopes, and assign distribution lists to
-                        report on vulnerabilities across the organization.
-                    </Text>
-                </TextContent>
+                <Flex
+                    alignItems={{
+                        default: 'alignItemsFlexStart',
+                        md: 'alignItemsCenter',
+                    }}
+                    direction={{ default: 'column', md: 'row' }}
+                    flexWrap={{ default: 'nowrap' }}
+                    spaceItems={{ default: 'spaceItemsXl' }}
+                >
+                    <FlexItem grow={{ default: 'grow' }}>
+                        <TextContent>
+                            <Title headingLevel="h1">Vulnerability reporting</Title>
+                            <Text component="p">
+                                Configure reports, define resource scopes, and assign distribution
+                                lists to report on vulnerabilities across the organization.
+                            </Text>
+                        </TextContent>
+                    </FlexItem>
+                    <FlexItem
+                        align={{
+                            default: 'alignLeft',
+                            md: 'alignRight',
+                            lg: 'alignRight',
+                            xl: 'alignRight',
+                            '2xl': 'alignRight',
+                        }}
+                    >
+                        <Button
+                            variant={ButtonVariant.primary}
+                            isInline
+                            component={(props) => (
+                                <Link
+                                    {...props}
+                                    to={`${vulnManagementReportsPath}?action=create`}
+                                />
+                            )}
+                        >
+                            Create report
+                        </Button>
+                    </FlexItem>
+                </Flex>
             </PageSection>
             <PageSection variant={PageSectionVariants.light}>
                 {reports.length > 0 ? (
