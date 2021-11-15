@@ -50,7 +50,7 @@
     "devDependencies": {
         "@babel/core": "7.12.3",
         "@stackrox/tailwind-config": "^0.2.0",
-        "@testing-library/jest-dom": "^5.14.1",
+        "@testing-library/jest-dom": "^5.15.0",
         "@testing-library/react": "^12.1.2",
         "@testing-library/user-event": "^13.5.0",
         "@types/lodash": "^4.14.176",

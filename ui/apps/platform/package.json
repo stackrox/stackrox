@@ -127,7 +127,7 @@
         "@cypress/code-coverage": "^3.9.11",
         "@cypress/instrument-cra": "^1.4.0",
         "@stackrox/tailwind-config": "*",
-        "@testing-library/jest-dom": "^5.14.1",
+        "@testing-library/jest-dom": "^5.15.0",
         "@testing-library/react": "^12.1.2",
         "@testing-library/react-hooks": "^7.0.2",
         "@types/jest": "^26.0.24",
