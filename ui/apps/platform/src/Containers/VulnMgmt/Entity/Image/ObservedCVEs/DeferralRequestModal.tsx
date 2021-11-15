@@ -15,8 +15,8 @@ export type DeferralFormValues = {
 
 export type DeferralRequestModalProps = {
     isOpen: boolean;
-    onRequestDeferral: (values: DeferralFormValues) => Promise<FormResponseMessage>;
-    onCompleteDeferral: () => void;
+    onSendRequest: (values: DeferralFormValues) => Promise<FormResponseMessage>;
+    onCompleteRequest: () => void;
     onCancelDeferral: () => void;
 };
 
@@ -49,8 +49,8 @@ const validationSchema = yup.object().shape({
 
 function DeferralRequestModal({
     isOpen,
-    onRequestDeferral,
-    onCompleteDeferral,
+    onSendRequest,
+    onCompleteRequest,
     onCancelDeferral,
 }: DeferralRequestModalProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
@@ -62,7 +62,7 @@ function DeferralRequestModal({
         },
         validationSchema,
         onSubmit: (values: DeferralFormValues) => {
-            const response = onRequestDeferral(values);
+            const response = onSendRequest(values);
             return response;
         },
     });
@@ -83,9 +83,10 @@ function DeferralRequestModal({
         setMessage(null);
         formik
             .submitForm()
-            .then((response) => {
-                setMessage(response);
-                onCompleteDeferral();
+            .then(() => {
+                setMessage(null);
+                formik.resetForm();
+                onCompleteRequest();
             })
             .catch((response) => {
                 const error = new Error(response.message);

@@ -11,7 +11,7 @@ export type CancelFormValues = {
     comment: string;
 };
 
-export type CancelDeferralModalProps = {
+export type ReobserveCVEModalProps = {
     isOpen: boolean;
     onSendRequest: (values: CancelFormValues) => Promise<FormResponseMessage>;
     onCompleteRequest: () => void;
@@ -22,12 +22,12 @@ const validationSchema = yup.object().shape({
     comment: yup.string().trim().required('A comment is required'),
 });
 
-function CancelDeferralModal({
+function ReobserveCVEModal({
     isOpen,
     onSendRequest,
     onCompleteRequest,
     onCancel,
-}: CancelDeferralModalProps): ReactElement {
+}: ReobserveCVEModalProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
     const formik = useFormik<CancelFormValues>({
         initialValues: {
@@ -71,7 +71,7 @@ function CancelDeferralModal({
     return (
         <Modal
             variant={ModalVariant.small}
-            title="Cancel deferral and reobserve CVE"
+            title="Reobserve CVE"
             isOpen={isOpen}
             onClose={onCancelHandler}
             actions={[
@@ -82,7 +82,7 @@ function CancelDeferralModal({
                     isDisabled={formik.isSubmitting || !formik.dirty || !formik.isValid}
                     isLoading={formik.isSubmitting}
                 >
-                    Cancel deferral
+                    Reobserve CVE
                 </Button>,
                 <Button
                     key="cancel"
@@ -96,7 +96,7 @@ function CancelDeferralModal({
         >
             <FormMessage message={message} />
             <div className="pf-u-pb-md">
-                Cancelling a deferral will return the CVE into the vulnerability management
+                Reobserving a false positive will return the CVE into the vulnerability management
                 workflow.
             </div>
             <Form>
@@ -114,7 +114,7 @@ function CancelDeferralModal({
                         value={formik.values.comment}
                         onChange={onChange}
                         onBlur={formik.handleBlur}
-                        placeholder="Enter an appropriate reason to undo"
+                        placeholder="Enter an appropriate reason to reobserve"
                     />
                 </FormLabelGroup>
             </Form>
@@ -122,4 +122,4 @@ function CancelDeferralModal({
     );
 }
 
-export default CancelDeferralModal;
+export default ReobserveCVEModal;

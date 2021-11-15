@@ -14,8 +14,8 @@ export type FalsePositiveFormValues = {
 
 export type DeferralRequestModalProps = {
     isOpen: boolean;
-    onRequestFalsePositive: (values: FalsePositiveFormValues) => Promise<FormResponseMessage>;
-    onCompleteFalsePositive: () => void;
+    onSendRequest: (values: FalsePositiveFormValues) => Promise<FormResponseMessage>;
+    onCompleteRequest: () => void;
     onCancelFalsePositive: () => void;
 };
 
@@ -35,8 +35,8 @@ const validationSchema = yup.object().shape({
 
 function FalsePositiveRequestModal({
     isOpen,
-    onRequestFalsePositive,
-    onCompleteFalsePositive,
+    onSendRequest,
+    onCompleteRequest,
     onCancelFalsePositive,
 }: DeferralRequestModalProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
@@ -47,7 +47,7 @@ function FalsePositiveRequestModal({
         },
         validationSchema,
         onSubmit: (values: FalsePositiveFormValues) => {
-            const response = onRequestFalsePositive(values);
+            const response = onSendRequest(values);
             return response;
         },
     });
@@ -64,9 +64,10 @@ function FalsePositiveRequestModal({
         setMessage(null);
         formik
             .submitForm()
-            .then((response) => {
-                setMessage(response);
-                onCompleteFalsePositive();
+            .then(() => {
+                setMessage(null);
+                formik.resetForm();
+                onCompleteRequest();
             })
             .catch((response) => {
                 const error = new Error(response.message);

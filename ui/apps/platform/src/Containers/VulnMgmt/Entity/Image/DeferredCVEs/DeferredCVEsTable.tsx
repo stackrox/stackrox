@@ -189,8 +189,8 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
             </TableComposable>
             <CancelDeferralModal
                 isOpen={cveDeferralsToBeCancelled.length !== 0}
-                onRequestCancelDeferral={requestCancelDeferral}
-                onCompleteCancelDeferral={completeCancelDeferral}
+                onSendRequest={requestCancelDeferral}
+                onCompleteRequest={completeCancelDeferral}
                 onCancel={cancelCancellation}
             />
         </>
