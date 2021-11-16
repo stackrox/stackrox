@@ -1,9 +1,11 @@
 import React, { forwardRef } from 'react';
 
 import { getNumEventsBackgroundWidth, getNumEventsText } from './clusteredEventMarkerUtils';
-import { ClusteredEvent } from '../eventTypes';
 
-type ClusteredPolicyViolationEventProps = ClusteredEvent;
+type ClusteredPolicyViolationEventProps = {
+    size: number;
+    numEvents: number;
+};
 
 const ClusteredPolicyViolationEvent = forwardRef<SVGSVGElement, ClusteredPolicyViolationEventProps>(
     ({ size, numEvents }, ref) => {
