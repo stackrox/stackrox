@@ -171,7 +171,7 @@ func (h *httpHandler) serveFileNoLock(w http.ResponseWriter, r *http.Request, pa
 		return
 	}
 
-	log.Infof("Serving vulnerability definitions from %s", basePath)
+	log.Debugf("Serving vulnerability definitions from %s", basePath)
 	http.ServeFile(w, r, path)
 }
 
