@@ -154,7 +154,7 @@ func (g *garbageCollectorImpl) removeExpiredVulnRequests() {
 		return
 	}
 
-	log.Infof("[Pruning] Found %d vulnerability requests. Deleting...", len(results))
+	log.Infof("[Pruning] Found %d expired vulnerability requests. Deleting...", len(results))
 
 	if err := g.vulnReqs.RemoveRequestsInternal(pruningCtx, search.ResultsToIDs(results)); err != nil {
 		log.Errorf("Failed to remove some expired vulnerability requests. Removal will be retried in next pruning cycle: %v", err)
