@@ -41,4 +41,7 @@ var (
 
 	// VulnReporting enables scheduled vulnerability reporting workflow, that allows the creation and management of vulnerability reporting configurations.
 	VulnReporting = registerFeature("Enable creation of scheduled vulnerability reports to be sent via email notifier", "ROX_VULN_REPORTING", false)
+
+	// LocalImageScanning enables OpenShift local-image scanning.
+	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", false)
 )
