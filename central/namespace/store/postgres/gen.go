@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=NamespaceMetadata --table=namespaces
+//go:generate pg-table-bindings-wrapper --type=NamespaceMetadata --table=namespaces

@@ -6,10 +6,12 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
 )
 
 var (
@@ -66,22 +68,35 @@ func (s *searchWalker) elemsToPath(elems []PathElem) string {
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
-	walker := searchWalker{
+	sw := searchWalker{
 		print:    false,
 		prefix:   prefix,
 		category: category,
 		fields:   make(map[FieldLabel]*Field),
 	}
-	sw := walker
 
-	if walker.print {
+	if sw.print {
 		fmt.Println()
 		fmt.Println(prefix)
 	}
 
 	var pathElems []PathElem
 	sw.walkRecursive(prefix, pathElems, reflect.TypeOf(obj))
-	return OptionsMapFromMap(category, sw.fields)
+	options := OptionsMapFromMap(category, sw.fields)
+
+	if features.PostgresPOC.Enabled() {
+		table := walker.Walk(reflect.TypeOf(obj))
+
+		searchFieldsToElements := table.SearchFieldsToElement()
+		for k, v := range options.Original() {
+			elem, ok := searchFieldsToElements[string(k)]
+			if !ok {
+				log.Fatalf("Could not find field %s in postgres parsing", k)
+			}
+			v.FlatElem = elem
+		}
+	}
+	return options
 }
 
 func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -28,7 +29,7 @@ const (
 		getIDsStmt = "select id from networkentity"
 		getStmt = "select value from networkentity where id = $1"
 		getManyStmt = "select value from networkentity where id = ANY($1::text[])"
-		upsertStmt = "insert into networkentity (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		upsertStmt = "insert into networkentity (id, value, Info_Desc_ExternalSource_Default) values($1, $2, $3) on conflict(id) do update set value = EXCLUDED.value, Info_Desc_ExternalSource_Default = EXCLUDED.Info_Desc_ExternalSource_Default"
 		deleteStmt = "delete from networkentity where id = $1"
 		deleteManyStmt = "delete from networkentity where id = ANY($1::text[])"
 		walkStmt = "select value from networkentity"
@@ -71,25 +72,32 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists networkentity (id varchar primary key, value jsonb)"
+	createTableQuery = "create table if not exists networkentity (id varchar primary key, value jsonb, Info_Desc_ExternalSource_Default bool)"
 	createIDIndexQuery = "create index if not exists networkentity_id on networkentity using hash ((id))"
 
-	batchInsertTemplate = "insert into networkentity (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
+	batchInsertTemplate = "insert into networkentity (id, value, Info_Desc_ExternalSource_Default) values %s on conflict(id) do update set value = EXCLUDED.value, Info_Desc_ExternalSource_Default = EXCLUDED.Info_Desc_ExternalSource_Default"
 )
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "NetworkEntity")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists NetworkEntity(serialized jsonb not null, Info_Desc_ExternalSource_Default bool, PRIMARY KEY ());",
+		"create table if not exists NetworkEntity_ListenPorts(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkEntity() ON DELETE CASCADE);",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -217,9 +225,17 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkEntity, []int, erro
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.NetworkEntity) error {
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+  if t == nil {
+    return nil
+  }
+  s := t.String()
+  return &s
+}
+
+func (s *storeImpl) upsert(id string, obj0 *storage.NetworkEntity) error {
 	t := time.Now()
-	value, err := marshaler.MarshalToString(obj)
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
@@ -227,7 +243,29 @@ func (s *storeImpl) upsert(id string, obj *storage.NetworkEntity) error {
 	conn, release := s.acquireConn(ops.Add, "NetworkEntity")
 	defer release()
 
-	_, err = conn.Exec(context.Background(), upsertStmt, id, value)
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		}
+//else {
+//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+//				// multi error?
+//				err = rollBackErr
+//			}
+//		}
+	}()
+
+	localQuery := "insert into NetworkEntity(serialized, Info_Desc_ExternalSource_Default) values($1, $2) on conflict() do update set serialized = EXCLUDED.serialized, Info_Desc_ExternalSource_Default = EXCLUDED.Info_Desc_ExternalSource_Default"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetInfo().GetExternalSource().GetDefault())
+if err != nil {
+    return err
+  }
+
+
 	return err
 }
 
@@ -256,7 +294,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.NetworkEntity) error {
 	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "NetworkEntity")
-	numElems := 2
+	numElems := 3
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -274,7 +312,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.NetworkEntity) error {
 			}
 			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "NetworkEntity")
 			id := keyFunc(obj)
-			data = append(data, id, value)
+			data = append(data, id, value, obj.GetInfo().GetExternalSource().GetDefault())
 		}
 		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
@@ -321,7 +359,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.NetworkEntity) error) error {
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}

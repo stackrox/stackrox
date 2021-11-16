@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -28,7 +29,7 @@ const (
 		getIDsStmt = "select id from secrets"
 		getStmt = "select value from secrets where id = $1"
 		getManyStmt = "select value from secrets where id = ANY($1::text[])"
-		upsertStmt = "insert into secrets (id, value, Name, ClusterId, ClusterName, Namespace, CreatedAt) values($1, $2, $3, $4, $5, $6, $7) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
+		upsertStmt = "insert into secrets (id, value, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
 		deleteStmt = "delete from secrets where id = $1"
 		deleteManyStmt = "delete from secrets where id = ANY($1::text[])"
 		walkStmt = "select value from secrets"
@@ -71,25 +72,35 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists secrets (id varchar primary key, value jsonb, Name varchar, ClusterId varchar, ClusterName varchar, Namespace varchar, CreatedAt timestamp)"
+	createTableQuery = "create table if not exists secrets (id varchar primary key, value jsonb, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Namespace varchar, CreatedAt timestamp)"
 	createIDIndexQuery = "create index if not exists secrets_id on secrets using hash ((id))"
 
-	batchInsertTemplate = "insert into secrets (id, value, Name, ClusterId, ClusterName, Namespace, CreatedAt) values %s on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
+	batchInsertTemplate = "insert into secrets (id, value, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
 )
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Secret")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists Secret(serialized jsonb not null, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Namespace varchar, CreatedAt timestamp, PRIMARY KEY ());",
+		"create table if not exists Secret_Files(idx numeric not null, Type integer, Metadata_Cert_EndDate timestamp, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Secret() ON DELETE CASCADE);",
+		"create table if not exists Secret_Files_Registries(parent_idx numeric not null, idx numeric not null, Name varchar, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES Secret_Files(idx) ON DELETE CASCADE);",
+		"create table if not exists Secret_ContainerRelationships(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Secret() ON DELETE CASCADE);",
+		"create table if not exists Secret_DeploymentRelationships(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Secret() ON DELETE CASCADE);",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -217,9 +228,17 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Secret, []int, error) {
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.Secret) error {
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+  if t == nil {
+    return nil
+  }
+  s := t.String()
+  return &s
+}
+
+func (s *storeImpl) upsert(id string, obj0 *storage.Secret) error {
 	t := time.Now()
-	value, err := marshaler.MarshalToString(obj)
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
@@ -227,7 +246,51 @@ func (s *storeImpl) upsert(id string, obj *storage.Secret) error {
 	conn, release := s.acquireConn(ops.Add, "Secret")
 	defer release()
 
-	_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetName(), obj.GetClusterId(), obj.GetClusterName(), obj.GetNamespace(), obj.GetCreatedAt().String())
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		}
+//else {
+//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+//				// multi error?
+//				err = rollBackErr
+//			}
+//		}
+	}()
+
+	localQuery := "insert into Secret(serialized, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values($1, $2, $3, $4, $5, $6, $7) on conflict() do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetNamespace(), nilOrStringTimestamp(obj0.GetCreatedAt()))
+if err != nil {
+    return err
+  }
+  for idx1, obj1 := range obj0.GetFiles() {
+    localQuery := "insert into Secret_Files(idx, Type, Metadata_Cert_EndDate) values($1, $2, $3) on conflict(idx) do update set idx = EXCLUDED.idx, Type = EXCLUDED.Type, Metadata_Cert_EndDate = EXCLUDED.Metadata_Cert_EndDate"
+    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetType(), nilOrStringTimestamp(obj1.GetCert().GetEndDate()))
+    if err != nil {
+      return err
+    }
+    for idx2, obj2 := range obj1.GetImagePullSecret().GetRegistries() {
+      localQuery := "insert into Secret_Files_Registries(parent_idx, idx, Name) values($1, $2, $3) on conflict(parent_idx, idx) do update set parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name"
+      _, err := tx.Exec(context.Background(), localQuery, idx1, idx2, obj2.GetName())
+      if err != nil {
+        return err
+      }
+    }
+      _, err = tx.Exec(context.Background(), "delete from Secret_Files_Registries where parent_idx = $1 and idx >= $2", idx1, len(obj1.GetImagePullSecret().GetRegistries()))
+      if err != nil {
+        return err
+      }
+  }
+    _, err = tx.Exec(context.Background(), "delete from Secret_Files where  and idx >= $1", len(obj0.GetFiles()))
+    if err != nil {
+      return err
+    }
+
+
 	return err
 }
 
@@ -256,7 +319,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.Secret) error {
 	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Secret")
-	numElems := 7
+	numElems := 8
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -274,7 +337,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.Secret) error {
 			}
 			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Secret")
 			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetName(), obj.GetClusterId(), obj.GetClusterName(), obj.GetNamespace(), obj.GetCreatedAt().String())
+			data = append(data, id, value, obj.GetId(), obj.GetName(), obj.GetClusterId(), obj.GetClusterName(), obj.GetNamespace(), obj.GetCreatedAt())
 		}
 		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
@@ -321,7 +384,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.Secret) error) error {
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}

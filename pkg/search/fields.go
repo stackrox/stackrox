@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
 )
 
 // Field describes a search field
@@ -15,6 +16,7 @@ type Field struct {
 	Hidden    bool
 	Category  v1.SearchCategory
 	Analyzer  string
+	FlatElem  walker.Element
 }
 
 func (f *Field) LastElem() PathElem {

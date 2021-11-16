@@ -3,35 +3,22 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
 )
 
-func flattenTable(table *Table) []Element {
-	var elems []Element
-	for _, elem := range table.Elems {
-		if !elem.IsSearchable {
-			continue
-		}
-		elems = append(elems, elem)
-	}
-	for _, child := range table.Embedded {
-		childPairs := flattenTable(child)
-		elems = append(elems, childPairs...)
-	}
-	return elems
-}
-
-func generateTableCreationQuery(tableName string, elements []Element) string {
+func generateTableCreationQuery(tableName string, elements []walker.Element) string {
 	fields := []string{
 		"id varchar primary key",
 		"value jsonb",
 	}
 	for _, elem := range elements {
-		fields = append(fields, fmt.Sprintf("%s %s", elem.SQLPath(), dataTypeToSQLType(elem.DataType)))
+		fields = append(fields, fmt.Sprintf("%s %s", elem.SQLPath(), walker.DataTypeToSQLType(elem.DataType)))
 	}
 	return fmt.Sprintf("create table if not exists %s (%s)", tableName, strings.Join(fields, ", "))
 }
 
-func generateTableInsertionQuery(tableName string, elements []Element) (string, string) {
+func generateTableInsertionQuery(tableName string, elements []walker.Element) (string, string) {
 	fields := []string{
 		"id",
 		"value",
@@ -66,7 +53,7 @@ func generateTableInsertionQuery(tableName string, elements []Element) (string, 
 	), strings.Join(valueGetters, ", ")
 }
 
-func generateTableMultiInsertionQuery(tableName string, elements []Element) (string, int) {
+func generateTableMultiInsertionQuery(tableName string, elements []walker.Element) (string, int) {
 	fields := []string{
 		"id",
 		"value",

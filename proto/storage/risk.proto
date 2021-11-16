@@ -17,7 +17,7 @@ message Risk {
             string message          = 1;
             string url              = 2;
         }
-        string name                 = 1 [(gogoproto.moretags) = "search:\"Risk Indicator,store,hidden\""];
+        string name                 = 1;
         repeated Factor factors     = 2;
         float score                 = 3;
     }

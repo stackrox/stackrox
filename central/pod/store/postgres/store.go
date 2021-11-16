@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -28,7 +29,7 @@ const (
 		getIDsStmt = "select id from pods"
 		getStmt = "select value from pods where id = $1"
 		getManyStmt = "select value from pods where id = ANY($1::text[])"
-		upsertStmt = "insert into pods (id, value, Name, DeploymentId, Namespace, ClusterId) values($1, $2, $3, $4, $5, $6) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
+		upsertStmt = "insert into pods (id, value, Id, Name, DeploymentId, Namespace, ClusterId) values($1, $2, $3, $4, $5, $6, $7) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
 		deleteStmt = "delete from pods where id = $1"
 		deleteManyStmt = "delete from pods where id = ANY($1::text[])"
 		walkStmt = "select value from pods"
@@ -71,25 +72,32 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists pods (id varchar primary key, value jsonb, Name varchar, DeploymentId varchar, Namespace varchar, ClusterId varchar)"
+	createTableQuery = "create table if not exists pods (id varchar primary key, value jsonb, Id varchar, Name varchar, DeploymentId varchar, Namespace varchar, ClusterId varchar)"
 	createIDIndexQuery = "create index if not exists pods_id on pods using hash ((id))"
 
-	batchInsertTemplate = "insert into pods (id, value, Name, DeploymentId, Namespace, ClusterId) values %s on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
+	batchInsertTemplate = "insert into pods (id, value, Id, Name, DeploymentId, Namespace, ClusterId) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
 )
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Pod")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists Pod(serialized jsonb not null, Id varchar, Name varchar, DeploymentId varchar, Namespace varchar, ClusterId varchar, PRIMARY KEY ());",
+		"create table if not exists Pod_LiveInstances(idx numeric not null, ImageDigest varchar, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Pod() ON DELETE CASCADE);",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -217,9 +225,17 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Pod, []int, error) {
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.Pod) error {
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+  if t == nil {
+    return nil
+  }
+  s := t.String()
+  return &s
+}
+
+func (s *storeImpl) upsert(id string, obj0 *storage.Pod) error {
 	t := time.Now()
-	value, err := marshaler.MarshalToString(obj)
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
@@ -227,7 +243,40 @@ func (s *storeImpl) upsert(id string, obj *storage.Pod) error {
 	conn, release := s.acquireConn(ops.Add, "Pod")
 	defer release()
 
-	_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetName(), obj.GetDeploymentId(), obj.GetNamespace(), obj.GetClusterId())
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		}
+//else {
+//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+//				// multi error?
+//				err = rollBackErr
+//			}
+//		}
+	}()
+
+	localQuery := "insert into Pod(serialized, Id, Name, DeploymentId, Namespace, ClusterId) values($1, $2, $3, $4, $5, $6) on conflict() do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetDeploymentId(), obj0.GetNamespace(), obj0.GetClusterId())
+if err != nil {
+    return err
+  }
+  for idx1, obj1 := range obj0.GetLiveInstances() {
+    localQuery := "insert into Pod_LiveInstances(idx, ImageDigest) values($1, $2) on conflict(idx) do update set idx = EXCLUDED.idx, ImageDigest = EXCLUDED.ImageDigest"
+    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetImageDigest())
+    if err != nil {
+      return err
+    }
+  }
+    _, err = tx.Exec(context.Background(), "delete from Pod_LiveInstances where  and idx >= $1", len(obj0.GetLiveInstances()))
+    if err != nil {
+      return err
+    }
+
+
 	return err
 }
 
@@ -256,7 +305,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.Pod) error {
 	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Pod")
-	numElems := 6
+	numElems := 7
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -274,7 +323,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.Pod) error {
 			}
 			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Pod")
 			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetName(), obj.GetDeploymentId(), obj.GetNamespace(), obj.GetClusterId())
+			data = append(data, id, value, obj.GetId(), obj.GetName(), obj.GetDeploymentId(), obj.GetNamespace(), obj.GetClusterId())
 		}
 		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
@@ -321,7 +370,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.Pod) error) error {
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}

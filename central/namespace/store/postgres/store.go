@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -28,7 +29,7 @@ const (
 		getIDsStmt = "select id from namespaces"
 		getStmt = "select value from namespaces where id = $1"
 		getManyStmt = "select value from namespaces where id = ANY($1::text[])"
-		upsertStmt = "insert into namespaces (id, value, Name, ClusterId, ClusterName) values($1, $2, $3, $4, $5) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName"
+		upsertStmt = "insert into namespaces (id, value, Id, Name, ClusterId, ClusterName, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
 		deleteStmt = "delete from namespaces where id = $1"
 		deleteManyStmt = "delete from namespaces where id = ANY($1::text[])"
 		walkStmt = "select value from namespaces"
@@ -71,25 +72,31 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists namespaces (id varchar primary key, value jsonb, Name varchar, ClusterId varchar, ClusterName varchar)"
+	createTableQuery = "create table if not exists namespaces (id varchar primary key, value jsonb, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Labels jsonb, Annotations jsonb)"
 	createIDIndexQuery = "create index if not exists namespaces_id on namespaces using hash ((id))"
 
-	batchInsertTemplate = "insert into namespaces (id, value, Name, ClusterId, ClusterName) values %s on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName"
+	batchInsertTemplate = "insert into namespaces (id, value, Id, Name, ClusterId, ClusterName, Labels, Annotations) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
 )
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "NamespaceMetadata")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists NamespaceMetadata(serialized jsonb not null, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Labels jsonb, Annotations jsonb, PRIMARY KEY ());",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -217,9 +224,17 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NamespaceMetadata, []int, 
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.NamespaceMetadata) error {
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+  if t == nil {
+    return nil
+  }
+  s := t.String()
+  return &s
+}
+
+func (s *storeImpl) upsert(id string, obj0 *storage.NamespaceMetadata) error {
 	t := time.Now()
-	value, err := marshaler.MarshalToString(obj)
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
@@ -227,7 +242,29 @@ func (s *storeImpl) upsert(id string, obj *storage.NamespaceMetadata) error {
 	conn, release := s.acquireConn(ops.Add, "NamespaceMetadata")
 	defer release()
 
-	_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetName(), obj.GetClusterId(), obj.GetClusterName())
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		}
+//else {
+//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+//				// multi error?
+//				err = rollBackErr
+//			}
+//		}
+	}()
+
+	localQuery := "insert into NamespaceMetadata(serialized, Id, Name, ClusterId, ClusterName, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7) on conflict() do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetLabels(), obj0.GetAnnotations())
+if err != nil {
+    return err
+  }
+
+
 	return err
 }
 
@@ -256,7 +293,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.NamespaceMetadata) error {
 	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "NamespaceMetadata")
-	numElems := 5
+	numElems := 8
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -274,7 +311,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.NamespaceMetadata) error {
 			}
 			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "NamespaceMetadata")
 			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetName(), obj.GetClusterId(), obj.GetClusterName())
+			data = append(data, id, value, obj.GetId(), obj.GetName(), obj.GetClusterId(), obj.GetClusterName(), obj.GetLabels(), obj.GetAnnotations())
 		}
 		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
@@ -321,7 +358,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.NamespaceMetadata) error) error {
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}

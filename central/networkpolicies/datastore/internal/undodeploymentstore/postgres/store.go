@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -81,15 +82,23 @@ const (
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "NetworkPolicyApplicationUndoDeploymentRecord")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists NetworkPolicyApplicationUndoDeploymentRecord(serialized jsonb not null, PRIMARY KEY ());",
+		"create table if not exists NetworkPolicyApplicationUndoDeploymentRecord_ToDelete(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkPolicyApplicationUndoDeploymentRecord() ON DELETE CASCADE);",
+		"create table if not exists NetworkPolicyApplicationUndoDeploymentRecord_ToDelete(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkPolicyApplicationUndoDeploymentRecord() ON DELETE CASCADE);",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -217,9 +226,17 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkPolicyApplicationUn
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+  if t == nil {
+    return nil
+  }
+  s := t.String()
+  return &s
+}
+
+func (s *storeImpl) upsert(id string, obj0 *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 	t := time.Now()
-	value, err := marshaler.MarshalToString(obj)
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
@@ -227,7 +244,29 @@ func (s *storeImpl) upsert(id string, obj *storage.NetworkPolicyApplicationUndoD
 	conn, release := s.acquireConn(ops.Add, "NetworkPolicyApplicationUndoDeploymentRecord")
 	defer release()
 
-	_, err = conn.Exec(context.Background(), upsertStmt, id, value)
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		}
+//else {
+//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+//				// multi error?
+//				err = rollBackErr
+//			}
+//		}
+	}()
+
+	localQuery := "insert into NetworkPolicyApplicationUndoDeploymentRecord(serialized) values($1) on conflict() do update set serialized = EXCLUDED.serialized"
+_, err = tx.Exec(context.Background(), localQuery, serialized)
+if err != nil {
+    return err
+  }
+
+
 	return err
 }
 
@@ -321,7 +360,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.NetworkPolicyApplicationUndoDeploy
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}
