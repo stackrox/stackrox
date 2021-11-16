@@ -27,9 +27,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Template design pattern. We define control flow here and defer logic to subclasses.
-//////////////////////////////////////////////////////////////////////////////////////
-
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
 	return NewPipeline(enrichment.ManagerSingleton(),
@@ -111,13 +108,11 @@ func parseEndpointForURL(endpoint string) string {
 	}
 
 	scheme := urlfmt.GetSchemeFromURL(url)
-	switch scheme {
-	case "http":
-		url = urlfmt.FormatURL(server, urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
-	default:
-		url = urlfmt.FormatURL(server, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	defaultScheme := urlfmt.HTTPS
+	if scheme == "http" {
+		defaultScheme = urlfmt.InsecureHTTP
 	}
-	return url
+	return urlfmt.FormatURL(server, defaultScheme, urlfmt.NoTrailingSlash)
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -134,17 +129,16 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	imageIntegration := msg.GetEvent().GetImageIntegration()
+	// Using GetDocker() because the config is within a `oneof` field.
 	dockerIntegration := imageIntegration.GetDocker()
 	if dockerIntegration == nil {
 		return nil
 	}
 
-	validTLS, err := tlscheck.CheckTLS(imageIntegration.GetDocker().GetEndpoint())
+	validTLS, err := tlscheck.CheckTLS(dockerIntegration.GetEndpoint())
 	if err != nil {
 		return errors.Wrapf(err, "reaching out for TLS check to %s", imageIntegration.GetDocker().GetEndpoint())
 	}
-
-	// Using GetDocker() because the config is within a `oneof` field.
 	dockerIntegration.Insecure = !validTLS
 	dockerIntegration.Endpoint = parseEndpointForURL(dockerIntegration.GetEndpoint())
 
@@ -171,15 +165,16 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// So we can assume the other credentials were valid up to this point.
 		// Also, they will eventually be picked up within an hour.
 		s.enrichAndDetectLoop.ShortCircuit()
-	} else {
-		imageIntegration.Id = integrationToUpdate.GetId()
-		imageIntegration.Name = integrationToUpdate.GetName()
-		if err := s.integrationManager.Upsert(imageIntegration); err != nil {
-			return errors.Wrap(err, "notifying of image integration update")
-		}
-		if err := s.datastore.UpdateImageIntegration(ctx, imageIntegration); err != nil {
-			return errors.Wrap(err, "updating integration")
-		}
+		return nil
+	}
+
+	imageIntegration.Id = integrationToUpdate.GetId()
+	imageIntegration.Name = integrationToUpdate.GetName()
+	if err := s.integrationManager.Upsert(imageIntegration); err != nil {
+		return errors.Wrap(err, "notifying of image integration update")
+	}
+	if err := s.datastore.UpdateImageIntegration(ctx, imageIntegration); err != nil {
+		return errors.Wrap(err, "updating integration")
 	}
 	return nil
 }
