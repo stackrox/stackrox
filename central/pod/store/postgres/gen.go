@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=Pod --table=pods
+//go:generate pg-table-bindings-wrapper --type=Pod --table=pods

@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=Risk --table=risks
+//go:generate pg-table-bindings-wrapper --type=Risk --table=risks

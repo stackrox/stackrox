@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -81,15 +82,27 @@ const (
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "NetworkBaseline")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists NetworkBaseline(serialized jsonb not null, PRIMARY KEY ());",
+		"create table if not exists NetworkBaseline_Peers(idx numeric not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkBaseline() ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline_Peers_Properties(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES NetworkBaseline_Peers(idx) ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline_Peers_ListenPorts(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES NetworkBaseline_Peers(idx) ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline_ForbiddenPeers(idx numeric not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkBaseline() ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline_ForbiddenPeers_Properties(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES NetworkBaseline_ForbiddenPeers(idx) ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline_ForbiddenPeers_ListenPorts(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES NetworkBaseline_ForbiddenPeers(idx) ON DELETE CASCADE);",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -217,9 +230,17 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkBaseline, []int, er
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.NetworkBaseline) error {
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+  if t == nil {
+    return nil
+  }
+  s := t.String()
+  return &s
+}
+
+func (s *storeImpl) upsert(id string, obj0 *storage.NetworkBaseline) error {
 	t := time.Now()
-	value, err := marshaler.MarshalToString(obj)
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
@@ -227,7 +248,51 @@ func (s *storeImpl) upsert(id string, obj *storage.NetworkBaseline) error {
 	conn, release := s.acquireConn(ops.Add, "NetworkBaseline")
 	defer release()
 
-	_, err = conn.Exec(context.Background(), upsertStmt, id, value)
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		}
+//else {
+//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+//				// multi error?
+//				err = rollBackErr
+//			}
+//		}
+	}()
+
+	localQuery := "insert into NetworkBaseline(serialized) values($1) on conflict() do update set serialized = EXCLUDED.serialized"
+_, err = tx.Exec(context.Background(), localQuery, serialized)
+if err != nil {
+    return err
+  }
+  for idx1, obj1 := range obj0.GetPeers() {
+    localQuery := "insert into NetworkBaseline_Peers(idx, Entity_Info_Desc_ExternalSource_Default) values($1, $2) on conflict(idx) do update set idx = EXCLUDED.idx, Entity_Info_Desc_ExternalSource_Default = EXCLUDED.Entity_Info_Desc_ExternalSource_Default"
+    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetEntity().GetInfo().GetExternalSource().GetDefault())
+    if err != nil {
+      return err
+    }
+  }
+    _, err = tx.Exec(context.Background(), "delete from NetworkBaseline_Peers where  and idx >= $1", len(obj0.GetPeers()))
+    if err != nil {
+      return err
+    }
+  for idx1, obj1 := range obj0.GetForbiddenPeers() {
+    localQuery := "insert into NetworkBaseline_ForbiddenPeers(idx, Entity_Info_Desc_ExternalSource_Default) values($1, $2) on conflict(idx) do update set idx = EXCLUDED.idx, Entity_Info_Desc_ExternalSource_Default = EXCLUDED.Entity_Info_Desc_ExternalSource_Default"
+    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetEntity().GetInfo().GetExternalSource().GetDefault())
+    if err != nil {
+      return err
+    }
+  }
+    _, err = tx.Exec(context.Background(), "delete from NetworkBaseline_ForbiddenPeers where  and idx >= $1", len(obj0.GetForbiddenPeers()))
+    if err != nil {
+      return err
+    }
+
+
 	return err
 }
 
@@ -321,7 +386,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.NetworkBaseline) error) error {
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}

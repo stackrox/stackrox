@@ -1,9 +1,4 @@
-package main
-
-import (
-	"fmt"
-	"strings"
-)
+package walker
 
 //go:generate stringer -type=DataType
 type DataType int
@@ -20,7 +15,7 @@ const (
 	INT_ARRAY    DataType = 8
 )
 
-func dataTypeToSQLType(dataType DataType) string {
+func DataTypeToSQLType(dataType DataType) string {
 	var sqlType string
 	switch dataType {
 	case BOOL:
@@ -43,19 +38,4 @@ func dataTypeToSQLType(dataType DataType) string {
 		panic(dataType.String())
 	}
 	return sqlType
-}
-
-func fieldsFromPath(b *strings.Builder, table *Table) {
-	for i, elem := range table.Elems {
-		if !elem.IsSearchable {
-			continue
-		}
-		if !(table.Parent == nil && i == 0) {
-			fmt.Fprint(b, ", ")
-		}
-		fmt.Fprintf(b, "%s %s", elem.SQLPath(), dataTypeToSQLType(elem.DataType))
-	}
-	for _, child := range table.Embedded {
-		fieldsFromPath(b, child)
-	}
 }

@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=ServiceAccount --table=service_accounts
+//go:generate pg-table-bindings-wrapper --type=ServiceAccount --table=service_accounts

@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=Secret --table=secrets
+//go:generate pg-table-bindings-wrapper --type=Secret --table=secrets

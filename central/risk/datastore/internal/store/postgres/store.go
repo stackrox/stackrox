@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -71,7 +72,7 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists risks (id varchar primary key, value jsonb, Score numeric, Subject_Namespace varchar, Subject_ClusterId varchar, Subject_Type numeric)"
+	createTableQuery = "create table if not exists risks (id varchar primary key, value jsonb, Score numeric, Subject_Namespace varchar, Subject_ClusterId varchar, Subject_Type integer)"
 	createIDIndexQuery = "create index if not exists risks_id on risks using hash ((id))"
 
 	batchInsertTemplate = "insert into risks (id, value, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values %s on conflict(id) do update set value = EXCLUDED.value, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"
@@ -81,15 +82,23 @@ const (
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Risk")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists Risk(serialized jsonb not null, Score numeric, Subject_Namespace varchar, Subject_ClusterId varchar, Subject_Type integer, PRIMARY KEY ());",
+		"create table if not exists Risk_Results(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Risk() ON DELETE CASCADE);",
+		"create table if not exists Risk_Results_Factors(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES Risk_Results(idx) ON DELETE CASCADE);",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -217,9 +226,17 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.Risk) error {
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+  if t == nil {
+    return nil
+  }
+  s := t.String()
+  return &s
+}
+
+func (s *storeImpl) upsert(id string, obj0 *storage.Risk) error {
 	t := time.Now()
-	value, err := marshaler.MarshalToString(obj)
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
@@ -227,7 +244,29 @@ func (s *storeImpl) upsert(id string, obj *storage.Risk) error {
 	conn, release := s.acquireConn(ops.Add, "Risk")
 	defer release()
 
-	_, err = conn.Exec(context.Background(), upsertStmt, id, value, obj.GetScore(), obj.GetSubject().GetNamespace(), obj.GetSubject().GetClusterId(), obj.GetSubject().GetType())
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		}
+//else {
+//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+//				// multi error?
+//				err = rollBackErr
+//			}
+//		}
+	}()
+
+	localQuery := "insert into Risk(serialized, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values($1, $2, $3, $4, $5) on conflict() do update set serialized = EXCLUDED.serialized, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetScore(), obj0.GetSubject().GetNamespace(), obj0.GetSubject().GetClusterId(), obj0.GetSubject().GetType())
+if err != nil {
+    return err
+  }
+
+
 	return err
 }
 
@@ -321,7 +360,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.Risk) error) error {
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}

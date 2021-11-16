@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=NetworkGraphConfig --table=networkgraphconfig --no-key-field
+//go:generate pg-table-bindings-wrapper --type=NetworkGraphConfig --table=networkgraphconfig --no-key-field

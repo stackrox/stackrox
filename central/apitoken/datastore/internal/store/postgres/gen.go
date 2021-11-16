@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=TokenMetadata --table=apiTokens
+//go:generate pg-table-bindings-wrapper --type=TokenMetadata --table=apiTokens

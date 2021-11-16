@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -77,15 +78,21 @@ const (
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "NetworkGraphConfig")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists NetworkGraphConfig(serialized jsonb not null, PRIMARY KEY ());",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -271,7 +278,7 @@ func (s *storeImpl) WalkAllWithID(fn func(id string, obj *storage.NetworkGraphCo
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}

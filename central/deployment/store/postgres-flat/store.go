@@ -93,7 +93,6 @@ func New(db *pgxpool.Pool) Store {
 		"create table if not exists Deployment_Containers_Env(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Key varchar, Value varchar, EnvVarSource integer, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Ports(parent_Id varchar not null, idx numeric not null, ContainerPort numeric, Protocol varchar, Exposure integer, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Ports_ExposureInfos(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Level integer, ServiceName varchar, ServicePort numeric, NodePort numeric, ExternalIps text[], ExternalHostnames text[], PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Ports(parent_Id, idx) ON DELETE CASCADE);",
-		"create table if not exists Deployment_Requirements(parent_Id varchar not null, idx numeric not null, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)

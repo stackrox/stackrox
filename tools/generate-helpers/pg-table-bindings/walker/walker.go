@@ -1,4 +1,4 @@
-package main
+package walker
 
 import (
 	"fmt"
@@ -18,19 +18,76 @@ type Table struct {
 	Embedded []*Table
 	Children []*Table
 	OneOf 	bool
+	SearchField string
 }
 
-func (p *Table) GetInsertComposer() *InsertComposer {
+func (t *Table) Elements() []Element {
+	var elems []Element
+	for _, elem := range t.Elems {
+		if !elem.IsSearchable() {
+			continue
+		}
+		elems = append(elems, elem)
+	}
+	for _, child := range t.Embedded {
+		childPairs := child.Elements()
+		elems = append(elems, childPairs...)
+	}
+	return elems
+}
+
+func (p *Table) SearchFieldsToElement() map[string]Element {
+	m := make(map[string]Element)
+	for _, elem := range p.Elements() {
+		if elem.IsSearchable() {
+			m[elem.SearchField] = elem
+		}
+	}
+	for _, child := range p.Embedded {
+		for k, v := range child.SearchFieldsToElement() {
+			m[k] = v
+		}
+	}
+	for _, child := range p.Children {
+		for k, v := range child.SearchFieldsToElement() {
+			m[k] = v
+		}
+	}
+	return m
+}
+
+func (p *Table) GetInsertComposer(level int) *InsertComposer {
 	ic := &InsertComposer{
 		Table: p.TableName(),
 	}
 
-	for _, elem := range flattenTable(p) {
+	for _, elem := range p.Elements() {
 		ic.AddSQL(elem.SQLPath())
 		ic.AddExcluded(elem.SQLPath())
-		ic.AddGetters(elem.GetterPath())
+		getterPath := fmt.Sprintf("obj%d.", level) + elem.GetterPath()
+		if elem.DataType == DATETIME {
+			getterPath = fmt.Sprintf("nilOrStringTimestamp(%s)", getterPath)
+		}
+		ic.AddGetters(getterPath)
 	}
 	return ic
+}
+
+func (p *Table) AbsGetterPath() string {
+	if p.Field == "" {
+		return ""
+	}
+	getter := fmt.Sprintf("Get%s()", p.Field)
+	if p.Parent == nil {
+		return getter
+	}
+	if p.Parent.TopLevel {
+		return getter
+	}
+	if getterPath := p.Parent.GetterPath(); getterPath != "" {
+		return getterPath + "." + getter
+	}
+	return getter
 }
 
 func (p *Table) GetterPath() string {
@@ -40,6 +97,9 @@ func (p *Table) GetterPath() string {
 	getter := fmt.Sprintf("Get%s()", p.Field)
 	if p.Parent == nil {
 		return getter
+	}
+	if p.OneOf {
+		return p.Parent.GetterPath()
 	}
 	if getterPath := p.Parent.GetterPath(); getterPath != "" {
 		return getterPath + "." + getter
@@ -104,7 +164,7 @@ func (s Table) Print(indent string, searchOnly bool) {
 	fmt.Println(indent, s.Field, s.RawFieldType, s.OneOf)
 	fmt.Println(indent, "  ", "fields:")
 	for _, elem := range s.Elems {
-		if !searchOnly || elem.IsSearchable {
+		if !searchOnly || elem.IsSearchable() {
 			fmt.Println(indent, "    ", elem.Field, elem.DataType.String(), elem.RawFieldType)
 		}
 	}
@@ -129,16 +189,16 @@ type Element struct {
 	Field        string
 	RawFieldType string
 	Slice        bool
-	IsSearchable bool
+	SearchField string
 	Options PostgresOptions
+}
+
+func (e Element) IsSearchable() bool {
+	return e.SearchField != ""
 }
 
 func (e Element) GetterPath() string {
 	getter := fmt.Sprintf("Get%s()", e.Field)
-	if e.DataType == DATETIME {
-		// Currently breaks on nil
-		getter += ".String()"
-	}
 	if e.Parent.TopLevel {
 		return getter
 	}
@@ -155,7 +215,7 @@ func (e Element) SQLPath() string {
 	return e.Field
 }
 
-type searchWalker struct {
+type SQLWalker struct {
 	table string
 }
 
@@ -166,7 +226,7 @@ func Walk(obj reflect.Type) *Table {
 		RawFieldType: strings.TrimPrefix(typ.String(), "storage."),
 		TopLevel: true,
 	}
-	walker := searchWalker{}
+	walker := SQLWalker{}
 	walker.handleStruct(parent, typ)
 
 	return parent
@@ -184,18 +244,18 @@ func getPostgresOptions(tag string) PostgresOptions {
 	var opts PostgresOptions
 
 	for _, field := range strings.Split(tag, ",") {
-		switch field {
-		case "-":
+		switch {
+		case field == "-":
 			opts.Ignored = true
-		case "index":
+		case strings.HasPrefix(field, "index"):
 			if strings.Contains(field, "=") {
 				opts.Index = stringutils.GetAfter(field, "=")
 			} else {
 				opts.Index = defaultIndex
 			}
-		case "pk":
+		case field == "pk":
 			opts.PrimaryKey = true
-		case "":
+		case field == "":
 		default:
 			// ignore for just right now
 			panic(fmt.Sprintf("unknown case: %s", field))
@@ -209,7 +269,7 @@ func hasSearchField(tag string) bool {
 }
 
 // handleStruct takes in a struct object and properly handles all of the fields
-func (s *searchWalker) handleStruct(parent *Table, original reflect.Type) {
+func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
 		field := original.Field(i)
 		if strings.HasPrefix(field.Name, "XXX") {
@@ -220,17 +280,19 @@ func (s *searchWalker) handleStruct(parent *Table, original reflect.Type) {
 			continue
 		}
 
+		var searchField string
 		searchTag := field.Tag.Get("search")
 		if searchTag == "-" {
 			continue
+		} else if searchTag != "" {
+			fields := strings.Split(searchTag, ",")
+			searchField = fields[0]
 		}
-		isSearchable := searchTag != ""
-
 		elem := Element{
 			Parent:       parent,
 			Field:        field.Name,
 			RawFieldType: field.Type.String(),
-			IsSearchable: isSearchable,
+			SearchField: searchField,
 			Options: opts,
 		}
 		switch field.Type.Kind() {
@@ -258,7 +320,7 @@ func (s *searchWalker) handleStruct(parent *Table, original reflect.Type) {
 					DataType:     STRING_ARRAY,
 					Field:        field.Name,
 					Slice:        true,
-					IsSearchable: isSearchable,
+					SearchField: searchField,
 				})
 				continue
 			case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
@@ -267,7 +329,7 @@ func (s *searchWalker) handleStruct(parent *Table, original reflect.Type) {
 					DataType:     INT_ARRAY,
 					Field:        field.Name,
 					Slice:        true,
-					IsSearchable: isSearchable,
+					SearchField: searchField,
 				})
 				continue
 			}

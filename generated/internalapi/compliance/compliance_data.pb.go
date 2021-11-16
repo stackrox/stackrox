@@ -1987,7 +1987,7 @@ func (m *File) Unmarshal(dAtA []byte) error {
 			m.IsDir = bool(v != 0)
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Embedded", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Children", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {

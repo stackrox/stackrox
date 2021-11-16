@@ -84,14 +84,6 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists Alert(serialized jsonb not null, LifecycleStage integer, Time timestamp, State integer, Tags text[], Policy_Id varchar, Policy_Name varchar, Policy_Description varchar, Policy_Disabled bool, Policy_Categories text[], Policy_LifecycleStages intarray, Policy_Severity integer, Policy_EnforcementActions intarray, Policy_SORTName varchar, Policy_SORTLifecycleStage varchar, Policy_SORTEnforcement bool, Entity_Deployment_Id varchar, Entity_Deployment_Name varchar, Entity_Deployment_Namespace varchar, Entity_Deployment_NamespaceId varchar, Entity_Deployment_ClusterId varchar, Entity_Deployment_ClusterName varchar, Entity_Image_Id varchar, Entity_Image_Name_Registry varchar, Entity_Image_Name_Remote varchar, Entity_Image_Name_Tag varchar, Entity_Image_Name_FullName varchar, Entity_Resource_ResourceType integer, Entity_Resource_Name varchar, PRIMARY KEY ());",
-		"create table if not exists Alert_Whitelists(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Alert() ON DELETE CASCADE);",
-		"create table if not exists Alert_Exclusions(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Alert() ON DELETE CASCADE);",
-		"create table if not exists Alert_Scope(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Alert() ON DELETE CASCADE);",
-		"create table if not exists Alert_PolicySections(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Alert() ON DELETE CASCADE);",
-		"create table if not exists Alert_PolicySections_PolicyGroups(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES Alert_PolicySections(idx) ON DELETE CASCADE);",
-		"create table if not exists Alert_PolicySections_PolicyGroups_Values(parent_parent_idx numeric not null, parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_parent_idx, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_idx, parent_idx) REFERENCES Alert_PolicySections_PolicyGroups(parent_idx, idx) ON DELETE CASCADE);",
-		"create table if not exists Alert_MitreAttackVectors(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Alert() ON DELETE CASCADE);",
-		"create table if not exists Alert_Containers(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Alert() ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)

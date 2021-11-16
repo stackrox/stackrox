@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-bindings-wrapper --type=Deployment --table=deployments
+//go:generate pg-table-bindings-wrapper --type=Deployment --table=deployments
