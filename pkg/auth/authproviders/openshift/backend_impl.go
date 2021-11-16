@@ -42,10 +42,15 @@ var (
 	}
 )
 
+type callbackAndRefreshConnector interface {
+	connector.CallbackConnector
+	connector.RefreshConnector
+}
+
 type backend struct {
 	id                 string
 	baseRedirectURL    url.URL
-	openshiftConnector connector.CallbackConnector
+	openshiftConnector callbackAndRefreshConnector
 }
 
 type openShiftSettings struct {
@@ -54,7 +59,7 @@ type openShiftSettings struct {
 	trustedCertPool *x509.CertPool
 }
 
-var _ authproviders.Backend = (*backend)(nil)
+var _ authproviders.RefreshTokenEnabledBackend = (*backend)(nil)
 
 func newBackend(id string, callbackURLPath string, _ map[string]string) (authproviders.Backend, error) {
 	settings, err := getOpenShiftSettings()
@@ -112,9 +117,9 @@ func (b *backend) RefreshURL() string {
 	return ""
 }
 
-func (b *backend) OnEnable(provider authproviders.Provider) {}
+func (b *backend) OnEnable(_ authproviders.Provider) {}
 
-func (b *backend) OnDisable(provider authproviders.Provider) {}
+func (b *backend) OnDisable(_ authproviders.Provider) {}
 
 func (b *backend) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	if r.URL.Path != b.baseRedirectURL.Path {
@@ -125,8 +130,12 @@ func (b *backend) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*a
 	}
 	id, err := b.openshiftConnector.HandleCallback(defaultScopes, r)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "retrieving user identity")
 	}
+	return b.idToAuthResponse(&id), nil
+}
+
+func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthResponse {
 	return &authproviders.AuthResponse{
 		Claims: &tokens.ExternalUserClaim{
 			UserID: id.Username,
@@ -136,10 +145,29 @@ func (b *backend) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*a
 			},
 		},
 		Expiration: time.Now().Add(roxTokenExpiration),
-	}, nil
+		RefreshTokenData: authproviders.RefreshTokenData{
+			RefreshToken: string(id.ConnectorData),
+		},
+	}
 }
 
-func (b *backend) ExchangeToken(ctx context.Context, externalToken string, state string) (*authproviders.AuthResponse, string, error) {
+// RefreshAccessToken attempts to fetch user info and issue an updated auth
+// status. If the refresh token has expired, error is returned.
+func (b *backend) RefreshAccessToken(ctx context.Context, refreshTokenData authproviders.RefreshTokenData) (*authproviders.AuthResponse, error) {
+	id, err := b.openshiftConnector.Refresh(ctx, defaultScopes, connector.Identity{
+		ConnectorData: []byte(refreshTokenData.RefreshToken),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving user identity")
+	}
+	return b.idToAuthResponse(&id), nil
+}
+
+func (b *backend) RevokeRefreshToken(_ context.Context, _ authproviders.RefreshTokenData) error {
+	return nil
+}
+
+func (b *backend) ExchangeToken(_ context.Context, _ string, _ string) (*authproviders.AuthResponse, string, error) {
 	return nil, "", errors.New("not implemented")
 }
 

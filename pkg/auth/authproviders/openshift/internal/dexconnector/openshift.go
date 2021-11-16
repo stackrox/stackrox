@@ -30,12 +30,14 @@ import (
 // Changes include:                                                           //
 //   * dynamically update oauth config with redirect_uri                      //
 //   * expose access token to support refreshing of our tokens                //
+//   * support refreshing tokens via Refresh() function                       //
 //   * remove allowed groups and the corresponding validation                 //
 //   * use errors.* instead of fmt.*                                          //
 //   * remove all insecure related settings                                   //
 //   * remove root CA path and instead inject a *x509.CertPool for TLS        //
 //     verification                                                           //
 //   * add validation for connectivity to OAuth2 endpoints                    //
+//   * extract fetching user info into identity() function                    //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -62,13 +64,7 @@ type openshiftConnector struct {
 }
 
 var _ connector.CallbackConnector = (*openshiftConnector)(nil)
-
-type connectorData struct {
-	// OpenShift's OAuth2 tokens expire after 24 hours while ACS tokens usually
-	// after 5 minutes. We can use this token to check user attributes on ACS
-	// token refresh without initiating an entire oauth flow.
-	OpenShiftAccessToken string `json:"openshiftAccessToken"`
-}
+var _ connector.RefreshConnector = (*openshiftConnector)(nil)
 
 type user struct {
 	k8sapi.TypeMeta   `json:",inline"`
@@ -228,6 +224,26 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 		return identity, errors.Wrap(err, "failed to get token")
 	}
 
+	return c.identity(ctx, s, token)
+}
+
+// Refresh uses an oauth token previously received from the OAuth server to
+// fetch fresh user info and build Identity from it. We expect the oauth token
+// to only contain the access token, hence once it expires, no user info can
+// be fetched and this function returns an error.
+func (c *openshiftConnector) Refresh(ctx context.Context, s connector.Scopes, oldID connector.Identity) (connector.Identity, error) {
+	var token oauth2.Token
+	err := json.Unmarshal(oldID.ConnectorData, &token)
+	if err != nil {
+		return connector.Identity{}, errors.Wrap(err, "parsing token")
+	}
+	if c.httpClient != nil {
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient)
+	}
+	return c.identity(ctx, s, &token)
+}
+
+func (c *openshiftConnector) identity(ctx context.Context, s connector.Scopes, token *oauth2.Token) (identity connector.Identity, err error) {
 	client := c.oauth2Config.Client(ctx, token)
 	user, err := c.user(ctx, client)
 	if err != nil {
@@ -243,10 +259,9 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 	}
 
 	if s.OfflineAccess {
-		data := connectorData{OpenShiftAccessToken: token.AccessToken}
-		connData, err := json.Marshal(data)
+		connData, err := json.Marshal(token)
 		if err != nil {
-			return identity, errors.Wrap(err, "failed to marshal openshift's access token")
+			return identity, errors.Wrap(err, "failed to marshal openshift's oauth2 token")
 		}
 		identity.ConnectorData = connData
 	}
