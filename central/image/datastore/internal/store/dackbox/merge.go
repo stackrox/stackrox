@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // Merge merges the images parts into an image.
@@ -99,6 +100,10 @@ func generateEmbeddedCVE(os string, cp CVEParts, imageCVEEdge *storage.ImageCVEE
 		}
 	}
 	ret.FirstImageOccurrence = imageCVEEdge.GetFirstImageOccurrence()
+
+	if features.VulnRiskManagement.Enabled() {
+		ret.State = imageCVEEdge.GetState()
+	}
 
 	if distroSpecifics, ok := cp.cve.GetDistroSpecifics()[os]; ok {
 		ret.Severity = distroSpecifics.GetSeverity()

@@ -95,18 +95,32 @@ func (mr *MockStoreMockRecorder) GetAll() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll))
 }
 
-// GetBatch mocks base method.
-func (m *MockStore) GetBatch(ids []string) ([]*storage.ImageCVEEdge, []int, error) {
+// GetMany mocks base method.
+func (m *MockStore) GetMany(ids []string) ([]*storage.ImageCVEEdge, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatch", ids)
+	ret := m.ctrl.Call(m, "GetMany", ids)
 	ret0, _ := ret[0].([]*storage.ImageCVEEdge)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetBatch indicates an expected call of GetBatch.
-func (mr *MockStoreMockRecorder) GetBatch(ids interface{}) *gomock.Call {
+// GetMany indicates an expected call of GetMany.
+func (mr *MockStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockStore)(nil).GetBatch), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ids)
+}
+
+// UpdateVulnState mocks base method.
+func (m *MockStore) UpdateVulnState(cve string, images []string, state storage.VulnerabilityState) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateVulnState", cve, images, state)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateVulnState indicates an expected call of UpdateVulnState.
+func (mr *MockStoreMockRecorder) UpdateVulnState(cve, images, state interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnState", reflect.TypeOf((*MockStore)(nil).UpdateVulnState), cve, images, state)
 }

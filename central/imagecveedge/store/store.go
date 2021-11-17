@@ -12,5 +12,6 @@ type Store interface {
 
 	GetAll() ([]*storage.ImageCVEEdge, error)
 	Get(id string) (*storage.ImageCVEEdge, bool, error)
-	GetBatch(ids []string) ([]*storage.ImageCVEEdge, []int, error)
+	GetMany(ids []string) ([]*storage.ImageCVEEdge, []int, error)
+	UpdateVulnState(cve string, images []string, state storage.VulnerabilityState) error
 }

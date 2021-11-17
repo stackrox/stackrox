@@ -49,7 +49,7 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 
 // resultsToImageCVEEdges returns the ImageCVEEdges from the db for the given search results.
 func (ds *searcherImpl) resultsToImageCVEEdges(results []search.Result) ([]*storage.ImageCVEEdge, []int, error) {
-	return ds.storage.GetBatch(search.ResultsToIDs(results))
+	return ds.storage.GetMany(search.ResultsToIDs(results))
 }
 
 // ToSearchResults returns the searchResults from the db for the given search results.
@@ -92,7 +92,7 @@ func (ds *searcherImpl) searchImageCVEEdges(ctx context.Context, q *v1.Query) ([
 	}
 
 	ids := search.ResultsToIDs(results)
-	cves, _, err := ds.storage.GetBatch(ids)
+	cves, _, err := ds.storage.GetMany(ids)
 	if err != nil {
 		return nil, err
 	}

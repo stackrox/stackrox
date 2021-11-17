@@ -97,3 +97,17 @@ func (mr *MockDataStoreMockRecorder) SearchRawEdges(arg0, arg1 interface{}) *gom
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawEdges", reflect.TypeOf((*MockDataStore)(nil).SearchRawEdges), arg0, arg1)
 }
+
+// UpdateVulnerabilityState mocks base method.
+func (m *MockDataStore) UpdateVulnerabilityState(arg0 context.Context, arg1 string, arg2 []string, arg3 storage.VulnerabilityState) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateVulnerabilityState", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateVulnerabilityState indicates an expected call of UpdateVulnerabilityState.
+func (mr *MockDataStoreMockRecorder) UpdateVulnerabilityState(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilityState", reflect.TypeOf((*MockDataStore)(nil).UpdateVulnerabilityState), arg0, arg1, arg2, arg3)
+}

@@ -47,7 +47,7 @@ func (suite *ImageStoreTestSuite) SetupSuite() {
 	}
 	suite.store = New(suite.dacky, concurrency.NewKeyFence(), false)
 	suite.cveStorage = cveDackBoxStore.New(suite.dacky, concurrency.NewKeyFence())
-	suite.imageCVEEdgeStore = imageCVEEdgeDackBox.New(suite.dacky)
+	suite.imageCVEEdgeStore = imageCVEEdgeDackBox.New(suite.dacky, concurrency.NewKeyFence())
 }
 
 func (suite *ImageStoreTestSuite) TearDownSuite() {
