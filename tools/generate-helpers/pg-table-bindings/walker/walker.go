@@ -41,12 +41,16 @@ func (p *Table) SearchFieldsToElement() map[string]Element {
 	m := make(map[string]Element)
 	for _, elem := range p.Elements() {
 		if elem.IsSearchable() {
-			m[elem.SearchField] = elem
+			if _, ok := m[elem.SearchField]; !ok {
+				m[elem.SearchField] = elem
+			}
 		}
 	}
 	for _, child := range p.Embedded {
 		for k, v := range child.SearchFieldsToElement() {
-			m[k] = v
+			if _, ok := m[k]; !ok {
+				m[k] = v
+			}
 		}
 	}
 	for _, child := range p.Children {

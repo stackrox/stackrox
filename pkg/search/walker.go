@@ -181,7 +181,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		//searchField.Elems = pathElems
 
 		if _, ok := s.fields[FieldLabel(fieldName)]; ok {
-			log.Errorf("UNEXPECTED: COLLISION IN SEARCH WALKER %s: Ambiguous use of %s", s.prefix, fieldName)
+			log.Errorf("UNEXPECTED: COLLISION IN SEARCH WALKER %s: Ambiguous use of %s on %s", s.prefix, prefix, fieldName)
 			continue
 		}
 
