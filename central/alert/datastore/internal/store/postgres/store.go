@@ -85,6 +85,7 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists Alert(serialized jsonb not null, Id varchar, LifecycleStage integer, Time timestamp, State integer, Tags text[], Policy_Id varchar, Policy_Name varchar, Policy_Description varchar, Policy_Disabled bool, Policy_Categories text[], Policy_LifecycleStages int[], Policy_Severity integer, Policy_EnforcementActions int[], Policy_SORTName varchar, Policy_SORTLifecycleStage varchar, Policy_SORTEnforcement bool, Entity_Deployment_Id varchar, Entity_Deployment_Name varchar, Entity_Deployment_Namespace varchar, Entity_Deployment_NamespaceId varchar, Entity_Deployment_ClusterId varchar, Entity_Deployment_ClusterName varchar, Entity_Image_Id varchar, Entity_Image_Name_Registry varchar, Entity_Image_Name_Remote varchar, Entity_Image_Name_Tag varchar, Entity_Image_Name_FullName varchar, Entity_Resource_ResourceType integer, Entity_Resource_Name varchar, PRIMARY KEY (Id));",
+		"create index if not exists Alert_Entity_Deployment_Id on Alert using hash(Entity_Deployment_Id)",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)

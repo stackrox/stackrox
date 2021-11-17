@@ -85,6 +85,7 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists K8SRole(serialized jsonb not null, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb, PRIMARY KEY (Id));",
+		"create index if not exists K8SRole_Id on K8SRole using hash(Id)",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
