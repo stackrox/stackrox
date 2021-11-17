@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -309,6 +310,8 @@ func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID 
 	identity.EXPECT().FullName().AnyTimes().Return(userID)
 	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
 	identity.EXPECT().User().AnyTimes().Return(nil)
+	dummyRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+	identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{dummyRole})
 	identity.EXPECT().Permissions().AnyTimes().Return(utils.FromResourcesWithAccess(resourceWithAccess...))
 
 	return authn.ContextWithIdentity(ctx, identity, s.T())

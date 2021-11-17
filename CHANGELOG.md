@@ -26,6 +26,10 @@ privileges required to create and modify access scopes for the purpose of config
   Note: the `csv` and `json` output formats contain **breaking changes**, the old formats are kept as default but marked as deprecated.
   Ensure that you switch to the new formats in a timely manner.
 
+- Behaviour change: The built-in `None` role is no longer taken into account when determining the roles for a user. Therefore, users with only the `None`
+  role will be logged out and not be able to log in, as a valid user must have some role assigned. Logout and login prevention are materialized with HTTP
+  status 401 `Unauthorized` and error message reporting the lack of valid role.
+
 ## [66.0]
 
 - Default system policies `DockerHub NGINX 1.10`, `Shellshock: Multiple CVEs`, and `Heartbleed: CVE-2014-0160` have been deprecated.

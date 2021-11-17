@@ -73,6 +73,10 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 		// 1b. Admin => allow all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), observe.ScopeCheckerAllowAdminAndService, nil
 	}
+	if len(id.Roles()) == 0 {
+		// 1c. User has no valid role => deny all.
+		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil
+	}
 	if client == nil {
 		// 2. Built-in scoped authorizer must be used.
 		ctx = sac.SetContextBuiltinScopedAuthzEnabled(ctx)

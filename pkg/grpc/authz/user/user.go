@@ -34,6 +34,9 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	if id == nil {
 		return errorhelpers.ErrNoCredentials
 	}
+	if len(id.Roles()) == 0 {
+		return errorhelpers.GenericNoValidRole()
+	}
 
 	// If sac scope checker is configured, skip role check.
 	contextIsSACEnabled := sac.IsContextSACEnabled(ctx)

@@ -27,6 +27,8 @@ class DiagnosticBundleTest extends BaseSpecification {
     private GenerateTokenResponse debugLogsReaderToken
     @Shared
     private GenerateTokenResponse noAccessToken
+    @Shared
+    private Role noAccessRole
 
     def setupSpec() {
         disableAuthzPlugin()
@@ -42,7 +44,16 @@ class DiagnosticBundleTest extends BaseSpecification {
         )
         debugLogsReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
                 debugLogsReaderRoleName)
-        noAccessToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "None")
+        Map<String, RoleOuterClass.Access> resourceToAccess =
+                [
+                        "DebugLogs": RoleOuterClass.Access.NO_ACCESS,
+                        "Cluster": RoleOuterClass.Access.NO_ACCESS,
+                ]
+        noAccessRole = RoleOuterClass.Role.newBuilder()
+                        .setName("No Access Test Role - ${RUN_ID}")
+                        .build()
+        noAccessRole = RoleService.createRoleWithPermissionSet(noAccessRole, resourceToAccess)
+        noAccessToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), noAccessRole.name)
     }
 
     def cleanupSpec() {
@@ -54,6 +65,9 @@ class DiagnosticBundleTest extends BaseSpecification {
         }
         if (noAccessToken != null) {
             services.ApiTokenService.revokeToken(noAccessToken.metadata.id)
+        }
+        if (noAccessRole != null) {
+            RoleService.deleteRole(noAccessRole.name)
         }
         RoleService.deleteRole(debugLogsReaderRoleName)
     }

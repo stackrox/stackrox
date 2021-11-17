@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -49,6 +50,9 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state
 	id, err := p.basicAuthMgr.IdentityForCreds(ctx, username, password, nil)
 	if err != nil {
 		return nil, "", authproviders.CreateError("failed to authenticate", err)
+	}
+	if len(id.Roles()) == 0 {
+		return nil, "", errorhelpers.GenericNoValidRole()
 	}
 
 	return &authproviders.AuthResponse{

@@ -125,7 +125,7 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 		username:      email,
 		friendlyName:  token.Subject,
 		fullName:      token.Name,
-		resolvedRoles: resolvedRoles,
+		resolvedRoles: authn.FilterOutNoneRole(resolvedRoles),
 		expiry:        token.Expiry(),
 		attributes:    attributes,
 		authProvider:  authProvider,
@@ -154,9 +154,6 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	resolvedRoles, err := roleMapper.FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
-	}
-	if len(resolvedRoles) == 0 {
-		return nil, fmt.Errorf("external user %s has no assigned role", token.ExternalUser.UserID)
 	}
 	if err := authProvider.MarkAsActive(); err != nil {
 		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())

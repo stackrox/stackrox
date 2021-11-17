@@ -61,6 +61,40 @@ func (s *MapperTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
+func (s *MapperTestSuite) TestMapperSuccessForRoleAbsence() {
+	// The user information.
+	expectedUser := &storage.User{
+		Id:             "testuserid",
+		AuthProviderId: fakeAuthProvider,
+		Attributes: []*storage.UserAttribute{
+			{
+				Key:   "email",
+				Value: "testuser@domain.tld",
+			},
+		},
+	}
+	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
+
+	expectedAttributes := map[string][]string{
+		"email": {"testuser@domain.tld"},
+	}
+	// Expect the user to have no group mapping.
+	s.mockGroups.EXPECT().Walk(s.requestContext, fakeAuthProvider, expectedAttributes).
+		Times(1).
+		Return([]*storage.Group{}, nil)
+
+	userDescriptor := &permissions.UserDescriptor{
+		UserID: "testuserid",
+		Attributes: map[string][]string{
+			"email": {"testuser@domain.tld"},
+		},
+	}
+
+	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	s.NoError(err, "mapping should have succeeded")
+	s.ElementsMatch(nil, roles, "since no role was mapped, no role should be returned")
+}
+
 func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 	// The user information we expect to be upserted.
 	expectedUser := &storage.User{
@@ -112,6 +146,59 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole}, roles, "since a single role was mapped, that role should be returned")
+}
+
+func (s *MapperTestSuite) TestMapperSuccessForOnlyNoneRole() {
+	// The user information we expect to be upserted.
+	expectedUser := &storage.User{
+		Id:             "testuserid",
+		AuthProviderId: fakeAuthProvider,
+		Attributes: []*storage.UserAttribute{
+			{
+				Key:   "email",
+				Value: "testuser@domain.tld",
+			},
+		},
+	}
+	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
+
+	// Expect the user to have a group mapping to the None role.
+	expectedGroup := &storage.Group{
+		Props: &storage.GroupProperties{
+			AuthProviderId: fakeAuthProvider,
+			Key:            "email",
+			Value:          "testuser@domain.tld",
+		},
+		RoleName: "None",
+	}
+	expectedAttributes := map[string][]string{
+		"email": {"testuser@domain.tld"},
+	}
+	s.mockGroups.
+		EXPECT().
+		Walk(s.requestContext, fakeAuthProvider, expectedAttributes).
+		Times(1).
+		Return([]*storage.Group{expectedGroup}, nil)
+
+	// Expect the role to be fetched.
+	expectedResolvedRole := roletest.NewResolvedRoleWithGlobalScope(
+		"None",
+		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
+	s.mockRoles.
+		EXPECT().
+		GetAndResolveRole(s.requestContext, "None").
+		Times(1).
+		Return(expectedResolvedRole, nil)
+
+	userDescriptor := &permissions.UserDescriptor{
+		UserID: "testuserid",
+		Attributes: map[string][]string{
+			"email": {"testuser@domain.tld"},
+		},
+	}
+	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	s.NoError(err, "mapping should have succeeded")
+	s.ElementsMatch([]permissions.ResolvedRole{}, roles, "since only the None role was mapped, no role should be returned")
 }
 
 func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
@@ -183,6 +270,75 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 	s.Require().NoError(err, "mapping should have succeeded")
 
 	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole1, expectedResolvedRole2}, roles, "expected both roles to be present")
+}
+
+func (s *MapperTestSuite) TestMapperSuccessForMultipleRolesIncludingNone() {
+	// The user information we expect to be upserted.
+	expectedUser := &storage.User{
+		Id:             "coolguysid",
+		AuthProviderId: fakeAuthProvider,
+		Attributes: []*storage.UserAttribute{
+			{
+				Key:   "email",
+				Value: "coolguy@yahoo",
+			},
+		},
+	}
+	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
+
+	// Expect the user to have multiple group mappings for roles including None.
+	expectedGroup := &storage.Group{
+		Props: &storage.GroupProperties{
+			AuthProviderId: fakeAuthProvider,
+			Key:            "email",
+			Value:          "coolguy@yahoo",
+		},
+		RoleName: "TeamAwesome",
+	}
+	expectedGroupNone := &storage.Group{
+		Props: &storage.GroupProperties{
+			AuthProviderId: fakeAuthProvider,
+			Key:            "email",
+			Value:          "coolguy@yahoo",
+		},
+		RoleName: "None",
+	}
+	expectedAttributes := map[string][]string{
+		"email": {"coolguy@yahoo"},
+	}
+	s.mockGroups.
+		EXPECT().
+		Walk(s.requestContext, fakeAuthProvider, expectedAttributes).
+		Times(1).
+		Return([]*storage.Group{expectedGroup, expectedGroupNone}, nil)
+
+	// Expect the roles to be fetched.
+	expectedResolvedRole := roletest.NewResolvedRoleWithGlobalScope(
+		"TeamAwesome",
+		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
+	expectedResolvedNoneRole := roletest.NewResolvedRoleWithGlobalScope(
+		"None",
+		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
+	s.mockRoles.
+		EXPECT().
+		GetAndResolveRole(s.requestContext, "TeamAwesome").
+		Times(1).
+		Return(expectedResolvedRole, nil)
+	s.mockRoles.
+		EXPECT().
+		GetAndResolveRole(s.requestContext, "None").
+		Times(1).
+		Return(expectedResolvedNoneRole, nil)
+
+	userDescriptor := &permissions.UserDescriptor{
+		UserID: "coolguysid",
+		Attributes: map[string][]string{
+			"email": {"coolguy@yahoo"},
+		},
+	}
+	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	s.NoError(err, "mapping should have succeeded")
+	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole}, roles, "expected None role to be filtered out and the other one to be present")
 }
 
 func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {

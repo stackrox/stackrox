@@ -629,7 +629,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/logimbue",
-			Authorizer:    user.WithAnyRole(),
+			Authorizer:    user.With(),
 			ServerHandler: logimbueHandler.Singleton(),
 			Compression:   false,
 		},

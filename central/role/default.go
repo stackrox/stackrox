@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -17,7 +17,7 @@ const (
 	Analyst = "Analyst"
 
 	// None role has no access.
-	None = user.NoneRole
+	None = authn.NoneRole
 
 	// ContinuousIntegration is for CI pipelines.
 	ContinuousIntegration = "Continuous Integration"

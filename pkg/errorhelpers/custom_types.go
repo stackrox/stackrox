@@ -32,6 +32,9 @@ var (
 	// ErrNoCredentials occurs if no credentials can be found.
 	ErrNoCredentials = errors.New("credentials not found")
 
+	// ErrNoValidRole occurs if no valid role can be found for user.
+	ErrNoValidRole = errors.New("no valid role")
+
 	// ErrNotAuthorized occurs if credentials are found, but they are
 	// insufficiently authorized.
 	ErrNotAuthorized = errors.New("not authorized")
@@ -40,6 +43,12 @@ var (
 	// service. This is a programming error.
 	ErrNoAuthzConfigured = errors.New("service authorization is misconfigured")
 )
+
+// GenericNoValidRole wraps ErrNoValidRole with a generic error message
+func GenericNoValidRole() error {
+	return fmt.Errorf("Access for this user is not authorized: %w. Please contact a system administrator.",
+		ErrNoValidRole)
+}
 
 // NewErrNotAuthorized wraps ErrNotAuthorized into an explanation.
 func NewErrNotAuthorized(explanation string) error {

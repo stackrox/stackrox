@@ -14,12 +14,14 @@ import (
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph/testutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -82,6 +84,8 @@ func identity(readResources ...string) func(mockCtrl *gomock.Controller, t *test
 			resourceToAccess[resource] = storage.Access_READ_ACCESS
 		}
 
+		dummyRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+		identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{dummyRole})
 		identity.EXPECT().Permissions().AnyTimes().Return(resourceToAccess)
 		return authn.ContextWithIdentity(context.Background(), identity, t)
 	}

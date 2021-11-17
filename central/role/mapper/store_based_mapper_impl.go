@@ -10,6 +10,7 @@ import (
 	userDataStore "github.com/stackrox/rox/central/user/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -74,7 +75,7 @@ func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*st
 		if err != nil {
 			return nil, errors.Wrapf(err, "resolving role %q", roleName)
 		}
-		if role != nil {
+		if role != nil && role.GetRoleName() != authn.NoneRole {
 			resolvedRoles = append(resolvedRoles, role)
 		}
 	}

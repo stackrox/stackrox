@@ -29,7 +29,7 @@ class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
     static final private String NAMESPACE_QA2 = "qa-test2"
     static final private String TEST_IMAGE = "nginx:1.7.9"
-    static final private String NONE = "None"
+    static final private String TESTROLE = "Continuous Integration"
     static final private String SECRETNAME = "sac-secret"
     static final protected String ALLACCESSTOKEN = "allAccessToken"
     static final protected String NOACCESSTOKEN = "noAccess"
@@ -102,7 +102,7 @@ class SACTest extends BaseSpecification {
     }
 
     GenerateTokenResponse useToken(String tokenName) {
-        GenerateTokenResponse token = ApiTokenService.generateToken(tokenName, NONE)
+        GenerateTokenResponse token = ApiTokenService.generateToken(tokenName, TESTROLE)
         BaseService.useApiToken(token.token)
         token
     }

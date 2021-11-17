@@ -78,7 +78,7 @@ class ComplianceTest extends BaseSpecification {
     private gcrId = ""
     @Shared
     private Map<String, String> standardsByName = [:]
-    static final private String NONE = "None"
+    static final private String TESTROLE = "Continuous Integration"
     static final private String COMPLIANCETOKEN = "stackrox-compliance"
 
     def setupSpec() {
@@ -1371,7 +1371,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "Enable SAC token and add other cluster"
         ClusterService.createCluster(otherClusterName, "stackrox/main:latest", "central.stackrox:443")
-        ApiTokenService.GenerateTokenResponse token = services.ApiTokenService.generateToken(COMPLIANCETOKEN, NONE)
+        ApiTokenService.GenerateTokenResponse token = services.ApiTokenService.generateToken(COMPLIANCETOKEN, TESTROLE)
         BaseService.useApiToken(token.token)
 
         when:
