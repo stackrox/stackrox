@@ -25,6 +25,7 @@ privileges required to create and modify access scopes for the purpose of config
   This includes introducing output format's `table, csv, json` for each command.
   Note: the `csv` and `json` output formats contain **breaking changes**, the old formats are kept as default but marked as deprecated.
   Ensure that you switch to the new formats in a timely manner.
+- In policy exclusions, the deployment name can now be a regex. Earlier, it was an exact string match.
 
 - Behaviour change: The built-in `None` role is no longer taken into account when determining the roles for a user. Therefore, users with only the `None`
   role will be logged out and not be able to log in, as a valid user must have some role assigned. Logout and login prevention are materialized with HTTP

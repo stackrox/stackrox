@@ -8,8 +8,9 @@ import (
 
 // CompiledScope a transformed scope into the relevant regexes
 type CompiledScope struct {
-	ClusterID  string
-	Namespace  regexutils.WholeStringMatcher
+	ClusterID string
+	Namespace regexutils.WholeStringMatcher
+
 	LabelKey   regexutils.WholeStringMatcher
 	LabelValue regexutils.WholeStringMatcher
 }

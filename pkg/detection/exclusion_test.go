@@ -38,6 +38,42 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			shouldMatch: true,
 		},
 		{
+			name:       "Named excluded scope with matching regex",
+			deployment: fixtures.GetDeployment(),
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{
+						Deployment: &storage.Exclusion_Deployment{Name: "nginx.*"},
+					},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name:       "Named excluded scope with non-matching regex",
+			deployment: fixtures.GetDeployment(),
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{
+						Deployment: &storage.Exclusion_Deployment{Name: "nginy.*"},
+					},
+				},
+			},
+			shouldMatch: false,
+		},
+		{
+			name:       "Named excluded scope with invalid regex (ensure no error)",
+			deployment: fixtures.GetDeployment(),
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{
+						Deployment: &storage.Exclusion_Deployment{Name: "ngin\\K"},
+					},
+				},
+			},
+			shouldMatch: false,
+		},
+		{
 			name:       "Named excluded scope, and another with a different name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
