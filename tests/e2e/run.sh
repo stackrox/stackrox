@@ -87,7 +87,6 @@ test_preamble() {
     export ROXDEPLOY_CONFIG_FILE_MAP="$TEST_ROOT/scripts/ci/endpoints/endpoints.yaml"
     export ROX_NETWORK_DETECTION_BASELINE_SIMULATION=true
     export ROX_NETWORK_DETECTION_BLOCKED_FLOWS=true
-    export ROX_SCOPED_ACCESS_CONTROL_V2=true
     export SENSOR_HELM_DEPLOY=true
     export ROX_COLLECTOR_ALT_PROBE_DOWNLOAD=true
     export ROX_ACTIVE_VULN_MANAGEMENT=true
