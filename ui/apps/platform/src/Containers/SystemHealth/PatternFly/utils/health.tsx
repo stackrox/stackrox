@@ -17,6 +17,12 @@ export const style0: CategoryStyle = {
     fgColor: 'text-base-500',
 };
 
+export const style0PF: CategoryStyle = {
+    Icon: Icon0,
+    bgColor: 'pf-u-background-color-200',
+    fgColor: 'pf-u-color-400',
+};
+
 export type CountMap = Record<string, number>;
 export type LabelMap = Record<string, string>;
 export type StyleMap = Record<string, CategoryStyle>;

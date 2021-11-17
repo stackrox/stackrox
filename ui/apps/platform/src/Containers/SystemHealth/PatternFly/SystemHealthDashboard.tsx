@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import {
     Card,
     CardHeader,
@@ -18,6 +18,7 @@ import {
 import ViewAllButton from 'Components/PatternFly/ViewAllButton';
 import useInterval from 'hooks/useInterval';
 import { clustersBasePath } from 'routePaths';
+import { fetchVulnerabilityDefinitionsInfo } from 'services/IntegrationHealthService';
 import VulnerabilityDefinitionsWidget from './Components/VulnerabilityDefinitionsWidget';
 import GenerateDiagnosticBundle from './Components/GenerateDiagnosticBundle';
 import ImageIntegrationHealthWidget from './Components/ImageIntegrationHealthWidget';
@@ -26,10 +27,37 @@ import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthW
 
 function SystemHealthDashboard(): ReactElement {
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
+    const [pollingCountSlower, setPollingCountSlower] = useState(0);
+    const [currentDatetime, setCurrentDatetime] = useState<Date | null>(null);
+
+    const [vulnerabilityDefinitionsInfo, setVulnerabilityDefinitionsInfo] = useState(null);
+
+    const [vulnerabilityDefinitionsRequestHasError, setVulnerabilityDefinitionsRequestHasError] =
+        useState(false);
+
+    useEffect(() => {
+        setCurrentDatetime(new Date());
+    }, [pollingCountFaster]);
+
+    useEffect(() => {
+        fetchVulnerabilityDefinitionsInfo()
+            .then((info) => {
+                setVulnerabilityDefinitionsInfo(info);
+                setVulnerabilityDefinitionsRequestHasError(false);
+            })
+            .catch(() => {
+                setVulnerabilityDefinitionsInfo(null);
+                setVulnerabilityDefinitionsRequestHasError(true);
+            });
+    }, [pollingCountSlower]);
 
     useInterval(() => {
         setPollingCountFaster(pollingCountFaster + 1);
     }, 30000); // 30 seconds is same as for Cluster Status Problems in top navigation
+
+    useInterval(() => {
+        setPollingCountSlower(pollingCountSlower + 1);
+    }, 300000); // 5 minutes is enough for Vulnerability Definitions
 
     return (
         <>
@@ -62,12 +90,14 @@ function SystemHealthDashboard(): ReactElement {
                         </Card>
                     </GridItem>
                     <GridItem span={12} md={6} lg={4} rowSpan={1}>
-                        {/* TODO: this section migrated as part of https://stack-rox.atlassian.net/browse/ROX-8313 */}
-                        <VulnerabilityDefinitionsWidget />
+                        <VulnerabilityDefinitionsWidget
+                            currentDatetime={currentDatetime}
+                            vulnerabilityDefinitionsInfo={vulnerabilityDefinitionsInfo}
+                            hasError={vulnerabilityDefinitionsRequestHasError}
+                        />
                     </GridItem>
                 </Grid>
                 <Grid hasGutter>
-                    {/* TODO: these section migrated as part of https://stack-rox.atlassian.net/browse/ROX-8314 */}
                     <GridItem span={12} md={4}>
                         <ImageIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     </GridItem>
