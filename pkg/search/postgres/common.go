@@ -93,29 +93,31 @@ func runQueryPrinter() {
 }
 
 type queryTree struct {
-	elem     searchPkg.PathElem
-	children map[string]*queryTree
+	tables set.StringSet
 }
 
-func newQueryTree(elem searchPkg.PathElem) *queryTree {
-	return &queryTree{
-		elem:     elem,
-		children: make(map[string]*queryTree),
-	}
+func (q *queryTree) AddTable(table string) {
+	q.tables.Add(strings.ToLower(table))
 }
 
-func (q *queryTree) addElems(elems []searchPkg.PathElem) {
-	currTree := q
-	for _, e := range elems {
-		var ok bool
-		childTree, ok := currTree.children[e.ProtoJSONName]
-		if !ok {
-			childTree = newQueryTree(e)
-			currTree.children[e.ProtoJSONName] = childTree
-		}
-		currTree = childTree
-	}
+func newQueryTree(table string) *queryTree {
+	qt := &queryTree{}
+	qt.AddTable(table)
+	return qt
 }
+
+//func (q *queryTree) addElems(elems []searchPkg.PathElem) {
+//	currTree := q
+//	for _, e := range elems {
+//		var ok bool
+//		childTree, ok := currTree.children[e.ProtoJSONName]
+//		if !ok {
+//			childTree = newQueryTree(e)
+//			currTree.children[e.ProtoJSONName] = childTree
+//		}
+//		currTree = childTree
+//	}
+//}
 
 func populatePathRecursive(tree *queryTree, q *v1.Query, optionsMap searchPkg.OptionsMap) {
 	switch sub := q.GetQuery().(type) {
@@ -129,7 +131,7 @@ func populatePathRecursive(tree *queryTree, q *v1.Query, optionsMap searchPkg.Op
 			if !ok {
 				return
 			}
-			tree.addElems(field.Elems)
+			tree.AddTable(field.FlatElem.TableName())
 		case *v1.BaseQuery_MatchNoneQuery:
 			// nothing to here either
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
@@ -139,7 +141,7 @@ func populatePathRecursive(tree *queryTree, q *v1.Query, optionsMap searchPkg.Op
 				if !ok {
 					return
 				}
-				tree.addElems(field.Elems)
+				tree.AddTable(field.FlatElem.TableName())
 			}
 		default:
 			panic("unsupported")
@@ -162,50 +164,12 @@ func populatePathRecursive(tree *queryTree, q *v1.Query, optionsMap searchPkg.Op
 	}
 }
 
-func printTree(t *queryTree, indent string) {
-	fmt.Println(indent, t.elem.ProtoJSONName, t.elem.Slice)
-	for _, children := range t.children {
-		printTree(children, indent+"  ")
-	}
-}
-
 func needsDistinct(t *queryTree) bool {
-	for _, childTree := range t.children {
-		if childTree.elem.Slice && len(childTree.children) != 0 {
-			return true
-		}
-		if needsDistinct(childTree) {
-			return true
-		}
-	}
-	return false
+	return len(t.tables) > 1
 }
 
 func createFromClauseRecursive(t *queryTree, parent string) []string {
-	var results []string
-	if parent == "" {
-		results = append(results, t.elem.ProtoJSONName)
-		parent = fmt.Sprintf("%s.value", t.elem.ProtoJSONName)
-	}
-
-	for _, childTree := range t.children {
-		if len(childTree.children) == 0 {
-			if childTree.elem.Slice {
-				results = append(results, fmt.Sprintf("jsonb_array_elements_text(%s->'%s') %s", parent, childTree.elem.ProtoJSONName, childTree.elem.ProtoJSONName))
-			}
-			continue
-		}
-		localParent := parent
-		if childTree.elem.Slice {
-			results = append(results, fmt.Sprintf("jsonb_array_elements(%s->'%s') %s", parent, childTree.elem.ProtoJSONName, childTree.elem.ProtoJSONName))
-			localParent = childTree.elem.ProtoJSONName
-		} else {
-			localParent = fmt.Sprintf("%s->'%s'", parent, childTree.elem.ProtoJSONName)
-		}
-		subRes := createFromClauseRecursive(childTree, localParent)
-		results = append(results, subRes...)
-	}
-	return results
+	return t.tables.AsSlice()
 }
 
 // This function does not currently solve naming collisions, and we'll need to eventually solve for that
@@ -256,28 +220,15 @@ func getPaginationQuery(pagination *v1.QueryPagination, table string, optionsMap
 
 	var orderByClauses []string
 	for _, so := range pagination.GetSortOptions() {
-		field, ok := optionsMap.Get(so.GetField())
-		if !ok {
-			return "", fmt.Errorf("cannot sort by field %s on table %s", so.GetField(), table)
-		}
-
-		root := field.TopLevelValue()
-		if root == "" {
-			elemPath := pgsearch.GenerateShortestElemPath(table, field.Elems)
-			switch field.Type {
-			case v1.SearchDataType_SEARCH_STRING:
-				root = pgsearch.RenderFinalPath(elemPath, field.LastElem().ProtoJSONName)
-			case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_ENUM:
-				root = fmt.Sprintf("(%s)::numeric", pgsearch.RenderFinalPath(elemPath, field.LastElem().ProtoJSONName))
-			case v1.SearchDataType_SEARCH_DATETIME:
-				root = fmt.Sprintf("(%s)::timestamp", pgsearch.RenderFinalPath(elemPath, field.LastElem().ProtoJSONName))
-			}
-		}
 		direction := "asc"
 		if so.GetReversed() {
 			direction = "desc"
 		}
-		orderByClauses = append(orderByClauses, root+" "+direction)
+		field, ok := optionsMap.Get(so.GetField())
+		if !ok {
+			return "", fmt.Errorf("cannot sort by field %s on table %s", so.GetField(), table)
+		}
+		orderByClauses = append(orderByClauses, field.FlatElem.TablePrefixed()+" "+direction)
 	}
 	var orderBy string
 	if len(orderByClauses) != 0 {
@@ -303,11 +254,7 @@ func generateSelectFieldsRecursive(table string, added set.StringSet, q *v1.Quer
 				return nil, nil
 			}
 			if subBQ.MatchFieldQuery.Highlight && added.Add(field.FieldPath) {
-				root := field.TopLevelValue()
-				if root == "" {
-					root = pgsearch.RenderFinalPath(pgsearch.GenerateShortestElemPath(table, field.Elems), field.LastElem().ProtoJSONName)
-				}
-				return []string{root}, []*searchPkg.Field{field}
+				return []string{field.FlatElem.TablePrefixed()}, []*searchPkg.Field{field}
 			}
 		case *v1.BaseQuery_MatchNoneQuery:
 			// nothing to here either
@@ -323,12 +270,8 @@ func generateSelectFieldsRecursive(table string, added set.StringSet, q *v1.Quer
 					return nil, nil
 				}
 				if q.Highlight && added.Add(field.FieldPath) {
-					root := field.TopLevelValue()
-					if root == "" {
-						path := pgsearch.RenderFinalPath(pgsearch.GenerateShortestElemPath(table, field.Elems), field.LastElem().ProtoJSONName)
-						paths = append(paths, path)
-						fields = append(fields, field)
-					}
+					paths = append(paths, field.FlatElem.TablePrefixed())
+					fields = append(fields, field)
 				}
 			}
 		default:
@@ -405,7 +348,7 @@ func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap
 	}
 	values := []string{"id"}
 	if selectType == VALUE {
-		paths = append(values, "value")
+		paths = append(values, "serialized")
 	} else {
 		paths = append(values, paths...)
 	}
@@ -415,9 +358,7 @@ func generateSelectFields(table string, tree *queryTree, q *v1.Query, optionsMap
 }
 
 func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, selectType SelectType) (*Query, error) {
-	tree := newQueryTree(searchPkg.PathElem{
-		ProtoJSONName: table,
-	})
+	tree := newQueryTree(table)
 	populatePathRecursive(tree, q, optionsMap)
 	fromClause := createFROMClause(tree)
 
@@ -484,24 +425,6 @@ func entriesFromQueries(table string, queries []*v1.Query, optionsMap searchPkg.
 	return entries, nil
 }
 
-func joinWrap(baseTable, joinTable string, query *Query) string {
-	//GetTableToTablePath
-	pathElems := searchPkg.GetTableToTablePath(baseTable, joinTable)
-	if len(pathElems) == 0 {
-		// This means that there is only pointers from joinTable to baseTable (which for now is just ID)
-		pathElems = searchPkg.GetTableToTablePath(joinTable, baseTable)
-		if len(pathElems) == 0 {
-			log.Errorf("No existing path between table %s to %s", baseTable, joinTable)
-			return ""
-		}
-		path := pgsearch.GenerateShortestElemPath(joinTable, pathElems)
-		query.Select.Query = fmt.Sprintf("select distinct(%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].ProtoJSONName))
-		return fmt.Sprintf("%s.id in (%s)", baseTable, query.String())
-	}
-	path := pgsearch.GenerateShortestElemPath(baseTable, pathElems)
-	return fmt.Sprintf("%s in (%s)", pgsearch.RenderFinalPath(path, pathElems[len(pathElems)-1].ProtoJSONName), query.String())
-}
-
 func tableFromBaseQuery(bq *v1.BaseQuery, optionsMap searchPkg.OptionsMap) (string, bool) {
 	switch subBQ := bq.Query.(type) {
 	case *v1.BaseQuery_DocIdQuery:
@@ -532,16 +455,9 @@ func compileBaseQuery(table string, q *v1.Query, optionsMap searchPkg.OptionsMap
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
 		queryTable, ok := tableFromBaseQuery(sub.BaseQuery, optionsMap)
-		if ok && queryTable != table {
-			// Need to regen the whole query and join it
-			query, err := populatePath(q, optionsMap, queryTable, GET)
-			if err != nil {
-				return nil, err
-			}
-			return &pgsearch.QueryEntry{
-				Query:  joinWrap(table, queryTable, query),
-				Values: query.Data,
-			}, nil
+		if ok && !strings.EqualFold(queryTable, table) {
+			log.Infof("Can't handle queryTable=%s, but table=%s", queryTable, table)
+			return nil, nil
 		}
 		switch subBQ := q.GetBaseQuery().Query.(type) {
 		case *v1.BaseQuery_DocIdQuery:
@@ -618,6 +534,8 @@ func RunSearchRequestValue(category v1.SearchCategory, q *v1.Query, db *pgxpool.
 	}
 
 	queryStr := query.String()
+
+	fmt.Println(queryStr)
 
 	runQueryPrinter()
 	t := time.Now()

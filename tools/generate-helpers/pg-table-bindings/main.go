@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/golang/protobuf/proto"
@@ -22,6 +23,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -43,13 +45,13 @@ const (
 		countStmt = "select count(*) from {{.Table}}"
 		existsStmt = "select exists(select 1 from {{.Table}} where id = $1)"
 		getIDsStmt = "select id from {{.Table}}"
-		getStmt = "select value from {{.Table}} where id = $1"
-		getManyStmt = "select value from {{.Table}} where id = ANY($1::text[])"
+		getStmt = "select serialized from {{.Table}} where id = $1"
+		getManyStmt = "select serialized from {{.Table}} where id = ANY($1::text[])"
 		upsertStmt = "{{.InsertionQuery}}"
 		deleteStmt = "delete from {{.Table}} where id = $1"
 		deleteManyStmt = "delete from {{.Table}} where id = ANY($1::text[])"
-		walkStmt = "select value from {{.Table}}"
-		walkWithIDStmt = "select id, value from {{.Table}}"
+		walkStmt = "select serialized from {{.Table}}"
+		walkWithIDStmt = "select id, serialized from {{.Table}}"
 )
 
 var (
@@ -283,6 +285,16 @@ func (s *storeImpl) UpsertManyWithIDs(ids []string, objs []*storage.{{.Type}}) e
 }
 {{- else}}
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -498,7 +510,8 @@ func main() {
 		}
 		fmt.Println("Generating for", typ)
 		mt := proto.MessageType(typ)
-		table := walker.Walk(mt)
+		props.Table = strings.TrimPrefix(mt.Elem().String(), "storage.")
+		table := walker.Walk(mt, props.Table)
 
 		insertion := generateInsertFunctions(table)
 

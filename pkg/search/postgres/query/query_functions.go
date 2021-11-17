@@ -38,32 +38,15 @@ func matchFieldQuery(table string, field *pkgSearch.Field, value string) (*Query
 }
 
 func handleExistenceQueries(table string, field *pkgSearch.Field, value string) *QueryEntry {
-	lastElem := field.LastElem()
-	elemPath := GenerateShortestElemPath(table, field.Elems)
-
-	root := field.TopLevelValue()
+	root := field.FlatElem.TablePrefixed()
 	switch value {
 	case pkgSearch.WildcardString:
-		if root != "" {
-			return &QueryEntry{
-				Query: fmt.Sprintf("%s is not null", root),
-			}
-		} else {
-			return &QueryEntry{
-				Query:  fmt.Sprintf("%s ? $$", elemPath),
-				Values: []interface{}{lastElem.ProtoJSONName},
-			}
+		return &QueryEntry{
+			Query: fmt.Sprintf("%s is not null", root),
 		}
 	case pkgSearch.NullString:
-		if root != "" {
-			return &QueryEntry{
-				Query: fmt.Sprintf("%s is null", root),
-			}
-		} else {
-			return &QueryEntry{
-				Query:  fmt.Sprintf("not %s ? $$", elemPath),
-				Values: []interface{}{lastElem.ProtoJSONName},
-			}
+		return &QueryEntry{
+			Query: fmt.Sprintf("%s is null", root),
 		}
 	default:
 		log.Fatalf("existence query for value %s is not currently handled", value)
@@ -77,26 +60,12 @@ func handleExistenceQueries(table string, field *pkgSearch.Field, value string) 
 //	return wq
 //}
 
-func RenderFinalPath(elemPath string, field string) string {
-	if elemPath == "" {
-		return field + " "
-	}
-	return fmt.Sprintf("%s ->>'%s' ", elemPath, field)
-}
-
 func newStringQuery(table string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
 	if len(value) == 0 {
 		return nil, errors.New("value in search query cannot be empty")
 	}
 
-	lastElem := field.LastElem()
-	elemPath := GenerateShortestElemPath(table, field.Elems)
-
-	root := field.TopLevelValue()
-	if root == "" {
-		root = RenderFinalPath(elemPath, lastElem.ProtoJSONName)
-	}
-
+	root := field.FlatElem.TablePrefixed()
 	if len(queryModifiers) == 0 {
 		return &QueryEntry{
 			Query:  root + " ilike $$",
@@ -232,6 +201,23 @@ func newEnumQuery(table string, field *pkgSearch.Field, value string, queryModif
 		return nil, fmt.Errorf("could not find corresponding enum at field %q with value %q and modifiers %+v", field, value, queryModifiers)
 	}
 
+	if equality {
+		var queries []string
+		var values []interface{}
+		for _, s := range enumValues {
+			entry, err := newStringQuery(table, field, strconv.Itoa(int(s)), pkgSearch.Equality)
+			if err != nil {
+				return nil, err
+			}
+			queries = append(queries, entry.Query)
+			values = append(values, entry.Values...)
+		}
+		return &QueryEntry{
+			Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
+			Values: values,
+		}, nil
+	}
+	
 	var queries []string
 	var values []interface{}
 	for _, s := range enumValues {

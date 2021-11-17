@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "namespaces"
+const table = "NamespaceMetadata"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, table)

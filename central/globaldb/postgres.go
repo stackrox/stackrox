@@ -34,7 +34,7 @@ func RegisterTable(table string, objType string) {
 func GetPostgresDB() *pgxpool.Pool {
 	pgInit.Do(func() {
 		source := "host=central-db.stackrox port=5432 user=postgres sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
-		//source := "pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=postgres sslmode=disable statement_timeout=600000"
+		// 		source := "host=localhost port=5432 database=postgres user=connorgorman sslmode=disable statement_timeout=600000 pool_min_conns=90 pool_max_conns=90"
 		config, err := pgxpool.ParseConfig(source)
 		if err != nil {
 			panic(err)

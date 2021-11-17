@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from processWhitelists2"
-		existsStmt = "select exists(select 1 from processWhitelists2 where id = $1)"
-		getIDsStmt = "select id from processWhitelists2"
-		getStmt = "select value from processWhitelists2 where id = $1"
-		getManyStmt = "select value from processWhitelists2 where id = ANY($1::text[])"
-		upsertStmt = "insert into processWhitelists2 (id, value, Key_DeploymentId, Key_ClusterId, Key_Namespace) values($1, $2, $3, $4, $5) on conflict(id) do update set value = EXCLUDED.value, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace"
-		deleteStmt = "delete from processWhitelists2 where id = $1"
-		deleteManyStmt = "delete from processWhitelists2 where id = ANY($1::text[])"
-		walkStmt = "select value from processWhitelists2"
-		walkWithIDStmt = "select id, value from processWhitelists2"
+		countStmt = "select count(*) from ProcessBaseline"
+		existsStmt = "select exists(select 1 from ProcessBaseline where id = $1)"
+		getIDsStmt = "select id from ProcessBaseline"
+		getStmt = "select serialized from ProcessBaseline where id = $1"
+		getManyStmt = "select serialized from ProcessBaseline where id = ANY($1::text[])"
+		upsertStmt = "insert into ProcessBaseline (id, value, Id, Key_DeploymentId, Key_ClusterId, Key_Namespace) values($1, $2, $3, $4, $5, $6) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace"
+		deleteStmt = "delete from ProcessBaseline where id = $1"
+		deleteManyStmt = "delete from ProcessBaseline where id = ANY($1::text[])"
+		walkStmt = "select serialized from ProcessBaseline"
+		walkWithIDStmt = "select id, serialized from ProcessBaseline"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "processWhitelists2"
+	table = "ProcessBaseline"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists processWhitelists2 (id varchar primary key, value jsonb, Key_DeploymentId varchar, Key_ClusterId varchar, Key_Namespace varchar)"
-	createIDIndexQuery = "create index if not exists processWhitelists2_id on processWhitelists2 using hash ((id))"
+	createTableQuery = "create table if not exists ProcessBaseline (id varchar primary key, value jsonb, Id varchar, Key_DeploymentId varchar, Key_ClusterId varchar, Key_Namespace varchar)"
+	createIDIndexQuery = "create index if not exists ProcessBaseline_id on ProcessBaseline using hash ((id))"
 
-	batchInsertTemplate = "insert into processWhitelists2 (id, value, Key_DeploymentId, Key_ClusterId, Key_Namespace) values %s on conflict(id) do update set value = EXCLUDED.value, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace"
+	batchInsertTemplate = "insert into ProcessBaseline (id, value, Id, Key_DeploymentId, Key_ClusterId, Key_Namespace) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,8 +84,7 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "ProcessBaseline")
 
 	for _, table := range []string {
-		"create table if not exists ProcessBaseline(serialized jsonb not null, Key_DeploymentId varchar, Key_ClusterId varchar, Key_Namespace varchar, PRIMARY KEY ());",
-		"create table if not exists ProcessBaseline_Elements(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES ProcessBaseline() ON DELETE CASCADE);",
+		"create table if not exists ProcessBaseline(serialized jsonb not null, Id varchar, Key_DeploymentId varchar, Key_ClusterId varchar, Key_Namespace varchar, PRIMARY KEY (Id));",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -225,6 +225,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ProcessBaseline, []int, er
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -259,8 +269,8 @@ func (s *storeImpl) upsert(id string, obj0 *storage.ProcessBaseline) error {
 //		}
 	}()
 
-	localQuery := "insert into ProcessBaseline(serialized, Key_DeploymentId, Key_ClusterId, Key_Namespace) values($1, $2, $3, $4) on conflict() do update set serialized = EXCLUDED.serialized, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace"
-_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetKey().GetDeploymentId(), obj0.GetKey().GetClusterId(), obj0.GetKey().GetNamespace())
+	localQuery := "insert into ProcessBaseline(serialized, Id, Key_DeploymentId, Key_ClusterId, Key_Namespace) values($1, $2, $3, $4, $5) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetKey().GetDeploymentId(), obj0.GetKey().GetClusterId(), obj0.GetKey().GetNamespace())
 if err != nil {
     return err
   }
@@ -294,7 +304,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessBaseline) error {
 	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessBaseline")
-	numElems := 5
+	numElems := 6
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -312,7 +322,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessBaseline) error {
 			}
 			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ProcessBaseline")
 			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetKey().GetDeploymentId(), obj.GetKey().GetClusterId(), obj.GetKey().GetNamespace())
+			data = append(data, id, value, obj.GetId(), obj.GetKey().GetDeploymentId(), obj.GetKey().GetClusterId(), obj.GetKey().GetNamespace())
 		}
 		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err

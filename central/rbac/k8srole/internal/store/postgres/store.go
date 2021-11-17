@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from k8sroles"
-		existsStmt = "select exists(select 1 from k8sroles where id = $1)"
-		getIDsStmt = "select id from k8sroles"
-		getStmt = "select value from k8sroles where id = $1"
-		getManyStmt = "select value from k8sroles where id = ANY($1::text[])"
-		upsertStmt = "insert into k8sroles (id, value, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
-		deleteStmt = "delete from k8sroles where id = $1"
-		deleteManyStmt = "delete from k8sroles where id = ANY($1::text[])"
-		walkStmt = "select value from k8sroles"
-		walkWithIDStmt = "select id, value from k8sroles"
+		countStmt = "select count(*) from K8SRole"
+		existsStmt = "select exists(select 1 from K8SRole where id = $1)"
+		getIDsStmt = "select id from K8SRole"
+		getStmt = "select serialized from K8SRole where id = $1"
+		getManyStmt = "select serialized from K8SRole where id = ANY($1::text[])"
+		upsertStmt = "insert into K8SRole (id, value, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+		deleteStmt = "delete from K8SRole where id = $1"
+		deleteManyStmt = "delete from K8SRole where id = ANY($1::text[])"
+		walkStmt = "select serialized from K8SRole"
+		walkWithIDStmt = "select id, serialized from K8SRole"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "k8sroles"
+	table = "K8SRole"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists k8sroles (id varchar primary key, value jsonb, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb)"
-	createIDIndexQuery = "create index if not exists k8sroles_id on k8sroles using hash ((id))"
+	createTableQuery = "create table if not exists K8SRole (id varchar primary key, value jsonb, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb)"
+	createIDIndexQuery = "create index if not exists K8SRole_id on K8SRole using hash ((id))"
 
-	batchInsertTemplate = "insert into k8sroles (id, value, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+	batchInsertTemplate = "insert into K8SRole (id, value, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,8 +84,7 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "K8SRole")
 
 	for _, table := range []string {
-		"create table if not exists K8SRole(serialized jsonb not null, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb, PRIMARY KEY ());",
-		"create table if not exists K8SRole_Rules(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES K8SRole() ON DELETE CASCADE);",
+		"create table if not exists K8SRole(serialized jsonb not null, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb, PRIMARY KEY (Id));",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -225,6 +225,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.K8SRole, []int, error) {
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -259,7 +269,7 @@ func (s *storeImpl) upsert(id string, obj0 *storage.K8SRole) error {
 //		}
 	}()
 
-	localQuery := "insert into K8SRole(serialized, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict() do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+	localQuery := "insert into K8SRole(serialized, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
 _, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetNamespace(), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetClusterRole(), obj0.GetLabels(), obj0.GetAnnotations())
 if err != nil {
     return err

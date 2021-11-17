@@ -1,15 +1,13 @@
 package search
 
 import (
-	"strings"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/walker"
 )
 
 // Field describes a search field
 type Field struct {
-	Elems     []PathElem
+	//Elems     []PathElem
 	FieldPath string
 	Type      v1.SearchDataType
 	Store     bool
@@ -17,27 +15,6 @@ type Field struct {
 	Category  v1.SearchCategory
 	Analyzer  string
 	FlatElem  walker.Element
-}
-
-func (f *Field) LastElem() PathElem {
-	return f.Elems[len(f.Elems)-1]
-}
-
-func (f *Field) TopLevelValue() string {
-	switch f.Type {
-	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_STRING, v1.SearchDataType_SEARCH_ENUM, v1.SearchDataType_SEARCH_DATETIME:
-	default:
-		return ""
-	}
-	var fields []string
-	for _, e := range f.Elems {
-		// Unsupported flattening for these today
-		if e.Slice || e.OneOf {
-			return ""
-		}
-		fields = append(fields, e.Field)
-	}
-	return strings.Join(fields, "_")
 }
 
 // GetFieldPath returns the field path

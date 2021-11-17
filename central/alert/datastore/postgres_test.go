@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/jackc/pgx/v4"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
@@ -43,8 +45,27 @@ func TestPGX(t *testing.T) {
 	}
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
+func TestSliceConversion(t *testing.T) {
+	stages := []storage.LifecycleStage {storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY}
+
+	//l := int(storage.LifecycleStage_BUILD)
+
+	lol := convertEnumSliceToIntArray(stages)
+	fmt.Println(lol)
+}
+
 func TestT(t *testing.T) {
-	config, err := pgxpool.ParseConfig("pool_min_conns=100 pool_max_conns=100 host=localhost port=5444 user=postgres sslmode=disable statement_timeout=60000")
+	config, err := pgxpool.ParseConfig("pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 database=postgres user=connorgorman sslmode=disable statement_timeout=60000")
 	if err != nil {
 		panic(err)
 	}
@@ -65,12 +86,17 @@ func TestT(t *testing.T) {
 
 	searcher := searcher.New(alertStore, alertIndex)
 
+	alert := fixtures.GetAlertWithID("0098077c-d872-4bf9-a8b2-666f9f8e939a")
+	if err := alertStore.Upsert(alert); err != nil {
+		panic(err)
+	}
+
 	qb := search.NewQueryBuilder().
 		AddStrings(
 			search.ViolationState,
 			storage.ViolationState_ACTIVE.String(),
 			storage.ViolationState_ATTEMPTED.String()).
-		AddStrings(search.Cluster, "remote").
+		AddStrings(search.Cluster, "prod").
 		AddStringsHighlighted(search.ClusterID, search.WildcardString)
 
 	pq := qb.ProtoQuery()

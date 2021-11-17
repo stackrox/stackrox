@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "alerts"
+const table = "alert"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_ALERTS, table)

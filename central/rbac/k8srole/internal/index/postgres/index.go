@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "k8sroles"
+const table = "K8SRole"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_ROLES, table)

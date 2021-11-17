@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from service_accounts"
-		existsStmt = "select exists(select 1 from service_accounts where id = $1)"
-		getIDsStmt = "select id from service_accounts"
-		getStmt = "select value from service_accounts where id = $1"
-		getManyStmt = "select value from service_accounts where id = ANY($1::text[])"
-		upsertStmt = "insert into service_accounts (id, value, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
-		deleteStmt = "delete from service_accounts where id = $1"
-		deleteManyStmt = "delete from service_accounts where id = ANY($1::text[])"
-		walkStmt = "select value from service_accounts"
-		walkWithIDStmt = "select id, value from service_accounts"
+		countStmt = "select count(*) from ServiceAccount"
+		existsStmt = "select exists(select 1 from ServiceAccount where id = $1)"
+		getIDsStmt = "select id from ServiceAccount"
+		getStmt = "select serialized from ServiceAccount where id = $1"
+		getManyStmt = "select serialized from ServiceAccount where id = ANY($1::text[])"
+		upsertStmt = "insert into ServiceAccount (id, value, Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+		deleteStmt = "delete from ServiceAccount where id = $1"
+		deleteManyStmt = "delete from ServiceAccount where id = ANY($1::text[])"
+		walkStmt = "select serialized from ServiceAccount"
+		walkWithIDStmt = "select id, serialized from ServiceAccount"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "service_accounts"
+	table = "ServiceAccount"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists service_accounts (id varchar primary key, value jsonb, Name varchar, Namespace varchar, ClusterName varchar, ClusterId varchar, Labels jsonb, Annotations jsonb)"
-	createIDIndexQuery = "create index if not exists service_accounts_id on service_accounts using hash ((id))"
+	createTableQuery = "create table if not exists ServiceAccount (id varchar primary key, value jsonb, Id varchar, Name varchar, Namespace varchar, ClusterName varchar, ClusterId varchar, Labels jsonb, Annotations jsonb)"
+	createIDIndexQuery = "create index if not exists ServiceAccount_id on ServiceAccount using hash ((id))"
 
-	batchInsertTemplate = "insert into service_accounts (id, value, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values %s on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+	batchInsertTemplate = "insert into ServiceAccount (id, value, Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,7 +84,7 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "ServiceAccount")
 
 	for _, table := range []string {
-		"create table if not exists ServiceAccount(serialized jsonb not null, Name varchar, Namespace varchar, ClusterName varchar, ClusterId varchar, Labels jsonb, Annotations jsonb, PRIMARY KEY ());",
+		"create table if not exists ServiceAccount(serialized jsonb not null, Id varchar, Name varchar, Namespace varchar, ClusterName varchar, ClusterId varchar, Labels jsonb, Annotations jsonb, PRIMARY KEY (Id));",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -224,6 +225,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.ServiceAccount, []int, err
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -258,8 +269,8 @@ func (s *storeImpl) upsert(id string, obj0 *storage.ServiceAccount) error {
 //		}
 	}()
 
-	localQuery := "insert into ServiceAccount(serialized, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7) on conflict() do update set serialized = EXCLUDED.serialized, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
-_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetName(), obj0.GetNamespace(), obj0.GetClusterName(), obj0.GetClusterId(), obj0.GetLabels(), obj0.GetAnnotations())
+	localQuery := "insert into ServiceAccount(serialized, Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetNamespace(), obj0.GetClusterName(), obj0.GetClusterId(), obj0.GetLabels(), obj0.GetAnnotations())
 if err != nil {
     return err
   }
@@ -293,7 +304,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.ServiceAccount) error {
 	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ServiceAccount")
-	numElems := 8
+	numElems := 9
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -311,7 +322,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.ServiceAccount) error {
 			}
 			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ServiceAccount")
 			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetName(), obj.GetNamespace(), obj.GetClusterName(), obj.GetClusterId(), obj.GetLabels(), obj.GetAnnotations())
+			data = append(data, id, value, obj.GetId(), obj.GetName(), obj.GetNamespace(), obj.GetClusterName(), obj.GetClusterId(), obj.GetLabels(), obj.GetAnnotations())
 		}
 		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err

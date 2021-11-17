@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from namespaces"
-		existsStmt = "select exists(select 1 from namespaces where id = $1)"
-		getIDsStmt = "select id from namespaces"
-		getStmt = "select value from namespaces where id = $1"
-		getManyStmt = "select value from namespaces where id = ANY($1::text[])"
-		upsertStmt = "insert into namespaces (id, value, Id, Name, ClusterId, ClusterName, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
-		deleteStmt = "delete from namespaces where id = $1"
-		deleteManyStmt = "delete from namespaces where id = ANY($1::text[])"
-		walkStmt = "select value from namespaces"
-		walkWithIDStmt = "select id, value from namespaces"
+		countStmt = "select count(*) from NamespaceMetadata"
+		existsStmt = "select exists(select 1 from NamespaceMetadata where id = $1)"
+		getIDsStmt = "select id from NamespaceMetadata"
+		getStmt = "select serialized from NamespaceMetadata where id = $1"
+		getManyStmt = "select serialized from NamespaceMetadata where id = ANY($1::text[])"
+		upsertStmt = "insert into NamespaceMetadata (id, value, Id, Name, ClusterId, ClusterName, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+		deleteStmt = "delete from NamespaceMetadata where id = $1"
+		deleteManyStmt = "delete from NamespaceMetadata where id = ANY($1::text[])"
+		walkStmt = "select serialized from NamespaceMetadata"
+		walkWithIDStmt = "select id, serialized from NamespaceMetadata"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "namespaces"
+	table = "NamespaceMetadata"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists namespaces (id varchar primary key, value jsonb, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Labels jsonb, Annotations jsonb)"
-	createIDIndexQuery = "create index if not exists namespaces_id on namespaces using hash ((id))"
+	createTableQuery = "create table if not exists NamespaceMetadata (id varchar primary key, value jsonb, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Labels jsonb, Annotations jsonb)"
+	createIDIndexQuery = "create index if not exists NamespaceMetadata_id on NamespaceMetadata using hash ((id))"
 
-	batchInsertTemplate = "insert into namespaces (id, value, Id, Name, ClusterId, ClusterName, Labels, Annotations) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+	batchInsertTemplate = "insert into NamespaceMetadata (id, value, Id, Name, ClusterId, ClusterName, Labels, Annotations) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,7 +84,7 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "NamespaceMetadata")
 
 	for _, table := range []string {
-		"create table if not exists NamespaceMetadata(serialized jsonb not null, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Labels jsonb, Annotations jsonb, PRIMARY KEY ());",
+		"create table if not exists NamespaceMetadata(serialized jsonb not null, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Labels jsonb, Annotations jsonb, PRIMARY KEY (Id));",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -224,6 +225,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NamespaceMetadata, []int, 
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -258,7 +269,7 @@ func (s *storeImpl) upsert(id string, obj0 *storage.NamespaceMetadata) error {
 //		}
 	}()
 
-	localQuery := "insert into NamespaceMetadata(serialized, Id, Name, ClusterId, ClusterName, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7) on conflict() do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
+	localQuery := "insert into NamespaceMetadata(serialized, Id, Name, ClusterId, ClusterName, Labels, Annotations) values($1, $2, $3, $4, $5, $6, $7) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations"
 _, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetLabels(), obj0.GetAnnotations())
 if err != nil {
     return err

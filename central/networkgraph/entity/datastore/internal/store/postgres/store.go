@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from networkentity"
-		existsStmt = "select exists(select 1 from networkentity where id = $1)"
-		getIDsStmt = "select id from networkentity"
-		getStmt = "select value from networkentity where id = $1"
-		getManyStmt = "select value from networkentity where id = ANY($1::text[])"
-		upsertStmt = "insert into networkentity (id, value, Info_Desc_ExternalSource_Default) values($1, $2, $3) on conflict(id) do update set value = EXCLUDED.value, Info_Desc_ExternalSource_Default = EXCLUDED.Info_Desc_ExternalSource_Default"
-		deleteStmt = "delete from networkentity where id = $1"
-		deleteManyStmt = "delete from networkentity where id = ANY($1::text[])"
-		walkStmt = "select value from networkentity"
-		walkWithIDStmt = "select id, value from networkentity"
+		countStmt = "select count(*) from NetworkEntity"
+		existsStmt = "select exists(select 1 from NetworkEntity where id = $1)"
+		getIDsStmt = "select id from NetworkEntity"
+		getStmt = "select serialized from NetworkEntity where id = $1"
+		getManyStmt = "select serialized from NetworkEntity where id = ANY($1::text[])"
+		upsertStmt = "insert into NetworkEntity (id, value, Info_Desc_ExternalSource_Default) values($1, $2, $3) on conflict(id) do update set value = EXCLUDED.value, Info_Desc_ExternalSource_Default = EXCLUDED.Info_Desc_ExternalSource_Default"
+		deleteStmt = "delete from NetworkEntity where id = $1"
+		deleteManyStmt = "delete from NetworkEntity where id = ANY($1::text[])"
+		walkStmt = "select serialized from NetworkEntity"
+		walkWithIDStmt = "select id, serialized from NetworkEntity"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "networkentity"
+	table = "NetworkEntity"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists networkentity (id varchar primary key, value jsonb, Info_Desc_ExternalSource_Default bool)"
-	createIDIndexQuery = "create index if not exists networkentity_id on networkentity using hash ((id))"
+	createTableQuery = "create table if not exists NetworkEntity (id varchar primary key, value jsonb, Info_Desc_ExternalSource_Default bool)"
+	createIDIndexQuery = "create index if not exists NetworkEntity_id on NetworkEntity using hash ((id))"
 
-	batchInsertTemplate = "insert into networkentity (id, value, Info_Desc_ExternalSource_Default) values %s on conflict(id) do update set value = EXCLUDED.value, Info_Desc_ExternalSource_Default = EXCLUDED.Info_Desc_ExternalSource_Default"
+	batchInsertTemplate = "insert into NetworkEntity (id, value, Info_Desc_ExternalSource_Default) values %s on conflict(id) do update set value = EXCLUDED.value, Info_Desc_ExternalSource_Default = EXCLUDED.Info_Desc_ExternalSource_Default"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -84,7 +85,6 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists NetworkEntity(serialized jsonb not null, Info_Desc_ExternalSource_Default bool, PRIMARY KEY ());",
-		"create table if not exists NetworkEntity_ListenPorts(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkEntity() ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -223,6 +223,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkEntity, []int, erro
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
 }
 
 func nilOrStringTimestamp(t *types.Timestamp) *string {

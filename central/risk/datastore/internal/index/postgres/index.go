@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "risks"
+const table = "Risk"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_RISKS, table)

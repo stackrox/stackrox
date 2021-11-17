@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from clusterinitbundles"
-		existsStmt = "select exists(select 1 from clusterinitbundles where id = $1)"
-		getIDsStmt = "select id from clusterinitbundles"
-		getStmt = "select value from clusterinitbundles where id = $1"
-		getManyStmt = "select value from clusterinitbundles where id = ANY($1::text[])"
-		upsertStmt = "insert into clusterinitbundles (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
-		deleteStmt = "delete from clusterinitbundles where id = $1"
-		deleteManyStmt = "delete from clusterinitbundles where id = ANY($1::text[])"
-		walkStmt = "select value from clusterinitbundles"
-		walkWithIDStmt = "select id, value from clusterinitbundles"
+		countStmt = "select count(*) from InitBundleMeta"
+		existsStmt = "select exists(select 1 from InitBundleMeta where id = $1)"
+		getIDsStmt = "select id from InitBundleMeta"
+		getStmt = "select serialized from InitBundleMeta where id = $1"
+		getManyStmt = "select serialized from InitBundleMeta where id = ANY($1::text[])"
+		upsertStmt = "insert into InitBundleMeta (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		deleteStmt = "delete from InitBundleMeta where id = $1"
+		deleteManyStmt = "delete from InitBundleMeta where id = ANY($1::text[])"
+		walkStmt = "select serialized from InitBundleMeta"
+		walkWithIDStmt = "select id, serialized from InitBundleMeta"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "clusterinitbundles"
+	table = "InitBundleMeta"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists clusterinitbundles (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index if not exists clusterinitbundles_id on clusterinitbundles using hash ((id))"
+	createTableQuery = "create table if not exists InitBundleMeta (id varchar primary key, value jsonb)"
+	createIDIndexQuery = "create index if not exists InitBundleMeta_id on InitBundleMeta using hash ((id))"
 
-	batchInsertTemplate = "insert into clusterinitbundles (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
+	batchInsertTemplate = "insert into InitBundleMeta (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -84,7 +85,6 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists InitBundleMeta(serialized jsonb not null, PRIMARY KEY ());",
-		"create table if not exists InitBundleMeta_Attributes(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES InitBundleMeta() ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -223,6 +223,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.InitBundleMeta, []int, err
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
 }
 
 func nilOrStringTimestamp(t *types.Timestamp) *string {

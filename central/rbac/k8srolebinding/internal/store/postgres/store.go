@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from rolebindings"
-		existsStmt = "select exists(select 1 from rolebindings where id = $1)"
-		getIDsStmt = "select id from rolebindings"
-		getStmt = "select value from rolebindings where id = $1"
-		getManyStmt = "select value from rolebindings where id = ANY($1::text[])"
-		upsertStmt = "insert into rolebindings (id, value, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId"
-		deleteStmt = "delete from rolebindings where id = $1"
-		deleteManyStmt = "delete from rolebindings where id = ANY($1::text[])"
-		walkStmt = "select value from rolebindings"
-		walkWithIDStmt = "select id, value from rolebindings"
+		countStmt = "select count(*) from K8SRoleBinding"
+		existsStmt = "select exists(select 1 from K8SRoleBinding where id = $1)"
+		getIDsStmt = "select id from K8SRoleBinding"
+		getStmt = "select serialized from K8SRoleBinding where id = $1"
+		getManyStmt = "select serialized from K8SRoleBinding where id = ANY($1::text[])"
+		upsertStmt = "insert into K8SRoleBinding (id, value, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId"
+		deleteStmt = "delete from K8SRoleBinding where id = $1"
+		deleteManyStmt = "delete from K8SRoleBinding where id = ANY($1::text[])"
+		walkStmt = "select serialized from K8SRoleBinding"
+		walkWithIDStmt = "select id, serialized from K8SRoleBinding"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "rolebindings"
+	table = "K8SRoleBinding"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists rolebindings (id varchar primary key, value jsonb, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb, RoleId varchar)"
-	createIDIndexQuery = "create index if not exists rolebindings_id on rolebindings using hash ((id))"
+	createTableQuery = "create table if not exists K8SRoleBinding (id varchar primary key, value jsonb, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb, RoleId varchar)"
+	createIDIndexQuery = "create index if not exists K8SRoleBinding_id on K8SRoleBinding using hash ((id))"
 
-	batchInsertTemplate = "insert into rolebindings (id, value, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId"
+	batchInsertTemplate = "insert into K8SRoleBinding (id, value, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,8 +84,8 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "K8SRoleBinding")
 
 	for _, table := range []string {
-		"create table if not exists K8SRoleBinding(serialized jsonb not null, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb, RoleId varchar, PRIMARY KEY ());",
-		"create table if not exists K8SRoleBinding_Subjects(idx numeric not null, Kind integer, Name varchar, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES K8SRoleBinding() ON DELETE CASCADE);",
+		"create table if not exists K8SRoleBinding(serialized jsonb not null, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb, RoleId varchar, PRIMARY KEY (Id));",
+		"create table if not exists K8SRoleBinding_Subjects(parent_Id varchar not null, idx numeric not null, Kind integer, Name varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES K8SRoleBinding(Id) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -225,6 +226,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.K8SRoleBinding, []int, err
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -259,19 +270,19 @@ func (s *storeImpl) upsert(id string, obj0 *storage.K8SRoleBinding) error {
 //		}
 	}()
 
-	localQuery := "insert into K8SRoleBinding(serialized, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict() do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId"
+	localQuery := "insert into K8SRoleBinding(serialized, Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId"
 _, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetNamespace(), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetClusterRole(), obj0.GetLabels(), obj0.GetAnnotations(), obj0.GetRoleId())
 if err != nil {
     return err
   }
   for idx1, obj1 := range obj0.GetSubjects() {
-    localQuery := "insert into K8SRoleBinding_Subjects(idx, Kind, Name) values($1, $2, $3) on conflict(idx) do update set idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
-    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetKind(), obj1.GetName())
+    localQuery := "insert into K8SRoleBinding_Subjects(parent_Id, idx, Kind, Name) values($1, $2, $3, $4) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
+    _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetKind(), obj1.GetName())
     if err != nil {
       return err
     }
   }
-    _, err = tx.Exec(context.Background(), "delete from K8SRoleBinding_Subjects where  and idx >= $1", len(obj0.GetSubjects()))
+    _, err = tx.Exec(context.Background(), "delete from K8SRoleBinding_Subjects where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetSubjects()))
     if err != nil {
       return err
     }

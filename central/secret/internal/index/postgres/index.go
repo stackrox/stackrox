@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "secrets"
+const table = "Secret"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_SECRETS, table)

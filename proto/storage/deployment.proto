@@ -100,7 +100,7 @@ message Volume {
 // Pod represents information for a currently running pod or deleted pod in an active deployment.
 message Pod {
     // Pod UID
-    string id                                           = 1 [(gogoproto.moretags) = "search:\"Pod ID,hidden\""];
+    string id                                           = 1 [(gogoproto.moretags) = "search:\"Pod ID,hidden\" sql:\"pk\""];
     string name                                         = 2 [(gogoproto.moretags) = "search:\"Pod Name,hidden\""];
     string deployment_id                                = 3 [(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
     string namespace                                    = 4 [(gogoproto.moretags) = "search:\"Namespace,store\""];
@@ -176,7 +176,7 @@ message PortConfig {
 
         // only set if level is not HOST
         string service_name       = 2 [(gogoproto.moretags) = "search:\"Exposing Service,store\""];
-        string service_id         = 3 [(gogoproto.moretags) = "sql:\"pk\""];
+        string service_id         = 3;
         string service_cluster_ip = 4;
         int32 service_port        = 5 [(gogoproto.moretags) = "search:\"Exposing Service Port,store\""];
 
@@ -188,7 +188,7 @@ message PortConfig {
         repeated string external_hostnames = 8 [(gogoproto.moretags) = "search:\"External Hostname,store\""];
     }
 
-    string name             = 1 [(gogoproto.moretags) = "sql:\"pk\""];
+    string name             = 1;
     int32 container_port    = 2 [(gogoproto.moretags) = "search:\"Port,store\""];
     string protocol         = 3 [(gogoproto.moretags) = "search:\"Port Protocol,store\""];
 

@@ -376,21 +376,21 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	// Complete hack
 	indexes := []string{
 		`create extension if not exists pg_stat_statements;`,
-		`create index if not exists deployments_clusterid on deployments using hash ((ClusterId));`,
-
-		`create index if not exists processindicators_poduid on processindicators using hash ((PodUid));`,
-
-		`create index if not exists namespaces_name on namespaces((Name));`,
-
-		`create index if not exists alerts_policy_id on alerts using hash ((Policy_Id));`,
-		// The one below is still jsonb due to one of
-		`create index if not exists alerts_deployment_id on alerts using hash ((alerts.value->'deployment' ->>'id'));`,
-		`create index if not exists alerts_state on alerts(state);`,
-		`create index if not exists alerts_lifecyclestage on alerts(LifecycleStage);`,
-		`create index if not exists alerts_time on alerts(Time);`,
-
-		`create index if not exists processindicators_id on processindicators using hash ((id));`,
-		`create index if not exists processindicators_deploymentid on processindicators using hash (DeploymentId);`,
+		//`create index if not exists deployments_clusterid on deployments using hash ((ClusterId));`,
+		//
+		//`create index if not exists processindicators_poduid on processindicators using hash ((PodUid));`,
+		//
+		//`create index if not exists namespaces_name on namespaces((Name));`,
+		//
+		//`create index if not exists alerts_policy_id on alerts using hash ((Policy_Id));`,
+		//// The one below is still jsonb due to one of
+		//`create index if not exists alerts_deployment_id on alerts using hash ((alerts.value->'deployment' ->>'id'));`,
+		//`create index if not exists alerts_state on alerts(state);`,
+		//`create index if not exists alerts_lifecyclestage on alerts(LifecycleStage);`,
+		//`create index if not exists alerts_time on alerts(Time);`,
+		//
+		//`create index if not exists processindicators_id on processindicators using hash ((id));`,
+		//`create index if not exists processindicators_deploymentid on processindicators using hash (DeploymentId);`,
 	}
 
 	for _, index := range indexes {

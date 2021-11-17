@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "rolebindings"
+const table = "K8SRoleBinding"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, table)

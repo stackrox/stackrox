@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from risks"
-		existsStmt = "select exists(select 1 from risks where id = $1)"
-		getIDsStmt = "select id from risks"
-		getStmt = "select value from risks where id = $1"
-		getManyStmt = "select value from risks where id = ANY($1::text[])"
-		upsertStmt = "insert into risks (id, value, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values($1, $2, $3, $4, $5, $6) on conflict(id) do update set value = EXCLUDED.value, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"
-		deleteStmt = "delete from risks where id = $1"
-		deleteManyStmt = "delete from risks where id = ANY($1::text[])"
-		walkStmt = "select value from risks"
-		walkWithIDStmt = "select id, value from risks"
+		countStmt = "select count(*) from Risk"
+		existsStmt = "select exists(select 1 from Risk where id = $1)"
+		getIDsStmt = "select id from Risk"
+		getStmt = "select serialized from Risk where id = $1"
+		getManyStmt = "select serialized from Risk where id = ANY($1::text[])"
+		upsertStmt = "insert into Risk (id, value, Id, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values($1, $2, $3, $4, $5, $6, $7) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"
+		deleteStmt = "delete from Risk where id = $1"
+		deleteManyStmt = "delete from Risk where id = ANY($1::text[])"
+		walkStmt = "select serialized from Risk"
+		walkWithIDStmt = "select id, serialized from Risk"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "risks"
+	table = "Risk"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists risks (id varchar primary key, value jsonb, Score numeric, Subject_Namespace varchar, Subject_ClusterId varchar, Subject_Type integer)"
-	createIDIndexQuery = "create index if not exists risks_id on risks using hash ((id))"
+	createTableQuery = "create table if not exists Risk (id varchar primary key, value jsonb, Id varchar, Score numeric, Subject_Namespace varchar, Subject_ClusterId varchar, Subject_Type integer)"
+	createIDIndexQuery = "create index if not exists Risk_id on Risk using hash ((id))"
 
-	batchInsertTemplate = "insert into risks (id, value, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values %s on conflict(id) do update set value = EXCLUDED.value, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"
+	batchInsertTemplate = "insert into Risk (id, value, Id, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,9 +84,7 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Risk")
 
 	for _, table := range []string {
-		"create table if not exists Risk(serialized jsonb not null, Score numeric, Subject_Namespace varchar, Subject_ClusterId varchar, Subject_Type integer, PRIMARY KEY ());",
-		"create table if not exists Risk_Results(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Risk() ON DELETE CASCADE);",
-		"create table if not exists Risk_Results_Factors(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES Risk_Results(idx) ON DELETE CASCADE);",
+		"create table if not exists Risk(serialized jsonb not null, Id varchar, Score numeric, Subject_Namespace varchar, Subject_ClusterId varchar, Subject_Type integer, PRIMARY KEY (Id));",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -226,6 +225,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -260,8 +269,8 @@ func (s *storeImpl) upsert(id string, obj0 *storage.Risk) error {
 //		}
 	}()
 
-	localQuery := "insert into Risk(serialized, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values($1, $2, $3, $4, $5) on conflict() do update set serialized = EXCLUDED.serialized, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"
-_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetScore(), obj0.GetSubject().GetNamespace(), obj0.GetSubject().GetClusterId(), obj0.GetSubject().GetType())
+	localQuery := "insert into Risk(serialized, Id, Score, Subject_Namespace, Subject_ClusterId, Subject_Type) values($1, $2, $3, $4, $5, $6) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Score = EXCLUDED.Score, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetScore(), obj0.GetSubject().GetNamespace(), obj0.GetSubject().GetClusterId(), obj0.GetSubject().GetType())
 if err != nil {
     return err
   }
@@ -295,7 +304,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.Risk) error {
 	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Risk")
-	numElems := 6
+	numElems := 7
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -313,7 +322,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.Risk) error {
 			}
 			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Risk")
 			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetScore(), obj.GetSubject().GetNamespace(), obj.GetSubject().GetClusterId(), obj.GetSubject().GetType())
+			data = append(data, id, value, obj.GetId(), obj.GetScore(), obj.GetSubject().GetNamespace(), obj.GetSubject().GetClusterId(), obj.GetSubject().GetType())
 		}
 		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err

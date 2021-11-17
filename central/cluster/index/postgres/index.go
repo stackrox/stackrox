@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "clusters"
+const table = "Cluster"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, table)
