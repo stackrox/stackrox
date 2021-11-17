@@ -1,13 +1,30 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { Alert, Bullseye, PageSection, Spinner } from '@patternfly/react-core';
 
-import { getPolicy } from 'services/PoliciesService';
+import PageTitle from 'Components/PageTitle';
+import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { PageAction } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
+
+function clonePolicy(policy: Policy) {
+    /*
+     * Default policies will have the "criteriaLocked" and "mitreVectorsLocked" fields set to true.
+     * When we clone these policies, we'll need to set them to false to allow users to edit
+     * both the policy criteria and mitre attack vectors
+     */
+    return {
+        ...policy,
+        criteriaLocked: false,
+        id: '',
+        isDefault: false,
+        mitreVectorsLocked: false,
+        name: `${policy.name} (COPY)`,
+    };
+}
 
 const initialPolicy: Policy = {
     id: '',
@@ -55,11 +72,11 @@ function PolicyPage({
     useEffect(() => {
         setPolicyError(null);
         if (policyId) {
-            // action is 'edit' or undefined
+            // action is 'clone' or 'edit' or undefined
             setIsLoading(true);
             getPolicy(policyId)
                 .then((data) => {
-                    setPolicy(data);
+                    setPolicy(pageAction === 'clone' ? clonePolicy(data) : data);
                 })
                 .catch((error) => {
                     setPolicy(initialPolicy);
@@ -76,10 +93,25 @@ function PolicyPage({
             // action is 'create'
             setPolicy(initialPolicy);
         }
-    }, [policyId]);
+    }, [pageAction, policyId]);
+
+    function handleUpdateDisabledState(id: string, disabled: boolean) {
+        return updatePolicyDisabledState(id, disabled).then(() => {
+            /*
+             * If success, render PolicyDetail element with updated policy.
+             * If failure, PolicyDetail element has catch block to display error.
+             */
+            return getPolicy(id).then((data) => {
+                setPolicy(data);
+            });
+        });
+    }
+
+    console.log(pageAction, policy); // eslint-disable-line no-console
 
     return (
         <PageSection variant="light" isFilled id="policy-page">
+            <PageTitle title="Policies - Policy" />
             {isLoading ? (
                 <Bullseye>
                     <Spinner />
@@ -90,6 +122,7 @@ function PolicyPage({
                     <PolicyWizard pageAction={pageAction} policy={policy} />
                 ) : (
                     <PolicyDetail
+                        handleUpdateDisabledState={handleUpdateDisabledState}
                         hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                         policy={policy}
                     />

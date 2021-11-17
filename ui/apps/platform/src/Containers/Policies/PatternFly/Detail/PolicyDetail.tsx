@@ -5,6 +5,8 @@ import {
     AlertActionCloseButton,
     AlertGroup,
     AlertVariant,
+    Breadcrumb,
+    BreadcrumbItem,
     Dropdown,
     DropdownItem,
     DropdownSeparator,
@@ -17,25 +19,37 @@ import {
 } from '@patternfly/react-core';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useToasts from 'hooks/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
-import { exportPolicies } from 'services/PoliciesService';
+import { deletePolicy, exportPolicies } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+function formatUpdateDisabledStateAction(disabled: boolean) {
+    return disabled ? 'Enable policy' : 'Disable policy';
+}
 
 type PolicyDetailProps = {
+    handleUpdateDisabledState: (id: string, disabled: boolean) => Promise<void>;
     hasWriteAccessForPolicy: boolean;
     policy: Policy;
 };
 
-function PolicyDetail({ hasWriteAccessForPolicy, policy }: PolicyDetailProps): ReactElement {
+function PolicyDetail({
+    handleUpdateDisabledState,
+    hasWriteAccessForPolicy,
+    policy,
+}: PolicyDetailProps): ReactElement {
     const history = useHistory();
 
     const [isRequesting, setIsRequesting] = useState(false);
+    const [requestError, setRequestError] = useState<ReactElement | null>(null);
     const [isActionsOpen, setIsActionsOpen] = useState(false);
 
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { disabled, id, name } = policy;
+    const { disabled, id, isDefault, name } = policy;
 
     function onSelectActions() {
         setIsActionsOpen(false);
@@ -74,15 +88,62 @@ function PolicyDetail({ hasWriteAccessForPolicy, policy }: PolicyDetailProps): R
     }
 
     function onUpdateDisabledState() {
-        // TODO handleUpdateDisabledState(id, !disabled) callback?
+        setRequestError(null);
+        setIsRequesting(true);
+        handleUpdateDisabledState(id, !disabled)
+            // If success, callback function updates policy prop.
+            .catch((error) => {
+                setRequestError(
+                    <Alert
+                        title={`Request failed: ${formatUpdateDisabledStateAction(disabled)}`}
+                        variant="danger"
+                        isInline
+                        actionClose={
+                            <AlertActionCloseButton onClose={() => setRequestError(null)} />
+                        }
+                    >
+                        {getAxiosErrorMessage(error)}
+                    </Alert>
+                );
+            })
+            .finally(() => {
+                setIsRequesting(false);
+            });
     }
 
     function onDeletePolicy() {
-        // TODO handleDeletePolicy(id) callback?
+        setRequestError(null);
+        setIsRequesting(true);
+        deletePolicy(id)
+            .then(() => {
+                // Route change causes policy table page to request policies.
+                history.replace(policiesBasePath);
+            })
+            .catch((error) => {
+                setRequestError(
+                    <Alert
+                        title="Request failed: Delete policy"
+                        variant="danger"
+                        isInline
+                        actionClose={
+                            <AlertActionCloseButton onClose={() => setRequestError(null)} />
+                        }
+                    >
+                        {getAxiosErrorMessage(error)}
+                    </Alert>
+                );
+            })
+            .finally(() => {
+                setIsRequesting(false);
+            });
     }
 
     return (
         <>
+            <Breadcrumb className="pf-u-mb-md">
+                <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
+                <BreadcrumbItem isActive>{name}</BreadcrumbItem>
+            </Breadcrumb>
             <Toolbar inset={{ default: 'insetNone' }}>
                 <ToolbarContent>
                     <ToolbarItem>
@@ -139,12 +200,13 @@ function PolicyDetail({ hasWriteAccessForPolicy, policy }: PolicyDetailProps): R
                                               component="button"
                                               onClick={onUpdateDisabledState}
                                           >
-                                              {disabled ? 'Enable policy' : 'Disable policy'}
+                                              {formatUpdateDisabledStateAction(disabled)}
                                           </DropdownItem>,
                                           <DropdownSeparator key="Separator" />,
                                           <DropdownItem
                                               key="Delete policy"
                                               component="button"
+                                              isDisabled={isDefault}
                                               onClick={onDeletePolicy}
                                           >
                                               Delete policy
@@ -164,6 +226,7 @@ function PolicyDetail({ hasWriteAccessForPolicy, policy }: PolicyDetailProps): R
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
+            {requestError}
             <Title headingLevel="h2">Policy overview</Title>
             TODO
             <Title headingLevel="h2">MITRE ATT&amp;CK</Title>

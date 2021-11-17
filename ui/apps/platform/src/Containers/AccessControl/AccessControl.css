@@ -42,14 +42,6 @@
 }
 
 /*
- * Disabled primary Dropdown needs same colors as Button.
- */
-#access-control .pf-c-dropdown__toggle.pf-m-primary[disabled] {
-    background-color: var(--pf-global--disabled-color--200);
-    color: var(--pf-global--disabled-color--100);
-}
-
-/*
  * Limit width (via className) of individual input elements.
  */
 #access-control .pf-c-form-control.pf-m-limit-width {

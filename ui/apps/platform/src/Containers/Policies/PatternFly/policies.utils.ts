@@ -6,7 +6,7 @@ import { SearchFilter } from 'types/search';
 export type PageAction = 'clone' | 'create' | 'edit';
 
 function isValidAction(action: unknown): action is PageAction {
-    return action === 'create' || action === 'edit';
+    return action === 'clone' || action === 'create' || action === 'edit';
 }
 
 function isParsedQs(s: unknown): s is ParsedQs {
