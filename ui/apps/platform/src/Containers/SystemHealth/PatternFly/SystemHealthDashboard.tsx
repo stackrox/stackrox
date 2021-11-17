@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useState } from 'react';
 import {
     Card,
     CardHeader,
@@ -16,11 +16,21 @@ import {
 } from '@patternfly/react-core';
 
 import ViewAllButton from 'Components/PatternFly/ViewAllButton';
+import useInterval from 'hooks/useInterval';
 import { clustersBasePath } from 'routePaths';
 import VulnerabilityDefinitionsWidget from './Components/VulnerabilityDefinitionsWidget';
 import GenerateDiagnosticBundle from './Components/GenerateDiagnosticBundle';
+import ImageIntegrationHealthWidget from './Components/ImageIntegrationHealthWidget';
+import NotifierIntegrationHealthWidget from './Components/NotifierIntegrationHealthWidget';
+import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthWidget';
 
 function SystemHealthDashboard(): ReactElement {
+    const [pollingCountFaster, setPollingCountFaster] = useState(0);
+
+    useInterval(() => {
+        setPollingCountFaster(pollingCountFaster + 1);
+    }, 30000); // 30 seconds is same as for Cluster Status Problems in top navigation
+
     return (
         <>
             <PageSection variant={PageSectionVariants.light}>
@@ -59,43 +69,13 @@ function SystemHealthDashboard(): ReactElement {
                 <Grid hasGutter>
                     {/* TODO: these section migrated as part of https://stack-rox.atlassian.net/browse/ROX-8314 */}
                     <GridItem span={12} md={4}>
-                        <Card isCompact>
-                            <CardHeader>
-                                <CardHeaderMain>
-                                    <CardTitle component="h2">Image Integrations</CardTitle>
-                                </CardHeaderMain>
-                                <CardActions hasNoOffset>
-                                    <ViewAllButton url={clustersBasePath} />
-                                </CardActions>
-                            </CardHeader>
-                            <CardBody>health details go here</CardBody>
-                        </Card>
+                        <ImageIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     </GridItem>
                     <GridItem span={12} md={4}>
-                        <Card isCompact>
-                            <CardHeader>
-                                <CardHeaderMain>
-                                    <CardTitle component="h2">Notifier Integrations</CardTitle>
-                                </CardHeaderMain>
-                                <CardActions hasNoOffset>
-                                    <ViewAllButton url={clustersBasePath} />
-                                </CardActions>
-                            </CardHeader>
-                            <CardBody>health details go here</CardBody>
-                        </Card>
+                        <NotifierIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     </GridItem>
                     <GridItem span={12} md={4}>
-                        <Card isCompact>
-                            <CardHeader>
-                                <CardHeaderMain>
-                                    <CardTitle component="h2">Backup Integrations</CardTitle>
-                                </CardHeaderMain>
-                                <CardActions hasNoOffset>
-                                    <ViewAllButton url={clustersBasePath} />
-                                </CardActions>
-                            </CardHeader>
-                            <CardBody>health details go here</CardBody>
-                        </Card>
+                        <BackupIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     </GridItem>
                 </Grid>
             </PageSection>

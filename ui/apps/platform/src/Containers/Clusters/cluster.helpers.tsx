@@ -97,7 +97,11 @@ export const centralEnvDefault = {
     kernelSupportAvailable: false,
 };
 
-const MinusCircleRotate45 = ({ className }) => (
+type MinusCircleRotate45Props = {
+    className: string;
+};
+
+const MinusCircleRotate45 = ({ className }: MinusCircleRotate45Props) => (
     <MinusCircleIcon className={`${className} transform rotate-45`} />
 );
 
@@ -123,6 +127,31 @@ export const styleUnhealthy = {
     Icon: TimesCircleIcon,
     bgColor: 'bg-alert-200',
     fgColor: 'text-alert-700',
+};
+
+// PatternFly versions of cluster style constants
+export const styleUninitializedPF = {
+    Icon: MinusCircleRotate45,
+    bgColor: 'pf-u-background-color-100',
+    fgColor: 'pf-u-default-color-300',
+};
+
+export const styleHealthyPF = {
+    Icon: CheckCircleIcon,
+    bgColor: 'pf-u-background-color-success',
+    fgColor: 'pf-u-success-color-100',
+};
+
+export const styleDegradedPF = {
+    Icon: ExclamationCircleIcon,
+    bgColor: 'pf-u-background-color-warning',
+    fgColor: 'pf-u-warning-color-100',
+};
+
+export const styleUnhealthyPF = {
+    Icon: TimesCircleIcon,
+    bgColor: 'pf-u-background-color-danger',
+    fgColor: 'pf-u-danger-color-100',
 };
 
 // Styles for ClusterStatus, SensorStatus, CollectorStatus.
@@ -169,8 +198,15 @@ export const sensorUpgradeStyles = {
     failure: styleUnhealthy,
 };
 
+type UpgradeState = {
+    displayValue?: string;
+    type: string;
+    actionText?: string;
+};
+type UpgradeStates = Record<string, UpgradeState>;
+
 // @TODO: add optional button text and func
-const upgradeStates = {
+const upgradeStates: UpgradeStates = {
     UP_TO_DATE: {
         displayValue: 'Up to date with Central',
         type: 'current',
@@ -247,7 +283,7 @@ const upgradeStates = {
     },
 };
 
-export function formatKubernetesVersion(orchestratorMetadata) {
+export function formatKubernetesVersion(orchestratorMetadata: { version: string }) {
     return orchestratorMetadata?.version || 'Not applicable';
 }
 
@@ -257,7 +293,14 @@ export function formatBuildDate(orchestratorMetadata) {
         : 'Not applicable';
 }
 
-export function formatCloudProvider(providerMetadata) {
+type ProviderMetadata = {
+    region: string;
+    aws?: any;
+    azure?: any;
+    google?: any;
+};
+
+export function formatCloudProvider(providerMetadata: ProviderMetadata) {
     if (providerMetadata) {
         const { region } = providerMetadata;
 
@@ -321,7 +364,7 @@ export function getCredentialExpirationProps(certExpiryStatus) {
     return null;
 }
 
-export function formatSensorVersion(sensorVersion) {
+export function formatSensorVersion(sensorVersion: string) {
     return sensorVersion || 'Not Running';
 }
 
@@ -377,15 +420,27 @@ function hasRelevantInformationFromMostRecentUpgrade(upgradeStatus) {
     );
 }
 
-export function getUpgradeStatusDetail(upgradeStatus) {
-    return get(upgradeStatus, 'mostRecentProcess.progress.upgradeStatusDetail', '');
+export function getUpgradeStatusDetail(upgradeStatus: string): string {
+    return get(upgradeStatus, 'mostRecentProcess.progress.upgradeStatusDetail', '') as string;
 }
+
+export type UpgradeStatus = {
+    mostRecentProcess: {
+        type: string;
+        progress?: {
+            upgradeState: string;
+        };
+        initiatedAt?: string;
+        active?: boolean;
+        upgradability?: string;
+    };
+};
 
 /**
  * If the most recent upgrade was a cert rotation, return the initiation time.
  * Else, return null.
  */
-export function initiationOfCertRotationIfApplicable(upgradeStatus) {
+export function initiationOfCertRotationIfApplicable(upgradeStatus: UpgradeStatus) {
     const mostRecentProcess = upgradeStatus?.mostRecentProcess;
     if (mostRecentProcess?.type !== 'CERT_ROTATION') {
         return null;
@@ -396,7 +451,9 @@ export function initiationOfCertRotationIfApplicable(upgradeStatus) {
     return mostRecentProcess.initiatedAt;
 }
 
-export function findUpgradeState(upgradeStatus) {
+export function findUpgradeState(
+    upgradeStatus: UpgradeStatus | null | undefined
+): UpgradeState | null {
     const upgradability = get(upgradeStatus, 'upgradability', null);
     if (!upgradability || upgradability === 'UNSET') {
         return null;
@@ -409,7 +466,7 @@ export function findUpgradeState(upgradeStatus) {
             }
 
             // Display active progress while using automatic upgrade to re-issue certificates.
-            const upgradeState = get(
+            const upgradeState: string = get(
                 upgradeStatus,
                 'mostRecentProcess.progress.upgradeState',
                 'unknown'
@@ -449,7 +506,7 @@ export function isUpToDateStateObject(upgradeStateObject) {
 
 export function getUpgradeableClusters(clusters = []) {
     return clusters.filter((cluster) => {
-        const upgradeStatus = get(cluster, 'status.upgradeStatus', null);
+        const upgradeStatus: UpgradeStatus | null = get(cluster, 'status.upgradeStatus', null);
         const upgradeStateObject = findUpgradeState(upgradeStatus);
 
         return upgradeStateObject?.actionText; // if property exists, you can try or retry an upgrade

@@ -4,6 +4,7 @@ import {
     healthStatusStyles,
     sensorUpgradeStyles,
     styleDegraded,
+    UpgradeStatus,
 } from 'Containers/Clusters/cluster.helpers';
 
 import { CategoryStyle, CountableText, nbsp } from './health';
@@ -44,9 +45,7 @@ export interface Cluster {
         certExpiryStatus?: {
             sensorCertExpiry: string;
         };
-        upgradeStatus?: {
-            upgradability: string;
-        };
+        upgradeStatus?: UpgradeStatus;
     };
 }
 
