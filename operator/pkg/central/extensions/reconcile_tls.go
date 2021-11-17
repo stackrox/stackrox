@@ -85,7 +85,7 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData() (secretDataMap, 
 	fileMap := make(secretDataMap)
 	certgen.AddCAToFileMap(fileMap, r.ca)
 
-	if err := certgen.IssueCentralCert(fileMap, r.ca); err != nil {
+	if err := certgen.IssueCentralCert(fileMap, r.ca, mtls.WithNamespace(r.Namespace())); err != nil {
 		return nil, errors.Wrap(err, "issuing central service certificate")
 	}
 
@@ -109,7 +109,7 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(subj mtls.Subject,
 }
 
 func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject, fileMap secretDataMap) error {
-	if err := certgen.IssueServiceCert(fileMap, r.ca, subj, ""); err != nil {
+	if err := certgen.IssueServiceCert(fileMap, r.ca, subj, "", mtls.WithNamespace(r.Namespace())); err != nil {
 		return err
 	}
 	certgen.AddCACertToFileMap(fileMap, r.ca)

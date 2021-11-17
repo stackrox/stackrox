@@ -18,8 +18,8 @@ func AddCertToFileMap(fileMap map[string][]byte, cert *mtls.IssuedCert, fileName
 
 // IssueServiceCert issues a certificate for the given service, and stores it in the given fileMap
 // (keys prefixed with fileNamePrefix, if any).
-func IssueServiceCert(fileMap map[string][]byte, ca mtls.CA, subject mtls.Subject, fileNamePrefix string) error {
-	cert, err := ca.IssueCertForSubject(subject)
+func IssueServiceCert(fileMap map[string][]byte, ca mtls.CA, subject mtls.Subject, fileNamePrefix string, opts ...mtls.IssueCertOption) error {
+	cert, err := ca.IssueCertForSubject(subject, opts...)
 	if err != nil {
 		return errors.Wrapf(err, "could not issue cert for %s", subject.Identifier)
 	}
