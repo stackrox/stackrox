@@ -2052,6 +2052,9 @@ commands:
     parameters:
       cluster-name:
         type: string
+      openshift-version:
+        type: string
+        default: ocp/stable-4.7
     steps:
       - run:
           name: Create OpenShift 4 cluster
@@ -2065,6 +2068,7 @@ commands:
               -e GOOGLE_CREDENTIALS="${GOOGLE_OPENSHIFT_4_CREDENTIALS}" \
               -e PULL_SECRET="${REDHAT_PULL_SECRET}" \
               -e REGION="us-central1" \
+              -e OPENSHIFT_VERSION=<< parameters.openshift-version >> \
               gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION \
               create << parameters.cluster-name >>-"${CIRCLE_WORKFLOW_ID:0:7}" "${GCP_PROJECT}" openshift.ci.rox.systems
             docker cp openshift-4-automation:/data $PWD/<< parameters.cluster-name >>
@@ -3241,6 +3245,50 @@ jobs:
         when: on_fail
         cluster-name: operator-oc4
 
+  provision-openshift-4-6-operator-e2e-tests:
+    executor: custom
+    steps:
+    - checkout
+    - check-to-run:
+        label: ci-openshift-4-operator-tests
+        run-on-master: true
+        run-on-tags: true
+        changed-path: '^operator/'
+    - check-backend-changes
+
+    - setup_remote_docker
+
+    - attach_workspace:
+        at: /go/src/github.com/stackrox/rox
+
+    - *loginToGCR
+    - create-openshift-4-cluster:
+        cluster-name: operator-oc4-6
+        openshift-version: ocp/stable-4.6
+
+    - run:
+        name: Validate Kubeconfig
+        command: |
+          ls -lh $PWD/operator-oc4-6/data
+          export KUBECONFIG=$PWD/operator-oc4-6/data/auth/kubeconfig
+          sudo chown "$USER" $PWD/operator-oc4-6/data/auth/kubeconfig
+          oc get nodes
+
+    - store_artifacts:
+        path: operator-oc4-6
+        destination: operator-oc4-6
+
+    - build-liveness-check
+
+    - persist_to_workspace:
+        root: .
+        paths:
+        - operator-oc4-6
+
+    - destroy-openshift-4-cluster:
+        when: on_fail
+        cluster-name: operator-oc4-6
+
   provision-race-condition-tests:
     executor: custom
     environment:
@@ -4070,6 +4118,73 @@ jobs:
         when: always
         cluster-name: operator-oc4
 
+  openshift-4-6-operator-e2e-tests:
+    executor: custom
+    environment:
+    - ROX_OPERATOR_MAIN_REGISTRY: "quay.io/rhacs-eng"
+    - ROX_OPERATOR_COLLECTOR_REGISTRY: "quay.io/rhacs-eng"
+    - IMAGE_REPO: "quay.io/rhacs-eng"
+    - IMAGE_TAG_BASE: "quay.io/rhacs-eng/stackrox-operator"
+
+    steps:
+    - checkout
+    - check-to-run:
+        label: ci-openshift-4-operator-tests  # drive all openshift-4*-operator-e2e-tests from a single label
+        run-on-master: true
+        run-on-tags: true
+        changed-path: '^operator/'
+    - check-backend-changes
+
+    - setup_remote_docker
+
+    - attach_workspace:
+        at: /go/src/github.com/stackrox/rox
+
+    - run:
+        name: Restore KUBECONFIG
+        command: |
+          ls -lh $PWD/operator-oc4-6/data
+          cci-export KUBECONFIG "$PWD/operator-oc4-6/data/auth/kubeconfig"
+          oc get nodes
+
+    - *loginToGCR
+    - *setupRoxctl
+    - setup-gcp
+    - setup-dep-env
+    - remove-existing-stackrox-resources
+    - *setupGoogleAppCreds
+
+    - run:
+        name: Start previous version of operator manager on cluster
+        command: make -C operator deploy-previous-via-olm
+
+    - run:
+        name: Run Operator upgrade tests
+        command: make -C operator test-upgrade
+
+    - store-test-results-and-artifacts:
+        path: operator/build/kuttl-test-artifacts
+
+    - run:
+        name: Run Operator e2e tests
+        command: make -C operator test-e2e-deployed
+
+    - store-test-results-and-artifacts:
+        path: operator/build/kuttl-test-artifacts
+
+    - run:
+        name: Run Operator Bundle Scorecard tests
+        command: make -C operator bundle-test-image
+
+    - collect-k8s-logs:
+        orchestrator-flavor: openshift
+    - store-k8s-logs:
+        destination: operator-e2e-test-k8s-service-logs
+
+    - destroy-openshift-4-cluster:
+        when: always
+        cluster-name: operator-oc4-6
+
   roxctl-windows-test:
     executor:
       name: win/default  # References orbs.win defined above.
@@ -4695,12 +4810,20 @@ workflows:
             - provision-openshift-4-api-e2e-tests
       - provision-openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
+      - provision-openshift-4-6-operator-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
       - openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - build
             - build-operator
             - provision-openshift-4-operator-e2e-tests
+      - openshift-4-6-operator-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-operator
+            - provision-openshift-4-6-operator-e2e-tests
       - provision-race-condition-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - race-condition-tests:
