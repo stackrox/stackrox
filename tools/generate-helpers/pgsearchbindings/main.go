@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/utils"
@@ -91,6 +92,7 @@ func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]s
 `
 
 type properties struct {
+	RegisteredType string
 	Type           string
 	Table          string
 	NoKeyField     bool
@@ -118,8 +120,9 @@ func main() {
 	c.Flags().StringVar(&props.Type, "type", "", "the (Go) name of the object")
 	utils.Must(c.MarkFlagRequired("type"))
 
+	c.Flags().StringVar(&props.RegisteredType, "registered-type", "", "the (Go) name of the object")
+
 	c.Flags().StringVar(&props.Table, "table", "", "the logical table of the objects")
-	utils.Must(c.MarkFlagRequired("table"))
 
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", fmt.Sprintf("the search category to index under (supported - %s)", renderSearchCategories()))
 	utils.Must(c.MarkFlagRequired("search-category"))
@@ -142,37 +145,18 @@ func main() {
 	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	//c.Flags().StringVar(&props.Tag, "tag", "", "use the specified json tag")
 
-	/*
-		props := operations.GeneratorProperties{}
-		c.Flags().StringVar(&props.Pkg, "package", "github.com/stackrox/rox/generated/storage", "the package of the object being indexed")
-
-		c.Flags().StringVar(&props.Object, "object", "", "the (Go) name of the object being indexed")
-		utils.Must(c.MarkFlagRequired("object"))
-
-		c.Flags().StringVar(&props.SearchCategory, "search-category", "", fmt.Sprintf("the search category to index under (supported - %s)", renderSearchCategories()))
-		utils.Must(c.MarkFlagRequired("search-category"))
-
-		c.Flags().StringVar(&props.ObjectPathName, "object-path-name", "", "overwrite the object path underneath Central")
-		c.Flags().StringVar(&props.Tag, "tag", "", "use the specified json tag")
-
-		c.RunE = func(*cobra.Command, []string) error {
-			if props.Plural == "" {
-				props.Plural = fmt.Sprintf("%ss", props.Singular)
-			}
-			if err := checkSupported(props.SearchCategory); err != nil {
-				return err
-			}
-			props.SearchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
-			return generate(props)
-		}
-
-		if err := c.Execute(); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	*/
-
 	c.RunE = func(*cobra.Command, []string) error {
+		typ := fmt.Sprintf("storage.%s", props.Type)
+		if props.RegisteredType != "" {
+			typ = fmt.Sprintf("storage.%s", props.RegisteredType)
+		}
+		fmt.Println("Generating for", typ)
+		mt := proto.MessageType(typ)
+
+		if props.Table == "" {
+			props.Table = strings.TrimPrefix(mt.Elem().String(), "storage.")
+		}
+
 		props.SearchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,

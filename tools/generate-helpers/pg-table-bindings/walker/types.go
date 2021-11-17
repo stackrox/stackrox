@@ -33,7 +33,7 @@ func DataTypeToSQLType(dataType DataType) string {
 	case STRING_ARRAY:
 		sqlType = "text[]"
 	case INT_ARRAY:
-		sqlType = "intarray"
+		sqlType = "int[]"
 	default:
 		panic(dataType.String())
 	}

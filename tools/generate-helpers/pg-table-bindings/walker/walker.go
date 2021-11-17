@@ -2,6 +2,7 @@ package walker
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 
@@ -67,6 +68,8 @@ func (p *Table) GetInsertComposer(level int) *InsertComposer {
 		getterPath := fmt.Sprintf("obj%d.", level) + elem.GetterPath()
 		if elem.DataType == DATETIME {
 			getterPath = fmt.Sprintf("nilOrStringTimestamp(%s)", getterPath)
+		} else if elem.DataType == INT_ARRAY {
+			getterPath = fmt.Sprintf("convertEnumSliceToIntArray(%s)", getterPath)
 		}
 		ic.AddGetters(getterPath)
 	}
@@ -193,8 +196,16 @@ type Element struct {
 	Options PostgresOptions
 }
 
+func (e Element) TableName() string {
+	return e.Parent.TableName()
+}
+
 func (e Element) IsSearchable() bool {
 	return e.SearchField != ""
+}
+
+func (e Element) TablePrefixed() string {
+	return fmt.Sprintf("%s.%s", e.Parent.TableName(), e.SQLPath())
 }
 
 func (e Element) GetterPath() string {
@@ -220,14 +231,19 @@ type SQLWalker struct {
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(obj reflect.Type) *Table {
+func Walk(obj reflect.Type, table string) *Table {
 	typ := obj.Elem()
 	parent := &Table{
-		RawFieldType: strings.TrimPrefix(typ.String(), "storage."),
+		RawFieldType: table,
 		TopLevel: true,
 	}
 	walker := SQLWalker{}
 	walker.handleStruct(parent, typ)
+
+	// Validate there is a pk
+	if len(parent.PrimaryKeyElements()) == 0 {
+		log.Printf("table %s needs PK", table)
+	}
 
 	return parent
 }
@@ -287,6 +303,8 @@ func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
 		} else if searchTag != "" {
 			fields := strings.Split(searchTag, ",")
 			searchField = fields[0]
+		} else if opts.PrimaryKey {
+			searchField = field.Name
 		}
 		elem := Element{
 			Parent:       parent,
@@ -382,7 +400,6 @@ func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
 			// If it is a oneof then call XXX_OneofWrappers to get the types.
 			// The return values is a slice of interfaces that are nil type pointers
 			if field.Tag.Get("protobuf_oneof") != "" {
-				fmt.Println(field.Name)
 				ptrToOriginal := reflect.PtrTo(original)
 
 				methodName := fmt.Sprintf("Get%s", field.Name)

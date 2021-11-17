@@ -98,7 +98,7 @@ message Alert {
         string                    message = 2;
     }
 
-    string                    id                = 1 [(gogoproto.moretags) = "sensorhash:\"ignore\""]; // Internal use only
+    string                    id                = 1 [(gogoproto.moretags) = "sensorhash:\"ignore\" sql:\"pk\""]; // Internal use only
     Policy                    policy            = 2; // This is the full object so it needs a projection to not override the top level
     LifecycleStage            lifecycle_stage   = 3 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
 

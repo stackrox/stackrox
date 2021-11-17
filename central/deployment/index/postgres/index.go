@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "deployments"
+const table = "Deployment"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, table)

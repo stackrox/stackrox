@@ -1,10 +1,6 @@
 package pgsearch
 
 import (
-	"fmt"
-	"math"
-	"strconv"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -31,33 +27,6 @@ func NewTrueQuery() *QueryEntry {
 	}
 }
 
-func GenerateShortestElemPath(table string, elems []searchPkg.PathElem) string {
-	if len(elems) == 1 {
-		return fmt.Sprintf("%s.value", table)
-	}
-	if lastElem := elems[len(elems)-1]; lastElem.Slice {
-		return ""
-	}
-
-	var path string
-	for i := len(elems) - 2; i > -1; i-- {
-		elem := elems[i]
-		if elem.Slice {
-			path = elems[i].ProtoJSONName + path
-			return path
-		}
-		if i == 0 || (i == 1 && elems[i-1].OneOf) {
-			path = fmt.Sprintf("%s.value->'%s'", table, elems[i].ProtoJSONName) + path
-			return path
-		}
-		if elem.OneOf {
-			continue
-		}
-		path = fmt.Sprintf("->'%s'", elems[i].ProtoJSONName) + path
-	}
-	return path
-}
-
 func MatchFieldQuery(table string, query *v1.MatchFieldQuery, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
 	// Need to find base value
 	field, ok := optionsMap.Get(query.GetField())
@@ -66,25 +35,6 @@ func MatchFieldQuery(table string, query *v1.MatchFieldQuery, optionsMap searchP
 		return nil, nil
 	}
 	return matchFieldQuery(table, field, query.Value)
-}
-
-func getValueFromField(val interface{}) string {
-	switch val := val.(type) {
-	case string:
-		return val
-	case float64:
-		i, f := math.Modf(val)
-		// If it's an int, return just the int portion.
-		if math.Abs(f) < 1e-3 {
-			return fmt.Sprintf("%d", int(i))
-		}
-		return fmt.Sprintf("%.2f", val)
-	case bool:
-		return strconv.FormatBool(val)
-	default:
-		log.Errorf("Unknown type field from index: %T", val)
-	}
-	return ""
 }
 
 //

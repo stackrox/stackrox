@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "pods"
+const table = "Pod"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_PODS, table)

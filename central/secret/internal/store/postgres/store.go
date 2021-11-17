@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from secrets"
-		existsStmt = "select exists(select 1 from secrets where id = $1)"
-		getIDsStmt = "select id from secrets"
-		getStmt = "select value from secrets where id = $1"
-		getManyStmt = "select value from secrets where id = ANY($1::text[])"
-		upsertStmt = "insert into secrets (id, value, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
-		deleteStmt = "delete from secrets where id = $1"
-		deleteManyStmt = "delete from secrets where id = ANY($1::text[])"
-		walkStmt = "select value from secrets"
-		walkWithIDStmt = "select id, value from secrets"
+		countStmt = "select count(*) from Secret"
+		existsStmt = "select exists(select 1 from Secret where id = $1)"
+		getIDsStmt = "select id from Secret"
+		getStmt = "select serialized from Secret where id = $1"
+		getManyStmt = "select serialized from Secret where id = ANY($1::text[])"
+		upsertStmt = "insert into Secret (id, value, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
+		deleteStmt = "delete from Secret where id = $1"
+		deleteManyStmt = "delete from Secret where id = ANY($1::text[])"
+		walkStmt = "select serialized from Secret"
+		walkWithIDStmt = "select id, serialized from Secret"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "secrets"
+	table = "Secret"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists secrets (id varchar primary key, value jsonb, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Namespace varchar, CreatedAt timestamp)"
-	createIDIndexQuery = "create index if not exists secrets_id on secrets using hash ((id))"
+	createTableQuery = "create table if not exists Secret (id varchar primary key, value jsonb, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Namespace varchar, CreatedAt timestamp)"
+	createIDIndexQuery = "create index if not exists Secret_id on Secret using hash ((id))"
 
-	batchInsertTemplate = "insert into secrets (id, value, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
+	batchInsertTemplate = "insert into Secret (id, value, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,11 +84,9 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Secret")
 
 	for _, table := range []string {
-		"create table if not exists Secret(serialized jsonb not null, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Namespace varchar, CreatedAt timestamp, PRIMARY KEY ());",
-		"create table if not exists Secret_Files(idx numeric not null, Type integer, Metadata_Cert_EndDate timestamp, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Secret() ON DELETE CASCADE);",
-		"create table if not exists Secret_Files_Registries(parent_idx numeric not null, idx numeric not null, Name varchar, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES Secret_Files(idx) ON DELETE CASCADE);",
-		"create table if not exists Secret_ContainerRelationships(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Secret() ON DELETE CASCADE);",
-		"create table if not exists Secret_DeploymentRelationships(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Secret() ON DELETE CASCADE);",
+		"create table if not exists Secret(serialized jsonb not null, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Namespace varchar, CreatedAt timestamp, PRIMARY KEY (Id));",
+		"create table if not exists Secret_Files(parent_Id varchar not null, idx numeric not null, Type integer, Metadata_Cert_EndDate timestamp, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Secret(Id) ON DELETE CASCADE);",
+		"create table if not exists Secret_Files_Registries(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Name varchar, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Secret_Files(parent_Id, idx) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -228,6 +227,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Secret, []int, error) {
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -262,30 +271,30 @@ func (s *storeImpl) upsert(id string, obj0 *storage.Secret) error {
 //		}
 	}()
 
-	localQuery := "insert into Secret(serialized, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values($1, $2, $3, $4, $5, $6, $7) on conflict() do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
+	localQuery := "insert into Secret(serialized, Id, Name, ClusterId, ClusterName, Namespace, CreatedAt) values($1, $2, $3, $4, $5, $6, $7) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt"
 _, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetClusterId(), obj0.GetClusterName(), obj0.GetNamespace(), nilOrStringTimestamp(obj0.GetCreatedAt()))
 if err != nil {
     return err
   }
   for idx1, obj1 := range obj0.GetFiles() {
-    localQuery := "insert into Secret_Files(idx, Type, Metadata_Cert_EndDate) values($1, $2, $3) on conflict(idx) do update set idx = EXCLUDED.idx, Type = EXCLUDED.Type, Metadata_Cert_EndDate = EXCLUDED.Metadata_Cert_EndDate"
-    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetType(), nilOrStringTimestamp(obj1.GetCert().GetEndDate()))
+    localQuery := "insert into Secret_Files(parent_Id, idx, Type, Metadata_Cert_EndDate) values($1, $2, $3, $4) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Type = EXCLUDED.Type, Metadata_Cert_EndDate = EXCLUDED.Metadata_Cert_EndDate"
+    _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetType(), nilOrStringTimestamp(obj1.GetCert().GetEndDate()))
     if err != nil {
       return err
     }
     for idx2, obj2 := range obj1.GetImagePullSecret().GetRegistries() {
-      localQuery := "insert into Secret_Files_Registries(parent_idx, idx, Name) values($1, $2, $3) on conflict(parent_idx, idx) do update set parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name"
-      _, err := tx.Exec(context.Background(), localQuery, idx1, idx2, obj2.GetName())
+      localQuery := "insert into Secret_Files_Registries(parent_parent_Id, parent_idx, idx, Name) values($1, $2, $3, $4) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name"
+      _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetName())
       if err != nil {
         return err
       }
     }
-      _, err = tx.Exec(context.Background(), "delete from Secret_Files_Registries where parent_idx = $1 and idx >= $2", idx1, len(obj1.GetImagePullSecret().GetRegistries()))
+      _, err = tx.Exec(context.Background(), "delete from Secret_Files_Registries where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetImagePullSecret().GetRegistries()))
       if err != nil {
         return err
       }
   }
-    _, err = tx.Exec(context.Background(), "delete from Secret_Files where  and idx >= $1", len(obj0.GetFiles()))
+    _, err = tx.Exec(context.Background(), "delete from Secret_Files where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetFiles()))
     if err != nil {
       return err
     }

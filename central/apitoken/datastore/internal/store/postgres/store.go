@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from apiTokens"
-		existsStmt = "select exists(select 1 from apiTokens where id = $1)"
-		getIDsStmt = "select id from apiTokens"
-		getStmt = "select value from apiTokens where id = $1"
-		getManyStmt = "select value from apiTokens where id = ANY($1::text[])"
-		upsertStmt = "insert into apiTokens (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
-		deleteStmt = "delete from apiTokens where id = $1"
-		deleteManyStmt = "delete from apiTokens where id = ANY($1::text[])"
-		walkStmt = "select value from apiTokens"
-		walkWithIDStmt = "select id, value from apiTokens"
+		countStmt = "select count(*) from TokenMetadata"
+		existsStmt = "select exists(select 1 from TokenMetadata where id = $1)"
+		getIDsStmt = "select id from TokenMetadata"
+		getStmt = "select serialized from TokenMetadata where id = $1"
+		getManyStmt = "select serialized from TokenMetadata where id = ANY($1::text[])"
+		upsertStmt = "insert into TokenMetadata (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		deleteStmt = "delete from TokenMetadata where id = $1"
+		deleteManyStmt = "delete from TokenMetadata where id = ANY($1::text[])"
+		walkStmt = "select serialized from TokenMetadata"
+		walkWithIDStmt = "select id, serialized from TokenMetadata"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "apiTokens"
+	table = "TokenMetadata"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists apiTokens (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index if not exists apiTokens_id on apiTokens using hash ((id))"
+	createTableQuery = "create table if not exists TokenMetadata (id varchar primary key, value jsonb)"
+	createIDIndexQuery = "create index if not exists TokenMetadata_id on TokenMetadata using hash ((id))"
 
-	batchInsertTemplate = "insert into apiTokens (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
+	batchInsertTemplate = "insert into TokenMetadata (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -222,6 +223,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.TokenMetadata, []int, erro
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
 }
 
 func nilOrStringTimestamp(t *types.Timestamp) *string {

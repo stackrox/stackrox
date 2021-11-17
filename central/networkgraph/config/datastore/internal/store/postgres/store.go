@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from networkgraphconfig"
-		existsStmt = "select exists(select 1 from networkgraphconfig where id = $1)"
-		getIDsStmt = "select id from networkgraphconfig"
-		getStmt = "select value from networkgraphconfig where id = $1"
-		getManyStmt = "select value from networkgraphconfig where id = ANY($1::text[])"
-		upsertStmt = "insert into networkgraphconfig (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
-		deleteStmt = "delete from networkgraphconfig where id = $1"
-		deleteManyStmt = "delete from networkgraphconfig where id = ANY($1::text[])"
-		walkStmt = "select value from networkgraphconfig"
-		walkWithIDStmt = "select id, value from networkgraphconfig"
+		countStmt = "select count(*) from NetworkGraphConfig"
+		existsStmt = "select exists(select 1 from NetworkGraphConfig where id = $1)"
+		getIDsStmt = "select id from NetworkGraphConfig"
+		getStmt = "select serialized from NetworkGraphConfig where id = $1"
+		getManyStmt = "select serialized from NetworkGraphConfig where id = ANY($1::text[])"
+		upsertStmt = "insert into NetworkGraphConfig (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		deleteStmt = "delete from NetworkGraphConfig where id = $1"
+		deleteManyStmt = "delete from NetworkGraphConfig where id = ANY($1::text[])"
+		walkStmt = "select serialized from NetworkGraphConfig"
+		walkWithIDStmt = "select id, serialized from NetworkGraphConfig"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "networkgraphconfig"
+	table = "NetworkGraphConfig"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -68,10 +69,10 @@ func alloc() proto.Message {
 }
 
 const (
-	createTableQuery = "create table if not exists networkgraphconfig (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index if not exists networkgraphconfig_id on networkgraphconfig using hash ((id))"
+	createTableQuery = "create table if not exists NetworkGraphConfig (id varchar primary key, value jsonb)"
+	createIDIndexQuery = "create index if not exists NetworkGraphConfig_id on NetworkGraphConfig using hash ((id))"
 
-	batchInsertTemplate = "insert into networkgraphconfig (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
+	batchInsertTemplate = "insert into NetworkGraphConfig (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
 )
 
 // New returns a new Store instance using the provided sql instance.

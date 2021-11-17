@@ -18,7 +18,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const table = "processindicators"
+const table = "ProcessIndicator"
 
 func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, table)

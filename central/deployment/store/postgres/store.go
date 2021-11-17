@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from deployments"
-		existsStmt = "select exists(select 1 from deployments where id = $1)"
-		getIDsStmt = "select id from deployments"
-		getStmt = "select value from deployments where id = $1"
-		getManyStmt = "select value from deployments where id = ANY($1::text[])"
-		upsertStmt = "insert into deployments (id, value, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
-		deleteStmt = "delete from deployments where id = $1"
-		deleteManyStmt = "delete from deployments where id = ANY($1::text[])"
-		walkStmt = "select value from deployments"
-		walkWithIDStmt = "select id, value from deployments"
+		countStmt = "select count(*) from Deployment"
+		existsStmt = "select exists(select 1 from Deployment where id = $1)"
+		getIDsStmt = "select id from Deployment"
+		getStmt = "select serialized from Deployment where id = $1"
+		getManyStmt = "select serialized from Deployment where id = ANY($1::text[])"
+		upsertStmt = "insert into Deployment (id, value, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
+		deleteStmt = "delete from Deployment where id = $1"
+		deleteManyStmt = "delete from Deployment where id = ANY($1::text[])"
+		walkStmt = "select serialized from Deployment"
+		walkWithIDStmt = "select id, serialized from Deployment"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "deployments"
+	table = "Deployment"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists deployments (id varchar primary key, value jsonb, Id varchar, Name varchar, Type varchar, Namespace varchar, NamespaceId varchar, OrchestratorComponent bool, Labels jsonb, PodLabels jsonb, Created timestamp, ClusterId varchar, ClusterName varchar, Annotations jsonb, Priority numeric, ImagePullSecrets text[], ServiceAccount varchar, ServiceAccountPermissionLevel integer, RiskScore numeric, ProcessTags text[])"
-	createIDIndexQuery = "create index if not exists deployments_id on deployments using hash ((id))"
+	createTableQuery = "create table if not exists Deployment (id varchar primary key, value jsonb, Id varchar, Name varchar, Type varchar, Namespace varchar, NamespaceId varchar, OrchestratorComponent bool, Labels jsonb, PodLabels jsonb, Created timestamp, ClusterId varchar, ClusterName varchar, Annotations jsonb, Priority numeric, ImagePullSecrets text[], ServiceAccount varchar, ServiceAccountPermissionLevel integer, RiskScore numeric, ProcessTags text[])"
+	createIDIndexQuery = "create index if not exists Deployment_id on Deployment using hash ((id))"
 
-	batchInsertTemplate = "insert into deployments (id, value, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
+	batchInsertTemplate = "insert into Deployment (id, value, Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProcessTags) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProcessTags = EXCLUDED.ProcessTags"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -85,7 +86,7 @@ func New(db *pgxpool.Pool) Store {
 	for _, table := range []string {
 		"create table if not exists Deployment(serialized jsonb not null, Id varchar, Name varchar, Type varchar, Namespace varchar, NamespaceId varchar, OrchestratorComponent bool, Labels jsonb, PodLabels jsonb, Created timestamp, ClusterId varchar, ClusterName varchar, Annotations jsonb, Priority numeric, ImagePullSecrets text[], ServiceAccount varchar, ServiceAccountPermissionLevel integer, RiskScore numeric, ProcessTags text[], PRIMARY KEY (Id));",
 		"create index if not exists Deployment_Id on Deployment using hash(Id)",
-		"create table if not exists Deployment_Containers(parent_Id varchar not null, idx numeric not null, Image_Id varchar, Image_Name_Registry varchar, Image_Name_Remote varchar, Image_Name_Tag varchar, Image_Name_FullName varchar, SecurityContext_Privileged bool, SecurityContext_DropCapabilities text[], SecurityContext_AddCapabilities text[], SecurityContext_ReadOnlyRootFilesystem bool, Resources_CpuCoresRequest numeric, Resources_CpuCoresLimit numeric, Resources_MemoryMbRequest numeric, Resources_MemoryMbLimit numeric, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
+		"create table if not exists Deployment_Containers(parent_Id varchar not null, idx numeric not null, Name varchar, Image_Id varchar, Image_Name_Registry varchar, Image_Name_Remote varchar, Image_Name_Tag varchar, Image_Name_FullName varchar, SecurityContext_Privileged bool, SecurityContext_DropCapabilities text[], SecurityContext_AddCapabilities text[], SecurityContext_ReadOnlyRootFilesystem bool, Resources_CpuCoresRequest numeric, Resources_CpuCoresLimit numeric, Resources_MemoryMbRequest numeric, Resources_MemoryMbLimit numeric, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Containers_Volumes(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Name varchar, Source varchar, Destination varchar, ReadOnly bool, Type varchar, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Containers_Ports(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, ContainerPort numeric, Protocol varchar, Exposure integer, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Containers_Ports_ExposureInfos(parent_parent_parent_Id varchar not null, parent_parent_idx numeric not null, parent_idx numeric not null, idx numeric not null, Level integer, ServiceName varchar, ServicePort numeric, NodePort numeric, ExternalIps text[], ExternalHostnames text[], PRIMARY KEY (parent_parent_parent_Id, parent_parent_idx, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_parent_Id, parent_parent_idx, parent_idx) REFERENCES Deployment_Containers_Ports(parent_parent_Id, parent_idx, idx) ON DELETE CASCADE);",
@@ -93,7 +94,7 @@ func New(db *pgxpool.Pool) Store {
 		"create table if not exists Deployment_Containers_Env(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Key varchar, Value varchar, EnvVarSource integer, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Ports(parent_Id varchar not null, idx numeric not null, ContainerPort numeric, Protocol varchar, Exposure integer, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Ports_ExposureInfos(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Level integer, ServiceName varchar, ServicePort numeric, NodePort numeric, ExternalIps text[], ExternalHostnames text[], PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Ports(parent_Id, idx) ON DELETE CASCADE);",
-		"create table if not exists Deployment_Requirements(parent_Id varchar not null, idx numeric not null, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
+		"create table if not exists Deployment_Requirements(parent_Id varchar not null, idx numeric not null, Key varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -234,6 +235,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Deployment, []int, error) 
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -274,8 +285,8 @@ if err != nil {
     return err
   }
   for idx1, obj1 := range obj0.GetContainers() {
-    localQuery := "insert into Deployment_Containers(parent_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
-    _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetImage().GetId(), obj1.GetImage().GetName().GetRegistry(), obj1.GetImage().GetName().GetRemote(), obj1.GetImage().GetName().GetTag(), obj1.GetImage().GetName().GetFullName(), obj1.GetSecurityContext().GetPrivileged(), obj1.GetSecurityContext().GetDropCapabilities(), obj1.GetSecurityContext().GetAddCapabilities(), obj1.GetSecurityContext().GetReadOnlyRootFilesystem(), obj1.GetResources().GetCpuCoresRequest(), obj1.GetResources().GetCpuCoresLimit(), obj1.GetResources().GetMemoryMbRequest(), obj1.GetResources().GetMemoryMbLimit())
+    localQuery := "insert into Deployment_Containers(parent_Id, idx, Name, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
+    _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetName(), obj1.GetImage().GetId(), obj1.GetImage().GetName().GetRegistry(), obj1.GetImage().GetName().GetRemote(), obj1.GetImage().GetName().GetTag(), obj1.GetImage().GetName().GetFullName(), obj1.GetSecurityContext().GetPrivileged(), obj1.GetSecurityContext().GetDropCapabilities(), obj1.GetSecurityContext().GetAddCapabilities(), obj1.GetSecurityContext().GetReadOnlyRootFilesystem(), obj1.GetResources().GetCpuCoresRequest(), obj1.GetResources().GetCpuCoresLimit(), obj1.GetResources().GetMemoryMbRequest(), obj1.GetResources().GetMemoryMbLimit())
     if err != nil {
       return err
     }

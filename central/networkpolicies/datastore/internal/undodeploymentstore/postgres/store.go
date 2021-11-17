@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from networkpolicies-undodeployment"
-		existsStmt = "select exists(select 1 from networkpolicies-undodeployment where id = $1)"
-		getIDsStmt = "select id from networkpolicies-undodeployment"
-		getStmt = "select value from networkpolicies-undodeployment where id = $1"
-		getManyStmt = "select value from networkpolicies-undodeployment where id = ANY($1::text[])"
-		upsertStmt = "insert into networkpolicies-undodeployment (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
-		deleteStmt = "delete from networkpolicies-undodeployment where id = $1"
-		deleteManyStmt = "delete from networkpolicies-undodeployment where id = ANY($1::text[])"
-		walkStmt = "select value from networkpolicies-undodeployment"
-		walkWithIDStmt = "select id, value from networkpolicies-undodeployment"
+		countStmt = "select count(*) from NetworkPolicyApplicationUndoDeploymentRecord"
+		existsStmt = "select exists(select 1 from NetworkPolicyApplicationUndoDeploymentRecord where id = $1)"
+		getIDsStmt = "select id from NetworkPolicyApplicationUndoDeploymentRecord"
+		getStmt = "select serialized from NetworkPolicyApplicationUndoDeploymentRecord where id = $1"
+		getManyStmt = "select serialized from NetworkPolicyApplicationUndoDeploymentRecord where id = ANY($1::text[])"
+		upsertStmt = "insert into NetworkPolicyApplicationUndoDeploymentRecord (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		deleteStmt = "delete from NetworkPolicyApplicationUndoDeploymentRecord where id = $1"
+		deleteManyStmt = "delete from NetworkPolicyApplicationUndoDeploymentRecord where id = ANY($1::text[])"
+		walkStmt = "select serialized from NetworkPolicyApplicationUndoDeploymentRecord"
+		walkWithIDStmt = "select id, serialized from NetworkPolicyApplicationUndoDeploymentRecord"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "networkpolicies-undodeployment"
+	table = "NetworkPolicyApplicationUndoDeploymentRecord"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists networkpolicies-undodeployment (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index if not exists networkpolicies-undodeployment_id on networkpolicies-undodeployment using hash ((id))"
+	createTableQuery = "create table if not exists NetworkPolicyApplicationUndoDeploymentRecord (id varchar primary key, value jsonb)"
+	createIDIndexQuery = "create index if not exists NetworkPolicyApplicationUndoDeploymentRecord_id on NetworkPolicyApplicationUndoDeploymentRecord using hash ((id))"
 
-	batchInsertTemplate = "insert into networkpolicies-undodeployment (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
+	batchInsertTemplate = "insert into NetworkPolicyApplicationUndoDeploymentRecord (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -84,8 +85,6 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists NetworkPolicyApplicationUndoDeploymentRecord(serialized jsonb not null, PRIMARY KEY ());",
-		"create table if not exists NetworkPolicyApplicationUndoDeploymentRecord_ToDelete(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkPolicyApplicationUndoDeploymentRecord() ON DELETE CASCADE);",
-		"create table if not exists NetworkPolicyApplicationUndoDeploymentRecord_ToDelete(idx numeric not null, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkPolicyApplicationUndoDeploymentRecord() ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -224,6 +223,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkPolicyApplicationUn
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
 }
 
 func nilOrStringTimestamp(t *types.Timestamp) *string {

@@ -68,7 +68,7 @@ func generateIndexes(table *walker.Table) []string {
 }
 
 func createTables(table *walker.Table) []string {
-	if table.Parent != nil && !(tableNeedsSearch(table) || table.TopLevel) {
+	if table.Parent != nil && !(tableNeedsSearch(table) && table.TopLevel) {
 		return nil
 	}
 

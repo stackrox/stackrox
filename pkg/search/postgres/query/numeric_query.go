@@ -165,12 +165,7 @@ func createNumericQuery(table string, field *search.Field, prefix string, value 
 		}
 	}
 
-	elemPath := GenerateShortestElemPath(table, field.Elems)
-
-	root := field.TopLevelValue()
-	if root == "" {
-		root = fmt.Sprintf("(%s)::numeric", RenderFinalPath(elemPath, field.LastElem().ProtoJSONName))
-	}
+	root := field.FlatElem.TablePrefixed()
 	if equality {
 		if delta == 0 {
 			// min and max are the same

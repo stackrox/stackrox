@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from watchedimages"
-		existsStmt = "select exists(select 1 from watchedimages where id = $1)"
-		getIDsStmt = "select id from watchedimages"
-		getStmt = "select value from watchedimages where id = $1"
-		getManyStmt = "select value from watchedimages where id = ANY($1::text[])"
-		upsertStmt = "insert into watchedimages (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
-		deleteStmt = "delete from watchedimages where id = $1"
-		deleteManyStmt = "delete from watchedimages where id = ANY($1::text[])"
-		walkStmt = "select value from watchedimages"
-		walkWithIDStmt = "select id, value from watchedimages"
+		countStmt = "select count(*) from WatchedImage"
+		existsStmt = "select exists(select 1 from WatchedImage where id = $1)"
+		getIDsStmt = "select id from WatchedImage"
+		getStmt = "select serialized from WatchedImage where id = $1"
+		getManyStmt = "select serialized from WatchedImage where id = ANY($1::text[])"
+		upsertStmt = "insert into WatchedImage (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		deleteStmt = "delete from WatchedImage where id = $1"
+		deleteManyStmt = "delete from WatchedImage where id = ANY($1::text[])"
+		walkStmt = "select serialized from WatchedImage"
+		walkWithIDStmt = "select id, serialized from WatchedImage"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "watchedimages"
+	table = "WatchedImage"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists watchedimages (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index if not exists watchedimages_id on watchedimages using hash ((id))"
+	createTableQuery = "create table if not exists WatchedImage (id varchar primary key, value jsonb)"
+	createIDIndexQuery = "create index if not exists WatchedImage_id on WatchedImage using hash ((id))"
 
-	batchInsertTemplate = "insert into watchedimages (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
+	batchInsertTemplate = "insert into WatchedImage (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -222,6 +223,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.WatchedImage, []int, error
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
 }
 
 func nilOrStringTimestamp(t *types.Timestamp) *string {

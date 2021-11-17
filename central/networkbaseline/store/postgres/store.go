@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from networkbaseline"
-		existsStmt = "select exists(select 1 from networkbaseline where id = $1)"
-		getIDsStmt = "select id from networkbaseline"
-		getStmt = "select value from networkbaseline where id = $1"
-		getManyStmt = "select value from networkbaseline where id = ANY($1::text[])"
-		upsertStmt = "insert into networkbaseline (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
-		deleteStmt = "delete from networkbaseline where id = $1"
-		deleteManyStmt = "delete from networkbaseline where id = ANY($1::text[])"
-		walkStmt = "select value from networkbaseline"
-		walkWithIDStmt = "select id, value from networkbaseline"
+		countStmt = "select count(*) from NetworkBaseline"
+		existsStmt = "select exists(select 1 from NetworkBaseline where id = $1)"
+		getIDsStmt = "select id from NetworkBaseline"
+		getStmt = "select serialized from NetworkBaseline where id = $1"
+		getManyStmt = "select serialized from NetworkBaseline where id = ANY($1::text[])"
+		upsertStmt = "insert into NetworkBaseline (id, value, DeploymentId) values($1, $2, $3) on conflict(id) do update set value = EXCLUDED.value, DeploymentId = EXCLUDED.DeploymentId"
+		deleteStmt = "delete from NetworkBaseline where id = $1"
+		deleteManyStmt = "delete from NetworkBaseline where id = ANY($1::text[])"
+		walkStmt = "select serialized from NetworkBaseline"
+		walkWithIDStmt = "select id, serialized from NetworkBaseline"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "networkbaseline"
+	table = "NetworkBaseline"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists networkbaseline (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index if not exists networkbaseline_id on networkbaseline using hash ((id))"
+	createTableQuery = "create table if not exists NetworkBaseline (id varchar primary key, value jsonb, DeploymentId varchar)"
+	createIDIndexQuery = "create index if not exists NetworkBaseline_id on NetworkBaseline using hash ((id))"
 
-	batchInsertTemplate = "insert into networkbaseline (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
+	batchInsertTemplate = "insert into NetworkBaseline (id, value, DeploymentId) values %s on conflict(id) do update set value = EXCLUDED.value, DeploymentId = EXCLUDED.DeploymentId"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,13 +84,9 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "NetworkBaseline")
 
 	for _, table := range []string {
-		"create table if not exists NetworkBaseline(serialized jsonb not null, PRIMARY KEY ());",
-		"create table if not exists NetworkBaseline_Peers(idx numeric not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkBaseline() ON DELETE CASCADE);",
-		"create table if not exists NetworkBaseline_Peers_Properties(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES NetworkBaseline_Peers(idx) ON DELETE CASCADE);",
-		"create table if not exists NetworkBaseline_Peers_ListenPorts(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES NetworkBaseline_Peers(idx) ON DELETE CASCADE);",
-		"create table if not exists NetworkBaseline_ForbiddenPeers(idx numeric not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES NetworkBaseline() ON DELETE CASCADE);",
-		"create table if not exists NetworkBaseline_ForbiddenPeers_Properties(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES NetworkBaseline_ForbiddenPeers(idx) ON DELETE CASCADE);",
-		"create table if not exists NetworkBaseline_ForbiddenPeers_ListenPorts(parent_idx numeric not null, idx numeric not null, PRIMARY KEY (parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_idx) REFERENCES NetworkBaseline_ForbiddenPeers(idx) ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline(serialized jsonb not null, DeploymentId varchar, PRIMARY KEY (DeploymentId));",
+		"create table if not exists NetworkBaseline_Peers(parent_DeploymentId varchar not null, idx numeric not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (parent_DeploymentId, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_DeploymentId) REFERENCES NetworkBaseline(DeploymentId) ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline_ForbiddenPeers(parent_DeploymentId varchar not null, idx numeric not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (parent_DeploymentId, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_DeploymentId) REFERENCES NetworkBaseline(DeploymentId) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -230,6 +227,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.NetworkBaseline, []int, er
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -264,30 +271,30 @@ func (s *storeImpl) upsert(id string, obj0 *storage.NetworkBaseline) error {
 //		}
 	}()
 
-	localQuery := "insert into NetworkBaseline(serialized) values($1) on conflict() do update set serialized = EXCLUDED.serialized"
-_, err = tx.Exec(context.Background(), localQuery, serialized)
+	localQuery := "insert into NetworkBaseline(serialized, DeploymentId) values($1, $2) on conflict(DeploymentId) do update set serialized = EXCLUDED.serialized, DeploymentId = EXCLUDED.DeploymentId"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetDeploymentId())
 if err != nil {
     return err
   }
   for idx1, obj1 := range obj0.GetPeers() {
-    localQuery := "insert into NetworkBaseline_Peers(idx, Entity_Info_Desc_ExternalSource_Default) values($1, $2) on conflict(idx) do update set idx = EXCLUDED.idx, Entity_Info_Desc_ExternalSource_Default = EXCLUDED.Entity_Info_Desc_ExternalSource_Default"
-    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetEntity().GetInfo().GetExternalSource().GetDefault())
+    localQuery := "insert into NetworkBaseline_Peers(parent_DeploymentId, idx, Entity_Info_Desc_ExternalSource_Default) values($1, $2, $3) on conflict(parent_DeploymentId, idx) do update set parent_DeploymentId = EXCLUDED.parent_DeploymentId, idx = EXCLUDED.idx, Entity_Info_Desc_ExternalSource_Default = EXCLUDED.Entity_Info_Desc_ExternalSource_Default"
+    _, err := tx.Exec(context.Background(), localQuery, obj0.GetDeploymentId(), idx1, obj1.GetEntity().GetInfo().GetExternalSource().GetDefault())
     if err != nil {
       return err
     }
   }
-    _, err = tx.Exec(context.Background(), "delete from NetworkBaseline_Peers where  and idx >= $1", len(obj0.GetPeers()))
+    _, err = tx.Exec(context.Background(), "delete from NetworkBaseline_Peers where parent_DeploymentId = $1 and idx >= $2", obj0.GetDeploymentId(), len(obj0.GetPeers()))
     if err != nil {
       return err
     }
   for idx1, obj1 := range obj0.GetForbiddenPeers() {
-    localQuery := "insert into NetworkBaseline_ForbiddenPeers(idx, Entity_Info_Desc_ExternalSource_Default) values($1, $2) on conflict(idx) do update set idx = EXCLUDED.idx, Entity_Info_Desc_ExternalSource_Default = EXCLUDED.Entity_Info_Desc_ExternalSource_Default"
-    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetEntity().GetInfo().GetExternalSource().GetDefault())
+    localQuery := "insert into NetworkBaseline_ForbiddenPeers(parent_DeploymentId, idx, Entity_Info_Desc_ExternalSource_Default) values($1, $2, $3) on conflict(parent_DeploymentId, idx) do update set parent_DeploymentId = EXCLUDED.parent_DeploymentId, idx = EXCLUDED.idx, Entity_Info_Desc_ExternalSource_Default = EXCLUDED.Entity_Info_Desc_ExternalSource_Default"
+    _, err := tx.Exec(context.Background(), localQuery, obj0.GetDeploymentId(), idx1, obj1.GetEntity().GetInfo().GetExternalSource().GetDefault())
     if err != nil {
       return err
     }
   }
-    _, err = tx.Exec(context.Background(), "delete from NetworkBaseline_ForbiddenPeers where  and idx >= $1", len(obj0.GetForbiddenPeers()))
+    _, err = tx.Exec(context.Background(), "delete from NetworkBaseline_ForbiddenPeers where parent_DeploymentId = $1 and idx >= $2", obj0.GetDeploymentId(), len(obj0.GetForbiddenPeers()))
     if err != nil {
       return err
     }
@@ -321,7 +328,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.NetworkBaseline) error {
 	defer release()
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "NetworkBaseline")
-	numElems := 2
+	numElems := 3
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -339,7 +346,7 @@ func (s *storeImpl) UpsertMany(objs []*storage.NetworkBaseline) error {
 			}
 			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "NetworkBaseline")
 			id := keyFunc(obj)
-			data = append(data, id, value)
+			data = append(data, id, value, obj.GetDeploymentId())
 		}
 		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err

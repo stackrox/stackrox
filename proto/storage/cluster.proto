@@ -112,7 +112,7 @@ message SensorDeploymentIdentification {
 }
 
 message Cluster {
-    string                    id                               = 1 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
+    string                    id                               = 1 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\" sql:\"pk\""];
     string                    name                             = 2 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     ClusterType               type                             = 3;
     map<string, string>       labels                           = 27 [(gogoproto.moretags) = "search:\"Cluster Label\""];

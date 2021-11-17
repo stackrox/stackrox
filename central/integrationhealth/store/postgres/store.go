@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from integrationhealth"
-		existsStmt = "select exists(select 1 from integrationhealth where id = $1)"
-		getIDsStmt = "select id from integrationhealth"
-		getStmt = "select value from integrationhealth where id = $1"
-		getManyStmt = "select value from integrationhealth where id = ANY($1::text[])"
-		upsertStmt = "insert into integrationhealth (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
-		deleteStmt = "delete from integrationhealth where id = $1"
-		deleteManyStmt = "delete from integrationhealth where id = ANY($1::text[])"
-		walkStmt = "select value from integrationhealth"
-		walkWithIDStmt = "select id, value from integrationhealth"
+		countStmt = "select count(*) from IntegrationHealth"
+		existsStmt = "select exists(select 1 from IntegrationHealth where id = $1)"
+		getIDsStmt = "select id from IntegrationHealth"
+		getStmt = "select serialized from IntegrationHealth where id = $1"
+		getManyStmt = "select serialized from IntegrationHealth where id = ANY($1::text[])"
+		upsertStmt = "insert into IntegrationHealth (id, value) values($1, $2) on conflict(id) do update set value = EXCLUDED.value"
+		deleteStmt = "delete from IntegrationHealth where id = $1"
+		deleteManyStmt = "delete from IntegrationHealth where id = ANY($1::text[])"
+		walkStmt = "select serialized from IntegrationHealth"
+		walkWithIDStmt = "select id, serialized from IntegrationHealth"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "integrationhealth"
+	table = "IntegrationHealth"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists integrationhealth (id varchar primary key, value jsonb)"
-	createIDIndexQuery = "create index if not exists integrationhealth_id on integrationhealth using hash ((id))"
+	createTableQuery = "create table if not exists IntegrationHealth (id varchar primary key, value jsonb)"
+	createIDIndexQuery = "create index if not exists IntegrationHealth_id on IntegrationHealth using hash ((id))"
 
-	batchInsertTemplate = "insert into integrationhealth (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
+	batchInsertTemplate = "insert into IntegrationHealth (id, value) values %s on conflict(id) do update set value = EXCLUDED.value"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -222,6 +223,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.IntegrationHealth, []int, 
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
 }
 
 func nilOrStringTimestamp(t *types.Timestamp) *string {

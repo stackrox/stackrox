@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from pods"
-		existsStmt = "select exists(select 1 from pods where id = $1)"
-		getIDsStmt = "select id from pods"
-		getStmt = "select value from pods where id = $1"
-		getManyStmt = "select value from pods where id = ANY($1::text[])"
-		upsertStmt = "insert into pods (id, value, Id, Name, DeploymentId, Namespace, ClusterId) values($1, $2, $3, $4, $5, $6, $7) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
-		deleteStmt = "delete from pods where id = $1"
-		deleteManyStmt = "delete from pods where id = ANY($1::text[])"
-		walkStmt = "select value from pods"
-		walkWithIDStmt = "select id, value from pods"
+		countStmt = "select count(*) from Pod"
+		existsStmt = "select exists(select 1 from Pod where id = $1)"
+		getIDsStmt = "select id from Pod"
+		getStmt = "select serialized from Pod where id = $1"
+		getManyStmt = "select serialized from Pod where id = ANY($1::text[])"
+		upsertStmt = "insert into Pod (id, value, Id, Name, DeploymentId, Namespace, ClusterId) values($1, $2, $3, $4, $5, $6, $7) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
+		deleteStmt = "delete from Pod where id = $1"
+		deleteManyStmt = "delete from Pod where id = ANY($1::text[])"
+		walkStmt = "select serialized from Pod"
+		walkWithIDStmt = "select id, serialized from Pod"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "pods"
+	table = "Pod"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -72,10 +73,10 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists pods (id varchar primary key, value jsonb, Id varchar, Name varchar, DeploymentId varchar, Namespace varchar, ClusterId varchar)"
-	createIDIndexQuery = "create index if not exists pods_id on pods using hash ((id))"
+	createTableQuery = "create table if not exists Pod (id varchar primary key, value jsonb, Id varchar, Name varchar, DeploymentId varchar, Namespace varchar, ClusterId varchar)"
+	createIDIndexQuery = "create index if not exists Pod_id on Pod using hash ((id))"
 
-	batchInsertTemplate = "insert into pods (id, value, Id, Name, DeploymentId, Namespace, ClusterId) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
+	batchInsertTemplate = "insert into Pod (id, value, Id, Name, DeploymentId, Namespace, ClusterId) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -83,8 +84,8 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Pod")
 
 	for _, table := range []string {
-		"create table if not exists Pod(serialized jsonb not null, Id varchar, Name varchar, DeploymentId varchar, Namespace varchar, ClusterId varchar, PRIMARY KEY ());",
-		"create table if not exists Pod_LiveInstances(idx numeric not null, ImageDigest varchar, PRIMARY KEY (idx), CONSTRAINT fk_parent_table FOREIGN KEY () REFERENCES Pod() ON DELETE CASCADE);",
+		"create table if not exists Pod(serialized jsonb not null, Id varchar, Name varchar, DeploymentId varchar, Namespace varchar, ClusterId varchar, PRIMARY KEY (Id));",
+		"create table if not exists Pod_LiveInstances(parent_Id varchar not null, idx numeric not null, ImageDigest varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Pod(Id) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -225,6 +226,16 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Pod, []int, error) {
 	return elems, missingIndices, nil
 }
 
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
 func nilOrStringTimestamp(t *types.Timestamp) *string {
   if t == nil {
     return nil
@@ -259,19 +270,19 @@ func (s *storeImpl) upsert(id string, obj0 *storage.Pod) error {
 //		}
 	}()
 
-	localQuery := "insert into Pod(serialized, Id, Name, DeploymentId, Namespace, ClusterId) values($1, $2, $3, $4, $5, $6) on conflict() do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
+	localQuery := "insert into Pod(serialized, Id, Name, DeploymentId, Namespace, ClusterId) values($1, $2, $3, $4, $5, $6) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId"
 _, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetDeploymentId(), obj0.GetNamespace(), obj0.GetClusterId())
 if err != nil {
     return err
   }
   for idx1, obj1 := range obj0.GetLiveInstances() {
-    localQuery := "insert into Pod_LiveInstances(idx, ImageDigest) values($1, $2) on conflict(idx) do update set idx = EXCLUDED.idx, ImageDigest = EXCLUDED.ImageDigest"
-    _, err := tx.Exec(context.Background(), localQuery, idx1, obj1.GetImageDigest())
+    localQuery := "insert into Pod_LiveInstances(parent_Id, idx, ImageDigest) values($1, $2, $3) on conflict(parent_Id, idx) do update set parent_Id = EXCLUDED.parent_Id, idx = EXCLUDED.idx, ImageDigest = EXCLUDED.ImageDigest"
+    _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, obj1.GetImageDigest())
     if err != nil {
       return err
     }
   }
-    _, err = tx.Exec(context.Background(), "delete from Pod_LiveInstances where  and idx >= $1", len(obj0.GetLiveInstances()))
+    _, err = tx.Exec(context.Background(), "delete from Pod_LiveInstances where parent_Id = $1 and idx >= $2", obj0.GetId(), len(obj0.GetLiveInstances()))
     if err != nil {
       return err
     }
