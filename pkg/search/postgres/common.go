@@ -535,8 +535,6 @@ func RunSearchRequestValue(category v1.SearchCategory, q *v1.Query, db *pgxpool.
 
 	queryStr := query.String()
 
-	fmt.Println(queryStr)
-
 	runQueryPrinter()
 	t := time.Now()
 	defer func() {
