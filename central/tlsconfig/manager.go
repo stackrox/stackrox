@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -52,7 +53,7 @@ var (
 // ManagerInstance returns the Manager.
 func ManagerInstance() Manager {
 	instanceOnce.Do(func() {
-		i, err := newManager()
+		i, err := newManager(env.Namespace.Setting())
 		utils.CrashOnError(err)
 		instance = i
 	})
