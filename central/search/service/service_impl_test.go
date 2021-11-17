@@ -115,64 +115,58 @@ func (s *SearchOperationsTestSuite) TearDownTest() {
 	s.rocksDB.Close()
 }
 
-func TestAutocomplete(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
+func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	// Create Deployment Indexer
 	idx, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
+	s.NoError(err)
 
-	testDB := rocksdbtest.RocksDBForT(t)
-	defer testDB.Close()
-
-	dacky, registry, indexingQ := testDackBoxInstance(t, testDB, idx)
+	dacky, registry, indexingQ := testDackBoxInstance(s.T(), s.rocksDB, idx)
 	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
-	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
 	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	deploymentNameOneOff := fixtures.GetDeployment()
-	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentNameOneOff))
+	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentNameOneOff))
 
 	deploymentName1 := fixtures.GetDeployment()
 	deploymentName1.Id = "name1"
 	deploymentName1.Name = "name1"
-	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1))
+	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1))
 
 	deploymentName1Duplicate := fixtures.GetDeployment()
 	deploymentName1Duplicate.Id = "name1Dup"
 	deploymentName1Duplicate.Name = "name1"
-	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1Duplicate))
+	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1Duplicate))
 
 	deploymentName2 := fixtures.GetDeployment()
 	deploymentName2.Id = "name12"
 	deploymentName2.Name = "name12"
 	deploymentName2.Labels = map[string]string{"hello": "hi", "hey": "ho"}
-	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentName2))
+	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName2))
 
 	finishedIndexing := concurrency.NewSignal()
 	indexingQ.PushSignal(&finishedIndexing)
 	finishedIndexing.Wait()
 
 	service := NewBuilder().
-		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
+		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
 		WithDeploymentStore(deploymentDS).
-		WithImageStore(imageMocks.NewMockDataStore(mockCtrl)).
-		WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
-		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
-		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalDataStore(mockCtrl)).
-		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
-		WithRiskStore(riskDatastoreMocks.NewMockDataStore(mockCtrl)).
-		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
-		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
-		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
-		WithCVEDataStore(cveMocks.NewMockDataStore(mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(mockCtrl)).
+		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
+		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
+		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
+		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalDataStore(s.mockCtrl)).
+		WithNamespaceStore(namespaceMocks.NewMockDataStore(s.mockCtrl)).
+		WithRiskStore(riskDatastoreMocks.NewMockDataStore(s.mockCtrl)).
+		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
+		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
+		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
+		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
+		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -214,55 +208,50 @@ func TestAutocomplete(t *testing.T) {
 			ignoreOrder:     true,
 		},
 	} {
-		t.Run(fmt.Sprintf("Test case %q", testCase.query), func(t *testing.T) {
+		s.Run(fmt.Sprintf("Test case %q", testCase.query), func() {
 			results, err := service.autocomplete(allAccessCtx, testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
-			require.NoError(t, err)
+			s.NoError(err)
 			if testCase.ignoreOrder {
-				assert.ElementsMatch(t, testCase.expectedResults, results)
+				s.ElementsMatch(testCase.expectedResults, results)
 			} else {
-				assert.Equal(t, testCase.expectedResults, results)
+				s.Equal(testCase.expectedResults, results)
 			}
 		})
 	}
 }
 
-func TestAutocompleteForEnums(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
+func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	// Create Policy Searcher
-	policyStore := policyStoreMocks.NewMockStore(mockCtrl)
+	policyStore := policyStoreMocks.NewMockStore(s.mockCtrl)
 	policyStore.EXPECT().GetAllPolicies()
 	idx, err := globalindex.MemOnlyIndex()
-	require.NoError(t, err)
+	s.NoError(err)
 	policyIndexer := policyIndex.New(idx)
-	require.NoError(t, policyIndexer.AddPolicy(fixtures.GetPolicy()))
+	s.NoError(policyIndexer.AddPolicy(fixtures.GetPolicy()))
 	policySearcher := policySearcher.New(policyStore, policyIndexer)
-	require.NoError(t, err)
 	ds := policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
 
 	service := NewBuilder().
-		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
-		WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
-		WithImageStore(imageMocks.NewMockDataStore(mockCtrl)).
+		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
+		WithDeploymentStore(deploymentMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
 		WithPolicyStore(ds).
-		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
-		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
-		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalDataStore(mockCtrl)).
-		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
-		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
-		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
-		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
-		WithCVEDataStore(cveMocks.NewMockDataStore(mockCtrl)).
-		WithComponentDataStore(componentMocks.NewMockDataStore(mockCtrl)).
+		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
+		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalDataStore(s.mockCtrl)).
+		WithNamespaceStore(namespaceMocks.NewMockDataStore(s.mockCtrl)).
+		WithRoleStore(roleMocks.NewMockDataStore(s.mockCtrl)).
+		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(s.mockCtrl)).
+		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(s.mockCtrl)).
+		WithCVEDataStore(cveMocks.NewMockDataStore(s.mockCtrl)).
+		WithComponentDataStore(componentMocks.NewMockDataStore(s.mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	results, err := service.autocomplete(ctx, fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
-	require.NoError(t, err)
-	assert.Equal(t, []string{fixtures.GetPolicy().GetSeverity().String()}, results)
+	s.NoError(err)
+	s.Equal([]string{fixtures.GetPolicy().GetSeverity().String()}, results)
 }
 
 func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
