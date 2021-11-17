@@ -22,6 +22,8 @@ const (
 	KubernetesSourceIPAddressCustomTag = "Source IP Address"
 	KubernetesUserAgentCustomTag       = "User Agent"
 	KubernetesIsImpersonatedCustomTag  = "Is Impersonated User"
+
+	RuntimeClassCustomTag = "Runtime Class"
 )
 
 type dockerfileLine struct {

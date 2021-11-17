@@ -2140,6 +2140,63 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 	}
 }
 
+func (suite *DefaultPoliciesTestSuite) TestRuntimeClass() {
+	var deps []*storage.Deployment
+	for _, runtimeClass := range []string{
+		"",
+		"blah",
+	} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.RuntimeClass = runtimeClass
+		deps = append(deps, dep)
+	}
+
+	for _, testCase := range []struct {
+		value           string
+		negate          bool
+		expectedMatches []string
+	}{
+		{
+			value:           ".*",
+			negate:          false,
+			expectedMatches: []string{"", "blah"},
+		},
+		{
+			value:           ".+",
+			negate:          false,
+			expectedMatches: []string{"blah"},
+		},
+		{
+			value:           ".+",
+			negate:          true,
+			expectedMatches: []string{""},
+		},
+		{
+			value:           "blah",
+			negate:          true,
+			expectedMatches: []string{""},
+		},
+	} {
+		c := testCase
+
+		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
+			depMatcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.RuntimeClass, c.value, c.negate))
+			require.NoError(t, err)
+			matchedRuntimeClasses := set.NewStringSet()
+			for _, dep := range deps {
+				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					matchedRuntimeClasses.Add(dep.GetRuntimeClass())
+					require.Len(t, violations.AlertViolations, 1)
+					assert.Equal(t, fmt.Sprintf("Runtime Class is set to '%s'", dep.GetRuntimeClass()), violations.AlertViolations[0].GetMessage())
+				}
+			}
+			assert.ElementsMatch(t, matchedRuntimeClasses.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", matchedRuntimeClasses.AsSlice(), c.value, c.expectedMatches)
+		})
+	}
+}
+
 func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 	var deps []*storage.Deployment
 	for _, namespace := range []string{

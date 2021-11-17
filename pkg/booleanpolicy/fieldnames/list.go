@@ -49,6 +49,7 @@ var (
 	RequiredAnnotation            = newFieldName("Required Annotation")
 	RequiredImageLabel            = newFieldName("Required Image Label")
 	RequiredLabel                 = newFieldName("Required Label")
+	RuntimeClass                  = newFieldName("Runtime Class")
 	SeccompProfileType            = newFieldName("Seccomp Profile Type")
 	ServiceAccount                = newFieldName("Service Account")
 	Severity                      = newFieldName("Severity")

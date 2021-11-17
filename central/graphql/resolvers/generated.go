@@ -531,6 +531,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"processTags: [String!]!",
 		"replicas: Int!",
 		"riskScore: Float!",
+		"runtimeClass: String!",
 		"serviceAccount: String!",
 		"serviceAccountPermissionLevel: PermissionLevel!",
 		"stateTimestamp: Int!",
@@ -5360,6 +5361,12 @@ func (resolver *deploymentResolver) RiskScore(ctx context.Context) float64 {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetRiskScore()
 	return float64(value)
+}
+
+func (resolver *deploymentResolver) RuntimeClass(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetRuntimeClass()
+	return value
 }
 
 func (resolver *deploymentResolver) ServiceAccount(ctx context.Context) string {

@@ -13,7 +13,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next available tag: 34
+// Next available tag: 35
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
@@ -43,6 +43,7 @@ message Deployment {
     bool host_network                          = 21 [(gogoproto.moretags) = "policy:\"Host Network\""];
     bool host_pid                              = 31 [(gogoproto.moretags) = "policy:\"Host PID\""];
     bool host_ipc                              = 32 [(gogoproto.moretags) = "policy:\"Host IPC\""];
+    string runtime_class                       = 34 [(gogoproto.moretags) = "policy:\"Runtime Class\""];
     repeated Toleration tolerations            = 22 [(gogoproto.moretags) = "search:\"-\""];
     repeated PortConfig ports                  = 24 [(gogoproto.moretags) = "policy:\"Ports\""];
 

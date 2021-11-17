@@ -517,6 +517,16 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
+	f.registerFieldMetadata(fieldnames.RuntimeClass,
+		querybuilders.ForFieldLabelRegex(augmentedobjs.RuntimeClassCustomTag),
+		nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return stringValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+	)
+
 	f.registerFieldMetadata(fieldnames.RequiredAnnotation,
 		querybuilders.ForFieldLabelMap(search.Annotation, query.MapShouldNotContain),
 		nil,

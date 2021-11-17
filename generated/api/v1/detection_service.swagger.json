@@ -806,6 +806,9 @@
         "hostIpc": {
           "type": "boolean"
         },
+        "runtimeClass": {
+          "type": "string"
+        },
         "tolerations": {
           "type": "array",
           "items": {
@@ -833,7 +836,7 @@
           }
         }
       },
-      "title": "Next available tag: 34"
+      "title": "Next available tag: 35"
     },
     "storageDockerfileLineRuleField": {
       "type": "object",

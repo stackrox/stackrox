@@ -256,6 +256,7 @@ func (w *DeploymentWrap) PopulateDeploymentFromPodSpec(podSpec v1.PodSpec) {
 	w.HostNetwork = podSpec.HostNetwork
 	w.HostPid = podSpec.HostPID
 	w.HostIpc = podSpec.HostIPC
+	w.RuntimeClass = stringutils.PointerOrDefault(podSpec.RuntimeClassName, "")
 	w.populateTolerations(podSpec)
 	w.populateServiceAccount(podSpec)
 	w.populateImagePullSecrets(podSpec)

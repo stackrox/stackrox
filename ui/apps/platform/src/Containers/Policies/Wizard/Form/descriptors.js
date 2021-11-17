@@ -451,6 +451,15 @@ export const policyConfigurationDescriptor = [
         canBooleanLogic: true,
     },
     {
+        label: 'Runtime Class',
+        name: 'Runtime Class',
+        negatedName: `Runtime Class doesn't match`,
+        category: policyCriteriaCategories.DEPLOYMENT_METADATA,
+        type: 'text',
+        placeholder: 'kata',
+        canBooleanLogic: true,
+    },
+    {
         label: 'Volume Name',
         name: 'Volume Name',
         negatedName: `Volume name doesn't match`,
