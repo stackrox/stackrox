@@ -101,6 +101,10 @@ spec:
           value: {{ ._rox.central.disableTelemetry | not | quote }}
         - name: ROX_OFFLINE_MODE
           value: {{ ._rox.env.offlineMode | quote }}
+        {{- if eq ._rox.env.openshift 4 }}
+        - name: ROX_ENABLE_OPENSHIFT_AUTH
+          value: "true"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog

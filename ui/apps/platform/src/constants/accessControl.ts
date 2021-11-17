@@ -43,6 +43,12 @@ export const availableAuthProviders = [
         label: 'Google IAP',
         value: 'iap',
     },
+    // TODO(alexr): Add this iff OpenShift auth is enabled, which is
+    // governed by Central's ROX_ENABLE_OPENSHIFT_AUTH env var.
+    {
+        label: 'OpenShift Auth',
+        value: 'openshift',
+    },
 ];
 
 export const oidcCallbackModes = [
