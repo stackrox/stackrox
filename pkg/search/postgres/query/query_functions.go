@@ -217,7 +217,7 @@ func newEnumQuery(table string, field *pkgSearch.Field, value string, queryModif
 			Values: values,
 		}, nil
 	}
-	
+
 	var queries []string
 	var values []interface{}
 	for _, s := range enumValues {
