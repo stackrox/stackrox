@@ -117,7 +117,6 @@ func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f 
 		}
 		d.printer = p
 		d.standardizedFormat = f.IsStandardizedFormat()
-		cmd.SilenceErrors = d.standardizedFormat
 	}
 
 	return nil

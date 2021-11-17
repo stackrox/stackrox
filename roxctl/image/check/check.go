@@ -134,9 +134,6 @@ func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command, f *prin
 		}
 		i.objectPrinter = p
 		i.standardizedOutputFormat = f.IsStandardizedFormat()
-		// Silence errors when a standardized output format is used to make sure the output format is not "destroyed"
-		// due to an error string, i.e. when policies are failing the check
-		cmd.SilenceErrors = i.standardizedOutputFormat
 	}
 
 	return nil

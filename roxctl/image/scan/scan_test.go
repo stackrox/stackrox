@@ -3,6 +3,7 @@ package scan
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -276,8 +277,15 @@ func (s *imageScanTestSuite) TestConstruct() {
 	s.Require().NoError(err)
 	invalidObjPrinterFactory.OutputFormat = "table"
 
+	emptyOutputFormatPrinterFactory, err := printer.NewObjectPrinterFactory("json", jsonFactory)
+	s.Require().NoError(err)
+	emptyOutputFormatPrinterFactory.OutputFormat = ""
+
 	cmd := &cobra.Command{Use: "test"}
 	cmd.Flags().Duration("timeout", 1*time.Minute, "")
+	cmd.Flags().String("format", "", "")
+	cmd.Flags().String("output", "", "")
+
 	cases := map[string]struct {
 		legacyFormat       string
 		printerFactory     *printer.ObjectPrinterFactory
@@ -291,24 +299,21 @@ func (s *imageScanTestSuite) TestConstruct() {
 			standardizedFormat: true,
 			printer:            jsonPrinter,
 		},
-		"legacy output format should never create printers": {
+		"legacy output format should never create printers with empty output format": {
 			legacyFormat:   "json",
-			printerFactory: validObjPrinterFactory,
+			printerFactory: emptyOutputFormatPrinterFactory,
 		},
 		"invalid printer factory should return an error": {
 			printerFactory: invalidObjPrinterFactory,
 			shouldFail:     true,
 			error:          errorhelpers.ErrInvalidArgs,
 		},
-		"legacy output format should never throw an error when invalid object printer factory is used": {
-			legacyFormat:   "json",
-			printerFactory: invalidObjPrinterFactory,
-		},
 	}
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
+			imgScanCmd.env, _ = s.newTestMockEnvironmentWithConn(nil)
 			imgScanCmd.format = c.legacyFormat
 
 			err := imgScanCmd.Construct(nil, cmd, c.printerFactory)
@@ -324,6 +329,53 @@ func (s *imageScanTestSuite) TestConstruct() {
 			s.Assert().Equal(1*time.Minute, imgScanCmd.timeout)
 		})
 	}
+}
+
+func (s *imageScanTestSuite) TestDeprecationNote() {
+	expectedDeprecationNote := fmt.Sprintf("Flag --format has been deprecated, %s\n", deprecationNote)
+	emptyOutputFormatPrinterFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
+	s.Require().NoError(err)
+	emptyOutputFormatPrinterFactory.OutputFormat = ""
+
+	cases := map[string]struct {
+		formatChanged    bool
+		outputChanged    bool
+		printDeprecation bool
+	}{
+		"default values are not changed, the deprecation warning should be printed": {
+			printDeprecation: true,
+		},
+		"changes in format, deprecation warning should not be printed": {
+			formatChanged: true,
+		},
+		"changes in output format, deprecation warning should not be printed": {
+			outputChanged: true,
+		},
+		"changes in both format and output format, deprecation warning should not be printed": {
+			outputChanged: true,
+			formatChanged: true,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			imgScanCmd := s.defaultImageScanCommand
+			io, _, _, errOut := environment.TestIO()
+			imgScanCmd.env = environment.NewCLIEnvironment(io)
+			cmd := Command(imgScanCmd.env)
+			cmd.Flags().Duration("timeout", 1*time.Minute, "")
+			cmd.Flag("format").Changed = c.formatChanged
+			cmd.Flag("output").Changed = c.outputChanged
+
+			_ = imgScanCmd.Construct(nil, cmd, emptyOutputFormatPrinterFactory)
+			if c.printDeprecation {
+				s.Assert().Equal(expectedDeprecationNote, errOut.String())
+			} else {
+				s.Assert().Empty(errOut.String())
+			}
+		})
+	}
+
 }
 
 func (s *imageScanTestSuite) TestValidate() {

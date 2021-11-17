@@ -21,6 +21,11 @@ import (
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
+const (
+	deprecationNote = "please use --output/-o to specify the output format. " +
+		"NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating."
+)
+
 var (
 	// default headers to use when printing tabular output
 	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK"}
@@ -45,6 +50,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
+	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be
+	// preferred and used. Once the output format is set, it will take precedence over the legacy one specified
+	// via the --format flag.
+	objectPrinterFactory.OutputFormat = ""
 
 	c := &cobra.Command{
 		Use: "scan",
@@ -73,9 +82,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
 	// The error message will be prefixed by "command <command-name> has been deprecated,"
 	// Fully deprecated "pretty" format, since we can assume no customer has built scripting around its loose format
-	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "", "format of the output. Choose output format from json and csv.")
-	utils.Must(c.Flags().MarkDeprecated("format", "please use --output/-o to specify the output format. NOTE: The new JSON format contains breaking changes, make sure "+
-		"you adapt to the new structure before migrating."))
+	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "format of the output. Choose output format from json and csv.")
+	utils.Must(c.Flags().MarkDeprecated("format", deprecationNote))
 
 	utils.Must(c.MarkFlagRequired("image"))
 	return c
@@ -106,9 +114,16 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 		return errorhelpers.NewErrInvalidArgs(err.Error())
 	}
 
+	// There is a case where cobra is not printing the deprecation warning to stderr, when a deprecated flag is not
+	// specified, but has default values. So, when --format is left with default values and --output is not specified,
+	// we manually print the deprecation note. We do not need to do this when i.e. --format csv is used, because
+	// then a deprecated flag will be explicitly used and cobra will take over the printing of the deprecation note.
+	if !cmd.Flag("format").Changed && !cmd.Flag("output").Changed {
+		fmt.Fprintf(i.env.InputOutput().ErrOut, "Flag --format has been deprecated, %s\n", deprecationNote)
+	}
 	// Only create the printer when the old, deprecated output format is not used
 	// TODO(ROX-8303): This can be removed once the old output format is fully deprecated
-	if i.format == "" {
+	if f.OutputFormat != "" {
 		p, err := f.CreatePrinter()
 		if err != nil {
 			return err
@@ -190,7 +205,7 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 // printImageResult print the storage.ImageScan results, either in legacy output format or
 // via a printer.ObjectPrinter
 func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
-	if i.format != "" {
+	if i.printer == nil {
 		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out)
 	}
 
