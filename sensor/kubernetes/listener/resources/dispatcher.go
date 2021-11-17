@@ -36,6 +36,7 @@ type DispatcherRegistry interface {
 	ForNodes() Dispatcher
 	ForSecrets() Dispatcher
 	ForServices() Dispatcher
+	ForOpenshiftRoutes() Dispatcher
 	ForServiceAccounts() Dispatcher
 	ForRBAC() Dispatcher
 	ForClusterOperators() Dispatcher
@@ -59,6 +60,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
 	rbacUpdater := rbac.NewStore()
+	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
@@ -66,7 +68,8 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 
 		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
-		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
+		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
+		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
 		secretDispatcher:          newSecretDispatcher(),
 		networkPolicyDispatcher:   newNetworkPolicyDispatcher(),
 		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
@@ -88,6 +91,7 @@ type registryImpl struct {
 	rbacDispatcher            *rbac.Dispatcher
 	namespaceDispatcher       *namespaceDispatcher
 	serviceDispatcher         *serviceDispatcher
+	osRouteDispatcher         *routeDispatcher
 	secretDispatcher          *secretDispatcher
 	networkPolicyDispatcher   *networkPolicyDispatcher
 	nodeDispatcher            *nodeDispatcher
@@ -155,6 +159,10 @@ func (d *registryImpl) ForSecrets() Dispatcher {
 
 func (d *registryImpl) ForServices() Dispatcher {
 	return wrapWithMetricDispatcher(d.serviceDispatcher)
+}
+
+func (d *registryImpl) ForOpenshiftRoutes() Dispatcher {
+	return wrapWithMetricDispatcher(d.osRouteDispatcher)
 }
 
 func (d *registryImpl) ForServiceAccounts() Dispatcher {

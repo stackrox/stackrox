@@ -3,6 +3,7 @@ package client
 import (
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -24,6 +25,7 @@ type Interface interface {
 	Dynamic() dynamic.Interface
 	OpenshiftApps() appVersioned.Interface
 	OpenshiftConfig() configVersioned.Interface
+	OpenshiftRoute() routeVersioned.Interface
 }
 
 type clientSet struct {
@@ -31,6 +33,7 @@ type clientSet struct {
 	k8s             kubernetes.Interface
 	openshiftApps   appVersioned.Interface
 	openshiftConfig configVersioned.Interface
+	openshiftRoute  routeVersioned.Interface
 }
 
 func mustCreateK8sClient(config *rest.Config) kubernetes.Interface {
@@ -42,13 +45,24 @@ func mustCreateK8sClient(config *rest.Config) kubernetes.Interface {
 	return client
 }
 
+func mustCreateOpenshiftRouteClient(config *rest.Config) routeVersioned.Interface {
+	if env.OpenshiftAPI.Setting() != "true" {
+		return nil
+	}
+	client, err := routeVersioned.NewForConfig(config)
+	if err != nil {
+		log.Panicf("Could not generate openshift routes client: %v", err)
+	}
+	return client
+}
+
 func mustCreateOpenshiftAppsClient(config *rest.Config) appVersioned.Interface {
 	if env.OpenshiftAPI.Setting() != "true" {
 		return nil
 	}
 	client, err := appVersioned.NewForConfig(config)
 	if err != nil {
-		log.Panicf("Could not generate openshift client: %v", err)
+		log.Panicf("Could not generate openshift apps client: %v", err)
 	}
 	return client
 }
@@ -59,7 +73,7 @@ func mustCreateOpenshiftConfigClient(config *rest.Config) configVersioned.Interf
 	}
 	client, err := configVersioned.NewForConfig(config)
 	if err != nil {
-		log.Warnf("Could not generate openshift client: %s", err)
+		log.Warnf("Could not generate openshift config client: %s", err)
 	}
 	return client
 }
@@ -88,6 +102,7 @@ func MustCreateInterface() Interface {
 		k8s:             mustCreateK8sClient(config),
 		openshiftApps:   mustCreateOpenshiftAppsClient(config),
 		openshiftConfig: mustCreateOpenshiftConfigClient(config),
+		openshiftRoute:  mustCreateOpenshiftRouteClient(config),
 	}
 }
 
@@ -101,6 +116,10 @@ func (c *clientSet) OpenshiftApps() appVersioned.Interface {
 
 func (c *clientSet) OpenshiftConfig() configVersioned.Interface {
 	return c.openshiftConfig
+}
+
+func (c *clientSet) OpenshiftRoute() routeVersioned.Interface {
+	return c.openshiftRoute
 }
 
 func (c *clientSet) Dynamic() dynamic.Interface {

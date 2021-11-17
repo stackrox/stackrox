@@ -1,6 +1,8 @@
 package resources
 
-import "k8s.io/apimachinery/pkg/labels"
+import (
+	"k8s.io/apimachinery/pkg/labels"
+)
 
 // selector is a restricted version of labels.Selector
 type selector interface {

@@ -9,7 +9,18 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-type endpointManager struct {
+type endpointManager interface {
+	OnDeploymentCreateOrUpdate(deployment *deploymentWrap)
+	OnDeploymentRemove(deployment *deploymentWrap)
+
+	OnServiceCreate(svc *serviceWrap)
+	OnServiceUpdateOrRemove(namespace string, sel selector)
+
+	OnNodeCreate(node *nodeWrap)
+	OnNodeUpdateOrRemove()
+}
+
+type endpointManagerImpl struct {
 	serviceStore    *serviceStore
 	deploymentStore *DeploymentStore
 	podStore        *PodStore
@@ -18,8 +29,8 @@ type endpointManager struct {
 	entityStore *clusterentities.Store
 }
 
-func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore *nodeStore, entityStore *clusterentities.Store) *endpointManager {
-	return &endpointManager{
+func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore, nodeStore *nodeStore, entityStore *clusterentities.Store) endpointManager {
+	return &endpointManagerImpl{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
 		podStore:        podStore,
@@ -28,7 +39,7 @@ func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentS
 	}
 }
 
-func (m *endpointManager) addEndpointDataForContainerPort(podIP, podHostIP net.IPAddress, node *nodeWrap, port v1.ContainerPort, data *clusterentities.EntityData) {
+func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP net.IPAddress, node *nodeWrap, port v1.ContainerPort, data *clusterentities.EntityData) {
 	l4Proto := convertL4Proto(port.Protocol)
 	targetInfo := clusterentities.EndpointTargetInfo{
 		ContainerPort: uint16(port.ContainerPort),
@@ -60,7 +71,7 @@ func (m *endpointManager) addEndpointDataForContainerPort(podIP, podHostIP net.I
 	}
 }
 
-func (m *endpointManager) addEndpointDataForPod(pod *v1.Pod, data *clusterentities.EntityData) {
+func (m *endpointManagerImpl) addEndpointDataForPod(pod *v1.Pod, data *clusterentities.EntityData) {
 	podIP := net.ParseIP(pod.Status.PodIP)
 	// Do not register the pod if it is using the host network (i.e., pod IP = node IP), as this causes issues with
 	// kube-proxy connections.
@@ -81,15 +92,15 @@ func (m *endpointManager) addEndpointDataForPod(pod *v1.Pod, data *clusterentiti
 	}
 }
 
-func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clusterentities.EntityData {
+func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clusterentities.EntityData {
 	result := &clusterentities.EntityData{}
 
 	for _, pod := range w.pods {
 		m.addEndpointDataForPod(pod, result)
 	}
 
-	for _, svc := range m.serviceStore.getMatchingServices(w.Namespace, w.PodLabels) {
-		m.addEndpointDataForService(w, svc, result)
+	for _, svc := range m.serviceStore.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels) {
+		m.addEndpointDataForService(w, svc.serviceWrap, result)
 	}
 
 	m.podStore.forEach(w.GetNamespace(), w.GetId(), func(p *storage.Pod) {
@@ -164,7 +175,7 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 	}
 }
 
-func (m *endpointManager) addEndpointDataForService(deployment *deploymentWrap, svc *serviceWrap, data *clusterentities.EntityData) {
+func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *serviceWrap, data *clusterentities.EntityData) {
 	var allNodeIPs []net.IPAddress
 	if svc.Spec.Type == v1.ServiceTypeLoadBalancer || svc.Spec.Type == v1.ServiceTypeNodePort {
 		for _, node := range m.nodeStore.getNodes() {
@@ -178,7 +189,7 @@ func (m *endpointManager) addEndpointDataForService(deployment *deploymentWrap, 
 	}
 }
 
-func (m *endpointManager) OnServiceCreate(svc *serviceWrap) {
+func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 		update := &clusterentities.EntityData{}
@@ -189,7 +200,7 @@ func (m *endpointManager) OnServiceCreate(svc *serviceWrap) {
 	m.entityStore.Apply(updates, true)
 }
 
-func (m *endpointManager) OnServiceUpdateOrRemove(namespace string, sel selector) {
+func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selector) {
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
@@ -198,7 +209,7 @@ func (m *endpointManager) OnServiceUpdateOrRemove(namespace string, sel selector
 	m.entityStore.Apply(updates, false)
 }
 
-func (m *endpointManager) OnNodeCreate(node *nodeWrap) {
+func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 	if len(node.addresses) == 0 {
 		return
 	}
@@ -222,7 +233,7 @@ func (m *endpointManager) OnNodeCreate(node *nodeWrap) {
 	m.entityStore.Apply(updates, true)
 }
 
-func (m *endpointManager) OnNodeUpdateOrRemove() {
+func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	affectedDeployments := make(map[*deploymentWrap]struct{})
 
 	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
@@ -239,14 +250,14 @@ func (m *endpointManager) OnNodeUpdateOrRemove() {
 	m.entityStore.Apply(updates, false)
 }
 
-func (m *endpointManager) OnDeploymentCreateOrUpdate(deployment *deploymentWrap) {
+func (m *endpointManagerImpl) OnDeploymentCreateOrUpdate(deployment *deploymentWrap) {
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): m.endpointDataForDeployment(deployment),
 	}
 	m.entityStore.Apply(updates, false)
 }
 
-func (m *endpointManager) OnDeploymentRemove(deployment *deploymentWrap) {
+func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): nil,
 	}

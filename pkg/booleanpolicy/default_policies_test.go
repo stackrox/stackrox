@@ -1948,6 +1948,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 			"NODE":     "exposed on node port",
 			"INTERNAL": "using internal cluster IP",
 			"HOST":     "exposed on host port",
+			"ROUTE":    "exposed with a route",
 		}
 		require.Len(t, violations, 1)
 		assert.Equal(t, fmt.Sprintf("Deployment port(s) %s", depRefToExpectedMsg[depRef]), violations[0].GetMessage())
@@ -1971,7 +1972,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 		{
 			[]string{"external", "NODE"},
 			true,
-			[]string{"INTERNAL", "HOST"},
+			[]string{"INTERNAL", "HOST", "ROUTE"},
 		},
 	} {
 		c := testCase

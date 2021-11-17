@@ -75,7 +75,7 @@ type deploymentHandler struct {
 	serviceStore           *serviceStore
 	deploymentStore        *DeploymentStore
 	podStore               *PodStore
-	endpointManager        *endpointManager
+	endpointManager        endpointManager
 	namespaceStore         *namespaceStore
 	processFilter          filter.Filter
 	config                 config.Handler
@@ -90,7 +90,7 @@ type deploymentHandler struct {
 
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
-	endpointManager *endpointManager, namespaceStore *namespaceStore, rbac rbac.Store, podLister v1listers.PodLister,
+	endpointManager endpointManager, namespaceStore *namespaceStore, rbac rbac.Store, podLister v1listers.PodLister,
 	processFilter filter.Filter, config config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:              podLister,

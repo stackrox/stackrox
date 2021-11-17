@@ -7,6 +7,7 @@ import (
 
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
@@ -62,6 +63,11 @@ func (c *clientSetImpl) OpenshiftConfig() configVersioned.Interface {
 
 // Dynamic returns nil
 func (c *clientSetImpl) Dynamic() dynamic.Interface {
+	return nil
+}
+
+// OpenshiftRoute implements the client interface.
+func (c *clientSetImpl) OpenshiftRoute() routeVersioned.Interface {
 	return nil
 }
 

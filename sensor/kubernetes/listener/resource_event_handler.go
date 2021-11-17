@@ -1,8 +1,9 @@
 package listener
 
 import (
-	"github.com/openshift/client-go/apps/informers/externalversions"
-	configExtVersions "github.com/openshift/client-go/config/informers/externalversions"
+	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
+	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
+	osRouteExtVersions "github.com/openshift/client-go/route/informers/externalversions"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -25,9 +26,14 @@ func (k *listenerImpl) handleAllEvents() {
 	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
 
 	// Create informer factories for needed orchestrators.
-	var osAppsFactory externalversions.SharedInformerFactory
+	var osAppsFactory osAppsExtVersions.SharedInformerFactory
 	if k.client.OpenshiftApps() != nil {
-		osAppsFactory = externalversions.NewSharedInformerFactory(k.client.OpenshiftApps(), resyncingPeriod)
+		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), resyncingPeriod)
+	}
+
+	var osRouteFactory osRouteExtVersions.SharedInformerFactory
+	if k.client.OpenshiftRoute() != nil {
+		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), resyncingPeriod)
 	}
 
 	// We want creates to be treated as updates while existing objects are loaded.
@@ -90,14 +96,14 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(roleBindingInformer, dispatchers.ForRBAC(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
 	handle(clusterRoleBindingInformer, dispatchers.ForRBAC(), k.eventsC, nil, prePodWaitGroup, stopSignal, &eventLock)
 
-	var osConfigFactory configExtVersions.SharedInformerFactory
+	var osConfigFactory osConfigExtVersions.SharedInformerFactory
 	if k.client.OpenshiftConfig() != nil {
 		if ok, err := clusterOperatorCRDExists(k.client); err != nil {
 			log.Errorf("Error checking for cluster operator CRD: %v", err)
 		} else if !ok {
 			log.Warnf("Skipping cluster operator discovery....")
 		} else {
-			osConfigFactory = configExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
+			osConfigFactory = osConfigExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
 		}
 	}
 	// For openshift clusters only
@@ -146,6 +152,10 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), k.eventsC, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), k.eventsC, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
+	if osRouteFactory != nil {
+		handle(osRouteFactory.Route().V1().Routes().Informer(), dispatchers.ForOpenshiftRoutes(), k.eventsC, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	}
+
 	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
 	handle(resyncingSif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.eventsC, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), k.eventsC, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
@@ -165,6 +175,9 @@ func (k *listenerImpl) handleAllEvents() {
 	resyncingSif.Start(stopSignal.Done())
 	if crdSharedInformerFactory != nil {
 		crdSharedInformerFactory.Start(stopSignal.Done())
+	}
+	if osRouteFactory != nil {
+		osRouteFactory.Start(stopSignal.Done())
 	}
 
 	if !concurrency.WaitInContext(preTopLevelDeploymentWaitGroup, stopSignal) {

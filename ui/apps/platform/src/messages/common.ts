@@ -96,6 +96,7 @@ export const stackroxSupport = Object.freeze({
 });
 
 export const portExposureLabels = Object.freeze({
+    ROUTE: 'Route',
     EXTERNAL: 'LoadBalancer',
     NODE: 'NodePort',
     HOST: 'HostPort',

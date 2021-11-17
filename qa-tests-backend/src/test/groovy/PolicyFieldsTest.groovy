@@ -8,6 +8,7 @@ import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
 import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -64,6 +65,7 @@ class PolicyFieldsTest extends BaseSpecification {
                                     mountPath: "/tmp/foo-volume"
                             )
                     )
+                    .setCreateRoute(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
 
     static final private BASED_ON_DEBIAN_7 = DEP_A
     static final private WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG = DEP_A
@@ -587,6 +589,12 @@ class PolicyFieldsTest extends BaseSpecification {
             ["EXTERNAL"]
     )
 
+    static final private HAS_ROUTE_EXPOSURE = setPolicyFieldANDValues(
+        BASE_POLICY.clone().setName("AAA_HAS_ROUTE_EXPOSURE"),
+        "Port Exposure Method",
+        ["ROUTE"]
+    )
+
     // "Privileged Container"
 
     static final private IS_PRIVILEGED = setPolicyFieldANDValues(
@@ -996,6 +1004,26 @@ class PolicyFieldsTest extends BaseSpecification {
         "Writable Host Mount"       | NO_READONLY_HOST_MOUNT                | WITHOUT_FOO_OR_BAR_VOLUMES             | "no match II"
         "Writable Mounted Volume"   | NO_WRITABLE_MOUNTED_VOLUMES           | WITH_A_RO_HOST_BAR_VOLUME              | "no match"
         "Writable Mounted Volume"   | NO_WRITABLE_MOUNTED_VOLUMES           | WITHOUT_FOO_OR_BAR_VOLUMES             | "no match II"
+    }
+
+    @SuppressWarnings('LineLength')
+    @Unroll
+    @Category([BAT])
+    def "Route exposure works as expected - #shouldMatch"() {
+        given:
+        "Running on an OpenShift 4 cluster"
+        Assume.assumeTrue("Route port exposure method is only supported on OpenShift", Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+
+        expect:
+        "Verify not triggered"
+        def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
+            .setQuery("Deployment:${deployment.name}+Policy:${HAS_ROUTE_EXPOSURE.name}").build())
+        assert (violations.size() > 0) == shouldMatch
+
+        where:
+        deployment                         | shouldMatch
+        WITH_LB_SERVICE                    | true
+        WITHOUT_SERVICE                    | false
     }
 
     // Note that this also register the policy into the POLICIES field

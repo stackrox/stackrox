@@ -170,6 +170,7 @@ message PortConfig {
         NODE     = 2;
         INTERNAL = 3;
         HOST     = 4;
+        ROUTE    = 5;
     }
 
     message ExposureInfo {
@@ -181,11 +182,12 @@ message PortConfig {
         string service_cluster_ip = 4;
         int32 service_port        = 5 [(gogoproto.moretags) = "search:\"Exposing Service Port,store\""];
 
-        // only set if level is HOST, NODE, or EXTERNAL
+        // only set if level is HOST, NODE, EXTERNAL or ROUTE
         int32 node_port = 6 [(gogoproto.moretags) = "search:\"Exposed Node Port,store\""];
 
         // only set if level is EXTERNAL
         repeated string external_ips       = 7 [(gogoproto.moretags) = "search:\"External IP,store\""];
+        // only set if level is EXTERNAL or ROUTE
         repeated string external_hostnames = 8 [(gogoproto.moretags) = "search:\"External Hostname,store\""];
     }
 
