@@ -1,4 +1,4 @@
-package tokenbased
+package authn
 
 import (
 	"testing"

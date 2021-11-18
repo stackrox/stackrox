@@ -30,7 +30,7 @@ type extractor struct {
 }
 
 func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
-	rawToken := ExtractToken(ri.Metadata, "Bearer")
+	rawToken := authn.ExtractToken(ri.Metadata, "Bearer")
 	if rawToken == "" {
 		return nil, nil
 	}
@@ -50,11 +50,6 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	}
 	if !authProviderSrc.Enabled() {
 		return nil, fmt.Errorf("auth provider %s is not enabled", authProviderSrc.Name())
-	}
-
-	// Anonymous permission-based tokens (true bearer tokens).
-	if token.Permissions != nil {
-		return e.withPermissions(token, authProviderSrc)
 	}
 
 	// We need all access for retrieving roles and upserting user info. Note that this context
@@ -83,26 +78,6 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	}
 
 	return nil, errors.New("could not determine token type")
-}
-
-func (e *extractor) withPermissions(token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
-	attributes := map[string][]string{"name": {token.Name}}
-
-	pseudoRole := &resolvedPseudoRoleImpl{permissionsUtils.FromProtos(token.Permissions...)}
-	id := &roleBasedIdentity{
-		uid:           fmt.Sprintf("auth-token:%s", token.ID),
-		username:      token.ExternalUser.Email,
-		friendlyName:  token.Subject,
-		fullName:      token.ExternalUser.FullName,
-		resolvedRoles: []permissions.ResolvedRole{pseudoRole},
-		expiry:        token.Expiry(),
-		attributes:    attributes,
-		authProvider:  authProvider,
-	}
-	if id.friendlyName == "" {
-		id.friendlyName = fmt.Sprintf("anonymous bearer token (expires %v)", token.Expiry())
-	}
-	return id, nil
 }
 
 func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, roleNames []string, authProvider authproviders.Provider) (authn.Identity, error) {
