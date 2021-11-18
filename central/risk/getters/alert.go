@@ -4,10 +4,10 @@ import (
 	"context"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // AlertGetter provides the required access to alerts for risk scoring.
 type AlertGetter interface {
-	ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) ([]*storage.ListAlert, error)
+	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 }

@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -24,6 +25,9 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	policyNameField = mappings.OptionsMap.MustGet(search.PolicyName.String())
+	severityField   = mappings.OptionsMap.MustGet(search.Severity.String())
 )
 
 // ViolationsMultiplier is a scorer for the violations on a deployment
@@ -45,11 +49,13 @@ func NewViolations(getter getters.AlertGetter) *ViolationsMultiplier {
 
 // Score takes a deployment and evaluates its risk based on policy violations.
 func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
-	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
+	qb := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, deployment.GetId()).
+		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddStringsHighlighted(search.PolicyName, search.WildcardString).
+		AddStringsHighlighted(search.Severity, search.WildcardString)
 
-	alerts, err := v.getter.ListAlerts(ctx, &v1.ListAlertsRequest{
-		Query: qb.Query(),
-	})
+	results, err := v.getter.Search(ctx, qb.ProtoQuery())
 	if err != nil {
 		log.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)
 		return nil
@@ -58,12 +64,40 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 	var severitySum float32
 	var count int
 	var factors []policyFactor
-	for _, alert := range alerts {
+	for _, result := range results {
 		count++
-		severitySum += severityImpact(alert.GetPolicy().GetSeverity())
+
+		severityStr, ok := result.Matches[severityField.FieldPath]
+		if !ok {
+			log.Error("UNEXPECTED: could not retrieve severity from alert")
+			continue
+		}
+		if len(severityStr) != 1 {
+			log.Errorf("UNEXPECTED: number of severities (%d) does not equal one", len(severityStr))
+			continue
+		}
+
+		severityInt, err := strconv.Atoi(severityStr[0])
+		if err != nil {
+			log.Error("UNEXPECTED: could not convert severity %s to integer: %v", severityStr, err)
+			continue
+		}
+		severity := storage.Severity(severityInt)
+
+		policyName, ok := result.Matches[policyNameField.FieldPath]
+		if !ok {
+			log.Error("UNEXPECTED: could not retrieve policy name from alert")
+			continue
+		}
+		if len(policyName) != 1 {
+			log.Errorf("UNEXPECTED: number of policy names (%d) does not equal one", len(policyName))
+			continue
+		}
+
+		severitySum += severityImpact(severity)
 		factors = append(factors, policyFactor{
-			name:     alert.GetPolicy().GetName(),
-			severity: alert.GetPolicy().GetSeverity(),
+			name:     policyName[0],
+			severity: severity,
 		})
 	}
 

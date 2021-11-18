@@ -2,25 +2,27 @@ package getters
 
 import (
 	"context"
+	"strconv"
 
+	"github.com/stackrox/rox/central/alert/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// MockAlertsGetter is a mock AlertsGetter.
-type MockAlertsGetter struct {
+var (
+	policyNameField = mappings.OptionsMap.MustGet(search.PolicyName.String())
+	severityField   = mappings.OptionsMap.MustGet(search.Severity.String())
+)
+
+// MockAlertsSearcher is a mock AlertsSearcher.
+type MockAlertsSearcher struct {
 	Alerts []*storage.ListAlert
 }
 
-// ListAlerts supports a limited set of request parameters.
+// Search supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
-func (m MockAlertsGetter) ListAlerts(ctx context.Context, req *v1.ListAlertsRequest) (alerts []*storage.ListAlert, err error) {
-	q, err := search.ParseQuery(req.GetQuery())
-	if err != nil {
-		return nil, err
-	}
-
+func (m MockAlertsSearcher) Search(ctx context.Context, q *v1.Query) (results []search.Result, err error) {
 	state := storage.ViolationState_ACTIVE.String()
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
@@ -31,7 +33,13 @@ func (m MockAlertsGetter) ListAlerts(ctx context.Context, req *v1.ListAlertsRequ
 
 	for _, a := range m.Alerts {
 		if a.GetState().String() == state {
-			alerts = append(alerts, a)
+			results = append(results, search.Result{
+				ID: a.GetId(),
+				Matches: map[string][]string{
+					policyNameField.FieldPath: {a.GetPolicy().GetName()},
+					severityField.FieldPath:   {strconv.Itoa(int(a.GetPolicy().GetSeverity()))},
+				},
+			})
 		}
 	}
 	return
