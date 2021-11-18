@@ -6,12 +6,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+## [67.0]
+
 - When the environment variable `ROX_NETWORK_ACCESS_LOG` for Central is enabled, the logs will now contain the request URI and `X-Forwarded-For` header values.
   Note: The network access logging feature was introduced in 51.0 and when enabled will cause noisy logging, and hence should be turned on
   only for the purpose of debugging network connectivity issues.
 - Scanner container image `uid:gid` changed to `65534:65534` (user nobody).
-- A new default Role called Scope Creator has been introduced, to be used to provide users the minimal set of
-privileges required to create and modify access scopes for the purpose of configuring access control or use in vulnerability reporting.
+- A new default Role called `Scope Manager` has been introduced, to be used to provide users the minimal set of
+  privileges required to create and modify access scopes for the purpose of configuring access control or use in vulnerability reporting.
 - The Compliance Operator integration now supports TailoredProfiles.
 - Presence of `microdnf` (presence in the image and process execution) is treated as violation of policies `Red Hat Package Manager in Image` and `Red Hat Package Manager Execution` respectively.
 - Central is now the only source for Scanner vulnerability updates.
