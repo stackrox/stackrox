@@ -93,6 +93,7 @@ func runQueryPrinter() {
 }
 
 type queryTree struct {
+	table string
 	tables set.StringSet
 }
 
@@ -101,7 +102,9 @@ func (q *queryTree) AddTable(table string) {
 }
 
 func newQueryTree(table string) *queryTree {
-	qt := &queryTree{}
+	qt := &queryTree{
+		table: table,
+	}
 	qt.AddTable(table)
 	return qt
 }
@@ -380,6 +383,18 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, se
 			From:   fromClause,
 			Pagination: pagination,
 		}, nil
+	}
+
+	// This is hack to try and fix the subjects test
+	if needsDistinct(tree) {
+		var joins []string
+		for t := range tree.tables {
+			if t == tree.table {
+				continue
+			}
+			joins = append(joins, fmt.Sprintf("%s.id = %s.parent_id", tree.table, t))
+		}
+		queryEntry.Query += " and " + strings.Join(joins, " and ")
 	}
 
 	return &Query{
