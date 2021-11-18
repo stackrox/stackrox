@@ -87,7 +87,7 @@ function GenerateDiagnosticBundle(): ReactElement {
                     // eslint-disable-next-line jsx-a11y/anchor-has-content
                     <a
                         {...props}
-                        href="/docs/product/docs/configure-stackrox/generate-diagnostic-bundle/"
+                        href="/docs/product/rhacs/latest/configuration/generate-diagnostic-bundle.html"
                         target="_blank"
                         rel="noopener noreferrer"
                     />

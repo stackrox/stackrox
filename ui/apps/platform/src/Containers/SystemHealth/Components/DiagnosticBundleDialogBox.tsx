@@ -196,7 +196,7 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
                     />
                     <div className="inline-flex flex-row text-tertiary-700">
                         <a
-                            href="/docs/product/docs/configure-stackrox/generate-diagnostic-bundle/"
+                            href="/docs/product/rhacs/latest/configuration/generate-diagnostic-bundle.html"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="underline"

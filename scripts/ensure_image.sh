@@ -15,6 +15,14 @@ dir="$3"
 
 [[ -n "${image}" && -n "${dockerfile}" && -n "${dir}" ]] || die "Usage $0 <image> <dockerfile_path> <dir>"
 
+shift ; shift ; shift
+pre_build_command=()
+if [[ "$#" -gt 0 ]]; then
+  [[ "$1" == "--" ]] || die "If additional arguments are given, they must be preceded by a '--'"
+  shift
+  pre_build_command=("$@")
+fi
+
 echo "Potentially pulling image ${image}"
 docker_pull_output="$(docker pull "${image}" 2>&1)"
 if [[ "$?" -eq 0 ]]; then
@@ -26,6 +34,11 @@ if [[ ! "${docker_pull_output}" =~ ^.*manifest\ for.*not\ found.*$ ]]; then
 fi
 
 set -e
+if [[ "${#pre_build_command[@]}" -gt 0 ]]; then
+  echo "Running pre-build command:" "${pre_build_command[@]}"
+  "${pre_build_command[@]}"
+fi
+
 echo "Building the image since it doesn't exist"
 docker build -t "${image}" -f "${dockerfile}" "${dir}"
 if [[ -n "${CI}" ]]; then

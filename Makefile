@@ -17,14 +17,16 @@ BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
 
 BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
 MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
-DOCS_IMAGE := stackrox/docs:embed-$(shell cat DOCS_VERSION)
+DOCS_IMAGE_BASE := stackrox/docs
 
 ifdef CI
     QUAY_REPO := rhacs-eng
     BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
     MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
-    DOCS_IMAGE := quay.io/$(QUAY_REPO)/docs:embed-$(shell cat DOCS_VERSION)
+    DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
 endif
+
+DOCS_IMAGE = $(DOCS_IMAGE_BASE):$(shell make --quiet --no-print-directory docs-tag)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
@@ -538,8 +540,12 @@ ifdef CI
 	docker tag stackrox/main:$(TAG) quay.io/$(QUAY_REPO)/main:$(TAG)
 endif
 
+.PHONY: docs-image
+docs-image:
+	scripts/ensure_image.sh $(DOCS_IMAGE) docs/Dockerfile docs/ -- $(MAKE) -C docs site
+
 .PHONY: docker-build-data-image
-docker-build-data-image:
+docker-build-data-image: docs-image
 	docker build -t stackrox-data:$(TAG) \
 	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
 		image/ \
@@ -658,7 +664,7 @@ collector-tag:
 
 .PHONY: docs-tag
 docs-tag:
-	@cat DOCS_VERSION
+	@echo $$(git submodule status -- docs/content | cut -c 2-9)-$$(git submodule status -- docs/tools | cut -c 2-9)
 
 .PHONY: scanner-tag
 scanner-tag:

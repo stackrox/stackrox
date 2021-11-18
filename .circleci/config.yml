@@ -789,6 +789,60 @@ commands:
             echo "Isolating pods"
             kubectl -n stackrox apply -R -f tests/proxy/netpol/
 
+  checkout-with-submodules:
+    steps:
+    - checkout
+
+    - add_ssh_keys:
+        fingerprints:
+        - "f1:20:e3:c4:eb:26:37:6f:ca:36:e0:39:cd:6b:95:ae"
+
+    - run:
+        name: Add SSH key of github.com
+        command: |
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+    - run:
+        name: Checkout submodules
+        command: |
+          git submodule update --init
+
+  check-docs-step:
+    parameters:
+      only-on-release:
+        type: boolean
+    steps:
+    - run:
+        name: Verify that docs are up to date
+        command: |
+          [[ "$CIRCLE_TAG" =~ ^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$ ]] || {
+            echo "Skipping step as this is not a release or RC build ..."
+            exit 0
+          }
+          version="${BASH_REMATCH[1]}"
+          <<# parameters.only-on-release >>
+          [[ -z "${BASH_REMATCH[3]}" ]] || {
+            echo "Skipping as this is an RC build"
+            exit 0
+          }
+          <</ parameters.only-on-release >>
+
+          expected_content_branch="rhacs-docs-${version}"
+          actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
+          [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
+            echo >&2 "Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
+            exit 1
+          }
+
+          echo "Verifying that there is no newer commit on the branch ..."
+          git submodule update --remote docs/content
+          git diff --exit-code HEAD || {
+            echo >&2 "The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
+            echo >&2 "  git submodule update --remote docs/content"
+            echo >&2 "and commit the result."
+            exit 1
+          }
+
   setup-go-build-env:
     steps:
       - run:
@@ -2178,6 +2232,17 @@ jobs:
           path: qa-tests-backend/build/reports/codenarc
           destination: reports/codenarc
 
+  # This job checks that the docs/content submodule is pointing to the correct branch in the openshift-docs repo,
+  # and that it is up-to-date. It only runs on RC builds, and is primarily intended as a reminder for the release
+  # manager to inquire about docs and, if available, update the submodule pointer.
+  check-docs-job:
+    executor: custom
+    resource_class: small
+    steps:
+    - checkout-with-submodules
+    - check-docs-step:
+        only-on-release: false
+
   check-generated-files-up-to-date:
     executor: custom
     resource_class: small
@@ -2642,7 +2707,10 @@ jobs:
       - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
-      - checkout
+      - checkout-with-submodules
+      - check-docs-step:
+          only-on-release: true
+
       - setup_remote_docker
       - setup-dep-env:
           docker-login: true
@@ -4317,7 +4385,7 @@ jobs:
             MAIN_TAG=$(make --quiet tag)
 
             # The docs image uses the same tag as main for releases,
-            # but is built in github.com/stackrox/docs with different tags.
+            # but is built as part of the main build with a different tag.
             # This step places it in Docker Hub with the release tag
             # for convenience before running the stackrox.io push.
             docker pull docker.io/stackrox/docs:$DOCS_TAG | cat
@@ -4864,6 +4932,11 @@ workflows:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
             - aws-setup
+
+      - check-docs-job:
+          <<: *runOnlyOnReleaseCandidateBuilds
+          context:
+          - custom-executor-pull
 
       # ROX-8306 - Disabled due to Azure account issue
       # - provision-openshift-aro-api-e2e-tests:

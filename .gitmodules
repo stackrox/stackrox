@@ -1,0 +1,10 @@
+[submodule "docs/content"]
+	path = docs/content
+	url = https://github.com/openshift/openshift-docs.git
+	branch = rhacs-docs
+	shallow = true
+[submodule "docs/tools"]
+	path = docs/tools
+	url = https://github.com/stackrox/docs-tools.git
+	branch = main
+	shallow = true
