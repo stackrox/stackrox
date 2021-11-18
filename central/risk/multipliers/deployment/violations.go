@@ -79,7 +79,7 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 
 		severityInt, err := strconv.Atoi(severityStr[0])
 		if err != nil {
-			log.Error("UNEXPECTED: could not convert severity %s to integer: %v", severityStr, err)
+			log.Errorf("UNEXPECTED: could not convert severity %s to integer: %v", severityStr, err)
 			continue
 		}
 		severity := storage.Severity(severityInt)
