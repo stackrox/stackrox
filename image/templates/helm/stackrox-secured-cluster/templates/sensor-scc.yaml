@@ -2,6 +2,7 @@
 
 {{- if and ._rox.env.openshift ._rox.system.createSCCs }}
 
+---
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
@@ -46,6 +47,7 @@ volumes:
 
 {{- else if eq ._rox.env.openshift 4 }}
 
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

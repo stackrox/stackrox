@@ -1,5 +1,7 @@
 {{- include "srox.init" . -}}
 
+[< if not .KubectlOutput >]
+
 {{- if ._rox.enableOpenShiftMonitoring -}}
 
 apiVersion: rbac.authorization.k8s.io/v1
@@ -92,3 +94,5 @@ spec:
     - {{ .Release.Namespace }}
 
 {{- end }}
+
+[< end >]

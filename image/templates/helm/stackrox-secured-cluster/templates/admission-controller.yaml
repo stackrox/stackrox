@@ -179,6 +179,7 @@ webhooks:
     {{- if ne ._rox.env.openshift 3 }}
     sideEffects: NoneOnDryRun
     admissionReviewVersions: [ "v1", "v1beta1" ]
+    timeoutSeconds: 27
     {{- end }}
     rules:
       - apiGroups:
@@ -226,6 +227,7 @@ webhooks:
     {{- if ne ._rox.env.openshift 3 }}
     sideEffects: NoneOnDryRun
     admissionReviewVersions: [ "v1", "v1beta1" ]
+    timeoutSeconds: 27
     {{- end }}
     rules:
       - apiGroups:

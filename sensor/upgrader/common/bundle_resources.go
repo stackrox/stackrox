@@ -5,7 +5,8 @@ import (
 )
 
 // OrderedBundleResourceTypes is the list of all k8s resource types that are (or were at some point) relevant for the sensor
-// bundle. They should be ordered according to the preferred creation order.
+// bundle. They should be ordered according to the preferred creation order. If there are multiple versions of the
+// same resource kind, they should be in ascending order.
 // IMPORTANT: Any resource type that is part of a sensor bundle deployment (either in a YAML or indirectly via a
 //            `kubectl` command invocation) must be listed here, otherwise the auto-upgrade will fail.
 // NEVER REMOVE ELEMENTS FROM THIS LIST, OTHERWISE UPGRADES MIGHT FAIL IN UNEXPECTED WAYS. The upgrader logic
@@ -34,5 +35,10 @@ var OrderedBundleResourceTypes = []schema.GroupVersionKind{
 
 	// No syntactic dependencies, but semantically depends on deployments and daemonsets
 	{Version: "v1", Kind: "Service"},
+
+	// Relative order of these is important; we want to prefer v1 if available
 	{Group: "admissionregistration.k8s.io", Version: "v1beta1", Kind: "ValidatingWebhookConfiguration"},
+	{Group: "admissionregistration.k8s.io", Version: "v1", Kind: "ValidatingWebhookConfiguration"},
+
+	{Group: "networking.istio.io", Version: "v1alpha3", Kind: "DestinationRule"},
 }

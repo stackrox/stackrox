@@ -164,7 +164,7 @@ test_upgrader() {
     deploy_sensor_via_upgrader "after manually patching webhook" 060a9fa6-0ed6-49ac-b70c-9ca692614707
 
     info "Verify the webhook was patched back by the upgrader"
-    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 30 ]]; then
+    if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 27 ]]; then
         echo "Webhook not patched"
         kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
         exit 1
