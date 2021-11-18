@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { ReactElement } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 import {
     AccessControlQueryAction,
     getQueryObject,
 } from 'Containers/AccessControl/accessControlPaths';
+import VulnMgmtCreateReportPage from './VulnMgmtCreateReportPage';
 import VulnMgmtReportTablePage from './VulnMgmtReportTablePage';
 
 function VulnMgmtReportsMainPage(): ReactElement {
@@ -14,7 +15,7 @@ function VulnMgmtReportsMainPage(): ReactElement {
     const { action } = queryObject;
 
     if (action === 'create') {
-        return <h1>Vulnerability reporting</h1>;
+        return <VulnMgmtCreateReportPage />;
     }
 
     return <VulnMgmtReportTablePage />;

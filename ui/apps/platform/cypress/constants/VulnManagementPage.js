@@ -144,7 +144,6 @@ const linkSelectors = {
     tileLinks: "[data-testid='tile-link']",
     tileLinkValue: "[data-testid='tile-link-value']",
     tileLinkSuperText: '[data-testid="tileLinkSuperText"]',
-    createReportLink: 'a:contains("Create report")',
 };
 
 const sidePanelSelectors = {
@@ -171,6 +170,11 @@ const policySidePanelSelectors = {
     policyEditPageHeader: '[data-testid="side-panel-header"]',
 };
 
+const reportSection = {
+    createReportLink: 'a:contains("Create report")',
+    breadcrumbItems: '.pf-c-breadcrumb__item',
+};
+
 export const selectors = {
     ...dashboardSelectors,
     ...listSelectors,
@@ -184,4 +188,5 @@ export const selectors = {
     // TODO-ivan: unscrew everything above, it overrides each other etc., move to scoped definitions
     mainTable: scopeSelectors('[data-testid="panel"]', tableSelectors),
     sidePanel1: scopeSelectors(panelSelectors.sidePanel, sidePanelSelectors),
+    reportSection,
 };

@@ -19,14 +19,22 @@ describe('Vulnmanagement reports', () => {
             cy.url().should('contain', url.reporting.list);
 
             // navigate by button
-            cy.get(selectors.createReportLink).click();
+            cy.get(selectors.reportSection.createReportLink).click();
             cy.location('pathname').should('eq', `${url.reporting.list}`);
             cy.location('search').should('eq', '?action=create');
+
+            // check the breadcrumbs
+            cy.get(selectors.reportSection.breadcrumbItems)
+                .last()
+                .contains('Create a vulnerability report');
+            // first breadcrumb should be link back to reports table
+            cy.get(selectors.reportSection.breadcrumbItems).first().click();
+            cy.location('pathname').should('eq', `${url.reporting.list}`);
 
             // navigate directly by URL
             cy.visit('/main/dashboard'); // leave Create Report page
             cy.visit(`${url.reporting.list}?action=create`);
-            cy.get('h1:contains("Vulnerability reporting")');
+            cy.get('h1:contains("Create a vulnerability report")');
         });
     });
 });
