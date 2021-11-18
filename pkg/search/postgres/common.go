@@ -389,7 +389,7 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, se
 	if needsDistinct(tree) {
 		var joins []string
 		for t := range tree.tables {
-			if t == tree.table {
+			if strings.EqualFold(t, tree.table) {
 				continue
 			}
 			joins = append(joins, fmt.Sprintf("%s.id = %s.parent_id", tree.table, t))
