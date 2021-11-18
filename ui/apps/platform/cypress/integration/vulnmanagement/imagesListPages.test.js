@@ -42,16 +42,25 @@ describe('Images list page and its entity detail page, related entities sub list
                 if (vulnRiskCveTabsEnabled) {
                     cy.get(`${selectors.tableBodyColumn}:eq(0)`).click({ force: true });
 
-                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(0):contains("Observed CVEs")').click();
+                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(0):contains("Observed CVEs")').click({
+                        force: true,
+                        waitForAnimations: false,
+                    });
 
-                    /* 
+                    /*
 
                     @TODO: Uncomment when the tables are made
-                    
-                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(1):contains("Deferred CVEs")').click();
 
-                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False Positive CVEs")').click(); 
-                        
+                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(1):contains("Deferred CVEs")').click({
+                        force: true,
+                        waitForAnimations: false,
+                    });
+
+                    cy.get('.pf-c-tabs .pf-c-tabs__item:eq(2):contains("False Positive CVEs")').click({
+                        force: true,
+                        waitForAnimations: false,
+                    });
+
                     */
                 } else {
                     allFixableCheck(url.list.images);
