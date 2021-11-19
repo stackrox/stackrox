@@ -542,7 +542,7 @@ endif
 
 .PHONY: docs-image
 docs-image:
-	scripts/ensure_image.sh $(DOCS_IMAGE) docs/Dockerfile docs/ -- $(MAKE) -C docs site
+	scripts/ensure_image.sh $(DOCS_IMAGE) docs/Dockerfile docs/
 
 .PHONY: docker-build-data-image
 docker-build-data-image: docs-image
@@ -664,7 +664,7 @@ collector-tag:
 
 .PHONY: docs-tag
 docs-tag:
-	@echo $$(git submodule status -- docs/content | cut -c 2-9)-$$(git submodule status -- docs/tools | cut -c 2-9)
+	@echo $$(git ls-tree -d --abbrev=8 HEAD docs | awk '{ print $$3; }')-$$(git submodule status -- docs/content | cut -c 2-9)-$$(git submodule status -- docs/tools | cut -c 2-9)
 
 .PHONY: scanner-tag
 scanner-tag:
