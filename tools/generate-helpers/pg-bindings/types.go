@@ -18,6 +18,7 @@ const (
 	ARRAY        DataType = 6
 	STRING_ARRAY DataType = 7
 	JSONB        DataType = 8
+	INTEGER      DataType = 9
 )
 
 func dataTypeToSQLType(dataType DataType) string {
@@ -37,6 +38,8 @@ func dataTypeToSQLType(dataType DataType) string {
 		sqlType = "integer"
 	case JSONB:
 		sqlType = "jsonb"
+	case INTEGER:
+		sqlType = "integer"
 	default:
 		panic(dataType.String())
 	}

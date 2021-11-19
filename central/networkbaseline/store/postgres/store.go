@@ -85,8 +85,8 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists NetworkBaseline(serialized jsonb not null, DeploymentId varchar, PRIMARY KEY (DeploymentId));",
-		"create table if not exists NetworkBaseline_Peers(parent_DeploymentId varchar not null, idx numeric not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (parent_DeploymentId, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_DeploymentId) REFERENCES NetworkBaseline(DeploymentId) ON DELETE CASCADE);",
-		"create table if not exists NetworkBaseline_ForbiddenPeers(parent_DeploymentId varchar not null, idx numeric not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (parent_DeploymentId, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_DeploymentId) REFERENCES NetworkBaseline(DeploymentId) ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline_Peers(parent_DeploymentId varchar not null, idx integer not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (parent_DeploymentId, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_DeploymentId) REFERENCES NetworkBaseline(DeploymentId) ON DELETE CASCADE);",
+		"create table if not exists NetworkBaseline_ForbiddenPeers(parent_DeploymentId varchar not null, idx integer not null, Entity_Info_Desc_ExternalSource_Default bool, PRIMARY KEY (parent_DeploymentId, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_DeploymentId) REFERENCES NetworkBaseline(DeploymentId) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)

@@ -13,6 +13,7 @@ const (
 	ARRAY        DataType = 6
 	STRING_ARRAY DataType = 7
 	INT_ARRAY    DataType = 8
+	INTEGER      DataType = 9
 )
 
 func DataTypeToSQLType(dataType DataType) string {
@@ -28,7 +29,7 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "timestamp"
 	case MAP:
 		sqlType = "jsonb"
-	case ENUM:
+	case ENUM, INTEGER:
 		sqlType = "integer"
 	case STRING_ARRAY:
 		sqlType = "text[]"

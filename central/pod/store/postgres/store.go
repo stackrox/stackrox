@@ -85,7 +85,7 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists Pod(serialized jsonb not null, Id varchar, Name varchar, DeploymentId varchar, Namespace varchar, ClusterId varchar, PRIMARY KEY (Id));",
-		"create table if not exists Pod_LiveInstances(parent_Id varchar not null, idx numeric not null, ImageDigest varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Pod(Id) ON DELETE CASCADE);",
+		"create table if not exists Pod_LiveInstances(parent_Id varchar not null, idx integer not null, ImageDigest varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Pod(Id) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)

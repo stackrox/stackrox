@@ -17,11 +17,12 @@ func _() {
 	_ = x[ARRAY-6]
 	_ = x[STRING_ARRAY-7]
 	_ = x[INT_ARRAY-8]
+	_ = x[INTEGER-9]
 }
 
-const _DataType_name = "BOOLNUMERICSTRINGDATETIMEMAPENUMARRAYSTRING_ARRAYINT_ARRAY"
+const _DataType_name = "BOOLNUMERICSTRINGDATETIMEMAPENUMARRAYSTRING_ARRAYINT_ARRAYINTEGER"
 
-var _DataType_index = [...]uint8{0, 4, 11, 17, 25, 28, 32, 37, 49, 58}
+var _DataType_index = [...]uint8{0, 4, 11, 17, 25, 28, 32, 37, 49, 58, 65}
 
 func (i DataType) String() string {
 	if i < 0 || i >= DataType(len(_DataType_index)-1) {
