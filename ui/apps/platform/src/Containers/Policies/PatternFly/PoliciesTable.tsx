@@ -10,7 +10,6 @@ import {
     Button,
     Select,
     SelectOption,
-    Label,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { CheckCircleIcon } from '@patternfly/react-icons';
@@ -18,13 +17,14 @@ import orderBy from 'lodash/orderBy';
 
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
-import { severityColorMapPF } from 'constants/severityColors';
-import { severityLabels, lifecycleStageLabels } from 'messages/common';
 import TableCell from 'Components/PatternFly/TableCell';
 import { ActionItem } from 'Containers/Violations/PatternFly/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
 import { SortDirection } from 'hooks/useTableSort';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+
+import { formatLifecycleStages } from './policies.utils';
+import PolicySeverityLabel from './PolicySeverityLabel';
 
 const columns = [
     {
@@ -77,8 +77,7 @@ const columns = [
         Header: 'Severity',
         accessor: 'severity',
         Cell: ({ value }) => {
-            const severity = severityLabels[value];
-            return <Label color={severityColorMapPF[severity]}>{severity}</Label>;
+            return <PolicySeverityLabel severity={value} />;
         },
         sortMethod: (a: ListPolicy, b: ListPolicy) => -sortSeverity(a.severity, b.severity),
     },
@@ -86,7 +85,7 @@ const columns = [
         Header: 'Lifecycle',
         accessor: 'lifecycleStages',
         Cell: ({ value }) => {
-            return value.map((stage) => lifecycleStageLabels[stage] as string).join(', ') as string;
+            return formatLifecycleStages(value);
         },
     },
 ];

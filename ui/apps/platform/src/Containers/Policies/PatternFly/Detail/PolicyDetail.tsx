@@ -20,11 +20,14 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import MitreAttackVectors from 'Containers/MitreAttackVectors';
 import useToasts from 'hooks/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import PolicyOverview from './PolicyOverview';
 
 function formatUpdateDisabledStateAction(disabled: boolean) {
     return disabled ? 'Enable policy' : 'Disable policy';
@@ -227,11 +230,17 @@ function PolicyDetail({
                 </ToolbarContent>
             </Toolbar>
             {requestError}
-            <Title headingLevel="h2">Policy overview</Title>
-            TODO
-            <Title headingLevel="h2">MITRE ATT&amp;CK</Title>
-            TODO
-            <Title headingLevel="h2">Policy criteria</Title>
+            <Title headingLevel="h2" className="pf-u-pb-md">
+                Policy overview
+            </Title>
+            <PolicyOverview policy={policy} />
+            <Title headingLevel="h2" className="pf-u-py-md">
+                MITRE ATT&amp;CK
+            </Title>
+            <MitreAttackVectors policyId={id} />
+            <Title headingLevel="h2" className="pf-u-py-md">
+                Policy criteria
+            </Title>
             TODO
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }) => (

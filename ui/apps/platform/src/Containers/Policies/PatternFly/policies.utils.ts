@@ -1,6 +1,8 @@
 import isPlainObject from 'lodash/isPlainObject';
 import qs, { ParsedQs } from 'qs';
 
+import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
+import { EnforcementAction, LifecycleStage, PolicyEventSource } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 
 export type PageAction = 'clone' | 'create' | 'edit';
@@ -72,4 +74,54 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .filter(([, value]) => value.length !== 0)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
+}
+
+// categories
+
+export function formatCategories(categories: string[]): string {
+    return categories.join(', ');
+}
+
+// enforcementActions
+
+export const lifecycleStagesToEnforcementActionsMap: Record<LifecycleStage, EnforcementAction[]> = {
+    BUILD: ['FAIL_BUILD_ENFORCEMENT'],
+    DEPLOY: ['SCALE_TO_ZERO_ENFORCEMENT', 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'],
+    RUNTIME: ['KILL_POD_ENFORCEMENT', 'FAIL_KUBE_REQUEST_ENFORCEMENT'],
+};
+
+export function getEnforcementLifecycleStages(
+    lifecycleStages: LifecycleStage[],
+    enforcementActions: EnforcementAction[]
+): LifecycleStage[] {
+    return lifecycleStages.filter((lifecycleStage) => {
+        const enforcementActionsForLifecycleStage =
+            lifecycleStagesToEnforcementActionsMap[lifecycleStage];
+
+        return enforcementActions.some((enforcementAction) =>
+            enforcementActionsForLifecycleStage.includes(enforcementAction)
+        );
+    });
+}
+
+export function formatResponse(enforcementLifecycleStages: LifecycleStage[]): string {
+    return enforcementLifecycleStages.length === 0 ? 'Inform' : 'Enforce';
+}
+
+// eventSource
+
+export function formatEventSource(eventSource: PolicyEventSource): string {
+    return eventSourceLabels[eventSource];
+}
+
+// isDefault
+
+export function formatType(isDefault: boolean): string {
+    return isDefault ? 'System default' : 'User generated';
+}
+
+// lifecycleStages
+
+export function formatLifecycleStages(lifecycleStages: LifecycleStage[]): string {
+    return lifecycleStages.map((lifecycleStage) => lifecycleStageLabels[lifecycleStage]).join(', ');
 }
