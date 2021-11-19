@@ -4153,10 +4153,12 @@ jobs:
     - run:
         name: Start previous version of operator manager on cluster
         command: make -C operator deploy-previous-via-olm
+        no_output_timeout: 30m
 
     - run:
         name: Run Operator upgrade tests
         command: make -C operator test-upgrade
+        no_output_timeout: 30m
 
     - store-test-results-and-artifacts:
         path: operator/build/kuttl-test-artifacts
@@ -4164,6 +4166,7 @@ jobs:
     - run:
         name: Run Operator e2e tests
         command: make -C operator test-e2e-deployed
+        no_output_timeout: 30m
 
     - store-test-results-and-artifacts:
         path: operator/build/kuttl-test-artifacts
@@ -4220,10 +4223,12 @@ jobs:
     - run:
         name: Start previous version of operator manager on cluster
         command: make -C operator deploy-previous-via-olm
+        no_output_timeout: 30m
 
     - run:
         name: Run Operator upgrade tests
         command: make -C operator test-upgrade
+        no_output_timeout: 30m
 
     - store-test-results-and-artifacts:
         path: operator/build/kuttl-test-artifacts
@@ -4231,6 +4236,7 @@ jobs:
     - run:
         name: Run Operator e2e tests
         command: make -C operator test-e2e-deployed
+        no_output_timeout: 30m
 
     - store-test-results-and-artifacts:
         path: operator/build/kuttl-test-artifacts
