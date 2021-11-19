@@ -130,7 +130,7 @@ function PoliciesTable({
         hasSelections,
         onSelect,
         onSelectAll,
-        onClearAll,
+        // onClearAll,
         getSelectedIds,
     } = useTableSelection(policies);
 
@@ -213,11 +213,12 @@ function PoliciesTable({
                             onClick={() => disablePoliciesHandler(selectedIds)}
                             data-testid="bulk-add-tags-btn"
                         />
+                        {/* TODO: will be re-added in https://stack-rox.atlassian.net/browse/ROX-8613
                         <SelectOption
                             key="1"
                             value={`Export to JSON (${numSelected})`}
                             onClick={() => exportPoliciesHandler(selectedIds, onClearAll)}
-                        />
+                        /> */}
                         <SelectOption
                             key="2"
                             value={`Delete (${numSelected})`}

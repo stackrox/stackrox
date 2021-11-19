@@ -25,8 +25,7 @@ import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { getRequestQueryStringForSearchFilter } from './policies.utils';
-// TODO: the policy import dialogue component will be migrated to PF in ROX-8354
-import PolicyImportDialogue from '../Table/PolicyImportDialogue';
+import ImportPolicyJSONModal from './Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
 import PoliciesTablePageActionButtons from './PoliciesTablePageActionButtons';
 
@@ -53,8 +52,6 @@ function PoliciesTablePage({
     function onClickImportPolicy() {
         setIsImportModalOpen(true);
     }
-
-    // TODO handleImportPolicySuccess(policyId: string)
 
     function onClickReassessPolicies() {
         return reassessPolicies()
@@ -180,13 +177,13 @@ function PoliciesTablePage({
                     }
                 />
             )}
-            {isImportModalOpen && (
-                <PolicyImportDialogue
-                    closeAction={() => {
-                        setIsImportModalOpen(false);
-                    }}
-                />
-            )}
+            <ImportPolicyJSONModal
+                isOpen={isImportModalOpen}
+                cancelModal={() => {
+                    setIsImportModalOpen(false);
+                }}
+                fetchPoliciesWithQuery={() => fetchPolicies(query)}
+            />
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }) => (
                     <Alert
