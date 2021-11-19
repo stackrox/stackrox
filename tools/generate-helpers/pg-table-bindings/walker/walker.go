@@ -134,7 +134,7 @@ func (p *Table) PrimaryKeyElements() []Element {
 	}
 
 	parentKeys = append(parentKeys, Element{
-		DataType:     NUMERIC,
+		DataType:     INTEGER,
 		Field:        "idx",
 		Parent:       p,
 	})

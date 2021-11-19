@@ -85,8 +85,8 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists Secret(serialized jsonb not null, Id varchar, Name varchar, ClusterId varchar, ClusterName varchar, Namespace varchar, CreatedAt timestamp, PRIMARY KEY (Id));",
-		"create table if not exists Secret_Files(parent_Id varchar not null, idx numeric not null, Type integer, Metadata_Cert_EndDate timestamp, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Secret(Id) ON DELETE CASCADE);",
-		"create table if not exists Secret_Files_Registries(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Name varchar, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Secret_Files(parent_Id, idx) ON DELETE CASCADE);",
+		"create table if not exists Secret_Files(parent_Id varchar not null, idx integer not null, Type integer, Metadata_Cert_EndDate timestamp, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Secret(Id) ON DELETE CASCADE);",
+		"create table if not exists Secret_Files_Registries(parent_parent_Id varchar not null, parent_idx integer not null, idx integer not null, Name varchar, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Secret_Files(parent_Id, idx) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)

@@ -85,7 +85,7 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists ProcessIndicator(serialized jsonb not null, Id varchar, DeploymentId varchar, ContainerName varchar, PodId varchar, PodUid varchar, ClusterId varchar, Namespace varchar, Signal_ContainerId varchar, Signal_Name varchar, Signal_Args varchar, Signal_ExecFilePath varchar, Signal_Uid numeric, PRIMARY KEY (Id));",
-		"create table if not exists ProcessIndicator_LineageInfo(parent_Id varchar not null, idx numeric not null, ParentExecFilePath varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES ProcessIndicator(Id) ON DELETE CASCADE);",
+		"create table if not exists ProcessIndicator_LineageInfo(parent_Id varchar not null, idx integer not null, ParentExecFilePath varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES ProcessIndicator(Id) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
