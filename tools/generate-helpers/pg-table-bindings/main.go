@@ -518,7 +518,13 @@ func main() {
 		elements := table.Elements()
 
 		tableCreationQueries := createTables(table)
-		fmt.Println(len(tableCreationQueries))
+		var count int
+		for _, t := range tableCreationQueries {
+			if strings.HasPrefix(t, "create table") {
+				count++
+			}
+		}
+		fmt.Println("Number of tables", count)
 
 		tableCreationQuery := generateTableCreationQuery(props.Table, elements)
 

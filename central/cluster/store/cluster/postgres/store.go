@@ -6,9 +6,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/globaldb"
@@ -23,22 +25,22 @@ import (
 )
 
 const (
-		countStmt = "select count(*) from clusters"
-		existsStmt = "select exists(select 1 from clusters where id = $1)"
-		getIDsStmt = "select id from clusters"
-		getStmt = "select value from clusters where id = $1"
-		getManyStmt = "select value from clusters where id = ANY($1::text[])"
-		upsertStmt = "insert into clusters (id, value, Name, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus) values($1, $2, $3, $4, $5, $6, $7) on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus"
-		deleteStmt = "delete from clusters where id = $1"
-		deleteManyStmt = "delete from clusters where id = ANY($1::text[])"
-		walkStmt = "select value from clusters"
-		walkWithIDStmt = "select id, value from clusters"
+		countStmt = "select count(*) from Cluster"
+		existsStmt = "select exists(select 1 from Cluster where id = $1)"
+		getIDsStmt = "select id from Cluster"
+		getStmt = "select serialized from Cluster where id = $1"
+		getManyStmt = "select serialized from Cluster where id = ANY($1::text[])"
+		upsertStmt = "insert into Cluster (id, value, Id, Name, Labels, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus) values($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus"
+		deleteStmt = "delete from Cluster where id = $1"
+		deleteManyStmt = "delete from Cluster where id = ANY($1::text[])"
+		walkStmt = "select serialized from Cluster"
+		walkWithIDStmt = "select id, serialized from Cluster"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	table = "clusters"
+	table = "Cluster"
 
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
 )
@@ -71,25 +73,31 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists clusters (id varchar primary key, value jsonb, Name varchar, HealthStatus_SensorHealthStatus numeric, HealthStatus_CollectorHealthStatus numeric, HealthStatus_OverallHealthStatus numeric, HealthStatus_AdmissionControlHealthStatus numeric)"
-	createIDIndexQuery = "create index if not exists clusters_id on clusters using hash ((id))"
+	createTableQuery = "create table if not exists Cluster (id varchar primary key, value jsonb, Id varchar, Name varchar, Labels jsonb, HealthStatus_SensorHealthStatus integer, HealthStatus_CollectorHealthStatus integer, HealthStatus_OverallHealthStatus integer, HealthStatus_AdmissionControlHealthStatus integer)"
+	createIDIndexQuery = "create index if not exists Cluster_id on Cluster using hash ((id))"
 
-	batchInsertTemplate = "insert into clusters (id, value, Name, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus) values %s on conflict(id) do update set value = EXCLUDED.value, Name = EXCLUDED.Name, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus"
+	batchInsertTemplate = "insert into Cluster (id, value, Id, Name, Labels, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus"
 )
 
 // New returns a new Store instance using the provided sql instance.
 func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "Cluster")
 
-	_, err := db.Exec(context.Background(), createTableQuery)
-	if err != nil {
-		panic("error creating table")
+	for _, table := range []string {
+		"create table if not exists Cluster(serialized jsonb not null, Id varchar, Name varchar, Labels jsonb, HealthStatus_SensorHealthStatus integer, HealthStatus_CollectorHealthStatus integer, HealthStatus_OverallHealthStatus integer, HealthStatus_AdmissionControlHealthStatus integer, PRIMARY KEY (Id));",
+		
+	} {
+		_, err := db.Exec(context.Background(), table)
+		if err != nil {
+			panic("error creating table: " + table)
+		}
 	}
 
-	_, err = db.Exec(context.Background(), createIDIndexQuery)
-	if err != nil {
-		panic("error creating index")
-	}
+	// Will also autogen the indexes in the future
+	//_, err := db.Exec(context.Background(), createIDIndexQuery)
+	//if err != nil {
+	//	panic("error creating index")
+	//}
 
 //
 	return &storeImpl{
@@ -153,7 +161,10 @@ func nilNoRows(err error) error {
 func (s *storeImpl) Get(id string) (*storage.Cluster, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Cluster")
 
-	row := s.db.QueryRow(context.Background(), getStmt, id)
+	conn, release := s.acquireConn(ops.Get, "Cluster")
+	defer release()
+
+	row := conn.QueryRow(context.Background(), getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, nilNoRows(err)
@@ -172,7 +183,10 @@ func (s *storeImpl) Get(id string) (*storage.Cluster, bool, error) {
 func (s *storeImpl) GetMany(ids []string) ([]*storage.Cluster, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Cluster")
 
-	rows, err := s.db.Query(context.Background(), getManyStmt, ids)
+	conn, release := s.acquireConn(ops.GetMany, "Cluster")
+	defer release()
+
+	rows, err := conn.Query(context.Background(), getManyStmt, ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
@@ -211,14 +225,57 @@ func (s *storeImpl) GetMany(ids []string) ([]*storage.Cluster, []int, error) {
 	return elems, missingIndices, nil
 }
 
-func (s *storeImpl) upsert(id string, obj *storage.Cluster) error {
+func convertEnumSliceToIntArray(i interface{}) []int32 {
+	enumSlice := reflect.ValueOf(i)
+	enumSliceLen := enumSlice.Len()
+	resultSlice := make([]int32, 0, enumSliceLen)
+	for i := 0; i < enumSlice.Len(); i++ {
+		resultSlice = append(resultSlice, int32(enumSlice.Index(i).Int()))
+	}
+	return resultSlice
+}
+
+func nilOrStringTimestamp(t *types.Timestamp) *string {
+  if t == nil {
+    return nil
+  }
+  s := t.String()
+  return &s
+}
+
+func (s *storeImpl) upsert(id string, obj0 *storage.Cluster) error {
 	t := time.Now()
-	value, err := marshaler.MarshalToString(obj)
+	serialized, err := marshaler.MarshalToString(obj0)
 	if err != nil {
 		return err
 	}
 	metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Cluster")
-	_, err = s.db.Exec(context.Background(), upsertStmt, id, value, obj.GetName(), obj.GetHealthStatus().GetSensorHealthStatus(), obj.GetHealthStatus().GetCollectorHealthStatus(), obj.GetHealthStatus().GetOverallHealthStatus(), obj.GetHealthStatus().GetAdmissionControlHealthStatus())
+	conn, release := s.acquireConn(ops.Add, "Cluster")
+	defer release()
+
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == nil {
+			err = tx.Commit(context.Background())
+		}
+//else {
+//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
+//				// multi error?
+//				err = rollBackErr
+//			}
+//		}
+	}()
+
+	localQuery := "insert into Cluster(serialized, Id, Name, Labels, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus) values($1, $2, $3, $4, $5, $6, $7, $8) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus"
+_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetName(), obj0.GetLabels(), obj0.GetHealthStatus().GetSensorHealthStatus(), obj0.GetHealthStatus().GetCollectorHealthStatus(), obj0.GetHealthStatus().GetOverallHealthStatus(), obj0.GetHealthStatus().GetAdmissionControlHealthStatus())
+if err != nil {
+    return err
+  }
+
+
 	return err
 }
 
@@ -228,14 +285,26 @@ func (s *storeImpl) Upsert(obj *storage.Cluster) error {
 	return s.upsert(keyFunc(obj), obj)
 }
 
+func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
+	defer metrics.SetAcquireDuration(time.Now(), op, typ)
+	conn, err := s.db.Acquire(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	return conn, conn.Release
+}
+
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.Cluster) error {
 	if len(objs) == 0 {
 		return nil
 	}
 
+	conn, release := s.acquireConn(ops.AddMany, "Cluster")
+	defer release()
+
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "Cluster")
-	numElems := 7
+	numElems := 9
 	batch := batcher.New(len(objs), 60000/numElems)
 	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
 		var placeholderStr string
@@ -245,14 +314,17 @@ func (s *storeImpl) UpsertMany(objs []*storage.Cluster) error {
 				placeholderStr += ", "
 			}
 			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+
+			t := time.Now()
 			value, err := marshaler.MarshalToString(obj)
 			if err != nil {
 				return err
 			}
+			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "Cluster")
 			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetName(), obj.GetHealthStatus().GetSensorHealthStatus(), obj.GetHealthStatus().GetCollectorHealthStatus(), obj.GetHealthStatus().GetOverallHealthStatus(), obj.GetHealthStatus().GetAdmissionControlHealthStatus())
+			data = append(data, id, value, obj.GetId(), obj.GetName(), obj.GetLabels(), obj.GetHealthStatus().GetSensorHealthStatus(), obj.GetHealthStatus().GetCollectorHealthStatus(), obj.GetHealthStatus().GetOverallHealthStatus(), obj.GetHealthStatus().GetAdmissionControlHealthStatus())
 		}
-		if _, err := s.db.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
+		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
 			return err
 		}
 	}
@@ -263,7 +335,10 @@ func (s *storeImpl) UpsertMany(objs []*storage.Cluster) error {
 func (s *storeImpl) Delete(id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Cluster")
 
-	if _, err := s.db.Exec(context.Background(), deleteStmt, id); err != nil {
+	conn, release := s.acquireConn(ops.Remove, "Cluster")
+	defer release()
+
+	if _, err := conn.Exec(context.Background(), deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
@@ -273,7 +348,9 @@ func (s *storeImpl) Delete(id string) error {
 func (s *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Cluster")
 
-	if _, err := s.db.Exec(context.Background(), deleteManyStmt, ids); err != nil {
+	conn, release := s.acquireConn(ops.RemoveMany, "Cluster")
+	defer release()
+	if _, err := conn.Exec(context.Background(), deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil
@@ -292,7 +369,7 @@ func (s *storeImpl) Walk(fn func(obj *storage.Cluster) error) error {
 			return err
 		}
 		msg := alloc()
-		buf := bytes.NewBuffer(data)
+		buf := bytes.NewReader(data)
 		if err := jsonpb.Unmarshal(buf, msg); err != nil {
 			return err
 		}
