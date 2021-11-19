@@ -136,13 +136,21 @@ func (b *backend) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*a
 }
 
 func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthResponse {
+	attributes := map[string][]string{
+		"userid": {id.UserID},
+		"name":   {id.Username},
+		"groups": id.Groups,
+	}
+	if id.Email != "" {
+		attributes["email"] = []string{id.Email}
+	}
+
 	return &authproviders.AuthResponse{
 		Claims: &tokens.ExternalUserClaim{
-			UserID: id.Username,
-			Email:  id.Email,
-			Attributes: map[string][]string{
-				"groups": id.Groups,
-			},
+			UserID:     id.Username,
+			FullName:   id.Username,
+			Email:      id.Email,
+			Attributes: attributes,
 		},
 		Expiration: time.Now().Add(roxTokenExpiration),
 		RefreshTokenData: authproviders.RefreshTokenData{
