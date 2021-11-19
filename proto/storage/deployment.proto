@@ -68,7 +68,7 @@ message Container {
     ContainerImage image                = 3;
     SecurityContext security_context    = 4;
     repeated Volume volumes             = 5;
-    repeated PortConfig ports           = 6 [(gogoproto.moretags) = "policy:\",ignore\""]; // Policies use the port config on the top-level deployment.
+    repeated PortConfig ports           = 6 [(gogoproto.moretags) = "policy:\",ignore\" search:\"-\""]; // Policies use the port config on the top-level deployment.
     repeated EmbeddedSecret secrets     = 7;
     Resources resources                 = 8;
 
