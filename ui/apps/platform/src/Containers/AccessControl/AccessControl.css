@@ -57,5 +57,5 @@
 
 #access-control input[type='radio']:disabled {
     cursor: not-allowed;
-    opacity: 60%;
+    opacity: 0.6;
 }
