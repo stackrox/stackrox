@@ -93,6 +93,7 @@ import (
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
+	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	"github.com/stackrox/rox/central/role"
@@ -342,6 +343,11 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	if features.VulnRiskManagement.Enabled() {
 		servicesToRegister = append(servicesToRegister, vulnRequestService.Singleton())
 	}
+
+	if features.VulnReporting.Enabled() {
+		servicesToRegister = append(servicesToRegister, reportConfigurationService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),

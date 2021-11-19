@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/backup_service.proto",
+    "title": "api/v1/report_configuration_service.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -11,15 +11,14 @@
     "application/json"
   ],
   "paths": {
-    "/v1/externalbackups": {
+    "/v1/report/configurations": {
       "get": {
-        "summary": "GetExternalBackups returns all external backup configurations.",
-        "operationId": "ExternalBackupService_GetExternalBackups",
+        "operationId": "ReportConfigurationService_GetReportConfigurations",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1GetExternalBackupsResponse"
+              "$ref": "#/definitions/v1GetReportConfigurationsResponse"
             }
           },
           "default": {
@@ -29,18 +28,52 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
         "tags": [
-          "ExternalBackupService"
+          "ReportConfigurationService"
         ]
       },
       "post": {
-        "summary": "PostExternalBackup creates an external backup configuration.",
-        "operationId": "ExternalBackupService_PostExternalBackup",
+        "summary": "PostReportConfiguration creates a report configuration",
+        "operationId": "ReportConfigurationService_PostReportConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageExternalBackup"
+              "$ref": "#/definitions/v1PostReportConfigurationResponse"
             }
           },
           "default": {
@@ -56,216 +89,54 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/storageExternalBackup"
+              "$ref": "#/definitions/v1PostReportConfigurationRequest"
             }
           }
         ],
         "tags": [
-          "ExternalBackupService"
-        ]
-      }
-    },
-    "/v1/externalbackups/test": {
-      "post": {
-        "summary": "TestExternalBackup tests an external backup configuration.",
-        "operationId": "ExternalBackupService_TestExternalBackup",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/storageExternalBackup"
-            }
-          }
-        ],
-        "tags": [
-          "ExternalBackupService"
-        ]
-      }
-    },
-    "/v1/externalbackups/test/updated": {
-      "post": {
-        "summary": "TestUpdatedExternalBackup checks if the given external backup is correctly configured, with optional stored credential reconciliation.",
-        "operationId": "ExternalBackupService_TestUpdatedExternalBackup",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1UpdateExternalBackupRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ExternalBackupService"
-        ]
-      }
-    },
-    "/v1/externalbackups/{externalBackup.id}": {
-      "patch": {
-        "summary": "UpdateExternalBackup modifies a given external backup, with optional stored credential reconciliation.",
-        "operationId": "ExternalBackupService_UpdateExternalBackup",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/storageExternalBackup"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "externalBackup.id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1UpdateExternalBackupRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ExternalBackupService"
-        ]
-      }
-    },
-    "/v1/externalbackups/{id}": {
-      "get": {
-        "summary": "GetExternalBackup returns the external backup configuration given its ID.",
-        "operationId": "ExternalBackupService_GetExternalBackup",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/storageExternalBackup"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ExternalBackupService"
-        ]
-      },
-      "delete": {
-        "summary": "DeleteExternalBackup removes an external backup configuration given its ID.",
-        "operationId": "ExternalBackupService_DeleteExternalBackup",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ExternalBackupService"
-        ]
-      },
-      "post": {
-        "summary": "TriggerExternalBackup initiates an external backup for the given configuration.",
-        "operationId": "ExternalBackupService_TriggerExternalBackup",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ExternalBackupService"
+          "ReportConfigurationService"
         ]
       },
       "put": {
-        "summary": "PutExternalBackup modifies a given external backup, without using stored credential reconciliation.",
-        "operationId": "ExternalBackupService_PutExternalBackup",
+        "summary": "PutReportConfigutarion updates a report configuration",
+        "operationId": "ReportConfigurationService_UpdateReportConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageExternalBackup"
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateReportConfigurationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ReportConfigurationService"
+        ]
+      }
+    },
+    "/v1/report/configurations/{id}": {
+      "get": {
+        "operationId": "ReportConfigurationService_GetReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetReportConfigurationResponse"
             }
           },
           "default": {
@@ -281,23 +152,59 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/storageExternalBackup"
-            }
           }
         ],
         "tags": [
-          "ExternalBackupService"
+          "ReportConfigurationService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteReportConfiguration removes a report configuration given its id",
+        "operationId": "ReportConfigurationService_DeleteReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportConfigurationService"
         ]
       }
     }
   },
   "definitions": {
+    "ReportConfigurationReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
+    },
+    "ReportLastRunStatusRunStatus": {
+      "type": "string",
+      "enum": [
+        "SUCCESS",
+        "FAILURE"
+      ],
+      "default": "SUCCESS"
+    },
     "ScheduleDaysOfMonth": {
       "type": "object",
       "properties": {
@@ -344,6 +251,15 @@
         }
       }
     },
+    "VulnerabilityReportFiltersFixability": {
+      "type": "string",
+      "enum": [
+        "BOTH",
+        "FIXABLE",
+        "NOT_FIXABLE"
+      ],
+      "default": "BOTH"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -380,7 +296,21 @@
         }
       }
     },
-    "storageExternalBackup": {
+    "storageEmailNotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "notifierId": {
+          "type": "string"
+        },
+        "mailingLists": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storageReportConfiguration": {
       "type": "object",
       "properties": {
         "id": {
@@ -389,69 +319,44 @@
         "name": {
           "type": "string"
         },
-        "type": {
+        "description": {
           "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ReportConfigurationReportType"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/storageVulnerabilityReportFilters"
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "emailConfig": {
+          "$ref": "#/definitions/storageEmailNotifierConfiguration"
         },
         "schedule": {
           "$ref": "#/definitions/storageSchedule"
         },
-        "backupsToKeep": {
-          "type": "integer",
-          "format": "int32"
+        "lastRunStatus": {
+          "$ref": "#/definitions/storageReportLastRunStatus"
         },
-        "s3": {
-          "$ref": "#/definitions/storageS3Config"
-        },
-        "gcs": {
-          "$ref": "#/definitions/storageGCSConfig"
-        },
-        "includeCertificates": {
-          "type": "boolean"
+        "lastSuccessfulRunTime": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
-    "storageGCSConfig": {
+    "storageReportLastRunStatus": {
       "type": "object",
       "properties": {
-        "bucket": {
-          "type": "string"
+        "reportStatus": {
+          "$ref": "#/definitions/ReportLastRunStatusRunStatus"
         },
-        "serviceAccount": {
+        "lastRunTime": {
           "type": "string",
-          "description": "The service account for the storage integration. The server will mask the value of this credential in responses and logs."
+          "format": "date-time"
         },
-        "objectPrefix": {
-          "type": "string"
-        },
-        "useWorkloadId": {
-          "type": "boolean"
-        }
-      }
-    },
-    "storageS3Config": {
-      "type": "object",
-      "properties": {
-        "bucket": {
-          "type": "string"
-        },
-        "useIam": {
-          "type": "boolean"
-        },
-        "accessKeyId": {
-          "type": "string",
-          "description": "The access key ID for the storage integration. The server will mask the value of this credential in responses and logs."
-        },
-        "secretAccessKey": {
-          "type": "string",
-          "description": "The secret access key for the storage integration. The server will mask the value of this credential in responses and logs."
-        },
-        "region": {
-          "type": "string"
-        },
-        "objectPrefix": {
-          "type": "string"
-        },
-        "endpoint": {
+        "errorMsg": {
           "type": "string"
         }
       }
@@ -481,29 +386,104 @@
         }
       }
     },
-    "v1Empty": {
-      "type": "object"
-    },
-    "v1GetExternalBackupsResponse": {
+    "storageVulnerabilityReportFilters": {
       "type": "object",
       "properties": {
-        "externalBackups": {
+        "fixability": {
+          "$ref": "#/definitions/VulnerabilityReportFiltersFixability"
+        },
+        "sinceLastReport": {
+          "type": "boolean"
+        },
+        "severities": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/storageExternalBackup"
+            "$ref": "#/definitions/storageVulnerabilitySeverity"
           }
         }
       }
     },
-    "v1UpdateExternalBackupRequest": {
+    "storageVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "v1Empty": {
+      "type": "object"
+    },
+    "v1GetReportConfigurationResponse": {
       "type": "object",
       "properties": {
-        "externalBackup": {
-          "$ref": "#/definitions/storageExternalBackup"
+        "reportConfig": {
+          "$ref": "#/definitions/storageReportConfiguration"
+        }
+      }
+    },
+    "v1GetReportConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "reportConfigs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageReportConfiguration"
+          }
+        }
+      }
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
         },
-        "updatePassword": {
-          "type": "boolean",
-          "description": "When false, use the stored credentials of an existing external backup configuration given its ID."
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        }
+      }
+    },
+    "v1PostReportConfigurationRequest": {
+      "type": "object",
+      "properties": {
+        "reportConfig": {
+          "$ref": "#/definitions/storageReportConfiguration"
+        }
+      }
+    },
+    "v1PostReportConfigurationResponse": {
+      "type": "object",
+      "properties": {
+        "reportConfig": {
+          "$ref": "#/definitions/storageReportConfiguration"
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1UpdateReportConfigurationRequest": {
+      "type": "object",
+      "properties": {
+        "reportConfig": {
+          "$ref": "#/definitions/storageReportConfiguration"
         }
       }
     }

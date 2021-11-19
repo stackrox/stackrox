@@ -232,6 +232,10 @@ var (
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
 
+	// Report configurations search fields
+	ReportName = newFieldLabel("Report Name")
+	ReportType = newFieldLabel("Report Type")
+
 	// Resource alerts search fields
 	ResourceName = newFieldLabel("Resource")
 	ResourceType = newFieldLabel("Resource Type")
