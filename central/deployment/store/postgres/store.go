@@ -88,8 +88,6 @@ func New(db *pgxpool.Pool) Store {
 		"create index if not exists Deployment_Id on Deployment using hash(Id)",
 		"create table if not exists Deployment_Containers(parent_Id varchar not null, idx numeric not null, Image_Id varchar, Image_Name_Registry varchar, Image_Name_Remote varchar, Image_Name_Tag varchar, Image_Name_FullName varchar, SecurityContext_Privileged bool, SecurityContext_DropCapabilities text[], SecurityContext_AddCapabilities text[], SecurityContext_ReadOnlyRootFilesystem bool, Resources_CpuCoresRequest numeric, Resources_CpuCoresLimit numeric, Resources_MemoryMbRequest numeric, Resources_MemoryMbLimit numeric, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Containers_Volumes(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Name varchar, Source varchar, Destination varchar, ReadOnly bool, Type varchar, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
-		"create table if not exists Deployment_Containers_Ports(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, ContainerPort numeric, Protocol varchar, Exposure integer, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
-		"create table if not exists Deployment_Containers_Ports_ExposureInfos(parent_parent_parent_Id varchar not null, parent_parent_idx numeric not null, parent_idx numeric not null, idx numeric not null, Level integer, ServiceName varchar, ServicePort numeric, NodePort numeric, ExternalIps text[], ExternalHostnames text[], PRIMARY KEY (parent_parent_parent_Id, parent_parent_idx, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_parent_Id, parent_parent_idx, parent_idx) REFERENCES Deployment_Containers_Ports(parent_parent_Id, parent_idx, idx) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Containers_Secrets(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Name varchar, Path varchar, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Containers_Env(parent_parent_Id varchar not null, parent_idx numeric not null, idx numeric not null, Key varchar, Value varchar, EnvVarSource integer, PRIMARY KEY (parent_parent_Id, parent_idx, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_parent_Id, parent_idx) REFERENCES Deployment_Containers(parent_Id, idx) ON DELETE CASCADE);",
 		"create table if not exists Deployment_Ports(parent_Id varchar not null, idx numeric not null, ContainerPort numeric, Protocol varchar, Exposure integer, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES Deployment(Id) ON DELETE CASCADE);",
@@ -297,28 +295,6 @@ if err != nil {
       }
     }
       _, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Volumes where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetVolumes()))
-      if err != nil {
-        return err
-      }
-    for idx2, obj2 := range obj1.GetPorts() {
-      localQuery := "insert into Deployment_Containers_Ports(parent_parent_Id, parent_idx, idx, ContainerPort, Protocol, Exposure) values($1, $2, $3, $4, $5, $6) on conflict(parent_parent_Id, parent_idx, idx) do update set parent_parent_Id = EXCLUDED.parent_parent_Id, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure"
-      _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, obj2.GetContainerPort(), obj2.GetProtocol(), obj2.GetExposure())
-      if err != nil {
-        return err
-      }
-      for idx3, obj3 := range obj2.GetExposureInfos() {
-        localQuery := "insert into Deployment_Containers_Ports_ExposureInfos(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict(parent_parent_parent_Id, parent_parent_idx, parent_idx, idx) do update set parent_parent_parent_Id = EXCLUDED.parent_parent_parent_Id, parent_parent_idx = EXCLUDED.parent_parent_idx, parent_idx = EXCLUDED.parent_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
-        _, err := tx.Exec(context.Background(), localQuery, obj0.GetId(), idx1, idx2, idx3, obj3.GetLevel(), obj3.GetServiceName(), obj3.GetServicePort(), obj3.GetNodePort(), obj3.GetExternalIps(), obj3.GetExternalHostnames())
-        if err != nil {
-          return err
-        }
-      }
-        _, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Ports_ExposureInfos where parent_parent_parent_Id = $1 and parent_parent_idx = $2 and parent_idx = $3 and idx >= $4", obj0.GetId(), idx1, idx2, len(obj2.GetExposureInfos()))
-        if err != nil {
-          return err
-        }
-    }
-      _, err = tx.Exec(context.Background(), "delete from Deployment_Containers_Ports where parent_parent_Id = $1 and parent_idx = $2 and idx >= $3", obj0.GetId(), idx1, len(obj1.GetPorts()))
       if err != nil {
         return err
       }
