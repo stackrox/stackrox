@@ -87,6 +87,7 @@ func New(db *pgxpool.Pool) Store {
 		"create table if not exists K8SRoleBinding(serialized jsonb not null, Id varchar, Name varchar, Namespace varchar, ClusterId varchar, ClusterName varchar, ClusterRole bool, Labels jsonb, Annotations jsonb, RoleId varchar, PRIMARY KEY (Id));",
 		"create index if not exists K8SRoleBinding_Id on K8SRoleBinding using hash(Id)",
 		"create table if not exists K8SRoleBinding_Subjects(parent_Id varchar not null, idx integer not null, Kind integer, Name varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES K8SRoleBinding(Id) ON DELETE CASCADE);",
+		"create index if not exists K8SRoleBinding_Subjects_Name on K8SRoleBinding_Subjects using hash(Name)",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
