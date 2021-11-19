@@ -2,9 +2,44 @@ package inputtypes
 
 import (
 	"github.com/gogo/protobuf/types"
+	"github.com/graph-gophers/graphql-go"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
+
+// VulnReqExpiry represents when a vulnerability request can expire.
+type VulnReqExpiry struct {
+	ExpiresWhenFixed *bool
+	ExpiresOn        *graphql.Time
+}
+
+// AsRequestExpiry converts vulnerability request expiry to proto.
+func (re *VulnReqExpiry) AsRequestExpiry() *storage.RequestExpiry {
+	if re == nil {
+		return nil
+	}
+	if re.ExpiresWhenFixed == nil && re.ExpiresOn == nil {
+		return nil
+	}
+
+	ret := &storage.RequestExpiry{}
+	if re.ExpiresWhenFixed != nil {
+		if *re.ExpiresWhenFixed {
+			ret.Expiry = &storage.RequestExpiry_ExpiresWhenFixed{
+				ExpiresWhenFixed: true,
+			}
+		}
+	} else {
+		ts, err := types.TimestampProto(re.ExpiresOn.Time)
+		if err != nil {
+			return nil
+		}
+		ret.Expiry = &storage.RequestExpiry_ExpiresOn{
+			ExpiresOn: ts,
+		}
+	}
+	return ret
+}
 
 // DeferVulnRequest encapsulates the request data for vulnerability deferral request.
 type DeferVulnRequest struct {
@@ -12,7 +47,7 @@ type DeferVulnRequest struct {
 	Comment          *string
 	Scope            *VulnReqScope
 	ExpiresWhenFixed *bool
-	ExpiresOn        *types.Timestamp
+	ExpiresOn        *graphql.Time
 }
 
 // AsV1DeferralRequest converts the deferral request option to proto.
@@ -47,8 +82,12 @@ func (dr *DeferVulnRequest) AsV1DeferralRequest() *v1.DeferVulnRequest {
 			}
 		}
 	} else {
+		ts, err := types.TimestampProto(dr.ExpiresOn.Time)
+		if err != nil {
+			return nil
+		}
 		ret.Expiry = &v1.DeferVulnRequest_ExpiresOn{
-			ExpiresOn: dr.ExpiresOn,
+			ExpiresOn: ts,
 		}
 	}
 	return ret

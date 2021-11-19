@@ -67,7 +67,6 @@ message UndoVulnRequestResponse {
 }
 
 // VulnerabilityRequestService APIs can be used to manage create and manage vulnerability requests.
-// Currently, only requests to unwatch vulnerabilities are supported.
 service VulnerabilityRequestService {
 
     // GetVulnerabilityRequest returns the requested vulnerability request by ID.

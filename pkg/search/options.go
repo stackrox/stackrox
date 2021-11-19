@@ -239,8 +239,8 @@ var (
 	// Vulnerability Watch Request fields
 	RequestStatus               = newFieldLabel("Request Status")
 	ExpiredRequest              = newFieldLabel("Expired Request")
+	RequestExpiryTime           = newFieldLabel("Request Expiry Time")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
-	DeferralExpiryTime          = newFieldLabel("Deferral Expiry Time")
 )
 
 func newFieldLabel(s string) FieldLabel {

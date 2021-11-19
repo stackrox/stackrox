@@ -499,13 +499,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"name: String!",
 	}))
-	utils.Must(builder.AddInput("DeferVulnRequest", []string{
-		"comment: String",
-		"cve: String",
-		"expiresOn: Time",
-		"expiresWhenFixed: Boolean",
-		"scope: VulnReqScope",
-	}))
 	utils.Must(builder.AddType("Deployment", []string{
 		"annotations: [Label!]!",
 		"automountServiceAccountToken: Boolean!",

@@ -370,14 +370,8 @@
     "storageDeferralRequest": {
       "type": "object",
       "properties": {
-        "expiresWhenFixed": {
-          "type": "boolean",
-          "description": "Indicates that this deferral request expires when the associated vulnerability is fixed."
-        },
-        "expiresOn": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Indicates the timestamp when this deferral request expires."
+        "expiry": {
+          "$ref": "#/definitions/storageRequestExpiry"
         }
       }
     },
@@ -399,6 +393,20 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "storageRequestExpiry": {
+      "type": "object",
+      "properties": {
+        "expiresWhenFixed": {
+          "type": "boolean",
+          "description": "Indicates that this request expires when the associated vulnerability is fixed."
+        },
+        "expiresOn": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Indicates the timestamp when this request expires."
         }
       }
     },

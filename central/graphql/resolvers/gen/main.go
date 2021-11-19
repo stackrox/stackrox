@@ -98,7 +98,6 @@ var (
 			},
 		},
 		InputTypes: []reflect.Type{
-			reflect.TypeOf((*inputtypes.DeferVulnRequest)(nil)),
 			reflect.TypeOf((*inputtypes.FalsePositiveVulnRequest)(nil)),
 			reflect.TypeOf((*inputtypes.SortOption)(nil)),
 			reflect.TypeOf((*inputtypes.Pagination)(nil)),
