@@ -21,6 +21,7 @@ scripts/setup.sh
 [<- end >]
 [<- if .KubectlOutput >]
 templates/cluster-config.yaml
+templates/openshift-monitoring.yaml
 internal/cluster-config.yaml.tpl
 [<- end >]
 [< if .ReleaseBuild >]
