@@ -73,7 +73,7 @@ message Container {
     Resources resources                 = 8;
 
     reserved 9; // previously instances
-    string name                          = 10 [(gogoproto.moretags) = "policy:\"Container Name\" sql:\"pk\""];
+    string name                          = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
 }
 
 message Resources {
@@ -89,7 +89,7 @@ message Volume {
         HOST_TO_CONTAINER = 1;
         BIDIRECTIONAL     = 2;
     }
-    string name                        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\" sql:\"pk\""];
+    string name                        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
     string source                      = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
     string destination                 = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
     bool read_only                     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
@@ -157,8 +157,8 @@ message ContainerInstanceID {
 }
 
 message EmbeddedSecret {
-    string name = 1 [(gogoproto.moretags) = "search:\"Secret\" sql:\"pk\""];
-    string path = 2 [(gogoproto.moretags) = "search:\"Secret Path\" sql:\"pk\""];
+    string name = 1 [(gogoproto.moretags) = "search:\"Secret\""];
+    string path = 2 [(gogoproto.moretags) = "search:\"Secret Path\""];
 }
 
 // Next Available Tag: 6
@@ -200,7 +200,7 @@ message PortConfig {
 
 message ContainerConfig {
     message EnvironmentConfig {
-        string key      = 1 [(gogoproto.moretags) = "search:\"Environment Key,store\" sql:\"pk\""];
+        string key      = 1 [(gogoproto.moretags) = "search:\"Environment Key,store\""];
         string value    = 2 [(gogoproto.moretags) = "search:\"Environment Value,store\""];
         EnvVarSource env_var_source = 3 [(gogoproto.moretags) = "search:\"Environment Variable Source,store\""];
 
