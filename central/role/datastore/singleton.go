@@ -87,6 +87,9 @@ var defaultRoles = map[string]roleAttributes{
 		idSuffix:    "scopemanager",
 		description: "For users: use it to create and modify scopes for the purpose of access control or vulnerability reporting",
 		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.AuthProvider),
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Namespace),
 			permissions.View(resources.Role),
 			permissions.Modify(resources.Role),
 		},
