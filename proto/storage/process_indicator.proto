@@ -14,13 +14,13 @@ message ProcessIndicator {
     // A unique uuid for the Indicator message
     string id                                      = 1 [(gogoproto.moretags) = "search:\"Process ID,store,hidden\" sql:\"pk\""];
 
-    string deployment_id                           = 2 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\" postgres:\"fk=deployments\" policy:\",prefer-parent\""];
+    string deployment_id                           = 2 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\" sql:\"index=hash\" policy:\",prefer-parent\""];
     reserved 10; // Previously deployment_state_ts
 
-    string container_name                          = 3 [(gogoproto.moretags) = "search:\"Container Name,hidden\" policy:\",prefer-parent\""];
+    string container_name                          = 3 [(gogoproto.moretags) = "search:\"Container Name,hidden\" policy:\",prefer-parent\" sql:\"index=hash\""];
     // Pod name
     string pod_id                                  = 4 [(gogoproto.moretags) = "search:\"Pod ID,hidden\""];
-    string pod_uid                                 = 11 [(gogoproto.moretags) = "search:\"Pod UID,hidden\" postgres:\"fk=pods\" "];
+    string pod_uid                                 = 11 [(gogoproto.moretags) = "search:\"Pod UID,hidden\" sql:\"index=hash\""];
 
     // The emit timestamp of the message. Used for measuring latency
     reserved 5;
