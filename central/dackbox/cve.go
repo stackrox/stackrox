@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -93,20 +94,6 @@ var (
 			ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
 			Then(transformation.Dedupe()),
-
-		// CombineReversed ( { k1, k2 }
-		//          CVEs,
-		//          CVE (backwards) Components (backwards) Image,
-		//          )
-		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ReverseEdgeKeys(
-			DoNothing,
-			transformation.AddPrefix(cveDackBox.Bucket).
-				ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)).
-				ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
-				Then(transformation.Dedupe()),
-		),
 
 		// CombineReversed ( { k2, k1 }
 		//          CVE (backwards) Components,
@@ -206,3 +193,36 @@ var (
 		clusterDackBox.BucketHandler,
 	)
 )
+
+func init() {
+	setImageCVEEdgeTransformation()
+}
+
+func setImageCVEEdgeTransformation() {
+	if features.VulnRiskManagement.Enabled() {
+		// CombineReversed ( { k1, k2 }
+		//          CVEs,
+		//          CVE (backwards) Image,
+		//          )
+		CVETransformations[v1.SearchCategory_IMAGE_VULN_EDGE] = transformation.ReverseEdgeKeys(
+			DoNothing,
+			transformation.AddPrefix(cveDackBox.Bucket).
+				ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
+				Then(transformation.Dedupe()),
+		)
+	}
+
+	// CombineReversed ( { k1, k2 }
+	//          CVEs,
+	//          CVE (backwards) Components (backwards) Image,
+	//          )
+	CVETransformations[v1.SearchCategory_IMAGE_VULN_EDGE] = transformation.ReverseEdgeKeys(
+		DoNothing,
+		transformation.AddPrefix(cveDackBox.Bucket).
+			ThenMapToMany(transformation.BackwardFromContext(componentDackBox.Bucket)).
+			ThenMapEachToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
+			Then(transformation.Dedupe()),
+	)
+}

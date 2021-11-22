@@ -17,6 +17,7 @@ import (
 	cveMapping "github.com/stackrox/rox/central/cve/mappings"
 	imageComponentMapping "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMapping "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	imageCVEEdgeMapping "github.com/stackrox/rox/central/imagecveedge/mappings"
 	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
@@ -145,6 +146,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTER_VULN_EDGE:     clusterVulnEdgeMapping.OptionsMap,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE:  imageComponentEdgeMapping.OptionsMap,
 		v1.SearchCategory_IMAGE_COMPONENTS:      componentSearchOptions,
+		v1.SearchCategory_IMAGE_VULN_EDGE:       imageCVEEdgeMapping.OptionsMap,
 		v1.SearchCategory_NODE_COMPONENT_EDGE:   nodeComponentEdgeMappings.OptionsMap,
 		v1.SearchCategory_VULN_REQUEST:          vulnReqMapping.OptionsMap,
 	}

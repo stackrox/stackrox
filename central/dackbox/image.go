@@ -88,7 +88,8 @@ var (
 				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 			transformation.AddPrefix(componentDackBox.Bucket).
 				ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)),
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+				Then(transformation.Dedupe()),
 		),
 
 		// We don't want to surface cluster level CVEs from an image scope, so we just descend to the CVEs.

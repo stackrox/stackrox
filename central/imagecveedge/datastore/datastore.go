@@ -3,15 +3,11 @@ package datastore
 import (
 	"context"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/imagecveedge/index"
 	"github.com/stackrox/rox/central/imagecveedge/search"
-	"github.com/stackrox/rox/central/imagecveedge/store/dackbox"
+	"github.com/stackrox/rox/central/imagecveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	pkgDackBox "github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -25,22 +21,11 @@ type DataStore interface {
 	UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error
 }
 
-func newDataStore(dacky *pkgDackBox.DackBox, keyFence concurrency.KeyFence, globalIndex bleve.Index) DataStore {
-	storage := dackbox.New(dacky, keyFence)
-
-	var searcher search.Searcher
-	if features.VulnRiskManagement.Enabled() {
-		searcher = search.New(storage, index.New(globalIndex))
-	}
-
+// New returns a new instance of a DataStore.
+func New(graphProvider graph.Provider, storage store.Store, searcher search.Searcher) DataStore {
 	return &datastoreImpl{
-		graphProvider: dacky,
+		graphProvider: graphProvider,
 		storage:       storage,
 		searcher:      searcher,
 	}
-}
-
-// New returns a new instance of a DataStore.
-func New(dacky *pkgDackBox.DackBox, keyFence concurrency.KeyFence, globalIndex bleve.Index) DataStore {
-	return newDataStore(dacky, keyFence, globalIndex)
 }
