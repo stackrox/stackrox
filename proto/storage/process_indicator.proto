@@ -89,6 +89,6 @@ message ProcessSignal {
 
     message LineageInfo {
         uint32 parent_uid            = 1;
-        string parent_exec_file_path = 2 [(gogoproto.moretags) = "search:\"Process Ancestor\""];
+        string parent_exec_file_path = 2 [(gogoproto.moretags) = "policy:\"Process Ancestor\""];
     }
 }

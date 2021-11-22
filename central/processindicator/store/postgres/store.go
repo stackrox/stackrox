@@ -5,7 +5,6 @@ package postgres
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -16,11 +15,9 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -30,7 +27,6 @@ const (
 		getIDsStmt = "select id from ProcessIndicator"
 		getStmt = "select serialized from ProcessIndicator where id = $1"
 		getManyStmt = "select serialized from ProcessIndicator where id = ANY($1::text[])"
-		upsertStmt = "insert into ProcessIndicator (id, value, Id, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"
 		deleteStmt = "delete from ProcessIndicator where id = $1"
 		deleteManyStmt = "delete from ProcessIndicator where id = ANY($1::text[])"
 		walkStmt = "select serialized from ProcessIndicator"
@@ -73,10 +69,7 @@ func keyFunc(msg proto.Message) string {
 }
 
 const (
-	createTableQuery = "create table if not exists ProcessIndicator (id varchar primary key, value jsonb, Id varchar, DeploymentId varchar, ContainerName varchar, PodId varchar, PodUid varchar, ClusterId varchar, Namespace varchar, Signal_ContainerId varchar, Signal_Name varchar, Signal_Args varchar, Signal_ExecFilePath varchar, Signal_Uid numeric)"
-	createIDIndexQuery = "create index if not exists ProcessIndicator_id on ProcessIndicator using hash ((id))"
-
-	batchInsertTemplate = "insert into ProcessIndicator (id, value, Id, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values %s on conflict(id) do update set value = EXCLUDED.value, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"
+	batchInsertTemplate = "<no value>"
 )
 
 // New returns a new Store instance using the provided sql instance.
@@ -85,7 +78,6 @@ func New(db *pgxpool.Pool) Store {
 
 	for _, table := range []string {
 		"create table if not exists ProcessIndicator(serialized jsonb not null, Id varchar, DeploymentId varchar, ContainerName varchar, PodId varchar, PodUid varchar, ClusterId varchar, Namespace varchar, Signal_ContainerId varchar, Signal_Name varchar, Signal_Args varchar, Signal_ExecFilePath varchar, Signal_Uid numeric, PRIMARY KEY (Id));",
-		"create table if not exists ProcessIndicator_LineageInfo(parent_Id varchar not null, idx integer not null, ParentExecFilePath varchar, PRIMARY KEY (parent_Id, idx), CONSTRAINT fk_parent_table FOREIGN KEY (parent_Id) REFERENCES ProcessIndicator(Id) ON DELETE CASCADE);",
 		
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -93,12 +85,6 @@ func New(db *pgxpool.Pool) Store {
 			panic("error creating table: " + table)
 		}
 	}
-
-	// Will also autogen the indexes in the future
-	//_, err := db.Exec(context.Background(), createIDIndexQuery)
-	//if err != nil {
-	//	panic("error creating index")
-	//}
 
 //
 	return &storeImpl{
@@ -258,26 +244,24 @@ func (s *storeImpl) upsert(id string, obj0 *storage.ProcessIndicator) error {
 	if err != nil {
 		return err
 	}
+    doRollback := true
 	defer func() {
-		if err == nil {
-			err = tx.Commit(context.Background())
+		if doRollback {
+			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
+				log.Errorf("error rolling backing: %v", err)
+			}
 		}
-//else {
-//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
-//				// multi error?
-//				err = rollBackErr
-//			}
-//		}
 	}()
 
 	localQuery := "insert into ProcessIndicator(serialized, Id, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"
-_, err = tx.Exec(context.Background(), localQuery, serialized, obj0.GetId(), obj0.GetDeploymentId(), obj0.GetContainerName(), obj0.GetPodId(), obj0.GetPodUid(), obj0.GetClusterId(), obj0.GetNamespace(), obj0.GetSignal().GetContainerId(), obj0.GetSignal().GetName(), obj0.GetSignal().GetArgs(), obj0.GetSignal().GetExecFilePath(), obj0.GetSignal().GetUid())
+_, err = tx.Exec(context.Background(),localQuery, serialized, obj0.GetId(), obj0.GetDeploymentId(), obj0.GetContainerName(), obj0.GetPodId(), obj0.GetPodUid(), obj0.GetClusterId(), obj0.GetNamespace(), obj0.GetSignal().GetContainerId(), obj0.GetSignal().GetName(), obj0.GetSignal().GetArgs(), obj0.GetSignal().GetExecFilePath(), obj0.GetSignal().GetUid())
 if err != nil {
     return err
   }
 
 
-	return err
+    doRollback = false
+	return tx.Commit(context.Background())
 }
 
 // Upsert inserts the object into the DB
@@ -301,34 +285,27 @@ func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
 		return nil
 	}
 
+	batch := &pgx.Batch{}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
+	for _, obj0 := range objs {
+		t := time.Now()
+		serialized, err := marshaler.MarshalToString(obj0)
+		if err != nil {
+			return err
+		}
+		metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ProcessIndicator")
+		localQuery := "insert into ProcessIndicator(serialized, Id, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"
+		batch.Queue(localQuery, serialized, obj0.GetId(), obj0.GetDeploymentId(), obj0.GetContainerName(), obj0.GetPodId(), obj0.GetPodUid(), obj0.GetClusterId(), obj0.GetNamespace(), obj0.GetSignal().GetContainerId(), obj0.GetSignal().GetName(), obj0.GetSignal().GetArgs(), obj0.GetSignal().GetExecFilePath(), obj0.GetSignal().GetUid())
+	}
+
 	conn, release := s.acquireConn(ops.AddMany, "ProcessIndicator")
 	defer release()
 
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
-	numElems := 14
-	batch := batcher.New(len(objs), 60000/numElems)
-	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
-		var placeholderStr string
-		data := make([]interface{}, 0, numElems * len(objs))
-		for i, obj := range objs[start:end] {
-			if i != 0 {
-				placeholderStr += ", "
-			}
-			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
-
-			t := time.Now()
-			value, err := marshaler.MarshalToString(obj)
-			if err != nil {
-				return err
-			}
-			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "ProcessIndicator")
-			id := keyFunc(obj)
-			data = append(data, id, value, obj.GetId(), obj.GetDeploymentId(), obj.GetContainerName(), obj.GetPodId(), obj.GetPodUid(), obj.GetClusterId(), obj.GetNamespace(), obj.GetSignal().GetContainerId(), obj.GetSignal().GetName(), obj.GetSignal().GetArgs(), obj.GetSignal().GetExecFilePath(), obj.GetSignal().GetUid())
-		}
-		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
-			return err
-		}
+	results := conn.SendBatch(context.Background(), batch)
+	if err := results.Close(); err != nil {
+		return err
 	}
+
 	return nil
 }
 

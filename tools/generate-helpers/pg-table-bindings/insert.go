@@ -24,7 +24,7 @@ func generateTopLevelTable(w io.Writer, table *walker.Table) {
 	ic.Combine(table.GetInsertComposer(0))
 
 	fmt.Fprintf(w, "localQuery := \"%s\"\n", ic.Query())
-	fmt.Fprintf(w,"_, err = tx.Exec(context.Background(), localQuery, %s)\n", ic.ExecGetters())
+	fmt.Fprintf(w,"_, err = {{.ExecutePrefix}}localQuery, %s)\n", ic.ExecGetters())
 	fmt.Fprint(w,"if err != nil {\n    return err\n  }\n")
 }
 
@@ -93,7 +93,7 @@ func generateSubTables(w io.Writer, table *walker.Table, topLevelPkElems []walke
 
 	fmt.Fprintf(w, "%sfor idx%d, obj%d := range %s {\n", levelToSpaces(level), level, level, sliceGetter)
 	fmt.Fprintf(w, "  %slocalQuery := \"%s\"\n", levelToSpaces(level), ic.Query())
-	fmt.Fprintf(w,"  %s_, err := tx.Exec(context.Background(), localQuery, %s)\n", levelToSpaces(level), ic.ExecGetters())
+	fmt.Fprintf(w,"  %s_, err := {{.ExecutePrefix}}localQuery, %s)\n", levelToSpaces(level), ic.ExecGetters())
 	fmt.Fprintf(w,"  %sif err != nil {\n    %sreturn err\n  %s}\n", levelToSpaces(level), levelToSpaces(level), levelToSpaces(level))
 	for _, child := range table.Children {
 		generateSubTables(w, child, topLevelPkElems, level + 1)
@@ -102,6 +102,6 @@ func generateSubTables(w io.Writer, table *walker.Table, topLevelPkElems []walke
 		generateSubTables(w, e, topLevelPkElems, level + 1)
 	}
 	fmt.Fprintf(w,"%s}\n", levelToSpaces(level))
-	fmt.Fprintf(w,"  %s_, err = tx.Exec(context.Background(), \"delete from %s where %s and idx >= $%d\", %s)\n", levelToSpaces(level), table.TableName(), strings.Join(deleteFromClauses, " and "), len(deleteFromClauses)+1, strings.Join(append(pkGetters, fmt.Sprintf("len(%s)", sliceGetter)), ", "))
+	fmt.Fprintf(w,"  %s_, err = {{.ExecutePrefix}}\"delete from %s where %s and idx >= $%d\", %s)\n", levelToSpaces(level), table.TableName(), strings.Join(deleteFromClauses, " and "), len(deleteFromClauses)+1, strings.Join(append(pkGetters, fmt.Sprintf("len(%s)", sliceGetter)), ", "))
 	fmt.Fprintf(w,"  %sif err != nil {\n    %sreturn err\n  %s}\n", levelToSpaces(level), levelToSpaces(level), levelToSpaces(level))
 }
