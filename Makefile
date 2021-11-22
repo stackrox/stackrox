@@ -686,7 +686,7 @@ install-dev-tools:
 	@echo "+ $@"
 	@$(GET_DEVTOOLS_CMD) | xargs $(MAKE)
 ifeq ($(UNAME_S),Darwin)
-	@brew install rocksdb
+	@echo "Please manually install RocksDB if you haven't already. See README for details"
 endif
 
 .PHONY: roxvet

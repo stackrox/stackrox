@@ -90,9 +90,14 @@ function launch_central {
     local EXTRA_DOCKER_ARGS=()
     local STORAGE_ARGS=()
 
-	local use_docker=1
+    local use_docker=1
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
     	use_docker=0
+    fi
+
+    local DOCKER_PLATFORM_ARGS=()
+    if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+      DOCKER_PLATFORM_ARGS=("--platform linux/x86_64")
     fi
 
     add_args() {
@@ -185,7 +190,7 @@ function launch_central {
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
-        docker run --rm "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
+        docker run --rm ${DOCKER_PLATFORM_ARGS[@]} "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
         	central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" "${STORAGE_ARGS[@]}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi

@@ -49,7 +49,7 @@ The following tools are necessary to test code and build image(s):
 * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
 * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
 * Docker (make sure you `docker login` to your company [DockerHub account](https://hub.docker.com/settings/security))
-* rocksdb (use `brew install rocksdb` on a Mac)
+* rocksdb (Follow [guide](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/227344410/Tools+languages+XCode+Docker+Brew+Java+Go#Tools%2Flanguages%3AXCode%2CDocker%2CBrew%2CJava%2CGo-InstallRocksDB) on Confluence to install)
 * xcode command line tools (macOS only)
 * [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
   You can obtain it with `brew install bats` or `npm install -g bats`.
@@ -108,11 +108,8 @@ $ git clone git@github.com:stackrox/rox.git
 
 To sweeten your experience, install [the workflow scripts](#productivity) beforehand.
 
+First install RocksDB using the guide in Confluence. For [Mac](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/227344410/Tools+languages+XCode+Docker+Brew+Java+Go#Tools%2Flanguages%3AXCode%2CDocker%2CBrew%2CJava%2CGo-InstallRocksDB) or [Linux](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/2404155411/Tools+languages#Tools%2Flanguages-InstallRocksDBdependencies)
 ```bash
-# Install rocksdb, central's main database
-# It is necessary because of several CGO bindings
-$ brew install rocksdb
-
 $ cd $GOPATH/src/github.com/stackrox/rox
 $ make install-dev-tools
 $ make image
