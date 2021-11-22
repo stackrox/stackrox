@@ -19,6 +19,9 @@ const (
 	// WildcardString represents the string we use for wildcard queries.
 	WildcardString = "*"
 
+	// HighlightString is used for internally highlighting fields\
+	HighlightString = "**"
+
 	// NullString represents the string we use for querying for the absence of any value in a field.
 	NullString = "-"
 

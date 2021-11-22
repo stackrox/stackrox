@@ -108,7 +108,7 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 	// Make sure the cluster and perhaps namespace fields are part of the returned fields.
 	fieldQB := search.NewQueryBuilder()
 	for _, fieldLabel := range h.resultsChecker.SearchFieldLabels() {
-		fieldQB = fieldQB.AddStringsHighlighted(fieldLabel, search.WildcardString)
+		fieldQB = fieldQB.AddStringsHighlighted(fieldLabel, search.HighlightString)
 	}
 
 	queryWithFields := search.ConjunctionQuery(q, fieldQB.ProtoQuery())

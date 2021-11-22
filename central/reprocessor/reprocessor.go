@@ -220,7 +220,7 @@ func (l *loopImpl) ReprocessSignatureVerifications() {
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString)
+	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.HighlightString)
 	if len(deploymentIDs) > 0 {
 		query = query.AddDocIDs(deploymentIDs...)
 	}
@@ -339,7 +339,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 }
 
 func (l *loopImpl) getActiveImageIDs() ([]string, error) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, search.WildcardString).ProtoQuery()
+	query := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, search.HighlightString).ProtoQuery()
 	results, err := l.images.Search(allAccessCtx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "error searching for active image IDs")

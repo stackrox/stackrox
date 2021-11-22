@@ -52,8 +52,8 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 	qb := search.NewQueryBuilder().
 		AddExactMatches(search.DeploymentID, deployment.GetId()).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-		AddStringsHighlighted(search.PolicyName, search.WildcardString).
-		AddStringsHighlighted(search.Severity, search.WildcardString)
+		AddStringsHighlighted(search.PolicyName, search.HighlightString).
+		AddStringsHighlighted(search.Severity, search.HighlightString)
 
 	results, err := v.getter.Search(ctx, qb.ProtoQuery())
 	if err != nil {

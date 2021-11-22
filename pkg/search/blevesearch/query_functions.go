@@ -44,6 +44,9 @@ const (
 )
 
 func matchFieldQuery(category v1.SearchCategory, searchFieldPath string, searchFieldType v1.SearchDataType, value string) (query.Query, error) {
+	if value == pkgSearch.HighlightString {
+		return bleve.NewMatchAllQuery(), nil
+	}
 	// Special case: wildcard
 	if value == pkgSearch.WildcardString {
 		return getWildcardQuery(searchFieldPath), nil
