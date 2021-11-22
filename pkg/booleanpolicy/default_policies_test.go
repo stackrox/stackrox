@@ -461,6 +461,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	strutsDepSuppressed := deploymentWithImageAnyID(strutsImageSuppressed)
 	suite.addDepAndImages(strutsDepSuppressed, strutsImageSuppressed)
 
+	// When image is pull out, the deferred field is set based upon the legacy suppressed field. Therefore, both are set.
+	// However, here we are specifically testing whether detection is taking the new vulnerability state field into
+	// account by not setting the suppressed field.
+	structImageWithDeferredVulns := imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "deferred-struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2017-5638", Link: "https://struts", State: storage.VulnerabilityState_DEFERRED, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
+			{Cve: "CVE-2017-FP", Link: "https://struts", State: storage.VulnerabilityState_FALSE_POSITIVE, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
+			{Cve: "CVE-2017-FAKE", Link: "https://struts", Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
+		}},
+	})
+	structDepWithDeferredVulns := deploymentWithImageAnyID(structImageWithDeferredVulns)
+	suite.addDepAndImages(structDepWithDeferredVulns, structImageWithDeferredVulns)
+
 	depWithNonSeriousVulnsImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
 		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
 			{Cve: "CVE-1234-5678", Link: "https://abcdefgh"},
@@ -980,19 +993,20 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Images with no scans",
 			shouldNotMatch: map[string]struct{}{
 				// These deployments have scans on their images.
-				fixtureDep.GetId():              {},
-				oldScannedDep.GetId():           {},
-				heartbleedDep.GetId():           {},
-				apkDep.GetId():                  {},
-				curlDep.GetId():                 {},
-				componentDeps["apt"].GetId():    {},
-				componentDeps["dnf"].GetId():    {},
-				componentDeps["wget"].GetId():   {},
-				shellshockDep.GetId():           {},
-				suppressedShellShockDep.GetId(): {},
-				strutsDep.GetId():               {},
-				strutsDepSuppressed.GetId():     {},
-				depWithNonSeriousVulns.GetId():  {},
+				fixtureDep.GetId():                 {},
+				oldScannedDep.GetId():              {},
+				heartbleedDep.GetId():              {},
+				apkDep.GetId():                     {},
+				curlDep.GetId():                    {},
+				componentDeps["apt"].GetId():       {},
+				componentDeps["dnf"].GetId():       {},
+				componentDeps["wget"].GetId():      {},
+				shellshockDep.GetId():              {},
+				suppressedShellShockDep.GetId():    {},
+				strutsDep.GetId():                  {},
+				strutsDepSuppressed.GetId():        {},
+				structDepWithDeferredVulns.GetId(): {},
+				depWithNonSeriousVulns.GetId():     {},
 				// The rest of the deployments have no images!
 				"FAKEID":                                          {},
 				containerPort22Dep.GetId():                        {},
@@ -1066,6 +1080,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF'",
 					},
 				},
+				// CVE-2017-5638 is deferred in `deferred-struct`, hence no violation.
 			},
 		},
 		{
@@ -1119,6 +1134,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
+				structDepWithDeferredVulns.GetId(): {
+					{
+						Message: "Fixable CVE-2017-FAKE (CVSS 8) (severity Important) found in component 'deferred-struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+					},
+				},
 			},
 		},
 		{
@@ -1127,6 +1147,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				strutsDep.GetId(): {
 					{
 						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+					},
+				},
+				structDepWithDeferredVulns.GetId(): {
+					{
+						Message: "Fixable CVE-2017-FAKE (CVSS 8) (severity Important) found in component 'deferred-struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
 			},
@@ -1327,6 +1352,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				strutsDepSuppressed.GetId(): {
 					{
 						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+					},
+				},
+				structDepWithDeferredVulns.GetId(): {
+					{
+						Message: "Fixable CVE-2017-FAKE (CVSS 8) (severity Important) found in component 'deferred-struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
 			},
@@ -1576,6 +1606,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suppressedShellshockImage.GetId():                {},
 				strutsImage.GetId():                              {},
 				strutsImageSuppressed.GetId():                    {},
+				structImageWithDeferredVulns.GetId():             {},
 				depWithNonSeriousVulnsImage.GetId():              {},
 				fixtureDep.GetContainers()[0].GetImage().GetId(): {},
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {},

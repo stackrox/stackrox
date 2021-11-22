@@ -73,10 +73,15 @@ func ForSeverity() QueryBuilder {
 
 func wrapForVulnMgmt(f queryBuilderFunc) QueryBuilder {
 	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
-		return append(f(group), &query.FieldQuery{
-			Field:  search.CVESuppressed.String(),
-			Values: []string{"false"},
-		})
+		return append(f(group),
+			&query.FieldQuery{
+				Field:  search.CVESuppressed.String(),
+				Values: []string{"false"},
+			},
+			&query.FieldQuery{
+				Field:  search.VulnerabilityState.String(),
+				Values: []string{storage.VulnerabilityState_OBSERVED.String()},
+			})
 	})
 }
 
