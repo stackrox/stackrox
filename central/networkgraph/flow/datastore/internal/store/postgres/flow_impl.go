@@ -63,10 +63,12 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 				placeholderStr += ", "
 			}
 			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
+			t := time.Now()
 			value, err := marshaler.MarshalToString(obj.GetProps())
 			if err != nil {
 				return err
 			}
+			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "NetworkFlowProperties")
 			id := common.GetIDString(obj.GetProps())
 			data = append(data, id, s.clusterID, value)
 		}
