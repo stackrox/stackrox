@@ -22,7 +22,6 @@ package postgres
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -33,11 +32,9 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 

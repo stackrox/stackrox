@@ -79,6 +79,7 @@ func New(db *pgxpool.Pool) Store {
 	for _, table := range []string {
 		"create table if not exists ProcessIndicator(serialized jsonb not null, Id varchar, DeploymentId varchar, ContainerName varchar, PodId varchar, PodUid varchar, ClusterId varchar, Namespace varchar, Signal_ContainerId varchar, Signal_Name varchar, Signal_Args varchar, Signal_ExecFilePath varchar, Signal_Uid numeric, PRIMARY KEY (Id));",
 		"create index if not exists ProcessIndicator_DeploymentId on ProcessIndicator using hash(DeploymentId)",
+		"create index if not exists ProcessIndicator_ContainerName on ProcessIndicator using hash(ContainerName)",
 		"create index if not exists ProcessIndicator_PodUid on ProcessIndicator using hash(PodUid)",
 		
 	} {
