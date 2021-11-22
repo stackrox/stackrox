@@ -196,7 +196,7 @@ message ImageCVEEdge {
 
     // TODO: [ROX-8348] Unhide search fields.
 
-    VulnerabilityState        state                  = 3 [(gogoproto.moretags) = "search:\"Vulnerability State\",hidden"];
+    VulnerabilityState        state                  = 3 [(gogoproto.moretags) = "search:\"Vulnerability State\""];
 }
 
 message WatchedImage {
