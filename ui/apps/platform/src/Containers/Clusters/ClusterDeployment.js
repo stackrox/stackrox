@@ -122,7 +122,7 @@ ClusterDeploymentPage.propTypes = {
     editing: PropTypes.bool.isRequired,
     createUpgraderSA: PropTypes.bool.isRequired,
     toggleSA: PropTypes.func.isRequired,
-    managerType: PropTypes.bool.isRequired,
+    managerType: PropTypes.string.isRequired,
 };
 
 export default ClusterDeploymentPage;
