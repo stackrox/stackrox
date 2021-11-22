@@ -1,24 +1,37 @@
 package postgres
 
 import (
-	"database/sql"
+	"context"
+	"fmt"
+	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func TestT(t *testing.T) {
-	source := "host=localhost port=5432 user=postgres sslmode=disable statement_timeout=60000"
-	db, err := sql.Open("postgres", source)
+func setup() *pgxpool.Pool {
+	config, err := pgxpool.ParseConfig("database=postgres pool_min_conns=100 pool_max_conns=100 host=localhost port=5432 user=connorgorman sslmode=disable statement_timeout=60000")
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	fmt.Printf("%+v\n", config)
 
-	store := New(db)
+	db, err := pgxpool.ConnectConfig(context.Background(), config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	return db
+}
 
-	err = store.UpsertMany([]*storage.ProcessIndicator{
+func TestT(t *testing.T) {
+	pool := setup()
+
+	store := New(pool)
+
+	err := store.UpsertMany([]*storage.ProcessIndicator{
 		{
 			Id:        "1",
 			Namespace: "stackrox",
@@ -31,5 +44,4 @@ func TestT(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
 }

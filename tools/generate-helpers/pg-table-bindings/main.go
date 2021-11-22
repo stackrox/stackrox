@@ -47,7 +47,6 @@ const (
 		getIDsStmt = "select id from {{.Table}}"
 		getStmt = "select serialized from {{.Table}} where id = $1"
 		getManyStmt = "select serialized from {{.Table}} where id = ANY($1::text[])"
-		upsertStmt = "{{.InsertionQuery}}"
 		deleteStmt = "delete from {{.Table}} where id = $1"
 		deleteManyStmt = "delete from {{.Table}} where id = ANY($1::text[])"
 		walkStmt = "select serialized from {{.Table}}"
@@ -109,9 +108,6 @@ func uniqKeyFunc(msg proto.Message) string {
 {{- end}}
 
 const (
-	createTableQuery = "{{.TableCreationQuery}}"
-	createIDIndexQuery = "create index if not exists {{.Table}}_id on {{.Table}} using hash ((id))"
-
 	batchInsertTemplate = "{{.BatchInsertionTemplate}}"
 )
 
@@ -120,7 +116,7 @@ func New(db *pgxpool.Pool) Store {
 	globaldb.RegisterTable(table, "{{.Type}}")
 
 	for _, table := range []string {
-		{{range .FlatTableInsertionQueries}}"{{.}}",
+		{{range .FlatTableCreationQueries}}"{{.}}",
 		{{end}}
 	} {
 		_, err := db.Exec(context.Background(), table)
@@ -128,12 +124,6 @@ func New(db *pgxpool.Pool) Store {
 			panic("error creating table: " + table)
 		}
 	}
-
-	// Will also autogen the indexes in the future
-	//_, err := db.Exec(context.Background(), createIDIndexQuery)
-	//if err != nil {
-	//	panic("error creating index")
-	//}
 
 //	{{- if .UniqKeyFunc}}
 //	return &storeImpl{
@@ -317,21 +307,19 @@ func (s *storeImpl) upsert(id string, obj0 *storage.{{.Type}}) error {
 	if err != nil {
 		return err
 	}
+    doRollback := true
 	defer func() {
-		if err == nil {
-			err = tx.Commit(context.Background())
+		if doRollback {
+			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
+				log.Errorf("error rolling backing: %v", err)
+			}
 		}
-//else {
-//			if rollBackErr := tx.Rollback(context.Background()); rollBackErr != nil {
-//				// multi error?
-//				err = rollBackErr
-//			}
-//		}
 	}()
 
 	{{.FlatInsertion}}
 
-	return err
+    doRollback = false
+	return tx.Commit(context.Background())
 }
 
 // Upsert inserts the object into the DB
@@ -355,33 +343,24 @@ func (s *storeImpl) UpsertMany(objs []*storage.{{.Type}}) error {
 		return nil
 	}
 
+	batch := &pgx.Batch{}
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "{{.Type}}")
+	for _, obj0 := range objs {
+		t := time.Now()
+		serialized, err := marshaler.MarshalToString(obj0)
+		if err != nil {
+			return err
+		}
+		metrics.SetJSONPBOperationDurationTime(t, "Marshal", "{{.Type}}")
+		{{.FlatMultiInsert}}
+	}
+
 	conn, release := s.acquireConn(ops.AddMany, "{{.Type}}")
 	defer release()
 
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "{{.Type}}")
-	numElems := {{ .BatchInsertionNumFields }}
-	batch := batcher.New(len(objs), 60000/numElems)
-	for start, end, ok := batch.Next(); ok; start, end, ok = batch.Next() {
-		var placeholderStr string
-		data := make([]interface{}, 0, numElems * len(objs))
-		for i, obj := range objs[start:end] {
-			if i != 0 {
-				placeholderStr += ", "
-			}
-			placeholderStr += postgres.GetValues(i*numElems+1, (i+1)*numElems+1)
-
-			t := time.Now()
-			value, err := marshaler.MarshalToString(obj)
-			if err != nil {
-				return err
-			}
-			metrics.SetJSONPBOperationDurationTime(t, "Marshal", "{{.Type}}")
-			id := keyFunc(obj)
-			data = append(data, {{.InsertionGetters}})
-		}
-		if _, err := conn.Exec(context.Background(), fmt.Sprintf(batchInsertTemplate, placeholderStr), data...); err != nil {
-			return err
-		}
+	results := conn.SendBatch(context.Background(), batch)
+	if err := results.Close(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -515,8 +494,6 @@ func main() {
 
 		insertion := generateInsertFunctions(table)
 
-		elements := table.Elements()
-
 		tableCreationQueries := createTables(table)
 		var count int
 		for _, t := range tableCreationQueries {
@@ -526,11 +503,19 @@ func main() {
 		}
 		fmt.Println("Number of tables", count)
 
-		tableCreationQuery := generateTableCreationQuery(props.Table, elements)
+		t := template.Must(template.New("insertion").Parse(insertion))
+		buf := bytes.NewBuffer(nil)
+		if err := t.Execute(buf, map[string]interface{} {"ExecutePrefix": "tx.Exec(context.Background(),"}); err != nil {
+			return err
+		}
+		singleInsert := buf.String()
 
-		insertionQuery, insertionGetters := generateTableInsertionQuery(props.Table, elements)
-
-		batchInsertionQuery, numFields := generateTableMultiInsertionQuery(props.Table, elements)
+		t = template.Must(template.New("insertion").Parse(insertion))
+		buf = bytes.NewBuffer(nil)
+		if err := t.Execute(buf, map[string]interface{} {"ExecutePrefix": "batch.Queue("}); err != nil {
+			return err
+		}
+		multiInsert := buf.String()
 
 		templateMap := map[string]interface{}{
 			"Type":       props.Type,
@@ -539,18 +524,15 @@ func main() {
 			"KeyFunc":    props.KeyFunc,
 			//"UniqKeyFunc": props.UniqKeyFunc,
 			"Table":                   props.Table,
-			"TableCreationQuery":      tableCreationQuery,
-			"InsertionQuery":          insertionQuery,
-			"InsertionGetters":        insertionGetters,
-			"BatchInsertionTemplate":  batchInsertionQuery,
-			"BatchInsertionNumFields": numFields,
 
-			"FlatInsertion": insertion,
-			"FlatTableInsertionQueries": tableCreationQueries,
+			"FlatInsertion": singleInsert,
+			"FlatTableCreationQueries": tableCreationQueries,
+			"FlatMultiInsert": multiInsert,
+			"SingleTable": count == 1,
 		}
 
-		t := template.Must(template.New("gen").Parse(autogenerated + storeFile))
-		buf := bytes.NewBuffer(nil)
+		t = template.Must(template.New("gen").Parse(autogenerated + storeFile))
+		buf = bytes.NewBuffer(nil)
 		if err := t.Execute(buf, templateMap); err != nil {
 			return err
 		}
