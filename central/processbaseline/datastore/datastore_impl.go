@@ -84,7 +84,7 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(id string, baseline *storage
 	if err := ds.storage.Upsert(baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
-	if err := ds.indexer.AddBaseline(baseline); err != nil {
+	if err := ds.indexer.AddProcessBaseline(baseline); err != nil {
 		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
 		subErr := ds.storage.Delete(id)
 		if subErr != nil {
@@ -98,7 +98,7 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(id string, baseline *storage
 func (ds *datastoreImpl) removeProcessBaselineByID(id string) error {
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
-	if err := ds.indexer.DeleteBaseline(id); err != nil {
+	if err := ds.indexer.DeleteProcessBaseline(id); err != nil {
 		return errors.Wrap(err, "error removing process baseline from index")
 	}
 	if err := ds.storage.Delete(id); err != nil {
