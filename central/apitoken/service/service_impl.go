@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/backend"
+	rolePkg "github.com/stackrox/rox/central/role"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -95,6 +97,11 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "role(s) %s don't exist", strings.Join(sliceutils.StringSelect(req.GetRoles(), missingIndices...), ","))
 	}
 
+	id := authn.IdentityFromContext(ctx)
+	if err = verifyNoPrivilegeEscalation(utils.RoleNames(id.Roles()), req.GetRoles()); err != nil {
+		return nil, err
+	}
+
 	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), utils.RoleNames(roles))
 	if err != nil {
 		return nil, err
@@ -104,6 +111,30 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		Token:    token,
 		Metadata: metadata,
 	}, nil
+}
+
+// This function ensures that no APIToken with permissions more than principal has can be created.
+// The only two acceptable cases are:
+// 	* principal has "Admin" role
+// 	* all requested roles are assigned to principal
+func verifyNoPrivilegeEscalation(userRoles, requestedRoles []string) error {
+	userRoleNames := make(map[string]struct{}, len(userRoles))
+	for _, userRole := range userRoles {
+		userRoleNames[userRole] = struct{}{}
+	}
+	if _, ok := userRoleNames[rolePkg.Admin]; ok {
+		return nil
+	}
+	for _, requestedRole := range requestedRoles {
+		if _, ok := userRoleNames[requestedRole]; !ok {
+			return errors.Wrapf(errorhelpers.ErrNotAuthorized,
+				"requested API token roles: %s, but principal only has next roles: %s",
+				strings.Join(requestedRoles, ", "),
+				strings.Join(userRoles, ", "),
+			)
+		}
+	}
+	return nil
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
