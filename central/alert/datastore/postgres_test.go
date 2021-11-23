@@ -56,7 +56,7 @@ func convertEnumSliceToIntArray(i interface{}) []int32 {
 }
 
 func TestSliceConversion(t *testing.T) {
-	stages := []storage.LifecycleStage {storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY}
+	stages := []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY}
 
 	//l := int(storage.LifecycleStage_BUILD)
 
@@ -103,7 +103,7 @@ func TestT(t *testing.T) {
 
 	pq.Pagination = &v1.QueryPagination{
 		Offset: 0,
-		Limit: 50,
+		Limit:  50,
 	}
 
 	results, err := searcher.SearchRawAlerts(context.Background(), pq)

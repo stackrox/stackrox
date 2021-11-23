@@ -93,7 +93,7 @@ func runQueryPrinter() {
 }
 
 type queryTree struct {
-	table string
+	table  string
 	tables set.StringSet
 }
 
@@ -379,8 +379,8 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, table string, se
 	}
 	if queryEntry == nil {
 		return &Query{
-			Select: selQuery,
-			From:   fromClause,
+			Select:     selQuery,
+			From:       fromClause,
 			Pagination: pagination,
 		}, nil
 	}

@@ -19,11 +19,11 @@ func countToPlaceholder(count int) string {
 }
 
 type InsertComposer struct {
-	Table string
-	SQL []string
+	Table    string
+	SQL      []string
 	Excluded []string
 	Getters  []string
-	pks []string
+	pks      []string
 }
 
 func (ic *InsertComposer) AddSQL(s string) {

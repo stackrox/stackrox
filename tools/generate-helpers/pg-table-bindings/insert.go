@@ -24,8 +24,8 @@ func generateTopLevelTable(w io.Writer, table *walker.Table) {
 	ic.Combine(table.GetInsertComposer(0))
 
 	fmt.Fprintf(w, "localQuery := \"%s\"\n", ic.Query())
-	fmt.Fprintf(w,"_, err = {{.ExecutePrefix}}localQuery, %s)\n", ic.ExecGetters())
-	fmt.Fprint(w,"if err != nil {\n    return err\n  }\n")
+	fmt.Fprintf(w, "_, err = {{.ExecutePrefix}}localQuery, %s)\n", ic.ExecGetters())
+	fmt.Fprint(w, "if err != nil {\n    return err\n  }\n")
 }
 
 func generateInsertFunctions(table *walker.Table) string {
@@ -55,7 +55,7 @@ func generateSubTables(w io.Writer, table *walker.Table, topLevelPkElems []walke
 		}
 		return
 	}
-	if !tableNeedsSearch(table){
+	if !tableNeedsSearch(table) {
 		return
 	}
 	ic := &walker.InsertComposer{
@@ -71,7 +71,7 @@ func generateSubTables(w io.Writer, table *walker.Table, topLevelPkElems []walke
 	for i := 0; i < level; i++ {
 		idx := "idx" + strconv.Itoa(i+1)
 		ic.AddGetters(idx)
-		if i != level - 1 {
+		if i != level-1 {
 			pkGetters = append(pkGetters, idx)
 		}
 	}
@@ -82,7 +82,7 @@ func generateSubTables(w io.Writer, table *walker.Table, topLevelPkElems []walke
 		ic.AddSQL(sqlPath)
 		ic.AddPK(sqlPath)
 		ic.AddExcluded(sqlPath)
-		if i != len(pkElements) - 1 {
+		if i != len(pkElements)-1 {
 			deleteFromClauses = append(deleteFromClauses, fmt.Sprintf("%s = $%d", sqlPath, i+1))
 		}
 	}
@@ -93,15 +93,15 @@ func generateSubTables(w io.Writer, table *walker.Table, topLevelPkElems []walke
 
 	fmt.Fprintf(w, "%sfor idx%d, obj%d := range %s {\n", levelToSpaces(level), level, level, sliceGetter)
 	fmt.Fprintf(w, "  %slocalQuery := \"%s\"\n", levelToSpaces(level), ic.Query())
-	fmt.Fprintf(w,"  %s_, err := {{.ExecutePrefix}}localQuery, %s)\n", levelToSpaces(level), ic.ExecGetters())
-	fmt.Fprintf(w,"  %sif err != nil {\n    %sreturn err\n  %s}\n", levelToSpaces(level), levelToSpaces(level), levelToSpaces(level))
+	fmt.Fprintf(w, "  %s_, err := {{.ExecutePrefix}}localQuery, %s)\n", levelToSpaces(level), ic.ExecGetters())
+	fmt.Fprintf(w, "  %sif err != nil {\n    %sreturn err\n  %s}\n", levelToSpaces(level), levelToSpaces(level), levelToSpaces(level))
 	for _, child := range table.Children {
-		generateSubTables(w, child, topLevelPkElems, level + 1)
+		generateSubTables(w, child, topLevelPkElems, level+1)
 	}
 	for _, e := range table.Embedded {
-		generateSubTables(w, e, topLevelPkElems, level + 1)
+		generateSubTables(w, e, topLevelPkElems, level+1)
 	}
-	fmt.Fprintf(w,"%s}\n", levelToSpaces(level))
-	fmt.Fprintf(w,"  %s_, err = {{.ExecutePrefix}}\"delete from %s where %s and idx >= $%d\", %s)\n", levelToSpaces(level), table.TableName(), strings.Join(deleteFromClauses, " and "), len(deleteFromClauses)+1, strings.Join(append(pkGetters, fmt.Sprintf("len(%s)", sliceGetter)), ", "))
-	fmt.Fprintf(w,"  %sif err != nil {\n    %sreturn err\n  %s}\n", levelToSpaces(level), levelToSpaces(level), levelToSpaces(level))
+	fmt.Fprintf(w, "%s}\n", levelToSpaces(level))
+	fmt.Fprintf(w, "  %s_, err = {{.ExecutePrefix}}\"delete from %s where %s and idx >= $%d\", %s)\n", levelToSpaces(level), table.TableName(), strings.Join(deleteFromClauses, " and "), len(deleteFromClauses)+1, strings.Join(append(pkGetters, fmt.Sprintf("len(%s)", sliceGetter)), ", "))
+	fmt.Fprintf(w, "  %sif err != nil {\n    %sreturn err\n  %s}\n", levelToSpaces(level), levelToSpaces(level), levelToSpaces(level))
 }

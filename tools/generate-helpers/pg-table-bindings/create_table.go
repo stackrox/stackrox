@@ -77,16 +77,16 @@ func createTables(table *walker.Table) []string {
 
 	if table.Parent != nil {
 		for _, elem := range table.PrimaryKeyElements() {
-			fmt.Fprintf(buf,"%s %s not null, ", elem.SQLPath(), walker.DataTypeToSQLType(elem.DataType))
+			fmt.Fprintf(buf, "%s %s not null, ", elem.SQLPath(), walker.DataTypeToSQLType(elem.DataType))
 		}
 	} else {
-		fmt.Fprint(buf,"serialized jsonb not null, ")
+		fmt.Fprint(buf, "serialized jsonb not null, ")
 	}
 	for _, elem := range table.Elements() {
 		if !elem.IsSearchable() {
 			continue
 		}
-		fmt.Fprintf(buf,"%s %s, ", elem.SQLPath(), walker.DataTypeToSQLType(elem.DataType))
+		fmt.Fprintf(buf, "%s %s, ", elem.SQLPath(), walker.DataTypeToSQLType(elem.DataType))
 	}
 	fmt.Fprint(buf, primaryKeyEntry(table.PrimaryKeyElements()))
 	if fkLine := foreignKeyEntry(table); fkLine != "" {
@@ -94,7 +94,7 @@ func createTables(table *walker.Table) []string {
 	}
 	fmt.Fprint(buf, ");")
 
-	tables := []string {
+	tables := []string{
 		buf.String(),
 	}
 	tables = append(tables, generateIndexes(table)...)
