@@ -283,14 +283,14 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
-	log.Infof("Upserting: %d indicators in batch", len(objs))
 	if len(objs) == 0 {
 		return nil
 	}
 
 	batch := &pgx.Batch{}
 	defer func(now time.Time) {
-		log.Infof("Upserting: %d indicators in batch - %d ms", len(objs), time.Since(now).Milliseconds())
+		ms := time.Since(now).Milliseconds()
+		log.Infof("Upserting: %d indicators in batch - %d ms (%0.4f ms average)", len(objs), ms, float64(ms) / float64(len(objs)))
 	}(time.Now())
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
 	for _, obj0 := range objs {

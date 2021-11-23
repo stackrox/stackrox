@@ -56,7 +56,8 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 	}
 
 	defer func(now time.Time) {
-		log.Infof("Upserting: %d flows in batch - %d ms", len(flows), time.Since(now).Milliseconds())
+		ms := time.Since(now).Milliseconds()
+		log.Infof("Upserting: %d flows in batch - %d ms (%0.4f ms average)", len(flows), ms, float64(ms) / float64(len(flows)))
 	}(time.Now())
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "NetworkFlowProperties")
