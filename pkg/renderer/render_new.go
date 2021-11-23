@@ -90,6 +90,8 @@ func renderNewBasicFiles(c Config, mode mode) ([]*zip.File, error) {
 
 	metaVals := charts.DefaultMetaValues()
 	metaVals["RenderMode"] = mode.String()
+	// Modify metaVals depending on deployment format:
+	metaVals["KubectlOutput"] = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL
 
 	chartFiles, err := chTpl.InstantiateRaw(metaVals)
 	if err != nil {

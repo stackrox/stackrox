@@ -230,14 +230,22 @@
 {{ end }}
 
 {{/* On first install, create a default proxy config, but only if we can be sure none exists. */}}
-{{ if and (kindIs "invalid" $proxyCfg) $.Release.IsInstall }}
-  {{ $lookupOut := dict }}
-  {{ include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $.Release.Namespace "proxy-config") }}
-  {{ if and $lookupOut.reliable (not $lookupOut.result) }}
-    {{ $fileOut := dict }}
-    {{ include "srox.loadFile" (list $ $fileOut "config/proxy-config.yaml.default") }}
-    {{ $proxyCfg = $fileOut.contents }}
+{{ if kindIs "invalid" $proxyCfg }}
+[<- if not .KubectlOutput >]
+  {{ if $.Release.IsInstall }}
+    {{ $lookupOut := dict }}
+    {{ include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $.Release.Namespace "proxy-config") }}
+    {{ if and $lookupOut.reliable (not $lookupOut.result) }}
+      {{ $fileOut := dict }}
+      {{ include "srox.loadFile" (list $ $fileOut "config/proxy-config.yaml.default") }}
+      {{ $proxyCfg = $fileOut.contents }}
+    {{ end }}
   {{ end }}
+[<- else >]
+  {{ $fileOut := dict }}
+  {{ include "srox.loadFile" (list $ $fileOut "config/proxy-config.yaml.default") }}
+  {{ $proxyCfg = $fileOut.contents }}
+[<- end >]
 {{ end }}
 {{ $_ = set $env "_proxyConfig" $proxyCfg }}
 
