@@ -4,9 +4,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index"
+	pgIndex "github.com/stackrox/rox/central/processbaseline/index/postgres"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
-	"github.com/stackrox/rox/central/processbaseline/store/postgres"
+	pgStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	"github.com/stackrox/rox/pkg/features"
@@ -25,15 +26,17 @@ var (
 
 func initialize() {
 	var storage store.Store
+	var indexer index.Indexer
 	if features.PostgresPOC.Enabled() {
-		storage = postgres.NewCachedStore(globaldb.GetPostgresDB())
+		storage = pgStore.NewCachedStore(globaldb.GetPostgresDB())
+		indexer = pgIndex.NewIndexer(globaldb.GetPostgresDB())
 	} else {
 		var err error
 		storage, err = rocksdb.New(globaldb.GetRocksDB())
 		utils.CrashOnError(err)
-	}
 
-	indexer := index.New(globalindex.GetGlobalTmpIndex())
+		indexer = index.New(globalindex.GetGlobalTmpIndex())
+	}
 
 	searcher, err := search.New(storage, indexer)
 	if err != nil {
