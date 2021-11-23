@@ -1,4 +1,4 @@
-import { distanceInWordsStrict, format } from 'date-fns';
+import { distanceInWordsStrict, format, addDays } from 'date-fns';
 
 import dateTimeFormat, { dateFormat } from 'constants/dateTimeFormat';
 
@@ -72,6 +72,10 @@ export const getDistanceStrictAsPhrase = (dataDatetime, currentDatetime) =>
         addSuffix: true,
         partialMethod: 'floor',
     });
+
+export const addDaysToDate = (date, amount) => {
+    return format(addDays(date, amount + 1), 'YYYY-MM-DD[T]HH:mm:ss[Z]');
+};
 
 export default {
     getLatestDatedItemByKey,

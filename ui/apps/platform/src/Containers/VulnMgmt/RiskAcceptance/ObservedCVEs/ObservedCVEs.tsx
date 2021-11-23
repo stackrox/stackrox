@@ -8,7 +8,6 @@ import {
     GetObservedCVEsData,
     GetObservedCVEsVars,
     GET_OBSERVED_CVES,
-    Vulnerability,
 } from './observedCVEs.graphql';
 
 import ObservedCVEsTable from './ObservedCVEsTable';
@@ -36,10 +35,11 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
         );
     }
 
-    // @TODO: handle error returned from API
-    const rows: Vulnerability[] = data?.result?.vulns || [];
+    const rows = data?.result?.vulns || [];
+    const imageName = data?.result?.name?.fullName.split(':')[0] || '';
+    const tag = data?.result?.name?.tag || '';
 
-    return <ObservedCVEsTable rows={rows} isLoading={isLoading} />;
+    return <ObservedCVEsTable rows={rows} imageName={imageName} tag={tag} isLoading={isLoading} />;
 }
 
 export default ObservedCVEs;

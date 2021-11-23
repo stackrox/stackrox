@@ -13,6 +13,7 @@ import {
     complianceBasePath,
     vulnManagementPath,
     vulnManagementReportsPath,
+    vulnManagementRiskAcceptancePath,
     configManagementPath,
     riskBasePath,
     clustersBasePath,
@@ -43,6 +44,9 @@ function NavigationSideBar(): ReactElement {
     const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
+    if (isVulnReportingEnabled) {
+        vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
+    }
     if (isVulnReportingEnabled) {
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }

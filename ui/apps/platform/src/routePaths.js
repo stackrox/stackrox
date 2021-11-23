@@ -60,7 +60,8 @@ export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 // The following paths are not part of the infinite nesting Workflow in Vuln Management
 export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementReportsPathWithParam = `${vulnManagementPath}/reports/:reportId`;
-// TODO: add risk (deferral) path
+
+export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
 
 /**
  * New Framwork-related route paths
@@ -103,6 +104,7 @@ const vulnManagementPathToLabelMap = {
     [vulnManagementPath]: 'Dashboard',
     // TODO: add mapping for Deferrals
     [vulnManagementReportsPath]: 'Reporting',
+    [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 
 export const basePathToLabelMap = {

@@ -6,3 +6,17 @@ export type RequestComment = {
     message: string;
     createdAt: string;
 };
+
+export type RequestState = 'PENDING' | 'APPROVED' | 'DENIED';
+
+export type DeferralRequest = {
+    expiresOn?: string;
+    expiresWhenFixed?: boolean;
+};
+
+export type Scope = {
+    imageScope?: {
+        name: string;
+        tagRegex: string;
+    };
+};

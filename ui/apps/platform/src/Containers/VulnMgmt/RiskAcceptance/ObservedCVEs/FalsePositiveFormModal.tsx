@@ -13,7 +13,7 @@ export type FalsePositiveFormValues = {
     comment: string;
 };
 
-export type DeferralRequestModalProps = {
+export type FalsePositiveFormModalProps = {
     isOpen: boolean;
     numCVEsToBeAssessed: number;
     onSendRequest: (values: FalsePositiveFormValues) => Promise<FormResponseMessage>;
@@ -35,13 +35,13 @@ const validationSchema = yup.object().shape({
     comment: yup.string().trim().required('A deferral rationale is required'),
 });
 
-function FalsePositiveRequestModal({
+function FalsePositiveFormModal({
     isOpen,
     numCVEsToBeAssessed,
     onSendRequest,
     onCompleteRequest,
     onCancelFalsePositive,
-}: DeferralRequestModalProps): ReactElement {
+}: FalsePositiveFormModalProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
     const formik = useFormik<FalsePositiveFormValues>({
         initialValues: {
@@ -171,4 +171,4 @@ function FalsePositiveRequestModal({
     );
 }
 
-export default FalsePositiveRequestModal;
+export default FalsePositiveFormModal;

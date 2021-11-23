@@ -14,32 +14,33 @@ import {
 import { SearchIcon } from '@patternfly/react-icons';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import useTableSelection from 'hooks/useTableSelection';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import { RequestComment } from 'types/vuln_request.proto';
+
 import VulnerabilitySeverityLabel from 'Components/PatternFly/VulnerabilitySeverityLabel';
+import CVSSScoreLabel from 'Components/PatternFly/CVSSScoreLabel';
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import useTableSelection from 'hooks/useTableSelection';
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
-import AffectedComponentsButton from '../AffectedComponentsButton';
-import CancelDeferralModal from './CancelDeferralModal';
+import { RequestComment } from 'types/vuln_request.proto';
+import AffectedComponentsButton from '../AffectedComponents/AffectedComponentsButton';
 import VulnerabilityCommentsButton from '../RequestComments/RequestCommentsButton';
+import ReobserveCVEModal from './ReobserveCVEModal';
 import { EmbeddedImageScanComponent } from '../ObservedCVEs/observedCVEs.graphql';
 
-export type DeferredCVERow = {
+export type FalsePositiveCVERow = {
     id: string;
     cve: string;
+    cvssScore: string;
     severity: VulnerabilitySeverity;
     components: EmbeddedImageScanComponent[];
     comments: RequestComment[];
-    expiresAt: string;
     applyTo: string;
-    approver: string;
 };
 
-export type DeferredCVEsTableProps = {
-    rows: DeferredCVERow[];
+export type FalsePositiveCVEsTableProps = {
+    rows: FalsePositiveCVERow[];
 };
 
-function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
+function FalsePositiveCVEsTable({ rows }: FalsePositiveCVEsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -48,31 +49,31 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
         onSelectAll,
         onClearAll,
         getSelectedIds,
-    } = useTableSelection<DeferredCVERow>(rows);
-    const [cveDeferralsToBeCancelled, setCVEDeferralsToBeCancelled] = useState<string[]>([]);
+    } = useTableSelection<FalsePositiveCVERow>(rows);
+    const [falsePositiveCVEsToBeReobserved, setFalsePositiveCVEsToBeReobserved] = useState<
+        string[]
+    >([]);
 
-    function setSelectedCVEDeferralsToBeCancelled() {
+    function setSelectedCVEFalsePositivesToBeCancelled() {
         const selectedIds = getSelectedIds();
-        setCVEDeferralsToBeCancelled(selectedIds);
+        setFalsePositiveCVEsToBeReobserved(selectedIds);
     }
 
-    function cancelCancellation() {
-        setCVEDeferralsToBeCancelled([]);
+    function cancelReobserveCVE() {
+        setFalsePositiveCVEsToBeReobserved([]);
     }
 
-    function completeCancelDeferral() {
+    function completeReobserveCVE() {
         onClearAll();
-        setCVEDeferralsToBeCancelled([]);
+        setFalsePositiveCVEsToBeReobserved([]);
     }
 
-    // @TODO: Convert the form values to the proper values used in the API for cancelling a request
-    function requestCancelDeferral(values) {
-        // @TODO: call parent function that will send out an API call to cancel request
+    function requestReobserveCVE(values) {
         const promise = new Promise<FormResponseMessage>((resolve, reject) => {
             setTimeout(() => {
                 if (values?.comment === 'blah') {
                     const formMessage = {
-                        message: 'Successfully cancelled request',
+                        message: 'Successfully reobserved CVE',
                         isError: false,
                     };
                     resolve(formMessage);
@@ -112,9 +113,9 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                             <DropdownItem
                                 key="upgrade"
                                 component="button"
-                                onClick={setSelectedCVEDeferralsToBeCancelled}
+                                onClick={setSelectedCVEFalsePositivesToBeCancelled}
                             >
-                                Cancel deferral ({numSelected})
+                                Reobserve CVE ({numSelected})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -132,21 +133,20 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                         />
                         <Th>CVE</Th>
                         <Th>Severity</Th>
+                        <Th>CVSS score</Th>
                         <Th>Affected Components</Th>
-                        <Th>Comments</Th>
-                        <Th>Expiration</Th>
                         <Th>Apply to</Th>
-                        <Th>Approver</Th>
+                        <Th>Comments</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
                     {rows.map((row, rowIndex) => {
                         const actions = [
                             {
-                                title: 'Cancel deferral',
+                                title: 'Reobserve CVE',
                                 onClick: (event) => {
                                     event.preventDefault();
-                                    setCVEDeferralsToBeCancelled([row.id]);
+                                    setFalsePositiveCVEsToBeReobserved([row.id]);
                                 },
                             },
                         ];
@@ -164,18 +164,19 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                                 <Td dataLabel="Severity">
                                     <VulnerabilitySeverityLabel severity={row.severity} />
                                 </Td>
+                                <Td dataLabel="CVSS score">
+                                    <CVSSScoreLabel cvss={row.cvssScore} />
+                                </Td>
                                 <Td dataLabel="Affected components">
                                     <AffectedComponentsButton components={row.components} />
                                 </Td>
+                                <Td dataLabel="Apply to">{row.applyTo}</Td>
                                 <Td dataLabel="Comments">
                                     <VulnerabilityCommentsButton
                                         cve={row.cve}
                                         comments={row.comments}
                                     />
                                 </Td>
-                                <Td dataLabel="Expiration">{row.expiresAt}</Td>
-                                <Td dataLabel="Apply to">{row.applyTo}</Td>
-                                <Td dataLabel="Approver">{row.approver}</Td>
                                 <Td
                                     className="pf-u-text-align-right"
                                     actions={{
@@ -187,14 +188,14 @@ function DeferredCVEsTable({ rows }: DeferredCVEsTableProps): ReactElement {
                     })}
                 </Tbody>
             </TableComposable>
-            <CancelDeferralModal
-                isOpen={cveDeferralsToBeCancelled.length !== 0}
-                onSendRequest={requestCancelDeferral}
-                onCompleteRequest={completeCancelDeferral}
-                onCancel={cancelCancellation}
+            <ReobserveCVEModal
+                isOpen={falsePositiveCVEsToBeReobserved.length !== 0}
+                onSendRequest={requestReobserveCVE}
+                onCompleteRequest={completeReobserveCVE}
+                onCancel={cancelReobserveCVE}
             />
         </>
     );
 }
 
-export default DeferredCVEsTable;
+export default FalsePositiveCVEsTable;

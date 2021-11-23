@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
 import { Card, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
@@ -17,15 +17,15 @@ import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
+import useTabs from 'hooks/patternfly/useTabs';
 
+import DeferredCVEs from 'Containers/VulnMgmt/RiskAcceptance/DeferredCVEs';
+import ObservedCVEs from 'Containers/VulnMgmt/RiskAcceptance/ObservedCVEs';
+import FalsePositiveCVEs from 'Containers/VulnMgmt/RiskAcceptance/FalsePositiveCVEs';
 import ScanDataMessage from './ScanDataMessage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
-
-import ObservedCVEs from './ObservedCVEs';
-import DeferredCVEs from './DeferredCVEs';
-import FalsePositiveCVEs from './FalsePositiveCVEs';
 
 const emptyImage = {
     deploymentCount: 0,
@@ -43,16 +43,13 @@ const emptyImage = {
 };
 
 const VulnMgmtImageOverview = ({ data, entityContext }) => {
-    const [activeKeyTab, setActiveKeyTab] = useState('OBSERVED_CVES');
+    const { activeKeyTab, onSelectTab } = useTabs({
+        defaultTab: 'OBSERVED_CVES',
+    });
     const workflowState = useContext(workflowStateContext);
     const isVulnRiskManagementEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
     );
-
-    function onSelectTab(event, eventKey) {
-        event.preventDefault(); // without this, the page refreshes with empty query string :(
-        setActiveKeyTab(eventKey);
-    }
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };

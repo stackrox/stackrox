@@ -14,7 +14,7 @@ export type DeferralFormValues = {
     comment: string;
 };
 
-export type DeferralRequestModalProps = {
+export type DeferralFormModalProps = {
     isOpen: boolean;
     numCVEsToBeAssessed: number;
     onSendRequest: (values: DeferralFormValues) => Promise<FormResponseMessage>;
@@ -49,13 +49,13 @@ const validationSchema = yup.object().shape({
     comment: yup.string().trim().required('A deferral rationale is required'),
 });
 
-function DeferralRequestModal({
+function DeferralFormModal({
     isOpen,
     numCVEsToBeAssessed,
     onSendRequest,
     onCompleteRequest,
     onCancelDeferral,
-}: DeferralRequestModalProps): ReactElement {
+}: DeferralFormModalProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
     const formik = useFormik<DeferralFormValues>({
         initialValues: {
@@ -237,4 +237,4 @@ function DeferralRequestModal({
     );
 }
 
-export default DeferralRequestModal;
+export default DeferralFormModal;

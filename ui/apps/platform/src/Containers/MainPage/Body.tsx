@@ -22,6 +22,7 @@ import {
     vulnManagementPath,
     vulnManagementReportsPath,
     configManagementPath,
+    vulnManagementRiskAcceptancePath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -58,6 +59,9 @@ const AsyncConfigManagementPage = asyncComponent(() => import('Containers/Config
 const AsyncVulnMgmtReports = asyncComponent(
     () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
 );
+const AsyncVulnMgmtRiskAcceptancePage = asyncComponent(
+    () => import('Containers/VulnMgmt/RiskAcceptance/RiskAcceptancePage')
+);
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
 const AsyncSystemHealthPagePF = asyncComponent(
@@ -73,6 +77,9 @@ function Body(): ReactElement {
         knownBackendFlags.ROX_POLICIES_PATTERNFLY
     );
     const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
+    const isVulnRiskAcceptanceEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
+    );
     return (
         <div
             className={`flex flex-col h-full w-full relative overflow-auto ${
@@ -104,6 +111,11 @@ function Body(): ReactElement {
                         path={vulnManagementReportsPath}
                         component={AsyncVulnMgmtReports}
                         featureFlagEnabled={isVulnReportingEnabled}
+                    />
+                    <ProtectedRoute
+                        path={vulnManagementRiskAcceptancePath}
+                        component={AsyncVulnMgmtRiskAcceptancePage}
+                        featureFlagEnabled={isVulnRiskAcceptanceEnabled}
                     />
                     <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <ProtectedRoute

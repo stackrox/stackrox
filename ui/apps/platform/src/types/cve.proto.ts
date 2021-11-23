@@ -3,3 +3,5 @@ export type VulnerabilitySeverity =
     | 'MODERATE_VULNERABILITY_SEVERITY'
     | 'IMPORTANT_VULNERABILITY_SEVERITY'
     | 'CRITICAL_VULNERABILITY_SEVERITY';
+
+export type VulnerabilityState = 'OBSERVED' | 'DEFERRED' | 'FALSE_POSITIVE';
