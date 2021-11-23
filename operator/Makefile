@@ -346,7 +346,9 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 		--first-version 3.62.0 `# 3.62.0 is the first operator version ever released` \
 		--operator-image $(IMG) \
 		--no-related-images \
-		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+	| sed 's,replaces: rhacs-operator.v3.66.0,replaces: rhacs-operator.v3.66.1,' > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+# TODO(ROX-8618): make the above sed on `replaces:` line generic (quick hack to address ROX-8630)
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 
