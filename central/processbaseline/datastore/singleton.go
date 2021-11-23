@@ -26,7 +26,7 @@ var (
 func initialize() {
 	var storage store.Store
 	if features.PostgresPOC.Enabled() {
-		storage = postgres.New(globaldb.GetPostgresDB())
+		storage = postgres.NewCachedStore(globaldb.GetPostgresDB())
 	} else {
 		var err error
 		storage, err = rocksdb.New(globaldb.GetRocksDB())
