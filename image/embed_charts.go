@@ -23,18 +23,29 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-//go:embed templates/* assets/* templates/helm/stackrox-central/* templates/helm/stackrox-central/templates/* templates/helm/stackrox-secured-cluster/templates/* templates/helm/stackrox-secured-cluster/*
+//go:embed templates/* assets/* templates/helm/stackrox-central/* templates/helm/stackrox-central/templates/* templates/helm/stackrox-secured-cluster/templates/* templates/helm/stackrox-secured-cluster/* templates/helm/shared/* templates/helm/shared/templates/*
 
 // AssetFS holds the helm charts
 var AssetFS embed.FS
+
+// ChartPrefix defines a chart's prefix pointing to the chart in the embedded filesystem.
+type ChartPrefix string
+
+// Path returns the string representation of the prefix path
+func (c ChartPrefix) Path() string {
+	return string(c)
+}
 
 const (
 	templatePath = "templates"
 
 	// CentralServicesChartPrefix points to the new stackrox-central-services Helm Chart.
-	CentralServicesChartPrefix = "templates/helm/stackrox-central"
+	CentralServicesChartPrefix ChartPrefix = "templates/helm/stackrox-central"
 	// SecuredClusterServicesChartPrefix points to the new stackrox-secured-cluster-services Helm Chart.
-	SecuredClusterServicesChartPrefix = "templates/helm/stackrox-secured-cluster"
+	SecuredClusterServicesChartPrefix ChartPrefix = "templates/helm/stackrox-secured-cluster"
+
+	// sharedFilesPrefix points to the path to the files shared between all charts
+	sharedFilesPrefix = "templates/helm/shared"
 )
 
 // These are the go based files from embedded chart filesystem
@@ -95,14 +106,15 @@ func (i *Image) ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (
 	return tpl.Parse(contents)
 }
 
-func (i *Image) getChartTemplate(prefix string) (*helmTemplate.ChartTemplate, error) {
-	chartTplFiles, err := i.GetFiles(prefix)
+func (i *Image) getChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.ChartTemplate, error) {
+	chartTplFiles, err := i.getChartFiles(chartPrefixPath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystem", prefix)
+		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystem", chartPrefixPath)
 	}
+
 	chartTpl, err := helmTemplate.Load(chartTplFiles)
 	if err != nil {
-		return nil, errors.Wrapf(err, "loading %s helmtpl", prefix)
+		return nil, errors.Wrapf(err, "loading %s helmtpl", chartPrefixPath)
 	}
 
 	return chartTpl, nil
@@ -147,20 +159,21 @@ var (
 
 // LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from an embed.FS, and instantiates
 // it, using default chart values.
-func (i *Image) LoadAndInstantiateChartTemplate(prefix string, metaVals map[string]interface{}) ([]*loader.BufferedFile, error) {
-	chartTplFiles, err := i.GetFiles(prefix)
+func (i *Image) LoadAndInstantiateChartTemplate(chartPrefixPath ChartPrefix, metaVals map[string]interface{}) ([]*loader.BufferedFile, error) {
+	chartTplFiles, err := i.getChartFiles(chartPrefixPath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystems", prefix)
+		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystems", chartPrefixPath)
 	}
+
 	chartTpl, err := helmTemplate.Load(chartTplFiles)
 	if err != nil {
-		return nil, errors.Wrapf(err, "loading %s helmtpl", prefix)
+		return nil, errors.Wrapf(err, "loading %s helmtpl", chartPrefixPath)
 	}
 
 	// Render template files.
 	renderedChartFiles, err := chartTpl.InstantiateRaw(metaVals)
 	if err != nil {
-		return nil, errors.Wrapf(err, "instantiating %s helmtpl", prefix)
+		return nil, errors.Wrapf(err, "instantiating %s helmtpl", chartPrefixPath)
 	}
 
 	// Apply .helmignore filtering rules, to be on the safe side (but keep .helmignore).
@@ -172,11 +185,34 @@ func (i *Image) LoadAndInstantiateChartTemplate(prefix string, metaVals map[stri
 	return renderedChartFiles, nil
 }
 
-// GetFiles returns all files recursively under a given path.
-func (i *Image) GetFiles(prefix string) ([]*loader.BufferedFile, error) {
-	prefix = strings.TrimSuffix(prefix, "/")
+// getChartFiles returns all files associated with the given chart, including shared files.
+func (i *Image) getChartFiles(prefix ChartPrefix) ([]*loader.BufferedFile, error) {
+	chartFiles, err := i.getFiles(prefix.Path())
+	if err != nil {
+		return nil, err
+	}
+
+	sharedFiles, err := i.getFiles(sharedFilesPrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sharedFile := range sharedFiles {
+		for _, chartFile := range chartFiles {
+			if sharedFile.Name == chartFile.Name {
+				return nil, errors.Errorf("Shared file %q already exists in Chart at %q.", sharedFile.Name, path.Join(prefix.Path(), chartFile.Name))
+			}
+		}
+	}
+
+	return append(chartFiles, sharedFiles...), nil
+}
+
+// getFiles returns all files recursively under a given path.
+func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
+	prefixPath = strings.TrimSuffix(prefixPath, "/")
 	var files []*loader.BufferedFile
-	err := fs.WalkDir(i.fs, prefix, func(p string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(i.fs, prefixPath, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -189,7 +225,7 @@ func (i *Image) GetFiles(prefix string) ([]*loader.BufferedFile, error) {
 			return err
 		}
 
-		newPath := strings.TrimPrefix(p, prefix+"/")
+		newPath := strings.TrimPrefix(p, prefixPath+"/")
 		files = append(files, &loader.BufferedFile{
 			Name: newPath,
 			Data: data,
@@ -204,7 +240,7 @@ func (i *Image) GetFiles(prefix string) ([]*loader.BufferedFile, error) {
 }
 
 // LoadChart loads the given Helm chart template and renders it as a Helm chart
-func (i *Image) LoadChart(chartPrefix string, metaValues charts.MetaValues) (*chart.Chart, error) {
+func (i *Image) LoadChart(chartPrefix ChartPrefix, metaValues charts.MetaValues) (*chart.Chart, error) {
 	renderedChartFiles, err := i.LoadAndInstantiateChartTemplate(chartPrefix, metaValues)
 	if err != nil {
 		return nil, errors.Wrapf(err, "loading and instantiating embedded chart %q failed", chartPrefix)
@@ -219,7 +255,7 @@ func (i *Image) LoadChart(chartPrefix string, metaValues charts.MetaValues) (*ch
 
 // GetSensorChartTemplate loads the Sensor helmtpl meta-template
 func (i *Image) GetSensorChartTemplate() (*helmTemplate.ChartTemplate, error) {
-	chartTplFiles, err := i.GetFiles(SecuredClusterServicesChartPrefix)
+	chartTplFiles, err := i.getChartFiles(SecuredClusterServicesChartPrefix)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sensor chart files from embedded filesystem")
 	}

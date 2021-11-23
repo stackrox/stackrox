@@ -32,7 +32,7 @@ var (
 )
 
 // SetupReconcilerWithManager creates and registers a new helm reconciler to the given controller manager.
-func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix string, translator values.Translator, extraOpts ...reconciler.Option) error {
+func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix image.ChartPrefix, translator values.Translator, extraOpts ...reconciler.Option) error {
 	metaVals := charts.RHACSMetaValues()
 	metaVals["Operator"] = true
 	chart, err := image.GetDefaultImage().LoadChart(chartPrefix, metaVals)

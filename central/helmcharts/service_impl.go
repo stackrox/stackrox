@@ -20,7 +20,7 @@ import (
 var (
 	chartNameRegex = regexp.MustCompile(`^/([^/]+)\.zip$`)
 
-	charts = map[string]string{
+	charts = map[string]image.ChartPrefix{
 		"secured-cluster-services": image.SecuredClusterServicesChartPrefix,
 	}
 )
