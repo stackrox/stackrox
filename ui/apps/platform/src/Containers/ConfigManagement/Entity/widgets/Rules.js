@@ -59,7 +59,7 @@ const Rules = ({ rules, ...rest }) => {
 };
 
 Rules.propTypes = {
-    rules: PropTypes.arrayOf({}),
+    rules: PropTypes.arrayOf(PropTypes.shape({})),
 };
 
 Rules.defaultProps = {

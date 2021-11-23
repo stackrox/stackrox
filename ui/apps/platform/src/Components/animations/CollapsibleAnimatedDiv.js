@@ -33,7 +33,7 @@ CollapsibleAnimatedDiv.propTypes = {
     dataTestId: PropTypes.string,
     defaultOpen: PropTypes.bool,
     isOpen: PropTypes.bool.isRequired,
-    children: PropTypes.element.isRequired,
+    children: PropTypes.node.isRequired,
 };
 
 CollapsibleAnimatedDiv.defaultProps = {
