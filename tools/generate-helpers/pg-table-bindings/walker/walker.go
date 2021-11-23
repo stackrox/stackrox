@@ -12,14 +12,14 @@ import (
 
 type Table struct {
 	Parent       *Table
-	TopLevel 	 bool
+	TopLevel     bool
 	Field        string
 	RawFieldType string
-	Elems    []Element
-	Embedded []*Table
-	Children []*Table
-	OneOf 	bool
-	SearchField string
+	Elems        []Element
+	Embedded     []*Table
+	Children     []*Table
+	OneOf        bool
+	SearchField  string
 }
 
 func (t *Table) Elements() []Element {
@@ -130,13 +130,13 @@ func (p *Table) PrimaryKeyElements() []Element {
 	}
 	parentKeys := p.Parent.PrimaryKeyElements()
 	for i := range parentKeys {
-		parentKeys[i].Field = "parent_"+parentKeys[i].Field
+		parentKeys[i].Field = "parent_" + parentKeys[i].Field
 	}
 
 	parentKeys = append(parentKeys, Element{
-		DataType:     INTEGER,
-		Field:        "idx",
-		Parent:       p,
+		DataType: INTEGER,
+		Field:    "idx",
+		Parent:   p,
 	})
 	return parentKeys
 }
@@ -196,8 +196,8 @@ type Element struct {
 	Field        string
 	RawFieldType string
 	Slice        bool
-	SearchField string
-	Options PostgresOptions
+	SearchField  string
+	Options      PostgresOptions
 }
 
 func (e Element) TableName() string {
@@ -239,7 +239,7 @@ func Walk(obj reflect.Type, table string) *Table {
 	typ := obj.Elem()
 	parent := &Table{
 		RawFieldType: table,
-		TopLevel: true,
+		TopLevel:     true,
 	}
 	walker := SQLWalker{}
 	walker.handleStruct(parent, typ)
@@ -253,8 +253,8 @@ func Walk(obj reflect.Type, table string) *Table {
 }
 
 type PostgresOptions struct {
-	Ignored bool
-	Index   string
+	Ignored    bool
+	Index      string
 	PrimaryKey bool
 }
 
@@ -314,8 +314,8 @@ func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
 			Parent:       parent,
 			Field:        field.Name,
 			RawFieldType: field.Type.String(),
-			SearchField: searchField,
-			Options: opts,
+			SearchField:  searchField,
+			Options:      opts,
 		}
 		switch field.Type.Kind() {
 		case reflect.Ptr:
@@ -338,19 +338,19 @@ func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
 			switch elemType.Kind() {
 			case reflect.String:
 				parent.Elems = append(parent.Elems, Element{
-					Parent:       parent,
-					DataType:     STRING_ARRAY,
-					Field:        field.Name,
-					Slice:        true,
+					Parent:      parent,
+					DataType:    STRING_ARRAY,
+					Field:       field.Name,
+					Slice:       true,
 					SearchField: searchField,
 				})
 				continue
 			case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
 				parent.Elems = append(parent.Elems, Element{
-					Parent:       parent,
-					DataType:     INT_ARRAY,
-					Field:        field.Name,
-					Slice:        true,
+					Parent:      parent,
+					DataType:    INT_ARRAY,
+					Field:       field.Name,
+					Slice:       true,
 					SearchField: searchField,
 				})
 				continue
@@ -360,7 +360,7 @@ func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
 				Parent:       parent,
 				Field:        field.Name,
 				RawFieldType: field.Type.String(),
-				TopLevel: true,
+				TopLevel:     true,
 			}
 			parent.Children = append(parent.Children, table)
 
@@ -431,7 +431,7 @@ func (s *SQLWalker) handleStruct(parent *Table, original reflect.Type) {
 							Parent:       parent,
 							Field:        field.Name,
 							RawFieldType: field.Type.String(),
-							OneOf: true,
+							OneOf:        true,
 						}
 						parent.Embedded = append(parent.Embedded, child)
 						s.handleStruct(child, typ.Elem())

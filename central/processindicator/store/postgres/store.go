@@ -8,16 +8,16 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -257,11 +257,10 @@ func (s *storeImpl) upsert(id string, obj0 *storage.ProcessIndicator) error {
 	}()
 
 	localQuery := "insert into ProcessIndicator(serialized, Id, DeploymentId, ContainerName, PodId, PodUid, ClusterId, Namespace, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) on conflict(Id) do update set serialized = EXCLUDED.serialized, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid"
-_, err = tx.Exec(context.Background(),localQuery, serialized, obj0.GetId(), obj0.GetDeploymentId(), obj0.GetContainerName(), obj0.GetPodId(), obj0.GetPodUid(), obj0.GetClusterId(), obj0.GetNamespace(), obj0.GetSignal().GetContainerId(), obj0.GetSignal().GetName(), obj0.GetSignal().GetArgs(), obj0.GetSignal().GetExecFilePath(), obj0.GetSignal().GetUid())
-if err != nil {
-    return err
-  }
-
+	_, err = tx.Exec(context.Background(),localQuery, serialized, obj0.GetId(), obj0.GetDeploymentId(), obj0.GetContainerName(), obj0.GetPodId(), obj0.GetPodUid(), obj0.GetClusterId(), obj0.GetNamespace(), obj0.GetSignal().GetContainerId(), obj0.GetSignal().GetName(), obj0.GetSignal().GetArgs(), obj0.GetSignal().GetExecFilePath(), obj0.GetSignal().GetUid())
+	if err != nil {
+    	return err
+  	}
 
     doRollback = false
 	return tx.Commit(context.Background())
@@ -284,11 +283,15 @@ func (s *storeImpl) acquireConn(op ops.Op, typ string) (*pgxpool.Conn, func()) {
 
 // UpsertMany batches objects into the DB
 func (s *storeImpl) UpsertMany(objs []*storage.ProcessIndicator) error {
+	log.Infof("Upserting: %d indicators in batch", len(objs))
 	if len(objs) == 0 {
 		return nil
 	}
 
 	batch := &pgx.Batch{}
+	defer func(now time.Time) {
+		log.Infof("Upserting: %d indicators in batch - %d ms", len(objs), time.Since(now).Milliseconds())
+	}(time.Now())
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
 	for _, obj0 := range objs {
 		t := time.Now()

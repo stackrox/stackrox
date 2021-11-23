@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/lib/pq"
-	"github.com/stackrox/rox/generated/storage"
 )
 
 func setup() *pgxpool.Pool {
@@ -29,19 +29,35 @@ func setup() *pgxpool.Pool {
 func TestT(t *testing.T) {
 	pool := setup()
 
-	store := New(pool)
+	// tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource
+	//ids := pgx.Identifier([]string{"processindicator"})
+	//vals, err := pool.CopyFrom(context.Background(), ids, []string{"id", "deploymentid", "serialized"}, pgx.CopyFromRows([][]interface{}{
+	//	{
+	//		"id1",
+	//		"dep1",
+	//		[]byte("{}"),
+	//	},
+	//	{
+	//		"id2",
+	//		"dep2",
+	//		[]byte("{}"),
+	//	},
+	//}))
+	//if err != nil {
+	//	panic(err)
+	//}
 
-	err := store.UpsertMany([]*storage.ProcessIndicator{
-		{
-			Id:        "1",
-			Namespace: "stackrox",
-		},
-		{
-			Id:        "2",
-			Namespace: "stackrox2",
-		},
-	})
+	var values []string
+	var data []interface{}
+	for i := 0; i < 100000; i++ {
+		values = append(values, fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3))
+		data = append(data, fmt.Sprintf("%d", i+1), "dep", []byte("{}"))
+	}
+	line := fmt.Sprintf("insert into processindicator(id, deploymentid, serialized) Values%s", strings.Join(values, ", "))
+	_, err := pool.Exec(context.Background(), line, data...)
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println(err)
 }

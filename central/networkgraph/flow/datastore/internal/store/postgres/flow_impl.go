@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -25,6 +26,8 @@ const (
 
 var (
 	marshaler = &jsonpb.Marshaler{EnumsAsInts: true, EmitDefaults: true}
+
+	log = logging.LoggerForModule()
 )
 
 type flowStoreImpl struct {
@@ -51,6 +54,10 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 	if len(flows) == 0 {
 		return nil
 	}
+
+	defer func(now time.Time) {
+		log.Infof("Upserting: %d flows in batch - %d ms", len(flows), time.Since(now).Milliseconds())
+	}(time.Now())
 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.AddMany, "NetworkFlowProperties")
 	numElems := 3
