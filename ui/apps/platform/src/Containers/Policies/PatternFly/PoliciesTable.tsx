@@ -260,7 +260,7 @@ function PoliciesTable({
                     </Thead>
                     <Tbody>
                         {rows.map((policy) => {
-                            const { disabled, id } = policy;
+                            const { disabled, id, isDefault } = policy;
                             let togglePolicyAction = {} as ActionItem;
                             if (disabled) {
                                 togglePolicyAction = {
@@ -274,12 +274,13 @@ function PoliciesTable({
                                 };
                             }
                             const exportPolicyAction = {
-                                title: 'Export to JSON',
+                                title: 'Export policy to JSON',
                                 onClick: () => exportPoliciesHandler([id]),
                             };
                             const deletePolicyAction = {
-                                title: 'Delete',
+                                title: 'Delete policy',
                                 onClick: () => deletePoliciesHandler([id]),
+                                disabled: isDefault,
                             };
                             const actionItems: ActionItem[] = [
                                 togglePolicyAction,
