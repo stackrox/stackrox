@@ -152,6 +152,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                 layers.length
                             )} across this image`}
                             rows={layers}
+                            entityType={entityTypes.IMAGE}
                             noDataText="No layers available in this image"
                             className="bg-base-100"
                             columns={entityToColumns[entityTypes.IMAGE]}
