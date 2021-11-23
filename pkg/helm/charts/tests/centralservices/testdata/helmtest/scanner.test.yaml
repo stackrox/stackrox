@@ -69,6 +69,6 @@ tests:
   expect: |
     .roles["use-scanner-scc"] | assertThat(. != null)
     .rolebindings["scanner-use-scc"] | assertThat(. != null)
-    .securitycontextcontraints("stackrox-scanner") | assert(. == null)
+    .securitycontextconstraints["stackrox-scanner"] | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 3)
