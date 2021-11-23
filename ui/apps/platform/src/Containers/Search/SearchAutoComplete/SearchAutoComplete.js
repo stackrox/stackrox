@@ -37,7 +37,7 @@ const SearchAutoComplete = ({ categories, query, children }) => {
 SearchAutoComplete.propTypes = {
     categories: PropTypes.arrayOf(PropTypes.string).isRequired,
     query: PropTypes.string,
-    children: PropTypes.node.isRequired,
+    children: PropTypes.func.isRequired,
 };
 
 SearchAutoComplete.defaultProps = {
