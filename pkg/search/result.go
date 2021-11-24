@@ -1,9 +1,58 @@
 package search
 
 import (
+	"fmt"
+	"math"
+	"strconv"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/set"
 )
+
+// GetValueFromField returns a string value from a search result field
+func GetValueFromField(val interface{}) string {
+	switch val := val.(type) {
+	case string:
+		return val
+	case float64:
+		i, f := math.Modf(val)
+		// If it's an int, return just the int portion.
+		if math.Abs(f) < 1e-3 {
+			return fmt.Sprintf("%d", int(i))
+		}
+		return fmt.Sprintf("%.2f", val)
+	case bool:
+		return strconv.FormatBool(val)
+	default:
+		log.Errorf("Unknown type field from index: %T", val)
+	}
+	return ""
+}
+
+// GetValuesFromFields returns the values from the given field as a string slice.
+func GetValuesFromFields(field string, m map[string]interface{}) []string {
+	val, ok := m[field]
+	if !ok {
+		return nil
+	}
+
+	if asSlice, ok := val.([]interface{}); ok {
+		values := make([]string, 0, len(asSlice))
+		for _, v := range asSlice {
+			strVal := GetValueFromField(v)
+			if strVal != "" {
+				values = append(values, strVal)
+			}
+		}
+		return values
+	}
+
+	strVal := GetValueFromField(val)
+	if strVal == "" {
+		return nil
+	}
+	return []string{strVal}
+}
 
 // Result is a wrapper around the search results
 type Result struct {
@@ -11,6 +60,12 @@ type Result struct {
 	Matches map[string][]string
 	Score   float64
 	Fields  map[string]interface{}
+}
+
+// GetValuesFromFieldPath returns a slice of strings from the result fields
+// for the passed field path
+func (r Result) GetValuesFromFieldPath(fieldPath string) []string {
+	return GetValuesFromFields(fieldPath, r.Fields)
 }
 
 // NewResult returns a new search result

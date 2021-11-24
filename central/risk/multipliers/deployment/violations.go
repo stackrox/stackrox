@@ -52,8 +52,8 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 	qb := search.NewQueryBuilder().
 		AddExactMatches(search.DeploymentID, deployment.GetId()).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-		AddStringsHighlighted(search.PolicyName, search.HighlightString).
-		AddStringsHighlighted(search.Severity, search.HighlightString)
+		AddRetrievedField(search.PolicyName).
+		AddRetrievedField(search.Severity)
 
 	results, err := v.getter.Search(ctx, qb.ProtoQuery())
 	if err != nil {
@@ -67,11 +67,7 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 	for _, result := range results {
 		count++
 
-		severityStr, ok := result.Matches[severityField.FieldPath]
-		if !ok {
-			log.Error("UNEXPECTED: could not retrieve severity from alert")
-			continue
-		}
+		severityStr := result.GetValuesFromFieldPath(severityField.FieldPath)
 		if len(severityStr) != 1 {
 			log.Errorf("UNEXPECTED: number of severities (%d) does not equal one", len(severityStr))
 			continue
@@ -84,11 +80,7 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 		}
 		severity := storage.Severity(severityInt)
 
-		policyName, ok := result.Matches[policyNameField.FieldPath]
-		if !ok {
-			log.Error("UNEXPECTED: could not retrieve policy name from alert")
-			continue
-		}
+		policyName := result.GetValuesFromFieldPath(policyNameField.FieldPath)
 		if len(policyName) != 1 {
 			log.Errorf("UNEXPECTED: number of policy names (%d) does not equal one", len(policyName))
 			continue

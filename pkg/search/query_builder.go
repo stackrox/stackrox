@@ -19,8 +19,8 @@ const (
 	// WildcardString represents the string we use for wildcard queries.
 	WildcardString = "*"
 
-	// HighlightString is used for internally highlighting fields\
-	HighlightString = "**"
+	// RetrieveFieldString is used for internally retrieving fields
+	RetrieveFieldString = "**"
 
 	// NullString represents the string we use for querying for the absence of any value in a field.
 	NullString = "-"
@@ -164,6 +164,12 @@ func (qb *QueryBuilder) MarkHighlighted(k FieldLabel) *QueryBuilder {
 // the field as highlighted.
 func (qb *QueryBuilder) AddStringsHighlighted(k FieldLabel, v ...string) *QueryBuilder {
 	return qb.AddStrings(k, v...).MarkHighlighted(k)
+}
+
+// AddRetrievedField will retrieve the field from all of the matches. This is cheaper
+// than using the wildcard query as it simply returns a stored field
+func (qb *QueryBuilder) AddRetrievedField(k FieldLabel) *QueryBuilder {
+	return qb.AddStringsHighlighted(k, RetrieveFieldString)
 }
 
 // AddNullField adds a very for documents that don't contain the specified field.

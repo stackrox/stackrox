@@ -220,7 +220,7 @@ func (l *loopImpl) ReprocessSignatureVerifications() {
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.HighlightString)
+	query := search.NewQueryBuilder().AddRetrievedField(search.ClusterID)
 	if len(deploymentIDs) > 0 {
 		query = query.AddDocIDs(deploymentIDs...)
 	}
@@ -237,7 +237,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 	}
 
 	for _, r := range results {
-		clusterIDs := r.Matches[path.FieldPath]
+		clusterIDs := r.GetValuesFromFieldPath(path.FieldPath)
 		if len(clusterIDs) == 0 {
 			log.Error("no cluster id found in fields")
 			continue
@@ -339,7 +339,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 }
 
 func (l *loopImpl) getActiveImageIDs() ([]string, error) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, search.HighlightString).ProtoQuery()
+	query := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, search.WildcardString).ProtoQuery()
 	results, err := l.images.Search(allAccessCtx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "error searching for active image IDs")
