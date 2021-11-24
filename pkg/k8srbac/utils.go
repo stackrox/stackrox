@@ -97,56 +97,47 @@ var EffectiveAdmin = &storage.PolicyRule{
 // ruleSet.Grants(getAnything) will return true for instance. You do not need to be able to get EVERYTHING, just
 // ANYTHING.
 
-// GetAnything is the permission that if granted means something in the core api can have 'get' called on it.
+// GetAnything is the permission that if granted means something in some api group can have 'get' called on it.
 var GetAnything = &storage.PolicyRule{
-	Verbs:     []string{"get"},
-	ApiGroups: []string{""},
+	Verbs: []string{"get"},
 }
 
-// ListAnything is the permission that if granted means something in the core api can have 'list' called on it.
+// ListAnything is the permission that if granted means something in some api group can have 'list' called on it.
 var ListAnything = &storage.PolicyRule{
-	Verbs:     []string{"list"},
-	ApiGroups: []string{""},
+	Verbs: []string{"list"},
 }
 
-// WatchAnything is the permission that if granted means something in the core api can have 'watch' called on it.
+// WatchAnything is the permission that if granted means something in some api group can have 'watch' called on it.
 var WatchAnything = &storage.PolicyRule{
-	Verbs:     []string{"watch"},
-	ApiGroups: []string{""},
+	Verbs: []string{"watch"},
 }
 
-// CreateAnything is the permission that if granted means something in the core api can have 'create' called on it.
+// CreateAnything is the permission that if granted means something in some api group can have 'create' called on it.
 var CreateAnything = &storage.PolicyRule{
-	Verbs:     []string{"create"},
-	ApiGroups: []string{""},
+	Verbs: []string{"create"},
 }
 
-// BindAnything is the permission that if granted means something in the core api can have 'bind' called on it.
+// BindAnything is the permission that if granted means something in some api group can have 'bind' called on it.
 var BindAnything = &storage.PolicyRule{
-	Verbs:     []string{"bind"},
-	ApiGroups: []string{""},
+	Verbs: []string{"bind"},
 }
 
-// PatchAnything is the permission that if granted means something in the core api can have 'patch' called on it.
+// PatchAnything is the permission that if granted means something in some api group can have 'patch' called on it.
 var PatchAnything = &storage.PolicyRule{
-	Verbs:     []string{"patch"},
-	ApiGroups: []string{""},
+	Verbs: []string{"patch"},
 }
 
-// UpdateAnything is the permission that if granted means something in the core api can have 'update' called on it.
+// UpdateAnything is the permission that if granted means something in some api group can have 'update' called on it.
 var UpdateAnything = &storage.PolicyRule{
-	Verbs:     []string{"update"},
-	ApiGroups: []string{""},
+	Verbs: []string{"update"},
 }
 
-// DeleteAnything is the permission that if granted means something in the core api can have 'delete' called on it.
+// DeleteAnything is the permission that if granted means something in some api group can have 'delete' called on it.
 var DeleteAnything = &storage.PolicyRule{
-	Verbs:     []string{"delete"},
-	ApiGroups: []string{""},
+	Verbs: []string{"delete"},
 }
 
-// DeletecollectionAnything is the permission that if granted means something in the core api can have 'deletecollection' called on it.
+// DeletecollectionAnything is the permission that if granted means something in some api group can have 'deletecollection' called on it.
 var DeletecollectionAnything = &storage.PolicyRule{
-	Verbs:     []string{"deletecollection"},
-	ApiGroups: []string{""},
+	Verbs: []string{"deletecollection"},
 }
