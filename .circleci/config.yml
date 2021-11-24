@@ -3528,7 +3528,9 @@ jobs:
       - teardown-gke
 
   gke-ui-e2e-tests:
-    executor: custom
+    executor:
+      name: custom
+      resource_class: medium+
     environment:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
