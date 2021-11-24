@@ -107,8 +107,6 @@ function PolicyPage({
         });
     }
 
-    console.log(pageAction, policy); // eslint-disable-line no-console
-
     return (
         <PageSection variant="light" isFilled id="policy-page">
             <PageTitle title="Policies - Policy" />

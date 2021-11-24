@@ -1,12 +1,12 @@
 import React, { ReactElement } from 'react';
-import { Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
+import { Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import { Policy } from 'Containers/Violations/PatternFly/types/violationTypes';
 
 import Fields from 'Containers/Policies/Wizard/Details/Fields';
 import ConfigurationFields from 'Containers/Policies/Wizard/Details/ConfigurationFields';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
-import MitreAttackVectors from 'Containers/MitreAttackVectors/PFMitreAttackVectors';
+import MitreAttackVectors from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
 
 type PolicyDetailsProps = {
     policy: Policy;
@@ -29,7 +29,6 @@ function PolicyDetails({ policy }: PolicyDetailsProps): ReactElement {
                 </FlexItem>
                 <FlexItem>
                     <Title headingLevel="h3">MITRE ATT&CK</Title>
-                    <Divider component="div" />
                     <div className="pf-u-mt-md">
                         {!!policy.id && <MitreAttackVectors policyId={policy.id} />}
                     </div>

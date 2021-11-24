@@ -20,7 +20,7 @@ import {
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import MitreAttackVectors from 'Containers/MitreAttackVectors';
+import MitreAttackVectors from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
 import useToasts from 'hooks/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
@@ -230,15 +230,15 @@ function PolicyDetail({
                 </ToolbarContent>
             </Toolbar>
             {requestError}
-            <Title headingLevel="h2" className="pf-u-pb-md">
+            <Title headingLevel="h2" className="pf-u-mb-md">
                 Policy overview
             </Title>
             <PolicyOverview policy={policy} />
-            <Title headingLevel="h2" className="pf-u-py-md">
+            <Title headingLevel="h2" className="pf-u-mt-md">
                 MITRE ATT&amp;CK
             </Title>
             <MitreAttackVectors policyId={id} />
-            <Title headingLevel="h2" className="pf-u-py-md">
+            <Title headingLevel="h2" className="pf-u-mb-md">
                 Policy criteria
             </Title>
             TODO
