@@ -639,15 +639,6 @@ else
 endif
 endif
 
-.PHONY: render-helm-yamls
-sensorChartDir="image/templates/helm/stackrox-secured-cluster"
-collectorVersion=$(shell cat COLLECTOR_VERSION)
-render-helm-yamls: proto-generated-srcs
-	@rm -rf /tmp/$(TAG)
-	@mkdir -p /tmp/$(TAG)
-	@go run -tags "$(subst $(comma),$(space),$(GOTAGS))" $(BASE_DIR)/$(sensorChartDir)/main.go "$(TAG)" "$(collectorVersion)" /tmp/$(TAG)
-	@cp $(BASE_DIR)/deploy/common/docker-auth.sh  /tmp/$(TAG)/scripts/
-
 .PHONY: ossls-audit
 ossls-audit: deps
 	ossls version

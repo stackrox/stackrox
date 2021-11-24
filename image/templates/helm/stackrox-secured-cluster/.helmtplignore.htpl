@@ -27,6 +27,5 @@ internal/cluster-config.yaml.tpl
 [< if .ReleaseBuild >]
 feature-flag-values.yaml
 [< end >]
-main.go
 *.swp
 templates/keep.yaml
