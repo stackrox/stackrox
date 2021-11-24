@@ -3381,7 +3381,7 @@ jobs:
   gke-api-nongroovy-tests:
     executor:
       name: custom
-      resource_class: medium+
+      resource_class: small
     environment:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
