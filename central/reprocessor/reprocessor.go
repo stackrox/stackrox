@@ -225,7 +225,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 		query = query.AddDocIDs(deploymentIDs...)
 	}
 
-	results, err := l.deployments.SearchDeployments(allAccessCtx, query.ProtoQuery())
+	results, err := l.deployments.Search(allAccessCtx, query.ProtoQuery())
 	if err != nil {
 		log.Errorf("error getting results for deployment reprocessing: %v", err)
 		return
@@ -237,7 +237,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 	}
 
 	for _, r := range results {
-		clusterIDs := r.FieldToMatches[path.FieldPath].GetValues()
+		clusterIDs := r.Matches[path.FieldPath]
 		if len(clusterIDs) == 0 {
 			log.Error("no cluster id found in fields")
 			continue
@@ -248,16 +248,16 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 			continue
 		}
 
-		dedupeKey := uuid.NewV5(riskDedupeNamespace, r.Id).String()
+		dedupeKey := uuid.NewV5(riskDedupeNamespace, r.ID).String()
 
 		msg := &central.MsgFromSensor{
-			HashKey:   r.Id,
+			HashKey:   r.ID,
 			DedupeKey: dedupeKey,
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
 					Resource: &central.SensorEvent_ReprocessDeployment{
 						ReprocessDeployment: &central.ReprocessDeploymentRisk{
-							DeploymentId: r.Id,
+							DeploymentId: r.ID,
 						},
 					},
 				},
