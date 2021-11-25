@@ -1,4 +1,4 @@
-[<- if .RenderAsLegacyChart ->]
+[<- if .KubectlOutput ->]
 cluster:
   name: [< default "" .ClusterName >]
   type: [< default "KUBERNETES_CLUSTER" .ClusterType >]

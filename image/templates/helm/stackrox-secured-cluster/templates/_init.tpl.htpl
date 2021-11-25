@@ -154,7 +154,7 @@
     {{ include "srox.fail"  (printf "Failed to change cluster name. Values for confirmNewClusterName '%s' did not match clusterName '%s'." $._rox.confirmNewClusterName $._rox.clusterName) }}
 {{ end }}
 
-[< if not .RenderAsLegacyChart >]
+[< if not .KubectlOutput >]
 {{ if not $.Release.IsUpgrade }}
 {{ if ne $.Release.Name $.Chart.Name }}
   {{ if $._rox.allowNonstandardReleaseName }}
@@ -167,8 +167,8 @@
 
 [< end >]
 
-[</* In legacy mode, the audit logs setting doesn't matter, since dynamic config isn't part of the legacy chart. */>]
-[< if not .RenderAsLegacyChart >]
+[</* In kubectl mode, the audit logs setting doesn't matter, since dynamic config isn't part of the YAML bundle. */>]
+[< if not .KubectlOutput >]
 {{ if and (not $._rox.auditLogs.disableCollection) (ne $._rox.env.openshift 4) }}
   {{ include "srox.fail" "'auditLogs.disableCollection' is set to false, but the chart is not being deployed in OpenShift 4 mode. Set 'env.openshift' to '4' in order to enable OpenShift 4 features." }}
 {{ end }}

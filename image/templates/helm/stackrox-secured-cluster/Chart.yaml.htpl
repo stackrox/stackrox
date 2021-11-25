@@ -1,5 +1,5 @@
 apiVersion: v2 [</* Can probably be generalized to v1 later. TODO(ROX-5502). */>]
-[<- if .RenderAsLegacyChart >]
+[<- if .KubectlOutput >]
 name: sensor
 [<- else >]
 name: stackrox-secured-cluster-services

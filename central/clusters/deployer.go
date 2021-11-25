@@ -104,8 +104,6 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 
 		"Versions": version.GetAllVersions(),
 
-		"RenderAsLegacyChart": true,
-
 		"FeatureFlags": make(map[string]string),
 
 		"AdmissionController":              c.AdmissionController,

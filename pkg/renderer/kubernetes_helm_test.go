@@ -97,7 +97,7 @@ func TestRenderSensorHelm(t *testing.T) {
 					ChartVersion: "1.0.0",
 				},
 
-				"RenderAsLegacyChart": true,
+				"KubectlOutput": true,
 			}
 
 			certs := &sensor.Certs{Files: map[string][]byte{

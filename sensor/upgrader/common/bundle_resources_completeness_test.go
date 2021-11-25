@@ -44,11 +44,10 @@ func TestBundleResourcesComplete(t *testing.T) {
 			MainVersion:      "3.0.49.0",
 			CollectorVersion: "1.2.3",
 		},
-		"MainRegistry":        "stackrox.io", // TODO: custom?
-		"CollectorRegistry":   "collector.stackrox.io",
-		"KubectlOutput":       true,
-		"RenderAsLegacyChart": true,
-		"FeatureFlags":        featureFlags,
+		"MainRegistry":      "stackrox.io", // TODO: custom?
+		"CollectorRegistry": "collector.stackrox.io",
+		"KubectlOutput":     true,
+		"FeatureFlags":      featureFlags,
 	}
 
 	helmImage := image.GetDefaultImage()

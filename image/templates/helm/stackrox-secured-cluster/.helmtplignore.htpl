@@ -1,13 +1,11 @@
-[<- if .RenderAsLegacyChart >]
-scripts/fetch-secrets.sh
-scripts/fetched-secrets-bundle.yaml.tpl
-scripts/fetched-secrets-bundle-ca-only.yaml.tpl
-sensor-chart-upgrade.md
 [<- if .KubectlOutput >]
+templates/cluster-config.yaml
+templates/openshift-monitoring.yaml
+internal/cluster-config.yaml.tpl
+sensor-chart-upgrade.md
 scripts/
 /README.md
 /.helmignore
-[<- end >]
 [<- if .CertsOnly >]
 scripts/
 !/*.yaml
@@ -15,14 +13,6 @@ scripts/
 !templates/_*.tpl
 templates/*
 [<- end >]
-[<- else >]
-scripts/add-cluster.sh
-scripts/setup.sh
-[<- end >]
-[<- if .KubectlOutput >]
-templates/cluster-config.yaml
-templates/openshift-monitoring.yaml
-internal/cluster-config.yaml.tpl
 [<- end >]
 [< if .ReleaseBuild >]
 feature-flag-values.yaml
