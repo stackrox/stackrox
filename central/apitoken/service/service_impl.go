@@ -117,9 +117,9 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 // 	* principal has role with unrestricted scope and superset of requested permissions
 // 	* all requested roles are assigned to principal
 func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.ResolvedRole) error {
-	requestedPS := utils.NewUnionPermissions(requestedRoles)
+	requestedPermissions := utils.NewUnionPermissions(requestedRoles)
 	for _, userRole := range userRoles {
-		if userRole.GetAccessScope() == nil && containsPermissions(requestedPS, userRole.GetPermissions()) {
+		if userRole.GetAccessScope() == nil && containsPermissions(requestedPermissions, userRole.GetPermissions()) {
 			return nil
 		}
 	}
@@ -142,11 +142,8 @@ func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.Resolve
 
 func containsPermissions(requiredPerms, userRolePerms map[string]storage.Access) bool {
 	for requiredPerm, access := range requiredPerms {
-		if userAccess, ok := userRolePerms[requiredPerm]; ok {
-			if userAccess < access {
-				return false
-			}
-		} else {
+		userAccess, ok := userRolePerms[requiredPerm]
+		if (ok && userAccess < access) || !ok {
 			return false
 		}
 	}
