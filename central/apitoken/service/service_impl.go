@@ -7,7 +7,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/backend"
-	rolePkg "github.com/stackrox/rox/central/role"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -98,7 +97,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	}
 
 	id := authn.IdentityFromContext(ctx)
-	if err = verifyNoPrivilegeEscalation(utils.RoleNames(id.Roles()), req.GetRoles()); err != nil {
+	if err = verifyNoPrivilegeEscalation(id.Roles(), roles); err != nil {
 		return nil, err
 	}
 
@@ -115,26 +114,43 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 
 // This function ensures that no APIToken with permissions more than principal has can be created.
 // The only two acceptable cases are:
-// 	* principal has "Admin" role
+// 	* principal has role with unrestricted scope and superset of requested permissions
 // 	* all requested roles are assigned to principal
-func verifyNoPrivilegeEscalation(userRoles, requestedRoles []string) error {
+func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.ResolvedRole) error {
+	requestedPS := utils.NewUnionPermissions(requestedRoles)
+	for _, userRole := range userRoles {
+		if userRole.GetAccessScope() == nil && containsPermissions(requestedPS, userRole.GetPermissions()) {
+			return nil
+		}
+	}
+
 	userRoleNames := make(map[string]struct{}, len(userRoles))
 	for _, userRole := range userRoles {
-		userRoleNames[userRole] = struct{}{}
-	}
-	if _, ok := userRoleNames[rolePkg.Admin]; ok {
-		return nil
+		userRoleNames[userRole.GetRoleName()] = struct{}{}
 	}
 	for _, requestedRole := range requestedRoles {
-		if _, ok := userRoleNames[requestedRole]; !ok {
+		if _, ok := userRoleNames[requestedRole.GetRoleName()]; !ok {
 			return errors.Wrapf(errorhelpers.ErrNotAuthorized,
 				"requested API token roles: %s, but principal only has next roles: %s",
-				strings.Join(requestedRoles, ", "),
-				strings.Join(userRoles, ", "),
+				strings.Join(utils.RoleNames(requestedRoles), ", "),
+				strings.Join(utils.RoleNames(userRoles), ", "),
 			)
 		}
 	}
 	return nil
+}
+
+func containsPermissions(requiredPerms, userRolePerms map[string]storage.Access) bool {
+	for requiredPerm, access := range requiredPerms {
+		if userAccess, ok := userRolePerms[requiredPerm]; ok {
+			if userAccess < access {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
