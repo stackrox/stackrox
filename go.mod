@@ -147,7 +147,7 @@ replace (
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5
-	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20210706005254-7857f66cf95e
+	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20210927052144-bbfc3e124f11
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 
 	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
