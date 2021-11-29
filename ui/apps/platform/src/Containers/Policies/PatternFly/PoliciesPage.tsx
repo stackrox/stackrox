@@ -62,6 +62,7 @@ function PoliciesPage() {
 
     return (
         <PoliciesTablePage
+            hasWriteAccessForPolicy={hasWriteAccessForPolicy}
             handleChangeSearchFilter={handleChangeSearchFilter}
             searchFilter={searchFilter}
         />

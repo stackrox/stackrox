@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    Flex,
-    FlexItem,
+    Button,
     Divider,
+    Dropdown,
+    DropdownItem,
+    DropdownSeparator,
+    DropdownToggle,
+    Flex,
     PageSection,
     Title,
-    Badge,
-    Button,
-    Select,
-    SelectOption,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import { CheckCircleIcon } from '@patternfly/react-icons';
+import { CaretDownIcon, CheckCircleIcon } from '@patternfly/react-icons';
 import orderBy from 'lodash/orderBy';
 
 import { ListPolicy } from 'types/policy.proto';
@@ -92,6 +95,7 @@ const columns = [
 
 type PoliciesTableProps = {
     policies?: ListPolicy[];
+    hasWriteAccessForPolicy: boolean;
     deletePoliciesHandler: (ids) => void;
     exportPoliciesHandler: (ids, onClearAll?) => void;
     enablePoliciesHandler: (ids) => void;
@@ -101,6 +105,7 @@ type PoliciesTableProps = {
 
 function PoliciesTable({
     policies = [],
+    hasWriteAccessForPolicy,
     deletePoliciesHandler,
     exportPoliciesHandler,
     enablePoliciesHandler,
@@ -112,7 +117,7 @@ function PoliciesTable({
     // sort direction of the currently active column
     const [activeSortDirection, setActiveSortDirection] = useState<SortDirection>('asc');
     // Handle Bulk Actions dropdown state.
-    const [isSelectOpen, setIsSelectOpen] = useState(false);
+    const [isActionsOpen, setIsActionsOpen] = useState(false);
     // For sorting data client side
     const [rows, setRows] = useState<ListPolicy[]>([]);
 
@@ -134,12 +139,12 @@ function PoliciesTable({
         getSelectedIds,
     } = useTableSelection(policies);
 
-    function onToggleSelect(toggleOpen) {
-        setIsSelectOpen(toggleOpen);
+    function onToggleActions(toggleOpen) {
+        setIsActionsOpen(toggleOpen);
     }
 
-    function closeSelect() {
-        setIsSelectOpen(false);
+    function onSelectActions() {
+        setIsActionsOpen(false);
     }
 
     function onSort(e, index, direction) {
@@ -148,15 +153,18 @@ function PoliciesTable({
     }
 
     const selectedIds = getSelectedIds();
-    const numSelected = selectedIds.length;
     const selectedPolicies = policies.filter(({ id }) => selectedIds.includes(id));
     let numEnabled = 0;
     let numDisabled = 0;
-    selectedPolicies.forEach(({ disabled }) => {
+    let numDeletable = 0;
+    selectedPolicies.forEach(({ disabled, isDefault }) => {
         if (disabled) {
             numDisabled += 1;
         } else {
             numEnabled += 1;
+        }
+        if (!isDefault) {
+            numDeletable += 1;
         }
     });
 
@@ -175,58 +183,75 @@ function PoliciesTable({
         setRows(sortedPolicies);
     }, [policies, activeSortIndex, activeSortDirection]);
 
+    // TODO: https://stack-rox.atlassian.net/browse/ROX-8613
+    // isDisabled={!hasSelections}
+    // dropdownItems={hasWriteAccessForPolicy ? [Enable, Disable, Export, Delete] : [Export]} see PolicyDetail.tsx
     return (
         <>
-            <Flex
-                className="pf-u-p-md"
-                alignSelf={{ default: 'alignSelfCenter' }}
-                fullWidth={{ default: 'fullWidth' }}
-            >
-                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
-                        Policies
-                    </Title>
-                </FlexItem>
-                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Badge isRead>{policies.length}</Badge>
-                </FlexItem>
-                <Divider component="div" isVertical />
-                <FlexItem>{pageActionButtons}</FlexItem>
-                <Divider component="div" isVertical />
-                <FlexItem data-testid="policies-bulk-actions-dropdown">
-                    <Select
-                        onToggle={onToggleSelect}
-                        isOpen={isSelectOpen}
-                        placeholderText="Bulk Actions"
-                        onSelect={closeSelect}
-                        isDisabled={!hasSelections}
-                    >
-                        <SelectOption
-                            key="0"
-                            value={`Enable policies (${numDisabled})`}
-                            onClick={() => enablePoliciesHandler(selectedIds)}
-                            data-testid="bulk-add-tags-btn"
+            <Toolbar inset={{ default: 'insetNone' }}>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
+                            Policies
+                        </Title>
+                    </ToolbarItem>
+                    <ToolbarItem>{pageActionButtons}</ToolbarItem>
+                    <ToolbarItem>
+                        <Dropdown
+                            data-testid="policies-bulk-actions-dropdown"
+                            onSelect={onSelectActions}
+                            toggle={
+                                <DropdownToggle
+                                    isDisabled={!hasWriteAccessForPolicy || !hasSelections}
+                                    isPrimary
+                                    onToggle={onToggleActions}
+                                    toggleIndicator={CaretDownIcon}
+                                >
+                                    Actions
+                                </DropdownToggle>
+                            }
+                            isOpen={isActionsOpen}
+                            dropdownItems={[
+                                <DropdownItem
+                                    key="Enable policies"
+                                    component="button"
+                                    isDisabled={numDisabled === 0}
+                                    onClick={() => enablePoliciesHandler(selectedIds)}
+                                >
+                                    {`Enable policies (${numDisabled})`}
+                                </DropdownItem>,
+                                <DropdownItem
+                                    key="Disable policies"
+                                    component="button"
+                                    isDisabled={numEnabled === 0}
+                                    onClick={() => disablePoliciesHandler(selectedIds)}
+                                >
+                                    {`Disable policies (${numEnabled})`}
+                                </DropdownItem>,
+                                // TODO: https://stack-rox.atlassian.net/browse/ROX-8613
+                                // Export policies to JSON
+                                // onClick={() => exportPoliciesHandler(selectedIds, onClearAll)}
+                                // {`Export policies to JSON (${numSelected})`}
+                                <DropdownSeparator key="Separator" />,
+                                <DropdownItem
+                                    key="Delete policy"
+                                    component="button"
+                                    isDisabled={numDeletable === 0}
+                                    onClick={() =>
+                                        deletePoliciesHandler(
+                                            selectedPolicies
+                                                .filter(({ isDefault }) => !isDefault)
+                                                .map(({ id }) => id)
+                                        )
+                                    }
+                                >
+                                    {`Delete policies (${numDeletable})`}
+                                </DropdownItem>,
+                            ]}
                         />
-                        <SelectOption
-                            key="0"
-                            value={`Disable policies (${numEnabled})`}
-                            onClick={() => disablePoliciesHandler(selectedIds)}
-                            data-testid="bulk-add-tags-btn"
-                        />
-                        {/* TODO: will be re-added in https://stack-rox.atlassian.net/browse/ROX-8613
-                        <SelectOption
-                            key="1"
-                            value={`Export to JSON (${numSelected})`}
-                            onClick={() => exportPoliciesHandler(selectedIds, onClearAll)}
-                        /> */}
-                        <SelectOption
-                            key="2"
-                            value={`Delete (${numSelected})`}
-                            onClick={() => deletePoliciesHandler(selectedIds)}
-                        />
-                    </Select>
-                </FlexItem>
-            </Flex>
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
             <Divider component="div" />
             <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
                 <TableComposable>

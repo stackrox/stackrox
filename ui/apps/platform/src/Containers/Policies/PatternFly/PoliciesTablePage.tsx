@@ -32,11 +32,13 @@ import PoliciesTablePageActionButtons from './PoliciesTablePageActionButtons';
 const searchCategory = 'POLICIES';
 
 type PoliciesTablePageProps = {
+    hasWriteAccessForPolicy: boolean;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
     searchFilter?: SearchFilter;
 };
 
 function PoliciesTablePage({
+    hasWriteAccessForPolicy,
     handleChangeSearchFilter,
     searchFilter,
 }: PoliciesTablePageProps): React.ReactElement {
@@ -165,6 +167,7 @@ function PoliciesTablePage({
             ) : (
                 <PoliciesTable
                     policies={policies}
+                    hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                     deletePoliciesHandler={deletePoliciesHandler}
                     exportPoliciesHandler={exportPoliciesHandler}
                     enablePoliciesHandler={enablePoliciesHandler}
