@@ -36,11 +36,9 @@ func DefaultMetaValues() MetaValues {
 		"Operator": false,
 	}
 
-	featureFlagVals := make(map[string]interface{})
-	for _, feature := range features.Flags {
-		featureFlagVals[feature.EnvVar()] = feature.Enabled()
+	if !buildinfo.ReleaseBuild {
+		metaValues["FeatureFlags"] = getFeatureFlags()
 	}
-	metaValues["FeatureFlags"] = featureFlagVals
 
 	return metaValues
 }
@@ -65,13 +63,16 @@ func RHACSMetaValues() MetaValues {
 		// TODO(ROX-7740): Temporarily use images from quay until our private registries are up again
 		metaValues["MainRegistry"] = mainRegistryOverride.Setting()
 		metaValues["CollectorRegistry"] = collectorRegistryOverride.Setting()
+		metaValues["FeatureFlags"] = getFeatureFlags()
 	}
 
+	return metaValues
+}
+
+func getFeatureFlags() map[string]interface{} {
 	featureFlagVals := make(map[string]interface{})
 	for _, feature := range features.Flags {
 		featureFlagVals[feature.EnvVar()] = feature.Enabled()
 	}
-	metaValues["FeatureFlags"] = featureFlagVals
-
-	return metaValues
+	return featureFlagVals
 }

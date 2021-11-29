@@ -67,3 +67,18 @@ func (s *embedTestSuite) TestLoadChart() {
 	s.Require().NoError(err)
 	s.Equal("stackrox-secured-cluster-services", chart.Name())
 }
+
+func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
+	metaVals := charts.DefaultMetaValues()
+	delete(metaVals, "FeatureFlags")
+
+	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
+	s.Require().NoError(err)
+	s.NotEmpty(chart.Files)
+
+	for _, f := range chart.Files {
+		if f.Name == "feature-flag-values.yaml" {
+			s.Fail("Found feature-flag-values.yaml in release build but should be ignored.")
+		}
+	}
+}
