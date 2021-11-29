@@ -86,7 +86,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		}
 	}
 
-	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
+	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes(), helmManagedConfig)
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
@@ -192,3 +192,4 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	s.AddAPIServices(apiServices...)
 	return s, nil
 }
+

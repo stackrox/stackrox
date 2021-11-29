@@ -12,6 +12,7 @@ message HelmManagedConfigInit {
   string cluster_id                            = 3;
   bool not_helm_managed                        = 4 [deprecated = true]; // Only taken into account if managed_by is UNKNOWN.
   storage.ManagerType managed_by               = 5;
+  string helm_release_name                     = 6;
 }
 
 message SensorHello {

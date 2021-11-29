@@ -288,6 +288,7 @@ func getProtoSecret(secret *v1.Secret) *storage.Secret {
 		Labels:      secret.GetLabels(),
 		Annotations: secret.GetAnnotations(),
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(secret.GetCreationTimestamp().Time),
+		Type: 		 string(secret.Type),
 	}
 }
 

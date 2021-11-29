@@ -2094,6 +2094,10 @@
         },
         "k8sNodeName": {
           "type": "string"
+        },
+        "helmReleaseRevision": {
+          "type": "string",
+          "format": "uint64"
         }
       },
       "description": "StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine\nwhether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network\npartition), or from a deployment in a different namespace or cluster."
