@@ -19,3 +19,6 @@ feature-flag-values.yaml
 [< end >]
 *.swp
 templates/keep.yaml
+[< if not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
+templates/*scanner*
+[< end >]
