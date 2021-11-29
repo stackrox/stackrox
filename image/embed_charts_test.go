@@ -1,12 +1,15 @@
 package image
 
 import (
+	"fmt"
 	"io/fs"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -91,4 +94,23 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 			s.Fail("Found feature-flag-values.yaml in release build but should be ignored.")
 		}
 	}
+}
+
+func (s *embedTestSuite) TestLoadSecuredCluster_DisabledFeatureFlagShouldDisableScanner() {
+	s.envIsolator.Setenv(features.LocalImageScanning.Name(), "false")
+
+	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, charts.DefaultMetaValues())
+	s.Require().NoError(err)
+	s.Equal("stackrox-secured-cluster-services", chart.Name())
+	s.NotEmpty(chart.Templates)
+
+	var foundScannerTpls []string
+	for _, tpl := range chart.Templates {
+		fmt.Println(tpl.Name)
+		if strings.Contains(tpl.Name, "scanner") {
+			foundScannerTpls = append(foundScannerTpls, tpl.Name)
+		}
+	}
+
+	s.Empty(foundScannerTpls, "Found scanner manifests but feature flag %q is disabled", features.LocalImageScanning.Name())
 }
