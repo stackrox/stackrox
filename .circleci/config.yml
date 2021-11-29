@@ -2076,10 +2076,9 @@ commands:
     steps:
       - checkout
       - check-to-run:
-          run-on-master: false  # don't run by default, only with changed go files
+          run-on-master: true
           run-on-tags: true
-          # tests in pkg/helm/charts/tests evaluate files in image/templates/helm
-          changed-path: '(^go\.(mod|sum)|\.(go|proto)$|/testdata/|^image/templates/helm/)'
+          changed-path-ignore: "^ui/"
       - *restoreGoModCache
       - setup-go-build-env
       - *restoreGoBuildCache
