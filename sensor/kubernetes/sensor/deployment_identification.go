@@ -5,8 +5,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
-	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -14,10 +12,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"gopkg.in/square/go-jose.v2/jwt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -28,11 +26,6 @@ const (
 	serviceAccountIDClaimKey = `kubernetes.io/serviceaccount/service-account.uid`
 
 	fetchClusterIdentificationTimeout = 10 * time.Second
-
-	// SecretTypeHelmReleaseV1 is where Helm stores the metadata for each
-	// release starting with Helm 3.
-	// See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
-	secretTypeHelmReleaseV1 corev1.SecretType = "helm.sh/release.v1"
 )
 
 // populateFromServiceAccountTokenFile populates the information stored in out from the JWT token stored in the file
@@ -109,25 +102,29 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 	}
 
 	if helmManagedConfig != nil {
-		listOpts := metav1.ListOptions{FieldSelector: fmt.Sprintf("type=%s", secretTypeHelmReleaseV1)}
-		secrets, err := k8sClient.CoreV1().Secrets(appNS).List(ctx, listOpts)
-		if err != nil {
-			errResult = multierror.Append(errResult, errors.Wrap(err, "failed to look up Helm release revision"))
-		} else {
-			var helmReleaseRevision uint64 = 0
-			for _, secret := range secrets.Items {
-				rev, err := extractHelmRevisionFromHelmSecret(helmManagedConfig.HelmReleaseName, secret)
-				if err != nil {
-					break
-				}
-				if rev > helmReleaseRevision {
-					helmReleaseRevision = rev
-				}
-			}
+		var helmReleaseRevision uint64
+		for secretType, _ := range resources.GetHelmSecretTypes() {
+			listOpts := metav1.ListOptions{FieldSelector: fmt.Sprintf("type=%s", secretType)}
+			secrets, err := k8sClient.CoreV1().Secrets(appNS).List(ctx, listOpts)
 			if err != nil {
 				errResult = multierror.Append(errResult, errors.Wrap(err, "failed to look up Helm release revision"))
+				break
 			} else {
-				out.HelmReleaseRevision = helmReleaseRevision
+				for _, secret := range secrets.Items {
+					rev, err := resources.ExtractHelmRevisionFromHelmSecret(helmManagedConfig.HelmReleaseName, &secret)
+					if err != nil {
+						break
+					}
+					if rev > helmReleaseRevision {
+						helmReleaseRevision = rev
+					}
+				}
+				if err != nil {
+					errResult = multierror.Append(errResult, errors.Wrap(err, "failed to look up Helm release revision"))
+					break
+				} else {
+					out.HelmReleaseRevision = helmReleaseRevision
+				}
 			}
 		}
 	}
@@ -135,26 +132,6 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 	return errResult
 }
 
-// Extracts the Helm release revision number from the secret where Helm stores
-// the release metadata starting with Helm 3.
-// Assuming the following naming conventions:
-// - For secretTypeHelmReleaseV1: "sh.helm.release.v1.RELEASE_NAME.vREVISION"
-// See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
-func extractHelmRevisionFromHelmSecret(helmReleaseName string, secret corev1.Secret) (uint64, error) {
-	if secret.Type == secretTypeHelmReleaseV1 {
-		secretName := secret.Name
-		splitSecretName := strings.Split(secretName, ".")
-		if len(splitSecretName) != 6 || splitSecretName[4] != helmReleaseName {
-			return 0, errors.Errorf("unexpected format for Helm release revision %s", secretName)
-		}
-		rev, err := strconv.Atoi(splitSecretName[5][1:])
-		if err != nil || rev <= 0 {
-			return 0, errors.Errorf("unexpected format for Helm release revision %s", secretName)
-		}
-		return uint64(rev), nil
-	}
-	return 0, errors.Errorf("unexpected type %s for secret with name %s", secret.Type, secret.Name)
-}
 
 // fetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of
 // secret mounts and information from the Kubernetes API server.

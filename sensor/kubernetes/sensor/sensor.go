@@ -105,7 +105,8 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager)
 
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector))
+	listener := listener.New(client, configHandler, policyDetector)
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener)
 
 	upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
 	if err != nil {
@@ -169,6 +170,8 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		centralClient,
 		components...,
 	)
+
+	listener.SetSensor(s)
 
 	if workloadHandler != nil {
 		workloadHandler.SetSignalHandlers(processPipeline, networkFlowManager)

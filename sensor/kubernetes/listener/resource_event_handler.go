@@ -66,7 +66,7 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
-	dispatchers := resources.NewDispatcherRegistry(clusterID, podInformer.Lister(), profileLister, clusterentities.StoreInstance(),
+	dispatchers := resources.NewDispatcherRegistry(k.sensor, clusterID, podInformer.Lister(), profileLister, clusterentities.StoreInstance(),
 		processfilter.Singleton(), k.configHandler, k.detector, orchestratornamespaces.Singleton())
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()

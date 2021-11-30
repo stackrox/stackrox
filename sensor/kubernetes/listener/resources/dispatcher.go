@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/sensor"
 	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -50,7 +51,7 @@ type DispatcherRegistry interface {
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, profileLister cache.GenericLister,
+func NewDispatcherRegistry(sensor *sensor.Sensor, clusterID string, podLister v1Listers.PodLister, profileLister cache.GenericLister,
 	entityStore *clusterentities.Store, processFilter filter.Filter,
 	configHandler config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) DispatcherRegistry {
 	serviceStore := newServiceStore()
@@ -70,7 +71,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
 		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:          newSecretDispatcher(),
+		secretDispatcher:          newSecretDispatcher(sensor, configHandler.GetHelmManagedConfig(), configHandler.GetDeploymentIdentification()),
 		networkPolicyDispatcher:   newNetworkPolicyDispatcher(),
 		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
 		serviceAccountDispatcher:  newServiceAccountDispatcher(),
