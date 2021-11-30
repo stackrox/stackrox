@@ -371,17 +371,26 @@ func GetHelmSecretTypes() map[v1.SecretType]bool {
 // the release metadata starting with Helm 3.
 // Assuming the following naming conventions:
 // - For secretTypeHelmReleaseV1: "sh.helm.release.v1.RELEASE_NAME.vREVISION".
+// Returns
+// - 0, nil if the secret corresponds to a release different to `helmReleaseName`.
+// - 0, err if the secret is not a helm secret (see isHelmSecret), or the secret name doesn't have the expected format.
 // See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
 func ExtractHelmRevisionFromHelmSecret(helmReleaseName string, secret *v1.Secret) (uint64, error) {
 	if secret.Type == secretTypeHelmReleaseV1 {
 		secretName := secret.Name
 		splitSecretName := strings.Split(secretName, ".")
-		if len(splitSecretName) != 6 || splitSecretName[4] != helmReleaseName {
+		if len(splitSecretName) != 6 {
 			return 0, errors.Errorf("unexpected format for Helm release revision %s", secretName)
 		}
+		if splitSecretName[4] != helmReleaseName {
+			return 0, nil
+		}
 		rev, err := strconv.Atoi(splitSecretName[5][1:])
-		if err != nil || rev <= 0 {
-			return 0, errors.Errorf("unexpected format for Helm release revision %s", secretName)
+		if err != nil {
+			return 0, errors.Wrapf(err, "unexpected format for Helm release revision %s, revision is not an int", secretName)
+		}
+		if rev <= 0 {
+			return 0, errors.Errorf("unexpected format for Helm release revision %s, revision is not a positive int", secretName)
 		}
 		return uint64(rev), nil
 	}
