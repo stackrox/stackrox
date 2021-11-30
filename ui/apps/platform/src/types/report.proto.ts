@@ -45,7 +45,7 @@ export type Schedule = {
     interval: Interval;
 };
 
-export type IntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'EVERY_TWO_WEEKS' | 'MONTHLY';
+export type IntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
 export type Interval = WeeklyInterval | DaysOfWeek | DaysOfMonth;
 

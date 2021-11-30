@@ -237,7 +237,6 @@
         "UNSET",
         "DAILY",
         "WEEKLY",
-        "EVERY_TWO_WEEKS",
         "MONTHLY"
       ],
       "default": "UNSET"

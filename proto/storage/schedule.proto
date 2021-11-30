@@ -10,8 +10,7 @@ message Schedule {
         UNSET           = 0;
         DAILY           = 1;
         WEEKLY          = 2;
-        EVERY_TWO_WEEKS = 3;
-        MONTHLY         = 4;
+        MONTHLY         = 3;
     }
 
     message WeeklyInterval {

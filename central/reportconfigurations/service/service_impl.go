@@ -140,7 +140,7 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	case storage.Schedule_UNSET:
 	case storage.Schedule_DAILY:
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must have a valid schedule type")
-	case storage.Schedule_WEEKLY, storage.Schedule_EVERY_TWO_WEEKS:
+	case storage.Schedule_WEEKLY:
 		if schedule.GetDaysOfWeek() == nil {
 			return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify days of week for the schedule")
 		}
