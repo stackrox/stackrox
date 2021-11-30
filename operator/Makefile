@@ -53,6 +53,11 @@ TEST_NAMESPACE ?= stackrox-operator
 # to your manager process.
 ENABLE_WEBHOOKS ?= false
 
+# Set 'development_build' as default ROX_IMAGE_FLAVOR, so that developers can use the Makefile locally.
+# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox_io_release, rhacs_release.
+ROX_IMAGE_FLAVOR ?= development_build
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -252,7 +257,12 @@ docker-build: test ## Build docker image with the operator.
 		`# Verify that the resulting status.sh is actually runnable` \
 		"$${smuggled_status_sh}" ;\
 	)
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build -t ${IMG} --ssh default=${SSH_AUTH_SOCK} -f Dockerfile ..
+	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+		-t ${IMG} \
+		--ssh default=${SSH_AUTH_SOCK} \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		-f Dockerfile \
+		..
 
 ##@ Deployment
 

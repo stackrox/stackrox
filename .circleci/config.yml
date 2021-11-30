@@ -128,6 +128,18 @@ getECRDockerPullPassword: &getECRDockerPullPassword
       cci-export AWS_ECR_DOCKER_PULL_PASSWORD "${PASS}"
       exit 0
 
+setImageFlavor: &setImageFlavor
+  run:
+    name: Set ROX_IMAGE_FLAVOR
+    command: |
+      FLAVOR="development_build"
+      # Use 'stackrox_io_release' flavor on release and RC builds
+      if [[ "${CIRCLE_TAG}" =~ ^[0-9]+(\.[0-9]+)?\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+        FLAVOR="stackrox_io_release"
+      fi
+      echo "Setting image flavor: '$FLAVOR' for CIRCLE_TAG: '$CIRCLE_TAG'"
+      cci-export ROX_IMAGE_FLAVOR "$FLAVOR"
+
 refreshAlpineBaseImage: &refreshAlpineBaseImage
   run:
     name: Refresh base image
@@ -2167,6 +2179,8 @@ jobs:
 
   go-unit-tests-release:
     executor: custom
+    environment:
+      ROX_IMAGE_FLAVOR: stackrox_io_release
     steps:
       - pre-go-unit-tests
       - run:
@@ -2725,6 +2739,7 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
+      - *setImageFlavor
 
       - run:
           name: Generate OSS notice
@@ -2874,6 +2889,7 @@ jobs:
 
       - *restoreGoModCache
       - setup-go-build-env
+      - *setImageFlavor
 
       - run:
           name: Build Operator Bundle image

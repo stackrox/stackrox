@@ -8,6 +8,11 @@ ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
+# Set 'development_build' as default ROX_IMAGE_FLAVOR, so that developers can use the Makefile locally.
+# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox_io_release, rhacs_release.
+ROX_IMAGE_FLAVOR ?= development_build
+
 # Compute the tag of the build image based on the contents of the tracked files in
 # build. This ensures that we build it if and only if necessary, pulling from DockerHub
 # otherwise.
@@ -329,7 +334,7 @@ clean-deps:
 clean-obsolete-protos:
 	@echo "+ $@"
 	$(BASE_DIR)/tools/clean_autogen_protos.py --protos $(BASE_DIR)/proto --generated $(BASE_DIR)/generated
-	
+
 
 
 ###########
@@ -533,8 +538,14 @@ $(CURDIR)/image/rhel/bundle.tar.gz:
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz
-	docker build -t stackrox/main:$(TAG) --file image/rhel/Dockerfile --label version=$(TAG) --label release=$(TAG) image/rhel
-	@echo "Built main image for RHEL with tag: $(TAG)"
+	docker build \
+		-t stackrox/main:$(TAG) \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		--file image/rhel/Dockerfile \
+		--label version=$(TAG) \
+		--label release=$(TAG) \
+		image/rhel
+	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 ifdef CI
 	docker tag stackrox/main:$(TAG) quay.io/$(QUAY_REPO)/main:$(TAG)
