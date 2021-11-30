@@ -2,16 +2,46 @@ import React, { ReactElement } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    Divider,
+    PageSection,
     Text,
     TextContent,
     Title,
-    PageSection,
 } from '@patternfly/react-core';
 
 import { vulnManagementReportsPath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import { ReportConfigurationMappedValues } from 'types/report.proto';
+import VulnMgmtReportForm from './VulnMgmtReportForm';
 
 function VulnMgmtCreateReportPage(): ReactElement {
+    const emptyReportValues: ReportConfigurationMappedValues = {
+        id: '',
+        name: '',
+        description: '',
+        type: 'VULNERABILITY',
+        vulnReportFiltersMappedValues: {
+            fixabilityMappedValues: [],
+            sinceLastReport: false,
+            severities: [],
+        },
+        scopeId: '',
+        notifierConfig: {
+            emailConfig: {
+                notifierId: '',
+                mailingLists: [],
+            },
+        },
+        schedule: {
+            intervalType: 'UNSET',
+            hour: 0,
+            minute: 0,
+            interval: {
+                day: 1,
+            },
+        },
+    };
+
     return (
         <>
             <PageSection variant="light">
@@ -29,9 +59,8 @@ function VulnMgmtCreateReportPage(): ReactElement {
                     </Text>
                 </TextContent>
             </PageSection>
-            <PageSection variant="light" isFilled>
-                new report form goes here
-            </PageSection>
+            <Divider component="div" />
+            <VulnMgmtReportForm initialValues={emptyReportValues} />
         </>
     );
 }

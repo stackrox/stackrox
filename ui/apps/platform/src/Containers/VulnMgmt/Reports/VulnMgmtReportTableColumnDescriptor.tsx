@@ -1,9 +1,9 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import dateFns from 'date-fns';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Button, ButtonVariant, Label } from '@patternfly/react-core';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
+import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
+import { fixabilityLabels, vulnerabilitySeverityLabels } from 'constants/reportConstants';
 import { vulnManagementReportsPath } from 'routePaths';
 
 const VulnMgmtReportTableColumnDescriptor = [
@@ -33,25 +33,36 @@ const VulnMgmtReportTableColumnDescriptor = [
     },
     {
         Header: 'CVE fixability type',
-        accessor: 'filter.fixability',
+        accessor: 'vulnReportFiltersMappedValues.fixabilityMappedValues',
         Cell: ({ value }): ReactElement => {
-            return <span>{value}</span>;
+            const fixabilityStrings = value.map((fixValue) => fixabilityLabels[fixValue] as string);
+            return <span>{fixabilityStrings.join(', ') || 'Issue: Fixabiltiy unset'}</span>;
         },
     },
     {
         Header: 'CVE severities',
-        accessor: 'filter.severities',
+        accessor: 'vulnReportFiltersMappedValues.severities',
         sortField: 'CVE severities',
         Cell: ({ value }): ReactElement => {
-            return <span>{value}</span>;
+            const severityLabels = value.map((fixValue) => (
+                <Label className="pf-u-mr-sm" color="red" isCompact>
+                    {vulnerabilitySeverityLabels[fixValue]}
+                </Label>
+            ));
+            return <>{severityLabels}</>;
         },
     },
     {
         Header: 'Last run',
-        accessor: 'runStatus.lastTimeRun',
+        accessor: 'runStatus',
         sortField: 'Last run',
         Cell: ({ value }): ReactElement => {
-            return <span>{dateFns.format(value, dateTimeFormat)}</span>;
+            const lastRunAttempt = value?.lastTimeRun;
+            return lastRunAttempt ? (
+                <DateTimeFormat time={lastRunAttempt} />
+            ) : (
+                <span>Not run yet</span>
+            );
         },
     },
 ];

@@ -5,13 +5,13 @@ export type ReportConfiguration = {
     name: string;
     description: string;
     type: ReportType;
-    filter: VulnerabilityReportFilters;
+    vulnReportFilters: VulnerabilityReportFilters;
     scopeId: string;
     notifierConfig: {
         emailConfig: EmailNotifierConfiguration;
     };
     schedule: Schedule;
-    runStatus: ReportLastRunStatus;
+    runStatus?: ReportLastRunStatus;
 };
 
 // TODO: COMPLIANCE type is for a future feature, currently a comment in proto file
@@ -63,4 +63,15 @@ export type DaysOfWeek = {
 // Only 1st and 15th of the month allowed for vuln report scheduling (API validations will be done)
 export type DaysOfMonth = {
     days: number[]; // int32
+};
+
+type FixabilityType = 'FIXABLE' | 'NOT_FIXABLE';
+
+export type VulnerabilityReportFiltersMappedValues = Omit<
+    VulnerabilityReportFilters,
+    'fixability'
+> & { fixabilityMappedValues: FixabilityType[] };
+
+export type ReportConfigurationMappedValues = Omit<ReportConfiguration, 'vulnReportFilters'> & {
+    vulnReportFiltersMappedValues: VulnerabilityReportFiltersMappedValues;
 };
