@@ -75,7 +75,7 @@ NetworkBaselinesSearch.propTypes = {
                 entity: PropTypes.shape({
                     id: PropTypes.string.isRequired,
                     type: PropTypes.string.isRequired,
-                    name: PropTypes.bool,
+                    name: PropTypes.string,
                     namespace: PropTypes.string,
                 }),
                 port: PropTypes.string.isRequired,
