@@ -208,8 +208,8 @@ type secretDispatcher struct{
 func newSecretDispatcher(sensor *sensor.Sensor, helmManagedConfig *central.HelmManagedConfigInit, deploymentIdentification *storage.SensorDeploymentIdentification) *secretDispatcher {
 	return &secretDispatcher{
 		sensor: sensor,
-		helmReleaseName: helmManagedConfig.HelmReleaseName,
-		helmReleaseRevision: deploymentIdentification.HelmReleaseRevision,
+		helmReleaseName: helmManagedConfig.GetHelmReleaseName(),
+		helmReleaseRevision: deploymentIdentification.GetHelmReleaseRevision(),
 	}
 }
 
@@ -307,7 +307,7 @@ func getProtoSecret(secret *v1.Secret) *storage.Secret {
 		Labels:      secret.GetLabels(),
 		Annotations: secret.GetAnnotations(),
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(secret.GetCreationTimestamp().Time),
-		Type: 		 string(secret.Type),
+		Type:        string(secret.Type),
 	}
 }
 

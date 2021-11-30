@@ -111,7 +111,7 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 				break
 			} else {
 				for _, secret := range secrets.Items {
-					rev, err := resources.ExtractHelmRevisionFromHelmSecret(helmManagedConfig.HelmReleaseName, &secret)
+					rev, err := resources.ExtractHelmRevisionFromHelmSecret(helmManagedConfig.GetHelmReleaseName(), &secret)
 					if err != nil {
 						break
 					}
