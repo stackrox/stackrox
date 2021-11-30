@@ -811,6 +811,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 		if cluster.GetInitBundleId() == bundleID &&
 			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
+			cluster.GetMostRecentSensorId().GetHelmReleaseRevision() >= hello.GetDeploymentIdentification().GetHelmReleaseRevision() &&
 			cluster.GetManagedBy() == manager {
 			// No change in either of
 			// * fingerprint of the Helm configuration
