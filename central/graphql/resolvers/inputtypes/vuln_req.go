@@ -152,8 +152,9 @@ func (rs *VulnReqScope) AsV1VulnerabilityRequestScope() *storage.VulnerabilityRe
 
 // VulnReqImageScope represents the image scope of a vulnerability request.
 type VulnReqImageScope struct {
-	Name     *string
-	TagRegex *string
+	Registry *string
+	Remote   *string
+	Tag      *string
 }
 
 // AsV1VulnerabilityRequestImageScope converts vulnerability request image scope to proto.
@@ -162,17 +163,23 @@ func (rs *VulnReqImageScope) AsV1VulnerabilityRequestImageScope() *storage.Vulne
 		return nil
 	}
 	return &storage.VulnerabilityRequest_Scope_Image{
-		Name: func() string {
-			if rs.Name == nil {
+		Registry: func() string {
+			if rs.Registry == nil {
 				return ""
 			}
-			return *rs.Name
+			return *rs.Registry
 		}(),
-		TagRegex: func() string {
-			if rs.TagRegex == nil {
+		Remote: func() string {
+			if rs.Remote == nil {
 				return ""
 			}
-			return *rs.TagRegex
+			return *rs.Remote
+		}(),
+		Tag: func() string {
+			if rs.Tag == nil {
+				return ""
+			}
+			return *rs.Tag
 		}(),
 	}
 }
@@ -184,10 +191,10 @@ type VulnReqGlobalScope struct {
 
 // AsV1VulnerabilityRequestGlobalScope converts vulnerability request global scope to proto.
 func (rs *VulnReqGlobalScope) AsV1VulnerabilityRequestGlobalScope() *storage.VulnerabilityRequest_Scope_Global {
-	if rs == nil || rs.Images.Name == nil || rs.Images.TagRegex == nil {
+	if rs == nil || rs.Images == nil {
 		return nil
 	}
-	if *rs.Images.Name != ".*" || *rs.Images.TagRegex != ".*" {
+	if *rs.Images.Registry != ".*" || *rs.Images.Remote != ".*" || *rs.Images.Tag != ".*" {
 		return nil
 	}
 	return &storage.VulnerabilityRequest_Scope_Global{}

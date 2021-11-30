@@ -322,11 +322,13 @@
     "VulnerabilityRequestScopeImage": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string",
-          "description": "Full image name including the registry part but without the tag."
+        "registry": {
+          "type": "string"
         },
-        "tagRegex": {
+        "remote": {
+          "type": "string"
+        },
+        "tag": {
           "type": "string"
         }
       }

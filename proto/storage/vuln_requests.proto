@@ -51,9 +51,9 @@ message VulnerabilityRequest {
     }
     message Scope {
         message Image {
-            // Full image name including the registry part but without the tag.
-            string name      = 1;
-            string tag_regex = 2; // For all tags this would be .*
+            string registry  = 1;
+            string remote    = 2;
+            string tag       = 3;
         }
 
         // For now global scopes out all the images (i.e. .*). The field could be extended in future to support

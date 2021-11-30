@@ -1370,8 +1370,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"images: VulnReqImageScope",
 	}))
 	utils.Must(builder.AddInput("VulnReqImageScope", []string{
-		"name: String",
-		"tagRegex: String",
+		"registry: String",
+		"remote: String",
+		"tag: String",
 	}))
 	utils.Must(builder.AddInput("VulnReqScope", []string{
 		"globalScope: VulnReqGlobalScope",
@@ -1392,8 +1393,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
-		"name: String!",
-		"tagRegex: String!",
+		"registry: String!",
+		"remote: String!",
+		"tag: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilitySeverity(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilityState(0)))
@@ -11769,13 +11771,18 @@ func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Images(values []*storag
 	return output, nil
 }
 
-func (resolver *vulnerabilityRequest_Scope_ImageResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) Registry(ctx context.Context) string {
+	value := resolver.data.GetRegistry()
 	return value
 }
 
-func (resolver *vulnerabilityRequest_Scope_ImageResolver) TagRegex(ctx context.Context) string {
-	value := resolver.data.GetTagRegex()
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) Remote(ctx context.Context) string {
+	value := resolver.data.GetRemote()
+	return value
+}
+
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) Tag(ctx context.Context) string {
+	value := resolver.data.GetTag()
 	return value
 }
 
