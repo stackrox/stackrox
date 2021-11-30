@@ -286,32 +286,32 @@ function PoliciesTable({
                     <Tbody>
                         {rows.map((policy) => {
                             const { disabled, id, isDefault } = policy;
-                            let togglePolicyAction = {} as ActionItem;
-                            if (disabled) {
-                                togglePolicyAction = {
-                                    title: 'Enable policy',
-                                    onClick: () => enablePoliciesHandler([id]),
-                                };
-                            } else {
-                                togglePolicyAction = {
-                                    title: 'Disable policy',
-                                    onClick: () => disablePoliciesHandler([id]),
-                                };
-                            }
-                            const exportPolicyAction = {
+                            const exportPolicyAction: ActionItem = {
                                 title: 'Export policy to JSON',
                                 onClick: () => exportPoliciesHandler([id]),
                             };
-                            const deletePolicyAction = {
-                                title: 'Delete policy',
-                                onClick: () => deletePoliciesHandler([id]),
-                                disabled: isDefault,
-                            };
-                            const actionItems: ActionItem[] = [
-                                togglePolicyAction,
-                                exportPolicyAction,
-                                deletePolicyAction,
-                            ];
+                            const actionItems = hasWriteAccessForPolicy
+                                ? [
+                                      disabled
+                                          ? {
+                                                title: 'Enable policy',
+                                                onClick: () => enablePoliciesHandler([id]),
+                                            }
+                                          : {
+                                                title: 'Disable policy',
+                                                onClick: () => disablePoliciesHandler([id]),
+                                            },
+                                      exportPolicyAction,
+                                      {
+                                          isSeparator: true,
+                                      },
+                                      {
+                                          title: 'Delete policy',
+                                          onClick: () => deletePoliciesHandler([id]),
+                                          disabled: isDefault,
+                                      },
+                                  ]
+                                : [exportPolicyAction];
                             const rowIndex = rowIdToIndex[id];
                             return (
                                 <Tr key={id}>
