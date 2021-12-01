@@ -9,7 +9,8 @@ import {
 import { hasFeatureFlag } from '../../helpers/features';
 import * as api from '../../constants/apiEndpoints';
 
-describe('Images list page and its entity detail page, related entities sub list validations ', () => {
+// TODO(ROX-8674): Enable this test.
+describe.skip('Images list page and its entity detail page, related entities sub list validations ', () => {
     withAuth();
 
     const vulnRiskCveTabsEnabled = hasFeatureFlag('ROX_VULN_RISK_MANAGEMENT');
