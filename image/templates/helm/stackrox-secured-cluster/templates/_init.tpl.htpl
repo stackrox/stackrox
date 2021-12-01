@@ -27,13 +27,6 @@
 {{ $values := deepCopy $.Values }}
 {{ include "srox.applyCompatibilityTranslation" (list $ $values) }}
 
-[<- if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-{{/*
-    #TODO(ROX-8672): Add setup and defaulting logic to secured cluster chart
-    Scanner setup
-  */}}
-[<- end ->]
-
 {{/*
     $rox / ._rox is the dictionary in which _all_ data that is modified by the init logic
     is stored.
@@ -244,6 +237,15 @@
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
+
+
+[<- if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
+{{/*
+   Scanner setup
+  */}}
+{{ include "srox.scannerInit" (list $ $._rox.scanner) }}
+[<- end ->]
+
 
 {{/* ManagedBy related settings */}}
 {{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here

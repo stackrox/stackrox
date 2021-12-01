@@ -1,0 +1,34 @@
+
+scanner:
+  disable: false
+  replicas: 3
+  logLevel: INFO
+
+  autoscaling:
+    disable: false
+    minReplicas: 2
+    maxReplicas: 5
+
+  resources:
+    requests:
+      memory: "1500Mi"
+      cpu: "1000m"
+    limits:
+      memory: "3000Mi"
+      cpu: "2000m"
+
+  image:
+    name: scanner
+    tag: [< .Versions.ScannerVersion >]
+
+  dbResources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "200m"
+      memory: "200Mi"
+
+  dbImage:
+    name: scanner-db
+    tag: [< .Versions.ScannerVersion >]
