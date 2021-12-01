@@ -839,8 +839,7 @@ commands:
           }
           <</ parameters.only-on-release >>
 
-          # For the first patch version in a version family (.0), we strip the last component of the version.
-          expected_content_branch="rhacs-docs-${version%.0}"
+          expected_content_branch="rhacs-docs-${version}"
           actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
           [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
             echo >&2 "Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
