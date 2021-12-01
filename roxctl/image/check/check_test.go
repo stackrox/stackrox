@@ -220,7 +220,11 @@ func (suite *imageCheckTestSuite) createGRPCServerWithDetectionService(alerts []
 
 func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
 	envMock := mocks.NewMockEnvironment(gomock.NewController(suite.T()))
+
 	testIO, _, out, _ := environment.TestIO()
+	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
+
+	envMock.EXPECT().Logger().AnyTimes().Return(logger)
 	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
 	return envMock, out
@@ -235,10 +239,11 @@ func (suite *imageCheckTestSuite) SetupTest() {
 }
 
 type outputFormatTest struct {
-	shouldFail     bool
-	alerts         []*storage.Alert
-	expectedOutput string
-	error          error
+	shouldFail        bool
+	alerts            []*storage.Alert
+	expectedOutput    string
+	expectedErrOutput string
+	error             error
 }
 
 func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
@@ -277,8 +282,8 @@ func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 +----------+----------+--------------+----------------------+--------------------+----------------------+
 | policy 7 |   LOW    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
 +----------+----------+--------------+----------------------+--------------------+----------------------+
-WARN: A total of 6 policies have been violated
 `,
+			expectedErrOutput: "WARN: A total of 6 policies have been violated\n",
 		},
 		"should fail with build failing enforcement actions": {
 			alerts: testAlertsWithFailure,
@@ -320,7 +325,8 @@ WARN: A total of 6 policies have been violated
 +----------+----------+--------------+----------------------+--------------------+----------------------+
 | policy 7 |   LOW    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
 +----------+----------+--------------+----------------------+--------------------+----------------------+
-WARN: A total of 7 policies have been violated
+`,
+			expectedErrOutput: `WARN: A total of 7 policies have been violated
 ERROR: failed policies found: 1 policies violated that are failing the check
 ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
 `,
@@ -668,7 +674,7 @@ func (suite *imageCheckTestSuite) TestValidate() {
 		},
 		"failViolations true and json not, warning output expected": {
 			failViolations:  true,
-			expectedWarning: "Note: --json-fail-on-policy-violations has no effect when --json is not specified.\n",
+			expectedWarning: "WARN:\t--json-fail-on-policy-violations has no effect when --json is not specified.\n",
 		},
 		"failViolations true and json as well, no output expected": {
 			failViolations:  true,
@@ -687,7 +693,7 @@ func (suite *imageCheckTestSuite) TestValidate() {
 			imgCheckCmd.failViolationsWithJSON = c.failViolations
 			imgCheckCmd.objectPrinter = c.printer
 			testIO, _, _, errOut := environment.TestIO()
-			imgCheckCmd.env = environment.NewCLIEnvironment(testIO)
+			imgCheckCmd.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 			suite.Assert().NoError(imgCheckCmd.Validate())
 			suite.Assert().Equal(c.expectedWarning, errOut.String())
 		})
@@ -696,7 +702,7 @@ func (suite *imageCheckTestSuite) TestValidate() {
 
 func (suite *imageCheckTestSuite) TestLegacyPrint_Error() {
 	imgCheckCmd := suite.imageCheckCommand
-	env := environment.NewCLIEnvironment(environment.DiscardIO())
+	env := environment.NewCLIEnvironment(environment.DiscardIO(), printer.DefaultColorPrinter())
 	imgCheckCmd.env = env
 	jsonPrinter, _ := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
 
@@ -1044,7 +1050,7 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 	for name, c := range cases {
 		suite.Run(name, func() {
 			testIO, _, out, _ := environment.TestIO()
-			imgCheckCmd.env = environment.NewCLIEnvironment(testIO)
+			imgCheckCmd.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 			imgCheckCmd.json = c.json
 			imgCheckCmd.printAllViolations = c.printAllViolations
 			// Errors will be tested within TestLegacyPrint_Error

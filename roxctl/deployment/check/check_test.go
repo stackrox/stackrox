@@ -253,7 +253,10 @@ func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientCo
 	mockEnv := mocks.NewMockEnvironment(gomock.NewController(d.T()))
 
 	testIO, _, testStdOut, _ := environment.TestIO()
+	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
+
 	mockEnv.EXPECT().InputOutput().AnyTimes().Return(testIO)
+	mockEnv.EXPECT().Logger().AnyTimes().Return(logger)
 	mockEnv.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
 
 	return mockEnv, testStdOut
@@ -361,10 +364,11 @@ func (d *deployCheckTestSuite) TestValidate() {
 }
 
 type outputFormatTest struct {
-	alerts         []*storage.Alert
-	expectedOutput string
-	shouldFail     bool
-	error          error
+	alerts            []*storage.Alert
+	expectedOutput    string
+	expectedErrOutput string
+	shouldFail        bool
+	error             error
 }
 
 func (d *deployCheckTestSuite) TestCheck_TableOutput() {
@@ -422,8 +426,8 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 | policy 7 |   LOW    |       -       | wordpress  | policy 7 for testing |   - testing alert violation    | policy 7 for testing |
 |          |          |               |            |                      |            message             |                      |
 +----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-WARN: A total of 6 policies have been violated
 `,
+			expectedErrOutput: "WARN: A total of 6 policies have been violated\n",
 		},
 		"should fail with failing enforcement actions": {
 			alerts: testDeploymentAlertsWithFailure,
@@ -478,7 +482,8 @@ WARN: A total of 6 policies have been violated
 | policy 7 |   LOW    |       -       | wordpress  | policy 7 for testing |   - testing alert violation    | policy 7 for testing |
 |          |          |               |            |                      |            message             |                      |
 +----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-WARN: A total of 6 policies have been violated
+`,
+			expectedErrOutput: `WARN: A total of 6 policies have been violated
 ERROR: failed policies found: 1 policies violated that are failing the check
 ERROR: Policy "policy 4" within Deployment "wordpress" - Possible remediation: "policy 4"
 `,

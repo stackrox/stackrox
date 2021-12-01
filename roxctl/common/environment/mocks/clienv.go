@@ -80,3 +80,17 @@ func (mr *MockEnvironmentMockRecorder) InputOutput() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InputOutput", reflect.TypeOf((*MockEnvironment)(nil).InputOutput))
 }
+
+// Logger mocks base method.
+func (m *MockEnvironment) Logger() environment.Logger {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Logger")
+	ret0, _ := ret[0].(environment.Logger)
+	return ret0
+}
+
+// Logger indicates an expected call of Logger.
+func (mr *MockEnvironmentMockRecorder) Logger() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logger", reflect.TypeOf((*MockEnvironment)(nil).Logger))
+}

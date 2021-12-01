@@ -18,4 +18,7 @@ type Environment interface {
 
 	// InputOutput returns an IO which holds all input / output streams
 	InputOutput() IO
+
+	// Logger returns Logger which handle all output
+	Logger() Logger
 }

@@ -249,12 +249,15 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 }
 
 func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
-	mockEnv := mocks.NewMockEnvironment(gomock.NewController(s.T()))
+	envMock := mocks.NewMockEnvironment(gomock.NewController(s.T()))
 
 	testIO, _, testStdOut, _ := environment.TestIO()
-	mockEnv.EXPECT().InputOutput().AnyTimes().Return(testIO)
-	mockEnv.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	return mockEnv, testStdOut
+	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
+
+	envMock.EXPECT().Logger().AnyTimes().Return(logger)
+	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
+	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
+	return envMock, testStdOut
 }
 
 func (s *imageScanTestSuite) SetupTest() {
@@ -332,7 +335,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 }
 
 func (s *imageScanTestSuite) TestDeprecationNote() {
-	expectedDeprecationNote := fmt.Sprintf("Flag --format has been deprecated, %s\n", deprecationNote)
+	expectedDeprecationNote := fmt.Sprintf("WARN:\tFlag --format has been deprecated, %s\n", deprecationNote)
 	emptyOutputFormatPrinterFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
 	s.Require().NoError(err)
 	emptyOutputFormatPrinterFactory.OutputFormat = ""
@@ -361,7 +364,7 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
 			io, _, _, errOut := environment.TestIO()
-			imgScanCmd.env = environment.NewCLIEnvironment(io)
+			imgScanCmd.env = environment.NewCLIEnvironment(io, printer.DefaultColorPrinter())
 			cmd := Command(imgScanCmd.env)
 			cmd.Flags().Duration("timeout", 1*time.Minute, "")
 			cmd.Flag("format").Changed = c.formatChanged
@@ -433,8 +436,9 @@ func (s *imageScanTestSuite) TestValidate() {
 }
 
 type outputFormatTest struct {
-	components     []*storage.EmbeddedImageScanComponent
-	expectedOutput string
+	components          []*storage.EmbeddedImageScanComponent
+	expectedOutput      string
+	expectedErrorOutput string
 }
 
 func (s *imageScanTestSuite) TestScan_TableOutput() {
@@ -481,8 +485,8 @@ func (s *imageScanTestSuite) TestScan_TableOutput() {
 +           +            +--------------+           +                    +
 |           |            | CVE-789-MED  |           |                    |
 +-----------+------------+--------------+-----------+--------------------+
-WARN: A total of 17 vulnerabilities were found in 5 components
 `,
+			expectedErrorOutput: "WARN: A total of 17 vulnerabilities were found in 5 components\n",
 		},
 		"should print only headers with empty components in image scan": {
 			expectedOutput: `Scan results for image: nginx:test

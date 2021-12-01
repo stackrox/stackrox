@@ -2,7 +2,6 @@ package check
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"time"
 
@@ -147,7 +146,7 @@ func (i *imageCheckCommand) Validate() error {
 	// Only print warnings specific to old --json format when no printer is created
 	if i.objectPrinter == nil {
 		if i.failViolationsWithJSON && !i.json {
-			fmt.Fprintf(i.env.InputOutput().ErrOut, "Note: --%s has no effect when --%s is not specified.\n", jsonFailFlagName, jsonFlagName)
+			i.env.Logger().WarnfLn("--%s has no effect when --%s is not specified.", jsonFailFlagName, jsonFlagName)
 		}
 	}
 
@@ -161,7 +160,7 @@ func (i *imageCheckCommand) CheckImage() error {
 	},
 		retry.Tries(i.retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
-			fmt.Fprintf(i.env.InputOutput().ErrOut, "Checking image failed: %v. Retrying after %v seconds\n", err, i.retryDelay)
+			i.env.Logger().ErrfLn("Checking image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}))
 	if err != nil {
@@ -197,7 +196,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 	// conditionally print a summary when the output format is a "non-RFC/standardized" one
 	// could be -> text, wide, tree etc.
 	if !i.standardizedOutputFormat {
-		printPolicySummary(i.image, policySummary.Summary, i.env.InputOutput().Out)
+		printPolicySummary(i.image, policySummary.Summary, i.env.Logger())
 	}
 
 	// print the JSON object in the dedicated format via a printer.ObjectPrinter
@@ -209,7 +208,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 	// could be -> text, wide, tree etc.
 	if !i.standardizedOutputFormat {
 		printAdditionalWarnsAndErrs(policySummary.Summary[policy.TotalPolicyAmountKey], policySummary.Results,
-			amountBuildBreakingPolicies, i.env.InputOutput().Out)
+			amountBuildBreakingPolicies, i.env.Logger())
 	}
 
 	if amountBuildBreakingPolicies != 0 {
@@ -252,9 +251,9 @@ func legacyPrint(alerts []*storage.Alert, failViolations bool, numBuildBreakingP
 
 // printPolicySummary prints a header with an overview of all found policy violations by policySeverity for
 // non-standardized output format, i.e. table format
-func printPolicySummary(image string, numOfPolicyViolations map[string]int, out io.Writer) {
-	fmt.Fprintf(out, "Policy check results for image: %s\n", image)
-	fmt.Fprintf(out, "(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n\n",
+func printPolicySummary(image string, numOfPolicyViolations map[string]int, out environment.Logger) {
+	out.PrintfLn("Policy check results for image: %s", image)
+	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		policy.TotalPolicyAmountKey, numOfPolicyViolations[policy.TotalPolicyAmountKey],
 		policy.LowSeverity, numOfPolicyViolations[policy.LowSeverity.String()],
 		policy.MediumSeverity, numOfPolicyViolations[policy.MediumSeverity.String()],
@@ -265,20 +264,21 @@ func printPolicySummary(image string, numOfPolicyViolations map[string]int, out 
 // printAdditionalWarnsAndErrs prints a warning indicating how many policies have been failed as well as errors for each
 // policy that failed the check. This will be printed only for non-standardized output formats, i.e. table format
 // and if there are any failed policies
-func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.EntityResult, numBreakingPolicies int, out io.Writer) {
+func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.EntityResult, numBreakingPolicies int,
+	out environment.Logger) {
 	if numTotalViolatedPolicies == 0 {
 		return
 	}
-	fmt.Fprintf(out, "WARN: A total of %d policies have been violated\n", numTotalViolatedPolicies)
+	out.WarnfLn("A total of %d policies have been violated", numTotalViolatedPolicies)
 
 	if numBreakingPolicies == 0 {
 		return
 	}
-	fmt.Fprintf(out, "ERROR: %s\n", policy.NewErrBreakingPolicies(numBreakingPolicies))
+	out.ErrfLn("%s", policy.NewErrBreakingPolicies(numBreakingPolicies))
 
 	for _, res := range results {
 		for _, breakingPolicy := range res.GetBreakingPolicies() {
-			fmt.Fprintf(out, "ERROR: Policy %q - Possible remediation: %q\n",
+			out.ErrfLn("Policy %q - Possible remediation: %q",
 				breakingPolicy.Name, breakingPolicy.Remediation)
 		}
 	}

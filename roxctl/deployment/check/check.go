@@ -2,8 +2,6 @@ package check
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -136,7 +134,7 @@ func (d *deploymentCheckCommand) Check() error {
 	},
 		retry.Tries(d.retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
-			fmt.Fprintf(d.env.InputOutput().ErrOut, "Scanning image failed: %v. Retrying after %d seconds\n",
+			d.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %d seconds...",
 				err, d.retryDelay)
 			time.Sleep(time.Duration(d.retryDelay) * time.Second)
 		}))
@@ -196,7 +194,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 	policySummary := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
 
 	if !d.standardizedFormat {
-		printDeploymentPolicySummary(policySummary.Summary, d.env.InputOutput().Out, policySummary.GetResultNames()...)
+		printDeploymentPolicySummary(policySummary.Summary, d.env.Logger(), policySummary.GetResultNames()...)
 	}
 
 	if err := d.printer.Print(policySummary, d.env.InputOutput().Out); err != nil {
@@ -207,7 +205,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 
 	if !d.standardizedFormat {
 		printAdditionalWarnsAndErrs(policySummary.Summary[policy.TotalPolicyAmountKey], amountBreakingPolicies,
-			policySummary.Results, d.env.InputOutput().Out)
+			policySummary.Results, d.env.Logger())
 	}
 
 	if amountBreakingPolicies != 0 {
@@ -216,9 +214,9 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 	return nil
 }
 
-func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out io.Writer, deployments ...string) {
-	fmt.Fprintf(out, "Policy check results for deployments: %v\n", deployments)
-	fmt.Fprintf(out, "(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n\n",
+func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out environment.Logger, deployments ...string) {
+	out.PrintfLn("Policy check results for deployments: %v", deployments)
+	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		policy.TotalPolicyAmountKey, numOfPolicyViolations[policy.TotalPolicyAmountKey],
 		policy.LowSeverity, numOfPolicyViolations[policy.LowSeverity.String()],
 		policy.MediumSeverity, numOfPolicyViolations[policy.MediumSeverity.String()],
@@ -227,22 +225,22 @@ func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out io.W
 }
 
 func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies int, results []policy.EntityResult,
-	out io.Writer) {
+	out environment.Logger) {
 	if amountViolatedPolicies == 0 {
 		return
 	}
 
-	fmt.Fprintf(out, "WARN: A total of %d policies have been violated\n", amountViolatedPolicies)
+	out.WarnfLn("A total of %d policies have been violated", amountViolatedPolicies)
 
 	if amountBreakingPolicies == 0 {
 		return
 	}
 
-	fmt.Fprintf(out, "ERROR: %s\n", policy.NewErrBreakingPolicies(amountBreakingPolicies))
+	out.ErrfLn("%s", policy.NewErrBreakingPolicies(amountBreakingPolicies))
 
 	for _, res := range results {
 		for _, breakingPolicy := range res.GetBreakingPolicies() {
-			fmt.Fprintf(out, "ERROR: Policy %q within Deployment %q - Possible remediation: %q\n",
+			out.ErrfLn("Policy %q within Deployment %q - Possible remediation: %q",
 				breakingPolicy.Name, res.Metadata.GetName(), breakingPolicy.Name)
 		}
 	}

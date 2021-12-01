@@ -119,7 +119,7 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 	// we manually print the deprecation note. We do not need to do this when i.e. --format csv is used, because
 	// then a deprecated flag will be explicitly used and cobra will take over the printing of the deprecation note.
 	if !cmd.Flag("format").Changed && !cmd.Flag("output").Changed {
-		fmt.Fprintf(i.env.InputOutput().ErrOut, "Flag --format has been deprecated, %s\n", deprecationNote)
+		i.env.Logger().WarnfLn("Flag --format has been deprecated, %s", deprecationNote)
 	}
 	// Only create the printer when the old, deprecated output format is not used
 	// TODO(ROX-8303): This can be removed once the old output format is fully deprecated
@@ -160,7 +160,7 @@ func (i *imageScanCommand) Scan() error {
 	},
 		retry.Tries(i.retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
-			fmt.Fprintf(i.env.InputOutput().ErrOut, "Scanning image failed: %v. Retrying after %v seconds\n", err, i.retryDelay)
+			i.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}),
 	)
@@ -212,7 +212,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	cveSummary := newCVESummaryForPrinting(imageResult.GetScan())
 
 	if !i.standardizedFormat {
-		printCVESummary(i.image, cveSummary.Result.Summary, i.env.InputOutput().Out)
+		printCVESummary(i.image, cveSummary.Result.Summary, i.env.Logger())
 	}
 
 	if err := i.printer.Print(cveSummary, i.env.InputOutput().Out); err != nil {
@@ -222,15 +222,15 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	if !i.standardizedFormat {
 		printCVEWarning(cveSummary.Result.Summary[totalVulnerabilitiesMapKey],
 			cveSummary.Result.Summary[totalComponentsMapKey],
-			i.env.InputOutput().Out)
+			i.env.Logger())
 	}
 	return nil
 }
 
 // print summary of amount of CVEs found
-func printCVESummary(image string, cveSummary map[string]int, out io.Writer) {
-	fmt.Fprintf(out, "Scan results for image: %s\n", image)
-	fmt.Fprintf(out, "(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n\n",
+func printCVESummary(image string, cveSummary map[string]int, out environment.Logger) {
+	out.PrintfLn("Scan results for image: %s", image)
+	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
 		totalVulnerabilitiesMapKey, cveSummary[totalVulnerabilitiesMapKey],
 		lowCVESeverity, cveSummary["LOW"],
@@ -240,9 +240,9 @@ func printCVESummary(image string, cveSummary map[string]int, out io.Writer) {
 }
 
 // print warning with amount of CVEs found in components
-func printCVEWarning(numOfVulns int, numOfComponents int, out io.Writer) {
+func printCVEWarning(numOfVulns int, numOfComponents int, out environment.Logger) {
 	if numOfVulns != 0 {
-		fmt.Fprintf(out, "WARN: A total of %d vulnerabilities were found in %d components\n",
+		out.WarnfLn("A total of %d vulnerabilities were found in %d components",
 			numOfVulns, numOfComponents)
 	}
 }
