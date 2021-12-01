@@ -100,7 +100,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	}
 
 	id := authn.IdentityFromContext(ctx)
-	if err = verifyNoPrivilegeEscalation(id.Roles(), roles); err != nil {
+	if err := verifyNoPrivilegeEscalation(id.Roles(), roles); err != nil {
 		return nil, errorhelpers.NewErrNotAuthorized(err.Error())
 	}
 
