@@ -196,10 +196,10 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 }
 
 // secretDispatcher handles secret resource events.
-type secretDispatcher struct{
-	sensor              *sensor.Sensor
+type secretDispatcher struct {
+	sensor *sensor.Sensor
 	// Zero value if not managed by Helm
-	helmReleaseName     string
+	helmReleaseName string
 	// Zero value if not managed by Helm
 	helmReleaseRevision uint64
 }
@@ -207,8 +207,8 @@ type secretDispatcher struct{
 // newSecretDispatcher creates and returns a new secret handler.
 func newSecretDispatcher(sensor *sensor.Sensor, helmManagedConfig *central.HelmManagedConfigInit, deploymentIdentification *storage.SensorDeploymentIdentification) *secretDispatcher {
 	return &secretDispatcher{
-		sensor: sensor,
-		helmReleaseName: helmManagedConfig.GetHelmReleaseName(),
+		sensor:              sensor,
+		helmReleaseName:     helmManagedConfig.GetHelmReleaseName(),
 		helmReleaseRevision: deploymentIdentification.GetHelmReleaseRevision(),
 	}
 }

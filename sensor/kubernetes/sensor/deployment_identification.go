@@ -103,7 +103,7 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 
 	if helmManagedConfig != nil {
 		var helmReleaseRevision uint64
-		for secretType, _ := range resources.GetHelmSecretTypes() {
+		for secretType := range resources.GetHelmSecretTypes() {
 			listOpts := metav1.ListOptions{FieldSelector: fmt.Sprintf("type=%s", secretType)}
 			secrets, err := k8sClient.CoreV1().Secrets(appNS).List(ctx, listOpts)
 			if err != nil {
@@ -111,8 +111,9 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 				break
 			} else {
 				for _, secret := range secrets.Items {
-					rev, err := resources.ExtractHelmRevisionFromHelmSecret(helmManagedConfig.GetHelmReleaseName(), &secret)
-					if err != nil {
+					rev, extractionErr := resources.ExtractHelmRevisionFromHelmSecret(helmManagedConfig.GetHelmReleaseName(), &secret)
+					if extractionErr != nil {
+						err = extractionErr
 						break
 					}
 					if rev > helmReleaseRevision {
@@ -131,7 +132,6 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 
 	return errResult
 }
-
 
 // fetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of
 // secret mounts and information from the Kubernetes API server.

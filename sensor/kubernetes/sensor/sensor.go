@@ -195,4 +195,3 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	s.AddAPIServices(apiServices...)
 	return s, nil
 }
-

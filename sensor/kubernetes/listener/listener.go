@@ -20,6 +20,8 @@ type SensorEventListener interface {
 	SensorEventStream() concurrency.ReadOnlyValueStream
 }
 
+// Listener listens to Kubernetes events, and forwards then to the
+// dispatchers configured in resources.NewDispatcherRegistry
 type Listener interface {
 	common.SensorComponent
 	SetSensor(sensor *sensor.Sensor)

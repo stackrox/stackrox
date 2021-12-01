@@ -28,7 +28,7 @@ type listenerImpl struct {
 
 	configHandler config.Handler
 	detector      detector.Detector
-	sensor 		  *sensor.Sensor
+	sensor        *sensor.Sensor
 }
 
 func (k *listenerImpl) Start() error {
