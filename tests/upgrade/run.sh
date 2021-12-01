@@ -67,15 +67,14 @@ preamble() {
     require_executable "$TEST_ROOT/bin/$TEST_HOST_OS/upgrader"
     require_environment "ROX_LICENSE_KEY"
 
-    if is_CI; then
-        REPO_FOR_TIME_TRAVEL="$TEST_ROOT"
-    else
-        info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
-        if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
-            (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
-        else
-            (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone git@github.com:stackrox/rox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
+    info "Will clone or update a clean copy of the rox repo for test at $REPO_FOR_TIME_TRAVEL"
+    if [[ -d "$REPO_FOR_TIME_TRAVEL" ]]; then
+        if is_CI; then
+          die "Repo for time travel already exists! This is unexpected in CI."
         fi
+        (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
+    else
+        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone git@github.com:stackrox/rox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
     fi
 
     if is_CI; then
@@ -296,14 +295,11 @@ rollback_sensor_via_upgrader() {
 test_upgrade_paths() {
     info "Testing various upgrade paths"
 
-    SHA_UNDER_TEST=$(git rev-parse HEAD)
     EARLIER_SHA="b7c73d4d9d627b470d047ea4f026818ed92550d3"
     EARLIER_TAG="3.0.58.x-41-gb7c73d4d9d"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
-    if ! is_CI; then
-        cd "$REPO_FOR_TIME_TRAVEL"
-    fi
+    cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
 
     deploy_earlier_central
@@ -311,11 +307,7 @@ test_upgrade_paths() {
     restore_backup_test
     wait_for_api
 
-    if is_CI; then
-        git reset --hard "$SHA_UNDER_TEST"
-    else
-        cd "$TEST_ROOT"
-    fi
+    cd "$TEST_ROOT"
 
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     wait_for_api
@@ -325,19 +317,11 @@ test_upgrade_paths() {
     force_rollback
     wait_for_api
 
-    if is_CI; then
-        git checkout "$EARLIER_SHA"
-    else
-        cd "$REPO_FOR_TIME_TRAVEL"
-    fi
+    cd "$REPO_FOR_TIME_TRAVEL"
 
     validate_upgrade "forced rollback to 3.0.58.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7" "../image/policies/files"
 
-    if is_CI; then
-        git reset --hard "$SHA_UNDER_TEST"
-    else
-        cd "$TEST_ROOT"
-    fi
+    cd "$TEST_ROOT"
 
     set_images_to_current
     wait_for_api
