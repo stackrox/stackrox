@@ -36,10 +36,19 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
     }
 
     const rows = data?.result?.vulns || [];
-    const imageName = data?.result?.name?.fullName.split(':')[0] || '';
+    const registry = data?.result?.name?.registry || '';
+    const remote = data?.result?.name?.remote || '';
     const tag = data?.result?.name?.tag || '';
 
-    return <ObservedCVEsTable rows={rows} imageName={imageName} tag={tag} isLoading={isLoading} />;
+    return (
+        <ObservedCVEsTable
+            rows={rows}
+            registry={registry}
+            remote={remote}
+            tag={tag}
+            isLoading={isLoading}
+        />
+    );
 }
 
 export default ObservedCVEs;

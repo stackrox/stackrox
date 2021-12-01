@@ -5,16 +5,17 @@ import { getScopeValue } from './vulnRequestFormUtils';
 
 export type UseMarkFalsePositiveProps = {
     cveIDs: string[];
-    imageName: string;
+    registry: string;
+    remote: string;
     tag: string;
 };
 
-function useMarkFalsePositive({ cveIDs, imageName, tag }: UseMarkFalsePositiveProps) {
+function useMarkFalsePositive({ cveIDs, registry, remote, tag }: UseMarkFalsePositiveProps) {
     const [markFalsePositive] = useMutation(MARK_FALSE_POSITIVE);
 
     function requestFalsePositive(formValues: FalsePositiveFormValues) {
         const { comment } = formValues;
-        const scope = getScopeValue(formValues.imageAppliesTo, imageName, tag);
+        const scope = getScopeValue(formValues.imageAppliesTo, registry, remote, tag);
 
         const promises = cveIDs.map((cve) => {
             const request: MarkFalsePositiveRequest = {

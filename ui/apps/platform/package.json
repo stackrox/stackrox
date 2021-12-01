@@ -10,7 +10,7 @@
     },
     "license": "UNLICENSED",
     "dependencies": {
-        "@apollo/client": "^3.3.11",
+        "@apollo/client": "^3.5.5",
         "@lifeomic/axios-fetch": "^2.0.5",
         "@patternfly/react-core": "^4.175.4",
         "@patternfly/react-icons": "^4.26.4",

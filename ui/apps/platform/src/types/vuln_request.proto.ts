@@ -16,7 +16,8 @@ export type DeferralRequest = {
 
 export type Scope = {
     imageScope?: {
-        name: string;
-        tagRegex: string;
+        registry: string;
+        remote: string;
+        tag: string;
     };
 };

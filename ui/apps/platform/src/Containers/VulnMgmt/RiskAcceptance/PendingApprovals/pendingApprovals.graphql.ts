@@ -55,8 +55,9 @@ export const GET_PENDING_APPROVALS = gql`
             }
             scope {
                 imageScope {
-                    name
-                    tagRegex
+                    registry
+                    remote
+                    tag
                 }
             }
             deferralReq {
@@ -66,6 +67,32 @@ export const GET_PENDING_APPROVALS = gql`
             cves {
                 ids
             }
+        }
+    }
+`;
+
+export type ApproveVulnerabilityRequest = {
+    requestID: string;
+    comment: string;
+};
+
+export const APPROVE_VULNERABILITY_REQUEST = gql`
+    mutation approveVulnerabilityRequest($requestID: ID!, $comment: String!) {
+        approveVulnerabilityRequest(requestID: $requestID, comment: $comment) {
+            id
+        }
+    }
+`;
+
+export type DenyVulnerabilityRequest = {
+    requestID: string;
+    comment: string;
+};
+
+export const DENY_VULNERABILITY_REQUEST = gql`
+    mutation denyVulnerabilityRequest($requestID: ID!, $comment: String!) {
+        denyVulnerabilityRequest(requestID: $requestID, comment: $comment) {
+            id
         }
     }
 `;

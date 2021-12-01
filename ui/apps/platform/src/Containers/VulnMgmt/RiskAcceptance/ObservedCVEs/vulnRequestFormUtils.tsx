@@ -20,20 +20,27 @@ export function getExpiresOnValue(expiresOn: string): string | undefined {
     return value;
 }
 
-export function getScopeValue(imageAppliesTo: string, imageName: string, tag: string): Scope {
+export function getScopeValue(
+    imageAppliesTo: string,
+    registry: string,
+    remote: string,
+    tag: string
+): Scope {
     let value: Scope = { imageScope: undefined };
     if (imageAppliesTo === 'All tags within image') {
         value = {
             imageScope: {
-                name: imageName,
-                tagRegex: '.*',
+                registry,
+                remote,
+                tag: '.*',
             },
         };
     } else if (imageAppliesTo === 'Only this image tag') {
         value = {
             imageScope: {
-                name: imageName,
-                tagRegex: tag,
+                registry,
+                remote,
+                tag,
             },
         };
     }

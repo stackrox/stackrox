@@ -21,7 +21,8 @@ export type EmbeddedImageScanComponent = { id: string; name: string; fixedIn: st
 export type GetObservedCVEsData = {
     result: {
         name: {
-            fullName: string;
+            registry: string;
+            remote: string;
             tag: string;
         };
         vulnCount: number;
@@ -38,7 +39,8 @@ export const GET_OBSERVED_CVES = gql`
     query getObservedCVEs($imageId: ID!, $vulnsQuery: String) {
         result: image(id: $imageId) {
             name {
-                fullName
+                registry
+                remote
                 tag
             }
             vulnCount(query: $vulnsQuery)

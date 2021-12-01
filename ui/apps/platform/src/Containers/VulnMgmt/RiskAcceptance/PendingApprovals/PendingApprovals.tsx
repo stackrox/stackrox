@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
-import { useQuery } from '@apollo/client';
+import { useQuery, useApolloClient } from '@apollo/client';
 
 import {
     GetPendingApprovalsData,
@@ -11,6 +11,7 @@ import {
 import PendingApprovalsTable from './PendingApprovalsTable';
 
 function PendingApprovals(): ReactElement {
+    const client = useApolloClient();
     const { loading: isLoading, data } = useQuery<GetPendingApprovalsData, GetPendingApprovalsVars>(
         GET_PENDING_APPROVALS,
         {
@@ -28,6 +29,12 @@ function PendingApprovals(): ReactElement {
         }
     );
 
+    async function updateTable() {
+        await client.refetchQueries({
+            include: [GET_PENDING_APPROVALS],
+        });
+    }
+
     if (isLoading) {
         return (
             <Bullseye>
@@ -38,7 +45,7 @@ function PendingApprovals(): ReactElement {
 
     const rows = data?.results || [];
 
-    return <PendingApprovalsTable rows={rows} isLoading={isLoading} />;
+    return <PendingApprovalsTable rows={rows} updateTable={updateTable} isLoading={isLoading} />;
 }
 
 export default PendingApprovals;

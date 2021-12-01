@@ -38,11 +38,12 @@ export type ObservedCVERow = Vulnerability;
 export type ObservedCVEsTableProps = {
     rows: ObservedCVERow[];
     isLoading: boolean;
-    imageName: string;
+    registry: string;
+    remote: string;
     tag: string;
 };
 
-function ObservedCVEsTable({ rows, imageName, tag }: ObservedCVEsTableProps): ReactElement {
+function ObservedCVEsTable({ rows, registry, remote, tag }: ObservedCVEsTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -55,12 +56,14 @@ function ObservedCVEsTable({ rows, imageName, tag }: ObservedCVEsTableProps): Re
     const [cvesToBeAssessed, setCVEsToBeAssessed] = useState<CVEsToBeAssessed>(null);
     const requestDeferral = useDeferVulnerability({
         cveIDs: cvesToBeAssessed?.ids || [],
-        imageName,
+        registry,
+        remote,
         tag,
     });
     const requestFalsePositive = useMarkFalsePositive({
         cveIDs: cvesToBeAssessed?.ids || [],
-        imageName,
+        registry,
+        remote,
         tag,
     });
 
