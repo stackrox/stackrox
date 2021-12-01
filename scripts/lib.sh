@@ -24,8 +24,7 @@ die() {
 
 is_CI() {
     (
-        set +u
-        [[ -n "$CI" || -n "$CIRCLECI" ]]
+        [[ -n "${CI:-}" || -n "${CIRCLECI:-}" ]]
     )
 }
 
