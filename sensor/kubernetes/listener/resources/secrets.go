@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -359,11 +360,31 @@ func isHelmSecret(secret *v1.Secret) bool {
 	return ok
 }
 
-// GetHelmSecretTypes returns a map with each secret type that Helm uses to store
-// release information in the keys, and with `true` as value.
-func GetHelmSecretTypes() map[v1.SecretType]bool {
-	return map[v1.SecretType]bool{
-		secretTypeHelmReleaseV1: true,
+// HelmSecretType is a secret type that Helm uses to store release information
+type HelmSecretType interface {
+	Type() v1.SecretType
+	// ListOptions Options that can be used to retrieve all secrets for a Helm release
+	ListOptions(helmReleaseName string) metav1.ListOptions
+}
+
+type helmSecretTypeReleaseV1 struct{}
+
+func (*helmSecretTypeReleaseV1) Type() v1.SecretType {
+	return secretTypeHelmReleaseV1
+}
+
+func (h *helmSecretTypeReleaseV1) ListOptions(helmReleaseName string) metav1.ListOptions {
+	return metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("type=%s", h.Type()),
+		LabelSelector: fmt.Sprintf("name=%s", helmReleaseName),
+	}
+}
+
+// GetHelmSecretTypes returns all secret types that Helm uses to store
+// release information.
+func GetHelmSecretTypes() map[v1.SecretType]HelmSecretType {
+	return map[v1.SecretType]HelmSecretType{
+		secretTypeHelmReleaseV1: &helmSecretTypeReleaseV1{},
 	}
 }
 

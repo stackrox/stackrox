@@ -3,7 +3,6 @@ package sensor
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -103,8 +102,8 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 
 	if helmManagedConfig != nil {
 		var helmReleaseRevision uint64
-		for secretType := range resources.GetHelmSecretTypes() {
-			listOpts := metav1.ListOptions{FieldSelector: fmt.Sprintf("type=%s", secretType)}
+		for _, secretType := range resources.GetHelmSecretTypes() {
+			listOpts := secretType.ListOptions(helmManagedConfig.GetHelmReleaseName())
 			secrets, err := k8sClient.CoreV1().Secrets(appNS).List(ctx, listOpts)
 			if err != nil {
 				errResult = multierror.Append(errResult, errors.Wrap(err, "failed to look up Helm release revision"))
