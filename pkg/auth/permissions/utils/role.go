@@ -24,7 +24,7 @@ func FromProtos(permissions ...*v1.Permission) map[string]storage.Access {
 	resourceToAccess := make(map[string]storage.Access, len(permissions))
 	for _, permission := range permissions {
 		if access, exists := resourceToAccess[permission.GetResource()]; exists {
-			resourceToAccess[permission.GetResource()] = maxAccess(access, permission.GetAccess())
+			resourceToAccess[permission.GetResource()] = MaxAccess(access, permission.GetAccess())
 		} else {
 			resourceToAccess[permission.GetResource()] = permission.GetAccess()
 		}
@@ -53,7 +53,7 @@ func NewUnionPermissions(roles []permissions.ResolvedRole) map[string]storage.Ac
 	for _, role := range roles {
 		for resource, access := range role.GetPermissions() {
 			if acc, exists := result[resource]; exists {
-				result[resource] = maxAccess(acc, access)
+				result[resource] = MaxAccess(acc, access)
 			} else {
 				result[resource] = access
 			}
@@ -66,7 +66,8 @@ func NewUnionPermissions(roles []permissions.ResolvedRole) map[string]storage.Ac
 	return result
 }
 
-func maxAccess(access1, access2 storage.Access) storage.Access {
+// MaxAccess returns maximum access of two presented.
+func MaxAccess(access1, access2 storage.Access) storage.Access {
 	if access1 > access2 {
 		return access1
 	}

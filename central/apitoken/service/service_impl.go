@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/backend"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
@@ -21,6 +22,8 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
 )
+
+const unrestricted = "Unrestricted"
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -113,41 +116,49 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 }
 
 // This function ensures that no APIToken with permissions more than principal has can be created.
-// The only two acceptable cases are:
-// 	* principal has role with unrestricted scope and superset of requested permissions
-// 	* all requested roles are assigned to principal
+// For each requested tuple (access scope, resource, accessLevel) we check that either:
+// * principal has permission on this resource with unrestricted access scope
+// * principal has permission on this resource with requested access scope
 func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.ResolvedRole) error {
-	requestedPermissions := utils.NewUnionPermissions(requestedRoles)
+	// Group roles by access scope.
+	userRolesByScope := make(map[string][]permissions.ResolvedRole)
+	accessScopeByName := make(map[string]*storage.SimpleAccessScope)
+	userPermissionsByScope := make(map[string]map[string]storage.Access)
 	for _, userRole := range userRoles {
-		if userRole.GetAccessScope() == nil && containsPermissions(requestedPermissions, userRole.GetPermissions()) {
-			return nil
-		}
+		scopeName := extractScopeName(userRole)
+		accessScopeByName[scopeName] = userRole.GetAccessScope()
+		userRolesByScope[scopeName] = append(userRolesByScope[scopeName], userRole)
+	}
+	// Unify permissions of grouped roles.
+	for scopeName, roles := range userRolesByScope {
+		userPermissionsByScope[scopeName] = utils.NewUnionPermissions(roles)
 	}
 
-	userRoleNames := make(map[string]struct{}, len(userRoles))
-	for _, userRole := range userRoles {
-		userRoleNames[userRole.GetRoleName()] = struct{}{}
-	}
+	// Verify that for each tuple (access scope, resource, accessLevel) we have enough permissions.
+	var multiErr error
 	for _, requestedRole := range requestedRoles {
-		if _, ok := userRoleNames[requestedRole.GetRoleName()]; !ok {
-			return errors.Wrapf(errorhelpers.ErrNotAuthorized,
-				"requested API token roles: %s, but principal only has next roles: %s",
-				strings.Join(utils.RoleNames(requestedRoles), ", "),
-				strings.Join(utils.RoleNames(userRoles), ", "),
-			)
+		scopeName := extractScopeName(requestedRole)
+		scopePermissions := userPermissionsByScope[scopeName]
+		unrestrictedPermissions := userPermissionsByScope[unrestricted]
+		for requestedResource, requestedAccess := range requestedRole.GetPermissions() {
+			scopeAccess := scopePermissions[requestedResource]
+			unrestrictedAccess := unrestrictedPermissions[requestedResource]
+			maxAccess := utils.MaxAccess(scopeAccess, unrestrictedAccess)
+			if maxAccess < requestedAccess {
+				err := errors.Errorf("resource=%s, access scope=%s: requested access is %q, when maximum access is %q",
+					requestedResource, scopeName, requestedAccess, maxAccess)
+				multiErr = multierror.Append(multiErr, err)
+			}
 		}
 	}
-	return nil
+	return multiErr
 }
 
-func containsPermissions(requiredPerms, userRolePerms map[string]storage.Access) bool {
-	for requiredPerm, access := range requiredPerms {
-		userAccess, ok := userRolePerms[requiredPerm]
-		if (ok && userAccess < access) || !ok {
-			return false
-		}
+func extractScopeName(userRole permissions.ResolvedRole) string {
+	if userRole.GetAccessScope() != nil {
+		return userRole.GetAccessScope().GetName()
 	}
-	return true
+	return unrestricted
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
