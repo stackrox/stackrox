@@ -216,7 +216,10 @@ export async function excludeDeployments(
     const policy = await getPolicy(policyId);
 
     const deploymentEntries = deploymentNames.map((name) => ({
-        deployment: { name },
+        name: '',
+        deployment: { name, scope: null },
+        image: null,
+        expiration: null,
     }));
     policy.exclusions = [...policy.exclusions, ...deploymentEntries];
     return axios

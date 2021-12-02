@@ -44,26 +44,34 @@ export type Policy = {
     readonly mitreVectorsLocked: boolean; // If true, the policy's MITRE ATT&CK fields are rendered read-only.
 } & ListPolicy;
 
-// TODO prefer initial values instead of optional properties while adding a new policy?
-export type PolicyExclusion = {
-    name?: string;
-    deployment?: PolicyExclusionDeployment;
-    image?: PolicyExclusionImage | null;
-    expiration?: string | null; // ISO 8601 date string
-};
+export type PolicyExclusion = PolicyDeploymentExclusion | PolicyImageExclusion;
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
-export type PolicyExclusionDeployment = {
-    name?: string;
-    scope?: PolicyScope | null;
-};
+export type PolicyDeploymentExclusion = {
+    deployment: PolicyExcludedDeployment;
+    image: null;
+} & PolicyBaseExclusion;
 
-export type PolicyExclusionImage = {
+export type PolicyExcludedDeployment = {
     name: string;
+    scope: PolicyScope | null;
+};
+
+export type PolicyImageExclusion = {
+    deployment: null;
+    image: {
+        name: string;
+    };
+} & PolicyBaseExclusion;
+
+// TODO prefer initial values instead of optional properties while adding a new policy?
+export type PolicyBaseExclusion = {
+    name: string;
+    expiration: string | null; // ISO 8601 date string
 };
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
-type PolicyScope = {
+export type PolicyScope = {
     cluster?: string;
     namespace?: string;
     label?: KeyValue | null;

@@ -2,7 +2,14 @@ import isPlainObject from 'lodash/isPlainObject';
 import qs, { ParsedQs } from 'qs';
 
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
-import { EnforcementAction, LifecycleStage, PolicyEventSource } from 'types/policy.proto';
+import { Cluster } from 'types/cluster.proto';
+import {
+    EnforcementAction,
+    LifecycleStage,
+    PolicyEventSource,
+    PolicyExcludedDeployment,
+    PolicyExclusion,
+} from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 
 export type PageAction = 'clone' | 'create' | 'edit';
@@ -114,6 +121,32 @@ export function formatEventSource(eventSource: PolicyEventSource): string {
     return eventSourceLabels[eventSource];
 }
 
+// exclusions
+
+export function getExcludedDeployments(exclusions: PolicyExclusion[]): PolicyExcludedDeployment[] {
+    const excludedDeployments: PolicyExcludedDeployment[] = [];
+
+    exclusions.forEach(({ deployment }) => {
+        if (deployment?.name || deployment?.scope) {
+            excludedDeployments.push(deployment);
+        }
+    });
+
+    return excludedDeployments;
+}
+
+export function getExcludedImageNames(exclusions: PolicyExclusion[]): string[] {
+    const excludedImageNames: string[] = [];
+
+    exclusions.forEach(({ image }) => {
+        if (image?.name) {
+            excludedImageNames.push(image.name);
+        }
+    });
+
+    return excludedImageNames;
+}
+
 // isDefault
 
 export function formatType(isDefault: boolean): string {
@@ -124,4 +157,11 @@ export function formatType(isDefault: boolean): string {
 
 export function formatLifecycleStages(lifecycleStages: LifecycleStage[]): string {
     return lifecycleStages.map((lifecycleStage) => lifecycleStageLabels[lifecycleStage]).join(', ');
+}
+
+// scope
+
+export function getClusterName(clusters: Cluster[], clusterId: string): string {
+    const cluster = clusters.find(({ id }) => id === clusterId);
+    return cluster?.name ?? clusterId;
 }

@@ -1,5 +1,14 @@
 import React, { ReactElement } from 'react';
-import { Badge, DescriptionList, Flex, FlexItem, Title } from '@patternfly/react-core';
+import {
+    Card,
+    CardBody,
+    DescriptionList,
+    Grid,
+    GridItem,
+    List,
+    ListItem,
+    Title,
+} from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { Policy } from 'types/policy.proto';
@@ -11,8 +20,13 @@ import {
     formatResponse,
     formatType,
     getEnforcementLifecycleStages,
+    getExcludedDeployments,
+    getExcludedImageNames,
 } from '../policies.utils';
 import PolicySeverityLabel from '../PolicySeverityLabel';
+
+import ExcludedDeployment from './ExcludedDeployment';
+import Restriction from './Restriction';
 
 type PolicyOverviewProps = {
     policy: Policy;
@@ -37,6 +51,8 @@ function PolicyOverview({ policy }: PolicyOverviewProps): ReactElement {
         lifecycleStages,
         enforcementActions
     );
+    const excludedDeployments = getExcludedDeployments(exclusions);
+    const excludedImageNames = getExcludedImageNames(exclusions);
 
     return (
         <>
@@ -71,33 +87,67 @@ function PolicyOverview({ policy }: PolicyOverviewProps): ReactElement {
                     />
                 )}
             </DescriptionList>
-            <Flex className="pf-u-pt-md">
-                <FlexItem>
-                    <Title headingLevel="h3">Notifiers</Title>
-                </FlexItem>
-                <FlexItem>
-                    <Badge isRead>{notifiers.length}</Badge>
-                </FlexItem>
-            </Flex>
-            TODO
-            <Flex className="pf-u-pt-md">
-                <FlexItem>
-                    <Title headingLevel="h3">Scope inclusions</Title>
-                </FlexItem>
-                <FlexItem>
-                    <Badge isRead>{scope.length}</Badge>
-                </FlexItem>
-            </Flex>
-            TODO
-            <Flex className="pf-u-pt-md">
-                <FlexItem>
-                    <Title headingLevel="h3">Scope exclusions</Title>
-                </FlexItem>
-                <FlexItem>
-                    <Badge isRead>{exclusions.length}</Badge>
-                </FlexItem>
-            </Flex>
-            TODO
+            {notifiers.length !== 0 && (
+                <>
+                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                        Notifiers
+                    </Title>
+                    TODO
+                </>
+            )}
+            {scope.length !== 0 && (
+                <>
+                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                        Restrict to scopes
+                    </Title>
+                    <Grid hasGutter>
+                        {scope.map((restriction, index) => (
+                            // eslint-disable-next-line react/no-array-index-key
+                            <GridItem key={index} span={4}>
+                                <Card isFlat>
+                                    <CardBody>
+                                        <Restriction clusters={[]} restriction={restriction} />
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                        ))}
+                    </Grid>
+                </>
+            )}
+            {excludedDeployments.length !== 0 && (
+                <>
+                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                        Excluded deployments
+                    </Title>
+                    <Grid hasGutter>
+                        {excludedDeployments.map((excludedDeployment, index) => (
+                            // eslint-disable-next-line react/no-array-index-key
+                            <GridItem key={index} span={4}>
+                                <Card isFlat>
+                                    <CardBody>
+                                        <ExcludedDeployment
+                                            clusters={[]}
+                                            excludedDeployment={excludedDeployment}
+                                        />
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                        ))}
+                    </Grid>
+                </>
+            )}
+            {excludedImageNames.length !== 0 && (
+                <>
+                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                        Excluded images
+                    </Title>
+                    <List isPlain>
+                        {excludedImageNames.map((name) => (
+                            <ListItem key={name}>{name}</ListItem>
+                        ))}
+                    </List>
+                </>
+            )}
         </>
     );
 }
