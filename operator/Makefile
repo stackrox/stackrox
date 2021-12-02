@@ -45,6 +45,25 @@ INDEX_IMG ?= $(INDEX_IMG_BASE):v$(VERSION)
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
+# Set up the so-called "storage image" for executing scorecard test suite.
+# By default a busybox image is pulled from docker.io. In order to rule out timing issues related to rate limiting
+# we use our own copy of a busybox image from quay.io.
+#
+# We expect this dependency on busybox to not be very volatile, but in case it is necessary to use a newer busybox
+# image for the scorecard tests, proceed as follows:
+#
+# 1. Push a new busybox image to the quay.io repository.
+# 2. Update the image image tag below.
+SCORECARD_STORAGE_IMAGE_BASE ?= quay.io/rhacs-eng/mirror-busybox
+SCORECARD_STORAGE_IMAGE_TAG ?= @sha256:fe9664ceda9c13b7fd65f5bc3c0bca5060de3a66fedc39d33926b573599da3b7
+SCORECARD_STORAGE_IMAGE ?= $(SCORECARD_STORAGE_IMAGE_BASE):$(SCORECARD_STORAGE_IMAGE_TAG)
+
+# Increase the scorecard wait time from (default) 30s to 40s, since we experienced some time out issues in the past.
+SCORECARD_WAIT_TIME_DURATION ?= 40s
+
+# SCORECARD_ARGS should be passed to any invocation of "$(OPERATOR_SDK) scorecard".
+SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)"
+
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
 TEST_NAMESPACE ?= stackrox-operator
 
@@ -368,11 +387,11 @@ bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
 
 .PHONY: bundle-test
 bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
-	$(OPERATOR_SDK) scorecard build/bundle/
+	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
 bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in the registry. Bundle image must be pushed beforehand.
-	$(OPERATOR_SDK) scorecard $(BUNDLE_IMG)
+	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
 index-build: opm bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
