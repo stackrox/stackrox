@@ -18,7 +18,10 @@ func IdentityFromContext(ctx context.Context) (Identity, error) {
 	if id == nil && err == nil {
 		return nil, errorhelpers.ErrNoCredentials
 	}
-	return id, errors.Wrap(errorhelpers.ErrNoCredentials, err.Error())
+	if err != nil {
+		return nil, errors.Wrap(errorhelpers.ErrNoCredentials, err.Error())
+	}
+	return id, nil
 }
 
 // ContextWithIdentity adds the given identity to the context. It is to be used only for testing --
