@@ -96,3 +96,13 @@ export const DENY_VULNERABILITY_REQUEST = gql`
         }
     }
 `;
+
+export type DeleteVulnerabilityRequest = {
+    requestID: string;
+};
+
+export const DELETE_VULNERABILITY_REQUEST = gql`
+    mutation deleteVulnerabilityRequest($requestID: ID!) {
+        deleteVulnerabilityRequest(requestID: $requestID)
+    }
+`;

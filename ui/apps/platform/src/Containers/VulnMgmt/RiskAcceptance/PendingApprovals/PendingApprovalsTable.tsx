@@ -23,6 +23,7 @@ import { RequestsToBeAssessed } from './types';
 import ApproveFalsePositiveModal from './ApproveFalsePositiveModal';
 import DenyDeferralModal from './DenyDeferralModal';
 import DenyFalsePositiveModal from './DenyFalsePositiveModal';
+import CancelVulnRequestModal from './CancelVulnRequestModal';
 
 export type PendingApprovalsTableProps = {
     rows: VulnerabilityRequest[];
@@ -41,7 +42,7 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
         onClearAll,
     } = useTableSelection<VulnerabilityRequest>(rows);
     const [requestsToBeAssessed, setRequestsToBeAssessed] = useState<RequestsToBeAssessed>(null);
-    const { approveVulnRequests, denyVulnRequests } = useRiskAcceptance({
+    const { approveVulnRequests, denyVulnRequests, deleteVulnRequests } = useRiskAcceptance({
         requests: requestsToBeAssessed?.requests || [],
     });
 
@@ -75,7 +76,8 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                                 component="button"
                                 onClick={() =>
                                     setRequestsToBeAssessed({
-                                        type: 'APPROVE_DEFERRAL',
+                                        type: 'DEFERRAL',
+                                        action: 'APPROVE',
                                         requests: selectedDeferralRequests,
                                     })
                                 }
@@ -84,24 +86,12 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                                 Approve deferrals ({selectedDeferralRequests.length})
                             </DropdownItem>
                             <DropdownItem
-                                key="approve false positives"
-                                component="button"
-                                onClick={() =>
-                                    setRequestsToBeAssessed({
-                                        type: 'APPROVE_FALSE_POSITIVE',
-                                        requests: selectedFalsePositiveRequests,
-                                    })
-                                }
-                                isDisabled={selectedFalsePositiveRequests.length === 0}
-                            >
-                                Approve false positives ({selectedFalsePositiveRequests.length})
-                            </DropdownItem>
-                            <DropdownItem
                                 key="deny deferrals"
                                 component="button"
                                 onClick={() =>
                                     setRequestsToBeAssessed({
-                                        type: 'DENY_DEFERRAL',
+                                        type: 'DEFERRAL',
+                                        action: 'DENY',
                                         requests: selectedDeferralRequests,
                                     })
                                 }
@@ -110,17 +100,60 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                                 Deny deferrals ({selectedDeferralRequests.length})
                             </DropdownItem>
                             <DropdownItem
+                                key="cancel deferrals"
+                                component="button"
+                                onClick={() =>
+                                    setRequestsToBeAssessed({
+                                        type: 'DEFERRAL',
+                                        action: 'CANCEL',
+                                        requests: selectedDeferralRequests,
+                                    })
+                                }
+                                isDisabled={selectedDeferralRequests.length === 0}
+                            >
+                                Cancel deferrals ({selectedDeferralRequests.length})
+                            </DropdownItem>
+                            <DropdownItem
+                                key="approve false positives"
+                                component="button"
+                                onClick={() =>
+                                    setRequestsToBeAssessed({
+                                        type: 'FALSE_POSITIVE',
+                                        action: 'APPROVE',
+                                        requests: selectedFalsePositiveRequests,
+                                    })
+                                }
+                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                            >
+                                Approve false positives ({selectedFalsePositiveRequests.length})
+                            </DropdownItem>
+                            <DropdownItem
                                 key="deny false positives"
                                 component="button"
                                 onClick={() =>
                                     setRequestsToBeAssessed({
-                                        type: 'DENY_FALSE_POSITIVE',
+                                        type: 'FALSE_POSITIVE',
+                                        action: 'DENY',
                                         requests: selectedFalsePositiveRequests,
                                     })
                                 }
                                 isDisabled={selectedFalsePositiveRequests.length === 0}
                             >
                                 Deny false positives ({selectedFalsePositiveRequests.length})
+                            </DropdownItem>
+                            <DropdownItem
+                                key="cancel false positives"
+                                component="button"
+                                onClick={() =>
+                                    setRequestsToBeAssessed({
+                                        type: 'FALSE_POSITIVE',
+                                        action: 'CANCEL',
+                                        requests: selectedFalsePositiveRequests,
+                                    })
+                                }
+                                isDisabled={selectedFalsePositiveRequests.length === 0}
+                            >
+                                Cancel false positives ({selectedFalsePositiveRequests.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -202,7 +235,10 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
             </TableComposable>
             {/* @TODO: The modals are very similiar and probably could be abstracted out more */}
             <ApproveDeferralModal
-                isOpen={requestsToBeAssessed?.type === 'APPROVE_DEFERRAL'}
+                isOpen={
+                    requestsToBeAssessed?.type === 'DEFERRAL' &&
+                    requestsToBeAssessed.action === 'APPROVE'
+                }
                 numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
                 numImpactedDeployments={0} // Add this when the data is available from backend
                 numImpactedImages={0} // Add this when the data is available from backend
@@ -211,7 +247,10 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                 onCancel={cancelAssessment}
             />
             <ApproveFalsePositiveModal
-                isOpen={requestsToBeAssessed?.type === 'APPROVE_FALSE_POSITIVE'}
+                isOpen={
+                    requestsToBeAssessed?.type === 'FALSE_POSITIVE' &&
+                    requestsToBeAssessed.action === 'APPROVE'
+                }
                 numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
                 numImpactedDeployments={0} // Add this when the data is available from backend
                 numImpactedImages={0} // Add this when the data is available from backend
@@ -220,19 +259,34 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                 onCancel={cancelAssessment}
             />
             <DenyDeferralModal
-                isOpen={requestsToBeAssessed?.type === 'DENY_DEFERRAL'}
+                isOpen={
+                    requestsToBeAssessed?.type === 'DEFERRAL' &&
+                    requestsToBeAssessed.action === 'DENY'
+                }
                 numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
                 onSendRequest={denyVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}
             />
             <DenyFalsePositiveModal
-                isOpen={requestsToBeAssessed?.type === 'DENY_FALSE_POSITIVE'}
+                isOpen={
+                    requestsToBeAssessed?.type === 'FALSE_POSITIVE' &&
+                    requestsToBeAssessed.action === 'DENY'
+                }
                 numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
                 onSendRequest={denyVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}
             />
+            {requestsToBeAssessed?.action === 'CANCEL' && (
+                <CancelVulnRequestModal
+                    type={requestsToBeAssessed?.type}
+                    numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
+                    onSendRequest={deleteVulnRequests}
+                    onCompleteRequest={completeAssessment}
+                    onCancel={cancelAssessment}
+                />
+            )}
         </>
     );
 }

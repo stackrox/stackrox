@@ -17,14 +17,21 @@ function DeferralRequestActionsColumn({
             title: 'Approve deferral',
             onClick: (event) => {
                 event.preventDefault();
-                setRequestsToBeAssessed({ type: 'APPROVE_DEFERRAL', requests: [row] });
+                setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'APPROVE', requests: [row] });
             },
         },
         {
             title: 'Deny deferral',
             onClick: (event) => {
                 event.preventDefault();
-                setRequestsToBeAssessed({ type: 'DENY_DEFERRAL', requests: [row] });
+                setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'DENY', requests: [row] });
+            },
+        },
+        {
+            title: 'Cancel deferral',
+            onClick: (event) => {
+                event.preventDefault();
+                setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'CANCEL', requests: [row] });
             },
         },
     ];

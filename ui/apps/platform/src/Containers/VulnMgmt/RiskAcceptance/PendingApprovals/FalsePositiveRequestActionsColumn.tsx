@@ -14,14 +14,33 @@ function FalsePositiveRequestActionsColumn({ row, setRequestsToBeAssessed }): Re
             title: 'Approve false positive',
             onClick: (event) => {
                 event.preventDefault();
-                setRequestsToBeAssessed({ type: 'APPROVE_FALSE_POSITIVE', requests: [row] });
+                setRequestsToBeAssessed({
+                    type: 'FALSE_POSITIVE',
+                    action: 'APPROVE',
+                    requests: [row],
+                });
             },
         },
         {
             title: 'Deny false positive',
             onClick: (event) => {
                 event.preventDefault();
-                setRequestsToBeAssessed({ type: 'DENY_FALSE_POSITIVE', requests: [row] });
+                setRequestsToBeAssessed({
+                    type: 'FALSE_POSITIVE',
+                    action: 'DENY',
+                    requests: [row],
+                });
+            },
+        },
+        {
+            title: 'Cancel false positive',
+            onClick: (event) => {
+                event.preventDefault();
+                setRequestsToBeAssessed({
+                    type: 'FALSE_POSITIVE',
+                    action: 'CANCEL',
+                    requests: [row],
+                });
             },
         },
     ];

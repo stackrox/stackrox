@@ -52,7 +52,6 @@ function ApproveDeferralModal({
         formik
             .submitForm()
             .then(() => {
-                setMessage(null);
                 formik.resetForm();
                 onCompleteRequest();
             })

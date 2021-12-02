@@ -52,7 +52,6 @@ function ApproveFalsePositiveModal({
         formik
             .submitForm()
             .then(() => {
-                setMessage(null);
                 formik.resetForm();
                 onCompleteRequest();
             })
