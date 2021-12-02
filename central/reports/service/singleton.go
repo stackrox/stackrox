@@ -32,12 +32,7 @@ func initializeManager() manager.Manager {
 			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
 
 	query := search.NewQueryBuilder().AddStrings(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
-	parsedQuery, err := search.ParseQuery(query.String())
-	if err != nil {
-		panic(err)
-	}
-
-	reportConfigs, err := datastore.Singleton().GetReportConfigurations(ctx, parsedQuery)
+	reportConfigs, err := datastore.Singleton().GetReportConfigurations(ctx, query)
 	if err != nil {
 		panic(err)
 	}
