@@ -101,6 +101,18 @@ func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(flow interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkFlow", reflect.TypeOf((*MockDetector)(nil).ProcessNetworkFlow), flow)
 }
 
+// ReprocessDeployment mocks base method.
+func (m *MockDetector) ReprocessDeployment(deployment *storage.Deployment) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ReprocessDeployment", deployment)
+}
+
+// ReprocessDeployment indicates an expected call of ReprocessDeployment.
+func (mr *MockDetectorMockRecorder) ReprocessDeployment(deployment interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessDeployment", reflect.TypeOf((*MockDetector)(nil).ReprocessDeployment), deployment)
+}
+
 // ResponsesC mocks base method.
 func (m *MockDetector) ResponsesC() <-chan *central.MsgFromSensor {
 	m.ctrl.T.Helper()

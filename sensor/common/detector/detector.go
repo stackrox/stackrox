@@ -43,6 +43,7 @@ type Detector interface {
 	common.CentralGRPCConnAware
 
 	ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction)
+	ReprocessDeployment(deployment *storage.Deployment)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(flow *storage.NetworkFlow)
 }
@@ -357,6 +358,14 @@ func (d *detectorImpl) ProcessDeployment(deployment *storage.Deployment, action 
 	defer d.deploymentDetectionLock.Unlock()
 
 	d.processDeploymentNoLock(deployment, action)
+}
+
+func (d *detectorImpl) ReprocessDeployment(deployment *storage.Deployment) {
+	d.deploymentDetectionLock.Lock()
+	defer d.deploymentDetectionLock.Unlock()
+
+	d.markDeploymentForProcessing(deployment.GetId())
+	go d.enricher.blockingScan(deployment, central.ResourceAction_UPDATE_RESOURCE)
 }
 
 func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, action central.ResourceAction) {

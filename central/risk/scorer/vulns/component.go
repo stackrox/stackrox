@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/scancomponent"
 )
@@ -50,7 +51,7 @@ func ProcessComponent(component scancomponent.ScanComponent) (min, max Component
 		Value: -math.MaxFloat32,
 	}
 	for _, vuln := range component.GetVulns() {
-		if vuln.GetSuppressed() {
+		if cve.IsCVESnoozed(vuln) {
 			continue
 		}
 		// Exclude vulnerabilities with unknown severity rating.

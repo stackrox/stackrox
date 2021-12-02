@@ -50,6 +50,7 @@ message MsgToSensor {
         CentralHello                   hello                              = 12;
         NetworkBaselineSync            network_baseline_sync              = 13;
         AuditLogSync                   audit_log_sync                     = 14;
+        ReprocessDeployment            reprocess_deployment               = 15;
     }
 }
 
@@ -59,6 +60,12 @@ message AuditLogSync {
 
 message AuditLogStatusInfo {
     map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
+}
+
+message ReprocessDeployment {
+    // Sensor stores deployments, hence no need to send the full deployment.
+
+    string deployment_id = 1;
 }
 
 service SensorService {

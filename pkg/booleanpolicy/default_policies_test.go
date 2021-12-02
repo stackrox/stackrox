@@ -1349,11 +1349,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Fixable CVE-2014-6200 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
 					},
 				},
-				strutsDepSuppressed.GetId(): {
-					{
-						Message: "Fixable CVE-2017-5638 (CVSS 8) (severity Important) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
-					},
-				},
 				structDepWithDeferredVulns.GetId(): {
 					{
 						Message: "Fixable CVE-2017-FAKE (CVSS 8) (severity Important) found in component 'deferred-struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",

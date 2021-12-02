@@ -7,6 +7,7 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -217,7 +218,7 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 	for _, c := range img.GetScan().GetComponents() {
 		filteredVulns := make([]*storage.EmbeddedVulnerability, 0, len(c.GetVulns()))
 		for _, vuln := range c.GetVulns() {
-			if !vuln.GetSuppressed() {
+			if !cve.IsCVESnoozed(vuln) {
 				cveSet.Add(vuln.GetCve())
 				filteredVulns = append(filteredVulns, vuln)
 			}

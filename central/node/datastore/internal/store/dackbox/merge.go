@@ -69,6 +69,8 @@ func generateEmbeddedCVE(cp *CVEParts, nodeCVEEdge *storage.NodeCVEEdge) *storag
 			FixedBy: cp.edge.GetFixedBy(),
 		}
 	}
+	// The `Suppressed` field is transferred to `State` field in `converter.ProtoCVEToEmbeddedCVE` and node cve deferral
+	// through vuln risk management workflow is not supported, hence, nothing to do here.
 	ret.FirstNodeOccurrence = nodeCVEEdge.GetFirstNodeOccurrence()
 	return ret
 }
