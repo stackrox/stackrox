@@ -62,9 +62,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer) error {
 	// Get the source cluster's ID.
-	identity := authn.IdentityFromContext(server.Context())
-	if identity == nil {
-		return errorhelpers.NewErrNotAuthorized("only sensor may access this API")
+	identity, err := authn.IdentityFromContext(server.Context())
+	if err != nil {
+		return errorhelpers.NewErrNotAuthorized(err.Error())
 	}
 
 	svc := identity.Service()

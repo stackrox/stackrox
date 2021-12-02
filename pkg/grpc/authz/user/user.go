@@ -30,7 +30,7 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	}
 
 	// Pull the identity from the context.
-	id := authn.IdentityFromContext(ctx)
+	id, _ := authn.IdentityFromContext(ctx)
 	if id == nil {
 		return errorhelpers.ErrNoCredentials
 	}

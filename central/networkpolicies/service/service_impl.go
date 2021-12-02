@@ -646,7 +646,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	}
 
 	var user string
-	identity := authn.IdentityFromContext(ctx)
+	identity, _ := authn.IdentityFromContext(ctx)
 	if identity != nil {
 		user = identity.FriendlyName()
 		if ap := identity.ExternalAuthProvider(); ap != nil {

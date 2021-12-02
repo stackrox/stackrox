@@ -11,7 +11,7 @@ import (
 // UserFromContext returns a comment_user from the given context.
 func UserFromContext(ctx context.Context) *storage.Comment_User {
 	var commentUser *storage.Comment_User
-	identity := authn.IdentityFromContext(ctx)
+	identity, _ := authn.IdentityFromContext(ctx)
 	if identity != nil {
 		commentUser = &storage.Comment_User{
 			Id:   identity.UID(),

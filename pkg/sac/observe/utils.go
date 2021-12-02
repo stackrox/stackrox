@@ -50,7 +50,7 @@ func calculateResponse(requestError error) *v1.AuthorizationTraceResponse_Respon
 }
 
 func calculateUser(ctx context.Context) *v1.AuthorizationTraceResponse_User {
-	id := authn.IdentityFromContext(ctx)
+	id, _ := authn.IdentityFromContext(ctx)
 	if id == nil {
 		return nil
 	}

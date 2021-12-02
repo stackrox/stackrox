@@ -21,7 +21,10 @@ type roleChecker struct {
 
 func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 	// Pull the identity from the context.
-	id := authn.IdentityFromContext(ctx)
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	if id == nil {
 		return errorhelpers.ErrNoCredentials
 	}

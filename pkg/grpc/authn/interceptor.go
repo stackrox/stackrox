@@ -26,6 +26,8 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 		} else {
 			log.Warnf("Cannot extract identity: %v", err)
 		}
+		// Ignore id value if error is not nil.
+		return context.WithValue(ctx, identityErrorContextKey{}, err), nil
 	}
 	if id == nil {
 		return ctx, nil

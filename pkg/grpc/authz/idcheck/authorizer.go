@@ -3,6 +3,7 @@ package idcheck
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -24,9 +25,9 @@ func Wrap(idAuthorizer IdentityBasedAuthorizer) authz.Authorizer {
 
 // Authorized implements the Authorizer interface.
 func (w identityBasedAuthorizerWrapper) Authorized(ctx context.Context, fullMethodName string) error {
-	id := authn.IdentityFromContext(ctx)
-	if id == nil {
-		return errorhelpers.ErrNoCredentials
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(errorhelpers.ErrNoCredentials, err.Error())
 	}
 	return w.idAuthorizer.AuthorizeByIdentity(id)
 }

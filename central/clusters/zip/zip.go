@@ -88,9 +88,9 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	identity := authn.IdentityFromContext(r.Context())
-	if identity == nil {
-		httputil.WriteGRPCStyleError(w, codes.Unauthenticated, errors.New("no identity in context"))
+	identity, err := authn.IdentityFromContext(r.Context())
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Unauthenticated, errors.Wrap(err, "no identity in context"))
 		return
 	}
 

@@ -34,7 +34,7 @@ func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, er
 }
 
 func extractUserIdentity(ctx context.Context) *storage.User {
-	ctxIdentity := authn.IdentityFromContext(ctx)
+	ctxIdentity, _ := authn.IdentityFromContext(ctx)
 	if ctxIdentity == nil {
 		return nil
 	}

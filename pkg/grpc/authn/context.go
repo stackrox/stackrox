@@ -3,14 +3,21 @@ package authn
 import (
 	"context"
 	"testing"
+
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 type identityContextKey struct{}
+type identityErrorContextKey struct{}
 
 // IdentityFromContext retrieves the identity from the context, if any.
-func IdentityFromContext(ctx context.Context) Identity {
+func IdentityFromContext(ctx context.Context) (Identity, error) {
 	id, _ := ctx.Value(identityContextKey{}).(Identity)
-	return id
+	err, _ := ctx.Value(identityErrorContextKey{}).(error)
+	if id == nil && err == nil {
+		return nil, errorhelpers.ErrNoCredentials
+	}
+	return id, err
 }
 
 // ContextWithIdentity adds the given identity to the context. It is to be used only for testing --

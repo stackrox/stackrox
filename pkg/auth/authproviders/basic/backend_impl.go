@@ -104,7 +104,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 
 	// If logging in via basic auth, the identity extractor of the request pipeline should already have validated our
 	// identity.
-	identity := authn.IdentityFromContext(r.Context())
+	identity, _ := authn.IdentityFromContext(r.Context())
 	if identity != nil {
 		if basicAuthIdentity, ok := identity.(basic.Identity); ok {
 			authResp := &authproviders.AuthResponse{
