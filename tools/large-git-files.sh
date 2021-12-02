@@ -2,10 +2,9 @@
 # Finds large files that have been checked in to Git.
 set -euo pipefail
 
-SCRIPT="$(python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE[0]}")"
+allowlist_path=".largefiles"
+[[ $# -eq 1 ]] && allowlist_path="$1"
 
-
-allowlist_path="$(dirname "${SCRIPT}")/allowlist"
 allowed_files=$(egrep -v '^\s*(#.*)$' "${allowlist_path}" | xargs git ls-files --)
 large_files=$(git ls-tree --full-tree -l -r HEAD "$(git rev-parse --show-toplevel)" | awk '$4 > 50*1024 {print$5}')
 
