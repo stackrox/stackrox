@@ -2,7 +2,6 @@ import React, { ReactElement, useState } from 'react';
 import { Button, Form, Modal, ModalVariant, Radio, TextArea } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import pluralize from 'pluralize';
 
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
@@ -87,13 +86,12 @@ function FalsePositiveFormModal({
         onCancelFalsePositive();
     }
 
+    const title = `Mark CVEs as false positive (${numCVEsToBeAssessed})`;
+
     return (
         <Modal
             variant={ModalVariant.small}
-            title={`Mark ${numCVEsToBeAssessed} ${pluralize(
-                'CVE',
-                numCVEsToBeAssessed
-            )} as false positive`}
+            title={title}
             isOpen={isOpen}
             onClose={onCancelHandler}
             actions={[

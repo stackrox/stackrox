@@ -1,6 +1,5 @@
 import React, { ReactElement, useState } from 'react';
 import { Button, Form, Modal, ModalVariant, TextArea } from '@patternfly/react-core';
-import pluralize from 'pluralize';
 import * as yup from 'yup';
 
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
@@ -73,13 +72,12 @@ function ApproveFalsePositiveModal({
         onCancel();
     }
 
+    const title = `Approve false positives (${numRequestsToBeAssessed})`;
+
     return (
         <Modal
             variant={ModalVariant.small}
-            title={`Approve ${numRequestsToBeAssessed} ${pluralize(
-                'false positive',
-                numRequestsToBeAssessed
-            )}`}
+            title={title}
             isOpen={isOpen}
             onClose={onCancelHandler}
             actions={[

@@ -23,7 +23,7 @@ function ApprovedDeferralActionsColumn({
             },
         },
         {
-            title: 'Undo deferral',
+            title: 'Reobserve CVE',
             onClick: (event) => {
                 event.preventDefault();
                 setRequestsToBeAssessed({ type: 'DEFERRAL', action: 'UNDO', requests: [row] });

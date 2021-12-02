@@ -1,13 +1,15 @@
 import { useMutation } from '@apollo/client';
 
 import {
-    ApproveVulnerabilityRequest,
-    APPROVE_VULNERABILITY_REQUEST,
-    DeleteVulnerabilityRequest,
-    DELETE_VULNERABILITY_REQUEST,
-    DenyVulnerabilityRequest,
-    DENY_VULNERABILITY_REQUEST,
     VulnerabilityRequest,
+    ApproveVulnerabilityRequest,
+    DeleteVulnerabilityRequest,
+    DenyVulnerabilityRequest,
+    UndoVulnerabilityRequest,
+    APPROVE_VULNERABILITY_REQUEST,
+    DENY_VULNERABILITY_REQUEST,
+    DELETE_VULNERABILITY_REQUEST,
+    UNDO_VULNERABILITY_REQUEST,
 } from './vulnerabilityRequests.graphql';
 
 export type UseRiskAcceptance = {
@@ -18,6 +20,7 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
     const [approveVulnerabilityRequest] = useMutation(APPROVE_VULNERABILITY_REQUEST);
     const [denyVulnerabilityRequest] = useMutation(DENY_VULNERABILITY_REQUEST);
     const [deleteVulnerabilityRequest] = useMutation(DELETE_VULNERABILITY_REQUEST);
+    const [undoVulnerabilityRequest] = useMutation(UNDO_VULNERABILITY_REQUEST);
 
     function approveVulnRequests(values) {
         const promises = requests.map((request) => {
@@ -100,9 +103,11 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
     }
 
     function undoVulnRequests() {
-        const promises = requests.map(() => {
-            // @TODO: Actually use API
-            return Promise.resolve('Success');
+        const promises = requests.map((request) => {
+            const variables: UndoVulnerabilityRequest = {
+                requestID: request.id,
+            };
+            return undoVulnerabilityRequest({ variables });
         });
 
         return Promise.all(promises)

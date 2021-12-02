@@ -1,14 +1,14 @@
 import React, { ReactElement, useState } from 'react';
 import { Button, Modal, ModalVariant } from '@patternfly/react-core';
-import pluralize from 'pluralize';
 
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type AllowedType = 'DEFERRAL' | 'FALSE_POSITIVE';
 
-export type CancelVulnRequestModalProps = {
+export type UndoVulnRequestModalProps = {
     type: AllowedType;
+    isOpen: boolean;
     numRequestsToBeAssessed: number;
     onSendRequest: () => Promise<FormResponseMessage>;
     onCompleteRequest: () => void;
@@ -20,19 +20,21 @@ const typeLabel: Record<AllowedType, string> = {
     FALSE_POSITIVE: 'false positive',
 };
 
-function CancelVulnRequestModal({
+function UndoVulnRequestModal({
     type,
+    isOpen,
     numRequestsToBeAssessed,
     onSendRequest,
     onCompleteRequest,
     onCancel,
-}: CancelVulnRequestModalProps): ReactElement {
+}: UndoVulnRequestModalProps): ReactElement {
     const [message, setMessage] = useState<FormResponseMessage>(null);
 
     function onHandleSubmit() {
         setMessage(null);
         onSendRequest()
             .then(() => {
+                setMessage(null);
                 onCompleteRequest();
             })
             .catch((response) => {
@@ -49,20 +51,17 @@ function CancelVulnRequestModal({
         onCancel();
     }
 
-    const title = `Cancel ${pluralize(
-        typeLabel[type],
-        numRequestsToBeAssessed
-    )} (${numRequestsToBeAssessed})`;
+    const title = `Reobserve approved deferrals (${numRequestsToBeAssessed} )`;
 
     return (
         <Modal
             variant={ModalVariant.small}
             title={title}
-            isOpen
+            isOpen={isOpen}
             onClose={onCancelHandler}
             actions={[
                 <Button key="confirm" variant="primary" onClick={onHandleSubmit}>
-                    Submit cancellation
+                    Reobserve CVE
                 </Button>,
                 <Button key="cancel" variant="link" onClick={onCancelHandler}>
                     Cancel
@@ -71,11 +70,11 @@ function CancelVulnRequestModal({
         >
             <FormMessage message={message} />
             <div>
-                Canceling a pending {typeLabel[type]} request will return the CVE into the
-                vulnerability management workflow
+                Reobserving an approved {typeLabel[type]} will return the CVE into the vulnerability
+                management workflow
             </div>
         </Modal>
     );
 }
 
-export default CancelVulnRequestModal;
+export default UndoVulnRequestModal;

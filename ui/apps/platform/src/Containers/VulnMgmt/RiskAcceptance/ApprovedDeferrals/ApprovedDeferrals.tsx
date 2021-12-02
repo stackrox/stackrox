@@ -17,7 +17,7 @@ function ApprovedDeferrals(): ReactElement {
         GetVulnerabilityRequestsVars
     >(GET_VULNERABILITY_REQUESTS, {
         variables: {
-            query: 'Request Status:APPROVED+Requested Vulnerability State:DEFERRED',
+            query: 'Request Status:APPROVED+Requested Vulnerability State:DEFERRED+Expired Request:false',
             pagination: {
                 limit: 20,
                 offset: 0,

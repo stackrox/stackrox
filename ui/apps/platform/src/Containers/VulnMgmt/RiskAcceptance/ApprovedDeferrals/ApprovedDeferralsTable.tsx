@@ -16,7 +16,7 @@ import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { ApprovedDeferralRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
-import UndoDeferralModal from './UndoDeferralModal';
+import UndoVulnRequestModal from './UndoVulnRequestModal';
 import UpdateDeferralModal from './UpdateDeferralModal';
 import DeferralExpiration from './DeferralExpiration';
 import ApprovedDeferralActionsColumn from './ApprovedDeferralActionsColumn';
@@ -89,7 +89,7 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                 }
                                 isDisabled={selectedDeferralRequests.length === 0}
                             >
-                                Undo deferrals ({selectedDeferralRequests.length})
+                                Reobserve CVEs ({selectedDeferralRequests.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
@@ -158,7 +158,8 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                     })}
                 </Tbody>
             </TableComposable>
-            <UndoDeferralModal
+            <UndoVulnRequestModal
+                type="DEFERRAL"
                 isOpen={requestsToBeAssessed?.action === 'UNDO'}
                 numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
                 onSendRequest={undoVulnRequests}
