@@ -114,7 +114,8 @@ describe('Policies basic tests', () => {
             );
         });
 
-        it('should open the preview panel to view policy dry run', () => {
+        // TODO: be sure to cover the PatternFly equivalent of this in the new version of Policies launching in 68
+        it.skip('should open the preview panel to view policy dry run', () => {
             visitPolicies();
             goToFirstPolicy();
             editPolicy();
@@ -279,7 +280,8 @@ describe('Policies basic tests', () => {
             });
         });
 
-        it('should allow creating new categories and saving them (ROX-1409)', () => {
+        // TODO: be sure to cover the PatternFly equivalent of this in the new version of Policies launching in 68
+        it.skip('should allow creating new categories and saving them (ROX-1409)', () => {
             const categoryName = 'ROX-1409-test-category';
 
             visitPolicies();
