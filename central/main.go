@@ -94,6 +94,8 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
+	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
+	reportService "github.com/stackrox/rox/central/reports/service"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	"github.com/stackrox/rox/central/role"
@@ -345,7 +347,9 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 	}
 
 	if features.VulnReporting.Enabled() {
-		servicesToRegister = append(servicesToRegister, reportConfigurationService.Singleton())
+		servicesToRegister = append(servicesToRegister,
+			reportConfigurationService.Singleton(),
+			reportService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
@@ -718,6 +722,10 @@ func waitForTerminationSignal() {
 
 	if features.VulnRiskManagement.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"})
+	}
+
+	if features.VulnReporting.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
 	}
 
 	var wg sync.WaitGroup

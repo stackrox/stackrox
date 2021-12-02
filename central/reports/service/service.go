@@ -16,7 +16,7 @@ type Service interface {
 	grpc.APIService
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-	v1.ReportConfigurationServiceServer
+	v1.ReportServiceServer
 }
 
 // New returns a new instance of the service. Please use the Singleton instead.

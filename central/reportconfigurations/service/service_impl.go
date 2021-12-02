@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
+	"github.com/stackrox/rox/central/reports/manager"
 	accessScopeStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -25,13 +26,15 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.VulnerabilityReports), permissions.View(resources.Role)): {
+		user.With(permissions.View(resources.VulnerabilityReports)): {
 			"/v1.ReportConfigurationService/GetReportConfigurations",
 			"/v1.ReportConfigurationService/GetReportConfiguration",
 		},
-		user.With(permissions.Modify(resources.VulnerabilityReports)): {
+		user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Notifier), permissions.View(resources.Role)): {
 			"/v1.ReportConfigurationService/PostReportConfiguration",
 			"/v1.ReportConfigurationService/UpdateReportConfiguration",
+		},
+		user.With(permissions.Modify(resources.VulnerabilityReports)): {
 			"/v1.ReportConfigurationService/DeleteReportConfiguration",
 		},
 	})
@@ -42,6 +45,7 @@ var (
 )
 
 type serviceImpl struct {
+	manager           manager.Manager
 	reportConfigStore datastore.DataStore
 	notifierStore     notifierDataStore.DataStore
 	accessScopeStore  accessScopeStore.DataStore
@@ -81,6 +85,11 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.P
 	if err := s.validateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
 		return nil, err
 	}
+
+	if err := s.manager.Upsert(ctx, request.GetReportConfig()); err != nil {
+		return nil, err
+	}
+
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, request.GetReportConfig())
 	if err != nil {
 		return nil, err
@@ -96,6 +105,9 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *v1
 	if err := s.validateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
 		return &v1.Empty{}, err
 	}
+	if err := s.manager.Upsert(ctx, request.GetReportConfig()); err != nil {
+		return nil, err
+	}
 
 	err := s.reportConfigStore.UpdateReportConfiguration(ctx, request.GetReportConfig())
 	if err != nil {
@@ -105,11 +117,13 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *v1
 }
 
 func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
-	err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId())
-	if err != nil {
-		return nil, err
+	if id.GetId() == "" {
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration id is required for deletion")
 	}
-	return &v1.Empty{}, nil
+	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
+		return &v1.Empty{}, err
+	}
+	return &v1.Empty{}, s.manager.Remove(ctx, id.GetId())
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

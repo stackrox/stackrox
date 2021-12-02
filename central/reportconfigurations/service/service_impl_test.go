@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
+	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
 	accessScopeMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -23,6 +24,7 @@ type TestReportConfigurationServiceTestSuite struct {
 	reportConfigDatastore *mocks.MockDataStore
 	notifierDatastore     *notifierMocks.MockDataStore
 	accessScopeStore      *accessScopeMocks.MockDataStore
+	manager               *managerMocks.MockManager
 	mockCtrl              *gomock.Controller
 }
 
@@ -31,8 +33,9 @@ func (s *TestReportConfigurationServiceTestSuite) SetupTest() {
 	s.reportConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.accessScopeStore = accessScopeMocks.NewMockDataStore(s.mockCtrl)
+	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 
-	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.accessScopeStore)
+	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.accessScopeStore, s.manager)
 }
 
 func (s *TestReportConfigurationServiceTestSuite) TearDownTest() {
@@ -49,6 +52,7 @@ func (s *TestReportConfigurationServiceTestSuite) TestAddValidReportConfiguratio
 	s.notifierDatastore.EXPECT().GetNotifier(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
 	s.accessScopeStore.EXPECT().GetAccessScope(ctx, gomock.Any()).Return(nil, true, nil).AnyTimes()
 
+	s.manager.EXPECT().Upsert(ctx, reportConfig).Return(nil)
 	_, err := s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
 		ReportConfig: reportConfig,
 	})

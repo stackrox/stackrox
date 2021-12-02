@@ -98,7 +98,7 @@ func validateBackup(backup *storage.ExternalBackup) error {
 
 	err := endpoints.ValidateEndpoints(backup.Config)
 	if err != nil {
-		errorList.AddWrap(err, "Invalid endpoint")
+		errorList.AddWrap(err, "invalid endpoint")
 	}
 	if backup.GetName() == "" {
 		errorList.AddString("name field must be specified")
