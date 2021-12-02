@@ -244,6 +244,7 @@ var (
 	RequestStatus               = newFieldLabel("Request Status")
 	ExpiredRequest              = newFieldLabel("Expired Request")
 	RequestExpiryTime           = newFieldLabel("Request Expiry Time")
+	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
 )
 
