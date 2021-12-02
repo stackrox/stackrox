@@ -29,6 +29,7 @@ const (
 var (
 	// default headers to use when printing tabular output
 	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK"}
+	columnsToMerge          = []string{"COMPONENT", "VERSION"}
 	// default JSON path expression representing a row within tabular output
 	defaultImageScanJSONPathExpression = "{" +
 		"result.vulnerabilities.#.componentName," +
@@ -38,7 +39,7 @@ var (
 		"result.vulnerabilities.#.cveInfo}"
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
-		printer.NewTabularPrinterFactory(true, defaultImageScanHeaders, defaultImageScanJSONPathExpression, false, false),
+		printer.NewTabularPrinterFactoryWithAutoMerge(defaultImageScanHeaders, columnsToMerge, defaultImageScanJSONPathExpression),
 		printer.NewJSONPrinterFactory(false, false),
 	}
 )

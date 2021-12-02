@@ -335,8 +335,8 @@ ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
 		},
 	}
 	// setup table printer with default options
-	tablePrinter, err := printer.NewTabularPrinterFactory(false, defaultImageCheckHeaders,
-		defaultImageCheckJSONPathExpression, false, false).CreatePrinter("table")
+	tablePrinter, err := printer.NewTabularPrinterFactory(defaultImageCheckHeaders,
+		defaultImageCheckJSONPathExpression).CreatePrinter("table")
 	suite.Require().NoError(err)
 	suite.runOutputTests(cases, tablePrinter, false)
 }
@@ -605,8 +605,8 @@ policy 7,LOW,-,policy 7 for testing,- test violation 1,policy 7 for testing
 	}
 
 	// setup CSV printer with default options
-	csvPrinter, err := printer.NewTabularPrinterFactory(false, defaultImageCheckHeaders,
-		defaultImageCheckJSONPathExpression, false, false).CreatePrinter("csv")
+	csvPrinter, err := printer.NewTabularPrinterFactory(defaultImageCheckHeaders,
+		defaultImageCheckJSONPathExpression).CreatePrinter("csv")
 	suite.Require().NoError(err)
 	suite.runOutputTests(cases, csvPrinter, true)
 }

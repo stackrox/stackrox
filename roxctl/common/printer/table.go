@@ -4,27 +4,42 @@ import (
 	"io"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/roxctl/common/printer/mapper"
 )
 
 type tablePrinter struct {
 	headers               []string
 	rowJSONPathExpression string
-	// autoMergeCells will instruct the table writer to merge all identical cells.
+	// columnIndexesToMerge set to non nil will instruct the table writer to merge all identical cells.
 	// There will be no precedence in any fashion applied.
-	autoMergeCells bool
-	noHeader       bool
+	columnIndexesToMerge []int
+	noHeader             bool
 }
 
 // newTablePrinter returns a table printer with injected options capable of printing data in
 // prettified tabular format.
-func newTablePrinter(headers []string, rowJSONPathExpression string, merge, noHeader bool) *tablePrinter {
+func newTablePrinter(headers []string, columnsToMerge []string, rowJSONPathExpression string, noHeader bool) *tablePrinter {
+	indexesToMerge := indexesToMergeFromColumnNames(headers, set.NewStringSet(columnsToMerge...))
 	return &tablePrinter{
 		headers:               headers,
 		rowJSONPathExpression: rowJSONPathExpression,
-		autoMergeCells:        merge,
+		columnIndexesToMerge:  indexesToMerge,
 		noHeader:              noHeader,
 	}
+}
+
+func indexesToMergeFromColumnNames(headers []string, columnsToMerge set.StringSet) []int {
+	if columnsToMerge.Cardinality() == 0 {
+		return nil
+	}
+	indexesToMerge := make([]int, 0, len(columnsToMerge))
+	for i, header := range headers {
+		if columnsToMerge.Contains(header) {
+			indexesToMerge = append(indexesToMerge, i)
+		}
+	}
+	return indexesToMerge
 }
 
 func (p *tablePrinter) createTableWriter(out io.Writer) *tablewriter.Table {
@@ -32,7 +47,9 @@ func (p *tablePrinter) createTableWriter(out io.Writer) *tablewriter.Table {
 	if !p.noHeader {
 		tw.SetHeader(p.headers)
 	}
-	tw.SetAutoMergeCells(p.autoMergeCells)
+	if p.columnIndexesToMerge != nil {
+		tw.SetAutoMergeCellsByColumnIndex(p.columnIndexesToMerge)
+	}
 	tw.SetRowLine(true)
 	tw.SetReflowDuringAutoWrap(false)
 

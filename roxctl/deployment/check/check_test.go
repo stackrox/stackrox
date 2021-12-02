@@ -492,8 +492,8 @@ ERROR: Policy "policy 4" within Deployment "wordpress" - Possible remediation: "
 		},
 	}
 
-	tablePrinter, err := printer.NewTabularPrinterFactory(false, defaultDeploymentCheckHeaders,
-		defaultDeploymentCheckJSONPathExpression, false, false).CreatePrinter("table")
+	tablePrinter, err := printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders,
+		defaultDeploymentCheckJSONPathExpression).CreatePrinter("table")
 	d.Require().NoError(err)
 	d.runOutputTests(cases, tablePrinter, false)
 }
@@ -761,8 +761,8 @@ policy 7,LOW,-,wordpress,policy 7 for testing,- testing alert violation message,
 		},
 	}
 
-	csvPrinter, err := printer.NewTabularPrinterFactory(false, defaultDeploymentCheckHeaders,
-		defaultDeploymentCheckJSONPathExpression, false, false).CreatePrinter("csv")
+	csvPrinter, err := printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders,
+		defaultDeploymentCheckJSONPathExpression).CreatePrinter("csv")
 	d.Require().NoError(err)
 	d.runOutputTests(cases, csvPrinter, true)
 }

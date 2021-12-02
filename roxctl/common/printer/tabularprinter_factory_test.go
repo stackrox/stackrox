@@ -64,6 +64,14 @@ func TestTabularPrinterFactory_Validate(t *testing.T) {
 			shouldFail: true,
 			error:      errorhelpers.ErrInvalidArgs,
 		},
+		"should fail with columns to merge not matching header": {
+			t: &TabularPrinterFactory{
+				Headers:        []string{"a", "b", "c"},
+				columnsToMerge: []string{"a", "d", "c", "e"},
+			},
+			shouldFail: true,
+			error:      errorhelpers.ErrInvalidArgs,
+		},
 	}
 
 	for name, c := range cases {

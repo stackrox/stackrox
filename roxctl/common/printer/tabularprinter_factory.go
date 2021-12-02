@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // TabularPrinterFactory holds all configuration options of tabular printers, specifically CSVPrinter and TablePrinter
@@ -18,16 +19,26 @@ type TabularPrinterFactory struct {
 	NoHeader              bool
 	// HeaderAsComment only applies to the "csv" format and prints headers as comment lines in the CSV output
 	HeaderAsComment bool
+	// columnsToMerge is a slice of columns names to merge. Names must match with headers.
+	// If set to nil and Merge set to true then all columns will be merged.
+	columnsToMerge []string
 }
 
 // NewTabularPrinterFactory creates new TabularPrinterFactory with the injected default values
-func NewTabularPrinterFactory(merge bool, headers []string, rowJSONPathExpression string, noHeader, headerAsComment bool) *TabularPrinterFactory {
+func NewTabularPrinterFactory(headers []string, rowJSONPathExpression string) *TabularPrinterFactory {
 	return &TabularPrinterFactory{
-		Merge:                 merge,
 		Headers:               headers,
 		RowJSONPathExpression: rowJSONPathExpression,
-		NoHeader:              noHeader,
-		HeaderAsComment:       headerAsComment,
+	}
+}
+
+// NewTabularPrinterFactoryWithAutoMerge creates new TabularPrinterFactory with the injected default values
+func NewTabularPrinterFactoryWithAutoMerge(headers []string, columnsToMerge []string, rowJSONPathExpression string) *TabularPrinterFactory {
+	return &TabularPrinterFactory{
+		Merge:                 true,
+		Headers:               headers,
+		RowJSONPathExpression: rowJSONPathExpression,
+		columnsToMerge:        columnsToMerge,
 	}
 }
 
@@ -94,9 +105,13 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	if err := t.validate(); err != nil {
 		return nil, err
 	}
+	// If not column is specified by merge is enabled then set all columns to merge.
+	if t.columnsToMerge == nil && t.Merge {
+		t.columnsToMerge = t.Headers
+	}
 	switch strings.ToLower(format) {
 	case "table":
-		return newTablePrinter(t.Headers, t.RowJSONPathExpression, t.Merge, t.NoHeader), nil
+		return newTablePrinter(t.Headers, t.columnsToMerge, t.RowJSONPathExpression, t.NoHeader), nil
 	case "csv":
 		return newCSVPrinter(t.Headers, t.RowJSONPathExpression, t.NoHeader, t.HeaderAsComment), nil
 	default:
@@ -111,6 +126,12 @@ func (t *TabularPrinterFactory) validate() error {
 	if t.NoHeader && t.HeaderAsComment {
 		return errorhelpers.NewErrInvalidArgs("cannot specify both --no-header as well as " +
 			"--headers-as-comment flags. Choose only one of them")
+	}
+	headers := set.NewStringSet(t.Headers...)
+	columnsToMerge := set.NewStringSet(t.columnsToMerge...)
+	intersect := headers.Intersect(columnsToMerge)
+	if !intersect.Equal(columnsToMerge) {
+		return errorhelpers.NewErrInvalidArgs("undefined columns to merge: " + columnsToMerge.Difference(intersect).ElementsString(", "))
 	}
 	return nil
 }

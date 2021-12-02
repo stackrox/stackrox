@@ -125,7 +125,11 @@ func TestTablePrinter_PrintWithMockData(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			out := strings.Builder{}
-			printer := newTablePrinter(columnHeaders, columnExpressions, c.merge, c.noHeader)
+			var columnsToMerge []string
+			if c.merge {
+				columnsToMerge = columnHeaders
+			}
+			printer := newTablePrinter(columnHeaders, columnsToMerge, columnExpressions, c.noHeader)
 			require.NoError(t, printer.Print(&jsonObject, &out))
 			assert.Equal(t, c.expectedOutput, out.String())
 		})

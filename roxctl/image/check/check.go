@@ -39,7 +39,7 @@ var (
 	}
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
-		printer.NewTabularPrinterFactory(false, defaultImageCheckHeaders, defaultImageCheckJSONPathExpression, false, false),
+		printer.NewTabularPrinterFactory(defaultImageCheckHeaders, defaultImageCheckJSONPathExpression),
 		printer.NewJSONPrinterFactory(false, false),
 	}
 )
