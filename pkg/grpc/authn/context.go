@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
@@ -17,7 +18,7 @@ func IdentityFromContext(ctx context.Context) (Identity, error) {
 	if id == nil && err == nil {
 		return nil, errorhelpers.ErrNoCredentials
 	}
-	return id, err
+	return id, errors.Wrap(errorhelpers.ErrNoCredentials, err.Error())
 }
 
 // ContextWithIdentity adds the given identity to the context. It is to be used only for testing --
