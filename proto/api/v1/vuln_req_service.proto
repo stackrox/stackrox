@@ -62,6 +62,17 @@ message DenyVulnRequestResponse {
     storage.VulnerabilityRequest request_info = 1;
 }
 
+message UpdateVulnRequest {
+    string                  id          = 1;
+    string                  comment     = 2;
+    storage.RequestExpiry   expiry      = 3;
+    // Currently, only expiry can be updated
+}
+
+message UpdateVulnRequestResponse {
+    storage.VulnerabilityRequest request_info = 1;
+}
+
 message UndoVulnRequestResponse {
     storage.VulnerabilityRequest request_info = 1;
 }
@@ -112,6 +123,14 @@ service VulnerabilityRequestService {
     rpc DenyVulnerabilityRequest (DenyVulnRequest) returns (DenyVulnRequestResponse) {
         option (google.api.http) = {
             post: "/v1/cve/requests/{id}/deny"
+            body: "*"
+        };
+    }
+
+    // UpdateVulnerabilityRequest updates an existing vulnerability request. Currently only deferral expiration time can be updated.
+    rpc UpdateVulnerabilityRequest (UpdateVulnRequest) returns (UpdateVulnRequestResponse) {
+        option (google.api.http) = {
+            post: "/v1/cve/requests/{id}/update"
             body: "*"
         };
     }

@@ -1,10 +1,10 @@
 package inputtypes
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // VulnReqExpiry represents when a vulnerability request can expire.
@@ -30,8 +30,8 @@ func (re *VulnReqExpiry) AsRequestExpiry() *storage.RequestExpiry {
 			}
 		}
 	} else {
-		ts, err := types.TimestampProto(re.ExpiresOn.Time)
-		if err != nil {
+		ts := protoconv.ConvertTimeToTimestampOrNil(re.ExpiresOn.Time)
+		if ts == nil {
 			return nil
 		}
 		ret.Expiry = &storage.RequestExpiry_ExpiresOn{
@@ -82,8 +82,8 @@ func (dr *DeferVulnRequest) AsV1DeferralRequest() *v1.DeferVulnRequest {
 			}
 		}
 	} else {
-		ts, err := types.TimestampProto(dr.ExpiresOn.Time)
-		if err != nil {
+		ts := protoconv.ConvertTimeToTimestampOrNil(dr.ExpiresOn.Time)
+		if ts == nil {
 			return nil
 		}
 		ret.Expiry = &v1.DeferVulnRequest_ExpiresOn{

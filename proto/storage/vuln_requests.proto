@@ -26,6 +26,8 @@ enum RequestStatus {
     APPROVED   = 1;
     // Indicates that the request has been denied by the approver.
     DENIED     = 2;
+    // Indicates that the original request was approved, but an update is still pending an approval or denial.
+    APPROVED_PENDING_UPDATE = 3;
 }
 
 message RequestExpiry {
@@ -98,4 +100,10 @@ message VulnerabilityRequest {
     oneof entities {
         CVEs                         cves               = 16;
     }
+
+    // 21 to 25 reserved for the updated request type oneof.
+    oneof updated_req {
+        DeferralRequest              updated_deferral_req       = 21 [(gogoproto.moretags) = "search:\"-\""];
+    }
+
 }

@@ -302,6 +302,45 @@
           "VulnerabilityRequestService"
         ]
       }
+    },
+    "/v1/cve/requests/{id}/update": {
+      "post": {
+        "summary": "UpdateVulnerabilityRequest updates an existing vulnerability request. Currently only deferral expiration time can be updated.",
+        "operationId": "VulnerabilityRequestService_UpdateVulnerabilityRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateVulnRequestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateVulnRequest"
+            }
+          }
+        ],
+        "tags": [
+          "VulnerabilityRequestService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -417,10 +456,11 @@
       "enum": [
         "PENDING",
         "APPROVED",
-        "DENIED"
+        "DENIED",
+        "APPROVED_PENDING_UPDATE"
       ],
       "default": "PENDING",
-      "description": "Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver\nare not tracked/persisted (with the exception of audit logs if it is turned on).\n\n - PENDING: Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.\n - APPROVED: Indicates that the request has been approved by the approver.\n - DENIED: Indicates that the request has been denied by the approver."
+      "description": "Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver\nare not tracked/persisted (with the exception of audit logs if it is turned on).\n\n - PENDING: Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.\n - APPROVED: Indicates that the request has been approved by the approver.\n - DENIED: Indicates that the request has been denied by the approver.\n - APPROVED_PENDING_UPDATE: Indicates that the original request was approved, but an update is still pending an approval or denial."
     },
     "storageSlimUser": {
       "type": "object",
@@ -485,6 +525,9 @@
         },
         "cves": {
           "$ref": "#/definitions/VulnerabilityRequestCVEs"
+        },
+        "updatedDeferralReq": {
+          "$ref": "#/definitions/storageDeferralRequest"
         }
       },
       "description": "Next available tag: 21\nVulnerabilityRequest encapsulates a request such as deferral request and false-positive request."
@@ -650,6 +693,28 @@
       }
     },
     "v1UndoVulnRequestResponse": {
+      "type": "object",
+      "properties": {
+        "requestInfo": {
+          "$ref": "#/definitions/storageVulnerabilityRequest"
+        }
+      }
+    },
+    "v1UpdateVulnRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "expiry": {
+          "$ref": "#/definitions/storageRequestExpiry"
+        }
+      }
+    },
+    "v1UpdateVulnRequestResponse": {
       "type": "object",
       "properties": {
         "requestInfo": {
