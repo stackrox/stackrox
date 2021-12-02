@@ -8,10 +8,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"gopkg.in/square/go-jose.v2/jwt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -67,8 +65,7 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 
 // populateFromKubernetes populates the system, default, and app namespace IDs in out from information returned by the
 // Kubernetes API server.
-func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
-	helmManagedConfig *central.HelmManagedConfigInit, out *storage.SensorDeploymentIdentification) error {
+func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface, out *storage.SensorDeploymentIdentification) error {
 	nsClient := k8sClient.CoreV1().Namespaces()
 
 	out.K8SNodeName = k8sNodeName.Setting()
@@ -100,41 +97,12 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 		out.AppNamespaceId = string(appNSObj.GetUID())
 	}
 
-	if helmManagedConfig != nil {
-		var helmReleaseRevision uint64
-		for _, secretType := range resources.GetHelmSecretTypes() {
-			listOpts := secretType.ListOptions(helmManagedConfig.GetHelmReleaseName())
-			secrets, err := k8sClient.CoreV1().Secrets(appNS).List(ctx, listOpts)
-			if err != nil {
-				errResult = multierror.Append(errResult, errors.Wrap(err, "failed to look up Helm release revision"))
-				break
-			} else {
-				for _, secret := range secrets.Items {
-					rev, extractionErr := resources.ExtractHelmRevisionFromHelmSecret(helmManagedConfig.GetHelmReleaseName(), &secret)
-					if extractionErr != nil {
-						err = extractionErr
-						break
-					}
-					if rev > helmReleaseRevision {
-						helmReleaseRevision = rev
-					}
-				}
-				if err != nil {
-					errResult = multierror.Append(errResult, errors.Wrap(err, "failed to look up Helm release revision"))
-					break
-				} else {
-					out.HelmReleaseRevision = helmReleaseRevision
-				}
-			}
-		}
-	}
-
 	return errResult
 }
 
 // fetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of
 // secret mounts and information from the Kubernetes API server.
-func fetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Interface, helmManagedConfig *central.HelmManagedConfigInit) *storage.SensorDeploymentIdentification {
+func fetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Interface) *storage.SensorDeploymentIdentification {
 	ctx, cancel := context.WithTimeout(ctx, fetchClusterIdentificationTimeout)
 	defer cancel()
 
@@ -146,7 +114,7 @@ func fetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Int
 	if err := populateFromServiceAccountNamespaceFile(&deploymentIdentification); err != nil {
 		log.Warnf("Could not populate cluster identification from service account namespace file: %s", err)
 	}
-	if err := populateFromKubernetes(ctx, k8sClient, helmManagedConfig, &deploymentIdentification); err != nil {
+	if err := populateFromKubernetes(ctx, k8sClient, &deploymentIdentification); err != nil {
 		log.Warnf("Could not populate cluster identification from Kubernetes API: %s", err)
 	}
 

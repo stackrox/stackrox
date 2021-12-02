@@ -86,7 +86,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		}
 	}
 
-	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes(), helmManagedConfig)
+	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
@@ -105,8 +105,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager)
 
-	listener := listener.New(client, configHandler, policyDetector)
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener)
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector))
 
 	upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
 	if err != nil {
@@ -170,8 +169,6 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		centralClient,
 		components...,
 	)
-
-	listener.SetSensor(s)
 
 	if workloadHandler != nil {
 		workloadHandler.SetSignalHandlers(processPipeline, networkFlowManager)

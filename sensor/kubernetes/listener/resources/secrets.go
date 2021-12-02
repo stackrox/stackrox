@@ -3,13 +3,12 @@ package resources
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/cloudflare/cfssl/certinfo"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -18,19 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/sensor"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	redhatRegistryEndpoint = "registry.redhat.io"
+const redhatRegistryEndpoint = "registry.redhat.io"
 
-	// SecretTypeHelmReleaseV1 is where Helm stores the metadata for each
-	// release starting with Helm 3.
-	// See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
-	secretTypeHelmReleaseV1 v1.SecretType = "helm.sh/release.v1"
-)
 
 // The following types are copied from the Kubernetes codebase,
 // since it is not placed in any of the officially supported client
@@ -197,21 +188,11 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 }
 
 // secretDispatcher handles secret resource events.
-type secretDispatcher struct {
-	sensor *sensor.Sensor
-	// Zero value if not managed by Helm
-	helmReleaseName string
-	// Zero value if not managed by Helm
-	helmReleaseRevision uint64
-}
+type secretDispatcher struct{}
 
 // newSecretDispatcher creates and returns a new secret handler.
-func newSecretDispatcher(sensor *sensor.Sensor, helmManagedConfig *central.HelmManagedConfigInit, deploymentIdentification *storage.SensorDeploymentIdentification) *secretDispatcher {
-	return &secretDispatcher{
-		sensor:              sensor,
-		helmReleaseName:     helmManagedConfig.GetHelmReleaseName(),
-		helmReleaseRevision: deploymentIdentification.GetHelmReleaseRevision(),
-	}
+func newSecretDispatcher() *secretDispatcher {
+	return &secretDispatcher{}
 }
 
 func dockerConfigToImageIntegration(registry string, dce dockerConfigEntry) *storage.ImageIntegration {
@@ -322,12 +303,8 @@ func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) 
 	}
 }
 
-func (d *secretDispatcher) isHelmManaged() bool {
-	return d.helmReleaseRevision > 0 && d.helmReleaseName != ""
-}
-
 // ProcessEvent processes a secret resource event, and returns the sensor events to emit in response.
-func (d *secretDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (*secretDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
 	secret := obj.(*v1.Secret)
 
 	switch secret.Type {
@@ -338,82 +315,7 @@ func (d *secretDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 		return nil
 	}
 
-	if d.isHelmManaged() && isHelmSecret(secret) {
-		revision, err := ExtractHelmRevisionFromHelmSecret(d.helmReleaseName, secret)
-		if err != nil {
-			err := errors.Wrap(err, "failed to extract Helm revision from secret, ignoring potential new Helm release")
-			log.Error(err)
-		} else if revision > d.helmReleaseRevision {
-			log.Warnf("Detected Helm revision %d higher than current revision %d, stopping sensor", revision, d.helmReleaseRevision)
-			d.sensor.Stop()
-		}
-	}
-
 	protoSecret := getProtoSecret(secret)
 	populateTypeData(protoSecret, secret.Data)
 	return []*central.SensorEvent{secretToSensorEvent(action, protoSecret)}
-}
-
-// isHelmSecret returns whether the secret is used by Helm to store release information.
-func isHelmSecret(secret *v1.Secret) bool {
-	_, ok := GetHelmSecretTypes()[secret.Type]
-	return ok
-}
-
-// HelmSecretType is a secret type that Helm uses to store release information
-type HelmSecretType interface {
-	Type() v1.SecretType
-	// ListOptions Options that can be used to retrieve all secrets for a Helm release
-	ListOptions(helmReleaseName string) metav1.ListOptions
-}
-
-type helmSecretTypeReleaseV1 struct{}
-
-func (*helmSecretTypeReleaseV1) Type() v1.SecretType {
-	return secretTypeHelmReleaseV1
-}
-
-func (h *helmSecretTypeReleaseV1) ListOptions(helmReleaseName string) metav1.ListOptions {
-	return metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("type=%s", h.Type()),
-		LabelSelector: fmt.Sprintf("name=%s", helmReleaseName),
-	}
-}
-
-// GetHelmSecretTypes returns all secret types that Helm uses to store
-// release information.
-func GetHelmSecretTypes() map[v1.SecretType]HelmSecretType {
-	return map[v1.SecretType]HelmSecretType{
-		secretTypeHelmReleaseV1: &helmSecretTypeReleaseV1{},
-	}
-}
-
-// ExtractHelmRevisionFromHelmSecret Extracts the Helm release revision number from the secret where Helm stores
-// the release metadata starting with Helm 3.
-// Assuming the following naming conventions:
-// - For secretTypeHelmReleaseV1: "sh.helm.release.v1.RELEASE_NAME.vREVISION".
-// Returns
-// - 0, nil if the secret corresponds to a release different to `helmReleaseName`.
-// - 0, err if the secret is not a helm secret (see isHelmSecret), or the secret name doesn't have the expected format.
-// See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
-func ExtractHelmRevisionFromHelmSecret(helmReleaseName string, secret *v1.Secret) (uint64, error) {
-	if secret.Type == secretTypeHelmReleaseV1 {
-		secretName := secret.Name
-		splitSecretName := strings.Split(secretName, ".")
-		if len(splitSecretName) != 6 {
-			return 0, errors.Errorf("unexpected format for Helm release revision %s", secretName)
-		}
-		if splitSecretName[4] != helmReleaseName {
-			return 0, nil
-		}
-		rev, err := strconv.Atoi(splitSecretName[5][1:])
-		if err != nil {
-			return 0, errors.Wrapf(err, "unexpected format for Helm release revision %s, revision is not an int", secretName)
-		}
-		if rev <= 0 {
-			return 0, errors.Errorf("unexpected format for Helm release revision %s, revision is not a positive int", secretName)
-		}
-		return uint64(rev), nil
-	}
-	return 0, errors.Errorf("unexpected type %s for secret with name %s", secret.Type, secret.Name)
 }

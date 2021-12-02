@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 )
 
@@ -20,15 +19,8 @@ type SensorEventListener interface {
 	SensorEventStream() concurrency.ReadOnlyValueStream
 }
 
-// Listener listens to Kubernetes events, and forwards then to the
-// dispatchers configured in resources.NewDispatcherRegistry
-type Listener interface {
-	common.SensorComponent
-	SetSensor(sensor *sensor.Sensor)
-}
-
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector) Listener {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector) common.SensorComponent {
 	k := &listenerImpl{
 		client:        client,
 		eventsC:       make(chan *central.MsgFromSensor, 10),
