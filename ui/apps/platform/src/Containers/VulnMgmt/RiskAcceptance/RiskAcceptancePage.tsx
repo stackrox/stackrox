@@ -20,6 +20,12 @@ import ApprovedDeferrals from './ApprovedDeferrals';
 import ApprovedFalsePositives from './ApprovedFalsePositives';
 
 const TABS = {
+    PENDING_APPROVALS: 'pending-approvals-tab',
+    APPROVED_DEFERRALS: 'approved-deferrals-tab',
+    APPROVED_FALSE_POSITIVES: 'approved-false-positives-tab',
+};
+
+const TAB_LABELS = {
     PENDING_APPROVALS: 'Pending Approvals',
     APPROVED_DEFERRALS: 'Approved Deferrals',
     APPROVED_FALSE_POSITIVES: 'Approved False Positives',
@@ -48,23 +54,25 @@ function RiskAcceptancePage(): ReactElement {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
-                <Tab
-                    eventKey={TABS.PENDING_APPROVALS}
-                    tabContentId={TABS.PENDING_APPROVALS}
-                    title={<TabTitleText>{TABS.PENDING_APPROVALS}</TabTitleText>}
-                />
-                <Tab
-                    eventKey={TABS.APPROVED_DEFERRALS}
-                    tabContentId={TABS.APPROVED_DEFERRALS}
-                    title={<TabTitleText>{TABS.APPROVED_DEFERRALS}</TabTitleText>}
-                />
-                <Tab
-                    eventKey={TABS.APPROVED_FALSE_POSITIVES}
-                    tabContentId={TABS.APPROVED_FALSE_POSITIVES}
-                    title={<TabTitleText>{TABS.APPROVED_FALSE_POSITIVES}</TabTitleText>}
-                />
-            </Tabs>
+            <div>
+                <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
+                    <Tab
+                        eventKey={TABS.PENDING_APPROVALS}
+                        tabContentId={TABS.PENDING_APPROVALS}
+                        title={<TabTitleText>{TAB_LABELS.PENDING_APPROVALS}</TabTitleText>}
+                    />
+                    <Tab
+                        eventKey={TABS.APPROVED_DEFERRALS}
+                        tabContentId={TABS.APPROVED_DEFERRALS}
+                        title={<TabTitleText>{TAB_LABELS.APPROVED_DEFERRALS}</TabTitleText>}
+                    />
+                    <Tab
+                        eventKey={TABS.APPROVED_FALSE_POSITIVES}
+                        tabContentId={TABS.APPROVED_FALSE_POSITIVES}
+                        title={<TabTitleText>{TAB_LABELS.APPROVED_FALSE_POSITIVES}</TabTitleText>}
+                    />
+                </Tabs>
+            </div>
             <TabContent
                 eventKey={TABS.PENDING_APPROVALS}
                 id={TABS.PENDING_APPROVALS}

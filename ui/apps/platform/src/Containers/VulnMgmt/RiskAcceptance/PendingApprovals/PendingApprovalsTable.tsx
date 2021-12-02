@@ -12,11 +12,11 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import { vulnerabilityStateLabels } from 'messages/vulnerability';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
-import { VulnerabilityRequest } from './pendingApprovals.graphql';
+import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import RequestedAction from './RequestedAction';
 import VulnerabilityRequestScope from './VulnerabilityRequestScope';
 import ApproveDeferralModal from './ApproveDeferralModal';
-import useRiskAcceptance from './useRiskAcceptance';
+import useRiskAcceptance from '../useRiskAcceptance';
 import DeferralRequestActionsColumn from './DeferralRequestActionsColumn';
 import FalsePositiveRequestActionsColumn from './FalsePositiveRequestActionsColumn';
 import { RequestsToBeAssessed } from './types';

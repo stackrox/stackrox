@@ -1,4 +1,4 @@
-import { VulnerabilityRequest } from './pendingApprovals.graphql';
+import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 
 export type RiskAssessmentAction = 'APPROVE' | 'DENY' | 'CANCEL';
 export type RiskAssessmentType = 'DEFERRAL' | 'FALSE_POSITIVE';

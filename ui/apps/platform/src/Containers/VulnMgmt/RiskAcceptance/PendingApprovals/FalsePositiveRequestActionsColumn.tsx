@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { ActionsColumn } from '@patternfly/react-table';
-import { VulnerabilityRequest } from './pendingApprovals.graphql';
+import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 import { RequestsToBeAssessed } from './types';
 
 export type DeferralRequestActionsColumnProps = {

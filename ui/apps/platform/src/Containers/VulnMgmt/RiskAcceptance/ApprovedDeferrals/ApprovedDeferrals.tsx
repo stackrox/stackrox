@@ -8,16 +8,16 @@ import {
     GET_VULNERABILITY_REQUESTS,
 } from '../vulnerabilityRequests.graphql';
 
-import PendingApprovalsTable from './PendingApprovalsTable';
+import ApprovedDeferralsTable from './ApprovedDeferralsTable';
 
-function PendingApprovals(): ReactElement {
+function ApprovedDeferrals(): ReactElement {
     const client = useApolloClient();
     const { loading: isLoading, data } = useQuery<
         GetVulnerabilityRequestsData,
         GetVulnerabilityRequestsVars
     >(GET_VULNERABILITY_REQUESTS, {
         variables: {
-            query: 'Request Status:PENDING',
+            query: 'Request Status:APPROVED+Requested Vulnerability State:DEFERRED',
             pagination: {
                 limit: 20,
                 offset: 0,
@@ -45,7 +45,7 @@ function PendingApprovals(): ReactElement {
 
     const rows = data?.results || [];
 
-    return <PendingApprovalsTable rows={rows} updateTable={updateTable} isLoading={isLoading} />;
+    return <ApprovedDeferralsTable rows={rows} updateTable={updateTable} isLoading={isLoading} />;
 }
 
-export default PendingApprovals;
+export default ApprovedDeferrals;
