@@ -1,3 +1,4 @@
+import * as api from '../../../constants/apiEndpoints';
 import { url, selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
@@ -12,6 +13,10 @@ describe('Vulnmanagement reports', () => {
     withAuth();
 
     describe('creating a report', () => {
+        beforeEach(() => {
+            cy.intercept('GET', api.report.configurations).as('getReportConfigurations');
+        });
+
         it('should navigate to the Create Report view by button or directly', () => {
             cy.visit('/main/dashboard');
             cy.get(selectors.vulnManagementExpandableNavLink).click({ force: true });
@@ -19,6 +24,7 @@ describe('Vulnmanagement reports', () => {
             cy.url().should('contain', url.reporting.list);
 
             // navigate by button
+            cy.wait('@getReportConfigurations');
             cy.get(selectors.reportSection.createReportLink).click();
             cy.location('pathname').should('eq', `${url.reporting.list}`);
             cy.location('search').should('eq', '?action=create');

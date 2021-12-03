@@ -272,6 +272,10 @@ export const integration = {
     },
 };
 
+export const report = {
+    configurations: '/v1/report/configurations',
+};
+
 export const system = {
     config: '/v1/config',
 };

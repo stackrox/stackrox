@@ -126,7 +126,8 @@ describe('Entities single views', () => {
         );
     });
 
-    it('should scope deployment data based on selected policy from entity page tab sublist', () => {
+    // TODO: track fixing this test under this bug ticket, https://stack-rox.atlassian.net/browse/ROX-8705
+    it.skip('should scope deployment data based on selected policy from entity page tab sublist', () => {
         cy.intercept('POST', api.vulnMgmt.graphqlEntities('POLICY')).as('getPolicies');
         cy.visit(url.list.policies);
         cy.wait('@getPolicies');
@@ -259,7 +260,8 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should filter component count in images list and image overview by cve when coming from cve list', () => {
+    // TODO: track fixing this test under this bug ticket, https://stack-rox.atlassian.net/browse/ROX-8705
+    it.skip('should filter component count in images list and image overview by cve when coming from cve list', () => {
         cy.intercept('POST', api.vulnMgmt.graphqlEntities('CVE')).as('getCves');
         cy.visit(url.list.cves);
         cy.wait('@getCves');
