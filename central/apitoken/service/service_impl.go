@@ -22,8 +22,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const unrestricted = "Unrestricted"
-
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.APIToken)): {
