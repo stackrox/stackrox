@@ -1,6 +1,7 @@
 import isPlainObject from 'lodash/isPlainObject';
 import qs, { ParsedQs } from 'qs';
 
+import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
 import { Cluster } from 'types/cluster.proto';
 import {
@@ -157,6 +158,12 @@ export function formatType(isDefault: boolean): string {
 
 export function formatLifecycleStages(lifecycleStages: LifecycleStage[]): string {
     return lifecycleStages.map((lifecycleStage) => lifecycleStageLabels[lifecycleStage]).join(', ');
+}
+
+// notifiers
+
+export function getNotifierTypeLabel(type: string): string {
+    return integrationsList.notifiers.find((notifier) => notifier.type === type)?.label ?? '';
 }
 
 // scope

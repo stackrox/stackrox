@@ -11,6 +11,8 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import { Cluster } from 'types/cluster.proto';
+import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 
 import {
@@ -26,13 +28,16 @@ import {
 import PolicySeverityLabel from '../PolicySeverityLabel';
 
 import ExcludedDeployment from './ExcludedDeployment';
+import Notifier from './Notifier';
 import Restriction from './Restriction';
 
 type PolicyOverviewProps = {
+    clusters: Cluster[];
+    notifiers: NotifierIntegration[];
     policy: Policy;
 };
 
-function PolicyOverview({ policy }: PolicyOverviewProps): ReactElement {
+function PolicyOverview({ clusters, notifiers, policy }: PolicyOverviewProps): ReactElement {
     const {
         categories,
         description,
@@ -41,7 +46,7 @@ function PolicyOverview({ policy }: PolicyOverviewProps): ReactElement {
         exclusions,
         isDefault,
         lifecycleStages,
-        notifiers,
+        notifiers: notifierIds,
         rationale,
         remediation,
         scope,
@@ -87,12 +92,22 @@ function PolicyOverview({ policy }: PolicyOverviewProps): ReactElement {
                     />
                 )}
             </DescriptionList>
-            {notifiers.length !== 0 && (
+            {notifierIds.length !== 0 && (
                 <>
                     <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
                         Notifiers
                     </Title>
-                    TODO
+                    <Grid hasGutter>
+                        {notifierIds.map((notifierId) => (
+                            <GridItem key={notifierId} span={4}>
+                                <Card isFlat>
+                                    <CardBody>
+                                        <Notifier notifierId={notifierId} notifiers={notifiers} />
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                        ))}
+                    </Grid>
                 </>
             )}
             {scope.length !== 0 && (
@@ -106,7 +121,10 @@ function PolicyOverview({ policy }: PolicyOverviewProps): ReactElement {
                             <GridItem key={index} span={4}>
                                 <Card isFlat>
                                     <CardBody>
-                                        <Restriction clusters={[]} restriction={restriction} />
+                                        <Restriction
+                                            clusters={clusters}
+                                            restriction={restriction}
+                                        />
                                     </CardBody>
                                 </Card>
                             </GridItem>
@@ -126,7 +144,7 @@ function PolicyOverview({ policy }: PolicyOverviewProps): ReactElement {
                                 <Card isFlat>
                                     <CardBody>
                                         <ExcludedDeployment
-                                            clusters={[]}
+                                            clusters={clusters}
                                             excludedDeployment={excludedDeployment}
                                         />
                                     </CardBody>

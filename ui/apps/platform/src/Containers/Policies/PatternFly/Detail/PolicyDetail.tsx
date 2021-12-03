@@ -24,6 +24,8 @@ import MitreAttackVectors from 'Containers/MitreAttackVectors/MitreAttackVectors
 import useToasts from 'hooks/useToasts';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
+import { Cluster } from 'types/cluster.proto';
+import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -34,14 +36,18 @@ function formatUpdateDisabledStateAction(disabled: boolean) {
 }
 
 type PolicyDetailProps = {
+    clusters: Cluster[];
     handleUpdateDisabledState: (id: string, disabled: boolean) => Promise<void>;
     hasWriteAccessForPolicy: boolean;
+    notifiers: NotifierIntegration[];
     policy: Policy;
 };
 
 function PolicyDetail({
+    clusters,
     handleUpdateDisabledState,
     hasWriteAccessForPolicy,
+    notifiers,
     policy,
 }: PolicyDetailProps): ReactElement {
     const history = useHistory();
@@ -233,7 +239,7 @@ function PolicyDetail({
             <Title headingLevel="h2" className="pf-u-mb-md">
                 Policy overview
             </Title>
-            <PolicyOverview policy={policy} />
+            <PolicyOverview clusters={clusters} policy={policy} notifiers={notifiers} />
             <Title headingLevel="h2" className="pf-u-mt-md">
                 MITRE ATT&amp;CK
             </Title>
