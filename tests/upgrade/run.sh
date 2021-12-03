@@ -74,7 +74,7 @@ preamble() {
         fi
         (cd "$REPO_FOR_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
     else
-        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone git@github.com:stackrox/rox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
+        (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone git@github.com:stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
     fi
 
     if is_CI; then
@@ -295,7 +295,7 @@ rollback_sensor_via_upgrader() {
 test_upgrade_paths() {
     info "Testing various upgrade paths"
 
-    EARLIER_SHA="b7c73d4d9d627b470d047ea4f026818ed92550d3"
+    EARLIER_SHA="af363cc209e33af88d30bba4b53afc0e55441e16"
     EARLIER_TAG="3.0.58.x-41-gb7c73d4d9d"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
