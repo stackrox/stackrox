@@ -47,22 +47,15 @@ export type Schedule = {
 
 export type IntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
-export type Interval = WeeklyInterval | DaysOfWeek | DaysOfMonth;
-
-// Note: This field will be unused for vuln mgmt reporting. It is currently
-// in use for scheduled S3 backups. With an appropriate migration, it can be
-// deprecated, and DaysOfWeek can be used instead.
-export type WeeklyInterval = {
-    day: number; // int32
-};
+export type Interval = DaysOfWeek | DaysOfMonth;
 
 // Sunday = 0, Monday = 1, .... Saturday =  6
 export type DaysOfWeek = {
-    day: number; // int32
+    days: string[]; // int32
 };
 // Only 1st and 15th of the month allowed for vuln report scheduling (API validations will be done)
 export type DaysOfMonth = {
-    days: number[]; // int32
+    days: string[]; // int32
 };
 
 type FixabilityType = 'FIXABLE' | 'NOT_FIXABLE';

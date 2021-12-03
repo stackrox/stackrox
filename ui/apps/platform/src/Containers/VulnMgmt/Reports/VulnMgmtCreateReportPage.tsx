@@ -33,11 +33,11 @@ function VulnMgmtCreateReportPage(): ReactElement {
             },
         },
         schedule: {
-            intervalType: 'UNSET',
+            intervalType: 'WEEKLY',
             hour: 0,
             minute: 0,
             interval: {
-                day: 1,
+                days: [],
             },
         },
     };

@@ -26,6 +26,8 @@ import { useFormik } from 'formik';
 import { vulnManagementReportsPath } from 'routePaths';
 import SelectSingle from 'Components/SelectSingle';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
+import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useMultiSelect from 'hooks/useMultiSelect';
 import { saveReport } from 'services/ReportsService';
@@ -100,8 +102,21 @@ function VulnMgmtReportForm({
         void setFieldValue('vulnReportFiltersMappedValues.severities', selection);
     }
 
-    function onSinceLastReportChange(selection) {
+    function onSinceLastReportChange(_id, selection) {
         void setFieldValue('vulnReportFiltersMappedValues.sinceLastReport', selection === 'true');
+    }
+
+    function onScheduledRepeatChange(_id, selection) {
+        // zero out the days selected list if changing interval type
+        if (selection !== values.schedule.intervalType) {
+            void setFieldValue('schedule.interval.days', []);
+        }
+
+        void setFieldValue('schedule.intervalType', selection);
+    }
+
+    function onScheduledDaysChange(id, selection) {
+        void setFieldValue(id, selection);
     }
 
     return (
@@ -132,10 +147,23 @@ function VulnMgmtReportForm({
                                     </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={3}>
-                                    <span>TODO: Repeat report</span>
+                                    <RepeatScheduleDropdown
+                                        label="Repeat report…"
+                                        isRequired
+                                        fieldId="schedule.intervalType"
+                                        value={values.schedule.intervalType}
+                                        handleSelect={onScheduledRepeatChange}
+                                    />
                                 </GridItem>
                                 <GridItem span={3}>
-                                    <span>TODO: On</span>
+                                    <DayPickerDropdown
+                                        label="On…"
+                                        isRequired
+                                        fieldId="schedule.interval.days"
+                                        value={values.schedule.interval.days}
+                                        handleSelect={onScheduledDaysChange}
+                                        intervalType={values.schedule.intervalType}
+                                    />
                                 </GridItem>
                                 <GridItem span={12}>
                                     <FormLabelGroup
