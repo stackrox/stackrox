@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -192,14 +193,21 @@ func (resolver *Resolver) OpenShiftVulnerabilities(ctx context.Context, args Pag
 }
 
 func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
-	var suppressedSet bool
+	var isSearchBySuppressed, isSearchByVulnState bool
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok && mfQ.MatchFieldQuery.GetField() == search.CVESuppressed.String() && mfQ.MatchFieldQuery.GetValue() == "true" {
-			suppressedSet = true
+			isSearchBySuppressed = true
+		}
+		if features.VulnRiskManagement.Enabled() {
+			if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
+				isSearchByVulnState = true
+			}
 		}
 	})
-	if suppressedSet {
+	// If search query is explicitly requesting vulns by its observed state using the legacy way or the new way,
+	// do not override with only unsnoozed cves query.
+	if isSearchBySuppressed || isSearchByVulnState {
 		return q
 	}
 

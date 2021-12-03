@@ -197,7 +197,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         printlnDated "Policy created to scale-to-zero deployments with CVE-2019-3462"
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        Helpers.sleepWithRetryBackoff(5000 * 4)
         printlnDated "Sensor and admission-controller _should_ have the policy update"
 
         def deployment = new Deployment()
