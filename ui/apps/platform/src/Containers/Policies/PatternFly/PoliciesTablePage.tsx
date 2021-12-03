@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
     PageSection,
     Bullseye,
@@ -10,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
-import SearchFilterInput from 'Components/SearchFilterInput';
+import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
 import {
     getPolicies,
     reassessPolicies,
@@ -27,9 +28,6 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from './policies.utils';
 import ImportPolicyJSONModal from './Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
-import PoliciesTablePageActionButtons from './PoliciesTablePageActionButtons';
-
-const searchCategory = 'POLICIES';
 
 type PoliciesTablePageProps = {
     hasWriteAccessForPolicy: boolean;
@@ -42,6 +40,8 @@ function PoliciesTablePage({
     handleChangeSearchFilter,
     searchFilter,
 }: PoliciesTablePageProps): React.ReactElement {
+    const history = useHistory();
+
     const [isLoading, setIsLoading] = useState(false);
     const [policies, setPolicies] = useState<ListPolicy[]>([]);
     const [errorMessage, setErrorMessage] = useState('');
@@ -50,6 +50,10 @@ function PoliciesTablePage({
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
 
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+    function onClickCreatePolicy() {
+        history.push(`${policiesBasePath}/?action=create`);
+    }
 
     function onClickImportPolicy() {
         setIsImportModalOpen(true);
@@ -132,7 +136,7 @@ function PoliciesTablePage({
     }
 
     useEffect(() => {
-        getSearchOptionsForCategory(searchCategory)
+        getSearchOptionsForCategory('POLICIES')
             .then((options) => {
                 setSearchOptions(options);
             })
@@ -147,14 +151,6 @@ function PoliciesTablePage({
 
     return (
         <PageSection variant="light" isFilled id="policies-table">
-            <SearchFilterInput
-                className="w-full"
-                handleChangeSearchFilter={handleChangeSearchFilter}
-                placeholder="Filter policies"
-                searchCategory={searchCategory}
-                searchFilter={searchFilter ?? {}}
-                searchOptions={searchOptions}
-            />
             {isLoading && (
                 <Bullseye>
                     <Spinner />
@@ -172,12 +168,12 @@ function PoliciesTablePage({
                     exportPoliciesHandler={exportPoliciesHandler}
                     enablePoliciesHandler={enablePoliciesHandler}
                     disablePoliciesHandler={disablePoliciesHandler}
-                    pageActionButtons={
-                        <PoliciesTablePageActionButtons
-                            onClickImportPolicy={onClickImportPolicy}
-                            onClickReassessPolicies={onClickReassessPolicies}
-                        />
-                    }
+                    handleChangeSearchFilter={handleChangeSearchFilter}
+                    onClickCreatePolicy={onClickCreatePolicy}
+                    onClickImportPolicy={onClickImportPolicy}
+                    onClickReassessPolicies={onClickReassessPolicies}
+                    searchFilter={searchFilter}
+                    searchOptions={searchOptions}
                 />
             )}
             <ImportPolicyJSONModal

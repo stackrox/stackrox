@@ -2,17 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Button,
-    Divider,
     Dropdown,
     DropdownItem,
     DropdownSeparator,
     DropdownToggle,
     Flex,
     PageSection,
+    Pagination,
     Title,
     Toolbar,
     ToolbarContent,
+    ToolbarGroup,
     ToolbarItem,
+    Tooltip,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { CaretDownIcon, CheckCircleIcon } from '@patternfly/react-icons';
@@ -21,10 +23,12 @@ import orderBy from 'lodash/orderBy';
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
 import TableCell from 'Components/PatternFly/TableCell';
+import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/PatternFly/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
 import { SortDirection } from 'hooks/useTableSort';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { SearchFilter } from 'types/search';
 
 import { formatLifecycleStages } from './policies.utils';
 import PolicySeverityLabel from './PolicySeverityLabel';
@@ -100,7 +104,12 @@ type PoliciesTableProps = {
     exportPoliciesHandler: (ids, onClearAll?) => void;
     enablePoliciesHandler: (ids) => void;
     disablePoliciesHandler: (ids) => void;
-    pageActionButtons: React.ReactElement;
+    handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
+    onClickCreatePolicy: () => void;
+    onClickImportPolicy: () => void;
+    onClickReassessPolicies: () => void;
+    searchFilter?: SearchFilter;
+    searchOptions: string[];
 };
 
 function PoliciesTable({
@@ -110,7 +119,12 @@ function PoliciesTable({
     exportPoliciesHandler,
     enablePoliciesHandler,
     disablePoliciesHandler,
-    pageActionButtons,
+    handleChangeSearchFilter,
+    onClickCreatePolicy,
+    onClickImportPolicy,
+    onClickReassessPolicies,
+    searchFilter,
+    searchOptions,
 }: PoliciesTableProps): React.ReactElement {
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(0);
@@ -191,68 +205,115 @@ function PoliciesTable({
             <Toolbar inset={{ default: 'insetNone' }}>
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
-                            Policies
-                        </Title>
+                        <Title headingLevel="h1">Policies</Title>
                     </ToolbarItem>
-                    <ToolbarItem>{pageActionButtons}</ToolbarItem>
-                    <ToolbarItem>
-                        <Dropdown
-                            data-testid="policies-bulk-actions-dropdown"
-                            onSelect={onSelectActions}
-                            toggle={
-                                <DropdownToggle
-                                    isDisabled={!hasWriteAccessForPolicy || !hasSelections}
-                                    isPrimary
-                                    onToggle={onToggleActions}
-                                    toggleIndicator={CaretDownIcon}
-                                >
-                                    Actions
-                                </DropdownToggle>
-                            }
-                            isOpen={isActionsOpen}
-                            dropdownItems={[
-                                <DropdownItem
-                                    key="Enable policies"
-                                    component="button"
-                                    isDisabled={numDisabled === 0}
-                                    onClick={() => enablePoliciesHandler(selectedIds)}
-                                >
-                                    {`Enable policies (${numDisabled})`}
-                                </DropdownItem>,
-                                <DropdownItem
-                                    key="Disable policies"
-                                    component="button"
-                                    isDisabled={numEnabled === 0}
-                                    onClick={() => disablePoliciesHandler(selectedIds)}
-                                >
-                                    {`Disable policies (${numEnabled})`}
-                                </DropdownItem>,
-                                // TODO: https://stack-rox.atlassian.net/browse/ROX-8613
-                                // Export policies to JSON
-                                // onClick={() => exportPoliciesHandler(selectedIds, onClearAll)}
-                                // {`Export policies to JSON (${numSelected})`}
-                                <DropdownSeparator key="Separator" />,
-                                <DropdownItem
-                                    key="Delete policy"
-                                    component="button"
-                                    isDisabled={numDeletable === 0}
-                                    onClick={() =>
-                                        deletePoliciesHandler(
-                                            selectedPolicies
-                                                .filter(({ isDefault }) => !isDefault)
-                                                .map(({ id }) => id)
-                                        )
-                                    }
-                                >
-                                    {`Delete policies (${numDeletable})`}
-                                </DropdownItem>,
-                            ]}
+                    <ToolbarGroup
+                        alignment={{ default: 'alignRight' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                        variant="button-group"
+                    >
+                        <ToolbarItem>
+                            <Button variant="primary" onClick={onClickCreatePolicy}>
+                                Create policy
+                            </Button>
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <Button variant="secondary" onClick={onClickImportPolicy}>
+                                Import policy
+                            </Button>
+                        </ToolbarItem>
+                    </ToolbarGroup>
+                </ToolbarContent>
+            </Toolbar>
+            <Toolbar inset={{ default: 'insetNone' }}>
+                <ToolbarContent>
+                    <ToolbarItem
+                        variant="search-filter"
+                        className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
+                    >
+                        <SearchFilterInput
+                            className="w-full"
+                            handleChangeSearchFilter={handleChangeSearchFilter}
+                            placeholder="Filter policies"
+                            searchCategory="POLICIES"
+                            searchFilter={searchFilter ?? {}}
+                            searchOptions={searchOptions}
+                        />
+                    </ToolbarItem>
+                    <ToolbarGroup spaceItems={{ default: 'spaceItemsSm' }} variant="button-group">
+                        <ToolbarItem>
+                            <Dropdown
+                                data-testid="policies-bulk-actions-dropdown"
+                                onSelect={onSelectActions}
+                                toggle={
+                                    <DropdownToggle
+                                        isDisabled={!hasWriteAccessForPolicy || !hasSelections}
+                                        isPrimary
+                                        onToggle={onToggleActions}
+                                        toggleIndicator={CaretDownIcon}
+                                    >
+                                        Bulk actions
+                                    </DropdownToggle>
+                                }
+                                isOpen={isActionsOpen}
+                                dropdownItems={[
+                                    <DropdownItem
+                                        key="Enable policies"
+                                        component="button"
+                                        isDisabled={numDisabled === 0}
+                                        onClick={() => enablePoliciesHandler(selectedIds)}
+                                    >
+                                        {`Enable policies (${numDisabled})`}
+                                    </DropdownItem>,
+                                    <DropdownItem
+                                        key="Disable policies"
+                                        component="button"
+                                        isDisabled={numEnabled === 0}
+                                        onClick={() => disablePoliciesHandler(selectedIds)}
+                                    >
+                                        {`Disable policies (${numEnabled})`}
+                                    </DropdownItem>,
+                                    // TODO: https://stack-rox.atlassian.net/browse/ROX-8613
+                                    // Export policies to JSON
+                                    // onClick={() => exportPoliciesHandler(selectedIds, onClearAll)}
+                                    // {`Export policies to JSON (${numSelected})`}
+                                    <DropdownSeparator key="Separator" />,
+                                    <DropdownItem
+                                        key="Delete policy"
+                                        component="button"
+                                        isDisabled={numDeletable === 0}
+                                        onClick={() =>
+                                            deletePoliciesHandler(
+                                                selectedPolicies
+                                                    .filter(({ isDefault }) => !isDefault)
+                                                    .map(({ id }) => id)
+                                            )
+                                        }
+                                    >
+                                        {`Delete policies (${numDeletable})`}
+                                    </DropdownItem>,
+                                ]}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <Tooltip content="Manually enrich external data">
+                                <Button variant="secondary" onClick={onClickReassessPolicies}>
+                                    Reassess all
+                                </Button>
+                            </Tooltip>
+                        </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            isCompact
+                            isDisabled
+                            itemCount={rows.length}
+                            page={1}
+                            perPage={rows.length}
                         />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
-            <Divider component="div" />
             <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
                 <TableComposable>
                     <Thead>
