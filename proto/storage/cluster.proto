@@ -98,6 +98,7 @@ message CompleteClusterConfig {
     StaticClusterConfig   static_config                = 2;
     string                config_fingerprint           = 3;
     map<string, string>   cluster_labels               = 4;
+    uint64                helm_release_revision        = 5;
 }
 
 // StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine
@@ -110,7 +111,6 @@ message SensorDeploymentIdentification {
     string app_namespace_id      = 4;
     string app_serviceaccount_id = 5;
     string k8s_node_name         = 6;
-    uint64 helm_release_revision = 7;
 }
 
 message Cluster {

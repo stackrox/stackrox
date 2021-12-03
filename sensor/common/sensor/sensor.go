@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/kubernetes/operator"
 )
 
 const (
@@ -64,11 +65,13 @@ type Sensor struct {
 	centralCommunication CentralCommunication
 	centralRestClient    *centralclient.Client
 
+	sensorOperator operator.Operator
+
 	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralClient *centralclient.Client, components ...common.SensorComponent) *Sensor {
+func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralClient *centralclient.Client, sensorOperator operator.Operator, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
@@ -79,6 +82,8 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 		components:        append(components, detector, configHandler), // Explicitly add the config handler
 		centralRestClient: centralClient,
 		centralConnection: grpcUtil.NewLazyClientConn(),
+
+		sensorOperator: sensorOperator,
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -218,6 +223,8 @@ func (s *Sensor) Start() {
 		return
 	}
 	go s.communicationWithCentral(&centralReachable)
+
+	go s.launchSensorOperator()
 }
 
 func (s *Sensor) gRPCConnectToCentralWithRetries(signal *concurrency.Signal) {
@@ -313,12 +320,28 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	s.centralCommunication = NewCentralCommunication(s.components...)
 
 	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
+	s.waitForSignal(s.centralCommunication.Stopped(), "Sensor reported an error: %v",
+		"Terminating central connection.")
+}
 
-	if err := s.centralCommunication.Stopped().Wait(); err != nil {
-		log.Errorf("Sensor reported an error: %v", err)
+func (s *Sensor) launchSensorOperator() {
+	if s.sensorOperator == nil {
+		return
+	}
+	if err := s.sensorOperator.Start(context.Background()); err != nil {
+		log.Errorf("Error launching sensor embedded operator, self-operating features will not be available: %v", err)
+		return
+	}
+	s.waitForSignal(s.sensorOperator.Stopped(), "Stopping sensor due an error in embedded operator: %v",
+		"Stopping sensor due to signal from embedded operator.")
+}
+
+func (s *Sensor) waitForSignal(signal concurrency.ReadOnlyErrorSignal, stopMessage string, stopErrorTemplateMsg string) {
+	if err := signal.Wait(); err != nil {
+		log.Errorf(stopErrorTemplateMsg, err)
 		s.stoppedSig.SignalWithError(err)
 	} else {
-		log.Info("Terminating central connection.")
+		log.Info(stopMessage)
 		s.stoppedSig.Signal()
 	}
 }

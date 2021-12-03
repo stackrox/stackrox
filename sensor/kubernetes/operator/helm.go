@@ -8,24 +8,23 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
+	fetchSensorPodTimeout                        = 10 * time.Second
 	fetchCurrentSensorHelmReleaseRevisionTimeout = 10 * time.Second
-	helmReleaseNameMetadataKey = "name"
+	helmReleaseNameAnnotationsKey                = "meta.helm.sh/release-name"
+
+	sensorPodAppLabelKey   = "app.kubernetes.io/component"
+	sensorPodAppLabelValue = "sensor"
 
 	// SecretTypeHelmReleaseV1 is where Helm stores the metadata for each
 	// release starting with Helm 3.
 	// See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
 	secretTypeHelmReleaseV1 v1.SecretType = "helm.sh/release.v1"
 )
-
-func getHelmReleaseName(pod v1.Pod) string {
-	return pod.GetObjectMeta().GetLabels()[helmReleaseNameMetadataKey]
-}
 
 // ExtractHelmRevisionFromHelmSecret Extracts the Helm release revision number from the secret where Helm stores
 // the release metadata starting with Helm 3.
@@ -58,12 +57,71 @@ func (o *operatorImpl) extractHelmRevisionFromHelmSecret(secret *v1.Secret) (uin
 	return 0, errors.Errorf("unexpected type %s for secret with name %s", secret.Type, secret.Name)
 }
 
-func (o *operatorImpl) fetchCurrentSensorHelmReleaseRevision(ctx context.Context) (uint64, error) {
+func (o *operatorImpl) fetchHelmReleaseName(ctx context.Context) error {
+	sensorPod, err := o.fetchSensorPod(ctx)
+	if err != nil {
+		return err
+	}
+	if helmReleaseName, ok := sensorPod.GetObjectMeta().GetAnnotations()[helmReleaseNameAnnotationsKey]; ok {
+		o.helmReleaseName = helmReleaseName
+	} else {
+		return errors.Errorf("Helm release name not found in annotations key %s", helmReleaseNameAnnotationsKey)
+	}
+
+	log.Infof("Detected helm release name %s", o.helmReleaseName)
+	return nil
+}
+
+func (o *operatorImpl) fetchSensorPod(ctx context.Context) (v1.Pod, error) {
+	var pod v1.Pod
+	ctx, cancel := context.WithTimeout(ctx, fetchSensorPodTimeout)
+	defer cancel()
+
+	sensorPodLabel := fmt.Sprintf("%s=%s", sensorPodAppLabelKey, sensorPodAppLabelValue)
+	retrySleepTime := time.Second
+	// Here finding 0 pods or more than 1 pod are treated as retryable errors, while all other errors are permanent
+	for {
+		select {
+		case <-ctx.Done():
+			return pod, errors.New("timeout fetching Sensor pod")
+		default:
+		}
+
+		var sensorPods []v1.Pod
+		for _, phase := range []string{"Running", "Pending"} {
+			listOpts := metav1.ListOptions{
+				LabelSelector: sensorPodLabel,
+				FieldSelector: fmt.Sprintf("status.phase=%s", phase),
+			}
+			podList, err := o.k8sClient.CoreV1().Pods(o.appNamespace).List(ctx, listOpts)
+			if err != nil {
+				return pod, err
+			}
+			sensorPods = append(sensorPods, podList.Items...)
+		}
+		switch numPodsFound := len(sensorPods); numPodsFound {
+		case 0:
+			log.Infof("no sensor pod found yet for namespace %s and label %s, will retry in %s",
+				o.appNamespace, sensorPodLabel, retrySleepTime)
+			time.Sleep(retrySleepTime)
+		case 1:
+			return sensorPods[0], nil
+		default:
+			podNamesStr := fmt.Sprintf("%s, %s, ...", sensorPods[0].GetName(), sensorPods[1].GetName())
+			log.Infof("more than 1 pod found for namespace %s and label %s, will retry in %s: %s",
+				o.appNamespace, sensorPodLabel, retrySleepTime, podNamesStr)
+			time.Sleep(retrySleepTime)
+		}
+	}
+}
+
+// Should be called after `o.helmReleaseName` is initialized with `fetchHelmReleaseName`
+func (o *operatorImpl) fetchCurrentSensorHelmReleaseRevision(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, fetchCurrentSensorHelmReleaseRevisionTimeout)
 	defer cancel()
 
 	var (
-		errResult error
+		errResult           error
 		helmReleaseRevision uint64
 	)
 	for _, secretType := range getHelmSecretTypes() {
@@ -90,9 +148,12 @@ func (o *operatorImpl) fetchCurrentSensorHelmReleaseRevision(ctx context.Context
 		}
 	}
 	if errResult != nil {
-		return 0, errResult
+		return errResult
 	}
-	return helmReleaseRevision, nil
+
+	o.helmReleaseRevision = helmReleaseRevision
+	log.Infof("Detected helm release revision %d", o.helmReleaseRevision)
+	return nil
 }
 
 func (o *operatorImpl) isSensorHelmManaged() bool {
@@ -104,13 +165,10 @@ func (o *operatorImpl) processSecret(secret *v1.Secret) error {
 	if o.isSensorHelmManaged() && isHelmSecret(secret) {
 		revision, err := o.extractHelmRevisionFromHelmSecret(secret)
 		if err != nil {
-			processingError = errors.Wrap(err, "failed to extract Helm revision from secret, ignoring potential new Helm release")
-			log.Error(processingError)
+			log.Errorf("Failed to extract Helm revision from secret, ignoring potential new Helm release: %s", processingError)
 		} else if revision > o.helmReleaseRevision {
 			log.Warnf("Detected Helm revision %d higher than current revision %d, stopping sensor", revision, o.helmReleaseRevision)
-			// FIXME send signal to stop the sensor
-			// TODO error management
-			// was: d.sensor.Stop()
+			o.stop(nil)
 		}
 	}
 	return processingError
@@ -135,6 +193,7 @@ func (h *helmSecretTypeReleaseV1) ListOptions(helmReleaseName string) metav1.Lis
 		LabelSelector: fmt.Sprintf("name=%s", helmReleaseName),
 	}
 }
+
 // GetHelmSecretTypes returns all secret types that Helm uses to store
 // release information.
 func getHelmSecretTypes() map[v1.SecretType]HelmSecretType {

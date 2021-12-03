@@ -245,8 +245,6 @@
   {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
 {{- end }}
 
-{{ $_ = set $._rox "helmReleaseName" .Release.Name }}
-
 {{/*
     Post-processing steps.
    */}}

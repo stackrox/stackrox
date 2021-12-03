@@ -46,6 +46,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
+	"github.com/stackrox/rox/sensor/kubernetes/operator"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
@@ -88,6 +89,17 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+
+	// FIXME: all helmManagedConfig related code together and in an aux function
+	var sensorOperator operator.Operator
+	if helmManagedConfig != nil {
+		sensorOperator = operator.New(client.Kubernetes(), deploymentIdentification.GetAppNamespace())
+		if err := sensorOperator.Initialize(context.Background()); err == nil {
+			log.Error(err)
+		} else {
+			helmManagedConfig.GetClusterConfig().HelmReleaseRevision = sensorOperator.GetHelmReleaseRevision()
+		}
+	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
@@ -167,6 +179,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		policyDetector,
 		imageService,
 		centralClient,
+		sensorOperator,
 		components...,
 	)
 

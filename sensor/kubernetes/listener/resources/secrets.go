@@ -22,7 +22,6 @@ import (
 
 const redhatRegistryEndpoint = "registry.redhat.io"
 
-
 // The following types are copied from the Kubernetes codebase,
 // since it is not placed in any of the officially supported client
 // libraries.
