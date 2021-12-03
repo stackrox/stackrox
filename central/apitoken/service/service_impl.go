@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/backend"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
@@ -113,52 +112,6 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		Token:    token,
 		Metadata: metadata,
 	}, nil
-}
-
-// This function ensures that no APIToken with permissions more than principal has can be created.
-// For each requested tuple (access scope, resource, accessLevel) we check that either:
-// * principal has permission on this resource with unrestricted access scope
-// * principal has permission on this resource with requested access scope
-func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.ResolvedRole) error {
-	// Group roles by access scope.
-	userRolesByScope := make(map[string][]permissions.ResolvedRole)
-	accessScopeByName := make(map[string]*storage.SimpleAccessScope)
-	userPermissionsByScope := make(map[string]map[string]storage.Access)
-	for _, userRole := range userRoles {
-		scopeName := extractScopeName(userRole)
-		accessScopeByName[scopeName] = userRole.GetAccessScope()
-		userRolesByScope[scopeName] = append(userRolesByScope[scopeName], userRole)
-	}
-	// Unify permissions of grouped roles.
-	for scopeName, roles := range userRolesByScope {
-		userPermissionsByScope[scopeName] = utils.NewUnionPermissions(roles)
-	}
-
-	// Verify that for each tuple (access scope, resource, accessLevel) we have enough permissions.
-	var multiErr error
-	for _, requestedRole := range requestedRoles {
-		scopeName := extractScopeName(requestedRole)
-		scopePermissions := userPermissionsByScope[scopeName]
-		unrestrictedPermissions := userPermissionsByScope[unrestricted]
-		for requestedResource, requestedAccess := range requestedRole.GetPermissions() {
-			scopeAccess := scopePermissions[requestedResource]
-			unrestrictedAccess := unrestrictedPermissions[requestedResource]
-			maxAccess := utils.MaxAccess(scopeAccess, unrestrictedAccess)
-			if maxAccess < requestedAccess {
-				err := errors.Errorf("resource=%s, access scope=%s: requested access is %q, when maximum access is %q",
-					requestedResource, scopeName, requestedAccess, maxAccess)
-				multiErr = multierror.Append(multiErr, err)
-			}
-		}
-	}
-	return multiErr
-}
-
-func extractScopeName(userRole permissions.ResolvedRole) string {
-	if userRole.GetAccessScope() != nil {
-		return userRole.GetAccessScope().GetName()
-	}
-	return unrestricted
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
