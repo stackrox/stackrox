@@ -1,10 +1,9 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
@@ -56,11 +55,8 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 	assert.Nil(t, err)
 	// 1. User roles are empty.
 	err = verifyNoPrivilegeEscalation(make([]permissions.ResolvedRole, 0), []permissions.ResolvedRole{writeRole})
-	multiErr := multierror.Append(nil, []error{
-		buildError("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS),
-		buildError("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS),
-	}...)
-	assert.EqualError(t, err, multiErr.Error())
+	assert.Contains(t, err.Error(), buildErrorMsg("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS))
+	assert.Contains(t, err.Error(), buildErrorMsg("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS))
 	// 2. Requested roles are empty.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{writeRole}, make([]permissions.ResolvedRole, 0))
 	assert.Nil(t, err)
@@ -100,30 +96,21 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 
 	// 8. User has read permissions in "Dev" scope, requested are write permissions in "Dev" scope.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devReadRole}, []permissions.ResolvedRole{devWriteRole})
-	multiErr = multierror.Append(nil, []error{
-		buildError("Image", "Dev", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS),
-		buildError("Deployment", "Dev", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS),
-	}...)
-	assert.EqualError(t, err, multiErr.Error())
+	assert.Contains(t, err.Error(), buildErrorMsg("Image", "Dev", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS))
+	assert.Contains(t, err.Error(), buildErrorMsg("Deployment", "Dev", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS))
 
 	// 9. User has read permissions, requested are write permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{readRole}, []permissions.ResolvedRole{writeRole})
-	multiErr = multierror.Append(nil, []error{
-		buildError("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS),
-		buildError("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS),
-	}...)
-	assert.EqualError(t, err, multiErr.Error())
+	assert.Contains(t, err.Error(), buildErrorMsg("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS))
+	assert.Contains(t, err.Error(), buildErrorMsg("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS))
 
 	// 10. User has "dev" write permissions, requested are unrestricted write permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devWriteRole}, []permissions.ResolvedRole{writeRole})
-	multiErr = multierror.Append(nil, []error{
-		buildError("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS),
-		buildError("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS),
-	}...)
-	assert.EqualError(t, err, multiErr.Error())
+	assert.Contains(t, err.Error(), buildErrorMsg("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS))
+	assert.Contains(t, err.Error(), buildErrorMsg("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS))
 }
 
-func buildError(requestedResource, scopeName string, requestedAccess, userAccess storage.Access) error {
-	return errors.Errorf("resource=%s, access scope=%q: requested access is %s, when user access is %s",
+func buildErrorMsg(requestedResource, scopeName string, requestedAccess, userAccess storage.Access) string {
+	return fmt.Sprintf("resource=%s, access scope=%q: requested access is %s, when user access is %s",
 		requestedResource, scopeName, requestedAccess, userAccess)
 }
