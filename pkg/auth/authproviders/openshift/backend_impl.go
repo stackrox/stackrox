@@ -30,9 +30,14 @@ const (
 // openshift auth. In addition to the CA files here, the system's trusted root CAs will be used as well.
 // The path may or may not exist depending on cluster state & configuration.
 const (
-	// serviceAccountCACertPath points to the secret of the service account, which within an OpenShift environment
-	// also has the service-ca.crt which includes CA's for internal services and Ingress Controller certificates.
-	serviceAccountCACertPath = "/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+	// serviceOperatorCAPath points to the secret of the service account, which within an OpenShift environment
+	// also has the service-ca.crt, which includes the CA to verify certificates issued by the service-ca operator.
+	// This could be i.e. the default ingress controller certificate.
+	serviceOperatorCAPath = "/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+	// internalServicesCAPath points to the secret of the service account, which includes the internal CAs to
+	// verify internal cluster services.
+	// This could be i.e. the openshiftAPIUrl or other internal services.
+	internalServicesCAPath = "/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 )
 
 var (
@@ -191,7 +196,7 @@ func getOpenShiftSettings() (openShiftSettings, error) {
 		return openShiftSettings{}, errors.Wrap(err, "reading service account token")
 	}
 
-	certPool, err := getSystemCertPoolWithAdditionalCA(serviceAccountCACertPath)
+	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath)
 	if err != nil {
 		return openShiftSettings{}, err
 	}
@@ -203,25 +208,33 @@ func getOpenShiftSettings() (openShiftSettings, error) {
 	}, nil
 }
 
-func getSystemCertPoolWithAdditionalCA(additionalCAPath string) (*x509.CertPool, error) {
+func getSystemCertPoolWithAdditionalCA(additionalCAPaths ...string) (*x509.CertPool, error) {
 	// Use the x509.SystemCertPool to include system's trusted CAs.
 	sysCertPool, err := x509.SystemCertPool()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating system cert pool")
 	}
 
-	rootCABytes, err := os.ReadFile(additionalCAPath)
-	if errors.Is(err, os.ErrNotExist) {
-		return sysCertPool, nil
-	}
-
+	sysAndAdditionalCertsPool, err := addAdditionalCAsToCertPool(additionalCAPaths, sysCertPool)
 	if err != nil {
-		return nil, errors.Wrapf(err, "reading CA at path %s", additionalCAPath)
+		return nil, err
 	}
 
-	if !sysCertPool.AppendCertsFromPEM(rootCABytes) {
-		return nil, errors.Errorf("parsing root CA file from %s", additionalCAPath)
-	}
+	return sysAndAdditionalCertsPool, nil
+}
 
-	return sysCertPool, nil
+func addAdditionalCAsToCertPool(additionalCAPaths []string, certPool *x509.CertPool) (*x509.CertPool, error) {
+	for _, caPath := range additionalCAPaths {
+		rootCABytes, err := os.ReadFile(caPath)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, errors.Wrapf(err, "reading CA at path %s", caPath)
+		}
+		if !certPool.AppendCertsFromPEM(rootCABytes) {
+			return nil, errors.Errorf("parsing root CA file from %s", caPath)
+		}
+	}
+	return certPool, nil
 }
