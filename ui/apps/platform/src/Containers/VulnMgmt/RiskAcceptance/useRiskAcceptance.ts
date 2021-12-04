@@ -6,11 +6,14 @@ import {
     DeleteVulnerabilityRequest,
     DenyVulnerabilityRequest,
     UndoVulnerabilityRequest,
+    UpdateVulnerabilityRequest,
     APPROVE_VULNERABILITY_REQUEST,
     DENY_VULNERABILITY_REQUEST,
     DELETE_VULNERABILITY_REQUEST,
     UNDO_VULNERABILITY_REQUEST,
+    UPDATE_VULNERABILITY_REQUEST,
 } from './vulnerabilityRequests.graphql';
+import { getExpiresOnValue, getExpiresWhenFixedValue } from './utils/vulnRequestFormUtils';
 
 export type UseRiskAcceptance = {
     requests: VulnerabilityRequest[];
@@ -21,6 +24,7 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
     const [denyVulnerabilityRequest] = useMutation(DENY_VULNERABILITY_REQUEST);
     const [deleteVulnerabilityRequest] = useMutation(DELETE_VULNERABILITY_REQUEST);
     const [undoVulnerabilityRequest] = useMutation(UNDO_VULNERABILITY_REQUEST);
+    const [updateVulnerabilityRequest] = useMutation(UPDATE_VULNERABILITY_REQUEST);
 
     function approveVulnRequests(values) {
         const promises = requests.map((request) => {
@@ -84,10 +88,25 @@ function useRiskAcceptance({ requests }: UseRiskAcceptance) {
             });
     }
 
-    function updateVulnRequests() {
-        const promises = requests.map(() => {
-            // @TODO: Actually use API with form values
-            return Promise.resolve('Success');
+    function updateVulnRequests(formValues) {
+        const { comment } = formValues;
+        let expiry = {};
+        const expiresWhenFixed = getExpiresWhenFixedValue(formValues.expiresOn);
+        const expiresOn = getExpiresOnValue(formValues.expiresOn);
+        if (expiresWhenFixed) {
+            expiry = { ...expiry, expiresWhenFixed };
+        }
+        if (expiresOn) {
+            expiry = { ...expiry, expiresOn };
+        }
+
+        const promises = requests.map((request) => {
+            const variables: UpdateVulnerabilityRequest = {
+                requestID: request.id,
+                comment,
+                expiry,
+            };
+            return updateVulnerabilityRequest({ variables });
         });
 
         return Promise.all(promises)

@@ -9,7 +9,6 @@ import {
 } from '@patternfly/react-core';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
-import { vulnerabilityStateLabels } from 'messages/vulnerability';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
@@ -24,6 +23,7 @@ import ApproveFalsePositiveModal from './ApproveFalsePositiveModal';
 import DenyDeferralModal from './DenyDeferralModal';
 import DenyFalsePositiveModal from './DenyFalsePositiveModal';
 import CancelVulnRequestModal from './CancelVulnRequestModal';
+import VulnRequestType from '../VulnRequestType';
 
 export type PendingApprovalsTableProps = {
     rows: VulnerabilityRequest[];
@@ -192,7 +192,10 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
                                 <Td dataLabel="Type">
-                                    {vulnerabilityStateLabels[row.targetState]}
+                                    <VulnRequestType
+                                        targetState={row.targetState}
+                                        requestStatus={row.status}
+                                    />
                                 </Td>
                                 <Td dataLabel="Scope">
                                     {row.scope.imageScope ? 'image' : 'global'}
@@ -201,7 +204,9 @@ function PendingApprovalsTable({ rows, updateTable }: PendingApprovalsTableProps
                                 <Td dataLabel="Requested Action">
                                     <RequestedAction
                                         targetState={row.targetState}
+                                        requestStatus={row.status}
                                         deferralReq={row.deferralReq}
+                                        updatedDeferralReq={row.updatedDeferralReq}
                                     />
                                 </Td>
                                 <Td dataLabel="Apply to">

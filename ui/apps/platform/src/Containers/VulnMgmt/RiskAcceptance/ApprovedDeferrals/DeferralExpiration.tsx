@@ -12,7 +12,7 @@ function DeferralExpiration({ deferralReq }: DeferralExpirationProps): ReactElem
     if (deferralReq?.expiresWhenFixed) {
         expiration = 'when fixed';
     } else {
-        expiration = getDistanceStrictAsPhrase(deferralReq.expiresOn);
+        expiration = getDistanceStrictAsPhrase(deferralReq.expiresOn, new Date());
     }
 
     return <span>{expiration}</span>;

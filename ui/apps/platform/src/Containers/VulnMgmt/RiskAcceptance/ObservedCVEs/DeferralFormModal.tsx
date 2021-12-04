@@ -6,9 +6,10 @@ import * as yup from 'yup';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ExpiresOn } from '../utils/vulnRequestFormUtils';
 
 export type DeferralFormValues = {
-    expiresOn: string;
+    expiresOn: ExpiresOn;
     imageAppliesTo: string;
     comment: string;
 };
@@ -58,7 +59,7 @@ function DeferralFormModal({
     const [message, setMessage] = useState<FormResponseMessage>(null);
     const formik = useFormik<DeferralFormValues>({
         initialValues: {
-            expiresOn: '',
+            expiresOn: 'Until Fixable',
             imageAppliesTo: '',
             comment: '',
         },

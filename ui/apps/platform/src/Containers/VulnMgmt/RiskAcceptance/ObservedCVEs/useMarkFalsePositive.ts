@@ -1,7 +1,7 @@
 import { useMutation } from '@apollo/client';
 import { FalsePositiveFormValues } from './FalsePositiveFormModal';
 import { MarkFalsePositiveRequest, MARK_FALSE_POSITIVE } from './observedCVEs.graphql';
-import { getScopeValue } from './vulnRequestFormUtils';
+import { getScopeValue } from '../utils/vulnRequestFormUtils';
 
 export type UseMarkFalsePositiveProps = {
     cveIDs: string[];

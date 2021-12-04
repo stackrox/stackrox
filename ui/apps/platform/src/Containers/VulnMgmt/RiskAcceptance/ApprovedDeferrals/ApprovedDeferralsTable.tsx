@@ -9,7 +9,6 @@ import {
 } from '@patternfly/react-core';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
-import { vulnerabilityStateLabels } from 'messages/vulnerability';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
@@ -20,6 +19,7 @@ import UndoVulnRequestModal from './UndoVulnRequestModal';
 import UpdateDeferralModal from './UpdateDeferralModal';
 import DeferralExpiration from './DeferralExpiration';
 import ApprovedDeferralActionsColumn from './ApprovedDeferralActionsColumn';
+import VulnRequestType from '../VulnRequestType';
 
 export type ApprovedDeferralsTableProps = {
     rows: VulnerabilityRequest[];
@@ -128,7 +128,10 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                 />
                                 <Td dataLabel="Requested Entity">{row.cves.ids[0]}</Td>
                                 <Td dataLabel="Type">
-                                    {vulnerabilityStateLabels[row.targetState]}
+                                    <VulnRequestType
+                                        targetState={row.targetState}
+                                        requestStatus={row.status}
+                                    />
                                 </Td>
                                 <Td dataLabel="Scope">
                                     {row.scope.imageScope ? 'image' : 'global'}

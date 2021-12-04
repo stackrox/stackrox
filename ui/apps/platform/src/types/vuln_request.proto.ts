@@ -7,7 +7,7 @@ export type RequestComment = {
     createdAt: string;
 };
 
-export type RequestState = 'PENDING' | 'APPROVED' | 'DENIED';
+export type RequestStatus = 'PENDING' | 'APPROVED' | 'DENIED' | 'APPROVED_PENDING_UPDATE';
 
 export type DeferralRequest = {
     expiresOn?: string;

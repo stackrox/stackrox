@@ -74,7 +74,7 @@ export const getDistanceStrictAsPhrase = (dataDatetime, currentDatetime) =>
     });
 
 export const addDaysToDate = (date, amount) => {
-    return format(addDays(date, amount + 1), 'YYYY-MM-DD[T]HH:mm:ss.SSSSSS[Z]');
+    return format(addDays(date, amount + 1), 'YYYY-MM-DD[T]HH:mm:ss.SSSSSSSSS[Z]');
 };
 
 export default {

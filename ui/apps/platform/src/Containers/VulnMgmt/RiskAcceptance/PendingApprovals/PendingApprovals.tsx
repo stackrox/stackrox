@@ -17,7 +17,7 @@ function PendingApprovals(): ReactElement {
         GetVulnerabilityRequestsVars
     >(GET_VULNERABILITY_REQUESTS, {
         variables: {
-            query: 'Request Status:PENDING',
+            query: 'Request Status:PENDING,APPROVED_PENDING_UPDATE+Expired Request:false',
             pagination: {
                 limit: 20,
                 offset: 0,
