@@ -348,7 +348,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 
 	identity, err := authn.IdentityFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "no identity in context")
+		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 	metadata := map[string]interface{}{identityUIDKey: identity.UID()}
 	id, err := s.dryRunPolicyJobManager.AddTask(metadata, t)
@@ -709,7 +709,7 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
-		return status.Error(codes.PermissionDenied, err.Error())
+		return status.Error(codes.Unauthenticated, err.Error())
 	}
 	if identityUID != id.UID() {
 		return status.Error(codes.PermissionDenied, "Unauthorized access.")
