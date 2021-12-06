@@ -53,7 +53,9 @@ function enterPageSearch(searchObj, inputSelector = search.input) {
     cy.get(inputSelector).blur(); // remove focus to close the autocomplete popup
 }
 
-describe('Violation Page: Tags', () => {
+// TODO: re-enable this suite and fix the flakey failures of various tests in CI
+//       see https://stack-rox.atlassian.net/browse/ROX-8717
+describe.skip('Violation Page: Tags', () => {
     withAuth();
 
     it('should add tag without allowing duplicates', () => {
