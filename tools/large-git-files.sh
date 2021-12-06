@@ -2,11 +2,22 @@
 # Finds large files that have been checked in to Git.
 set -euo pipefail
 
-allowed_files=""
+DEFAULT_ALLOWLIST_PATH=".allowed-largefiles"
+
+allowlist_path=""
+if [[ -f "$DEFAULT_ALLOWLIST_PATH" ]]
+then
+  allowlist_path="$DEFAULT_ALLOWLIST_PATH"
+fi
 
 if [[ $# -eq 1 ]]
 then
   allowlist_path="$1"
+fi
+
+allowed_files=""
+if [[ -n "$allowlist_path" ]]
+then
   allowed_files=$(egrep -v '^\s*(#.*)$' "${allowlist_path}" | xargs git ls-files --)
 fi
 
@@ -24,7 +35,7 @@ IFS=$'\n' read -d '' -r -a non_allowed_files < <(
 
 [[ "${#non_allowed_files[@]}" == 0 ]] || {
   echo "Found large files in the working tree. Please remove them!"
-  echo "If you must add them, you need to explicitly add them to the allow list file."
+  echo "If you must add them, you need to explicitly add them to the allow list file ${allowlist_path:-$DEFAULT_ALLOWLIST_PATH}"
   echo "Files were: "
   printf '  %s\n' "${non_allowed_files[@]}"
   exit 1
