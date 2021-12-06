@@ -7,7 +7,7 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
-// AlertGetter provides the required access to alerts for risk scoring.
-type AlertGetter interface {
+// AlertSearcher provides the required access to alert results for risk scoring.
+type AlertSearcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
 }

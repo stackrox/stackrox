@@ -32,7 +32,7 @@ var (
 
 // ViolationsMultiplier is a scorer for the violations on a deployment
 type ViolationsMultiplier struct {
-	getter getters.AlertGetter
+	searcher getters.AlertSearcher
 }
 
 type policyFactor struct {
@@ -41,9 +41,9 @@ type policyFactor struct {
 }
 
 // NewViolations scores the data based on the number and severity of policy violations.
-func NewViolations(getter getters.AlertGetter) *ViolationsMultiplier {
+func NewViolations(searcher getters.AlertSearcher) *ViolationsMultiplier {
 	return &ViolationsMultiplier{
-		getter: getter,
+		searcher: searcher,
 	}
 }
 
@@ -55,7 +55,7 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 		AddRetrievedField(search.PolicyName).
 		AddRetrievedField(search.Severity)
 
-	results, err := v.getter.Search(ctx, qb.ProtoQuery())
+	results, err := v.searcher.Search(ctx, qb.ProtoQuery())
 	if err != nil {
 		log.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)
 		return nil

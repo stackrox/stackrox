@@ -35,9 +35,9 @@ func (m MockAlertsSearcher) Search(ctx context.Context, q *v1.Query) (results []
 		if a.GetState().String() == state {
 			results = append(results, search.Result{
 				ID: a.GetId(),
-				Matches: map[string][]string{
-					policyNameField.FieldPath: {a.GetPolicy().GetName()},
-					severityField.FieldPath:   {strconv.Itoa(int(a.GetPolicy().GetSeverity()))},
+				Fields: map[string]interface{}{
+					policyNameField.FieldPath: a.GetPolicy().GetName(),
+					severityField.FieldPath:   strconv.Itoa(int(a.GetPolicy().GetSeverity())),
 				},
 			})
 		}
