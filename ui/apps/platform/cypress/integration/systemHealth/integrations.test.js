@@ -94,7 +94,8 @@ describe('System Health Integrations fixtures', () => {
 
     const { integrations } = selectors;
 
-    it('should have counts in healthy text', () => {
+    // re-enable when we update this test to work with ROX-7120 System Health in PatternFly
+    it.skip('should have counts in healthy text', () => {
         cy.server();
 
         // 2 / 3 healthy integrations
