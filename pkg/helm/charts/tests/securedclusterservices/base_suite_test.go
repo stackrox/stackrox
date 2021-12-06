@@ -23,12 +23,12 @@ var (
 			MainVersion:      "3.0.49.0",
 			CollectorVersion: "1.2.3",
 		},
-		"MainRegistry":      "stackrox.io", // TODO: custom?
-		"CollectorRegistry": "collector.stackrox.io",
+		"MainRegistry":          "stackrox.io", // TODO: custom?
+		"CollectorRegistry":     "collector.stackrox.io",
 		"CollectorSlimImageTag": "1.2.3-slim",
 		"CollectorFullImageTag": "1.2.3-latest",
-		"RenderMode":        "",
-		"FeatureFlags":      map[string]interface{}{},
+		"RenderMode":            "",
+		"FeatureFlags":          map[string]interface{}{},
 	}
 
 	installOpts = helmUtil.Options{

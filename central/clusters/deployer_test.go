@@ -14,15 +14,19 @@ import (
 )
 
 var (
-	imageRegistryKey        = "ImageRegistry"
-	collectorRegistryKey    = "CollectorRegistry"
-	collectorImageRemoteKey = "CollectorImageRemote"
-	collectorImageTagKey    = "CollectorImageTag"
+	imageRegistryKey         = "ImageRegistry"
+	collectorRegistryKey     = "CollectorRegistry"
+	collectorImageRemoteKey  = "CollectorImageRemote"
+	collectorFullImageTagKey = "CollectorFullImageTag"
+	collectorSlimImageTagKey = "CollectorSlimImageTag"
 )
 
-func assertCollectorImageFullPath(t *testing.T, expected string, fields map[string]interface{}) {
-	fullRef := fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorImageTagKey])
-	assert.Equal(t, expected, fullRef)
+func getCollectorFull(fields map[string]interface{}) string {
+	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorFullImageTagKey])
+}
+
+func getCollectorSlim(fields map[string]interface{}) string {
+	return fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorSlimImageTagKey])
 }
 
 func TestGenerateCollectorImage(t *testing.T) {
@@ -126,21 +130,24 @@ func TestImagePaths(t *testing.T) {
 		mainImage                 string
 		expectedMainRegistry      string
 		collectorImage            string
-		expectedCollectorImage    string
+		expectedCollectorFullRef  string
+		expectedCollectorSlimRef  string
 		expectedCollectorRegistry string
 	}{
 		{
 			name:                      "defaults",
 			mainImage:                 "stackrox.io/main",
 			expectedMainRegistry:      "stackrox.io",
-			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
+			expectedCollectorFullRef:  fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
+			expectedCollectorSlimRef:  fmt.Sprintf("collector.stackrox.io/collector:%s-slim", collectorVersion),
 			expectedCollectorRegistry: "collector.stackrox.io",
 		},
 		{
 			name:                      "airgap with generated collector image",
 			mainImage:                 "some.other.registry/main",
 			expectedMainRegistry:      "some.other.registry",
-			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
+			expectedCollectorFullRef:  fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
+			expectedCollectorSlimRef:  fmt.Sprintf("some.other.registry/collector:%s-slim", collectorVersion),
 			expectedCollectorRegistry: "some.other.registry",
 		},
 		{
@@ -148,7 +155,8 @@ func TestImagePaths(t *testing.T) {
 			mainImage:                 "some.other.registry/main",
 			expectedMainRegistry:      "some.other.registry",
 			collectorImage:            "some.other.registry/collector",
-			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
+			expectedCollectorFullRef:  fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
+			expectedCollectorSlimRef:  fmt.Sprintf("some.other.registry/collector:%s-slim", collectorVersion),
 			expectedCollectorRegistry: "some.other.registry",
 		},
 		{
@@ -156,7 +164,8 @@ func TestImagePaths(t *testing.T) {
 			mainImage:                 "some.rhel.registry.stackrox/main",
 			expectedMainRegistry:      "some.rhel.registry.stackrox",
 			collectorImage:            "collector.stackrox.io/collector",
-			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
+			expectedCollectorFullRef:  fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
+			expectedCollectorSlimRef:  fmt.Sprintf("collector.stackrox.io/collector:%s-slim", collectorVersion),
 			expectedCollectorRegistry: "collector.stackrox.io",
 		},
 	}
@@ -177,8 +186,8 @@ func TestImagePaths(t *testing.T) {
 			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistryKey])
 			assert.Contains(t, fields, collectorRegistryKey)
 			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistryKey])
-
-			assertCollectorImageFullPath(t, c.expectedCollectorImage, fields)
+			assert.Equal(t, c.expectedCollectorFullRef, getCollectorFull(fields))
+			assert.Equal(t, c.expectedCollectorSlimRef, getCollectorSlim(fields))
 		})
 	}
 }

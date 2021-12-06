@@ -69,9 +69,10 @@ func TestRenderSensorHelm(t *testing.T) {
 
 				"AdvertisedEndpoint": "sensor.stackrox:443",
 
-				"CollectorRegistry":    "collector.stackrox.io",
-				"CollectorImageRemote": "collector",
-				"CollectorImageTag":    "3.0.11-latest",
+				"CollectorRegistry":     "collector.stackrox.io",
+				"CollectorImageRemote":  "collector",
+				"CollectorFullImageTag": "3.0.11-latest",
+				"CollectorSlimImageTag": "3.0.11-slim",
 
 				"CollectionMethod": "EBPF",
 

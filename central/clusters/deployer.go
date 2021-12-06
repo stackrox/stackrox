@@ -85,11 +85,11 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		"CollectorRegistry":    urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
-		"CollectorImageRemote": collectorImageName.GetRemote(),
-		"CollectorImageTag":    fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
+		"CollectorRegistry":     urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
+		"CollectorImageRemote":  collectorImageName.GetRemote(),
+		"CollectorFullImageTag": fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
 		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
-		"CollectionMethod":     c.CollectionMethod.String(),
+		"CollectionMethod":      c.CollectionMethod.String(),
 
 		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
 		"CreateUpgraderSA":   opts.CreateUpgraderSA,
