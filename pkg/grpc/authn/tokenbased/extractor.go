@@ -12,9 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 )
+
+var log = logging.LoggerForModule()
 
 // NewExtractor returns a new token-based identity extractor.
 func NewExtractor(roleStore permissions.RoleStore, tokenValidator tokens.Validator) authn.IdentityExtractor {
@@ -37,7 +40,8 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "token validation failed")
+		log.Warn(fmt.Sprintf("token validation failed: %s", err.Error()))
+		return nil, errors.New("token validation failed")
 	}
 
 	// All tokens should have a source.
