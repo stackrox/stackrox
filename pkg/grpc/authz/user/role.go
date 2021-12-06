@@ -25,9 +25,6 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 	if err != nil {
 		return err
 	}
-	if id == nil {
-		return errorhelpers.ErrNoCredentials
-	}
 	if len(id.Roles()) == 0 {
 		return errorhelpers.GenericNoValidRole()
 	}
