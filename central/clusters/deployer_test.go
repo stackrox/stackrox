@@ -5,11 +5,25 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
+
+var (
+	imageRegistryKey        = "ImageRegistry"
+	collectorRegistryKey    = "CollectorRegistry"
+	collectorImageRemoteKey = "CollectorImageRemote"
+	collectorImageTagKey    = "CollectorImageTag"
+)
+
+func assertCollectorImageFullPath(t *testing.T, expected string, fields map[string]interface{}) {
+	fullRef := fmt.Sprintf("%s/%s:%s", fields[collectorRegistryKey], fields[collectorImageRemoteKey], fields[collectorImageTagKey])
+	assert.Equal(t, expected, fullRef)
+}
 
 func TestGenerateCollectorImage(t *testing.T) {
 	var cases = []struct {
@@ -101,12 +115,12 @@ func getBaseConfig() *storage.Cluster {
 }
 
 func TestImagePaths(t *testing.T) {
-	imageRegistry := "ImageRegistry"
-	collectorRegistry := "CollectorRegistry"
+	testbuildinfo.SetForTest(t)
+	testutils.SetVersion(t, version.Versions{
+		CollectorVersion: "1.2.3",
+		MainVersion:      "3.2.1",
+	})
 	collectorVersion := version.GetCollectorVersion()
-	if collectorVersion != "" {
-		collectorVersion = "1.2.3" // not necessary for functionality, but test output looks weird o/w.
-	}
 	var cases = []struct {
 		name                      string
 		mainImage                 string
@@ -159,10 +173,12 @@ func TestImagePaths(t *testing.T) {
 
 			fields, err := FieldsFromClusterAndRenderOpts(config, RenderOptions{})
 			assert.NoError(t, err)
-			assert.Contains(t, fields, imageRegistry)
-			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistry])
-			assert.Contains(t, fields, collectorRegistry)
-			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistry])
+			assert.Contains(t, fields, imageRegistryKey)
+			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistryKey])
+			assert.Contains(t, fields, collectorRegistryKey)
+			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistryKey])
+
+			assertCollectorImageFullPath(t, c.expectedCollectorImage, fields)
 		})
 	}
 }

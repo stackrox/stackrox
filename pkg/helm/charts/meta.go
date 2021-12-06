@@ -1,6 +1,8 @@
 package charts
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
@@ -26,6 +28,8 @@ func DefaultMetaValues() MetaValues {
 		"Versions":          version.GetAllVersions(),
 		"MainRegistry":      defaults.MainImageRegistry(),
 		"CollectorRegistry": defaults.CollectorImageRegistry(),
+		"CollectorImageTag": fmt.Sprintf("%s-latest", version.GetCollectorVersion()),
+		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", version.GetCollectorVersion()),
 		"RenderMode":        "",
 		"ChartRepo": ChartRepo{
 			URL: "https://charts.stackrox.io",

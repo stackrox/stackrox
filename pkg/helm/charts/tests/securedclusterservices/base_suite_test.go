@@ -25,6 +25,8 @@ var (
 		},
 		"MainRegistry":      "stackrox.io", // TODO: custom?
 		"CollectorRegistry": "collector.stackrox.io",
+		"CollectorSlimImageTag": "1.2.3-slim",
+		"CollectorFullImageTag": "1.2.3-latest",
 		"RenderMode":        "",
 		"FeatureFlags":      map[string]interface{}{},
 	}

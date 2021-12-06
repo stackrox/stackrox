@@ -53,10 +53,10 @@ image:
 image:
   collector:
     {{- if ._rox.collector.slimMode }}
-    tag: "[< .Versions.CollectorVersion >]-slim"
+    tag: "[< .CollectorSlimImageTag >]"
     pullPolicy: IfNotPresent
     {{- else }}
-    tag: "[< .Versions.CollectorVersion >]-latest"
+    tag: "[< .CollectorFullImageTag >]"
     pullPolicy: Always
     {{- end }}
 ---

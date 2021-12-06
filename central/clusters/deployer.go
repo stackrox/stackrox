@@ -1,6 +1,7 @@
 package clusters
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -86,7 +87,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 
 		"CollectorRegistry":    urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"CollectorImageRemote": collectorImageName.GetRemote(),
-		"CollectorImageTag":    collectorImageName.GetTag(),
+		"CollectorImageTag":    fmt.Sprintf("%s-latest", collectorImageName.GetTag()),
+		"CollectorSlimImageTag": fmt.Sprintf("%s-slim", collectorImageName.GetTag()),
 		"CollectionMethod":     c.CollectionMethod.String(),
 
 		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
