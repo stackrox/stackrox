@@ -157,7 +157,9 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLError
 	s.registry.loginHTTPHandler(s.writer, req)
 	s.assert.Equal(500, s.writer.Code, "login URL should return error")
 	body := s.writer.Result().Body
-	defer body.Close()
+	defer func() {
+		_ = body.Close()
+	}()
 	b, _ := ioutil.ReadAll(body)
 	s.assert.Equal("could not get login URL: some error\n", string(b), "login URL should return error")
 }
@@ -169,7 +171,9 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLEmpty
 	s.registry.loginHTTPHandler(s.writer, req)
 	s.assert.Equal(500, s.writer.Code, "login URL should return error")
 	body := s.writer.Result().Body
-	defer body.Close()
+	defer func() {
+		_ = body.Close()
+	}()
 	b, _ := ioutil.ReadAll(body)
 	s.assert.Equal("empty login URL\n", string(b), "login URL should return error")
 }
