@@ -90,7 +90,7 @@ func loadHelmConfig() (*central.HelmManagedConfigInit, error) {
 
 func setupEmbeddedOperator(client client.Interface, deploymentIdentification *storage.SensorDeploymentIdentification) (operator.Operator, error) {
 	sensorOperator := operator.New(client.Kubernetes(), deploymentIdentification.GetAppNamespace())
-	if err := sensorOperator.Initialize(context.Background()); err == nil {
+	if err := sensorOperator.Initialize(context.Background()); err != nil {
 		return nil, errors.Wrap(err, "Error initializing sensor embedded operator, self-operating features will not be available")
 	}
 	if err := sensorOperator.Start(context.Background()); err != nil {
@@ -112,8 +112,9 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
 	var sensorOperatorSignal concurrency.ReadOnlyErrorSignal
-	if sensorOperator, err := setupEmbeddedOperator(client, deploymentIdentification); err != nil {
-		log.Errorf("Error launching sensor embedded operator, self-operating features will not be available: %v", err)
+	sensorOperator, operatorSetupErr := setupEmbeddedOperator(client, deploymentIdentification)
+	if operatorSetupErr != nil {
+		log.Errorf("Error launching sensor embedded operator, self-operating features will not be available: %v", operatorSetupErr)
 	} else {
 		helmManagedConfig.GetClusterConfig().HelmReleaseRevision = sensorOperator.GetHelmReleaseRevision()
 		sensorOperatorSignal = sensorOperator.Stopped()

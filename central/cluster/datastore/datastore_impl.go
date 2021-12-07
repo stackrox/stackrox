@@ -848,10 +848,24 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 func isClusterUpdateRequired(cluster *storage.Cluster, bundleID string, hello *central.SensorHello) bool {
 	helmConfig := hello.GetHelmManagedConfigInit()
 	manager := helmConfig.GetManagedBy()
-	return !(cluster.GetInitBundleId() == bundleID &&
-		cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
-		cluster.GetManagedBy() == manager &&
-		cluster.GetHelmConfig().GetHelmReleaseRevision() != hello.GetHelmManagedConfigInit().GetClusterConfig().GetHelmReleaseRevision())
+	clusterUpdateRequired := false
+	if cluster.GetInitBundleId() != bundleID {
+		log.Info("Cluster update is required, init bundle id has changed")
+		clusterUpdateRequired = true
+	}
+	if cluster.GetHelmConfig().GetConfigFingerprint() != helmConfig.GetClusterConfig().GetConfigFingerprint() {
+		log.Info("Cluster update is required, helm configuration fingerprint has changed")
+		clusterUpdateRequired = true
+	}
+	if cluster.GetManagedBy() != manager {
+		log.Info("Cluster update is required, manager type has changed")
+		clusterUpdateRequired = true
+	}
+	if cluster.GetHelmConfig().GetHelmReleaseRevision() != hello.GetHelmManagedConfigInit().GetClusterConfig().GetHelmReleaseRevision() {
+		log.Info("Cluster update is required, helm release revision has changed")
+		clusterUpdateRequired = true
+	}
+	return clusterUpdateRequired
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {

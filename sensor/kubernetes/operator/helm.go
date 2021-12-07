@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	fetchSensorPodTimeout                          = 10 * time.Second
+	fetchSensorPodTimeout                          = 1 * time.Minute
 	fetchSensorPodSleepTime                        = time.Second
 	fetchCurrentSensorHelmReleaseRevisionTimeout   = 1 * time.Minute
 	fetchCurrentSensorHelmReleaseRevisionSleepTime = 5 * time.Second

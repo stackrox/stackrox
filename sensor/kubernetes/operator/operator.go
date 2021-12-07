@@ -63,6 +63,7 @@ func (o *operatorImpl) Initialize(ctx context.Context) error {
 		return o.failInitialization(err)
 	}
 	o.helmReleaseRevision = revision
+	log.Infof("Detected helm release revision %d", o.helmReleaseRevision)
 
 	return nil
 }
