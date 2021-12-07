@@ -239,6 +239,28 @@
         ]
       }
     },
+    "/v1/availableAuthProviders": {
+      "get": {
+        "operationId": "AuthProviderService_ListAvailableProviderTypes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AvailableProviderTypesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "AuthProviderService"
+        ]
+      }
+    },
     "/v1/login/authproviders": {
       "get": {
         "operationId": "AuthProviderService_GetLoginAuthProviders",
@@ -260,31 +282,20 @@
           "AuthProviderService"
         ]
       }
-    },
-    "/v1/supportedAuthProviders": {
-      "get": {
-        "operationId": "AuthProviderService_ListSupportedAuthProviders",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1SupportedAuthProvidersResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "tags": [
-          "AuthProviderService"
-        ]
-      }
     }
   },
   "definitions": {
+    "AvailableProviderTypesResponseAuthProviderInfo": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
     "GetLoginAuthProvidersResponseLoginAuthProvider": {
       "type": "object",
       "properties": {
@@ -298,17 +309,6 @@
           "type": "string"
         },
         "loginUrl": {
-          "type": "string"
-        }
-      }
-    },
-    "SupportedAuthProvidersResponseAuthProviderType": {
-      "type": "object",
-      "properties": {
-        "label": {
-          "type": "string"
-        },
-        "value": {
           "type": "string"
         }
       }
@@ -518,6 +518,17 @@
         }
       }
     },
+    "v1AvailableProviderTypesResponse": {
+      "type": "object",
+      "properties": {
+        "authProviderTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AvailableProviderTypesResponseAuthProviderInfo"
+          }
+        }
+      }
+    },
     "v1Empty": {
       "type": "object"
     },
@@ -571,17 +582,6 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/GetLoginAuthProvidersResponseLoginAuthProvider"
-          }
-        }
-      }
-    },
-    "v1SupportedAuthProvidersResponse": {
-      "type": "object",
-      "properties": {
-        "authProviderTypes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/SupportedAuthProvidersResponseAuthProviderType"
           }
         }
       }

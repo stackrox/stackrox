@@ -64,18 +64,18 @@ message ExchangeTokenResponse {
     v1.AuthStatus user         = 4;
 }
 
-message SupportedAuthProvidersResponse {
-    message AuthProviderType {
+message AvailableProviderTypesResponse {
+    message AuthProviderInfo {
         string label = 1;
         string value = 2;
     }
-    repeated AuthProviderType auth_provider_types = 1;
+    repeated AuthProviderInfo auth_provider_types = 1;
 }
 
 service AuthProviderService {
-    rpc ListSupportedAuthProviders(Empty) returns (SupportedAuthProvidersResponse) {
+    rpc ListAvailableProviderTypes(Empty) returns (AvailableProviderTypesResponse) {
         option (google.api.http) = {
-            get: "/v1/supportedAuthProviders"
+            get: "/v1/availableAuthProviders"
         };
     }
 

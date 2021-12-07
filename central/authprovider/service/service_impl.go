@@ -107,9 +107,9 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 	return &v1.GetLoginAuthProvidersResponse{AuthProviders: result}, nil
 }
 
-// ListSupportedAuthProviders
-func (s *serviceImpl) ListSupportedAuthProviders(_ context.Context, _ *v1.Empty) (*v1.SupportedAuthProvidersResponse, error) {
-	supportedTypes := []*v1.SupportedAuthProvidersResponse_AuthProviderType{
+// ListAvailableProviderTypes returns auth provider types which can be created.
+func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty) (*v1.AvailableProviderTypesResponse, error) {
+	supportedTypes := []*v1.AvailableProviderTypesResponse_AuthProviderInfo{
 		{
 			Label: "Auth0",
 			Value: "auth0",
@@ -132,12 +132,12 @@ func (s *serviceImpl) ListSupportedAuthProviders(_ context.Context, _ *v1.Empty)
 		},
 	}
 	if env.EnableOpenShiftAuth.BooleanSetting() {
-		supportedTypes = append(supportedTypes, &v1.SupportedAuthProvidersResponse_AuthProviderType{
+		supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderInfo{
 			Label: "OpenShift Auth",
 			Value: "openshift",
 		})
 	}
-	return &v1.SupportedAuthProvidersResponse{
+	return &v1.AvailableProviderTypesResponse{
 		AuthProviderTypes: supportedTypes,
 	}, nil
 }
