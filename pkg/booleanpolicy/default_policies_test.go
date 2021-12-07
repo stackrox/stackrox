@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -78,6 +79,11 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	}
 
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.VulnRiskManagement.EnvVar(), "true")
+}
+
+func (suite *DefaultPoliciesTestSuite) TearDownSuite() {
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupTest() {
@@ -1391,6 +1397,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				processMatcher, err := BuildDeploymentWithProcessMatcher(p)
 				require.NoError(t, err)
 				for deploymentID, processes := range c.expectedProcessViolations {
+					if !features.VulnRiskManagement.Enabled() {
+						if deploymentID == structDepWithDeferredVulns.GetId() {
+							continue
+						}
+					}
 					expectedProcesses := set.NewStringSet(sliceutils.Map(processes, func(p *storage.ProcessIndicator) string {
 						return p.GetId()
 					}).([]string)...)
@@ -1443,6 +1454,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			}
 
 			for id := range suite.deployments {
+				if !features.VulnRiskManagement.Enabled() {
+					if id == structDepWithDeferredVulns.GetId() {
+						continue
+					}
+				}
 				violations, expected := c.expectedViolations[id]
 				if expected {
 					assert.Contains(t, actualViolations, id)
