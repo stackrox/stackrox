@@ -13,7 +13,7 @@ import addTokenRefreshInterceptors, {
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
-const supportedProvidersUrl = '/v1/supportedAuthProviders';
+const availableProviderTypesUrl = '/v1/availableAuthProviders';
 const tokenRefreshUrl = '/sso/session/tokenrefresh';
 const logoutUrl = '/sso/session/logout';
 
@@ -100,7 +100,7 @@ export function fetchLoginAuthProviders(): Promise<{ response: AuthProviderLogin
 
 
 export function fetchSupportedAuthProviders(): Promise<{ response: AuthProviderInfo[] }> {
-    return axios.get(`${supportedProvidersUrl}`).then((response) => ({
+    return axios.get(`${availableProviderTypesUrl}`).then((response) => ({
         response: response.data.authProviderTypes,
     }));
 }
