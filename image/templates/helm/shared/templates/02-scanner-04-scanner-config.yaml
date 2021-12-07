@@ -2,7 +2,6 @@
 
 {{- if not ._rox.scanner.disable -}}
 
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
