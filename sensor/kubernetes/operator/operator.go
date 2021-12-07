@@ -59,6 +59,9 @@ func (o *operatorImpl) Initialize(ctx context.Context) error {
 }
 
 func (o *operatorImpl) failInitialization(err error) error {
+	// Reset release name and revision so Start is a noop
+	o.helmReleaseName = ""
+	o.helmReleaseRevision = 0
 	return errors.Wrap(err, "Operator initialization error")
 }
 

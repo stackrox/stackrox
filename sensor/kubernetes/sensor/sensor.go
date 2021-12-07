@@ -56,41 +56,34 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// CreateSensor takes in a client interface and returns a sensor instantiation
-func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager) (*sensor.Sensor, error) {
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
-
+func loadHelmConfig(client client.Interface, deploymentIdentification *storage.SensorDeploymentIdentification) (*central.HelmManagedConfigInit, operator.Operator, error) {
 	var helmManagedConfig *central.HelmManagedConfigInit
 	if configFP := helmconfig.HelmConfigFingerprint.Setting(); configFP != "" {
 		var err error
 		helmManagedConfig, err = helmconfig.Load()
 		if err != nil {
-			return nil, errors.Wrap(err, "loading Helm cluster config")
+			return nil, nil, errors.Wrap(err, "loading Helm cluster config")
 		}
 		if helmManagedConfig.GetClusterConfig().GetConfigFingerprint() != configFP {
-			return nil, errors.Errorf("fingerprint %q of loaded config does not match expected fingerprint %q, config changes can only be applied via 'helm upgrade' or a similar chart-based mechanism", helmManagedConfig.GetClusterConfig().GetConfigFingerprint(), configFP)
+			return nil, nil, errors.Errorf("fingerprint %q of loaded config does not match expected fingerprint %q, config changes can only be applied via 'helm upgrade' or a similar chart-based mechanism", helmManagedConfig.GetClusterConfig().GetConfigFingerprint(), configFP)
 		}
 		log.Infof("Loaded Helm cluster configuration with fingerprint %q", configFP)
 
 		if err := helmconfig.CheckEffectiveClusterName(helmManagedConfig); err != nil {
-			return nil, errors.Wrap(err, "validating cluster name")
+			return nil, nil, errors.Wrap(err, "validating cluster name")
 		}
 	}
 
 	if helmManagedConfig.GetClusterName() == "" {
 		certClusterID, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing cluster ID from service certificate")
+			return nil, nil, errors.Wrap(err, "parsing cluster ID from service certificate")
 		}
 		if certClusterID == centralsensor.InitCertClusterID {
-			return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
+			return nil, nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
 		}
 	}
 
-	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
-	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
-
-	// FIXME: all helmManagedConfig related code together and in an aux function
 	var sensorOperator operator.Operator
 	if helmManagedConfig != nil {
 		sensorOperator = operator.New(client.Kubernetes(), deploymentIdentification.GetAppNamespace())
@@ -99,6 +92,21 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		} else {
 			helmManagedConfig.GetClusterConfig().HelmReleaseRevision = sensorOperator.GetHelmReleaseRevision()
 		}
+	}
+
+	return helmManagedConfig, sensorOperator, nil
+}
+
+// CreateSensor takes in a client interface and returns a sensor instantiation
+func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager) (*sensor.Sensor, error) {
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
+
+	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
+	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+
+	helmManagedConfig, sensorOperator, err := loadHelmConfig(client, deploymentIdentification)
+	if err != nil {
+		return nil, err
 	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
