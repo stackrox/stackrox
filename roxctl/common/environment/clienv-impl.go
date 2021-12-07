@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"io"
 	"time"
 
 	"github.com/stackrox/rox/roxctl/common"
@@ -41,4 +42,20 @@ func (c *cliEnvironmentImpl) InputOutput() IO {
 
 func (c *cliEnvironmentImpl) Logger() Logger {
 	return c.logger
+}
+
+func (c *cliEnvironmentImpl) ColorWriter(out io.Writer) io.Writer {
+	return colorWriter{
+		colorfulPrinter: c.colorfulPrinter,
+		out:             out,
+	}
+}
+
+type colorWriter struct {
+	colorfulPrinter printer.ColorfulPrinter
+	out             io.Writer
+}
+
+func (w colorWriter) Write(p []byte) (n int, err error) {
+	return w.out.Write([]byte(w.colorfulPrinter.ColorWords(string(p))))
 }

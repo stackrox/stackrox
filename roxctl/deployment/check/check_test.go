@@ -250,16 +250,17 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 }
 
 func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
-	mockEnv := mocks.NewMockEnvironment(gomock.NewController(d.T()))
+	envMock := mocks.NewMockEnvironment(gomock.NewController(d.T()))
 
-	testIO, _, testStdOut, _ := environment.TestIO()
+	testIO, _, out, _ := environment.TestIO()
 	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
 
-	mockEnv.EXPECT().InputOutput().AnyTimes().Return(testIO)
-	mockEnv.EXPECT().Logger().AnyTimes().Return(logger)
-	mockEnv.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
+	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
+	envMock.EXPECT().Logger().AnyTimes().Return(logger)
+	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
+	envMock.EXPECT().ColorWriter(out).AnyTimes().Return(out)
 
-	return mockEnv, testStdOut
+	return envMock, out
 }
 
 func (d *deployCheckTestSuite) SetupTest() {

@@ -196,7 +196,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 		printDeploymentPolicySummary(policySummary.Summary, d.env.Logger(), policySummary.GetResultNames()...)
 	}
 
-	if err := d.printer.Print(policySummary, d.env.InputOutput().Out); err != nil {
+	if err := d.printer.Print(policySummary, d.env.ColorWriter(d.env.InputOutput().Out)); err != nil {
 		return err
 	}
 

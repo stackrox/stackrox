@@ -216,7 +216,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 		printCVESummary(i.image, cveSummary.Result.Summary, i.env.Logger())
 	}
 
-	if err := i.printer.Print(cveSummary, i.env.InputOutput().Out); err != nil {
+	if err := i.printer.Print(cveSummary, i.env.ColorWriter(i.env.InputOutput().Out)); err != nil {
 		return err
 	}
 

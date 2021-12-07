@@ -251,13 +251,14 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
 	envMock := mocks.NewMockEnvironment(gomock.NewController(s.T()))
 
-	testIO, _, testStdOut, _ := environment.TestIO()
+	testIO, _, out, _ := environment.TestIO()
 	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
 
 	envMock.EXPECT().Logger().AnyTimes().Return(logger)
 	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	return envMock, testStdOut
+	envMock.EXPECT().ColorWriter(out).AnyTimes().Return(out)
+	return envMock, out
 }
 
 func (s *imageScanTestSuite) SetupTest() {

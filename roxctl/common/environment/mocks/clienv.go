@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	io "io"
 	reflect "reflect"
 	time "time"
 
@@ -35,6 +36,20 @@ func NewMockEnvironment(ctrl *gomock.Controller) *MockEnvironment {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEnvironment) EXPECT() *MockEnvironmentMockRecorder {
 	return m.recorder
+}
+
+// ColorWriter mocks base method.
+func (m *MockEnvironment) ColorWriter(out io.Writer) io.Writer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ColorWriter", out)
+	ret0, _ := ret[0].(io.Writer)
+	return ret0
+}
+
+// ColorWriter indicates an expected call of ColorWriter.
+func (mr *MockEnvironmentMockRecorder) ColorWriter(out interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ColorWriter", reflect.TypeOf((*MockEnvironment)(nil).ColorWriter), out)
 }
 
 // GRPCConnection mocks base method.
