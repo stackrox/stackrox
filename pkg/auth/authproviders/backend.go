@@ -23,7 +23,7 @@ type Backend interface {
 	Config() map[string]string
 
 	// LoginURL returns a login URL with the given client state.
-	LoginURL(clientState string, ri *requestinfo.RequestInfo) string
+	LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error)
 	// RefreshURL returns a refresh URL, if supported by the auth provider.
 	RefreshURL() string
 

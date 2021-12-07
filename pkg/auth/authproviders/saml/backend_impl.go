@@ -148,12 +148,8 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
-	url, err := p.loginURL(clientState)
-	if err != nil {
-		log.Errorf("could not obtain the login URL: %v", err)
-	}
-	return url
+func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) (string, error) {
+	return p.loginURL(clientState)
 }
 
 func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {

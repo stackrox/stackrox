@@ -80,8 +80,8 @@ func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 	p.callbacks.UnregisterAuthProvider(provider)
 }
 
-func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
-	return p.pathPrefix + authenticateHandlerPath
+func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
+	return p.pathPrefix + authenticateHandlerPath, nil
 }
 
 func (p *backendImpl) RefreshURL() string {

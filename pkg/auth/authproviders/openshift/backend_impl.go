@@ -103,7 +103,7 @@ func (b *backend) Config() map[string]string {
 	return nil
 }
 
-func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
+func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
 	state := idputil.MakeState(b.id, clientState)
 
 	// baseRedirectURL does not include the hostname, take it from the request.
@@ -114,8 +114,7 @@ func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) stri
 		redirectURL.Scheme = "http"
 	}
 
-	loginURL, _ := b.openshiftConnector.LoginURL(defaultScopes, redirectURL.String(), state)
-	return loginURL
+	return b.openshiftConnector.LoginURL(defaultScopes, redirectURL.String(), state)
 }
 
 func (b *backend) RefreshURL() string {

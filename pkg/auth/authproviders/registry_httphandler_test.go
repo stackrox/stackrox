@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -147,6 +148,34 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendParseReturnsE
 		"should redirect to the registry redirect URL")
 	s.assert.Equal(identityCreationError.Error(), redirectURLFragments.Get("error"),
 		"provider callback should propagate the identity creation error if any")
+}
+
+func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLError() {
+	loginURL := s.registry.loginURL(dummyProviderType)
+	req, _ := http.NewRequest(http.MethodGet, loginURL, strings.NewReader(""))
+	testAuthProviderBackend.registerLoginURL("some.url", errors.New("some error"))
+	s.registry.loginHTTPHandler(s.writer, req)
+	s.assert.Equal(500, s.writer.Code, "login URL should return error")
+	body := s.writer.Result().Body
+	defer func() {
+		_ = body.Close()
+	}()
+	b, _ := io.ReadAll(body)
+	s.assert.Equal("could not get login URL: some error\n", string(b), "login URL should return error")
+}
+
+func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLEmpty() {
+	loginURL := s.registry.loginURL(dummyProviderType)
+	req, _ := http.NewRequest(http.MethodGet, loginURL, strings.NewReader(""))
+	testAuthProviderBackend.registerLoginURL("", nil)
+	s.registry.loginHTTPHandler(s.writer, req)
+	s.assert.Equal(500, s.writer.Code, "login URL should return error")
+	body := s.writer.Result().Body
+	defer func() {
+		_ = body.Close()
+	}()
+	b, _ := io.ReadAll(body)
+	s.assert.Equal("empty login URL\n", string(b), "login URL should return error")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthenticationTestModeUserWithoutRole() {
@@ -339,8 +368,9 @@ func (*tstRoleMapperFactory) GetRoleMapper(_ string) perm.RoleMapper {
 
 // Authentication backend factory (needed by registry.RegisterBackendFactory)
 type tstAuthProviderBackend struct {
-	authRsp *AuthResponse
-	err     error
+	authRsp  *AuthResponse
+	err      error
+	loginURL string
 }
 
 func (b *tstAuthProviderBackend) registerProcessHTTPResponse(authRsp *AuthResponse, err error) {
@@ -348,12 +378,17 @@ func (b *tstAuthProviderBackend) registerProcessHTTPResponse(authRsp *AuthRespon
 	b.err = err
 }
 
+func (b *tstAuthProviderBackend) registerLoginURL(loginURL string, err error) {
+	b.loginURL = loginURL
+	b.err = err
+}
+
 func (*tstAuthProviderBackend) Config() map[string]string {
 	return nil
 }
 
-func (*tstAuthProviderBackend) LoginURL(_ string, _ *requestinfo.RequestInfo) string {
-	return "login"
+func (b *tstAuthProviderBackend) LoginURL(_ string, r *requestinfo.RequestInfo) (string, error) {
+	return b.loginURL, b.err
 }
 
 func (*tstAuthProviderBackend) RefreshURL() string {
