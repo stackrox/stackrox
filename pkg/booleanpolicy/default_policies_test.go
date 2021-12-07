@@ -1397,6 +1397,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				processMatcher, err := BuildDeploymentWithProcessMatcher(p)
 				require.NoError(t, err)
 				for deploymentID, processes := range c.expectedProcessViolations {
+					if !features.VulnRiskManagement.Enabled() {
+						if deploymentID == structDepWithDeferredVulns.GetId() {
+							continue
+						}
+					}
 					expectedProcesses := set.NewStringSet(sliceutils.Map(processes, func(p *storage.ProcessIndicator) string {
 						return p.GetId()
 					}).([]string)...)
@@ -1449,6 +1454,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			}
 
 			for id := range suite.deployments {
+				if !features.VulnRiskManagement.Enabled() {
+					if id == structDepWithDeferredVulns.GetId() {
+						continue
+					}
+				}
 				violations, expected := c.expectedViolations[id]
 				if expected {
 					assert.Contains(t, actualViolations, id)
@@ -2970,4 +2980,8 @@ func podPortForwardEvent(pod string, port int32) *storage.KubernetesEvent {
 			},
 		},
 	}
+}
+
+func getExpectedViolations(id string) {
+
 }
