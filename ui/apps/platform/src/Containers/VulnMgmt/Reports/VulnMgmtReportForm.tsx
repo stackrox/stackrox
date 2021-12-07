@@ -15,11 +15,8 @@ import {
     Select,
     SelectOption,
     SelectVariant,
-    Text,
     TextArea,
     TextInput,
-    TextVariants,
-    Title,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 
@@ -29,6 +26,7 @@ import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMess
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import NotifierSelection from 'Components/PatternFly/NotifierSelection';
 import useMultiSelect from 'hooks/useMultiSelect';
 import { saveReport } from 'services/ReportsService';
 import { ReportConfigurationMappedValues } from 'types/report.proto';
@@ -288,13 +286,12 @@ function VulnMgmtReportForm({
                             </Grid>
                         </GridItem>
                         <GridItem span={4}>
-                            <Title headingLevel="h2">
-                                TODO: Notification method and distribution
-                            </Title>
-                            <Text component={TextVariants.p}>
-                                Schedule reports across the organization by defining a notification
-                                method and distribution list for the report
-                            </Text>
+                            <NotifierSelection
+                                notifierId={values.notifierConfig.emailConfig.notifierId}
+                                mailingLists={values.notifierConfig.emailConfig.mailingLists}
+                                setFieldValue={setFieldValue}
+                                handleBlur={handleBlur}
+                            />
                         </GridItem>
                     </Grid>
                 </Form>
