@@ -9,8 +9,13 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
+// MetaValuesKey exists exclusively to protect MetaValues from losing typing and becoming exchangeable with
+// map[string]interface{}. By doing this we get the opportunity to more reliably trace MetaValues usage throughout the
+// codebase.
+type MetaValuesKey string
+
 // MetaValues are the values to be passed to the StackRox chart templates.
-type MetaValues map[string]interface{}
+type MetaValues map[MetaValuesKey]interface{}
 
 // ChartRepo contains information about where the Helm charts are published.
 type ChartRepo struct {
@@ -24,7 +29,7 @@ type ImagePullSecrets struct {
 
 // DefaultMetaValues are the default meta values for rendering the StackRox charts in production.
 func DefaultMetaValues() MetaValues {
-	metaValues := map[string]interface{}{
+	metaValues := MetaValues{
 		"Versions":              version.GetAllVersions(),
 		"MainRegistry":          defaults.MainImageRegistry(),
 		"CollectorRegistry":     defaults.CollectorImageRegistry(),
@@ -49,7 +54,7 @@ func DefaultMetaValues() MetaValues {
 
 // RHACSMetaValues are the meta values for rendering the StackRox charts in RHACS flavor.
 func RHACSMetaValues() MetaValues {
-	metaValues := map[string]interface{}{
+	metaValues := MetaValues{
 		"Versions":              version.GetAllVersions(),
 		"MainRegistry":          "registry.redhat.io/rh-acs",
 		"CollectorRegistry":     "registry.redhat.io/rh-acs",
@@ -73,6 +78,18 @@ func RHACSMetaValues() MetaValues {
 	}
 
 	return metaValues
+}
+
+// ToRaw converts MetaValues to map[string]interface{} for use in Go templating.
+// Go templating does not like our MetaValuesKey and prefers to have string as a key in the map.
+// Unfortunately, an attempt to cast MetaValues to map[string]interface{} does not compile, therefore we need to copy
+// the map.
+func (m MetaValues) ToRaw() map[string]interface{} {
+	result := make(map[string]interface{}, len(m))
+	for k, v := range m {
+		result[string(k)] = v
+	}
+	return result
 }
 
 func getFeatureFlags() map[string]interface{} {
