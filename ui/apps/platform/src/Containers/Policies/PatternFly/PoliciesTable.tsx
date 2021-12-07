@@ -22,32 +22,26 @@ import orderBy from 'lodash/orderBy';
 
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
-import TableCell from 'Components/PatternFly/TableCell';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/PatternFly/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
 import { SortDirection } from 'hooks/useTableSort';
 import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
 
-import { formatLifecycleStages } from './policies.utils';
+import {
+    LabelAndNotifierIdsForType,
+    formatLifecycleStages,
+    formatNotifierCountsWithLabelStrings,
+    getLabelAndNotifierIdsForTypes,
+} from './policies.utils';
 import PolicySeverityLabel from './PolicySeverityLabel';
 
 const columns = [
     {
         Header: 'Policy',
         accessor: 'name',
-        Cell: ({ original, value }) => (
-            <Button
-                variant="link"
-                isInline
-                component={(props) => (
-                    <Link {...props} to={`${policiesBasePath}/${original.id as string}`} />
-                )}
-            >
-                {value}
-            </Button>
-        ),
         sortMethod: (a: ListPolicy, b: ListPolicy) => sortAsciiCaseInsensitive(a.name, b.name),
         width: 20 as const,
     },
@@ -59,45 +53,26 @@ const columns = [
     {
         Header: 'Status',
         accessor: 'disabled',
-        Cell: ({ value }) => {
-            if (value) {
-                return 'Disabled';
-            }
-            return (
-                <Flex className="pf-u-info-color-200">
-                    <CheckCircleIcon className="pf-u-mr-sm pf-m-align-self-center" />
-                    Enabled
-                </Flex>
-            );
-        },
         width: 15 as const,
     },
     {
         Header: 'Notifiers',
         accessor: 'notifiers',
-        Cell: ({ value }) => {
-            return value.join(', ') as string;
-        },
         sortMethod: (a: ListPolicy, b: ListPolicy) => sortValueByLength(a.notifiers, b.notifiers),
     },
     {
         Header: 'Severity',
         accessor: 'severity',
-        Cell: ({ value }) => {
-            return <PolicySeverityLabel severity={value} />;
-        },
         sortMethod: (a: ListPolicy, b: ListPolicy) => -sortSeverity(a.severity, b.severity),
     },
     {
         Header: 'Lifecycle',
         accessor: 'lifecycleStages',
-        Cell: ({ value }) => {
-            return formatLifecycleStages(value);
-        },
     },
 ];
 
 type PoliciesTableProps = {
+    notifiers: NotifierIntegration[];
     policies?: ListPolicy[];
     hasWriteAccessForPolicy: boolean;
     deletePoliciesHandler: (ids) => void;
@@ -113,6 +88,7 @@ type PoliciesTableProps = {
 };
 
 function PoliciesTable({
+    notifiers,
     policies = [],
     hasWriteAccessForPolicy,
     deletePoliciesHandler,
@@ -126,6 +102,9 @@ function PoliciesTable({
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
+    const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
+        LabelAndNotifierIdsForType[]
+    >([]);
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(0);
     // sort direction of the currently active column
@@ -134,6 +113,10 @@ function PoliciesTable({
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     // For sorting data client side
     const [rows, setRows] = useState<ListPolicy[]>([]);
+
+    useEffect(() => {
+        setLabelAndNotifierIdsForTypes(getLabelAndNotifierIdsForTypes(notifiers));
+    }, [notifiers]);
 
     // a map to keep track of row index within the table to the policy id
     // for checkbox selection after the table has been sorted
@@ -346,7 +329,21 @@ function PoliciesTable({
                     </Thead>
                     <Tbody>
                         {rows.map((policy) => {
-                            const { disabled, id, isDefault } = policy;
+                            const {
+                                description,
+                                disabled,
+                                id,
+                                isDefault,
+                                lifecycleStages,
+                                name,
+                                notifiers: notifierIds,
+                                severity,
+                            } = policy;
+                            const notifierCountsWithLabelStrings =
+                                formatNotifierCountsWithLabelStrings(
+                                    labelAndNotifierIdsForTypes,
+                                    notifierIds
+                                );
                             const exportPolicyAction: ActionItem = {
                                 title: 'Export policy to JSON',
                                 onClick: () => exportPoliciesHandler([id]),
@@ -383,15 +380,52 @@ function PoliciesTable({
                                             isSelected: selected[rowIndex],
                                         }}
                                     />
-                                    {columns.map((column) => {
-                                        return (
-                                            <TableCell
-                                                key={column.Header}
-                                                row={policy}
-                                                column={column}
-                                            />
-                                        );
-                                    })}
+                                    <Td dataLabel="Policy">
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            component={(props) => (
+                                                <Link {...props} to={`${policiesBasePath}/${id}`} />
+                                            )}
+                                        >
+                                            {name}
+                                        </Button>
+                                    </Td>
+                                    <Td dataLabel="Description">{description || '-'}</Td>
+                                    <Td dataLabel="Status">
+                                        {disabled ? (
+                                            'Disabled'
+                                        ) : (
+                                            <Flex className="pf-u-info-color-200">
+                                                <CheckCircleIcon className="pf-u-mr-sm pf-m-align-self-center" />
+                                                Enabled
+                                            </Flex>
+                                        )}
+                                    </Td>
+                                    <Td dataLabel="Notifiers">
+                                        {notifierCountsWithLabelStrings.length === 0 ? (
+                                            '-'
+                                        ) : (
+                                            <>
+                                                {notifierCountsWithLabelStrings.map(
+                                                    (notifierCountWithLabelString) => (
+                                                        <div
+                                                            key={notifierCountWithLabelString}
+                                                            className="pf-u-text-nowrap"
+                                                        >
+                                                            {notifierCountWithLabelString}
+                                                        </div>
+                                                    )
+                                                )}
+                                            </>
+                                        )}
+                                    </Td>
+                                    <Td dataLabel="Severity">
+                                        <PolicySeverityLabel severity={severity} />
+                                    </Td>
+                                    <Td dataLabel="Lifecycle">
+                                        {formatLifecycleStages(lifecycleStages)}
+                                    </Td>
                                     <Td
                                         actions={{
                                             items: actionItems,

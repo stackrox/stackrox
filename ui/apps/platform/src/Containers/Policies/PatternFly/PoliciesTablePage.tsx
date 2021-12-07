@@ -19,9 +19,11 @@ import {
     exportPolicies,
     updatePoliciesDisabledState,
 } from 'services/PoliciesService';
+import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import useToasts from 'hooks/useToasts';
 import { getSearchOptionsForCategory } from 'services/SearchService';
 import { ListPolicy } from 'types/policy.proto';
+import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -42,6 +44,7 @@ function PoliciesTablePage({
 }: PoliciesTablePageProps): React.ReactElement {
     const history = useHistory();
 
+    const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [policies, setPolicies] = useState<ListPolicy[]>([]);
     const [errorMessage, setErrorMessage] = useState('');
@@ -136,6 +139,16 @@ function PoliciesTablePage({
     }
 
     useEffect(() => {
+        fetchNotifierIntegrations()
+            .then((data) => {
+                setNotifiers(data as NotifierIntegration[]);
+            })
+            .catch(() => {
+                setNotifiers([]);
+            });
+    }, []);
+
+    useEffect(() => {
         getSearchOptionsForCategory('POLICIES')
             .then((options) => {
                 setSearchOptions(options);
@@ -162,6 +175,7 @@ function PoliciesTablePage({
                 </Bullseye>
             ) : (
                 <PoliciesTable
+                    notifiers={notifiers}
                     policies={policies}
                     hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                     deletePoliciesHandler={deletePoliciesHandler}
