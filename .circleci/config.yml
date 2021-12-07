@@ -2783,6 +2783,12 @@ jobs:
               ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:latest"
             fi
       - run:
+          name: Retag collector & scanner images with main-version tag
+          command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            ./scripts/ci/retag-collector-scanner.sh "$CIRCLE_TAG" | cat
+      - run:
           name: Publish new versions of NPM packages if any
           command: |
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
@@ -4476,6 +4482,15 @@ jobs:
 
             ./scripts/redhat-registry-publish/retag.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
             DRY_RUN=false ./scripts/redhat-registry-publish/push.sh "$MAIN_TAG" "$SCANNER_TAG" "$COLLECTOR_TAG"
+
+      - run:
+          name: Retag collector & scanner images with main-version tag
+          command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" stackrox.io
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
+            ./scripts/ci/retag-collector-scanner.sh "$CIRCLE_TAG"  | cat
 
       - run:
           name: Push roxctl to stackrox-hub
