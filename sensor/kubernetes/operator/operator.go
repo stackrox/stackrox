@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"helm.sh/helm/v3/pkg/action"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 )
@@ -27,12 +28,13 @@ type Operator interface {
 }
 
 type operatorImpl struct {
-	k8sClient    kubernetes.Interface
-	appNamespace string
+	k8sClient     kubernetes.Interface
+	helmGetClient *action.Get
+	appNamespace  string
 	// Zero value if not managed by Helm
 	helmReleaseName string
 	// Zero value if not managed by Helm
-	helmReleaseRevision uint64
+	helmReleaseRevision int
 	stoppedC            concurrency.ErrorSignal
 }
 
@@ -47,13 +49,20 @@ func New(k8sClient kubernetes.Interface, appNamespace string) Operator {
 
 func (o *operatorImpl) Initialize(ctx context.Context) error {
 	log.Infof("Initializing operator for namespace %s", o.appNamespace)
+
+	if err := o.initializeHelmActionConfig(); err != nil {
+		return o.failInitialization(err)
+	}
+
 	if err := o.fetchHelmReleaseName(ctx); err != nil {
 		return o.failInitialization(err)
 	}
 
-	if err := o.fetchCurrentSensorHelmReleaseRevision(ctx); err != nil {
+	revision, err := o.fetchCurrentSensorHelmReleaseRevision(ctx)
+	if err != nil {
 		return o.failInitialization(err)
 	}
+	o.helmReleaseRevision = revision
 
 	return nil
 }
@@ -66,7 +75,7 @@ func (o *operatorImpl) failInitialization(err error) error {
 }
 
 func (o *operatorImpl) GetHelmReleaseRevision() uint64 {
-	return o.helmReleaseRevision
+	return uint64(o.helmReleaseRevision)
 }
 
 func (o *operatorImpl) Stopped() concurrency.ReadOnlyErrorSignal {
@@ -92,7 +101,7 @@ func (o *operatorImpl) Start(ctx context.Context) error {
 	// as linked in sensor/kubernetes/listener/listener_impl.go for context.
 	noResyncPeriod := 0 * time.Minute
 	sif := informers.NewSharedInformerFactoryWithOptions(o.k8sClient, noResyncPeriod, informers.WithNamespace(o.appNamespace))
-	o.watchSecrets(sif)
+	o.watchSecrets(ctx, sif)
 
 	log.Info("Embedded operator started correctly.")
 	return nil
