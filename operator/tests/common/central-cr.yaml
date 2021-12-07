@@ -5,6 +5,7 @@ metadata:
 spec:
   # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
   central:
+    invalidSetting: 42
     resources:
       requests:
         memory: 1Gi
