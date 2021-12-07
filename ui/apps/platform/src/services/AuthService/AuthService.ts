@@ -98,7 +98,7 @@ export function fetchLoginAuthProviders(): Promise<{ response: AuthProviderLogin
     }));
 }
 
-export function fetchSupportedAuthProviders(): Promise<{ response: AuthProviderInfo[] }> {
+export function fetchAvailableAuthProviders(): Promise<{ response: AuthProviderInfo[] }> {
     return axios.get(`${availableProviderTypesUrl}`).then((response) => ({
         response: response.data.authProviderTypes,
     }));
