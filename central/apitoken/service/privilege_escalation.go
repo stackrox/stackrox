@@ -23,18 +23,20 @@ func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.Resolve
 	}
 
 	// Verify that for each tuple (access scope, resource, accessLevel) we have enough permissions.
-	var multiErr *multierror.Error
+	var multiErr error
 	for _, requestedRole := range requestedRoles {
 		scopeName := requestedRole.GetAccessScope().GetName()
 		applicablePermissions := utils.NewUnionPermissions(append(userRolesByScope[scopeName], userRolesByScope[defaultScopeName]...))
 		err := comparePermissions(requestedRole.GetPermissions(), applicablePermissions, scopeName)
-		multiErr = multierror.Append(multiErr, err)
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		}
 	}
-	return multiErr.ErrorOrNil()
+	return multiErr
 }
 
 func comparePermissions(requestedPerms, applicablePerms map[string]storage.Access, scopeName string) error {
-	var multiErr *multierror.Error
+	var multiErr error
 	for requestedResource, requestedAccess := range requestedPerms {
 		userAccess := applicablePerms[requestedResource]
 		if userAccess < requestedAccess {

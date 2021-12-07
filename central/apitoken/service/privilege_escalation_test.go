@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVerifyNoPrivilegeEscalation(t *testing.T) {
@@ -52,30 +53,31 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 
 	// 0. Both user and requested roles are empty.
 	err := verifyNoPrivilegeEscalation(make([]permissions.ResolvedRole, 0), make([]permissions.ResolvedRole, 0))
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	// 1. User roles are empty.
 	err = verifyNoPrivilegeEscalation(make([]permissions.ResolvedRole, 0), []permissions.ResolvedRole{writeRole})
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), buildErrorMsg("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS))
 	assert.Contains(t, err.Error(), buildErrorMsg("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS))
 	// 2. Requested roles are empty.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{writeRole}, make([]permissions.ResolvedRole, 0))
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// 3. User role and requested role are the same.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{readRole}, []permissions.ResolvedRole{readRole})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// 4. User roles include requested roles.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{writeRole, readRole}, []permissions.ResolvedRole{readRole})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// 5. User has "Dev" write permissions, requested are "Dev" read permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devWriteRole}, []permissions.ResolvedRole{devReadRole})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// 6. User has write permissions, requested are "Dev" read permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{writeRole}, []permissions.ResolvedRole{devReadRole})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// 7. Permissions between user roles are united.
 	devImageWriteRole := roletest.NewResolvedRole(
@@ -92,20 +94,23 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 		},
 	)
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devImageWriteRole, deploymentWriteRole}, []permissions.ResolvedRole{devWriteRole})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// 8. User has read permissions in "Dev" scope, requested are write permissions in "Dev" scope.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devReadRole}, []permissions.ResolvedRole{devWriteRole})
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), buildErrorMsg("Image", "Dev", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS))
 	assert.Contains(t, err.Error(), buildErrorMsg("Deployment", "Dev", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS))
 
 	// 9. User has read permissions, requested are write permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{readRole}, []permissions.ResolvedRole{writeRole})
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), buildErrorMsg("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS))
 	assert.Contains(t, err.Error(), buildErrorMsg("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS))
 
 	// 10. User has "dev" write permissions, requested are unrestricted write permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devWriteRole}, []permissions.ResolvedRole{writeRole})
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), buildErrorMsg("Image", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS))
 	assert.Contains(t, err.Error(), buildErrorMsg("Deployment", "", storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS))
 }
