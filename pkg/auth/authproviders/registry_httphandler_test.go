@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -160,7 +160,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLError
 	defer func() {
 		_ = body.Close()
 	}()
-	b, _ := ioutil.ReadAll(body)
+	b, _ := io.ReadAll(body)
 	s.assert.Equal("could not get login URL: some error\n", string(b), "login URL should return error")
 }
 
@@ -174,7 +174,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLEmpty
 	defer func() {
 		_ = body.Close()
 	}()
-	b, _ := ioutil.ReadAll(body)
+	b, _ := io.ReadAll(body)
 	s.assert.Equal("empty login URL\n", string(b), "login URL should return error")
 }
 
