@@ -2183,6 +2183,101 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 	}
 }
 
+func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
+	deployments := make(map[string]*storage.Deployment)
+	for _, d := range []struct {
+		DeploymentName                string
+		ServiceAccountName            string
+		AutomountServiceAccountTokens bool
+	}{
+		{
+			DeploymentName:                "DefaultSAAutomountedTokens",
+			ServiceAccountName:            "default",
+			AutomountServiceAccountTokens: true,
+		},
+		{
+			DeploymentName:     "DefaultSANotAutomountedTokens",
+			ServiceAccountName: "default",
+		},
+		{
+			DeploymentName:                "CustomSAAutomountedTokens",
+			ServiceAccountName:            "custom",
+			AutomountServiceAccountTokens: true,
+		},
+		{
+			DeploymentName:     "CustomSANotAutomountedTokens",
+			ServiceAccountName: "custom",
+		},
+	} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.Name = d.DeploymentName
+		dep.ServiceAccount = d.ServiceAccountName
+		dep.AutomountServiceAccountToken = d.AutomountServiceAccountTokens
+		deployments[dep.Name] = dep
+	}
+
+	automountServiceAccountTokenPolicyGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.AutomountServiceAccountToken,
+		Values:    []*storage.PolicyValue{{Value: "true"}},
+	}
+	defaultServiceAccountPolicyGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.ServiceAccount,
+		Values:    []*storage.PolicyValue{{Value: "default"}},
+	}
+
+	allAutomountServiceAccountTokenPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, automountServiceAccountTokenPolicyGroup)
+	defaultAutomountServiceAccountTokenPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, automountServiceAccountTokenPolicyGroup, defaultServiceAccountPolicyGroup)
+
+	automountAlert := &storage.Alert_Violation{Message: "Deployment mounts the service account tokens."}
+	defaultServiceAccountAlert := &storage.Alert_Violation{Message: "Service Account is set to 'default'"}
+
+	for _, c := range []struct {
+		CaseName       string
+		Policy         *storage.Policy
+		DeploymentName string
+		ExpectedAlerts []*storage.Alert_Violation
+	}{
+		{
+			CaseName:       "Automounted default service account tokens should alert on bare automount policy",
+			Policy:         allAutomountServiceAccountTokenPolicy,
+			DeploymentName: "DefaultSAAutomountedTokens",
+			ExpectedAlerts: []*storage.Alert_Violation{automountAlert},
+		},
+		{
+			CaseName:       "Automounted default service account tokens should alert on default only automount policy",
+			Policy:         defaultAutomountServiceAccountTokenPolicy,
+			DeploymentName: "DefaultSAAutomountedTokens",
+			ExpectedAlerts: []*storage.Alert_Violation{automountAlert, defaultServiceAccountAlert},
+		},
+		{
+			CaseName:       "Automounted custom service account tokens should alert on bare automount policy",
+			Policy:         allAutomountServiceAccountTokenPolicy,
+			DeploymentName: "CustomSAAutomountedTokens",
+			ExpectedAlerts: []*storage.Alert_Violation{automountAlert},
+		},
+		{
+			CaseName:       "Not automounted default service account should not alert on bare automount policy",
+			Policy:         allAutomountServiceAccountTokenPolicy,
+			DeploymentName: "DefaultSANotAutomountedTokens",
+		},
+		{
+			CaseName:       "Not automounted custom service account should not alert on bare automount policy",
+			Policy:         allAutomountServiceAccountTokenPolicy,
+			DeploymentName: "CustomSANotAutomountedTokens",
+		},
+	} {
+		suite.T().Run(c.CaseName, func(t *testing.T) {
+			dep := deployments[c.DeploymentName]
+			matcher, err := BuildDeploymentMatcher(c.Policy)
+			suite.NoError(err, "deployment matcher creation must succeed")
+			violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+			suite.NoError(err, "deployment matcher run must succeed")
+			suite.Empty(violations.ProcessViolation)
+			suite.Equal(c.ExpectedAlerts, violations.AlertViolations)
+		})
+	}
+}
+
 func (suite *DefaultPoliciesTestSuite) TestRuntimeClass() {
 	var deps []*storage.Deployment
 	for _, runtimeClass := range []string{

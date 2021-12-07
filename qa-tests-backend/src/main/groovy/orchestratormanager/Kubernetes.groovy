@@ -2116,6 +2116,9 @@ class Kubernetes implements OrchestratorMain {
                 hostNetwork: deployment.hostNetwork,
                 serviceAccountName: deployment.serviceAccountName
         )
+        if (!deployment.automountServiceAccountToken) {
+            podSpec.automountServiceAccountToken = deployment.automountServiceAccountToken
+        }
         return podSpec
     }
 

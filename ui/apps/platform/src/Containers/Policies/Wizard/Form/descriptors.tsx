@@ -813,6 +813,25 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
+        label: 'Automount Service Account Token',
+        name: 'Automount Service Account Token',
+        longName: 'Automount Service Account Token',
+        category: policyCriteriaCategories.KUBERNETES_ACCESS,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Automount',
+                value: true,
+            },
+            {
+                text: 'Do Not Mount',
+                value: false,
+            },
+        ],
+        defaultValue: false,
+        canBooleanLogic: false,
+    },
+    {
         label: 'Minimum RBAC Permissions',
         name: 'Minimum RBAC Permissions',
         longName: 'RBAC permission level is at least',
