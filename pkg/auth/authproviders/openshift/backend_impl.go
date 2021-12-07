@@ -114,8 +114,7 @@ func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) (str
 		redirectURL.Scheme = "http"
 	}
 
-	loginURL, err := b.openshiftConnector.LoginURL(defaultScopes, redirectURL.String(), state)
-	return loginURL, err
+	return b.openshiftConnector.LoginURL(defaultScopes, redirectURL.String(), state)
 }
 
 func (b *backend) RefreshURL() string {

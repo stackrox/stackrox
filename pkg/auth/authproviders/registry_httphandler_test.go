@@ -153,7 +153,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendParseReturnsE
 func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLError() {
 	loginURL := s.registry.loginURL(dummyProviderType)
 	req, _ := http.NewRequest(http.MethodGet, loginURL, strings.NewReader(""))
-	testAuthProviderBackend.registerProcessHTTPResponse(nil, errors.New("some error"))
+	testAuthProviderBackend.registerLoginURL("some.url", errors.New("some error"))
 	s.registry.loginHTTPHandler(s.writer, req)
 	s.assert.Equal(500, s.writer.Code, "login URL should return error")
 	body := s.writer.Result().Body
@@ -167,7 +167,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLError
 func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLEmpty() {
 	loginURL := s.registry.loginURL(dummyProviderType)
 	req, _ := http.NewRequest(http.MethodGet, loginURL, strings.NewReader(""))
-	testAuthProviderBackend.registerProcessHTTPResponse(nil, errors.New("empty"))
+	testAuthProviderBackend.registerLoginURL("", nil)
 	s.registry.loginHTTPHandler(s.writer, req)
 	s.assert.Equal(500, s.writer.Code, "login URL should return error")
 	body := s.writer.Result().Body
@@ -368,12 +368,18 @@ func (*tstRoleMapperFactory) GetRoleMapper(_ string) perm.RoleMapper {
 
 // Authentication backend factory (needed by registry.RegisterBackendFactory)
 type tstAuthProviderBackend struct {
-	authRsp *AuthResponse
-	err     error
+	authRsp  *AuthResponse
+	err      error
+	loginURL string
 }
 
 func (b *tstAuthProviderBackend) registerProcessHTTPResponse(authRsp *AuthResponse, err error) {
 	b.authRsp = authRsp
+	b.err = err
+}
+
+func (b *tstAuthProviderBackend) registerLoginURL(loginURL string, err error) {
+	b.loginURL = loginURL
 	b.err = err
 }
 
@@ -382,10 +388,7 @@ func (*tstAuthProviderBackend) Config() map[string]string {
 }
 
 func (b *tstAuthProviderBackend) LoginURL(_ string, r *requestinfo.RequestInfo) (string, error) {
-	if b.err.Error() == "empty" {
-		return "", nil
-	}
-	return "login", b.err
+	return b.loginURL, b.err
 }
 
 func (*tstAuthProviderBackend) RefreshURL() string {
