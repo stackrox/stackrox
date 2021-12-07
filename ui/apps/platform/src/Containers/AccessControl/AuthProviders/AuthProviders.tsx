@@ -21,7 +21,6 @@ import { CaretDownIcon } from '@patternfly/react-icons';
 
 import ACSEmptyState from 'Components/ACSEmptyState';
 import NotFoundMessage from 'Components/NotFoundMessage';
-import { availableAuthProviders } from 'constants/accessControl';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import {
@@ -59,6 +58,7 @@ const authProviderState = createStructuredSelector({
     isFetchingRoles: (state) =>
         selectors.getLoadingStatus(state, roleActionTypes.FETCH_ROLES) as boolean,
     userRolePermissions: selectors.getUserRolePermissions,
+    supportedTypes: selectors.getSupportedAuthProviders,
 });
 
 function getNewAuthProviderObj(type) {
@@ -74,8 +74,13 @@ function AuthProviders(): ReactElement {
     const dispatch = useDispatch();
 
     const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-    const { authProviders, groups, isFetchingAuthProviders, isFetchingRoles, userRolePermissions } =
-        useSelector(authProviderState);
+    const {
+        authProviders,
+        groups,
+        isFetchingAuthProviders,
+        isFetchingRoles,
+        userRolePermissions,
+        supportedTypes, } = useSelector(authProviderState);
     const hasWriteAccess = getHasReadWritePermission('AuthProvider', userRolePermissions);
 
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
@@ -122,7 +127,7 @@ function AuthProviders(): ReactElement {
         dispatch(authActions.setSaveAuthProviderStatus(null));
     }
 
-    const dropdownItems = availableAuthProviders.map(({ value, label }) => (
+    const dropdownItems = supportedTypes.map(({ value, label }) => (
         <DropdownItem key={value} value={value} component="button">
             {label}
         </DropdownItem>

@@ -1,16 +1,12 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
-import { availableAuthProviders } from 'constants/accessControl';
-import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+import { createFetchingActions, createFetchingActionTypes } from 'utils/fetchingReduxRoutines';
 
 // Helper functions
 
-export const filterAuthProviders = (providers) => {
-    const availableTypes = availableAuthProviders.map((provider) => provider.value);
-    const filteredProviders = providers.filter(
-        (provider) => availableTypes.indexOf(provider.type) !== -1
-    );
-    return filteredProviders;
+export const filterAuthProviders = (providers, supportedTypes) => {
+    const availableTypes = supportedTypes?.map((provider) => provider.value);
+    return providers.filter((provider) => availableTypes?.indexOf(provider.type) !== -1);
 };
 
 // Action types
@@ -18,6 +14,7 @@ export const filterAuthProviders = (providers) => {
 export const types = {
     FETCH_AUTH_PROVIDERS: createFetchingActionTypes('auth/FETCH_AUTH_PROVIDERS'),
     FETCH_LOGIN_AUTH_PROVIDERS: createFetchingActionTypes('auth/FETCH_LOGIN_AUTH_PROVIDERS'),
+    FETCH_SUPPORTED_AUTH_PROVIDERS: 'auth/FETCH_SUPPORTED_AUTH_PROVIDERS',
     SELECTED_AUTH_PROVIDER: 'auth/SELECTED_AUTH_PROVIDER',
     SAVE_AUTH_PROVIDER: 'auth/SAVE_AUTH_PROVIDER',
     DELETE_AUTH_PROVIDER: 'auth/DELETE_AUTH_PROVIDER',
@@ -60,6 +57,10 @@ export const actions = {
         type: types.SET_AUTH_PROVIDER_TEST_RESULTS,
         value,
     }),
+    setSupportedAuthProviders: (value) => ({
+        type: types.FETCH_SUPPORTED_AUTH_PROVIDERS,
+        value,
+    }),
     login: (userData) => ({ type: types.LOGIN, userData }),
     logout: () => ({ type: types.LOGOUT }),
     grantAnonymousAccess: () => ({ type: types.GRANT_ANONYMOUS_ACCESS }),
@@ -99,7 +100,7 @@ const loginAuthProviders = (state = [], action) => {
 
 const selectedAuthProvider = (state = null, action) => {
     if (action.type === types.FETCH_AUTH_PROVIDERS.SUCCESS) {
-        const providers = filterAuthProviders(action.response);
+        const providers = filterAuthProviders(action.response, state?.supportedAuthProviders);
         if (state?.id && !providers.find((provider) => provider.id === state.id)) {
             // the selected auth provider isn't anymore in the list of auth providers => deselect
             return null;
@@ -170,6 +171,13 @@ const saveAuthProviderStatus = (state = null, action) => {
     return state;
 };
 
+const supportedAuthProviders = (state = [], action) => {
+    if (action.type === types.FETCH_SUPPORTED_AUTH_PROVIDERS) {
+        return isEqual(action.value, state) ? state : action.value;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     authProviders,
     authProviderTestResults,
@@ -180,6 +188,7 @@ const reducer = combineReducers({
     isEditingAuthProvider,
     saveAuthProviderStatus,
     currentUser,
+    supportedAuthProviders,
 });
 
 export default reducer;
@@ -189,13 +198,15 @@ export default reducer;
 const getAuthProviders = (state) => state.authProviders;
 const getLoginAuthProviders = (state) => state.loginAuthProviders;
 const getLoginAuthProviderTestResults = (state) => state.authProviderTestResults;
-const getAvailableAuthProviders = (state) => filterAuthProviders(state.authProviders);
+const getAvailableAuthProviders = (state) =>
+    filterAuthProviders(state.authProviders, state.supportedAuthProviders);
 const getSelectedAuthProvider = (state) => state.selectedAuthProvider;
 const getAuthStatus = (state) => state.authStatus;
 const getAuthProviderError = (state) => state.authProviderResponse;
 const getAuthProviderEditingState = (state) => state.isEditingAuthProvider;
 const getSaveAuthProviderStatus = (state) => state.saveAuthProviderStatus;
 const getCurrentUser = (state) => state.currentUser;
+const getSupportedAuthProviders = (state) => state.supportedAuthProviders;
 
 export const selectors = {
     getAuthProviders,
@@ -208,4 +219,5 @@ export const selectors = {
     getAuthProviderEditingState,
     getSaveAuthProviderStatus,
     getCurrentUser,
+    getSupportedAuthProviders,
 };

@@ -260,6 +260,28 @@
           "AuthProviderService"
         ]
       }
+    },
+    "/v1/supportedAuthProviders": {
+      "get": {
+        "operationId": "AuthProviderService_ListSupportedAuthProviders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SupportedAuthProvidersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "AuthProviderService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -276,6 +298,17 @@
           "type": "string"
         },
         "loginUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "SupportedAuthProvidersResponseAuthProviderType": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "value": {
           "type": "string"
         }
       }
@@ -538,6 +571,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/GetLoginAuthProvidersResponseLoginAuthProvider"
+          }
+        }
+      }
+    },
+    "v1SupportedAuthProvidersResponse": {
+      "type": "object",
+      "properties": {
+        "authProviderTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SupportedAuthProvidersResponseAuthProviderType"
           }
         }
       }

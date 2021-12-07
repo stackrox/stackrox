@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -29,6 +30,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
+			"/v1.AuthProviderService/ListSupportedAuthProviders",
 			"/v1.AuthProviderService/GetLoginAuthProviders",
 			"/v1.AuthProviderService/ExchangeToken",
 		},
@@ -103,6 +105,41 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 		return result[i].GetName() < result[j].GetName()
 	})
 	return &v1.GetLoginAuthProvidersResponse{AuthProviders: result}, nil
+}
+
+// ListSupportedAuthProviders
+func (s *serviceImpl) ListSupportedAuthProviders(_ context.Context, _ *v1.Empty) (*v1.SupportedAuthProvidersResponse, error) {
+	supportedTypes := []*v1.SupportedAuthProvidersResponse_AuthProviderType{
+		{
+			Label: "Auth0",
+			Value: "auth0",
+		},
+		{
+			Label: "OpenID Connect",
+			Value: "oidc",
+		},
+		{
+			Label: "SAML 2.0",
+			Value: "saml",
+		},
+		{
+			Label: "User Certificates",
+			Value: "userpki",
+		},
+		{
+			Label: "Google IAP",
+			Value: "iap",
+		},
+	}
+	if env.EnableOpenShiftAuth.BooleanSetting() {
+		supportedTypes = append(supportedTypes, &v1.SupportedAuthProvidersResponse_AuthProviderType{
+			Label: "OpenShift Auth",
+			Value: "openshift",
+		})
+	}
+	return &v1.SupportedAuthProvidersResponse{
+		AuthProviderTypes: supportedTypes,
+	}, nil
 }
 
 // GetAuthProviders retrieves all authProviders that matches the request filters

@@ -336,9 +336,17 @@ function* watchLocationForAuthProviders() {
     yield all(effects);
 }
 
+function* fetchSupportedAuthProviders() {
+    const result = yield call(AuthService.fetchSupportedAuthProviders);
+    // eslint-disable-next-line no-console
+    console.log(`Response ${result?.response}`);
+    yield put(actions.setSupportedAuthProviders(result?.response || []));
+}
+
 export default function* auth() {
     // start by monitoring auth providers to re-evaluate user access
     yield fork(watchNewAuthProviders);
+    yield fork(fetchSupportedAuthProviders);
 
     // take the first location change, i.e. the location where user landed first time
     const action = yield take(locationActionTypes.LOCATION_CHANGE);

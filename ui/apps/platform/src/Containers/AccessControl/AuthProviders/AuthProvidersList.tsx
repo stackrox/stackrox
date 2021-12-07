@@ -5,7 +5,6 @@ import { createStructuredSelector } from 'reselect';
 import { Button, Modal, ModalVariant } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { availableAuthProviders } from 'constants/accessControl';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import { AuthProvider } from 'services/AuthService';
@@ -18,8 +17,8 @@ const selectedRowStyle = {
     borderLeft: '3px solid var(--pf-global--primary-color--100)',
 };
 
-function getAuthProviderTypeLabel(type: string): string {
-    return availableAuthProviders.find(({ value }) => value === type)?.label ?? '';
+function getAuthProviderTypeLabel(type: string, supportedTypes): string {
+    return supportedTypes.find(({ value }) => value === type)?.label ?? '';
 }
 
 const entityType = 'AUTH_PROVIDER';
@@ -31,13 +30,14 @@ export type AuthProvidersListProps = {
 
 const authProviderState = createStructuredSelector({
     currentUser: selectors.getCurrentUser,
+    supportedTypes: selectors.getSupportedAuthProviders,
 });
 
 function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps): ReactElement {
     const [authProviderToDelete, setAuthProviderToDelete] = useState('');
     const [idToDelete, setIdToDelete] = useState('');
     const dispatch = useDispatch();
-    const { currentUser } = useSelector(authProviderState);
+    const { currentUser, supportedTypes } = useSelector(authProviderState);
 
     function onClickDelete(name: string, id: string) {
         setIdToDelete(id);
@@ -68,7 +68,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                 </Thead>
                 <Tbody>
                     {authProviders.map(({ id, name, type, defaultRole, groups = [] }) => {
-                        const typeLabel = getAuthProviderTypeLabel(type);
+                        const typeLabel = getAuthProviderTypeLabel(type, supportedTypes);
 
                         return (
                             <Tr
