@@ -25,7 +25,7 @@ func NewHandler(deploymentStore store.DeploymentStore) Handler {
 type handlerImpl struct {
 	deploymentStore store.DeploymentStore
 	detector        detector.Detector
-	stopSig         concurrency.Signal
+	stopSig         concurrency.ErrorSignal
 }
 
 func (h *handlerImpl) Start() error {
@@ -33,7 +33,7 @@ func (h *handlerImpl) Start() error {
 }
 
 func (h *handlerImpl) Stop(err error) {
-	h.stopSig.Signal()
+	h.stopSig.SignalWithError(err)
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -50,7 +50,7 @@ func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	deploymentID := request.GetDeploymentId()
 	select {
 	case <-h.stopSig.Done():
-		return errors.Errorf("could not fulfill re-process deployment %q request for ", request.GetDeploymentId())
+		return errors.Wrapf(h.stopSig.Err(), "could not fulfill re-process deployment %q request", request.GetDeploymentId())
 	default:
 		deployment := h.deploymentStore.Get(deploymentID)
 		// The deployment affected by the vulnerability request may have been removed.

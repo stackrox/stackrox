@@ -77,6 +77,10 @@ func wrapForVulnMgmt(f queryBuilderFunc) QueryBuilder {
 		if features.VulnRiskManagement.Enabled() {
 			return append(f(group),
 				&query.FieldQuery{
+					Field:  search.CVESuppressed.String(),
+					Values: []string{"false"},
+				},
+				&query.FieldQuery{
 					Field:  search.VulnerabilityState.String(),
 					Values: []string{storage.VulnerabilityState_OBSERVED.String()},
 				})
