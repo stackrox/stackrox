@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 )
 
@@ -28,7 +27,6 @@ type listenerImpl struct {
 
 	configHandler config.Handler
 	detector      detector.Detector
-	sensor        *sensor.Sensor
 }
 
 func (k *listenerImpl) Start() error {
@@ -54,10 +52,6 @@ func (k *listenerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (k *listenerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return k.eventsC
-}
-
-func (k *listenerImpl) SetSensor(sensor *sensor.Sensor) {
-	k.sensor = sensor
 }
 
 func clusterOperatorCRDExists(client client.Interface) (bool, error) {
