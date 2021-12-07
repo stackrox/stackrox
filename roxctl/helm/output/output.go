@@ -49,7 +49,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, r
 		templateImage = image.NewImage(os.DirFS(debugChartPath))
 	}
 
-	var metaVals map[string]interface{}
+	var metaVals charts.MetaValues
 	if rhacs {
 		metaVals = charts.RHACSMetaValues()
 	} else {

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/suite"
@@ -17,7 +18,7 @@ import (
 )
 
 var (
-	metaValues = map[string]interface{}{
+	metaValues = charts.MetaValues{
 		"Versions": version.Versions{
 			ChartVersion:     "1.0.0",
 			MainVersion:      "3.0.49.0",
