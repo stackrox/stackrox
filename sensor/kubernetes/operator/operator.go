@@ -4,7 +4,6 @@ package operator
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,9 +27,6 @@ type Operator interface {
 }
 
 type operatorImpl struct {
-	initialized  bool
-	initError    error
-	monitor      sync.Mutex
 	k8sClient    kubernetes.Interface
 	appNamespace string
 	// Zero value if not managed by Helm
@@ -50,12 +46,6 @@ func New(k8sClient kubernetes.Interface, appNamespace string) Operator {
 }
 
 func (o *operatorImpl) Initialize(ctx context.Context) error {
-	o.monitor.Lock()
-	defer o.monitor.Unlock()
-	if o.initialized {
-		return o.initError
-	}
-
 	log.Infof("Initializing operator for namespace %s", o.appNamespace)
 	if err := o.fetchHelmReleaseName(ctx); err != nil {
 		return o.failInitialization(err)
@@ -65,22 +55,11 @@ func (o *operatorImpl) Initialize(ctx context.Context) error {
 		return o.failInitialization(err)
 	}
 
-	o.initialized = true
-	o.initError = nil
 	return nil
 }
 
 func (o *operatorImpl) failInitialization(err error) error {
-	o.initError = err
 	return errors.Wrap(err, "Operator initialization error")
-}
-
-func (o *operatorImpl) isInitialized() bool {
-	o.monitor.Lock()
-	defer o.monitor.Unlock()
-	initialized := o.initialized
-
-	return initialized
 }
 
 func (o *operatorImpl) GetHelmReleaseRevision() uint64 {
@@ -95,14 +74,10 @@ func (o *operatorImpl) stop(err error) {
 	o.stoppedC.SignalWithError(err)
 }
 
+// Start launches the processes that implement the "operational logic" of Sensor.
+// Precondition: Initialize was previously invoked.
 func (o *operatorImpl) Start(ctx context.Context) error {
 	log.Info("Starting embedded operator.")
-	if !o.isInitialized() {
-		if err := o.Initialize(ctx); err != nil {
-			log.Error(err)
-			return err
-		}
-	}
 
 	if !o.isSensorHelmManaged() {
 		log.Warn("Sensor is not managed by Helm, stopping the embedded operator as it only supports Helm.")

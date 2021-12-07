@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
@@ -26,7 +25,7 @@ const (
 	// SecretTypeHelmReleaseV1 is where Helm stores the metadata for each
 	// release starting with Helm 3.
 	// See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
-	secretTypeHelmReleaseV1 v1.SecretType = "helm.sh/release.v1"
+	secretTypeHelmReleaseV1 corev1.SecretType = "helm.sh/release.v1"
 )
 
 // ExtractHelmRevisionFromHelmSecret Extracts the Helm release revision number from the secret where Helm stores
@@ -38,7 +37,7 @@ const (
 // - 0, err if the secret is not a helm secret (see isHelmSecret), or the secret name doesn't have the expected format.
 // See https://helm.sh/docs/faq/changes_since_helm2/#secrets-as-the-default-storage-driver
 // FIXME: replace by usage of Helm action client
-func (o *operatorImpl) extractHelmRevisionFromHelmSecret(secret *v1.Secret) (uint64, error) {
+func (o *operatorImpl) extractHelmRevisionFromHelmSecret(secret *corev1.Secret) (uint64, error) {
 	if secret.Type == secretTypeHelmReleaseV1 {
 		secretName := secret.Name
 		splitSecretName := strings.Split(secretName, ".")
@@ -75,8 +74,8 @@ func (o *operatorImpl) fetchHelmReleaseName(ctx context.Context) error {
 	return nil
 }
 
-func (o *operatorImpl) fetchSensorPod(ctx context.Context) (v1.Pod, error) {
-	var pod v1.Pod
+func (o *operatorImpl) fetchSensorPod(ctx context.Context) (corev1.Pod, error) {
+	var pod corev1.Pod
 	ctx, cancel := context.WithTimeout(ctx, fetchSensorPodTimeout)
 	defer cancel()
 
@@ -90,7 +89,7 @@ func (o *operatorImpl) fetchSensorPod(ctx context.Context) (v1.Pod, error) {
 		default:
 		}
 
-		var sensorPods []v1.Pod
+		var sensorPods []corev1.Pod
 		for _, phase := range []string{"Running", "Pending"} {
 			listOpts := metav1.ListOptions{
 				LabelSelector: sensorPodLabel,
@@ -182,7 +181,7 @@ func (o *operatorImpl) watchSecrets(sif informers.SharedInformerFactory) chan st
 	return secretInformerStopper
 }
 
-func (o *operatorImpl) processSecret(secret *v1.Secret, secretInformerStopper chan struct{}) error {
+func (o *operatorImpl) processSecret(secret *corev1.Secret, secretInformerStopper chan struct{}) error {
 	var processingError error
 	if o.isSensorHelmManaged() && isHelmSecret(secret) {
 		revision, err := o.extractHelmRevisionFromHelmSecret(secret)
@@ -199,14 +198,14 @@ func (o *operatorImpl) processSecret(secret *v1.Secret, secretInformerStopper ch
 
 // HelmSecretType is a secret type that Helm uses to store release information
 type HelmSecretType interface {
-	Type() v1.SecretType
+	Type() corev1.SecretType
 	// ListOptions Options that can be used to retrieve all secrets for a Helm release
 	ListOptions(helmReleaseName string) metav1.ListOptions
 }
 
 type helmSecretTypeReleaseV1 struct{}
 
-func (*helmSecretTypeReleaseV1) Type() v1.SecretType {
+func (*helmSecretTypeReleaseV1) Type() corev1.SecretType {
 	return secretTypeHelmReleaseV1
 }
 
@@ -219,14 +218,14 @@ func (h *helmSecretTypeReleaseV1) ListOptions(helmReleaseName string) metav1.Lis
 
 // GetHelmSecretTypes returns all secret types that Helm uses to store
 // release information.
-func getHelmSecretTypes() map[v1.SecretType]HelmSecretType {
-	return map[v1.SecretType]HelmSecretType{
+func getHelmSecretTypes() map[corev1.SecretType]HelmSecretType {
+	return map[corev1.SecretType]HelmSecretType{
 		secretTypeHelmReleaseV1: &helmSecretTypeReleaseV1{},
 	}
 }
 
 // isHelmSecret returns whether the secret is used by Helm to store release information.
-func isHelmSecret(secret *v1.Secret) bool {
+func isHelmSecret(secret *corev1.Secret) bool {
 	_, ok := getHelmSecretTypes()[secret.Type]
 	return ok
 }
