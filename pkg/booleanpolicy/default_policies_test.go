@@ -2981,7 +2981,3 @@ func podPortForwardEvent(pod string, port int32) *storage.KubernetesEvent {
 		},
 	}
 }
-
-func getExpectedViolations(id string) {
-
-}
