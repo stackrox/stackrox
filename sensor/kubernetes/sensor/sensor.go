@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -56,57 +57,66 @@ var (
 	log = logging.LoggerForModule()
 )
 
-func loadHelmConfig(client client.Interface, deploymentIdentification *storage.SensorDeploymentIdentification) (*central.HelmManagedConfigInit, operator.Operator, error) {
+func loadHelmConfig() (*central.HelmManagedConfigInit, error) {
 	var helmManagedConfig *central.HelmManagedConfigInit
 	if configFP := helmconfig.HelmConfigFingerprint.Setting(); configFP != "" {
 		var err error
 		helmManagedConfig, err = helmconfig.Load()
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "loading Helm cluster config")
+			return nil, errors.Wrap(err, "loading Helm cluster config")
 		}
 		if helmManagedConfig.GetClusterConfig().GetConfigFingerprint() != configFP {
-			return nil, nil, errors.Errorf("fingerprint %q of loaded config does not match expected fingerprint %q, config changes can only be applied via 'helm upgrade' or a similar chart-based mechanism", helmManagedConfig.GetClusterConfig().GetConfigFingerprint(), configFP)
+			return nil, errors.Errorf("fingerprint %q of loaded config does not match expected fingerprint %q, config changes can only be applied via 'helm upgrade' or a similar chart-based mechanism", helmManagedConfig.GetClusterConfig().GetConfigFingerprint(), configFP)
 		}
 		log.Infof("Loaded Helm cluster configuration with fingerprint %q", configFP)
 
 		if err := helmconfig.CheckEffectiveClusterName(helmManagedConfig); err != nil {
-			return nil, nil, errors.Wrap(err, "validating cluster name")
+			return nil, errors.Wrap(err, "validating cluster name")
 		}
 	}
 
 	if helmManagedConfig.GetClusterName() == "" {
 		certClusterID, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "parsing cluster ID from service certificate")
+			return nil, errors.Wrap(err, "parsing cluster ID from service certificate")
 		}
 		if certClusterID == centralsensor.InitCertClusterID {
-			return nil, nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
+			return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
 		}
 	}
 
-	var sensorOperator operator.Operator
-	if helmManagedConfig != nil {
-		sensorOperator = operator.New(client.Kubernetes(), deploymentIdentification.GetAppNamespace())
-		if err := sensorOperator.Initialize(context.Background()); err == nil {
-			log.Error(err)
-		} else {
-			helmManagedConfig.GetClusterConfig().HelmReleaseRevision = sensorOperator.GetHelmReleaseRevision()
-		}
-	}
+	return helmManagedConfig, nil
+}
 
-	return helmManagedConfig, sensorOperator, nil
+func setupEmbeddedOperator(client client.Interface, deploymentIdentification *storage.SensorDeploymentIdentification) (operator.Operator, error) {
+	sensorOperator := operator.New(client.Kubernetes(), deploymentIdentification.GetAppNamespace())
+	if err := sensorOperator.Initialize(context.Background()); err == nil {
+		return nil, errors.Wrap(err, "Error initializing sensor embedded operator, self-operating features will not be available")
+	}
+	if err := sensorOperator.Start(context.Background()); err != nil {
+		return nil, errors.Wrap(err, "Error starting sensor embedded operator, self-operating features will not be available")
+	}
+	return sensorOperator, nil
 }
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
+	helmManagedConfig, err := loadHelmConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
-	helmManagedConfig, sensorOperator, err := loadHelmConfig(client, deploymentIdentification)
-	if err != nil {
-		return nil, err
+	var sensorOperatorSignal concurrency.ReadOnlyErrorSignal
+	if sensorOperator, err := setupEmbeddedOperator(client, deploymentIdentification); err != nil {
+		log.Errorf("Error launching sensor embedded operator, self-operating features will not be available: %v", err)
+	} else {
+		helmManagedConfig.GetClusterConfig().HelmReleaseRevision = sensorOperator.GetHelmReleaseRevision()
+		sensorOperatorSignal = sensorOperator.Stopped()
 	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
@@ -187,7 +197,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		policyDetector,
 		imageService,
 		centralClient,
-		sensorOperator,
+		sensorOperatorSignal,
 		components...,
 	)
 

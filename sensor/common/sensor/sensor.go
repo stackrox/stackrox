@@ -30,7 +30,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
-	"github.com/stackrox/rox/sensor/kubernetes/operator"
 )
 
 const (
@@ -65,13 +64,13 @@ type Sensor struct {
 	centralCommunication CentralCommunication
 	centralRestClient    *centralclient.Client
 
-	sensorOperator operator.Operator
+	sensorOperatorSignal concurrency.ReadOnlyErrorSignal
 
 	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralClient *centralclient.Client, sensorOperator operator.Operator, components ...common.SensorComponent) *Sensor {
+func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralClient *centralclient.Client, sensorOperatorSignal concurrency.ReadOnlyErrorSignal, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
@@ -83,7 +82,7 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 		centralRestClient: centralClient,
 		centralConnection: grpcUtil.NewLazyClientConn(),
 
-		sensorOperator: sensorOperator,
+		sensorOperatorSignal: sensorOperatorSignal,
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -224,7 +223,7 @@ func (s *Sensor) Start() {
 	}
 	go s.communicationWithCentral(&centralReachable)
 
-	go s.launchSensorOperator()
+	go s.waitForSensorOperatorSignal()
 }
 
 func (s *Sensor) gRPCConnectToCentralWithRetries(signal *concurrency.Signal) {
@@ -324,25 +323,20 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 		"Sensor reported an error: %v")
 }
 
-func (s *Sensor) launchSensorOperator() {
-	if s.sensorOperator == nil {
-		return
-	}
-	if err := s.sensorOperator.Start(context.Background()); err != nil {
-		log.Errorf("Error launching sensor embedded operator, self-operating features will not be available: %v", err)
-		return
-	}
-	s.waitForSignal(s.sensorOperator.Stopped(), "Stopping sensor due to signal from embedded operator.",
+func (s *Sensor) waitForSensorOperatorSignal() {
+	s.waitForSignal(s.sensorOperatorSignal, "Stopping sensor due to signal from embedded operator.",
 		"Stopping sensor due an error in embedded operator: %v.")
 }
 
 func (s *Sensor) waitForSignal(signal concurrency.ReadOnlyErrorSignal, stopMessage string, stopErrorTemplateMsg string) {
-	if err := signal.Wait(); err != nil {
-		log.Errorf(stopErrorTemplateMsg, err)
-		s.stoppedSig.SignalWithError(err)
-	} else {
-		log.Info(stopMessage)
-		s.stoppedSig.Signal()
+	if signal != nil {
+		if err := signal.Wait(); err != nil {
+			log.Errorf(stopErrorTemplateMsg, err)
+			s.stoppedSig.SignalWithError(err)
+		} else {
+			log.Info(stopMessage)
+			s.stoppedSig.Signal()
+		}
 	}
 }
 
