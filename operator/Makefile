@@ -227,11 +227,30 @@ ENVTEST_K8S_VERSION = 1.22
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
-test-e2e: build install kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
+.PHONY: validate
+CRDS := SecuredCluster Central
+validate:
+	@CRS=$$( \
+		for crd in $(CRDS); do \
+			find tests -type f -name "*.yaml" \! -name "*-assert.yaml" \! -name "*-errors.yaml" \! -name "*.envsubst.yaml" -exec grep -q "^kind: $$crd" {} \; -print; \
+		done); \
+	for cr in $$CRS; do \
+		/bin/echo -n "Validating custom resource $$cr with kubectl... "; \
+		output=$$(kubectl apply --dry-run=client --validate=true -f "$$cr" 2>&1); \
+		if [ $$? -eq 0 ]; then \
+			echo PASSED; \
+		else \
+			echo FAILED; \
+			echo "kubectl: $$output"; \
+		fi; \
+		echo; \
+	done;
+
+test-e2e: build install validate kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
 
-test-e2e-deployed: kuttl ## Run e2e tests with manager deployed on cluster.
+test-e2e-deployed: build install validate kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
 	SKIP_MANAGER_START=1 $(KUTTL) test
 
