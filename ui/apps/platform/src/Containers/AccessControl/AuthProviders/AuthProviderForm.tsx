@@ -50,11 +50,11 @@ const authProviderState = createStructuredSelector({
     roles: selectors.getRoles,
     groups: selectors.getRuleGroups,
     saveAuthProviderStatus: selectors.getSaveAuthProviderStatus,
-    supportedTypes: selectors.getSupportedAuthProviders,
+    availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
-function getNewAuthProviderTitle(type, supportedTypes) {
-    const selectedType = supportedTypes.find(({ value }) => value === type);
+function getNewAuthProviderTitle(type, availableProviderTypes) {
+    const selectedType = availableProviderTypes.find(({ value }) => value === type);
 
     return `Add new ${selectedType?.label as string} auth provider`;
 }
@@ -71,7 +71,8 @@ function AuthProviderForm({
     onClickEdit,
 }: AuthProviderFormProps): ReactElement {
     const history = useHistory();
-    const { groups, roles, saveAuthProviderStatus, supportedTypes } = useSelector(authProviderState);
+    const { groups, roles, saveAuthProviderStatus, availableProviderTypes } =
+        useSelector(authProviderState);
     const dispatch = useDispatch();
 
     const initialValues = !selectedAuthProvider.name
@@ -222,7 +223,7 @@ function AuthProviderForm({
     const isViewing = !hasAction;
     const formTitle =
         action === 'create'
-            ? getNewAuthProviderTitle(selectedAuthProvider.type, supportedTypes)
+            ? getNewAuthProviderTitle(selectedAuthProvider.type, availableProviderTypes)
             : selectedAuthProvider.name;
 
     return (
@@ -369,7 +370,7 @@ function AuthProviderForm({
                                     handleSelect={setFieldValue}
                                     isDisabled
                                 >
-                                    {supportedTypes.map(({ value, label }) => (
+                                    {availableProviderTypes.map(({ value, label }) => (
                                         <SelectOption key={value} value={value}>
                                             {label}
                                         </SelectOption>

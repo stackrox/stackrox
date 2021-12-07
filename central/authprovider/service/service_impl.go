@@ -30,7 +30,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
-			"/v1.AuthProviderService/ListSupportedAuthProviders",
+			"/v1.AuthProviderService/ListAvailableProviderTypes",
 			"/v1.AuthProviderService/GetLoginAuthProviders",
 			"/v1.AuthProviderService/ExchangeToken",
 		},

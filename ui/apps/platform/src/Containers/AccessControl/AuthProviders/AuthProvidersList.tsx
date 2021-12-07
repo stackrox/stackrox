@@ -7,7 +7,7 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { AuthProvider } from 'services/AuthService';
+import { AuthProvider, AuthProviderInfo } from 'services/AuthService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 
@@ -17,7 +17,7 @@ const selectedRowStyle = {
     borderLeft: '3px solid var(--pf-global--primary-color--100)',
 };
 
-function getAuthProviderTypeLabel(type: string, supportedTypes): string {
+function getAuthProviderTypeLabel(type: string, supportedTypes: AuthProviderInfo[]): string {
     return supportedTypes.find(({ value }) => value === type)?.label ?? '';
 }
 
@@ -30,14 +30,14 @@ export type AuthProvidersListProps = {
 
 const authProviderState = createStructuredSelector({
     currentUser: selectors.getCurrentUser,
-    supportedTypes: selectors.getSupportedAuthProviders,
+    availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
 function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps): ReactElement {
     const [authProviderToDelete, setAuthProviderToDelete] = useState('');
     const [idToDelete, setIdToDelete] = useState('');
     const dispatch = useDispatch();
-    const { currentUser, supportedTypes } = useSelector(authProviderState);
+    const { currentUser, availableProviderTypes } = useSelector(authProviderState);
 
     function onClickDelete(name: string, id: string) {
         setIdToDelete(id);
@@ -68,7 +68,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                 </Thead>
                 <Tbody>
                     {authProviders.map(({ id, name, type, defaultRole, groups = [] }) => {
-                        const typeLabel = getAuthProviderTypeLabel(type, supportedTypes);
+                        const typeLabel = getAuthProviderTypeLabel(type, availableProviderTypes);
 
                         return (
                             <Tr

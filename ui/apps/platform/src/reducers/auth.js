@@ -4,9 +4,9 @@ import { createFetchingActions, createFetchingActionTypes } from 'utils/fetching
 
 // Helper functions
 
-export const filterAuthProviders = (providers, supportedTypes) => {
-    const availableTypes = supportedTypes?.map((provider) => provider.value);
-    return providers.filter((provider) => availableTypes?.indexOf(provider.type) !== -1);
+export const filterAuthProviders = (providers, availableTypes) => {
+    const availableTypeNames = availableTypes?.map((provider) => provider.value);
+    return providers.filter((provider) => availableTypeNames?.indexOf(provider.type) !== -1);
 };
 
 // Action types
@@ -14,7 +14,7 @@ export const filterAuthProviders = (providers, supportedTypes) => {
 export const types = {
     FETCH_AUTH_PROVIDERS: createFetchingActionTypes('auth/FETCH_AUTH_PROVIDERS'),
     FETCH_LOGIN_AUTH_PROVIDERS: createFetchingActionTypes('auth/FETCH_LOGIN_AUTH_PROVIDERS'),
-    FETCH_SUPPORTED_AUTH_PROVIDERS: 'auth/FETCH_SUPPORTED_AUTH_PROVIDERS',
+    FETCH_AVAILABLE_PROVIDER_TYPES: 'auth/FETCH_AVAILABLE_PROVIDER_TYPES',
     SELECTED_AUTH_PROVIDER: 'auth/SELECTED_AUTH_PROVIDER',
     SAVE_AUTH_PROVIDER: 'auth/SAVE_AUTH_PROVIDER',
     DELETE_AUTH_PROVIDER: 'auth/DELETE_AUTH_PROVIDER',
@@ -57,8 +57,8 @@ export const actions = {
         type: types.SET_AUTH_PROVIDER_TEST_RESULTS,
         value,
     }),
-    setSupportedAuthProviders: (value) => ({
-        type: types.FETCH_SUPPORTED_AUTH_PROVIDERS,
+    setAvailableProviderTypes: (value) => ({
+        type: types.FETCH_AVAILABLE_PROVIDER_TYPES,
         value,
     }),
     login: (userData) => ({ type: types.LOGIN, userData }),
@@ -171,8 +171,8 @@ const saveAuthProviderStatus = (state = null, action) => {
     return state;
 };
 
-const supportedAuthProviders = (state = [], action) => {
-    if (action.type === types.FETCH_SUPPORTED_AUTH_PROVIDERS) {
+const availableProviderTypes = (state = [], action) => {
+    if (action.type === types.FETCH_AVAILABLE_PROVIDER_TYPES) {
         return isEqual(action.value, state) ? state : action.value;
     }
     return state;
@@ -188,7 +188,7 @@ const reducer = combineReducers({
     isEditingAuthProvider,
     saveAuthProviderStatus,
     currentUser,
-    supportedAuthProviders,
+    availableProviderTypes,
 });
 
 export default reducer;
@@ -199,14 +199,14 @@ const getAuthProviders = (state) => state.authProviders;
 const getLoginAuthProviders = (state) => state.loginAuthProviders;
 const getLoginAuthProviderTestResults = (state) => state.authProviderTestResults;
 const getAvailableAuthProviders = (state) =>
-    filterAuthProviders(state.authProviders, state.supportedAuthProviders);
+    filterAuthProviders(state.authProviders, state.availableProviderTypes);
 const getSelectedAuthProvider = (state) => state.selectedAuthProvider;
 const getAuthStatus = (state) => state.authStatus;
 const getAuthProviderError = (state) => state.authProviderResponse;
 const getAuthProviderEditingState = (state) => state.isEditingAuthProvider;
 const getSaveAuthProviderStatus = (state) => state.saveAuthProviderStatus;
 const getCurrentUser = (state) => state.currentUser;
-const getSupportedAuthProviders = (state) => state.supportedAuthProviders;
+const getAvailableProviderTypes = (state) => state.availableProviderTypes;
 
 export const selectors = {
     getAuthProviders,
@@ -219,5 +219,5 @@ export const selectors = {
     getAuthProviderEditingState,
     getSaveAuthProviderStatus,
     getCurrentUser,
-    getSupportedAuthProviders,
+    getAvailableProviderTypes,
 };

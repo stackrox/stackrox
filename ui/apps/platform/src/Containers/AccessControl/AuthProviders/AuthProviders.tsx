@@ -58,7 +58,7 @@ const authProviderState = createStructuredSelector({
     isFetchingRoles: (state) =>
         selectors.getLoadingStatus(state, roleActionTypes.FETCH_ROLES) as boolean,
     userRolePermissions: selectors.getUserRolePermissions,
-    supportedTypes: selectors.getSupportedAuthProviders,
+    availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
 function getNewAuthProviderObj(type) {
@@ -80,7 +80,8 @@ function AuthProviders(): ReactElement {
         isFetchingAuthProviders,
         isFetchingRoles,
         userRolePermissions,
-        supportedTypes, } = useSelector(authProviderState);
+        availableProviderTypes,
+    } = useSelector(authProviderState);
     const hasWriteAccess = getHasReadWritePermission('AuthProvider', userRolePermissions);
 
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
@@ -127,7 +128,7 @@ function AuthProviders(): ReactElement {
         dispatch(authActions.setSaveAuthProviderStatus(null));
     }
 
-    const dropdownItems = supportedTypes.map(({ value, label }) => (
+    const dropdownItems = availableProviderTypes.map(({ value, label }) => (
         <DropdownItem key={value} value={value} component="button">
             {label}
         </DropdownItem>
