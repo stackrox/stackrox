@@ -5,10 +5,12 @@ package operator
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -107,24 +109,13 @@ func (o *operatorImpl) Start(ctx context.Context) error {
 		return nil
 	}
 
-	go o.mainLoop()
+	// The current functionality to watch secrets is not critical, and it is very simple, so we disable resync
+	// to avoid load in the k8s API. See https://groups.google.com/forum/#!topic/kubernetes-sig-api-machinery/PbSCXdLDno0
+	// as linked in sensor/kubernetes/listener/listener_impl.go for context.
+	noResyncPeriod := 0 * time.Minute
+	sif := informers.NewSharedInformerFactoryWithOptions(o.k8sClient, noResyncPeriod, informers.WithNamespace(o.appNamespace))
+	o.watchSecrets(sif)
 
 	log.Info("Embedded operator started correctly.")
 	return nil
-}
-
-func (o *operatorImpl) mainLoop() {
-	// TODO: // Secret watch ... or informer ..
-	//  // see https://pkg.go.dev/k8s.io/client-go/tools/watch#NewIndexerInformerWatcher
-	// FIXME
-	for i := 0; i < 1; i++ { // FIXME proper loop
-		/*
-			var secret *v1.Secret
-			err := o.processSecret(secret)
-			if err != nil {
-				err := errors.Wrapf(err, "Error processing secret with name %s", secret.GetName())
-				log.Error(err)
-			} */
-		log.Warn("Bye for now")
-	}
 }

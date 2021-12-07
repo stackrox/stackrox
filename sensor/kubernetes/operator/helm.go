@@ -8,8 +8,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -160,7 +163,26 @@ func (o *operatorImpl) isSensorHelmManaged() bool {
 	return o.helmReleaseRevision > 0 && o.helmReleaseName != ""
 }
 
-func (o *operatorImpl) processSecret(secret *v1.Secret) error {
+func (o *operatorImpl) watchSecrets(sif informers.SharedInformerFactory) chan struct{} {
+	secretInformerStopper := make(chan struct{})
+	secretInformer := sif.Core().V1().Secrets().Informer()
+	secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(newObj interface{}) {
+			secret := newObj.(*corev1.Secret)
+			err := o.processSecret(secret, secretInformerStopper)
+			if err != nil {
+				err := errors.Wrapf(err, "Error processing secret with name %s", secret.GetName())
+				log.Error(err)
+			}
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {},
+		DeleteFunc: func(obj interface{}) {},
+	})
+	go secretInformer.Run(secretInformerStopper)
+	return secretInformerStopper
+}
+
+func (o *operatorImpl) processSecret(secret *v1.Secret, secretInformerStopper chan struct{}) error {
 	var processingError error
 	if o.isSensorHelmManaged() && isHelmSecret(secret) {
 		revision, err := o.extractHelmRevisionFromHelmSecret(secret)
@@ -168,6 +190,7 @@ func (o *operatorImpl) processSecret(secret *v1.Secret) error {
 			log.Errorf("Failed to extract Helm revision from secret, ignoring potential new Helm release: %s", processingError)
 		} else if revision > o.helmReleaseRevision {
 			log.Warnf("Detected Helm revision %d higher than current revision %d, stopping sensor", revision, o.helmReleaseRevision)
+			secretInformerStopper <- struct{}{}
 			o.stop(nil)
 		}
 	}

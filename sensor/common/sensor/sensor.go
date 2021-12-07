@@ -320,8 +320,8 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	s.centralCommunication = NewCentralCommunication(s.components...)
 
 	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
-	s.waitForSignal(s.centralCommunication.Stopped(), "Sensor reported an error: %v",
-		"Terminating central connection.")
+	s.waitForSignal(s.centralCommunication.Stopped(), "Terminating central connection.",
+		"Sensor reported an error: %v")
 }
 
 func (s *Sensor) launchSensorOperator() {
@@ -332,8 +332,8 @@ func (s *Sensor) launchSensorOperator() {
 		log.Errorf("Error launching sensor embedded operator, self-operating features will not be available: %v", err)
 		return
 	}
-	s.waitForSignal(s.sensorOperator.Stopped(), "Stopping sensor due an error in embedded operator: %v",
-		"Stopping sensor due to signal from embedded operator.")
+	s.waitForSignal(s.sensorOperator.Stopped(), "Stopping sensor due to signal from embedded operator.",
+		"Stopping sensor due an error in embedded operator: %v.")
 }
 
 func (s *Sensor) waitForSignal(signal concurrency.ReadOnlyErrorSignal, stopMessage string, stopErrorTemplateMsg string) {
