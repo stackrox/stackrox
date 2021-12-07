@@ -13,6 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlFake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -31,6 +33,7 @@ type secretReconciliationTestCase struct {
 	ExpectedError              string
 	ExpectedNotExistingSecrets []string
 	VerifyStatus               statusVerifyFunc
+	HasSecuredCluster          bool
 }
 
 func basicSpecWithScanner(scannerEnabled bool) platform.CentralSpec {
@@ -47,7 +50,7 @@ func basicSpecWithScanner(scannerEnabled bool) platform.CentralSpec {
 	return spec
 }
 
-func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, k8sClient kubernetes.Interface, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
+func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, k8sClient kubernetes.Interface, controllerClient ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
 	central := &platform.Central{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "platform.stackrox.io/v1alpha1",
@@ -76,9 +79,23 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 
 	client := fake.NewSimpleClientset(allExisting...)
 
+	sch := runtime.NewScheme()
+	require.NoError(t, platform.AddToScheme(sch))
+	ctrlClientBuilder := ctrlFake.NewClientBuilder().WithScheme(sch)
+	if c.HasSecuredCluster {
+		securedCluster := platform.SecuredCluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-secured-cluster-services",
+				Namespace: testNamespace,
+			},
+		}
+		ctrlClientBuilder.WithObjects(&securedCluster)
+	}
+	ctrlClient := ctrlClientBuilder.Build()
+
 	// Verify that an initial invocation does not touch any of the existing secrets, and creates
 	// the expected ones.
-	err := runFn(context.Background(), central.DeepCopy(), client, statusUpdater, logr.Discard())
+	err := runFn(context.Background(), central.DeepCopy(), client, ctrlClient, statusUpdater, logr.Discard())
 	if c.ExpectedError == "" {
 		require.NoError(t, err)
 	} else {
@@ -132,7 +149,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	assert.Empty(t, secretsByName, "one or more unexpected secrets exist")
 
 	// Verify that a second invocation does not further change the cluster state
-	err = runFn(context.Background(), central.DeepCopy(), client, statusUpdater, logr.Discard())
+	err = runFn(context.Background(), central.DeepCopy(), client, ctrlClient, statusUpdater, logr.Discard())
 	assert.NoError(t, err, "second invocation of reconciliation function failed")
 
 	if c.VerifyStatus != nil {
@@ -148,7 +165,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	central.DeletionTimestamp = new(metav1.Time)
 	*central.DeletionTimestamp = metav1.Now()
 
-	err = runFn(context.Background(), central.DeepCopy(), client, statusUpdater, logr.Discard())
+	err = runFn(context.Background(), central.DeepCopy(), client, ctrlClient, statusUpdater, logr.Discard())
 	assert.NoError(t, err, "deletion of CR resulted in error")
 
 	secretsList3, err := client.CoreV1().Secrets(testNamespace).List(context.Background(), metav1.ListOptions{})

@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	coreV1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -32,10 +33,10 @@ var (
 
 // ReconcilePVCExtension reconciles PVCs created by the operator
 func ReconcilePVCExtension(k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return wrapExtension(reconcilePVC, k8sClient)
+	return wrapExtension(reconcilePVC, k8sClient, nil)
 }
 
-func reconcilePVC(ctx context.Context, central *platform.Central, k8sClient kubernetes.Interface, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+func reconcilePVC(ctx context.Context, central *platform.Central, k8sClient kubernetes.Interface, _ ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:        ctx,
 		namespace:  central.GetNamespace(),

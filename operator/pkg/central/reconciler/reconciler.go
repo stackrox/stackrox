@@ -20,7 +20,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, client kubernetes.Interface) error 
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		proxy.InjectProxyEnvVars(translation.Translator{Client: client}, proxyEnv),
-		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client)),
+		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(client, mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(client)),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(client)),

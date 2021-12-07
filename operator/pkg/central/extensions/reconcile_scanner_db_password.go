@@ -9,6 +9,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/renderer"
 	"k8s.io/client-go/kubernetes"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -18,10 +19,10 @@ const (
 // ReconcileScannerDBPasswordExtension returns an extension that takes care of creating the scanner-db-password
 // secret ahead of time.
 func ReconcileScannerDBPasswordExtension(k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return wrapExtension(reconcileScannerDBPassword, k8sClient)
+	return wrapExtension(reconcileScannerDBPassword, k8sClient, nil)
 }
 
-func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, _ ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"k8s.io/client-go/kubernetes"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -19,17 +20,18 @@ const (
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
-func ReconcileCentralTLSExtensions(k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralTLS, k8sClient)
+func ReconcileCentralTLSExtensions(k8sClient kubernetes.Interface, controllerClient ctrlClient.Client) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralTLS, k8sClient, controllerClient)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, _ func(updateStatusFunc), log logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, controllerClient ctrlClient.Client, _ func(updateStatusFunc), log logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
 			centralObj: c,
 			k8sClient:  k8sClient,
 		},
+		ctrlClient: controllerClient,
 	}
 	return run.Execute()
 }
@@ -37,7 +39,8 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, k8sClient kub
 type createCentralTLSExtensionRun struct {
 	secretReconciliationExtension
 
-	ca mtls.CA
+	ca         mtls.CA
+	ctrlClient ctrlClient.Client
 }
 
 func (r *createCentralTLSExtensionRun) Execute() error {

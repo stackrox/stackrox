@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -27,10 +28,10 @@ const (
 
 // ReconcileAdminPasswordExtension returns an extension that takes care of reconciling the central-htpasswd secret.
 func ReconcileAdminPasswordExtension(k8sClient kubernetes.Interface) extensions.ReconcileExtension {
-	return wrapExtension(reconcileAdminPassword, k8sClient)
+	return wrapExtension(reconcileAdminPassword, k8sClient, nil)
 }
 
-func reconcileAdminPassword(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, statusUpdater func(updateStatusFunc), log logr.Logger) error {
+func reconcileAdminPassword(ctx context.Context, c *platform.Central, k8sClient kubernetes.Interface, _ ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error {
 	run := &reconcileAdminPasswordExtensionRun{
 		secretReconciliationExtension: secretReconciliationExtension{
 			ctx:        ctx,
