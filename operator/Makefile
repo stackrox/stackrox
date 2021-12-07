@@ -230,7 +230,8 @@ test: manifests generate fmt vet envtest ## Run tests.
 .PHONY: validate
 CRDS := SecuredCluster Central
 validate:
-	@CRS=$$( \
+	@set +e; \
+	CRS=$$( \
 		for crd in $(CRDS); do \
 			find tests -type f -name "*.yaml" \! -name "*-assert.yaml" \! -name "*-errors.yaml" \! -name "*.envsubst.yaml" -exec grep -q "^kind: $$crd" {} \; -print; \
 		done); \
