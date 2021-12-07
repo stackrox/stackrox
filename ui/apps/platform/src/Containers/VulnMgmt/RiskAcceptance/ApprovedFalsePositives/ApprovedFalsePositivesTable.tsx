@@ -12,22 +12,23 @@ import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestCom
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
-import { ApprovedDeferralRequestsToBeAssessed } from './types';
+import { ApprovedFalsePositiveRequestsToBeAssessed } from './types';
 import useRiskAcceptance from '../useRiskAcceptance';
 import VulnerabilityRequestScope from '../PendingApprovals/VulnerabilityRequestScope';
 import UndoVulnRequestModal from '../UndoVulnRequestModal';
-import UpdateDeferralModal from './UpdateDeferralModal';
-import DeferralExpiration from './DeferralExpiration';
-import ApprovedDeferralActionsColumn from './ApprovedDeferralActionsColumn';
+import ApprovedFalsePositiveActionsColumn from './ApprovedFalsePositiveActionsColumn';
 import VulnRequestType from '../VulnRequestType';
 
-export type ApprovedDeferralsTableProps = {
+export type ApprovedFalsePositivesTableProps = {
     rows: VulnerabilityRequest[];
     updateTable: () => void;
     isLoading: boolean;
 };
 
-function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTableProps): ReactElement {
+function ApprovedFalsePositivesTable({
+    rows,
+    updateTable,
+}: ApprovedFalsePositivesTableProps): ReactElement {
     const {
         selected,
         allRowsSelected,
@@ -38,8 +39,8 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
         onClearAll,
     } = useTableSelection<VulnerabilityRequest>(rows);
     const [requestsToBeAssessed, setRequestsToBeAssessed] =
-        useState<ApprovedDeferralRequestsToBeAssessed>(null);
-    const { updateVulnRequests, undoVulnRequests } = useRiskAcceptance({
+        useState<ApprovedFalsePositiveRequestsToBeAssessed>(null);
+    const { undoVulnRequests } = useRiskAcceptance({
         requests: requestsToBeAssessed?.requests || [],
     });
 
@@ -54,7 +55,7 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
     }
 
     const selectedIds = getSelectedIds();
-    const selectedDeferralRequests = rows.filter((row) => selectedIds.includes(row.id));
+    const selectedFalsePositiveRequests = rows.filter((row) => selectedIds.includes(row.id));
 
     return (
         <>
@@ -64,39 +65,25 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                     <ToolbarItem>
                         <BulkActionsDropdown isDisabled={numSelected === 0}>
                             <DropdownItem
-                                key="update deferrals"
+                                key="undo false positives"
                                 component="button"
                                 onClick={() =>
                                     setRequestsToBeAssessed({
-                                        type: 'DEFERRAL',
-                                        action: 'UPDATE',
-                                        requests: selectedDeferralRequests,
-                                    })
-                                }
-                                isDisabled={selectedDeferralRequests.length === 0}
-                            >
-                                Update deferrals ({selectedDeferralRequests.length})
-                            </DropdownItem>
-                            <DropdownItem
-                                key="undo deferrals"
-                                component="button"
-                                onClick={() =>
-                                    setRequestsToBeAssessed({
-                                        type: 'DEFERRAL',
+                                        type: 'FALSE_POSITIVE',
                                         action: 'UNDO',
-                                        requests: selectedDeferralRequests,
+                                        requests: selectedFalsePositiveRequests,
                                     })
                                 }
-                                isDisabled={selectedDeferralRequests.length === 0}
+                                isDisabled={selectedFalsePositiveRequests.length === 0}
                             >
-                                Reobserve CVEs ({selectedDeferralRequests.length})
+                                Reobserve CVEs ({selectedFalsePositiveRequests.length})
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
             <Divider component="div" />
-            <TableComposable aria-label="Approved Deferrals Table" variant="compact" borders>
+            <TableComposable aria-label="Approved False Positives Table" variant="compact" borders>
                 <Thead>
                     <Tr>
                         <Th
@@ -109,7 +96,7 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                         <Th>Type</Th>
                         <Th>Scope</Th>
                         <Th>Impacted Entities</Th>
-                        <Th>Expiration</Th>
+                        <Th>Requested Action</Th>
                         <Th>Apply to</Th>
                         <Th>Comments</Th>
                         <Th>Requestor</Th>
@@ -137,9 +124,7 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                     {row.scope.imageScope ? 'image' : 'global'}
                                 </Td>
                                 <Td dataLabel="Impacted entities">-</Td>
-                                <Td dataLabel="Expiration">
-                                    <DeferralExpiration deferralReq={row.deferralReq} />
-                                </Td>
+                                <Td dataLabel="Requested Action">Mark false positive</Td>
                                 <Td dataLabel="Apply to">
                                     <VulnerabilityRequestScope scope={row.scope} />
                                 </Td>
@@ -151,7 +136,7 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                                 </Td>
                                 <Td dataLabel="Requestor">{row.requestor.name}</Td>
                                 <Td className="pf-u-text-align-right">
-                                    <ApprovedDeferralActionsColumn
+                                    <ApprovedFalsePositiveActionsColumn
                                         row={row}
                                         setRequestsToBeAssessed={setRequestsToBeAssessed}
                                     />
@@ -162,17 +147,10 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
                 </Tbody>
             </TableComposable>
             <UndoVulnRequestModal
-                type="DEFERRAL"
+                type="FALSE_POSITIVE"
                 isOpen={requestsToBeAssessed?.action === 'UNDO'}
                 numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
                 onSendRequest={undoVulnRequests}
-                onCompleteRequest={completeAssessment}
-                onCancel={cancelAssessment}
-            />
-            <UpdateDeferralModal
-                isOpen={requestsToBeAssessed?.action === 'UPDATE'}
-                numRequestsToBeAssessed={requestsToBeAssessed?.requests.length || 0}
-                onSendRequest={updateVulnRequests}
                 onCompleteRequest={completeAssessment}
                 onCancel={cancelAssessment}
             />
@@ -180,4 +158,4 @@ function ApprovedDeferralsTable({ rows, updateTable }: ApprovedDeferralsTablePro
     );
 }
 
-export default ApprovedDeferralsTable;
+export default ApprovedFalsePositivesTable;
