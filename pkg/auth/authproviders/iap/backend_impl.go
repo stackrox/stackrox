@@ -70,8 +70,8 @@ func (p *backendImpl) OnEnable(provider authproviders.Provider) {
 func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 }
 
-func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
-	return p.loginURL
+func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
+	return p.loginURL, nil
 }
 
 func (p *backendImpl) RefreshURL() string {

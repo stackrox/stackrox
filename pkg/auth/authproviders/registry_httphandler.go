@@ -140,9 +140,15 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	}
 
 	ri := requestinfo.FromContext(req.Context())
-	loginURL := backend.LoginURL(clientState, &ri)
+	loginURL, err := backend.LoginURL(clientState, &ri)
+	if err != nil {
+		log.Warnf("could not obtain the login URL for %s: %v", providerID, err)
+		http.Error(w, fmt.Sprintf("could not get login URL: %v", err), http.StatusInternalServerError)
+		return
+	}
 	if loginURL == "" {
-		http.Error(w, "could not get login URL", http.StatusInternalServerError)
+		log.Warnf("empty login URL for %s", providerID)
+		http.Error(w, "empty login URL", http.StatusInternalServerError)
 		return
 	}
 
