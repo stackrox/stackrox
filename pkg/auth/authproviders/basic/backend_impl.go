@@ -61,7 +61,7 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state
 	}, state, nil
 }
 
-func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
+func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) (string, error) {
 	queryParams := url.Values{}
 	queryParams.Set(clientStateQueryParamName, clientState)
 	queryParams.Set("micro_ts", strconv.FormatInt(int64(p.monoClock.SinceEpoch()/time.Microsecond), 10))
@@ -69,7 +69,7 @@ func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) s
 		Path:     p.urlPathPrefix + challengeHandlerPath,
 		RawQuery: queryParams.Encode(),
 	}
-	return u.String()
+	return u.String(), nil
 }
 
 func (p *backendImpl) Config() map[string]string {
