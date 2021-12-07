@@ -809,16 +809,8 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			}
 		}
 
-		if cluster.GetInitBundleId() == bundleID &&
-			cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
-			// FIXME restore in prviate fun: cluster.GetHelmConfig().GetHelmReleaseRevision() != hello.GetHelmManagedConfigInit().GetClusterConfig().GetHelmReleaseRevision() &&
-			cluster.GetManagedBy() == manager {
-			// No change in either of
-			// * fingerprint of the Helm configuration
-			// * in init bundle ID
-			// * manager type
-			//
-			// => there is no need to update the cluster, return immediately.
+		if !isClusterUpdateRequired(cluster, bundleID, hello) {
+			// There is no need to update the cluster, return immediately.
 			//
 			// Note: this also is the case if the cluster was newly added.
 			return cluster, nil
@@ -846,6 +838,20 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	return cluster, nil
+}
+
+// We need to update the cluster is there is change in either of:
+// * fingerprint of the Helm configuration
+// * in init bundle ID
+// * manager type
+// * Helm release revision
+func isClusterUpdateRequired(cluster *storage.Cluster, bundleID string, hello *central.SensorHello) bool {
+	helmConfig := hello.GetHelmManagedConfigInit()
+	manager := helmConfig.GetManagedBy()
+	return !(cluster.GetInitBundleId() == bundleID &&
+		cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() &&
+		cluster.GetManagedBy() == manager &&
+		cluster.GetHelmConfig().GetHelmReleaseRevision() != hello.GetHelmManagedConfigInit().GetClusterConfig().GetHelmReleaseRevision())
 }
 
 func normalizeCluster(cluster *storage.Cluster) error {
