@@ -231,6 +231,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 CRDS := SecuredCluster Central
 validate:
 	@set +e; \
+	FAILED=0; \
 	CRS=$$( \
 		for crd in $(CRDS); do \
 			find tests -type f -name "*.yaml" \! -name "*-assert.yaml" \! -name "*-errors.yaml" \! -name "*.envsubst.yaml" -exec grep -q "^kind: $$crd" {} \; -print; \
@@ -241,11 +242,16 @@ validate:
 		if [ $$? -eq 0 ]; then \
 			echo PASSED; \
 		else \
+			FAILED=1; \
 			echo FAILED; \
 			echo "kubectl: $$output"; \
 		fi; \
 		echo; \
-	done;
+	done; \
+	if [ $$FAILED -ne 0 ]; then \
+		/bin/echo "ERROR: Some custom resources did not pass validation (see above)."; \
+		exit 1; \
+	fi;
 
 test-e2e: build install validate kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
