@@ -54,18 +54,18 @@ func (c ScopeTreeCompacted) ToJSON() (string, error) {
 	return string(jsonified), nil
 }
 
-// ToScopeQueries converts ScopeTreeCompacted to multiple scope query strings, one for each cluster or cluster/namespace
+// ToScopeQueries converts ScopeTreeCompacted to multiple scope query strings, one for each cluster or cluster/namespace.
 func (c ScopeTreeCompacted) ToScopeQueries() []string {
 	scopeQueries := make([]string, 0, len(c))
 	for cluster, namespaces := range c {
 		if len(namespaces) == 1 && namespaces[0] == "*" {
 			scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%s", search.Cluster.String(), cluster))
-		} else {
-			for _, ns := range namespaces {
-				scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%s+%s:%s",
-					search.Cluster.String(), cluster,
-					search.Namespace.String(), ns))
-			}
+			continue
+		}
+		for _, ns := range namespaces {
+			scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%s+%s:%s",
+				search.Cluster.String(), cluster,
+				search.Namespace.String(), ns))
 		}
 	}
 	return scopeQueries
