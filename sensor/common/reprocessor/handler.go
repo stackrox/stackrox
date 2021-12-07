@@ -16,9 +16,10 @@ type Handler interface {
 }
 
 // NewHandler returns a new instance of a deployment reprocessor.
-func NewHandler(deploymentStore store.DeploymentStore) Handler {
+func NewHandler(deploymentStore store.DeploymentStore, detector detector.Detector) Handler {
 	return &handlerImpl{
 		deploymentStore: deploymentStore,
+		detector:        detector,
 	}
 }
 
