@@ -2782,12 +2782,27 @@ jobs:
               docker tag "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" "quay.io/$QUAY_REPO/roxctl:latest"
               ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:latest"
             fi
+
       - run:
           name: Retag collector & scanner images with main-version tag
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-            ./scripts/ci/retag-collector-scanner.sh "$CIRCLE_TAG" | cat
+
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+
+            REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+            for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}" | cat
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}" | cat
+
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}" | cat
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector:${MAIN_TAG}-slim" | cat
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}" | cat
+            done
+
       - run:
           name: Publish new versions of NPM packages if any
           command: |
@@ -4419,9 +4434,7 @@ jobs:
             # but is built as part of the main build with a different tag.
             # This step places it in Docker Hub with the release tag
             # for convenience before running the stackrox.io push.
-            docker pull docker.io/stackrox/docs:$DOCS_TAG | cat
-            docker tag  docker.io/stackrox/docs:$DOCS_TAG docker.io/stackrox/docs:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/docs:$MAIN_TAG | cat
+            ./scripts/ci/pull-retag-push.sh  "docker.io/stackrox/docs:$DOCS_TAG" "docker.io/stackrox/docs:$MAIN_TAG" | cat
 
       - run:
           name: Push image into stackrox.io
@@ -4433,43 +4446,24 @@ jobs:
             MAIN_TAG=$(make --quiet tag)
             COLLECTOR_TAG=$(make --quiet collector-tag)
 
-            docker pull docker.io/stackrox/main:$MAIN_TAG | cat
-            docker tag docker.io/stackrox/main:$MAIN_TAG stackrox.io/main:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh stackrox.io/main:$MAIN_TAG | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/main:$MAIN_TAG" "stackrox.io/main:$MAIN_TAG" | cat
 
             # RHEL images
             # For simplicity for customers, tag main as main-rhel as well
-            docker tag stackrox.io/main:$MAIN_TAG stackrox.io/main-rhel:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh stackrox.io/main-rhel:$MAIN_TAG | cat
+            ./scripts/ci/pull-retag-push.sh "stackrox.io/main:$MAIN_TAG" "stackrox.io/main-rhel:$MAIN_TAG" | cat
 
             # The docs image uses the same tag as main for releases.
-            docker pull docker.io/stackrox/docs:$MAIN_TAG | cat
-            docker tag  docker.io/stackrox/docs:$MAIN_TAG stackrox.io/docs:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh stackrox.io/docs:$MAIN_TAG | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/docs:$MAIN_TAG"   "stackrox.io/docs:$MAIN_TAG" | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/roxctl:$MAIN_TAG" "stackrox.io/roxctl:$MAIN_TAG" | cat
 
-            docker pull docker.io/stackrox/roxctl:$MAIN_TAG | cat
-            docker tag  docker.io/stackrox/roxctl:$MAIN_TAG stackrox.io/roxctl:$MAIN_TAG
-            ./scripts/ci/push-as-manifest-list.sh stackrox.io/roxctl:$MAIN_TAG | cat
-
-            docker pull    docker.io/stackrox/collector:$COLLECTOR_TAG | cat
-            docker pull    "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" | cat
-            docker pull    "docker.io/stackrox/collector:${COLLECTOR_TAG}-base" | cat
-            docker tag     docker.io/stackrox/collector:$COLLECTOR_TAG collector.stackrox.io/collector:$COLLECTOR_TAG
-            docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest"
-            docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-base" "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"
-
-            ./scripts/ci/push-as-manifest-list.sh collector.stackrox.io/collector:$COLLECTOR_TAG | cat
-            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" | cat
-            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim" | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}"        "collector.stackrox.io/collector:${COLLECTOR_TAG}" | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}-base"   "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim" | cat
 
             # Retag with -rhel suffix for historical reasons
-            docker tag "collector.stackrox.io/collector:$COLLECTOR_TAG"          "collector.stackrox.io/collector-rhel:$COLLECTOR_TAG"
-            docker tag "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest"
-            docker tag "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim"
-
-            ./scripts/ci/push-as-manifest-list.sh collector.stackrox.io/collector-rhel:$COLLECTOR_TAG | cat
-            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
-            ./scripts/ci/push-as-manifest-list.sh "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim" | cat
+            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}"         collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}" | cat
+            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
+            ./scripts/ci/pull-retag-push.sh "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"   "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim" | cat
 
       - run:
           name: Push image into quay.io repository backing registry.redhat.io
@@ -4490,7 +4484,26 @@ jobs:
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" stackrox.io
             docker login -u "$STACKROX_IO_PUSH_USERNAME" --password-stdin \<<<"$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
-            ./scripts/ci/retag-collector-scanner.sh "$CIRCLE_TAG"  | cat
+
+            MAIN_TAG="$(make --quiet tag)"
+            SCANNER_VERSION="$(make --quiet scanner-tag)"
+            COLLECTOR_VERSION="$(make --quiet collector-tag)"
+
+            REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" "stackrox.io" )
+            for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}" | cat
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}" | cat
+
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY/stackrox.io/collector.stackrox.io}/collector:${MAIN_TAG}" | cat
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY/stackrox.io/collector.stackrox.io}/collector:${MAIN_TAG}-slim" | cat
+              ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY/stackrox.io/collector.stackrox.io}/collector-slim:${MAIN_TAG}" | cat
+            done
+
+            # Externally exposed registries require '-rhel' suffix for backwards compatibility with some customers.
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/scanner:${MAIN_TAG}"                   "stackrox.io/scanner-rhel:${MAIN_TAG}" | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/scanner-db:${MAIN_TAG}"                "stackrox.io/scanner-db-rhel:${MAIN_TAG}" | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${MAIN_TAG}"       "collector.stackrox.io/collector-rhel:${MAIN_TAG}" | cat
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${MAIN_TAG}-slim"  "collector.stackrox.io/collector-rhel:${MAIN_TAG}-slim" | cat
 
       - run:
           name: Push roxctl to stackrox-hub
