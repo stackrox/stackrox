@@ -63,38 +63,6 @@
 {{- end -}}
 
 {{/*
-  srox._labels $labels $ $objType $objName $forPod
-
-  Writes all applicable [pod] labels (including default labels) for $objType/$objName
-  into $labels. Pod labels are written iff $forPod is true.
-
-  This template receives the $ parameter as its second (not its first, as usual) parameter
-  such that it can be used easier in "srox.labels".
-   */}}
-{{ define "srox._labels" }}
-{{ $labels := index . 0 }}
-{{ $ := index . 1  }}
-{{ $objType := index . 2 }}
-{{ $objName := index . 3 }}
-{{ $forPod := index . 4 }}
-{{ $_ := set $labels "app.kubernetes.io/name" "stackrox" }}
-{{ $_ = set $labels "app.kubernetes.io/managed-by" $.Release.Service }}
-{{ $_ = set $labels "helm.sh/chart" (printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_")) }}
-{{ $_ = set $labels "app.kubernetes.io/instance" $.Release.Name }}
-{{ $_ = set $labels "app.kubernetes.io/version" $.Chart.AppVersion }}
-{{ $_ = set $labels "app.kubernetes.io/part-of" "stackrox-secured-cluster-services" }}
-{{ $component := regexReplaceAll "^.*/(admission-control|collector|sensor)[^/]*\\.yaml" $.Template.Name "${1}" }}
-{{ if not (contains "/" $component) }}
-  {{ $_ = set $labels "app.kubernetes.io/component" $component }}
-{{ end }}
-{{ $metadataNames := list "labels" }}
-{{ if $forPod }}
-  {{ $metadataNames = append $metadataNames "podLabels" }}
-{{ end }}
-{{ include "srox._customizeMetadata" (list $ $labels $objType $objName $metadataNames) }}
-{{ end }}
-
-{{/*
   srox._annotations $annotations $ $objType $objName $forPod
 
   Writes all applicable [pod] annotations (including default annotations) for
@@ -190,3 +158,16 @@
   {{ end }}
 {{ end }}
 {{ end }}
+
+{{/* Add namespace specific prefixes for global resources to avoid resource name clashes for multi-namespace deployments. */}}
+{{- define "srox.globalResourceName" -}}
+{{- $ := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- if eq $.Release.Namespace "stackrox" -}}
+  {{- /* Standard namespace, use resource name as is. */ -}}
+  {{- $name -}}
+{{- else -}}
+  {{- /* Add global prefix to resource name. */ -}}
+  {{- printf "%s-%s" $._rox.globalPrefix (trimPrefix "stackrox-" $name) -}}
+{{- end -}}
+{{- end -}}
