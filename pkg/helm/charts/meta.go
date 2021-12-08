@@ -12,6 +12,7 @@ import (
 // MetaValuesKey exists exclusively to protect MetaValues from losing typing and becoming exchangeable with
 // map[string]interface{}. By doing this we get the opportunity to more reliably trace MetaValues usage throughout the
 // codebase.
+// TODO(RS-379): Switch MetaValues to be struct and get rid of MetaValuesKey.
 type MetaValuesKey string
 
 // MetaValues are the values to be passed to the StackRox chart templates.
@@ -84,6 +85,7 @@ func RHACSMetaValues() MetaValues {
 // Go templating does not like our MetaValuesKey and prefers to have string as a key in the map.
 // Unfortunately, an attempt to cast MetaValues to map[string]interface{} does not compile, therefore we need to copy
 // the map.
+// TODO(RS-379): Switch MetaVals to struct and get rid of ToRaw function.
 func (m MetaValues) ToRaw() map[string]interface{} {
 	result := make(map[string]interface{}, len(m))
 	for k, v := range m {
