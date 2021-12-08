@@ -3,11 +3,14 @@ package check
 import (
 	"bytes"
 	"context"
+	"io/ioutil"
 	"net"
+	"path"
+	"runtime"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -219,16 +222,7 @@ func (suite *imageCheckTestSuite) createGRPCServerWithDetectionService(alerts []
 }
 
 func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer) {
-	envMock := mocks.NewMockEnvironment(gomock.NewController(suite.T()))
-
-	testIO, _, out, _ := environment.TestIO()
-	logger := environment.NewLogger(testIO, printer.DefaultColorPrinter())
-
-	envMock.EXPECT().Logger().AnyTimes().Return(logger)
-	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
-	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	envMock.EXPECT().ColorWriter().AnyTimes().Return(out)
-	return envMock, out
+	return mocks.NewEnvWithConn(conn, suite.T())
 }
 
 func (suite *imageCheckTestSuite) SetupTest() {
@@ -250,83 +244,13 @@ type outputFormatTest struct {
 func (suite *imageCheckTestSuite) TestCheckImage_TableOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non build failing enforcement actions": {
-			alerts: testAlertsWithoutFailure,
-			expectedOutput: `Policy check results for image: nginx:test
-(TOTAL: 6, LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 0)
-
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-|  POLICY  | SEVERITY | BREAKS BUILD |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 4 |   HIGH   |      -       | policy 4 for testing | - test violation 1 | policy 4 for testing |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 8 |   HIGH   |      -       |          -           | - test violation 1 | policy 8 for testing |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 2 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 3 |                      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 2 |  MEDIUM  |      -       | policy 2 for testing | - test violation 1 | policy 2 for testing |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 2 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 3 |                      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 5 |  MEDIUM  |      -       | policy 5 for testing | - test violation 1 | policy 5 for testing |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 2 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 3 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 1 |                      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 6 |  MEDIUM  |      -       | policy 6 for testing | - test violation 1 | policy 6 for testing |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 7 |   LOW    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-`,
+			alerts:            testAlertsWithoutFailure,
+			expectedOutput:    "testAlertsWithoutFailure.txt",
 			expectedErrOutput: "WARN: A total of 6 policies have been violated\n",
 		},
 		"should fail with build failing enforcement actions": {
-			alerts: testAlertsWithFailure,
-			expectedOutput: `Policy check results for image: nginx:test
-(TOTAL: 7, LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 1)
-
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-|  POLICY  | SEVERITY | BREAKS BUILD |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 1 | CRITICAL |      X       | policy 1 for testing | - test violation 1 | policy 1 for testing |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 2 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 3 |                      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 4 |   HIGH   |      -       | policy 4 for testing | - test violation 1 | policy 4 for testing |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 8 |   HIGH   |      -       |          -           | - test violation 1 | policy 8 for testing |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 2 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 3 |                      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 2 |  MEDIUM  |      -       | policy 2 for testing | - test violation 1 | policy 2 for testing |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 5 |  MEDIUM  |      -       | policy 5 for testing | - test violation 1 | policy 5 for testing |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 2 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 3 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 1 |                      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 6 |  MEDIUM  |      -       | policy 6 for testing | - test violation 1 | policy 6 for testing |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 2 |                      |
-|          |          |              |                      |                    |                      |
-|          |          |              |                      | - test violation 3 |                      |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 7 |   LOW    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
-+----------+----------+--------------+----------------------+--------------------+----------------------+
-`,
+			alerts:         testAlertsWithFailure,
+			expectedOutput: "testAlertsWithFailure.txt",
 			expectedErrOutput: `WARN: A total of 7 policies have been violated
 ERROR: failed policies found: 1 policies violated that are failing the check
 ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
@@ -345,212 +269,14 @@ ERROR: Policy "policy 1" - Possible remediation: "policy 1 for testing"
 func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non build failing enforcement actions": {
-			alerts: testAlertsWithoutFailure,
-			expectedOutput: `{
-  "results": [
-    {
-      "metadata": {
-        "id": "unknown",
-        "additionalInfo": null
-      },
-      "summary": {
-        "CRITICAL": 0,
-        "HIGH": 2,
-        "LOW": 1,
-        "MEDIUM": 3,
-        "TOTAL": 6
-      },
-      "violatedPolicies": [
-        {
-          "name": "policy 4",
-          "severity": "HIGH",
-          "description": "policy 4 for testing",
-          "violation": [
-            "test violation 1"
-          ],
-          "remediation": "policy 4 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 8",
-          "severity": "HIGH",
-          "description": "",
-          "violation": [
-            "test violation 1",
-            "test violation 2",
-            "test violation 3"
-          ],
-          "remediation": "policy 8 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 2",
-          "severity": "MEDIUM",
-          "description": "policy 2 for testing",
-          "violation": [
-            "test violation 1",
-            "test violation 2",
-            "test violation 3"
-          ],
-          "remediation": "policy 2 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 5",
-          "severity": "MEDIUM",
-          "description": "policy 5 for testing",
-          "violation": [
-            "test violation 1",
-            "test violation 2",
-            "test violation 3",
-            "test violation 1"
-          ],
-          "remediation": "policy 5 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 6",
-          "severity": "MEDIUM",
-          "description": "policy 6 for testing",
-          "violation": [
-            "test violation 1"
-          ],
-          "remediation": "policy 6 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 7",
-          "severity": "LOW",
-          "description": "policy 7 for testing",
-          "violation": [
-            "test violation 1"
-          ],
-          "remediation": "policy 7 for testing",
-          "failingCheck": false
-        }
-      ]
-    }
-  ],
-  "summary": {
-    "CRITICAL": 0,
-    "HIGH": 2,
-    "LOW": 1,
-    "MEDIUM": 3,
-    "TOTAL": 6
-  }
-}
-`,
+			alerts:         testAlertsWithoutFailure,
+			expectedOutput: "testAlertsWithoutFailure.json",
 		},
 		"should fail with build failing enforcement actions": {
-			shouldFail: true,
-			alerts:     testAlertsWithFailure,
-			error:      policy.ErrBreakingPolicies,
-			expectedOutput: `{
-  "results": [
-    {
-      "metadata": {
-        "id": "unknown",
-        "additionalInfo": null
-      },
-      "summary": {
-        "CRITICAL": 1,
-        "HIGH": 2,
-        "LOW": 1,
-        "MEDIUM": 3,
-        "TOTAL": 7
-      },
-      "violatedPolicies": [
-        {
-          "name": "policy 1",
-          "severity": "CRITICAL",
-          "description": "policy 1 for testing",
-          "violation": [
-            "test violation 1",
-            "test violation 2",
-            "test violation 3"
-          ],
-          "remediation": "policy 1 for testing",
-          "failingCheck": true
-        },
-        {
-          "name": "policy 4",
-          "severity": "HIGH",
-          "description": "policy 4 for testing",
-          "violation": [
-            "test violation 1"
-          ],
-          "remediation": "policy 4 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 8",
-          "severity": "HIGH",
-          "description": "",
-          "violation": [
-            "test violation 1",
-            "test violation 2",
-            "test violation 3"
-          ],
-          "remediation": "policy 8 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 2",
-          "severity": "MEDIUM",
-          "description": "policy 2 for testing",
-          "violation": [
-            "test violation 1"
-          ],
-          "remediation": "policy 2 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 5",
-          "severity": "MEDIUM",
-          "description": "policy 5 for testing",
-          "violation": [
-            "test violation 1",
-            "test violation 2",
-            "test violation 3",
-            "test violation 1"
-          ],
-          "remediation": "policy 5 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 6",
-          "severity": "MEDIUM",
-          "description": "policy 6 for testing",
-          "violation": [
-            "test violation 1",
-            "test violation 2",
-            "test violation 3"
-          ],
-          "remediation": "policy 6 for testing",
-          "failingCheck": false
-        },
-        {
-          "name": "policy 7",
-          "severity": "LOW",
-          "description": "policy 7 for testing",
-          "violation": [
-            "test violation 1"
-          ],
-          "remediation": "policy 7 for testing",
-          "failingCheck": false
-        }
-      ]
-    }
-  ],
-  "summary": {
-    "CRITICAL": 1,
-    "HIGH": 2,
-    "LOW": 1,
-    "MEDIUM": 3,
-    "TOTAL": 7
-  }
-}
-`,
+			shouldFail:     true,
+			alerts:         testAlertsWithFailure,
+			error:          policy.ErrBreakingPolicies,
+			expectedOutput: "testAlertsWithFailure.json",
 		},
 	}
 
@@ -563,45 +289,14 @@ func (suite *imageCheckTestSuite) TestCheckImage_JSONOutput() {
 func (suite *imageCheckTestSuite) TestCheckImage_CSVOutput() {
 	cases := map[string]outputFormatTest{
 		"should not fail with non build failing enforcement actions": {
-			alerts: testAlertsWithoutFailure,
-			expectedOutput: `POLICY,SEVERITY,BREAKS BUILD,DESCRIPTION,VIOLATION,REMEDIATION
-policy 4,HIGH,-,policy 4 for testing,- test violation 1,policy 4 for testing
-policy 8,HIGH,-,-,"- test violation 1
-- test violation 2
-- test violation 3",policy 8 for testing
-policy 2,MEDIUM,-,policy 2 for testing,"- test violation 1
-- test violation 2
-- test violation 3",policy 2 for testing
-policy 5,MEDIUM,-,policy 5 for testing,"- test violation 1
-- test violation 2
-- test violation 3
-- test violation 1",policy 5 for testing
-policy 6,MEDIUM,-,policy 6 for testing,- test violation 1,policy 6 for testing
-policy 7,LOW,-,policy 7 for testing,- test violation 1,policy 7 for testing
-`,
+			alerts:         testAlertsWithoutFailure,
+			expectedOutput: "testAlertsWithoutFailure.csv",
 		},
 		"should fail with build failing enforcement actions": {
-			alerts:     testAlertsWithFailure,
-			shouldFail: true,
-			error:      policy.ErrBreakingPolicies,
-			expectedOutput: `POLICY,SEVERITY,BREAKS BUILD,DESCRIPTION,VIOLATION,REMEDIATION
-policy 1,CRITICAL,X,policy 1 for testing,"- test violation 1
-- test violation 2
-- test violation 3",policy 1 for testing
-policy 4,HIGH,-,policy 4 for testing,- test violation 1,policy 4 for testing
-policy 8,HIGH,-,-,"- test violation 1
-- test violation 2
-- test violation 3",policy 8 for testing
-policy 2,MEDIUM,-,policy 2 for testing,- test violation 1,policy 2 for testing
-policy 5,MEDIUM,-,policy 5 for testing,"- test violation 1
-- test violation 2
-- test violation 3
-- test violation 1",policy 5 for testing
-policy 6,MEDIUM,-,policy 6 for testing,"- test violation 1
-- test violation 2
-- test violation 3",policy 6 for testing
-policy 7,LOW,-,policy 7 for testing,- test violation 1,policy 7 for testing
-`,
+			alerts:         testAlertsWithFailure,
+			shouldFail:     true,
+			error:          policy.ErrBreakingPolicies,
+			expectedOutput: "testAlertsWithFailure.csv",
 		},
 	}
 
@@ -769,282 +464,13 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 			alerts:             testAlertsWithoutFailure,
 			json:               true,
 			printAllViolations: true,
-			expectedOutput: `{
-  "alerts": [
-    {
-      "policy": {
-        "id": "policy7",
-        "name": "policy 7",
-        "description": "policy 7 for testing",
-        "remediation": "policy 7 for testing",
-        "severity": "LOW_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy2",
-        "name": "policy 2",
-        "description": "policy 2 for testing",
-        "remediation": "policy 2 for testing",
-        "severity": "MEDIUM_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        },
-        {
-          "message": "test violation 2"
-        },
-        {
-          "message": "test violation 3"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy5",
-        "name": "policy 5",
-        "description": "policy 5 for testing",
-        "remediation": "policy 5 for testing",
-        "severity": "MEDIUM_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        },
-        {
-          "message": "test violation 2"
-        },
-        {
-          "message": "test violation 3"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy5",
-        "name": "policy 5",
-        "description": "policy 5 for testing",
-        "remediation": "policy 5 for testing",
-        "severity": "MEDIUM_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy6",
-        "name": "policy 6",
-        "description": "policy 6 for testing",
-        "remediation": "policy 6 for testing",
-        "severity": "MEDIUM_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy4",
-        "name": "policy 4",
-        "description": "policy 4 for testing",
-        "remediation": "policy 4 for testing",
-        "severity": "HIGH_SEVERITY",
-        "enforcementActions": [
-          "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT"
-        ]
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy8",
-        "name": "policy 8",
-        "rationale": "policy 8 for testing",
-        "remediation": "policy 8 for testing",
-        "severity": "HIGH_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        },
-        {
-          "message": "test violation 2"
-        },
-        {
-          "message": "test violation 3"
-        }
-      ]
-    }
-  ]
-}
-`,
+			expectedOutput:     "legacy_testAlertsWithoutFailure.json",
 		},
 		"alert with json output format failing the build": {
 			alerts:             testAlertsWithFailure,
 			printAllViolations: true,
 			json:               true,
-			expectedOutput: `{
-  "alerts": [
-    {
-      "policy": {
-        "id": "policy7",
-        "name": "policy 7",
-        "description": "policy 7 for testing",
-        "remediation": "policy 7 for testing",
-        "severity": "LOW_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy2",
-        "name": "policy 2",
-        "description": "policy 2 for testing",
-        "remediation": "policy 2 for testing",
-        "severity": "MEDIUM_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy5",
-        "name": "policy 5",
-        "description": "policy 5 for testing",
-        "remediation": "policy 5 for testing",
-        "severity": "MEDIUM_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        },
-        {
-          "message": "test violation 2"
-        },
-        {
-          "message": "test violation 3"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy5",
-        "name": "policy 5",
-        "description": "policy 5 for testing",
-        "remediation": "policy 5 for testing",
-        "severity": "MEDIUM_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy6",
-        "name": "policy 6",
-        "description": "policy 6 for testing",
-        "remediation": "policy 6 for testing",
-        "severity": "MEDIUM_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        },
-        {
-          "message": "test violation 2"
-        },
-        {
-          "message": "test violation 3"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy4",
-        "name": "policy 4",
-        "description": "policy 4 for testing",
-        "remediation": "policy 4 for testing",
-        "severity": "HIGH_SEVERITY",
-        "enforcementActions": [
-          "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT"
-        ]
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy1",
-        "name": "policy 1",
-        "description": "policy 1 for testing",
-        "remediation": "policy 1 for testing",
-        "severity": "CRITICAL_SEVERITY",
-        "enforcementActions": [
-          "FAIL_BUILD_ENFORCEMENT"
-        ]
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        },
-        {
-          "message": "test violation 2"
-        },
-        {
-          "message": "test violation 3"
-        }
-      ]
-    },
-    {
-      "policy": {
-        "id": "policy8",
-        "name": "policy 8",
-        "rationale": "policy 8 for testing",
-        "remediation": "policy 8 for testing",
-        "severity": "HIGH_SEVERITY"
-      },
-      "violations": [
-        {
-          "message": "test violation 1"
-        },
-        {
-          "message": "test violation 2"
-        },
-        {
-          "message": "test violation 3"
-        }
-      ]
-    }
-  ]
-}
-`,
+			expectedOutput:     "legacy_testAlertsWithFailure.json",
 		},
 	}
 
@@ -1056,7 +482,9 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 			imgCheckCmd.printAllViolations = c.printAllViolations
 			// Errors will be tested within TestLegacyPrint_Error
 			_ = imgCheckCmd.printResults(c.alerts)
-			suite.Assert().Equal(c.expectedOutput, out.String())
+			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", c.expectedOutput))
+			suite.Require().NoError(err)
+			suite.Assert().Equal(string(expectedOutput), out.String())
 		})
 	}
 }
@@ -1064,26 +492,51 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 // helper to run output format tests
 func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
 	standardizedFormat bool) {
+	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		suite.Run(name, func() {
-			var out *bytes.Buffer
-			conn, closeF := suite.createGRPCServerWithDetectionService(c.alerts)
+			out, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
 			defer closeF()
-
-			imgCheckCmd := suite.imageCheckCommand
-			imgCheckCmd.objectPrinter = printer
-			imgCheckCmd.standardizedOutputFormat = standardizedFormat
-
-			imgCheckCmd.env, out = suite.newTestMockEnvironment(conn)
-			err := imgCheckCmd.CheckImage()
-			if c.shouldFail {
-				suite.Require().Error(err)
-				suite.Assert().ErrorIs(err, c.error)
-			} else {
-				suite.Require().NoError(err)
-
+			suite.assertError(imgCheckCmd, c)
+			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", c.expectedOutput))
+			suite.Require().NoError(err)
+			suite.Assert().Equal(string(expectedOutput), out.String())
+		})
+		suite.Run(colorTestPrefix+name, func() {
+			if runtime.GOOS == "windows" {
+				suite.T().Skip()
 			}
-			suite.Assert().Equal(c.expectedOutput, out.String())
+			color.NoColor = false
+			defer func() { color.NoColor = true }()
+
+			out, closeF, imgCheckCmd := suite.createNewImgCheckCmd(c, printer, standardizedFormat)
+			defer closeF()
+			suite.assertError(imgCheckCmd, c)
+			expectedOutput, err := ioutil.ReadFile(path.Join("testdata", colorTestPrefix+c.expectedOutput))
+			suite.Require().NoError(err)
+			suite.Assert().Equal(string(expectedOutput), out.String())
 		})
 	}
+}
+
+func (suite *imageCheckTestSuite) assertError(imgCheckCmd imageCheckCommand, c outputFormatTest) {
+	err := imgCheckCmd.CheckImage()
+	if c.shouldFail {
+		suite.Require().Error(err)
+		suite.Assert().ErrorIs(err, c.error)
+	} else {
+		suite.Require().NoError(err)
+	}
+}
+
+func (suite *imageCheckTestSuite) createNewImgCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (*bytes.Buffer, func(), imageCheckCommand) {
+	var out *bytes.Buffer
+	conn, closeF := suite.createGRPCServerWithDetectionService(c.alerts)
+
+	imgCheckCmd := suite.imageCheckCommand
+	imgCheckCmd.objectPrinter = printer
+	imgCheckCmd.standardizedOutputFormat = standardizedFormat
+
+	imgCheckCmd.env, out = suite.newTestMockEnvironment(conn)
+	return out, closeF, imgCheckCmd
 }
