@@ -17,8 +17,8 @@ const selectedRowStyle = {
     borderLeft: '3px solid var(--pf-global--primary-color--100)',
 };
 
-function getAuthProviderTypeLabel(type: string, supportedTypes: AuthProviderInfo[]): string {
-    return supportedTypes.find(({ value }) => value === type)?.label ?? '';
+function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {
+    return availableTypes.find(({ value }) => value === type)?.label ?? '';
 }
 
 const entityType = 'AUTH_PROVIDER';
