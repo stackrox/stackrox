@@ -33,6 +33,7 @@ import useMultiSelect from 'hooks/useMultiSelect';
 import { saveReport } from 'services/ReportsService';
 import { ReportConfigurationMappedValues } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import ResourceScopeSelection from './Form/ResourceScopeSelection';
 
 export type VulnMgmtReportFormProps = {
     initialValues: ReportConfigurationMappedValues;
@@ -279,7 +280,10 @@ function VulnMgmtReportForm({
                                     </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={12}>
-                                    <span>TODO: Configure resource scope</span>
+                                    <ResourceScopeSelection
+                                        scopeId={values.scopeId}
+                                        setFieldValue={setFieldValue}
+                                    />
                                 </GridItem>
                             </Grid>
                         </GridItem>
