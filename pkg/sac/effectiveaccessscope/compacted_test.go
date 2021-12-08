@@ -49,7 +49,7 @@ func TestScopeQueries(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			result := tc.stc.ToScopeQueries()
-			assert.EqualValues(t, tc.expectedScopeQueries, result)
+			assert.ElementsMatch(t, tc.expectedScopeQueries, result)
 		})
 	}
 }
