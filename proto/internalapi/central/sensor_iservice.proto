@@ -63,15 +63,10 @@ message AuditLogStatusInfo {
 }
 
 message ReprocessDeployment {
-    // Sensor stores deployments, hence no need to send the full deployment. Note that Sensor image cache is not
-    // invalidated by this message. Hence, ensure that SyncImage message is sent before reprocessing deployment.
+    // Sensor stores deployments, hence no need to send the full deployment. The sensor image cache is
+    // invalidated by this message.
 
     repeated string  deployment_ids = 1;
-}
-
-message SensorImageCacheKey {
-    string image_id        = 1;
-    string image_full_name = 2;
 }
 
 service SensorService {
