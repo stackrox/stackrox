@@ -44,10 +44,10 @@ func (c *cliEnvironmentImpl) Logger() Logger {
 	return c.logger
 }
 
-func (c *cliEnvironmentImpl) ColorWriter(out io.Writer) io.Writer {
+func (c *cliEnvironmentImpl) ColorWriter() io.Writer {
 	return colorWriter{
 		colorfulPrinter: c.colorfulPrinter,
-		out:             out,
+		out:             c.InputOutput().Out,
 	}
 }
 

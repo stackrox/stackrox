@@ -258,7 +258,7 @@ func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientCo
 	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
 	envMock.EXPECT().Logger().AnyTimes().Return(logger)
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	envMock.EXPECT().ColorWriter(out).AnyTimes().Return(out)
+	envMock.EXPECT().ColorWriter().AnyTimes().Return(out)
 
 	return envMock, out
 }

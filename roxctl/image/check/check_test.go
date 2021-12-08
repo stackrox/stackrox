@@ -227,7 +227,7 @@ func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) 
 	envMock.EXPECT().Logger().AnyTimes().Return(logger)
 	envMock.EXPECT().InputOutput().AnyTimes().Return(testIO)
 	envMock.EXPECT().GRPCConnection().AnyTimes().Return(conn, nil)
-	envMock.EXPECT().ColorWriter(out).AnyTimes().Return(out)
+	envMock.EXPECT().ColorWriter().AnyTimes().Return(out)
 	return envMock, out
 }
 

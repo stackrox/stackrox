@@ -36,7 +36,7 @@ func Test_colorWriter_Write(t *testing.T) {
 			testIO, _, testStdOut, _ := TestIO()
 			env := NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
-			w := env.ColorWriter(testStdOut)
+			w := env.ColorWriter()
 			n, err := fmt.Fprint(w, tt.given)
 
 			assert.NoError(t, err)

@@ -200,7 +200,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 	}
 
 	// print the JSON object in the dedicated format via a printer.ObjectPrinter
-	if err := i.objectPrinter.Print(policySummary, i.env.ColorWriter(i.env.InputOutput().Out)); err != nil {
+	if err := i.objectPrinter.Print(policySummary, i.env.ColorWriter()); err != nil {
 		return err
 	}
 
