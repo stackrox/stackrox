@@ -10,7 +10,7 @@ import (
 
 const defaultScopeName = ""
 
-// This function ensures that no APIToken with permissions more than principal has can be created.
+// This function ensures that no APIToken with permissions more than principal's can be created.
 // For each requested tuple (access scope, resource, accessLevel) we check that either:
 // * principal has permission on this resource with unrestricted access scope
 // * principal has permission on this resource with requested access scope
@@ -40,10 +40,14 @@ func comparePermissions(requestedPerms, applicablePerms map[string]storage.Acces
 	for requestedResource, requestedAccess := range requestedPerms {
 		userAccess := applicablePerms[requestedResource]
 		if userAccess < requestedAccess {
-			err := errors.Errorf("resource=%s, access scope=%q: requested access is %s, when user access is %s",
-				requestedResource, scopeName, requestedAccess, userAccess)
+			err := newPrivilegeEscalationError(requestedResource, scopeName, requestedAccess, userAccess)
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}
 	return multiErr
+}
+
+func newPrivilegeEscalationError(requestedResource string, scopeName string, requestedAccess storage.Access, userAccess storage.Access) error {
+	return errors.Errorf("resource=%s, access scope=%q: requested access is %s, when user access is %s",
+		requestedResource, scopeName, requestedAccess, userAccess)
 }
